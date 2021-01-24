@@ -1028,7 +1028,8 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 		if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
 			cJSON * i;
-
+			
+			switch_mutex_lock(jsock->flag_mutex);
 			for(i = json_ptr->child; i; i = i->next) {
 				if (i->type == cJSON_True) {
 					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
@@ -1038,6 +1039,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
 				}
 			}
+			switch_mutex_unlock(jsock->flag_mutex);
 		}
 
 		if (jsock->profile->send_passwd || verto_globals.send_passwd) {
@@ -1099,6 +1101,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 					switch_mutex_lock(jsock->flag_mutex);
 					switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, var, val);
+					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, var, val);
 					switch_mutex_unlock(jsock->flag_mutex);
 				}
 			}
@@ -2303,10 +2306,12 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 		switch_channel_set_variable(tech_pvt->channel, "chat_proto", VERTO_CHAT_PROTO);
 		switch_channel_set_variable(tech_pvt->channel, "verto_host", jsock->domain);
 
+		switch_mutex_lock(jsock->flag_mutex);
 		for (hi = jsock->user_vars->headers; hi; hi = hi->next) {
 			switch_channel_set_variable(tech_pvt->channel, hi->name, hi->value);
 		}
-
+		switch_mutex_unlock(jsock->flag_mutex);
+		
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
 			caller_profile->callee_id_name = switch_core_strdup(caller_profile->pool, var);
 		}
@@ -4098,10 +4103,11 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	switch_ivr_set_user(session, jsock->uid);
 
+	switch_mutex_lock(jsock->flag_mutex);
 	for (hp = jsock->user_vars->headers; hp; hp = hp->next) {
 		switch_channel_set_variable(channel, hp->name, hp->value);
 	}
-
+	switch_mutex_unlock(jsock->flag_mutex);
 
 	switch_channel_set_profile_var(channel, "callee_id_name", remote_caller_id_name);
 	switch_channel_set_profile_var(channel, "callee_id_number", remote_caller_id_number);
@@ -4473,9 +4479,11 @@ static switch_bool_t jsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 	cJSON_AddItemToObject(obj, "chat_proto", cJSON_CreateString((char *)VERTO_CHAT_PROTO));
 	cJSON_AddItemToObject(obj, "verto_host", cJSON_CreateString((char *)jsock->domain));
 
+	switch_mutex_lock(jsock->flag_mutex);
 	for (hi = jsock->user_vars->headers; hi; hi = hi->next) {
 		cJSON_AddItemToObject(obj, hi->name, cJSON_CreateString((char *)hi->value));
 	}
+	switch_mutex_unlock(jsock->flag_mutex);
 
 	if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
 		cJSON_AddItemToObject(obj, "caller-id-name", cJSON_CreateString((char *)var));
