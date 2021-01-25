@@ -1532,6 +1532,51 @@ static void *SWITCH_THREAD_FUNC prefetch_thread(switch_thread_t *thread, void *o
 	return NULL;
 }
 
+static switch_curl_slist_t *default_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+        const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
+{
+        char header[1024];
+
+	switch_snprintf(header, sizeof(header), "%s: %s", profile->api_key_header, profile->api_key);
+
+        headers = switch_curl_slist_append(headers, header);
+
+	return headers;
+}
+
+static switch_status_t default_config_profile(switch_xml_t xml, http_profile_t *profile)
+{
+
+	switch_xml_t api_key_header = switch_xml_child(xml, "api-key-header");
+	switch_xml_t api_key = switch_xml_child(xml, "api-key");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring default profile\n");
+
+	if (api_key_header) {
+		profile->api_key_header = switch_strip_whitespace(switch_xml_txt(api_key_header));
+
+		if (api_key) {
+			profile->api_key = switch_strip_whitespace(switch_xml_txt(api_key));
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing api-key in default profile\n");
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing api-key-header in default profile\n");
+	}
+
+	if (zstr(profile->api_key_header) || zstr(profile->api_key)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing API KEY credentials for profile \"%s\"\n", profile->name);
+
+                return SWITCH_STATUS_FALSE;
+        }
+
+	profile->append_headers_ptr = default_append_headers;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configured default profile\n");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /**
  * Configure the module
  * @param cache to configure
@@ -1632,6 +1677,8 @@ static switch_status_t do_config(url_cache_t *cache)
 				profile_obj->secret_access_key = NULL;
 				profile_obj->base_domain = NULL;
 				profile_obj->bytes_per_block = 0;
+				profile_obj->api_key_header = NULL;
+				profile_obj->api_key = NULL;
 				profile_obj->append_headers_ptr = NULL;
 				profile_obj->finalise_put_ptr = NULL;
 
@@ -1645,6 +1692,13 @@ static switch_status_t do_config(url_cache_t *cache)
 					if (profile_xml) {
 						if (azure_blob_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
 							continue;
+						}
+					} else {
+						profile_xml = switch_xml_child(profile, "default");
+						if (profile_xml) {
+							if (default_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
+								continue;
+							}
 						}
 					}
 				}
