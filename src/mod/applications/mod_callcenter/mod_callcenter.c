@@ -1501,7 +1501,7 @@ static int sqlite_column_rename_callback(void *pArg, const char *errmsg)
 	return 0;
 }
 
-static switch_status_t load_config(void)
+static switch_status_t load_config(switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers;
@@ -1536,7 +1536,7 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "global-database-lock")) {
 				globals.global_database_lock = switch_true(val);
 			} else if (!strcasecmp(var, "cc-instance-id")) {
-				globals.cc_instance_id = strdup(val);
+				globals.cc_instance_id = switch_core_strdup(pool, val);
 			} else if (!strcasecmp(var, "agent-originate-timeout")) {
 				globals.agent_originate_timeout = atoi(val);
 			}
@@ -4227,7 +4227,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_core_hash_init(&globals.queue_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
-	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+	if ((status = load_config(pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_event_unbind(&globals.node);
 		switch_event_free_subclass(CALLCENTER_EVENT);
 		switch_core_hash_destroy(&globals.queue_hash);
