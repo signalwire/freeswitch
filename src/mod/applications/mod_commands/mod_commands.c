@@ -890,7 +890,7 @@ SWITCH_STANDARD_API(msleep_function)
 		switch_yield(ms * 1000);
 	}
 
-	stream->write_function(stream, "+OK");
+	stream->write_function(stream, "+OK\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
