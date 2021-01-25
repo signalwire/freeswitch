@@ -1,6 +1,17 @@
 #!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
+. $(dirname $0)/build-requirements.sh
+
+# run build checks
+check_make
+check_awk
+check_ac_ver
+check_am_ver
+check_acl_ver
+check_lt_ver
+check_libtoolize
+
 sdir="."
 [ -n "${0%/*}" ] && sdir="${0%/*}"
 . $sdir/common.sh
