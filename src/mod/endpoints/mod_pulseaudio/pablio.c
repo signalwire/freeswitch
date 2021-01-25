@@ -84,10 +84,11 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	 * audio drivers. */
 	bzero(&buffer_attr, sizeof(buffer_attr));
 	buffer_attr.prebuf = (uint32_t) -1;
+	buffer_attr.minreq = (uint32_t) -1;
+	buffer_attr.maxlength = (uint32_t) -1;
 
 	if (inputParameters) {
 		buffer_attr.fragsize = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, inputParameters);
-		buffer_attr.maxlength = buffer_attr.fragsize;
 		channels = inputParameters->channels;
 		aStream->istream = pa_simple_new(NULL, appName, PA_STREAM_RECORD, NULL, channelName, inputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->istream) {
@@ -98,7 +99,6 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	if (outputParameters) {
 		channels = outputParameters->channels;
 		buffer_attr.tlength = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, outputParameters);
-		buffer_attr.maxlength = buffer_attr.tlength;
 		aStream->ostream = pa_simple_new(NULL, appName, PA_STREAM_PLAYBACK, NULL, channelName, outputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->ostream) {
 			goto error;
@@ -143,4 +143,3 @@ void CloseAudioStream(PABLIO_Stream * aStream)
 
 	free(aStream);
 }
-
