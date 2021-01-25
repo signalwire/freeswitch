@@ -35,13 +35,6 @@
 #include <openssl/sha.h>
 #endif
 
-
-
-#if defined(HAVE_OPENSSL)
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-#endif
-
 #if defined(HAVE_OPENSSL)
 /**
  * Calculate HMAC-SHA256 hash of a message
@@ -290,6 +283,11 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
 #if defined(HAVE_OPENSSL)
 	switch_aws_s3_profile aws_s3_profile;
 	char* url_dup;
+
+	if (!query_string) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required arg query_string.\n");
+		return headers;
+	}
 
 	// Get bucket and object name from url
 	switch_strdup(url_dup, url);

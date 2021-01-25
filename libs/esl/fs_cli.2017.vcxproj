@@ -202,6 +202,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="src\libesl.2017.vcxproj">
       <Project>{cf405366-9558-4ae8-90ef-5e21b51ccb4e}</Project>

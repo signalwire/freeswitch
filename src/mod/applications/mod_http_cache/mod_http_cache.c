@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1099,6 +1099,8 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+	char *query_string = NULL;
+	char *full_url = NULL;
 
 	/* set up HTTP GET */
 	get_data.fd = 0;
@@ -1110,12 +1112,23 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	}
 
 	if (profile && profile->append_headers_ptr) {
-		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, NULL);
+		headers = profile->append_headers_ptr(profile, headers, "GET", 0, "", url->url, 0, &query_string);
+	}
+
+	if (query_string) {
+		full_url = switch_mprintf("%s?%s", url->url, query_string);
+		free(query_string);
+	} else {
+		switch_strdup(full_url, url->url);
 	}
 
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
+#ifdef WIN32
+	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | O_BINARY)) > -1) {
+#else
 	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+#endif
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
@@ -1123,7 +1136,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		if (headers) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		}
-		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, get_data.url->url);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &get_data);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
@@ -1178,6 +1191,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 
 done:
 
+	switch_safe_free(full_url);
 	if (headers) {
 		switch_curl_slist_free_all(headers);
 	}
@@ -1518,6 +1532,51 @@ static void *SWITCH_THREAD_FUNC prefetch_thread(switch_thread_t *thread, void *o
 	return NULL;
 }
 
+static switch_curl_slist_t *default_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+        const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
+{
+        char header[1024];
+
+	switch_snprintf(header, sizeof(header), "%s: %s", profile->api_key_header, profile->api_key);
+
+        headers = switch_curl_slist_append(headers, header);
+
+	return headers;
+}
+
+static switch_status_t default_config_profile(switch_xml_t xml, http_profile_t *profile)
+{
+
+	switch_xml_t api_key_header = switch_xml_child(xml, "api-key-header");
+	switch_xml_t api_key = switch_xml_child(xml, "api-key");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring default profile\n");
+
+	if (api_key_header) {
+		profile->api_key_header = switch_strip_whitespace(switch_xml_txt(api_key_header));
+
+		if (api_key) {
+			profile->api_key = switch_strip_whitespace(switch_xml_txt(api_key));
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing api-key in default profile\n");
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing api-key-header in default profile\n");
+	}
+
+	if (zstr(profile->api_key_header) || zstr(profile->api_key)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing API KEY credentials for profile \"%s\"\n", profile->name);
+
+                return SWITCH_STATUS_FALSE;
+        }
+
+	profile->append_headers_ptr = default_append_headers;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configured default profile\n");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /**
  * Configure the module
  * @param cache to configure
@@ -1618,6 +1677,8 @@ static switch_status_t do_config(url_cache_t *cache)
 				profile_obj->secret_access_key = NULL;
 				profile_obj->base_domain = NULL;
 				profile_obj->bytes_per_block = 0;
+				profile_obj->api_key_header = NULL;
+				profile_obj->api_key = NULL;
 				profile_obj->append_headers_ptr = NULL;
 				profile_obj->finalise_put_ptr = NULL;
 
@@ -1631,6 +1692,13 @@ static switch_status_t do_config(url_cache_t *cache)
 					if (profile_xml) {
 						if (azure_blob_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
 							continue;
+						}
+					} else {
+						profile_xml = switch_xml_child(profile, "default");
+						if (profile_xml) {
+							if (default_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
+								continue;
+							}
 						}
 					}
 				}

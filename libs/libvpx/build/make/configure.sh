@@ -807,6 +807,10 @@ process_common_toolchain() {
         tgt_isa=x86_64
         tgt_os=darwin19
         ;;
+      *darwin20*)
+        tgt_isa=x86_64
+        tgt_os=darwin20
+        ;;
       x86_64*mingw32*)
         tgt_os=win64
         ;;

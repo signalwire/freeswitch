@@ -686,11 +686,6 @@ int main(int argc, char *argv[])
 			reincarnate = SWITCH_TRUE;
 			reincarnate_reexec = SWITCH_TRUE;
 		}
-
-		else if (!strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
-			exit(EXIT_SUCCESS);
-		}
 #endif
 #ifdef HAVE_SETRLIMIT
 		else if (!strcmp(local_argv[x], "-core")) {
@@ -715,6 +710,11 @@ int main(int argc, char *argv[])
 #endif
 		}
 #endif
+		else if (!strcmp(local_argv[x], "-version")) {
+			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
+			exit(EXIT_SUCCESS);
+		}
+
 		else if (!strcmp(local_argv[x], "-hp") || !strcmp(local_argv[x], "-rp")) {
 			priority = 2;
 		}

@@ -5146,6 +5146,8 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 			switch_safe_free(sql);
 		} else {
 			stream->write_function(stream, "-ERR Recording doesn't exist [%s]\n", final_file_path);
+			profile_rwunlock(profile);
+			goto done;
 		}
 		profile_rwunlock(profile);
 	}
