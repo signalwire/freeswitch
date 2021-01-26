@@ -6516,7 +6516,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		const char *uuid;
 		switch_core_session_t *other_session;
 		private_object_t *tech_pvt = switch_core_session_get_private(session);
-		char network_ip[80];
+		char network_ip[80] = "";
 		int network_port = 0;
 		switch_caller_profile_t *caller_profile = NULL;
 		int has_t38 = 0;
