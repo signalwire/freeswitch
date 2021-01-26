@@ -267,6 +267,53 @@ FST_CORE_BEGIN("./conf")
 			fst_check_int_equals(switch_safe_atoll(0, 3), 3);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_dup)
+		{
+			char *magicnumber = malloc(9);
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			void *hash_val;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			snprintf(magicnumber, 9, "%s", "DEADBEEF");
+			switch_core_hash_insert_dup(hash, "test", (const char *)magicnumber);
+			snprintf(magicnumber, 9, "%s", "BAADF00D");
+
+			hi = switch_core_hash_first(hash);
+			switch_core_hash_this(hi, NULL, NULL, &hash_val);
+			fst_check_string_equals(hash_val, "DEADBEEF");
+			switch_safe_free(hash_val);
+			free(magicnumber);
+			free(hi);
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_alloc)
+		{
+			char *item;
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			void *hash_val;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			item = switch_core_hash_insert_alloc(hash, "test", 10);
+			fst_requires(item);
+			snprintf(item, 9, "%s", "DEADBEEF");
+
+			hi = switch_core_hash_first(hash);
+			switch_core_hash_this(hi, NULL, NULL, &hash_val);
+			fst_check_string_equals(hash_val, "DEADBEEF");
+			free(hi);
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+			free(item);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
