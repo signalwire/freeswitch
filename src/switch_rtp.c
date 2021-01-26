@@ -2051,7 +2051,7 @@ static int using_ice(switch_rtp_t *rtp_session)
 	return 0;
 }
 
-static void sendRTCPEvent(switch_rtp_t *rtp_session ,struct switch_rtcp_sender_report *sr,struct switch_rtcp_report_block *rtcp_report_block) {
+static void switch_send_rtcp_event(switch_rtp_t *rtp_session ,struct switch_rtcp_sender_report *sr,struct switch_rtcp_report_block *rtcp_report_block) {
 	if (sr && rtcp_report_block) {
 		switch_event_t *event;
 
@@ -2104,9 +2104,6 @@ static void sendRTCPEvent(switch_rtp_t *rtp_session ,struct switch_rtcp_sender_r
 #endif
 				snprintf(value, sizeof(value), "%u", tmpLost);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
-				// snprintf(header, sizeof(header), "Source%u-Loss-Avg", i);
-				// snprintf(value, sizeof(value), "%u", rtp_session->rtcp_frame.reports[i].loss_avg);
-				// switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
 				snprintf(header, sizeof(header), "Source-Highest-Sequence-Number-Received");
 				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->highest_sequence_number_received));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
@@ -2275,7 +2272,9 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
 				stats->sent_pkt_count = 0;
-				sendRTCPEvent(rtp_session, sr, rtcp_report_block);
+				if (switch_channel_var_true(switch_core_session_get_channel(rtp_session->session), SWITCH_RTCP_FIRE_EVENTS)) {
+ 					switch_send_rtcp_event(rtp_session, sr, rtcp_report_block);
+ 				}
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR (ssrc=%u)\n", rtp_session->ssrc);
 		}
