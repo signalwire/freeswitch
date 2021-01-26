@@ -2627,10 +2627,20 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 static switch_bool_t acls_matched(switch_core_session_t *session, const char *remote_ip)
 {
-	uint32_t x = 0;
+	switch_bool_t matched;
+	char acl_string[2048];
+	char *argv[MAX_ACL] = { 0 };
+	uint32_t x = 0, y = 0, argc = 0;
 
 	for (x = 0; x < prefs.acl_count; x++) {
-		if (!switch_check_network_list_ip(remote_ip, prefs.acl[x])) {
+		matched = SWITCH_FALSE;
+		switch_copy_string(acl_string, prefs.acl[x], sizeof(acl_string) / sizeof(acl_string[0]));
+		argc = switch_separate_string(acl_string, ',', argv, sizeof(argv) / sizeof(argv[0]));
+		for (y = 0; !matched && y < argc; y++) {
+			matched = switch_check_network_list_ip(remote_ip, argv[y]);
+		}
+
+		if (!matched) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n",
 								remote_ip, prefs.acl[x]);
 			return SWITCH_FALSE;
