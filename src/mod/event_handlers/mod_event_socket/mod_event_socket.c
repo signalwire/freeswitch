@@ -2625,6 +2625,21 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	return status;
 }
 
+static switch_bool_t acls_matched(switch_core_session_t *session, const char *remote_ip)
+{
+	uint32_t x = 0;
+
+	for (x = 0; x < prefs.acl_count; x++) {
+		if (!switch_check_network_list_ip(remote_ip, prefs.acl[x])) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n",
+								remote_ip, prefs.acl[x]);
+			return SWITCH_FALSE;
+		}
+	}
+
+	return SWITCH_TRUE;
+}
+
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 {
 	listener_t *listener = (listener_t *) obj;
@@ -2666,23 +2681,16 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 
 	if (prefs.acl_count && listener->sa && !zstr(listener->remote_ip)) {
-		uint32_t x = 0;
+		if (!acls_matched(listener->session, listener->remote_ip)) {
+			const char message[] = "Access Denied, go away.\n";
+			int mlen = (int)strlen(message);
 
-		for (x = 0; x < prefs.acl_count; x++) {
-			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
-				const char message[] = "Access Denied, go away.\n";
-				int mlen = (int)strlen(message);
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip,
-								  prefs.acl[x]);
-
-				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length: %d\n\n", mlen);
-				len = strlen(buf);
-				switch_socket_send(listener->sock, buf, &len);
-				len = mlen;
-				switch_socket_send(listener->sock, message, &len);
-				goto done;
-			}
+			switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length: %d\n\n", mlen);
+			len = strlen(buf);
+			switch_socket_send(listener->sock, buf, &len);
+			len = mlen;
+			switch_socket_send(listener->sock, message, &len);
+			goto done;
 		}
 	}
 
