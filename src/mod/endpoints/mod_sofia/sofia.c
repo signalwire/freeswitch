@@ -4561,7 +4561,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			} else {
 				switch_memory_pool_t *pool = NULL;
 
-				if (!xprofilename) {
+				if (zstr(xprofilename)) {
 					xprofilename = "unnamed";
 				}
 
