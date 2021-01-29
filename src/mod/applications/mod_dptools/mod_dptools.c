@@ -593,9 +593,9 @@ SWITCH_STANDARD_APP(filter_codecs_function)
 	const char *r_sdp;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	
+
 	r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-	
+
 	if (data && r_sdp) {
 		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST, data);
 		switch_channel_set_variable(channel, "filter_codec_string", data);
@@ -909,7 +909,7 @@ SWITCH_STANDARD_APP(native_eavesdrop_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "INVALID ARGS usage (%s)\n", native_eavesdrop_SYNTAX);
 		return;
 	}
-	
+
 	mydata = switch_core_session_strdup(session, data);
 	argc = switch_split(mydata, ' ', argv);
 
@@ -921,7 +921,7 @@ SWITCH_STANDARD_APP(native_eavesdrop_function)
 		}
 	}
 
-	switch_ivr_eavesdrop_session(session, argv[0], NULL, flags);	
+	switch_ivr_eavesdrop_session(session, argv[0], NULL, flags);
 }
 
 
@@ -1572,7 +1572,7 @@ SWITCH_STANDARD_APP(video_refresh_function)
 {
 	switch_core_session_message_t msg = { 0 };
 	char *cmd = (char *)data;
-	
+
 	if (!zstr(cmd)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1581,14 +1581,14 @@ SWITCH_STANDARD_APP(video_refresh_function)
 		} else if (!strcasecmp(cmd, "auto")) {
 			switch_channel_clear_flag(channel, CF_MANUAL_VID_REFRESH);
 		}
-		
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-						  "%s video refresh now in %s mode.\n", switch_channel_get_name(channel), 
-						  switch_channel_test_flag(channel, CF_MANUAL_VID_REFRESH) ? "manual" : "auto");	
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						  "%s video refresh now in %s mode.\n", switch_channel_get_name(channel),
+						  switch_channel_test_flag(channel, CF_MANUAL_VID_REFRESH) ? "manual" : "auto");
 
 		return;
 	}
-	
+
 	/* Tell the channel to refresh video */
 	msg.from = __FILE__;
 	msg.numeric_arg = 1;
@@ -3185,6 +3185,7 @@ SWITCH_STANDARD_APP(endless_playback_function)
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
 	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not play the media correctly. error: %s\n", error);
 		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
 		break;
 	}
@@ -6644,10 +6645,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function,
 				   "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
-	
+
 	SWITCH_ADD_APP(app_interface, "sched_hold", "Schedule a call hold request", "Schedule a call hold request", sched_hold_function, "[+]<time>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_unhold", "Schedule a call unhold request", "Schedule a call unhold request", sched_unhold_function, "[+]<time>", SAF_SUPPORT_NOMEDIA);
-	
+
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_heartbeat", "Enable Scheduled Heartbeat", "Enable Scheduled Heartbeat",
 				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
