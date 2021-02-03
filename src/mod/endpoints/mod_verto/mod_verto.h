@@ -140,7 +140,8 @@ struct jsock_s {
 	char remote_host[256];
 	int remote_port;
 	int family;
-
+	time_t exptime;
+	time_t logintime;
 	struct verto_profile_s *profile;
 	switch_thread_rwlock_t *rwlock;
 

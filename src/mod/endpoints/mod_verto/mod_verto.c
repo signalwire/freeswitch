@@ -1056,7 +1056,9 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		} else {
 			switch_xml_t x_param, x_params;
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
+			time_t now = switch_epoch_time_now(NULL);
 
+			jsock->logintime = now;
 			jsock->id = switch_core_strdup(jsock->pool, id);
 			jsock->domain = switch_core_strdup(jsock->pool, domain);
 			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
@@ -1103,6 +1105,18 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, var, val);
 					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, var, val);
 					switch_mutex_unlock(jsock->flag_mutex);
+
+					if (!strcmp(var, "login-expires")) {
+						uint32_t tmp = atol(val);
+
+						if (tmp > now) {
+							jsock->exptime = tmp;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %ld seconds\n", jsock->uid, tmp - now);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid expire time for %s. Defaulting to 300 sec\n", jsock->uid);
+							jsock->exptime = now + 300;
+						}
+					}
 				}
 			}
 
@@ -1950,10 +1964,20 @@ static void client_run(jsock_t *jsock)
 
 	while(jsock->profile->running) {
 		int pflags, poll_time = 50;
+		time_t now;
 
 		if (!jsock->ws) { die("%s Setup Error\n", jsock->name); }
 		
 		pflags = kws_wait_sock(jsock->ws, poll_time, KS_POLL_READ);
+
+		if (jsock->exptime) {
+			now = switch_epoch_time_now(NULL);
+
+			if (now >= jsock->exptime) {
+				die("%s Authentication Expired\n", jsock->uid);
+			}
+
+		}
 
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
 		if (pflags < 0 && (errno != EINTR)) { die_errnof("%s POLL FAILED with %d", jsock->name, pflags); }
@@ -4402,6 +4426,10 @@ static switch_bool_t login_func(const char *method, cJSON *params, jsock_t *jsoc
 	const char *var;
 	*response = cJSON_CreateObject();
 	cJSON_AddItemToObject(*response, "message", cJSON_CreateString("logged in"));
+
+	if (jsock->exptime) {
+		cJSON_AddItemToObject(*response, "auth-expires", cJSON_CreateNumber(jsock->exptime));
+	}
 
 	switch_mutex_lock(jsock->flag_mutex);
 	if ((var = switch_event_get_header(jsock->vars, "moderator")) && switch_true(var)) {
