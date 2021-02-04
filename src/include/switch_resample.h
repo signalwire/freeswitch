@@ -39,7 +39,7 @@
 
 */
 #define switch_normalize_volume(x) if (x > 4) x = 4; if (x < -4) x = -4;
-#define switch_normalize_volume_granular(x) if (x > 13) x = 13; if (x < -13) x = -13;
+#define switch_normalize_volume_granular(x) if (x > 13) x = 13; if (x < -53) x = -53;
 
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H

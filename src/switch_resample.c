@@ -346,7 +346,62 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 {
 	double newrate = 0;
 	double pos[13] = {1.25, 1.50, 1.75, 2.0, 2.25, 2.50, 2.75, 3.0, 3.25, 3.50, 3.75, 4.0, 4.5};
-	double neg[13] = {.917, .834, .751, .668, .585, .502, .419, .336, .253, .087, .017, .004, 0.0};
+	double neg[53] = 
+{
+	0.900,
+	0.810,
+	0.729,
+	0.656,
+	0.590,
+	0.531,
+	0.478,
+	0.430,
+	0.387,
+	0.349,
+	0.314,
+	0.282,
+	0.254,
+	0.229,
+	0.206,
+	0.185,
+	0.167,
+	0.150,
+	0.135,
+	0.121,
+	0.109,
+	0.098,
+	0.088,
+	0.079,
+	0.071,
+	0.064,
+	0.058,
+	0.052,
+	0.046,
+	0.042,
+	0.038,
+	0.034,
+	0.031,
+	0.027,
+	0.024,
+	0.022,
+	0.020,
+	0.018,
+	0.016,
+	0.015,
+	0.013,
+	0.012,
+	0.010,
+	0.009,
+	0.008,
+	0.007,
+	0.006,
+	0.005,
+	0.004,
+	0.003,
+	0.002,
+	0.001,
+	0.0
+};
 	double *chart;
 	uint32_t i;
 
@@ -362,7 +417,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 
 	i = abs(vol) - 1;
 
-	switch_assert(i < 13);
+	switch_assert(i < 53);
 
 	newrate = chart[i];
 
@@ -444,6 +499,13 @@ SWITCH_DECLARE(void) switch_agc_set(switch_agc_t *agc, uint32_t energy_avg,
 	agc->change_factor = change_factor;
 	agc->period_len = period_len;
 	agc->low_energy_point = low_energy_point;
+
+	agc->score = 0;
+	agc->score_count = 0;
+	agc->score_sum = 0;
+	agc->score_avg = 0;
+	agc->score_over = 0;
+	agc->score_under = 0;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, 
@@ -539,6 +601,8 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] OVER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 									  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 					agc->score_over++;
+				} else {
+					agc->score_over = 0;
 				}
 			} else {
 				agc->score_over = 0;
@@ -549,8 +613,6 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] BELOW LOW POINT, SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 			} else if (((agc->score_avg < agc->energy_avg) && (agc->energy_avg - agc->score_avg > agc->margin))) {
-				//&& (agc->vol < 0 || agc->score_avg > agc->low_energy_point)) {
-				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] UNDER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 				agc->score_under++;
