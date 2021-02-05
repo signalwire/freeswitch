@@ -59,6 +59,15 @@
 #include <priv.h>
 #endif
 
+#ifdef __linux__
+#include <sys/wait.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* Required for POSIX_SPAWN_USEVFORK */
+#endif
+#include <spawn.h>
+#include <poll.h>
+#endif
+
 #ifdef WIN32
 #define popen _popen
 #define pclose _pclose
@@ -2283,6 +2292,17 @@ static void switch_load_core_config(const char *file)
 						switch_clear_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 					}
 #endif
+				} else if (!strcasecmp(var, "spawn-instead-of-system") && !zstr(val)) {
+#ifdef WIN32
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "spawn-instead-of-system is not implemented on this platform\n");
+#else
+					int v = switch_true(val);
+					if (v) {
+						switch_core_set_variable("spawn_instead_of_system", "true");
+					} else {
+						switch_core_set_variable("spawn_instead_of_system", "false");
+					}
+#endif
 				} else if (!strcasecmp(var, "min-idle-cpu") && !zstr(val)) {
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
@@ -3341,9 +3361,14 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 {
+#ifdef __linux__
+	switch_bool_t spawn_instead_of_system = switch_true(switch_core_get_variable("spawn_instead_of_system"));
+#else
+	switch_bool_t spawn_instead_of_system = SWITCH_FALSE;
+#endif
 	int (*sys_p)(const char *cmd, switch_bool_t wait);
 
-	sys_p = switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_system_thread : switch_system_fork;
+	sys_p = spawn_instead_of_system ? switch_spawn : switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_system_thread : switch_system_fork;
 
 	return sys_p(cmd, wait);
 
@@ -3354,6 +3379,141 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream)
 {
 	return switch_stream_system(cmd, stream);
+}
+
+#ifdef __linux__
+extern char **environ;
+#endif
+
+SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, switch_stream_handle_t *stream)
+{
+#ifndef __linux__
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "posix_spawn is unsupported on current platform\n");
+	return 1;
+#else
+	int status = 0, rval;
+	char buffer[1024];
+	pid_t pid;
+	char *pdata = NULL, *argv[64];
+	posix_spawn_file_actions_t action;
+	posix_spawnattr_t *attr;
+	int cout_pipe[2];
+	int cerr_pipe[2];
+	struct pollfd pfds[2] = { {0} };
+
+	if (zstr(cmd)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to execute switch_spawn_stream because of empty command\n");
+		return 1;
+	}
+
+	if (!(pdata = strdup(cmd))) {
+		return 1;
+	}
+
+	if (!switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
+		free(pdata);
+		return 1;
+	}
+
+	if (!(attr = malloc(sizeof(posix_spawnattr_t)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a memory error: %s\n", cmd);
+		free(pdata);
+		return 1;
+	}
+
+	if (stream) {
+		if (pipe(cout_pipe)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a pipe error: %s\n", cmd);
+			free(attr);
+			free(pdata);
+			return 1;
+		}
+
+		if (pipe(cerr_pipe)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a pipe error: %s\n", cmd);
+			close(cout_pipe[0]);
+			close(cout_pipe[1]);
+			free(attr);
+			free(pdata);
+			return 1;
+		}
+	}
+
+	memset(attr, 0, sizeof(posix_spawnattr_t));
+	posix_spawnattr_init(attr);
+	posix_spawnattr_setflags(attr, POSIX_SPAWN_USEVFORK);
+
+	posix_spawn_file_actions_init(&action);
+
+	if (stream) {
+		posix_spawn_file_actions_addclose(&action, cout_pipe[0]);
+		posix_spawn_file_actions_addclose(&action, cerr_pipe[0]);
+		posix_spawn_file_actions_adddup2(&action, cout_pipe[1], 1);
+		posix_spawn_file_actions_adddup2(&action, cerr_pipe[1], 2);
+
+		posix_spawn_file_actions_addclose(&action, cout_pipe[1]);
+		posix_spawn_file_actions_addclose(&action, cerr_pipe[1]);
+	}
+
+	if (posix_spawnp(&pid, argv[0], &action, attr, argv, environ) != 0) {
+		status = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to execute posix_spawnp: %s\n", cmd);
+		if (stream) {
+			close(cout_pipe[0]), close(cerr_pipe[0]);
+			close(cout_pipe[1]), close(cerr_pipe[1]);
+		}
+	} else {
+		if (stream) {
+			close(cout_pipe[1]), close(cerr_pipe[1]); /* close child-side of pipes */
+
+			pfds[0] = (struct pollfd) {
+				.fd = cout_pipe[0],
+					.events = POLLIN,
+					.revents = 0
+			};
+
+			pfds[1] = (struct pollfd) {
+				.fd = cerr_pipe[0],
+					.events = POLLIN,
+					.revents = 0
+			};
+
+			while ((rval = poll(pfds, 2, /*timeout*/-1)) > 0) {
+				if (pfds[0].revents & POLLIN) {
+					int bytes_read = read(cout_pipe[0], buffer, sizeof(buffer));
+					stream->raw_write_function(stream, (unsigned char *)buffer, bytes_read);
+				} else if (pfds[1].revents & POLLIN) {
+					int bytes_read = read(cerr_pipe[0], buffer, sizeof(buffer));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "STDERR of cmd (%s): %.*s\n", cmd, bytes_read, buffer);
+				} else {
+					break; /* nothing left to read */
+				}
+			}
+
+			close(cout_pipe[0]), close(cerr_pipe[0]);
+		}
+
+		if (wait) {
+			if (waitpid(pid, &status, 0) != pid) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waitpid failed: %s\n", cmd);
+			} else if (status != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Exit status (%d): %s\n", status, cmd);
+			}
+		}
+	}
+
+	posix_spawnattr_destroy(attr);
+	free(attr);
+	posix_spawn_file_actions_destroy(&action);
+	free(pdata);
+
+	return status;
+#endif
+}
+
+SWITCH_DECLARE(int) switch_spawn(const char *cmd, switch_bool_t wait)
+{
+	return switch_stream_spawn(cmd, wait, NULL);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max)
@@ -3382,26 +3542,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, s
 
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
 {
-	char buffer[128];
-	size_t bytes;
-	FILE* pipe = popen(cmd, "r");
-	if (!pipe) return 1;
+#ifdef __linux__
+	switch_bool_t spawn_instead_of_system = switch_true(switch_core_get_variable("spawn_instead_of_system"));
+#else
+	switch_bool_t spawn_instead_of_system = SWITCH_FALSE;
+#endif
 
-	while (!feof(pipe)) {
-		while ((bytes = fread(buffer, 1, 128, pipe)) > 0) {
-			if (stream != NULL) {
-				stream->raw_write_function(stream, (unsigned char *)buffer, bytes);
+	if (spawn_instead_of_system){
+		return switch_stream_spawn(cmd, SWITCH_TRUE, stream);
+	} else {
+		char buffer[128];
+		size_t bytes;
+		FILE* pipe = popen(cmd, "r");
+		if (!pipe) return 1;
+
+		while (!feof(pipe)) {
+			while ((bytes = fread(buffer, 1, 128, pipe)) > 0) {
+				if (stream != NULL) {
+					stream->raw_write_function(stream, (unsigned char *)buffer, bytes);
+				}
 			}
 		}
-	}
 
-	if (ferror(pipe)) {
+		if (ferror(pipe)) {
+			pclose(pipe);
+			return 1;
+		}
+
 		pclose(pipe);
-		return 1;
+		return 0;
 	}
-
-	pclose(pipe);
-	return 0;
 }
 
 SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()

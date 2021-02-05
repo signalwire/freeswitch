@@ -160,6 +160,40 @@ FST_CORE_BEGIN("./conf")
 			fst_check_int_equals(r, SWITCH_TRUE);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_spawn)
+		{
+#ifdef __linux__
+			int status;
+			switch_stream_handle_t stream = { 0 };
+
+			status = switch_spawn("echo CHECKING_BAD_FILE_DESCRIPTOR", SWITCH_TRUE);
+			fst_check_int_equals(status, 0);
+
+			SWITCH_STANDARD_STREAM(stream);
+			status = switch_stream_spawn("echo DEADBEEF", SWITCH_TRUE, &stream);
+			fst_check_int_equals(status, 0);
+			fst_check_string_equals(stream.data, "DEADBEEF\n");
+			switch_safe_free(stream.data);
+
+			SWITCH_STANDARD_STREAM(stream);
+			status = switch_stream_spawn("echo DEADBEEF", SWITCH_FALSE, &stream);
+			fst_check_int_equals(status, 0);
+			fst_check_string_equals(stream.data, "DEADBEEF\n");
+			switch_safe_free(stream.data);
+
+			printf("\nExpected warning check ... ");
+			status = switch_spawn("false", SWITCH_TRUE);
+			fct_chk_neq_int(status, 0);
+
+			status = switch_spawn("false", SWITCH_FALSE);
+			fct_chk_eq_int(status, 0);
+
+			status = switch_spawn("true", SWITCH_TRUE);
+			fct_chk_eq_int(status, 0);
+#endif
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
