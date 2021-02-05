@@ -10278,8 +10278,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s receiving invite from %s:%d version: %s\n",
-					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, switch_version_full_human());
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "%s receiving invite from %s:%d version: %s call-id: %s\n",
+					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, switch_version_full_human(), sip->sip_call_id ? switch_str_nil(sip->sip_call_id->i_id) : "");
 
 
 	if (sip->sip_via && sip->sip_via->v_protocol && switch_stristr("sip/2.0/ws", sip->sip_via->v_protocol)) {
