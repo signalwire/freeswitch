@@ -2930,7 +2930,9 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
 		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
 
-		switch_ivr_set_user(session, jsock->uid);
+		if (!switch_channel_var_true(switch_core_session_get_channel(session),"verto_skip_set_user")) {
+			switch_ivr_set_user(session, jsock->uid);
+		}
 
 		if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
@@ -4125,7 +4127,9 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	}
 
-	switch_ivr_set_user(session, jsock->uid);
+	if (!switch_channel_var_true(channel,"verto_skip_set_user")) {
+		switch_ivr_set_user(session, jsock->uid);
+	}
 
 	switch_mutex_lock(jsock->flag_mutex);
 	for (hp = jsock->user_vars->headers; hp; hp = hp->next) {
