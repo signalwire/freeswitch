@@ -40,7 +40,7 @@
  *
  */
 #include "mod_sofia.h"
-
+#include <switch_ssl.h>
 
 extern su_log_t tport_log[];
 extern su_log_t iptsec_log[];
@@ -3149,6 +3149,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_status_t st;
 	char qname [128] = "";
 
+	char *key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	char *cert  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	char *chain  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	SSL_CTX *ssl_ctx;
+	const SSL_METHOD *ssl_method = SSLv23_server_method();
+	switch_bool_t ssl_error = SWITCH_FALSE;
+
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -3183,6 +3190,37 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	/* We have to init the verify_subjects here as during config stage profile->home isn't setup, it should be freed when profile->home is freed */
 	if ( (profile->tls_verify_policy & TPTLS_VERIFY_SUBJECTS_IN)  && profile->tls_verify_in_subjects_str && ! profile->tls_verify_in_subjects) {
 		profile->tls_verify_in_subjects = su_strlst_dup_split((su_home_t *)profile->nua, profile->tls_verify_in_subjects_str, "|");
+	}
+
+	ssl_ctx = SSL_CTX_new((SSL_METHOD *)ssl_method);
+
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_TLSv1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_COMPRESSION);
+
+	if (!SSL_CTX_use_certificate_chain_file(ssl_ctx, chain)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_use_certificate_file(ssl_ctx, cert, SSL_FILETYPE_PEM)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_use_PrivateKey_file(ssl_ctx, key, SSL_FILETYPE_PEM)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_check_private_key(ssl_ctx)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (ssl_error) {
+		attempts = profile->bind_attempts;
 	}
 
 	do {
@@ -3256,7 +3294,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 										 TPTAG_REUSE(0)),
 								  TAG_END());	/* Last tag should always finish the sequence */
 
-		if (!profile->nua) {
+		if (!ssl_error && !profile->nua) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s) ATTEMPT %d (RETRY IN %d SEC)\n",
 							  profile->name, profile->bindurl, attempts + 1, profile->bind_attempt_interval);
 			if (attempts < profile->bind_attempts) {
@@ -3267,9 +3305,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	} while (!profile->nua && attempts++ < profile->bind_attempts);
 
 	if (!profile->nua) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
-						  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
-						  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
+		if (!ssl_error) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
+							  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
+							  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
+		}
+		else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Error Creating SIP UA for profile: %s (%s). Bad WSS.PEM certificate.\n", profile->name, profile->bindurl);
+		}
+
 		sofia_profile_start_failure(profile, profile->name);
 		sofia_glue_del_profile(profile);
 		goto end;
