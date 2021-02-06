@@ -3149,11 +3149,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_status_t st;
 	char qname [128] = "";
 
+#if defined(HAVE_OPENSSL)
 	char *key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
 	char *cert  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
 	char *chain  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
 	SSL_CTX *ssl_ctx;
 	const SSL_METHOD *ssl_method = SSLv23_server_method();
+#endif
+
 	switch_bool_t ssl_error = SWITCH_FALSE;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
@@ -3192,7 +3195,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		profile->tls_verify_in_subjects = su_strlst_dup_split((su_home_t *)profile->nua, profile->tls_verify_in_subjects_str, "|");
 	}
 
+#if defined(HAVE_OPENSSL)
 	ssl_ctx = SSL_CTX_new((SSL_METHOD *)ssl_method);
+	switch_assert(ssl_ctx);
 
 	/* Disable SSLv2 */
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2);
@@ -3222,6 +3227,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (ssl_error) {
 		attempts = profile->bind_attempts;
 	}
+
+	SSL_CTX_free(ssl_ctx);
+#endif
 
 	do {
 		profile->nua = nua_create(profile->s_root,	/* Event loop */
