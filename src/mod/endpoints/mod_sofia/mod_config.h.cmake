@@ -1,0 +1,11 @@
+#ifndef MOD_SOFIA_CONFIG_H
+#define MOD_SOFIA_CONFIG_H
+
+#cmakedefine PROJECT_NAME     "@PROJECT_NAME@"
+#cmakedefine PROJECT_VERSION  "@PROJECT_VERSION@"
+#cmakedefine FS_MAJOR_VERSION  @FS_MAJOR_VERSION@
+#cmakedefine FS_MINOR_VERSION  @FS_MINOR_VERSION@
+#cmakedefine FS_MICRO_VERSION  @FS_MICRO_VERSION@
+#cmakedefine FS_VERSION       "@FS_VERSION@"
+
+#endif // MOD_SOFIA_CONFIG_H
