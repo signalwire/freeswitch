@@ -6,7 +6,7 @@ noinst_PROGRAMS += switch_core_video switch_core_db switch_vad switch_core_asr
 
 AM_LDFLAGS += -avoid-version -no-undefined $(SWITCH_AM_LDFLAGS) $(openssl_LIBS)
 AM_LDFLAGS += $(FREESWITCH_LIBS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
-AM_CFLAGS  += -Wno-declaration-after-statement -Wno-int-conversion -Wno-implicit-function-declaration
+AM_CFLAGS  += -Wno-int-conversion -Wno-implicit-function-declaration
 
 if HAVE_FVAD
 AM_CFLAGS += -DSWITCH_HAVE_FVAD

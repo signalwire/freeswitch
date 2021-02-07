@@ -32,6 +32,7 @@ FST_TEARDOWN_BEGIN()
 FST_TEARDOWN_END()
 	FST_TEST_BEGIN(test_rtp)
 	{
+		switch_rtp_stats_t *stats;
 		switch_core_new_memory_pool(&pool);
 		
 		rtp_session = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "soft", &err, pool, 0, 0);
@@ -44,7 +45,7 @@ FST_TEARDOWN_END()
 		switch_rtp_set_ssrc(rtp_session, 0xabcd);
 		switch_rtp_set_remote_ssrc(rtp_session, 0xcdef);
 		fst_xcheck(switch_rtp_get_ssrc(rtp_session) == 0xabcd, "get SSRC");
-		switch_rtp_stats_t *stats = switch_rtp_get_stats(rtp_session, pool);
+		stats = switch_rtp_get_stats(rtp_session, pool);
 		fst_requires(stats);
 		switch_rtp_destroy(&rtp_session);
 

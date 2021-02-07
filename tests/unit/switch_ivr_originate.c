@@ -379,6 +379,7 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(originate_test_group_confirm_2_legs)
 		{
+			const char *name;
 			switch_core_session_t *session = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
@@ -400,7 +401,7 @@ FST_CORE_BEGIN("./conf")
 			status = switch_ivr_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dh);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(session);
-			const char *name = switch_core_session_get_name(session);
+			name = switch_core_session_get_name(session);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "channel %s\n", name);
 			fst_check_string_equals(name, "null/test2");
 			switch_core_session_rwunlock(session);
@@ -411,6 +412,7 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(originate_test_group_confirm_global_var)
 		{
+			const char *name;
 			switch_core_session_t *session = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
@@ -419,7 +421,7 @@ FST_CORE_BEGIN("./conf")
 			status = switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(session);
-			const char *name = switch_core_session_get_name(session);
+			name = switch_core_session_get_name(session);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "channel %s\n", name);
 			fst_check_string_equals(name, "null/test");
 			switch_core_session_rwunlock(session);
@@ -428,6 +430,7 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(originate_test_group_confirm_local_var)
 		{
+			const char *name;
 			switch_core_session_t *session = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
@@ -437,7 +440,7 @@ FST_CORE_BEGIN("./conf")
 			status = switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(session);
-			const char *name = switch_core_session_get_name(session);
+			name = switch_core_session_get_name(session);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "channel %s\n", name);
 			fst_check_string_equals(name, "null/test2");
 			switch_core_session_rwunlock(session);
