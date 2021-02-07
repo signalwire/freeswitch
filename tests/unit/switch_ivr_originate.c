@@ -212,7 +212,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_empty_dial_string)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -235,7 +234,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_one_leg)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -261,7 +259,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_no_pre_answer)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -291,7 +288,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_exec_in_pre_answer)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -322,7 +318,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_exec_after_answer_early_ok)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -354,7 +349,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_exec_after_answer_ignore_early_media)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -386,7 +380,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_2_legs)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -419,7 +412,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_global_var)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			const char *dialstring = "{group_confirm_file='playback silence_stream://1000',group_confirm_key=exec}null/test";
@@ -437,7 +429,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_local_var)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			const char *dialstring = "[group_confirm_file='playback silence_stream://1000',group_confirm_key=exec]null/test1,"
@@ -456,7 +447,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_loopback_endpoint_originate)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			const char *dialstring = "[group_confirm_key=exec,group_confirm_file='event a=1']loopback/loopback";
@@ -475,10 +465,6 @@ FST_CORE_BEGIN("./conf")
 
 		FST_SESSION_BEGIN(originate_test_group_confirm_loopback_endpoint_bridge)
 		{
-			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
-			switch_status_t status;
-			switch_call_cause_t cause;
 			const char *dialstring = "[group_confirm_key=exec,group_confirm_file='event a=1']loopback/loopback";
 
 			switch_event_bind("test", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, loopback_group_confirm_event_handler, NULL);
@@ -493,7 +479,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_leg_timeout_not_finished)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -521,7 +506,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_leg_timeout_finished)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -552,7 +536,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_timeout_leg)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -581,7 +564,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_timeout_global)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;
@@ -610,7 +592,6 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(originate_test_group_confirm_cancel_timeout_global)
 		{
 			switch_core_session_t *session = NULL;
-			switch_channel_t *channel = NULL;
 			switch_status_t status;
 			switch_call_cause_t cause;
 			switch_dial_handle_t *dh;

@@ -21,10 +21,8 @@ FST_TEARDOWN_END()
 FST_TEST_BEGIN(benchmark)
 {
   switch_event_t *event = NULL;
-  switch_bool_t verbose = SWITCH_TRUE;
-  const char *err = NULL;
   switch_time_t start_ts, end_ts;
-  int rc = 0, loops = 10, x = 0;
+  int loops = 10, x = 0;
   switch_status_t status = SWITCH_STATUS_SUCCESS;
   char **index = NULL;
   uint64_t micro_total = 0;
