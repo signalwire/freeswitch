@@ -29,7 +29,6 @@
  *
  */
 
-#include <stdio.h>
 #include <switch.h>
 #include <test/switch_test.h>
 
