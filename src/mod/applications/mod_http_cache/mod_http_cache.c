@@ -1535,40 +1535,40 @@ static void *SWITCH_THREAD_FUNC prefetch_thread(switch_thread_t *thread, void *o
 static switch_curl_slist_t *default_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
         const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
 {
-        char header[1024];
+	char header[1024];
+	int i;
 
-	switch_snprintf(header, sizeof(header), "%s: %s", profile->api_key_header, profile->api_key);
+	for (i = 0; i < profile->header_count; i++) {
+		switch_snprintf(header, sizeof(header), "%s: %s", profile->header_names[i], profile->header_values[i]);
 
-        headers = switch_curl_slist_append(headers, header);
+		headers = switch_curl_slist_append(headers, header);
+	}
 
 	return headers;
 }
 
-static switch_status_t default_config_profile(switch_xml_t xml, http_profile_t *profile)
+static switch_status_t default_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool)
 {
-
-	switch_xml_t api_key_header = switch_xml_child(xml, "api-key-header");
-	switch_xml_t api_key = switch_xml_child(xml, "api-key");
+	int i, header_count = 0;
+	switch_xml_t header;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring default profile\n");
 
-	if (api_key_header) {
-		profile->api_key_header = switch_strip_whitespace(switch_xml_txt(api_key_header));
-
-		if (api_key) {
-			profile->api_key = switch_strip_whitespace(switch_xml_txt(api_key));
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing api-key in default profile\n");
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing api-key-header in default profile\n");
+	for (header = switch_xml_child(xml, "header"); header; header = header->next) {
+		header_count++;
 	}
 
-	if (zstr(profile->api_key_header) || zstr(profile->api_key)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing API KEY credentials for profile \"%s\"\n", profile->name);
+	profile->header_count = header_count;
+	profile->header_names = switch_core_alloc(pool, sizeof(char*) * header_count);
+	profile->header_values = switch_core_alloc(pool, sizeof(char*) * header_count);
 
-                return SWITCH_STATUS_FALSE;
-        }
+	for (i = 0, header = switch_xml_child(xml, "header"); header; i++, header = header->next) {
+		char *header_name = (char *) switch_xml_attr_soft(header, "name");
+		char *header_value = (char *) switch_xml_txt(header);
+
+		profile->header_names[i] = switch_core_strdup(pool, header_name);
+		profile->header_values[i] = switch_core_strdup(pool, header_value);
+	}
 
 	profile->append_headers_ptr = default_append_headers;
 
@@ -1677,8 +1677,9 @@ static switch_status_t do_config(url_cache_t *cache)
 				profile_obj->secret_access_key = NULL;
 				profile_obj->base_domain = NULL;
 				profile_obj->bytes_per_block = 0;
-				profile_obj->api_key_header = NULL;
-				profile_obj->api_key = NULL;
+				profile_obj->header_count = 0;
+				profile_obj->header_names = NULL;
+				profile_obj->header_values = NULL;
 				profile_obj->append_headers_ptr = NULL;
 				profile_obj->finalise_put_ptr = NULL;
 
@@ -1696,7 +1697,7 @@ static switch_status_t do_config(url_cache_t *cache)
 					} else {
 						profile_xml = switch_xml_child(profile, "default");
 						if (profile_xml) {
-							if (default_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
+							if (default_config_profile(profile_xml, profile_obj, cache->pool) == SWITCH_STATUS_FALSE) {
 								continue;
 							}
 						}
