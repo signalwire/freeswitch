@@ -835,12 +835,10 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	case T38_MODE:
 		{
 			switch_core_session_message_t msg = { 0 };
-			switch_mutex_lock(pvt->mutex);
 			if (pvt->t38_state == NULL) {
 				pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
 			}
 			if (pvt->t38_state == NULL) {
-				switch_mutex_unlock(pvt->mutex);
 				return SWITCH_STATUS_FALSE;
 			}
 			if (pvt->udptl_state == NULL) {
@@ -849,7 +847,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			if (pvt->udptl_state == NULL) {
 				t38_terminal_free(pvt->t38_state);
 				pvt->t38_state = NULL;
-				switch_mutex_unlock(pvt->mutex);
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -860,7 +857,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			memset(t38, 0, sizeof(t38_terminal_state_t));
 
 			if (t38_terminal_init(t38, pvt->caller, t38_tx_packet_handler, pvt) == NULL) {
-				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
 				return SWITCH_STATUS_FALSE;
 			}
@@ -869,7 +865,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 			if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries,
 					(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
-				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
 				return SWITCH_STATUS_FALSE;
 			}
@@ -890,13 +885,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 				span_log_set_level(t30_get_logging_state(t30), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-			}
-
-			switch_mutex_unlock(pvt->mutex);
-
-			/* add to timer thread processing */
-			if (!add_pvt(pvt)) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 		}
 		break;
@@ -1700,10 +1688,17 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					switch_core_session_message_t msg = { 0 };
 					pvt->t38_mode = T38_MODE_NEGOTIATED;
 					switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
-					spanfax_init(pvt, T38_MODE);
-					switch_mutex_lock(pvt->mutex);
-					configure_t38(pvt);
-					switch_mutex_unlock(pvt->mutex);
+					if (spanfax_init(pvt, T38_MODE) == SWITCH_STATUS_SUCCESS) {
+						configure_t38(pvt);
+						/* add to timer thread processing */
+						if (!add_pvt(pvt)) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize Fax engine for T.38\n");
+						switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot initialize Fax engine for T.38");
+						goto done;
+					}
 
 					/* This will change the rtp stack to udptl mode */
 					msg.from = __FILE__;
@@ -1726,7 +1721,16 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					if (negotiate_t38(pvt) == T38_MODE_NEGOTIATED) {
 						/* is is safe to call this again, it was already called above in AUDIO_MODE */
 						/* but this is the only way to set up the t38 stuff */
-						spanfax_init(pvt, T38_MODE);
+						if (spanfax_init(pvt, T38_MODE) == SWITCH_STATUS_SUCCESS) {
+							/* add to timer thread processing */
+							if (!add_pvt(pvt)) {
+								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							}
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize Fax engine for T.38\n");
+							switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot initialize Fax engine for T.38");
+							goto done;
+						}
 						continue;
 					}
 				}
