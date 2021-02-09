@@ -6530,7 +6530,7 @@ SWITCH_STANDARD_API(spawn_stream_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_stream_spawn(cmd, SWITCH_TRUE, stream) < 0) {
+	if (switch_stream_spawn(cmd, SWITCH_FALSE, SWITCH_TRUE, stream) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Failed to execute command: %s\n", cmd);
 	}
 

@@ -3361,17 +3361,21 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 {
+	int retval = 0;
 #ifdef __linux__
 	switch_bool_t spawn_instead_of_system = switch_true(switch_core_get_variable("spawn_instead_of_system"));
 #else
 	switch_bool_t spawn_instead_of_system = SWITCH_FALSE;
 #endif
-	int (*sys_p)(const char *cmd, switch_bool_t wait);
-
-	sys_p = spawn_instead_of_system ? switch_spawn : switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_system_thread : switch_system_fork;
-
-	return sys_p(cmd, wait);
-
+	
+	if (spawn_instead_of_system) {
+		retval = switch_stream_spawn(cmd, SWITCH_TRUE, wait, NULL);
+	} else if (switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC)) {
+		retval = switch_system_thread(cmd, wait);
+	} else {
+		retval = switch_system_fork(cmd, wait);
+	}
+	return retval;
 }
 
 
@@ -3385,7 +3389,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 extern char **environ;
 #endif
 
-SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, switch_stream_handle_t *stream)
+SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t shell, switch_bool_t wait, switch_stream_handle_t *stream)
 {
 #ifndef __linux__
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "posix_spawn is unsupported on current platform\n");
@@ -3406,18 +3410,27 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, swi
 		return 1;
 	}
 
-	if (!(pdata = strdup(cmd))) {
-		return 1;
-	}
-
-	if (!switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
-		free(pdata);
-		return 1;
+	if (shell) {
+		argv[0] = switch_core_get_variable("spawn_system_shell");
+		argv[1] = "-c";
+		argv[2] = (char *)cmd;
+		argv[3] = NULL;
+		if (zstr(argv[0])) {
+			argv[0] = "/bin/sh";
+		}
+	} else {
+		if (!(pdata = strdup(cmd))) {
+			return 1;
+		}
+		if (!switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
+			free(pdata);
+			return 1;
+		}
 	}
 
 	if (!(attr = malloc(sizeof(posix_spawnattr_t)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a memory error: %s\n", cmd);
-		free(pdata);
+		switch_safe_free(pdata);
 		return 1;
 	}
 
@@ -3425,7 +3438,7 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, swi
 		if (pipe(cout_pipe)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a pipe error: %s\n", cmd);
 			free(attr);
-			free(pdata);
+			switch_safe_free(pdata);
 			return 1;
 		}
 
@@ -3434,7 +3447,7 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, swi
 			close(cout_pipe[0]);
 			close(cout_pipe[1]);
 			free(attr);
-			free(pdata);
+			switch_safe_free(pdata);
 			return 1;
 		}
 	}
@@ -3505,7 +3518,7 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, swi
 	posix_spawnattr_destroy(attr);
 	free(attr);
 	posix_spawn_file_actions_destroy(&action);
-	free(pdata);
+	switch_safe_free(pdata);
 
 	return status;
 #endif
@@ -3513,7 +3526,7 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t wait, swi
 
 SWITCH_DECLARE(int) switch_spawn(const char *cmd, switch_bool_t wait)
 {
-	return switch_stream_spawn(cmd, wait, NULL);
+	return switch_stream_spawn(cmd, SWITCH_FALSE, wait, NULL);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max)
@@ -3549,7 +3562,7 @@ SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t
 #endif
 
 	if (spawn_instead_of_system){
-		return switch_stream_spawn(cmd, SWITCH_TRUE, stream);
+		return switch_stream_spawn(cmd, SWITCH_TRUE, SWITCH_TRUE, stream);
 	} else {
 		char buffer[128];
 		size_t bytes;
