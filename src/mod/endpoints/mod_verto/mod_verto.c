@@ -1460,7 +1460,7 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 
 	jrpc_add_id(reply, id, "", 0);
 
-	if (!switch_test_flag(jsock, JPFLAG_AUTHED) && (jsock->profile->userauth || jsock->profile->root_passwd)) {
+	if ((!switch_test_flag(jsock, JPFLAG_AUTHED) || (method && !strcmp(method, "login"))) && (jsock->profile->userauth || jsock->profile->root_passwd)) {
 		int code = CODE_AUTH_REQUIRED;
 		char message[128] = "Authentication Required";
 
