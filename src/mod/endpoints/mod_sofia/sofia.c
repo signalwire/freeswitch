@@ -3317,8 +3317,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
 							  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
 							  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
-		}
-		else {
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							  "Error Creating SIP UA for profile: %s (%s). Bad WSS.PEM certificate.\n", profile->name, profile->bindurl);
 		}
