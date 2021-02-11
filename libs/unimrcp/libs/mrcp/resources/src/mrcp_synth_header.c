@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_synth_header.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_synth_header.h"
@@ -92,7 +90,7 @@ static const apt_str_table_item_t completion_cause_string_table[] = {
 };
 
 
-static APR_INLINE apr_size_t apt_string_table_value_parse(const apt_str_table_item_t *string_table, size_t count, const apt_str_t *value)
+static APR_INLINE apr_size_t apt_string_table_value_parse(const apt_str_table_item_t *string_table, apr_size_t count, const apt_str_t *value)
 {
 	return apt_string_table_id_find(string_table,count,value);
 }
@@ -303,7 +301,7 @@ static void* mrcp_synth_header_allocate(mrcp_header_accessor_t *accessor, apr_po
 }
 
 /** Parse MRCP synthesizer header */
-static apt_bool_t mrcp_synth_header_parse(mrcp_header_accessor_t *accessor, size_t id, const apt_str_t *value, apr_pool_t *pool)
+static apt_bool_t mrcp_synth_header_parse(mrcp_header_accessor_t *accessor, apr_size_t id, const apt_str_t *value, apr_pool_t *pool)
 {
 	apt_bool_t status = TRUE;
 	mrcp_synth_header_t *synth_header = accessor->data;
@@ -378,7 +376,7 @@ static apt_bool_t mrcp_synth_header_parse(mrcp_header_accessor_t *accessor, size
 }
 
 /** Generate MRCP synthesizer header */
-static apt_bool_t mrcp_synth_header_generate(const mrcp_header_accessor_t *accessor, size_t id, apt_str_t *value, apr_pool_t *pool)
+static apt_bool_t mrcp_synth_header_generate(const mrcp_header_accessor_t *accessor, apr_size_t id, apt_str_t *value, apr_pool_t *pool)
 {
 	mrcp_synth_header_t *synth_header = accessor->data;
 	switch(id) {
@@ -389,7 +387,7 @@ static apt_bool_t mrcp_synth_header_generate(const mrcp_header_accessor_t *acces
 			apt_boolean_value_generate(synth_header->kill_on_barge_in,value,pool);
 			break;
 		case SYNTHESIZER_HEADER_SPEAKER_PROFILE:
-			*value = synth_header->speaker_profile,value;
+			*value = synth_header->speaker_profile;
 			break;
 		case SYNTHESIZER_HEADER_COMPLETION_CAUSE:
 			apt_completion_cause_generate(
@@ -417,7 +415,7 @@ static apt_bool_t mrcp_synth_header_generate(const mrcp_header_accessor_t *acces
 			apt_size_value_generate(synth_header->voice_param.variant,value,pool);
 			break;
 		case SYNTHESIZER_HEADER_VOICE_NAME:
-			*value = synth_header->voice_param.name,value;
+			*value = synth_header->voice_param.name;
 			break;
 		case SYNTHESIZER_HEADER_PROSODY_VOLUME:
 			mrcp_prosody_volume_generate(&synth_header->prosody_param.volume,value,pool);
@@ -462,7 +460,7 @@ static apt_bool_t mrcp_synth_header_generate(const mrcp_header_accessor_t *acces
 }
 
 /** Duplicate MRCP synthesizer header */
-static apt_bool_t mrcp_synth_header_duplicate(mrcp_header_accessor_t *accessor, const mrcp_header_accessor_t *src, size_t id, const apt_str_t *value, apr_pool_t *pool)
+static apt_bool_t mrcp_synth_header_duplicate(mrcp_header_accessor_t *accessor, const mrcp_header_accessor_t *src, apr_size_t id, const apt_str_t *value, apr_pool_t *pool)
 {
 	mrcp_synth_header_t *synth_header = accessor->data;
 	const mrcp_synth_header_t *src_synth_header = src->data;

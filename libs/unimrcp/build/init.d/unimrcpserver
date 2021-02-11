@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# unimrcpserver This shell script takes care of starting and stopping the UniMRCP server.
+#
+# chkconfig: 2345 65 35
+# description: UniMRCP is an open source MRCP v1 & v2 server.
+#
+### BEGIN INIT INFO
+# Provides: unimrcpserver
+# Required-Start: $local_fs $remote_fs $network
+# Required-Stop: $local_fs $remote_fs $network
+# Short-Description: Starts and stops the UniMRCP server
+# Description: UniMRCP is an open source MRCP v1 & v2 server.
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+# Some global variables
+APP_NAME="unimrcpserver"
+UNIMRCP_DIR="/usr/local/unimrcp"
+APP_ARGS="-o 2"
+
+# Allow configuration overrides in /etc/sysconfig/$APP_NAME
+CONFIG_FILE=/etc/sysconfig/$APP_NAME
+
+[ -e $CONFIG_FILE ] && . $CONFIG_FILE
+
+DAEMON_ARGS="-d -r ${UNIMRCP_DIR}"
+EXEC=${EXEC-${UNIMRCP_DIR}/bin/${APP_NAME}}
+LOCK_FILE=${LOCK_FILE-/var/lock/subsys/${APP_NAME}}
+RETVAL=0
+
+# Do not modify anything beyond this point
+start() {
+    [ -x $EXEC ] || exit 5
+    [ -d $UNIMRCP_DIR ] || exit 6
+    echo "Starting $APP_NAME..."
+    daemon $EXEC "$DAEMON_ARGS $APP_ARGS"
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && touch ${LOCK_FILE}
+    return $RETVAL
+}
+
+stop() {
+    echo "Stopping $APP_NAME..."
+    killproc $APP_NAME
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && rm -f ${LOCK_FILE}
+}
+
+restart() {
+    stop
+    start
+}
+
+rh_status() {
+    # run checks to determine if the service is running or use generic status
+    status $APP_NAME
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    status)
+        rh_status
+        ;;
+    *)
+        echo "Usage: $0 { start | stop | restart | status }"
+        exit 2
+        ;;
+esac
+
+exit $RETVAL

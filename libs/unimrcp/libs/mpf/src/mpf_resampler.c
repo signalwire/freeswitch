@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_resampler.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_resampler.h"
@@ -21,7 +19,7 @@
 
 MPF_DECLARE(mpf_audio_stream_t*) mpf_resampler_create(mpf_audio_stream_t *source, mpf_audio_stream_t *sink, apr_pool_t *pool)
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_WARNING,
+	apt_log(MPF_LOG_MARK,APT_PRIO_WARNING,
 		"Currently resampling is not supported. "
 		"Try to configure and use the same sampling rate on both ends");
 	return NULL;

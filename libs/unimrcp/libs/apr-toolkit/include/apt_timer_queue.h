@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_timer_queue.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef APT_TIMER_QUEUE_H
@@ -50,7 +48,7 @@ APT_DECLARE(void) apt_timer_queue_advance(apt_timer_queue_t *timer_queue, apr_ui
 APT_DECLARE(apt_bool_t) apt_timer_queue_is_empty(const apt_timer_queue_t *timer_queue);
 
 /** Get current timeout */
-APT_DECLARE(apt_bool_t) apt_timer_queue_timeout_get(const apt_timer_queue_t *timer_queue, apr_uint32_t *timeout);
+APT_DECLARE(apt_bool_t) apt_timer_queue_timeout_get(apt_timer_queue_t *timer_queue, apr_uint32_t *timeout);
 
 
 /** Create timer */

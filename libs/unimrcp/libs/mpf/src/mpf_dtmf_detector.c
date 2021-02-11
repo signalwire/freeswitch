@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_dtmf_detector.c 2227 2014-11-12 01:10:18Z achaloyan@gmail.com $
  */
 
 #include "mpf_dtmf_detector.h"
@@ -273,7 +271,7 @@ MPF_DECLARE(void) mpf_dtmf_detector_get_frame(
 	{
 		if (detector->band & MPF_DTMF_DETECTOR_INBAND) {
 			detector->band &= ~MPF_DTMF_DETECTOR_INBAND;
-			apt_log(APT_LOG_MARK, APT_PRIO_INFO, "Out-of-band digit arrived, turning "
+			apt_log(MPF_LOG_MARK, APT_PRIO_INFO, "Out-of-band digit arrived, turning "
 				"in-band DTMF detector off");
 		}
 		mpf_dtmf_detector_add_digit(detector, mpf_event_id_to_dtmf_char(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_recorder_engine.c 2193 2014-10-08 03:44:33Z achaloyan@gmail.com $
  */
 
 /* 
@@ -106,12 +104,18 @@ struct recorder_channel_t {
 	FILE                    *audio_out;
 };
 
-
 /** Declare this macro to set plugin version */
 MRCP_PLUGIN_VERSION_DECLARE
 
-/** Declare this macro to use log routine of the server, plugin is loaded from */
-MRCP_PLUGIN_LOGGER_IMPLEMENT
+/**
+ * Declare this macro to use log routine of the server, plugin is loaded from.
+ * Enable/add the corresponding entry in logger.xml to set a cutsom log source priority.
+ *    <source name="RECORD-PLUGIN" priority="DEBUG" masking="NONE"/>
+ */
+MRCP_PLUGIN_LOG_SOURCE_IMPLEMENT(RECORD_PLUGIN,"RECORD-PLUGIN")
+
+/** Use custom log source mark */
+#define RECORD_LOG_MARK   APT_LOG_MARK_DECLARE(RECORD_PLUGIN)
 
 /** Create recorder engine */
 MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
@@ -213,7 +217,7 @@ static apt_bool_t recorder_file_open(recorder_channel_t *recorder_channel, mrcp_
 	const mpf_codec_descriptor_t *descriptor = mrcp_engine_sink_stream_codec_get(channel);
 
 	if(!descriptor) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor "APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
+		apt_log(RECORD_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor " APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
 		return FALSE;
 	}
 
@@ -231,10 +235,10 @@ static apt_bool_t recorder_file_open(recorder_channel_t *recorder_channel, mrcp_
 		recorder_channel->audio_out = NULL;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Utterance Output File [%s] for Writing",file_path);
+	apt_log(RECORD_LOG_MARK,APT_PRIO_INFO,"Open Utterance Output File [%s] for Writing",file_path);
 	recorder_channel->audio_out = fopen(file_path,"wb");
 	if(!recorder_channel->audio_out) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Utterance Output File [%s] for Writing",file_path);
+		apt_log(RECORD_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Utterance Output File [%s] for Writing",file_path);
 		return FALSE;
 	}
 
@@ -447,17 +451,17 @@ static apt_bool_t recorder_stream_write(mpf_audio_stream_t *stream, const mpf_fr
 		mpf_detector_event_e det_event = mpf_activity_detector_process(recorder_channel->detector,frame);
 		switch(det_event) {
 			case MPF_DETECTOR_EVENT_ACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity "APT_SIDRES_FMT,
+				apt_log(RECORD_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(recorder_channel->record_request));
 				recorder_start_of_input(recorder_channel);
 				break;
 			case MPF_DETECTOR_EVENT_INACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity "APT_SIDRES_FMT,
+				apt_log(RECORD_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(recorder_channel->record_request));
 				recorder_record_complete(recorder_channel,RECORDER_COMPLETION_CAUSE_SUCCESS_SILENCE);
 				break;
 			case MPF_DETECTOR_EVENT_NOINPUT:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Noinput "APT_SIDRES_FMT,
+				apt_log(RECORD_LOG_MARK,APT_PRIO_INFO,"Detected Noinput " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(recorder_channel->record_request));
 				if(recorder_channel->timers_started == TRUE) {
 					recorder_record_complete(recorder_channel,RECORDER_COMPLETION_CAUSE_NO_INPUT_TIMEOUT);

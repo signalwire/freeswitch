@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_timer_queue.c 2174 2014-09-12 03:33:16Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -30,6 +28,8 @@ struct apt_timer_queue_t {
 
 	/** Elapsed time */
 	apr_uint32_t  elapsed_time;
+	/** Whether elapsed_time is reset or not */
+	apt_bool_t    reset;
 };
 
 /** Timer */
@@ -58,6 +58,7 @@ APT_DECLARE(apt_timer_queue_t*) apt_timer_queue_create(apr_pool_t *pool)
 	apt_timer_queue_t *timer_queue = apr_palloc(pool,sizeof(apt_timer_queue_t));
 	APR_RING_INIT(&timer_queue->head, apt_timer_t, link);
 	timer_queue->elapsed_time = 0;
+	timer_queue->reset = FALSE;
 	return timer_queue;
 }
 
@@ -74,6 +75,11 @@ APT_DECLARE(void) apt_timer_queue_advance(apt_timer_queue_t *timer_queue, apr_ui
 
 	if(APR_RING_EMPTY(&timer_queue->head, apt_timer_t, link)) {
 		/* just return, nothing to do */
+		return;
+	}
+
+	if(timer_queue->reset == TRUE) {
+		/* elapsed_time has just been reset, do not advance */
 		return;
 	}
 
@@ -115,9 +121,15 @@ APT_DECLARE(apt_bool_t) apt_timer_queue_is_empty(const apt_timer_queue_t *timer_
 }
 
 /** Get current timeout */
-APT_DECLARE(apt_bool_t) apt_timer_queue_timeout_get(const apt_timer_queue_t *timer_queue, apr_uint32_t *timeout)
+APT_DECLARE(apt_bool_t) apt_timer_queue_timeout_get(apt_timer_queue_t *timer_queue, apr_uint32_t *timeout)
 {
 	apt_timer_t *timer;
+
+	/* clear reset flag, if set */
+	if(timer_queue->reset == TRUE) {
+		timer_queue->reset = FALSE;
+	}
+
 	/* is queue empty */
 	if(APR_RING_EMPTY(&timer_queue->head, apt_timer_t, link)) {
 		return FALSE;
@@ -147,7 +159,6 @@ APT_DECLARE(apt_timer_t*) apt_timer_create(apt_timer_queue_t *timer_queue, apt_t
 
 /** Set one-shot timer */
 APT_DECLARE(apt_bool_t) apt_timer_set(apt_timer_t *timer, apr_uint32_t timeout)
-
 {
 	apt_timer_queue_t *queue = timer->queue;
 
@@ -212,6 +223,8 @@ static apt_bool_t apt_timer_remove(apt_timer_queue_t *timer_queue, apt_timer_t *
 	if(APR_RING_EMPTY(&timer_queue->head, apt_timer_t, link)) {
 		/* reset elapsed time if no timers set */
 		timer_queue->elapsed_time = 0;
+		/* set reset flag */
+		timer_queue->reset = TRUE;
 	}
 	return TRUE;
 }

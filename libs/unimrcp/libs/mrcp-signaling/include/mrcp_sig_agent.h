@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_sig_agent.h 2253 2014-11-21 02:57:19Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SIG_AGENT_H
@@ -70,7 +68,7 @@ struct mrcp_sig_agent_t {
 	/** Virtual create_server_session */
 	mrcp_session_t* (*create_server_session)(mrcp_sig_agent_t *signaling_agent);
 	/** Virtual create_client_session */
-	apt_bool_t (*create_client_session)(mrcp_session_t *session, const mrcp_sig_settings_t *settings);
+	apt_bool_t (*create_client_session)(mrcp_session_t *session, const mrcp_sig_settings_t *settings, const mrcp_session_attribs_t *attribs);
 };
 
 /** Create signaling agent. */

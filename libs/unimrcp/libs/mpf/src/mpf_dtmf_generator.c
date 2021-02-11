@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_dtmf_generator.c 2227 2014-11-12 01:10:18Z achaloyan@gmail.com $
  */
 
 #include "mpf_dtmf_generator.h"
@@ -172,7 +170,7 @@ MPF_DECLARE(apt_bool_t) mpf_dtmf_generator_enqueue(
 	qlen = strlen(generator->queue);
 	if (qlen + dlen > MPF_DTMFGEN_QUEUE_LEN) {
 		ret = FALSE;
-		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "DTMF queue too short (%d), "
+		apt_log(MPF_LOG_MARK, APT_PRIO_WARNING, "DTMF queue too short (%d), "
 			"cannot add %"APR_SIZE_T_FMT" digit%s, already has %"APR_SIZE_T_FMT,
 			MPF_DTMFGEN_QUEUE_LEN, dlen, dlen > 1 ? "s" : "", qlen);
 	} else {

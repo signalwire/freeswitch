@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: umcframework.cpp 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
+#include <apr_fnmatch.h>
 #include "umcframework.h"
-#include "umcsession.h"
 #include "synthscenario.h"
 #include "recogscenario.h"
 #include "recorderscenario.h"
@@ -33,6 +31,7 @@ typedef struct
 	char                      m_ScenarioName[128];
 	char                      m_ProfileName[128];
 	const mrcp_app_message_t* m_pAppMessage;
+	UmcSession*               m_pSession;
 } UmcTaskMsg;
 
 enum UmcTaskMsgType
@@ -42,7 +41,8 @@ enum UmcTaskMsgType
 	UMC_TASK_STOP_SESSION_MSG,
 	UMC_TASK_KILL_SESSION_MSG,
 	UMC_TASK_SHOW_SCENARIOS_MSG,
-	UMC_TASK_SHOW_SESSIONS_MSG
+	UMC_TASK_SHOW_SESSIONS_MSG,
+	UMC_TASK_EXIT_SESSION_MSG
 };
 
 apt_bool_t UmcProcessMsg(apt_task_t* pTask, apt_task_msg_t* pMsg);
@@ -185,105 +185,124 @@ UmcScenario* UmcFramework::CreateScenario(const char* pType)
 	return NULL;
 }
 
-apr_xml_doc* UmcFramework::LoadDocument()
+bool UmcFramework::LoadScenario(const char* pFilePath)
 {
 	apr_xml_parser* pParser = NULL;
 	apr_xml_doc* pDoc = NULL;
 	apr_file_t* pFD = NULL;
+	const apr_xml_attr* pAttr;
+	const apr_xml_elem* pRoot;
+	const char* pName = NULL;
+	const char* pClass = NULL;
+	const char* pMrcpProfile = NULL;
 	apr_status_t rv;
-	const char* pFilePath;
 
-	pFilePath = apt_dir_layout_path_compose(m_pDirLayout,APT_LAYOUT_CONF_DIR,"umcscenarios.xml",m_pPool);
-	if(!pFilePath)
-	{
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Compose Config File Path");
-		return NULL;
-	}
-
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Open Config File [%s]",pFilePath);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Open Scenario File [%s]",pFilePath);
 	rv = apr_file_open(&pFD,pFilePath,APR_READ|APR_BINARY,0,m_pPool);
 	if(rv != APR_SUCCESS) 
 	{
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Config File [%s]",pFilePath);
-		return NULL;
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Scenario File [%s]",pFilePath);
+		return false;
 	}
 
 	rv = apr_xml_parse_file(m_pPool,&pParser,&pDoc,pFD,2000);
-	if(rv != APR_SUCCESS) 
+	apr_file_close(pFD);
+	if(rv != APR_SUCCESS)
 	{
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse Config File [%s]",pFilePath);
-		pDoc = NULL;
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse Scenario File [%s]",pFilePath);
+		return false;
 	}
 
-	apr_file_close(pFD);
-	return pDoc;
+	pRoot = pDoc->root;
+	if(!pRoot || strcasecmp(pRoot->name,"umcscenario") != 0)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Document");
+		return false;
+	}
+
+	for(pAttr = pRoot->attr; pAttr; pAttr = pAttr->next)
+	{
+		if(strcasecmp(pAttr->name,"name") == 0) 
+		{
+			pName = pAttr->value;
+		}
+		else if(strcasecmp(pAttr->name,"class") == 0) 
+		{
+			pClass = pAttr->value;
+		}
+		else if(strcasecmp(pAttr->name,"profile") == 0) 
+		{
+			pMrcpProfile = pAttr->value;
+		}
+	}
+
+	if(!pName)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Scenario Name");
+		return false;
+	}
+
+	if(!pClass)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Scenario Class");
+		return false;
+	}
+
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Load Scenario Name [%s] Class [%s]",pName,pClass);
+	UmcScenario* pScenario = CreateScenario(pClass);
+	if(!pScenario)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No Such Scenario Class [%s]",pClass);
+		return false;
+	}
+
+	pScenario->SetDirLayout(m_pDirLayout);
+	pScenario->SetName(pName);
+	pScenario->SetMrcpProfile(pMrcpProfile);
+	if(!pScenario->Load(pRoot,m_pPool))
+	{
+		delete pScenario;
+		return false;
+	}
+
+	apr_hash_set(m_pScenarioTable,pScenario->GetName(),APR_HASH_KEY_STRING,pScenario);
+	return true;
 }
 
 bool UmcFramework::LoadScenarios()
 {
-	apr_xml_doc* pDoc = LoadDocument();
-	if(!pDoc)
+	apr_dir_t* pDir;
+	apr_finfo_t finfo;
+	apr_status_t rv;
+	const char* pDirPath;
+
+	pDirPath = apt_dir_layout_path_compose(m_pDirLayout,APT_LAYOUT_CONF_DIR,"umc-scenarios",m_pPool);
+	if(!pDirPath)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Compose Config File Path");
 		return false;
-
-	const apr_xml_attr* pAttr;
-	const apr_xml_elem* pElem;
-	const apr_xml_elem* pRoot = pDoc->root;
-	if(!pRoot || strcasecmp(pRoot->name,"umcscenarios") != 0)
-	{
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Document");
-		return FALSE;
 	}
-	for(pElem = pRoot->first_child; pElem; pElem = pElem->next)
-	{
-		if(strcasecmp(pElem->name,"scenario") != 0)
-		{
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",pElem->name);
-			continue;
-		}
-		
-		const char* pName = NULL;
-		const char* pClass = NULL;
-		const char* pMrcpProfile = NULL;
-		for(pAttr = pElem->attr; pAttr; pAttr = pAttr->next) 
-		{
-			if(strcasecmp(pAttr->name,"name") == 0) 
-			{
-				pName = pAttr->value;
-			}
-			else if(strcasecmp(pAttr->name,"class") == 0) 
-			{
-				pClass = pAttr->value;
-			}
-			else if(strcasecmp(pAttr->name,"profile") == 0) 
-			{
-				pMrcpProfile = pAttr->value;
-			}
-		}
 
-		if(pName && pClass)
-		{
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Load Scenario name [%s] class [%s]",pName,pClass);
-			UmcScenario* pScenario = CreateScenario(pClass);
-			if(pScenario)
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Enter Directory [%s]",pDirPath);
+	rv = apr_dir_open(&pDir,pDirPath,m_pPool);
+	if(rv != APR_SUCCESS)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No Such Directory %s",pDirPath);
+		return false;
+	}
+
+	while(apr_dir_read(&finfo,APR_FINFO_NAME,pDir) == APR_SUCCESS)
+	{
+		if(apr_fnmatch("*.xml",finfo.name,0) == APR_SUCCESS) {
+			char* pFilePath;
+			if(apr_filepath_merge(&pFilePath,pDirPath,finfo.name,APR_FILEPATH_NATIVE,m_pPool) == APR_SUCCESS)
 			{
-				pScenario->SetDirLayout(m_pDirLayout);
-				pScenario->SetName(pName);
-				pScenario->SetMrcpProfile(pMrcpProfile);
-				if(pScenario->Load(pElem,m_pPool))
-					apr_hash_set(m_pScenarioTable,pScenario->GetName(),APR_HASH_KEY_STRING,pScenario);
-				else
-					delete pScenario;
+				LoadScenario(pFilePath);
 			}
-			else
-			{
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No such scenario <%s>",pClass);
-			}
-		}
-		else
-		{
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing either name or class of the scenario");
 		}
 	}
+	apr_dir_close(pDir);
+
 	return true;
 }
 
@@ -334,8 +353,10 @@ bool UmcFramework::ProcessRunRequest(const char* pScenarioName, const char* pPro
 		return false;
 
 	printf("[%s]\n",pSession->GetId());
-	pSession->SetMrcpProfile(pProfileName);
+	if(pProfileName && *pProfileName != '\0')
+		pSession->SetMrcpProfile(pProfileName);
 	pSession->SetMrcpApplication(m_pMrcpApplication);
+	pSession->SetMethodProvider(this);
 	if(!pSession->Run())
 	{
 		delete pSession;
@@ -416,6 +437,15 @@ void UmcFramework::ProcessShowSessions()
 	}
 }
 
+void UmcFramework::ProcessSessionExit(UmcSession* pUmcSession)
+{
+	if(!pUmcSession)
+		return;
+
+	RemoveSession(pUmcSession);
+	delete pUmcSession;
+}
+
 void UmcFramework::RunSession(const char* pScenarioName, const char* pProfileName)
 {
 	apt_task_t* pTask = apt_consumer_task_base_get(m_pTask);
@@ -427,7 +457,10 @@ void UmcFramework::RunSession(const char* pScenarioName, const char* pProfileNam
 	pTaskMsg->sub_type = UMC_TASK_RUN_SESSION_MSG;
 	UmcTaskMsg* pUmcMsg = (UmcTaskMsg*) pTaskMsg->data;
 	strncpy(pUmcMsg->m_ScenarioName,pScenarioName,sizeof(pUmcMsg->m_ScenarioName)-1);
-	strncpy(pUmcMsg->m_ProfileName,pProfileName,sizeof(pUmcMsg->m_ProfileName)-1);
+	if(pProfileName)
+		strncpy(pUmcMsg->m_ProfileName,pProfileName,sizeof(pUmcMsg->m_ProfileName)-1);
+	else
+		*pUmcMsg->m_ProfileName = '\0';
 	pUmcMsg->m_pAppMessage = NULL;
 	apt_task_msg_signal(pTask,pTaskMsg);
 }
@@ -488,6 +521,21 @@ void UmcFramework::ShowSessions()
 	apt_task_msg_signal(pTask,pTaskMsg);
 }
 
+void UmcFramework::ExitSession(UmcSession* pUmcSession)
+{
+	apt_task_t* pTask = apt_consumer_task_base_get(m_pTask);
+	apt_task_msg_t* pTaskMsg = apt_task_msg_get(pTask);
+	if(!pTaskMsg) 
+		return;
+
+	pTaskMsg->type = TASK_MSG_USER;
+	pTaskMsg->sub_type = UMC_TASK_EXIT_SESSION_MSG;
+	
+	UmcTaskMsg* pUmcMsg = (UmcTaskMsg*) pTaskMsg->data;
+	pUmcMsg->m_pSession = pUmcSession;
+	apt_task_msg_signal(pTask,pTaskMsg);
+}
+
 apt_bool_t AppMessageHandler(const mrcp_app_message_t* pMessage)
 {
 	UmcFramework* pFramework = (UmcFramework*) mrcp_application_object_get(pMessage->application);
@@ -505,57 +553,50 @@ apt_bool_t AppMessageHandler(const mrcp_app_message_t* pMessage)
 		pUmcMsg->m_pAppMessage = pMessage;
 		apt_task_msg_signal(pTask,pTaskMsg);
 	}
-	
+
 	return TRUE;
 }
 
-
-apt_bool_t AppOnSessionUpdate(mrcp_application_t *application, mrcp_session_t *session, mrcp_sig_status_code_e status)
+apt_bool_t AppOnSessionUpdate(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_sig_status_code_e status)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	return pSession->OnSessionUpdate(status);
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnSessionUpdate(status);
 }
 
-apt_bool_t AppOnSessionTerminate(mrcp_application_t *application, mrcp_session_t *session, mrcp_sig_status_code_e status)
+apt_bool_t AppOnSessionTerminate(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_sig_status_code_e status)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	if(!pSession->OnSessionTerminate(status))
-		return false;
-
-	UmcFramework* pFramework = (UmcFramework*) mrcp_application_object_get(application);
-	pFramework->RemoveSession(pSession);
-	delete pSession;
-	return true;
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnSessionTerminate(status);
 }
 
-apt_bool_t AppOnChannelAdd(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
+apt_bool_t AppOnChannelAdd(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_channel_t* pChannel, mrcp_sig_status_code_e status)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	return pSession->OnChannelAdd(channel,status);
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnChannelAdd(pChannel,status);
 }
 
-apt_bool_t AppOnChannelRemove(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
+apt_bool_t AppOnChannelRemove(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_channel_t* pChannel, mrcp_sig_status_code_e status)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	return pSession->OnChannelRemove(channel,status);
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnChannelRemove(pChannel,status);
 }
 
-apt_bool_t AppOnMessageReceive(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_message_t *message)
+apt_bool_t AppOnMessageReceive(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_channel_t* pChannel, mrcp_message_t* pMessage)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	return pSession->OnMessageReceive(channel,message);
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnMessageReceive(pChannel,pMessage);
 }
 
-apt_bool_t AppOnTerminateEvent(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel)
+apt_bool_t AppOnTerminateEvent(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_channel_t* pChannel)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	return pSession->OnTerminateEvent(channel);
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnTerminateEvent(pChannel);
 }
 
-apt_bool_t AppOnResourceDiscover(mrcp_application_t *application, mrcp_session_t *session, mrcp_session_descriptor_t *descriptor, mrcp_sig_status_code_e status)
+apt_bool_t AppOnResourceDiscover(mrcp_application_t* pApplication, mrcp_session_t* pSession, mrcp_session_descriptor_t* pDescriptor, mrcp_sig_status_code_e status)
 {
-	UmcSession* pSession = (UmcSession*) mrcp_application_session_object_get(session);
-	return pSession->OnResourceDiscover(descriptor,status);
+	UmcSessionEventHandler* pEventHandler = (UmcSessionEventHandler*) mrcp_application_session_object_get(pSession);
+	return pEventHandler->OnResourceDiscover(pDescriptor,status);
 }
 
 void UmcOnStartComplete(apt_task_t* pTask)
@@ -625,6 +666,11 @@ apt_bool_t UmcProcessMsg(apt_task_t *pTask, apt_task_msg_t *pMsg)
 		case UMC_TASK_SHOW_SESSIONS_MSG:
 		{
 			pFramework->ProcessShowSessions();
+			break;
+		}
+		case UMC_TASK_EXIT_SESSION_MSG:
+		{
+			pFramework->ProcessSessionExit(pUmcMsg->m_pSession);
 			break;
 		}
 	}

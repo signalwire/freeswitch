@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: rtsp_start_line.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "rtsp_start_line.h"
 #include "apt_string_table.h"
 #include "apt_log.h"
+
+APT_LOG_SOURCE_IMPLEMENT(RTSP,rtsp_log_source,"RTSP")
 
 /** Protocol name used in version string */
 #define RTSP_NAME "RTSP"
@@ -33,7 +33,8 @@ static const apt_str_table_item_t rtsp_method_string_table[] = {
 	{{"SETUP",    5},0},
 	{{"ANNOUNCE", 8},0},
 	{{"TEARDOWN", 8},0},
-	{{"DESCRIBE", 8},0}
+	{{"DESCRIBE", 8},0},
+	{{"OPTIONS",  7},0}
 };
 
 /** String table of RTSP reason phrases (rtsp_reason_phrase_e) */
@@ -47,9 +48,10 @@ static const apt_str_table_item_t rtsp_reason_string_table[] = {
 	{{"Not Acceptable",        14},4},
 	{{"Proxy Auth Required",   19},0},
 	{{"Request Timeout",       15},0},
-	{{"Session Not Found",     17},0},
+	{{"Session Not Found",     17},2},
 	{{"Internal Server Error", 21},0},
-	{{"Not Implemented",       15},4}
+	{{"Not Implemented",       15},5},
+	{{"Service Unavailable",   19},2}
 };
 
 /** Parse RTSP URI */
@@ -183,7 +185,7 @@ RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, ap
 
 	apt_text_stream_init(&line,str->buf,str->length);
 	if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot read the first field in start-line");
+		apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Cannot read the first field in start-line");
 		return FALSE;
 	}
 
@@ -196,13 +198,13 @@ RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, ap
 		status_line->version = rtsp_version_parse(&field);
 
 		if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse status-code in status-line");
+			apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Cannot parse status-code in status-line");
 			return FALSE;
 		}
 		status_line->status_code = rtsp_status_code_parse(&field);
 
 		if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse reason phrase in status-line");
+			apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Cannot parse reason phrase in status-line");
 			return FALSE;
 		}
 		apt_string_copy(&status_line->reason,&field,pool);
@@ -217,13 +219,13 @@ RTSP_DECLARE(apt_bool_t) rtsp_start_line_parse(rtsp_start_line_t *start_line, ap
 		request_line->method_id = apt_string_table_id_find(rtsp_method_string_table,RTSP_METHOD_COUNT,&field);
 
 		if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse URL in request-line");
+			apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Cannot parse URL in request-line");
 			return FALSE;
 		}
 		rtsp_resource_uri_parse(&field,request_line,pool);
 
 		if(apt_text_field_read(&line,APT_TOKEN_SP,TRUE,&field) == FALSE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot parse version in request-line");
+			apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Cannot parse version in request-line");
 			return FALSE;
 		}
 		request_line->version = rtsp_version_parse(&field);

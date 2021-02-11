@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_client_connection.c 2249 2014-11-19 05:26:24Z achaloyan@gmail.com $
  */
 
 #include "mrcp_connection.h"
@@ -36,6 +34,7 @@ struct mrcp_connection_agent_t {
 
 	apr_uint32_t                          request_timeout;
 	apt_bool_t                            offer_new_connection;
+	apr_size_t                            max_shared_use_count;
 	apr_size_t                            tx_buffer_size;
 	apr_size_t                            rx_buffer_size;
 
@@ -77,11 +76,12 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_create(
 	mrcp_connection_agent_t *agent;
 
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create MRCPv2 Agent [%s] [%"APR_SIZE_T_FMT"]",
-				id,	max_connection_count);
+				id,max_connection_count);
 	agent = apr_palloc(pool,sizeof(mrcp_connection_agent_t));
 	agent->pool = pool;
 	agent->request_timeout = 0;
 	agent->offer_new_connection = offer_new_connection;
+	agent->max_shared_use_count = 100;
 	agent->rx_buffer_size = MRCP_STREAM_BUFFER_SIZE;
 	agent->tx_buffer_size = MRCP_STREAM_BUFFER_SIZE;
 
@@ -169,6 +169,14 @@ MRCP_DECLARE(void) mrcp_client_connection_tx_size_set(
 		size = MRCP_STREAM_BUFFER_SIZE;
 	}
 	agent->tx_buffer_size = size;
+}
+
+/** Set max shared use count for an MRCPv2 connection */
+MRCP_DECLARE(void) mrcp_client_connection_max_shared_use_set(
+								mrcp_connection_agent_t *agent,
+								apr_size_t max_shared_use_count)
+{
+	agent->max_shared_use_count = max_shared_use_count;
 }
 
 /** Set request timeout */
@@ -366,9 +374,22 @@ static mrcp_connection_t* mrcp_client_agent_connection_find(mrcp_connection_agen
 	for(connection = APR_RING_FIRST(&agent->connection_list);
 			connection != APR_RING_SENTINEL(&agent->connection_list, mrcp_connection_t, link);
 				connection = APR_RING_NEXT(connection, link)) {
+		/* do not observe connections with closed socket */
+		if(!connection->sock)
+			continue;
+
 		if(apr_sockaddr_info_get(&sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool) == APR_SUCCESS) {
 			if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0 && 
 				descriptor->port == connection->r_sockaddr->port) {
+
+				if(agent->max_shared_use_count && connection->use_count >= agent->max_shared_use_count) {
+					/* do not allow the same connection to be used infinitely */
+					apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Max Use Count Reached for Connection %s [%d]",
+						connection->id,
+						connection->use_count);
+					continue;
+				}
+
 				return connection;
 			}
 		}
@@ -515,7 +536,7 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 	apt_message_status_e result;
 
 	if(!connection || !connection->sock) {
-		apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Null MRCPv2 Connection "APT_SIDRES_FMT,MRCP_MESSAGE_SIDRES(message));
+		apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Null MRCPv2 Connection " APT_SIDRES_FMT,MRCP_MESSAGE_SIDRES(message));
 		mrcp_client_agent_request_cancel(agent,channel,message);
 		return FALSE;
 	}
@@ -573,7 +594,7 @@ static apt_bool_t mrcp_client_message_handler(mrcp_connection_t *connection, mrc
 			if(message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) {
 				if(!channel->active_request || 
 					channel->active_request->start_line.request_id != message->start_line.request_id) {
-					apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Unexpected MRCP Response "APT_SIDRES_FMT" [%d]",
+					apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Unexpected MRCP Response " APT_SIDRES_FMT" [%d]",
 						MRCP_MESSAGE_SIDRES(message),
 						message->start_line.request_id);
 					return FALSE;
@@ -587,7 +608,7 @@ static apt_bool_t mrcp_client_message_handler(mrcp_connection_t *connection, mrc
 			mrcp_connection_message_receive(agent->vtable,channel,message);
 		}
 		else {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Find Channel "APT_SIDRES_FMT" in Connection %s [%d]",
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Find Channel " APT_SIDRES_FMT" in Connection %s [%d]",
 				MRCP_MESSAGE_SIDRES(message),
 				connection->id,
 				apr_hash_count(connection->channel_table));

@@ -1,0 +1,6 @@
+No-Input-Timeout: 5000
+Recognition-Timeout: 20000
+Speech-Complete-Timeout: 400
+DTMF-Term-Timeout: 3000
+DTMF-Interdigit-Timeout: 3000
+Confidence-Threshold: 0.5

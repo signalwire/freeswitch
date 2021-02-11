@@ -20,6 +20,12 @@
     <ClInclude Include="include\mrcp_sofiasip_server_agent.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\mrcp_sofiasip_task.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_sofiasip_logger.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mrcp_sdp.c">
@@ -29,6 +35,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\mrcp_sofiasip_server_agent.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_sofiasip_task.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\mrcp_sofiasip_logger.c">

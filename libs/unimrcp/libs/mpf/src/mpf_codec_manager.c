@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_codec_manager.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -54,7 +52,7 @@ MPF_DECLARE(apt_bool_t) mpf_codec_manager_codec_register(mpf_codec_manager_t *co
 		return FALSE;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Register Codec [%s]",codec->attribs->name.buf);
+	apt_log(MPF_LOG_MARK,APT_PRIO_INFO,"Register Codec [%s]",codec->attribs->name.buf);
 
 	APR_ARRAY_PUSH(codec_manager->codec_arr,mpf_codec_t*) = codec;
 	return TRUE;
@@ -142,7 +140,7 @@ static apt_bool_t mpf_codec_manager_codec_parse(const mpf_codec_manager_t *codec
 				*descriptor = *event_descriptor;
 			}
 			else {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"No Such Codec [%s]",str);
+				apt_log(MPF_LOG_MARK,APT_PRIO_WARNING,"No Such Codec [%s]",str);
 				return FALSE;
 			}
 		}

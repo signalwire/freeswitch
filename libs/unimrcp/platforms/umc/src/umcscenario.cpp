@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: umcscenario.cpp 2232 2014-11-12 01:33:37Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -221,7 +219,7 @@ const char* UmcScenario::LoadFileContent(const char* pFileName, apr_size_t& size
 
 	size = (apr_size_t)finfo.size;
 	char* pContent = (char*) apr_palloc(pool,size+1);
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load File Content size [%" APR_SIZE_T_FMT" bytes] %s",size,pFilePath);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load File Content size [%" APR_SIZE_T_FMT " bytes] %s",size,pFilePath);
 	if(apr_file_read(pFile,pContent,&size) != APR_SUCCESS) 
 	{
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Read Content %s",pFilePath);

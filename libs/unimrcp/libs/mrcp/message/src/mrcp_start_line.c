@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_start_line.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -112,7 +110,7 @@ static APR_INLINE mrcp_status_code_e mrcp_status_code_parse(const apt_str_t *fie
 }
 
 /** Generate MRCP status-code */
-static APR_INLINE size_t  mrcp_status_code_generate(mrcp_status_code_e status_code, apt_text_stream_t *stream)
+static APR_INLINE apr_size_t  mrcp_status_code_generate(mrcp_status_code_e status_code, apt_text_stream_t *stream)
 {
 	return apt_text_size_value_insert(stream,status_code);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: rtsp_start_line.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef RTSP_START_LINE_H
@@ -50,6 +48,7 @@ typedef enum{
 	RTSP_METHOD_ANNOUNCE,
 	RTSP_METHOD_TEARDOWN,
 	RTSP_METHOD_DESCRIBE,
+	RTSP_METHOD_OPTIONS,
 
 	RTSP_METHOD_COUNT,
 	RTSP_METHOD_UNKNOWN = RTSP_METHOD_COUNT
@@ -73,6 +72,7 @@ typedef enum {
 
 	RTSP_STATUS_CODE_INTERNAL_SERVER_ERROR     = 500,
 	RTSP_STATUS_CODE_NOT_IMPLEMENTED           = 501,
+	RTSP_STATUS_CODE_SERVICE_UNAVAILABLE       = 503
 } rtsp_status_code_e;
 
 /** Reason phrases */
@@ -89,6 +89,7 @@ typedef enum {
 	RTSP_REASON_PHRASE_SESSION_NOT_FOUND,
 	RTSP_REASON_PHRASE_INTERNAL_SERVER_ERROR,
 	RTSP_REASON_PHRASE_NOT_IMPLEMENTED,
+	RTSP_REASON_PHRASE_SERVICE_UNAVAILABLE,
 	RTSP_REASON_PHRASE_COUNT,
 
 	/** Unknown reason phrase */

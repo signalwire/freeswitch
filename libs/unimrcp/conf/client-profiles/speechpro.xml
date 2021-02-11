@@ -6,7 +6,10 @@
   <settings>
     <!-- RTSP MRCPv1 settings -->
     <rtsp-settings id="SpeechPro-RTSP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+	    Server IP address can explicitly be specified per "rtsp-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+	  -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>8000</server-port>
       <!-- <force-destination>true</force-destination> -->
@@ -28,6 +31,6 @@
       <rtp-settings>RTP-Settings-1</rtp-settings>
     </mrcpv1-profile>
 
-    <!-- more profiles might be added here -->
+    <!-- More profiles may follow. -->
   </profiles>
 </unimrcpclient>

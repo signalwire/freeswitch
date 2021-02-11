@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -150,6 +150,12 @@
     <ClCompile Include="resources\src\mrcp_synth_resource.c" />
     <ClCompile Include="resources\src\mrcp_verifier_header.c" />
     <ClCompile Include="resources\src\mrcp_verifier_resource.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\apr-toolkit\aprtoolkit.vcxproj">
+      <Project>{13deeca0-bdd4-4744-a1a2-8eb0a44df3d2}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

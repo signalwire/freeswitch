@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_context.c 2181 2014-09-14 04:29:38Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -179,7 +177,7 @@ MPF_DECLARE(apt_bool_t) mpf_context_termination_add(mpf_context_t *context, mpf_
 			continue;
 		}
 		if(!context->count) {
-			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Add Media Context %s",context->name);
+			apt_log(MPF_LOG_MARK,APT_PRIO_DEBUG,"Add Media Context %s",context->name);
 			APR_RING_INSERT_TAIL(&context->factory->head,context,mpf_context_t,link);
 		}
 
@@ -235,7 +233,7 @@ MPF_DECLARE(apt_bool_t) mpf_context_termination_subtract(mpf_context_t *context,
 	termination->slot = (apr_size_t)-1;
 	context->count--;
 	if(!context->count) {
-		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Remove Media Context %s",context->name);
+		apt_log(MPF_LOG_MARK,APT_PRIO_DEBUG,"Remove Media Context %s",context->name);
 		APR_RING_REMOVE(context,link);
 	}
 	return TRUE;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: synthsession.cpp 2193 2014-10-08 03:44:33Z achaloyan@gmail.com $
  */
 
 #include "synthsession.h"
@@ -265,15 +263,23 @@ mrcp_message_t* SynthSession::CreateSpeakRequest(mrcp_channel_t* pMrcpChannel)
 
 		/* set message body */
 		if(pScenario->GetContent())
-			apt_string_assign(&pMrcpMessage->body,pScenario->GetContent(),pMrcpMessage->pool);
+			apt_string_assign_n(&pMrcpMessage->body,pScenario->GetContent(),pScenario->GetContentLength(),pMrcpMessage->pool);
 	}
 	/* get/allocate synthesizer header */
 	pSynthHeader = (mrcp_synth_header_t*) mrcp_resource_header_prepare(pMrcpMessage);
 	if(pSynthHeader) 
 	{
+#if 0
 		/* set synthesizer header fields */
 		pSynthHeader->voice_param.age = 28;
 		mrcp_resource_header_property_add(pMrcpMessage,SYNTHESIZER_HEADER_VOICE_AGE);
+#endif
+		const char* pSpeechLanguage = pScenario->GetSpeechLanguage();
+		if (pSpeechLanguage)
+		{
+			apt_string_assign(&pSynthHeader->speech_language, pSpeechLanguage, pMrcpMessage->pool);
+			mrcp_resource_header_property_add(pMrcpMessage, SYNTHESIZER_HEADER_SPEECH_LANGUAGE);
+		}
 	}
 
 	return pMrcpMessage;

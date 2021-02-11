@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_engine_iface.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_ENGINE_IFACE_H
@@ -45,7 +43,7 @@ void mrcp_engine_on_close(mrcp_engine_t *engine);
 
 
 /** Create engine channel */
-mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine, mrcp_version_e mrcp_version, apr_pool_t *pool);
+mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine, apr_table_t *attribs, mrcp_version_e mrcp_version, apr_pool_t *pool);
 
 /** Destroy engine channel */
 apt_bool_t mrcp_engine_channel_virtual_destroy(mrcp_engine_channel_t *channel);
@@ -79,6 +77,8 @@ static APR_INLINE apt_bool_t mrcp_engine_channel_request_process(mrcp_engine_cha
 /** Allocate engine config */
 mrcp_engine_config_t* mrcp_engine_config_alloc(apr_pool_t *pool);
 
+/** Allocate engine profile settings */
+mrcp_engine_settings_t* mrcp_engine_settings_alloc(apr_pool_t *pool);
 
 APT_END_EXTERN_C
 

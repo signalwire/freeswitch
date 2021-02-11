@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: demo_synth_engine.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 /* 
@@ -127,8 +125,15 @@ static apt_bool_t demo_synth_msg_process(apt_task_t *task, apt_task_msg_t *msg);
 /** Declare this macro to set plugin version */
 MRCP_PLUGIN_VERSION_DECLARE
 
-/** Declare this macro to use log routine of the server, plugin is loaded from */
-MRCP_PLUGIN_LOGGER_IMPLEMENT
+/**
+ * Declare this macro to use log routine of the server, plugin is loaded from.
+ * Enable/add the corresponding entry in logger.xml to set a cutsom log source priority.
+ *    <source name="SYNTH-PLUGIN" priority="DEBUG" masking="NONE"/>
+ */
+MRCP_PLUGIN_LOG_SOURCE_IMPLEMENT(SYNTH_PLUGIN,"SYNTH-PLUGIN")
+
+/** Use custom log source mark */
+#define SYNTH_LOG_MARK   APT_LOG_MARK_DECLARE(SYNTH_PLUGIN)
 
 /** Create demo synthesizer engine */
 MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
@@ -266,7 +271,7 @@ static apt_bool_t demo_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp_
 	const mpf_codec_descriptor_t *descriptor = mrcp_engine_source_stream_codec_get(channel);
 
 	if(!descriptor) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor "APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
+		apt_log(SYNTH_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor " APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
 		response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
 		return FALSE;
 	}
@@ -279,12 +284,12 @@ static apt_bool_t demo_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp_
 	if(file_path) {
 		synth_channel->audio_file = fopen(file_path,"rb");
 		if(synth_channel->audio_file) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set [%s] as Speech Source "APT_SIDRES_FMT,
+			apt_log(SYNTH_LOG_MARK,APT_PRIO_INFO,"Set [%s] as Speech Source " APT_SIDRES_FMT,
 				file_path,
 				MRCP_MESSAGE_SIDRES(request));
 		}
 		else {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"No Speech Source [%s] Found "APT_SIDRES_FMT,
+			apt_log(SYNTH_LOG_MARK,APT_PRIO_INFO,"No Speech Source [%s] Found " APT_SIDRES_FMT,
 				file_path,
 				MRCP_MESSAGE_SIDRES(request));
 			/* calculate estimated time to complete */
@@ -342,12 +347,12 @@ static apt_bool_t demo_synth_channel_set_params(mrcp_engine_channel_t *channel, 
 	if(req_synth_header) {
 		/* check voice age header */
 		if(mrcp_resource_header_property_check(request,SYNTHESIZER_HEADER_VOICE_AGE) == TRUE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Age [%"APR_SIZE_T_FMT"]",
+			apt_log(SYNTH_LOG_MARK,APT_PRIO_INFO,"Set Voice Age [%"APR_SIZE_T_FMT"]",
 				req_synth_header->voice_param.age);
 		}
 		/* check voice name header */
 		if(mrcp_resource_header_property_check(request,SYNTHESIZER_HEADER_VOICE_NAME) == TRUE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Name [%s]",
+			apt_log(SYNTH_LOG_MARK,APT_PRIO_INFO,"Set Voice Name [%s]",
 				req_synth_header->voice_param.name.buf);
 		}
 	}

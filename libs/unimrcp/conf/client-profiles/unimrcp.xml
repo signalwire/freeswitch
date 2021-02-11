@@ -6,15 +6,22 @@
   <settings>
     <!-- SIP MRCPv2 settings -->
     <sip-settings id="UniMRCP-SIP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+        Server IP address can explicitly be specified per "sip-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+      -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>8060</server-port>
       <!-- <force-destination>true</force-destination> -->
+      <!-- <feature-tags>speechrecog.engine="SR-1";speechsynth.engine="SS-1"</feature-tags> -->
     </sip-settings>
-    
+
     <!-- RTSP MRCPv1 settings -->
     <rtsp-settings id="UniMRCP-RTSP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+        Server IP address can explicitly be specified per "rtsp-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+      -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>1554</server-port>
       <!-- <force-destination>true</force-destination> -->
@@ -25,7 +32,7 @@
       </resource-map>
     </rtsp-settings>
   </settings>
-  
+
   <profiles>
     <!-- UniMRCP MRCPv2 profile -->
     <mrcpv2-profile id="uni2">
@@ -36,7 +43,7 @@
       <sip-settings>UniMRCP-SIP-Settings</sip-settings>
       <rtp-settings>RTP-Settings-1</rtp-settings>
     </mrcpv2-profile>
-    
+
     <!-- UniMRCP MRCPv1 profile -->
     <mrcpv1-profile id="uni1">
       <rtsp-uac>RTSP-Agent-1</rtsp-uac>
@@ -46,6 +53,6 @@
       <rtp-settings>RTP-Settings-1</rtp-settings>
     </mrcpv1-profile>
 
-    <!-- more profiles might be added here -->
+    <!-- More profiles may follow. -->
   </profiles>
 </unimrcpclient>
