@@ -1553,7 +1553,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 		if (msg->string_array_arg[0]) {
 			tech_pvt->proxy_refer_uuid = (char *)msg->string_array_arg[0];
-		} else {
+		} else if (!switch_channel_var_true(tech_pvt->channel, "sip_refer_continue_after_reply")) {
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
 			sofia_wait_for_reply(tech_pvt, 9999, 10);
 			switch_mutex_lock(tech_pvt->sofia_mutex);
