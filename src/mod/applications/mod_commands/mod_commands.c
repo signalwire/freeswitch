@@ -4797,7 +4797,12 @@ SWITCH_STANDARD_API(session_displace_function)
 
 	if (!strcasecmp(action, "start")) {
 		if (switch_ivr_displace_session(rsession, path, limit, flags) != SWITCH_STATUS_SUCCESS) {
-			stream->write_function(stream, "-ERR Cannot displace session!\n");
+			switch_channel_t *channel = switch_core_session_get_channel(rsession);
+			if (switch_channel_ready(channel)) {
+				stream->write_function(stream, "-ERR Cannot displace session!\n");
+			} else {
+				stream->write_function(stream, "-ERR Session is terminated!\n");
+			}
 		} else {
 			stream->write_function(stream, "+OK Success\n");
 		}
