@@ -2008,7 +2008,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int8_t hangup_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
-	uint32_t progress_timelimit_sec = 0;
+	uint32_t progress_timelimit_sec = 0, request_timelimit_sec = 0;
 	const char *cid_tmp, *lc;
 	originate_global_t oglobals = { 0 };
 	int cdr_total = 0;
@@ -2493,6 +2493,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		int tmp = atoi(var_val);
 		if (tmp > 0) {
 			progress_timelimit_sec = (uint32_t) tmp;
+		}
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "originate_request_timeout"))) {
+		int tmp = atoi(var_val);
+		if (tmp > 0) {
+			request_timelimit_sec = (uint32_t) tmp;
 		}
 	}
 
@@ -3194,6 +3201,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				for (i = 0; i < and_argc; i++) {
 					int state;
 					time_t elapsed;
+					time_t global_elapsed;
 
 					if (!originate_status[i].peer_channel) {
 						continue;
@@ -3216,8 +3224,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 					elapsed = switch_epoch_time_now(NULL) - start;
+					global_elapsed = switch_epoch_time_now(NULL) - global_start;
 
 					if (elapsed > (time_t) timelimit_sec) {
+						to++;
+						oglobals.idx = IDX_TIMEOUT;
+						goto notready;
+					}
+
+					if (request_timelimit_sec && global_elapsed > (time_t) request_timelimit_sec) {
 						to++;
 						oglobals.idx = IDX_TIMEOUT;
 						goto notready;
@@ -3276,6 +3291,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			while ((!caller_channel || switch_channel_ready(caller_channel) || switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE)) &&
 				   check_channel_status(&oglobals, originate_status, and_argc, &force_reason)) {
 				time_t elapsed = switch_epoch_time_now(NULL) - start;
+				time_t global_elapsed = switch_epoch_time_now(NULL) - global_start;
 
 				read_packet = 0;
 
@@ -3291,6 +3307,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (oglobals.session) {
 					switch_ivr_parse_all_events(oglobals.session);
+				}
+
+				if (request_timelimit_sec && global_elapsed > (time_t) request_timelimit_sec) {
+					oglobals.idx = IDX_TIMEOUT;
+					if (force_reason == SWITCH_CAUSE_NONE) {
+						force_reason = SWITCH_CAUSE_PROGRESS_TIMEOUT;
+					}
+					goto notready;
 				}
 
 				if (!oglobals.sent_ring && !oglobals.progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
