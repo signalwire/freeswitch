@@ -87,6 +87,7 @@ static struct {
 	switch_byte_t default_bitrate;
 	switch_byte_t volte;
 	switch_byte_t adjust_bitrate;
+	switch_byte_t force_oa; /*force OA when originating*/
 	int debug;
 } globals;
 
@@ -211,7 +212,11 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		context->enc_mode = globals.default_bitrate;
 
 		/* octet-align = 0  - per RFC - if there's no `octet-align` FMTP value then BE is employed */
-		switch_clear_flag(context, AMRWB_OPT_OCTET_ALIGN);
+		if (!globals.force_oa) {
+			switch_clear_flag(context, AMRWB_OPT_OCTET_ALIGN);
+		} else {
+			switch_set_flag(context, AMRWB_OPT_OCTET_ALIGN);
+		}
 
 		if (codec->fmtp_in) {
 			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -561,6 +566,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 				}
 				if (!strcasecmp(var, "adjust-bitrate")) {
 					globals.adjust_bitrate = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "force-oa")) {
+					globals.force_oa = (switch_byte_t) atoi(val);
 				}
 			}
 		}
