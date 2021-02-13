@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -426,7 +426,7 @@ static struct {
 	int debug;
 	char *odbc_dsn;
 	char *dbname;
-	char *cc_instance_id;
+	const char *cc_instance_id;
 	switch_bool_t reserve_agents;
 	switch_bool_t truncate_tiers;
 	switch_bool_t truncate_agents;
@@ -1546,7 +1546,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
 	if (zstr(globals.cc_instance_id)) {
-		globals.cc_instance_id = strdup("single_box");
+		globals.cc_instance_id = switch_core_strdup(pool, "single_box");
 	}
 	if (!globals.reserve_agents) {
 		globals.reserve_agents = SWITCH_FALSE;
@@ -4341,7 +4341,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.dbname);
-	switch_safe_free(globals.cc_instance_id);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
