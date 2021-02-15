@@ -3371,6 +3371,55 @@ SWITCH_STANDARD_API(uuid_deflect)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_REFER_3PCC_SYNTAX "<uuid> <uuid-to-refer>"
+SWITCH_STANDARD_API(uuid_refer_3pcc)
+{
+	char *argv[3] = { 0 };
+	char *split_argv;
+	int argc = 0;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_REFER_3PCC_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	split_argv = strdup(cmd);
+	argc = switch_split(split_argv, ' ', argv);
+
+	if (argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_REFER_3PCC_SYNTAX);
+	} else {
+		char *uuid_to_send_refer = argv[0];
+		char *uuid_to_refer = argv[1];
+		switch_core_session_t *session_to_send_refer = switch_core_session_locate(uuid_to_send_refer);
+
+		if (session_to_send_refer)
+		{
+			switch_core_session_t *session_to_refer = switch_core_session_locate(uuid_to_refer);
+
+			if (session_to_refer) {
+				switch_core_session_message_t msg = {0};
+
+				/* Tell sofia to refer the channel */
+				msg.from = __FILE__;
+				msg.string_arg = argv[1];
+				msg.message_id = SWITCH_MESSAGE_INDICATE_REFER_3PCC;
+				switch_core_session_receive_message(session_to_send_refer, &msg);
+				stream->write_function(stream, "+OK:%s\n", msg.string_reply);
+				switch_core_session_rwunlock(session_to_refer);
+			} else {
+				stream->write_function(stream, "-ERR No such channel %s!\n", uuid_to_refer);
+			}
+			switch_core_session_rwunlock(session_to_send_refer);
+		} else {
+			stream->write_function(stream, "-ERR No such channel %s!\n", uuid_to_send_refer);
+		}
+	}
+
+	switch_safe_free(split_argv);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define UUID_REDIRECT_SYNTAX "<uuid> <uri>"
 SWITCH_STANDARD_API(uuid_redirect)
 {
@@ -7563,6 +7612,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "Get a variable from a channel", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_hold", "Place call on hold", uuid_hold_function, HOLD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_refer_3pcc", "Send a REFER/Replace to a channel", uuid_refer_3pcc, UUID_REFER_3PCC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_message", "Send MESSAGE to the endpoint", uuid_send_message_function, SEND_MESSAGE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_set_media_stats", "Set media stats", uuid_set_media_stats, UUID_MEDIA_STATS_SYNTAX);
@@ -7781,6 +7831,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_recovery_refresh ::console::list_uuid");
 	switch_console_set_complete("add uuid_recv_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_redirect ::console::list_uuid");
+	switch_console_set_complete("add uuid_refer_3pcc ::console::list_uuid ::console::list_uuid");
 	switch_console_set_complete("add uuid_send_dtmf ::console::list_uuid");
 	switch_console_set_complete("add uuid_session_heartbeat ::console::list_uuid");
 	switch_console_set_complete("add uuid_setvar_multi ::console::list_uuid");

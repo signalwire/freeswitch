@@ -1313,6 +1313,75 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_bool_t sofia_refer_3pcc(switch_core_session_t *session, switch_core_session_message_t *msg, const char *uuid_to_refer)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	switch_core_session_t *session_to_refer;
+	switch_channel_t *channel_to_refer;
+	const char *sip_refer_reply;
+	char *refer_to;
+	char *referred_by;
+	char *url_encoded;
+	const char *from_host = switch_channel_get_variable(channel, "sip_from_host");
+	const char *from_user = switch_channel_get_variable(channel, "sip_from_user");
+	const char *replaced_call_id;
+	const char *replaced_from_uri;
+	const char *replaced_to_tag;
+	const char *replaced_from_tag;
+
+	if ((session_to_refer = switch_core_session_locate(uuid_to_refer))) {
+		channel_to_refer = switch_core_session_get_channel(session_to_refer);
+		replaced_call_id = switch_channel_get_variable(channel_to_refer, "sip_call_id");
+		replaced_from_uri = switch_channel_get_variable(channel_to_refer, "sip_from_uri");
+		replaced_to_tag = switch_channel_get_variable(channel_to_refer, "sip_to_tag");
+		replaced_from_tag = switch_channel_get_variable(channel_to_refer, "sip_from_tag");
+		switch_core_session_rwunlock(session_to_refer);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+						  "(%s) Can't locate session with UUID %s for REFER.\n",
+						  switch_channel_get_name(channel), uuid_to_refer);
+		return SWITCH_FALSE;
+	}
+
+	if (!zstr(from_host) && !zstr(from_user) && !zstr(replaced_from_uri) && !zstr(replaced_call_id) && !zstr(replaced_to_tag) && !zstr(replaced_from_tag)) {
+		switch_size_t url_encoded_size;
+		char *replace_by;
+		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+
+		replace_by = switch_mprintf("%s;to-tag=%s;from-tag=%s", replaced_call_id, replaced_to_tag, replaced_from_tag);
+		url_encoded_size = strlen(replace_by) * 3 + 1;
+		switch_malloc(url_encoded, url_encoded_size);
+		switch_url_encode(replace_by, url_encoded, url_encoded_size);
+		switch_safe_free(replace_by);
+		refer_to = switch_mprintf("<sip:%s?Replaces=%s>", replaced_from_uri, url_encoded);
+		referred_by = switch_mprintf("<sip:%s@%s>", from_user, from_host);
+		switch_safe_free(url_encoded);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) Referring %s: %s\n",
+						  switch_channel_get_name(channel), uuid_to_refer, refer_to);
+		switch_channel_set_variable(channel, SOFIA_REFER_3PCC_HANGUP_VARIABLE, uuid_to_refer);
+		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(refer_to), SIPTAG_REFERRED_BY_STR(referred_by),
+				  TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+				  TAG_END());
+		switch_safe_free(refer_to);
+		switch_safe_free(referred_by);
+		switch_mutex_unlock(tech_pvt->sofia_mutex);
+		sofia_wait_for_reply(tech_pvt, SOFIA_CUSTOM_NUA_EVENT_REFER, 10);
+		switch_mutex_lock(tech_pvt->sofia_mutex);
+
+		if ((sip_refer_reply = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
+			msg->string_reply = switch_core_session_strdup(session, sip_refer_reply);
+		} else {
+			msg->string_reply = "no reply";
+		}
+
+		return SWITCH_TRUE;
+	} else {
+		msg->string_reply = "from_host, from_user or replaced_from_uri empty";
+		return SWITCH_FALSE;
+	}
+}
+
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1514,6 +1583,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 
 	switch (msg->message_id) {
+
+	// REFER sips:conf-id@focus.ng.911bell.ca;transport=tcp SIP/2.0
+	// Refer-To: <sips:caller@tsp.ca?Replaces=12345%40tsp.ca%3Bto-tag%3D12345%3Bfrom-tag%3D5FFE-3994>
+	// Referred-By: <sips:psap1.qc.psap.ng.911bell.ca>
+	//
+	// REFER sips:[sip_contact_uri] SIP/2.0
+	// Refer-To: <sips:[sip_from_user@sip_from_host]?Replaces=[sip_call_id];to-tag=[sip_to_tag];from-tag=[sip_from_tag]>
+	// Referred-By: <sips:[sip_from_host]>
+	case SWITCH_MESSAGE_INDICATE_REFER_3PCC:
+		if (sofia_refer_3pcc(session, msg, msg->string_arg) == SWITCH_FALSE) {
+			goto end_lock;
+		}
+		break;
 
 	case SWITCH_MESSAGE_INDICATE_DEFLECT: {
 
