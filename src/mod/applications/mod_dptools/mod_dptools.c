@@ -1187,6 +1187,31 @@ SWITCH_STANDARD_APP(flush_dtmf_function)
 	switch_channel_flush_dtmf(switch_core_session_get_channel(session));
 }
 
+#define refer_to_uri_3pcc_DESC "Send a REFER with Refer-To: set to <refer-to-uri>?<call_info>;<serviceurn>"
+#define refer_to_uri_3pcc_SYNTAX "<refer-to-uri>"
+SWITCH_STANDARD_APP(refer_to_uri_3pcc_function)
+{
+	char *argv[1] = { 0 };
+	int argc;
+	char *split_argv;
+	switch_core_session_t *session_to_send_refer = session;
+	switch_core_session_message_t msg = {0};
+
+	split_argv = switch_core_session_strdup(session, data);
+	argc = switch_split(split_argv, ' ', argv);
+
+	if (argc < 1 || zstr(argv[0])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s refer_to_uri_3pcc error USAGE: %s\n",
+		                  switch_core_session_get_name(session), refer_to_uri_3pcc_SYNTAX);
+		return;
+	}
+
+	msg.from = __FILE__;
+	msg.string_arg = argv[0];
+	msg.message_id = SWITCH_MESSAGE_INDICATE_REFER_TO_URI_3PCC;
+	switch_core_session_receive_message(session_to_send_refer, &msg);
+}
+
 SWITCH_STANDARD_APP(transfer_function)
 {
 	int argc;
@@ -6470,6 +6495,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "unhold", "Send a un-hold message", "Send a un-hold message", unhold_function, UNHOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mutex", "block on a call flow only allowing one at a time", "", mutex_function, MUTEX_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "page", "", "", page_function, PAGE_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "refer_to_uri_3pcc", "Send a REFER with Refer-To/Call-Info/serviceurn to a channel", refer_to_uri_3pcc_DESC, refer_to_uri_3pcc_function, refer_to_uri_3pcc_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", "Check an ip against an ACL list", check_acl_function,

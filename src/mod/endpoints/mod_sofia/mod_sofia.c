@@ -1313,6 +1313,71 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_bool_t sofia_refer_to_uri_3pcc(switch_core_session_t *session, switch_core_session_message_t *msg, const char *refer_to_uri)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	private_object_t *tech_pvt = switch_core_session_get_private(session);
+	const char *sip_refer_reply;
+	char *refer_to;
+	char *referred_by;
+	char *url_encoded;
+	char *sip_prefix = strcasecmp(refer_to_uri, "sip:") ? "" : "sip:";
+	const char *from_host = switch_channel_get_variable(channel, "sip_from_host");
+	const char *from_user = switch_channel_get_variable(channel, "sip_from_user");
+	const char *refer_to_params_serviceurn = switch_channel_get_variable(channel, "sip_refer_to_params_serviceurn");
+	const char *call_info_override = switch_channel_get_variable(tech_pvt->channel, "sip_h_Call-Info");
+
+	if (!zstr(from_host) && !zstr(from_user) && !zstr(refer_to_uri)) {
+		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+
+		if (!zstr(call_info_override)) {
+			switch_size_t url_encoded_size  = strlen(call_info_override)*3+1;
+
+			switch_malloc(url_encoded, url_encoded_size);
+			switch_url_encode(call_info_override, url_encoded, url_encoded_size);
+			refer_to = switch_mprintf("<%s%s?Call-Info=%s>", sip_prefix, refer_to_uri, url_encoded);
+			switch_safe_free(url_encoded);
+		} else {
+			refer_to = switch_mprintf("<%s%s>", sip_prefix, refer_to_uri);
+		}
+
+		if (!zstr(refer_to_params_serviceurn)) {
+			char *refer_to_with_params;
+			switch_size_t url_encoded_size  = strlen(refer_to_params_serviceurn)*3+1;
+
+			switch_malloc(url_encoded, url_encoded_size);
+			switch_url_encode(refer_to_params_serviceurn, url_encoded, url_encoded_size);
+			refer_to_with_params = switch_mprintf("%s;serviceurn=%s", refer_to, url_encoded);
+			switch_safe_free(url_encoded);
+			switch_safe_free(refer_to);
+			refer_to = refer_to_with_params;
+		}
+
+		referred_by = switch_mprintf("<sip:%s@%s>", from_user, from_host);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) Referring %s: %s\n",
+						  switch_channel_get_name(channel), refer_to_uri, refer_to);
+		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(refer_to), SIPTAG_REFERRED_BY_STR(referred_by),
+				  TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+				  TAG_END());
+		switch_safe_free(refer_to);
+		switch_safe_free(referred_by);
+		switch_mutex_unlock(tech_pvt->sofia_mutex);
+		sofia_wait_for_reply(tech_pvt, SOFIA_CUSTOM_NUA_EVENT_REFER, 10);
+		switch_mutex_lock(tech_pvt->sofia_mutex);
+
+		if ((sip_refer_reply = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
+			msg->string_reply = switch_core_session_strdup(session, sip_refer_reply);
+		} else {
+			msg->string_reply = "no reply";
+		}
+
+		return SWITCH_TRUE;
+	} else {
+		msg->string_reply = "from_host, from_user or refer_to_uri empty";
+		return SWITCH_FALSE;
+	}
+}
+
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1514,6 +1579,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 
 	switch (msg->message_id) {
+
+	case SWITCH_MESSAGE_INDICATE_REFER_TO_URI_3PCC:
+		if (sofia_refer_to_uri_3pcc(session, msg, msg->string_arg) == SWITCH_FALSE) {
+			goto end_lock;
+		}
+		break;
 
 	case SWITCH_MESSAGE_INDICATE_DEFLECT: {
 
