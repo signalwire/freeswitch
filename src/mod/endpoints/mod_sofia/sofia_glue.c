@@ -1057,6 +1057,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *force_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_from");
 	const char *force_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_to");
 	const char *content_encoding = switch_channel_get_variable(tech_pvt->channel, "sip_content_encoding");
+	const char *call_info = switch_channel_get_variable(tech_pvt->channel, "sip_h_Call-Info");
 	char *mp = NULL, *mp_type = NULL;
 	char *record_route = NULL;
 	const char *recover_via = NULL;
@@ -1665,6 +1666,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
 				   TAG_IF(!zstr(invite_route_uri), NUTAG_INITIAL_ROUTE_STR(invite_route_uri)),
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
+				   TAG_IF(!zstr(call_info), SIPTAG_CALL_INFO(SOFIA_NULL_HEADER)),
+				   TAG_IF(!zstr(call_info), SIPTAG_CALL_INFO_STR(call_info)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
 				   TAG_IF(content_encoding, SIPTAG_CONTENT_ENCODING_STR(content_encoding)),
@@ -1703,6 +1706,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(identity), SIPTAG_IDENTITY_STR(identity)),
 				   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
+				   TAG_IF(!zstr(call_info), SIPTAG_CALL_INFO(SOFIA_NULL_HEADER)),
+				   TAG_IF(!zstr(call_info), SIPTAG_CALL_INFO_STR(call_info)),
 				   TAG_IF(!zstr(invite_route_uri), NUTAG_INITIAL_ROUTE_STR(invite_route_uri)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
