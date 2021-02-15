@@ -693,6 +693,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			}
 		}
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
+		return;
 	}
 
 	/* if no session, assume it could be an incoming notify from a gateway subscription */
