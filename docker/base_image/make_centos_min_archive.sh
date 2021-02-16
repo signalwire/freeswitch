@@ -64,13 +64,6 @@ extra_files_debian() {
 /usr/lib64/erlang/bin/epmd
 /usr/lib64/erlang/erts-5.10.4/bin/epmd
 /usr/bin/busybox
-/usr/bin/bash
-/usr/bin/ldd
-/usr/bin/strace
-/usr/lib64/libdw.so.1
-/usr/lib64/libelf.so.1
-/usr/lib64/liblzma.so.5
-/usr/lib64/libbz2.so.1
 /usr/lib
 EOF
 }
