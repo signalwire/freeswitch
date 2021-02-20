@@ -141,7 +141,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  */
 #define fst_session_park(session) \
 	switch_ivr_park_session(session); \
-	switch_channel_wait_for_state(switch_core_session_get_channel(session), NULL, CS_PARK);
+	switch_channel_wait_for_flag(switch_core_session_get_channel(session), CF_PARK, SWITCH_TRUE, 10000, NULL);
 
 /**
  * check for test requirement - execute teardown on failure
