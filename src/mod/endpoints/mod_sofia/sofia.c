@@ -2538,6 +2538,8 @@ void sofia_event_callback(nua_event_t event,
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);
 						if (switch_true(telnyx_force_cdr)) {
 							switch_channel_clear_flag(channel, CF_NO_CDR);
+						} else if (switch_false(telnyx_force_cdr)) {
+							switch_channel_set_flag(channel, CF_NO_CDR);
 						}
 						if (!zstr(tech_pvt->call_id)) {
 							tech_pvt->sofia_private = NULL;
