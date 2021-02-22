@@ -1152,6 +1152,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+	char errbuf[CURL_ERROR_SIZE] = { 0 };
 
 	/* set up HTTP GET */
 	get_data.fd = 0;
@@ -1184,6 +1185,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errbuf);
 		if (cache->connect_timeout > 0) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
 		}
@@ -1247,6 +1249,7 @@ done:
 
 	if (event) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_curl_status", "%d", curl_status);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_curl_error", "%s", !zstr(errbuf) ? errbuf : curl_easy_strerror(curl_status));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_response_code", "%ld", httpRes);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_file_create_result", "%d", errno);
 	}
@@ -1331,6 +1334,7 @@ SWITCH_STANDARD_API(http_cache_get)
 	const char *extension = NULL;
 	int validate_url_extension = SWITCH_TRUE;
 	int use_mime_ext = SWITCH_TRUE;
+	switch_event_t *event;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_GET_SYNTAX);
@@ -1371,13 +1375,27 @@ SWITCH_STANDARD_API(http_cache_get)
 		}
 	}
 
-	filename = url_cache_get(&gcache, profile, session, url, download, refresh, extension, validate_url_extension, use_mime_ext, NULL, pool);
+	switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA);
+	filename = url_cache_get(&gcache, profile, session, url, download, refresh, extension, validate_url_extension, use_mime_ext, event, pool);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
-
 	} else {
-		stream->write_function(stream, "-ERR\n");
-		status = SWITCH_STATUS_FALSE;
+		if (event) {
+			const char * curl_status = switch_event_get_header(event, "http_cache_curl_status");
+			if (!zstr(curl_status) && strcmp(curl_status, "0")) {
+				stream->write_function(stream, "-ERR CURL:%s\n", switch_event_get_header(event, "http_cache_curl_error"));
+			} else {
+				const char * file_status = switch_event_get_header(event, "http_cache_file_create_result");
+				if (!zstr(file_status) && strcmp(file_status, "0")) {
+					stream->write_function(stream, "-ERR FILE:%s\n", strerror(atoi(file_status)));
+				} else {
+					stream->write_function(stream, "-ERR UNKNOWN\n");
+				}
+			}
+		} else {
+			stream->write_function(stream, "-ERR UNKNOWN\n");
+		}
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	if (lpool) {
@@ -1386,6 +1404,10 @@ SWITCH_STANDARD_API(http_cache_get)
 
 	if (params) {
 		switch_event_destroy(&params);
+	}
+
+	if (event) {
+		switch_event_destroy(&event);
 	}
 
 	return status;
