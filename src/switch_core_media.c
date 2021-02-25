@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -3583,7 +3583,6 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 	}
 }
 
-
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_session_t *session, int force)
 {
@@ -3726,20 +3725,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 		if (strcasecmp(a_engine->read_impl.iananame, a_engine->cur_payload_map->iananame) ||
 			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
 			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
-
-			if (session->read_resampler) {
-				switch_mutex_lock(session->resample_mutex);
-				switch_resample_destroy(&session->read_resampler);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
-				switch_mutex_unlock(session->resample_mutex);
-			}
-
-			if (session->write_resampler) {
-				switch_mutex_lock(session->resample_mutex);
-				switch_resample_destroy(&session->write_resampler);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
-				switch_mutex_unlock(session->resample_mutex);
-			}
 
 			switch_core_session_reset(session, 0, 0);
 			switch_channel_audio_sync(session->channel);
