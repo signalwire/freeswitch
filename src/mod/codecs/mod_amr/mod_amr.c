@@ -139,7 +139,7 @@ static struct {
 	int debug;
 } globals;
 
-const int switch_amr_frame_sizes[] = {12,13,15,17,19,20,26,31,5,0};
+const int switch_amr_frame_sizes[] = {12,13,15,17,19,20,26,31,5,0,0,0,0,0,0,1};
 
 #define SWITCH_AMR_OUT_MAX_SIZE 32
 #define SWITCH_AMR_MODES 9 /* plus SID */
@@ -157,7 +157,7 @@ static switch_bool_t switch_amr_unpack_oa(unsigned char *buf, uint8_t *tmp, int 
 	tocs = buf;
 	index = ((tocs[0]>>3) & 0xf);
 	buf++; /* point to voice payload */
-	if (index > SWITCH_AMR_MODES) {
+	if (index > SWITCH_AMR_MODES && index != 0xf) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR decoder (OA): Invalid Table Of Contents (TOC): 0x%x\n", index);
 		return SWITCH_FALSE;
 	}
@@ -195,7 +195,7 @@ static switch_bool_t switch_amr_info(unsigned char *encoded_buf, int encoded_dat
 		encoded_buf++; /* CMR skip */
 		tocs = encoded_buf;
 		index = (tocs[0] >> 3) & 0x0f;
-		if (index > SWITCH_AMR_MODES) {
+		if (index > SWITCH_AMR_MODES && index != 0xf) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR decoder (OA): Invalid Table Of Contents (TOC): 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
@@ -215,7 +215,7 @@ static switch_bool_t switch_amr_info(unsigned char *encoded_buf, int encoded_dat
 		ft = shift_tocs[0] >> 3 ;
 		ft &= ~(1 << 5); /* Frame Type */
 		index = (shift_tocs[0] >> 3) & 0x0f;
-		if (index > SWITCH_AMR_MODES) {
+		if (index > SWITCH_AMR_MODES && index != 0xf) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMR decoder (BE): Invalid Table Of Contents (TOC): 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
