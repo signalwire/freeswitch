@@ -10,7 +10,7 @@
 
     2) copy conf/config.FS0 to /var/spool/hylafax/etc (or wherver the appropriate dir is on your system)
 
-    Subsequent modem configs would incrment the 0 to 1 and so on.
+    Subsequent modem configs would increment the 0 to 1 and so on.
 
 -->
       <param name="total-modems" value="0"/>

@@ -296,7 +296,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-directory
-Provides FreeSWITCH mod_directory, a dial by name directory application. 
+Provides FreeSWITCH mod_directory, a dial by name directory application.
 
 %package application-distributor
 Summary:	FreeSWITCH mod_distributor
@@ -304,7 +304,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-distributor
-Provides FreeSWITCH mod_distributor, a simple round-robbin style distribution 
+Provides FreeSWITCH mod_distributor, a simple round-robin style distribution
 to call gateways.
 
 %package application-easyroute
@@ -461,7 +461,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-rad_auth
-Provides FreeSWITCH mod_rad_auth, authetication via RADIUS protocol from FreeSWITCH dialplan
+Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
 
 %package application-redis
 Summary:	FreeSWITCH mod_redis
@@ -839,7 +839,7 @@ XMPP support for FreeSWITCH open source telephony platform. Allows FreeSWITCH
 to be used as a client for GoogleTalk or other XMPP Servers.
 
 #%package endpoint-gsmopen
-#Summary:        Generic GSM enpoint support for FreeSWITCH open source telephony platform
+#Summary:        Generic GSM endpoint support for FreeSWITCH open source telephony platform
 #Group:          System/Libraries
 #Requires:       %{name} = %{version}-%{release}
 #
@@ -849,12 +849,12 @@ to be used as a client for GoogleTalk or other XMPP Servers.
 #SMS is handled via the standard CHAT API in FreeSWITCH.
 
 #%package endpoint-h323
-#Summary:        H.323 enpoint support for FreeSWITCH open source telephony platform
+#Summary:        H.323 endpoint support for FreeSWITCH open source telephony platform
 #Group:          System/Libraries
 #Requires:       %{name} = %{version}-%{release}
 #
 #%description endpoint-h323
-#H.323 enpoint support for FreeSWITCH open source telephony platform
+#H.323 endpoint support for FreeSWITCH open source telephony platform
 
 #%package endpoint-khomp
 #Summary:        khomp endpoint support for FreeSWITCH open source telephony platform
@@ -1170,7 +1170,7 @@ Requires:	%{name} = %{version}-%{release}
 ######################################################################################################################
 
 %package lang-en
-Summary:	Provides english language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:	Provides english language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -1178,7 +1178,7 @@ Requires:        %{name} = %{version}-%{release}
 English language phrases module and directory structure for say module and voicemail
 
 %package lang-ru
-Summary:        Provides russian language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides russian language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -1218,12 +1218,12 @@ Requires:        %{name} = %{version}-%{release}
 Spanish language phrases module and directory structure for say module and voicemail
 
 %package lang-pt
-Summary:        Provides Portugese language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides Portuguese language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description lang-pt
-Portugese language phrases module and directory structure for say module and voicemail
+Portuguese language phrases module and directory structure for say module and voicemail
 
 %package lang-sv
 Summary:        Provides Swedish language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
@@ -1982,7 +1982,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/directory/default/*
 ######################################################################################################################
-#							IVR Menues
+#							IVR Menus
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/ivr_menus/*.xml
 ######################################################################################################################
@@ -2557,7 +2557,7 @@ fi
 * Wed Jun 19 2013 - krice@freeswitch.org
 - tweak files included for vanilla configs
 * Wed Sep 19 2012 - krice@freeswitch.org
-- Add support for Spanish and Portugese say language modules
+- Add support for Spanish and Portuguese say language modules
 * Thu Jan 26 2012 - krice@freeswitch.org
 - complete rework of spec file
 * Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
@@ -2576,7 +2576,7 @@ fi
 - fixes for ss7 freetdm modules
 - added mod_opus
 - added selector for sangoma modules
-- addded python esl module to rpm
+- added python esl module to rpm
 - some minor cleanups
 - cut sangoma modules into separate rpms as addons for freetdm
 * Tue Jan 18 2011 - michal.bielicki@seventhsignal.de
@@ -2594,7 +2594,7 @@ fi
 - added mod_nibblebill to standard modules
 * Sun Sep 26 2010 - michal.bielicki@seventhsignal.de
 - added portaudio_stream module
-- some more formating work
+- some more formatting work
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
 - new hash module config file added to freeswitch.spec
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
@@ -2607,7 +2607,7 @@ fi
 - Added Contributors
 - Added Anthony's copyright for the whole package into the header
 * Tue Jun 22 2010 - michal.bielicki@seventhsignal.de
-- Reorganized the modules alphabeticaly
+- Reorganized the modules alphabetically
 - synced SFEopensolaris and centos spec
 - started to fix Run Dependencies
 - added mod_say_ru which seemd to have gone missing
@@ -2619,7 +2619,7 @@ fi
 - replaced mod_limit with mod_db
 - added mod_spy
 - added mod_valet_parking
-- addded mod_memcache
+- added mod_memcache
 - added mod_distributor
 - added mod_avmd
 * Thu Apr 29 2010 - michal.bielicki@seventhsignal.de
@@ -2639,7 +2639,7 @@ fi
 * Sat Nov 21 2009 - michal.bielicki@seventhsignal.de
 - added patch by Igor Neves <neves.igor@gmail.com>: Added some checkup in %post and %postun to prevent upgrades from removing freeswitch user
 * Wed Nov 18 2009 - michal.bielicki@seventhsignal.de
-- added new config files for diretory and distributor
+- added new config files for directory and distributor
 - removed sangoma boost from openzap for builds that do not inherit wanpipe while building.
 * Fri Jul 24 2009 - mike@jerris.com
 - removed mod_http
@@ -2704,7 +2704,7 @@ fi
 - fixed odbc requirements
 - added all buildable modules
 - added redhat style init file
-- splitted off language dependant stuff into separate language files
+- split off language dependent stuff into separate language files
 - disable non complete language modules
 * Tue Apr 24 2007 - peter+rpmspam@suntel.com.tr
 - Added a debug package
