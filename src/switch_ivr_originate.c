@@ -1843,9 +1843,8 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	switch_frame_t *read_frame = NULL;
 	switch_codec_implementation_t read_impl = { 0 };
 
-#if 0
 	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-		switch_core_session_t *session = state->originate_status[i].peer_session;
+		switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
 		switch_channel_t *channel = NULL;
 
 		if (session) channel = switch_core_session_get_channel(session);
@@ -1855,11 +1854,10 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		}
 
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			originate_status[i].peer_session = session;
-			originate_status[i].peer_channel = channel;
+			state->oglobals->originate_status[i].peer_session = session;
+			state->oglobals->originate_status[i].peer_channel = channel;
 		}
 	}
-#endif
 	
 	if (state->oglobals->session) {
 		switch_core_session_get_read_impl(state->oglobals->session, &read_impl);
