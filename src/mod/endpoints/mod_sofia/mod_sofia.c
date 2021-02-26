@@ -4797,7 +4797,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		*dest++ = '\0';
 
-		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
+		if (!(gateway_ptr = sofia_reg_find_gateway(gw)) || !gateway_ptr->profile) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Gateway \'%s\'\n", gw);
 			cause = SWITCH_CAUSE_INVALID_GATEWAY;
 			goto error;
