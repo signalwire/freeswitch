@@ -1364,6 +1364,23 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 	return x;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
+		if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_reset(session, flush_dtmf, reset_read_codec);
+			switch_mutex_unlock(session->codec_write_mutex);
+			status = SWITCH_STATUS_SUCCESS;
+		}
+
+		switch_mutex_unlock(session->codec_read_mutex);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);

@@ -1360,6 +1360,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_
 SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
 
 /*!
+  \brief Reset the buffers and resampler on a session, fail if can not lock codec mutexes
+  \param session the session to reset
+  \param flush_dtmf flush all queued dtmf events too
+  \return SWITCH_STATUS_SUCCESS if the session was reset
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
+
+/*!
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
