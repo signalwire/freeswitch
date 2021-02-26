@@ -745,7 +745,7 @@ update-clean: clean python-reconf
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
-swigall:
+swigall: src/include/switch_swigable_cpp.h
 	@echo reswigging all
 	sh $(switch_srcdir)/build/swigall.sh
 
