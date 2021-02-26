@@ -25,7 +25,7 @@ MCAST_la_LDFLAGS   = -avoid-version -module -no-undefined -shared $(PERL_LDFLAGS
 endif
 
 mcast/mcast_wrap.cpp:
-	cd mcast && swig -module MCAST -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o mcast_wrap.cpp MCAST.i
+	cd mcast && swig -module MCAST -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o mcast_wrap.cpp MCAST.i && patch -s -p0 -i hack.diff
 
 mcast/perlxsi.c:
 	$(PERL) -MExtUtils::Embed -e xsinit -- -o mcast/perlxsi.c
