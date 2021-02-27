@@ -2072,6 +2072,8 @@ GCC_DIAG_OFF(deprecated-declarations)
 				ret = write_frame(context->fc, &context->audio_st[j].st->codec->time_base, context->audio_st[j].st, &pkt[j]);
 GCC_DIAG_ON(deprecated-declarations)
 				if (context->mutex) switch_mutex_unlock(context->mutex);
+				
+				av_packet_unref(&pkt);
 
 				if (ret < 0) {
 					context->errs++;
