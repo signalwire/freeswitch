@@ -1571,6 +1571,8 @@ GCC_DIAG_ON(deprecated-declarations)
 
 			}
 
+		} else {
+			av_packet_unref(&pkt);
 		}
 	}
 
