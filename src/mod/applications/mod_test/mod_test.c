@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -41,6 +41,7 @@ SWITCH_MODULE_DEFINITION(mod_test, mod_test_load, mod_test_shutdown, mod_test_ru
 typedef struct {
 	char *text;
 	int samples;
+	const char *channel_uuid;
 } test_tts_t;
 
 typedef enum {
@@ -393,6 +394,10 @@ static switch_status_t test_speech_feed_tts(switch_speech_handle_t *sh, char *te
 {
 	test_tts_t *context = (test_tts_t *)sh->private_info;
 
+	if (switch_true(switch_core_get_variable("mod_test_tts_must_have_channel_uuid")) && zstr(context->channel_uuid)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!zstr(text)) {
 		char *p = strstr(text, "silence://");
 
@@ -431,6 +436,13 @@ static void test_speech_flush_tts(switch_speech_handle_t *sh)
 
 static void test_speech_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
 {
+	test_tts_t *context = (test_tts_t *)sh->private_info;
+	if (!zstr(param) && !zstr(val)) {
+		if (!strcasecmp("channel-uuid", param)) {
+			context->channel_uuid = switch_core_strdup(sh->memory_pool, val);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "channel-uuid = %s\n", val);
+		}
+	}
 }
 
 static void test_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
