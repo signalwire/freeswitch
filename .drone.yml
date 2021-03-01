@@ -18,7 +18,6 @@ steps:
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
       - git clone https://github.com/freeswitch/sofia-sip.git
       - cd sofia-sip && ./autogen.sh && ./configure.gnu && make -j`nproc` && make install && cd ..
-      - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
       - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
@@ -148,6 +147,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 500b43fb74a889e2a75e115a4d64c579a6bc48b9521e260908859d7359f2d46b
+hmac: a85b0db203d2c9a71c3e4a63a46b5513fbdb3b8f5135e21d0fe0992f33626824
 
 ...
