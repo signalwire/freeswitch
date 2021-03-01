@@ -50,7 +50,9 @@
 #include <switch_jitterbuffer.h>
 
 //#define DEBUG_TS_ROLLOVER
-//#define TS_ROLLOVER_START 4294951295
+#ifdef DEBUG_TS_ROLLOVER
+#define TS_ROLLOVER_START 4294951295
+#endif
 
 //#define DEBUG_2833
 //#define RTP_DEBUG_WRITE_DELTA
