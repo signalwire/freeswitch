@@ -1552,6 +1552,7 @@ AC_TRY_RUN([
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <stdlib.h>
 main()
 {
     struct rlimit limit;
@@ -1580,6 +1581,7 @@ AC_TRY_RUN([
 #include <stdlib.h>
 #include <fcntl.h>
 #include <semaphore.h>
+#include <stdlib.h>                                                                                                                                            
 main()
 {
     sem_t *psem;
@@ -1634,6 +1636,7 @@ if test "$threads" = "1"; then
       AC_TRY_RUN([
 #include <sys/types.h>
 #include <pthread.h>
+#include <stdlib.h>
         int main()
         {
             pthread_mutex_t mutex;
