@@ -2309,6 +2309,13 @@ static void switch_load_core_config(const char *file)
 						switch_core_set_variable("spawn_instead_of_system", "false");
 					}
 #endif
+				} else if (!strcasecmp(var, "exclude-error-log-from-xml-cdr") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_core_set_variable("exclude_error_log_from_xml_cdr", "true");
+					} else {
+						switch_core_set_variable("exclude_error_log_from_xml_cdr", "false");
+					}
 				} else if (!strcasecmp(var, "min-idle-cpu") && !zstr(val)) {
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {

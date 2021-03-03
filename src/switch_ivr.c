@@ -2690,6 +2690,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 	int loff = 0;
 	switch_rtp_stats_t *stats = switch_core_media_get_stats(session, type, NULL);
 	char var_val[35] = "";
+	switch_bool_t exclude_error_log_from_xml_cdr = switch_true(switch_core_get_variable("exclude_error_log_from_xml_cdr"));
 
 	if (!stats) return off;
 
@@ -2727,7 +2728,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 	add_stat_double(x_in, stats->inbound.mos, "mos");
 
 
-	if (stats->inbound.error_log) {
+	if (stats->inbound.error_log && !exclude_error_log_from_xml_cdr) {
 		switch_xml_t x_err_log, x_err;
 		switch_error_period_t *ep;
 		int eoff = 0;
