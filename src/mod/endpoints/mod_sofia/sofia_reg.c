@@ -355,6 +355,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		reg_state_t ostate = gateway_ptr->state;
 		char *user_via = NULL;
 		char *register_host = NULL;
+		char *custom_headers = NULL;
 
 		if (!now) {
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
@@ -448,6 +449,10 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			}
 
+			if (gateway_ptr->ib_vars) {
+				custom_headers = sofia_glue_get_extra_headers_from_event(gateway_ptr->ib_vars, SOFIA_SIP_REGISTER_HEADER_PREFIX);
+			}
+
 			switch_safe_free(register_host);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registering %s\n", gateway_ptr->name);
@@ -457,6 +462,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							 NUTAG_URL(gateway_ptr->register_url),
 							 TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 							 TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+							 TAG_IF(custom_headers, SIPTAG_HEADER_STR(custom_headers)),
 							 SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_to : gateway_ptr->register_from),
 							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 							 SIPTAG_FROM_STR(gateway_ptr->register_from),
@@ -470,6 +476,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							   NUTAG_URL(gateway_ptr->register_url),
 							   TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 							   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+							   TAG_IF(custom_headers, SIPTAG_HEADER_STR(custom_headers)),
 							   SIPTAG_FROM_STR(gateway_ptr->register_from),
 							   SIPTAG_TO_STR(gateway_ptr->distinct_to ? gateway_ptr->register_to : gateway_ptr->register_from),
 							   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
@@ -478,6 +485,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			gateway_ptr->reg_timeout = now + gateway_ptr->reg_timeout_seconds;
 			gateway_ptr->state = REG_STATE_TRYING;
+			switch_safe_free(custom_headers);
 			switch_safe_free(user_via);
 			user_via = NULL;
 			break;
