@@ -122,6 +122,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX "sip_ph_"
 #define SOFIA_SIP_PROGRESS_HEADER_PREFIX_T "~sip_ph_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
+#define SOFIA_SIP_REGISTER_HEADER_PREFIX "sip_reg_h_"
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
 #define SOFIA_REFER_TO_VARIABLE "sip_refer_to"
