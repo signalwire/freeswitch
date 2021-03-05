@@ -710,7 +710,7 @@ static void write_event(const char *event_channel, const char *super_channel, js
 static void jsock_send_event(cJSON *event)
 {
 
-	const char *event_channel, *session_uuid = NULL;
+	const char *event_channel, *session_uuid = NULL, *direct_id = NULL;
 	jsock_t *use_jsock = NULL;
 	switch_core_session_t *session = NULL;
 
@@ -719,17 +719,27 @@ static void jsock_send_event(cJSON *event)
 		return;
 	}
 
-
-	if ((session = switch_core_session_locate(event_channel))) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		const char *jsock_uuid_str = switch_channel_get_variable(channel, "jsock_uuid_str");
-		if (jsock_uuid_str) {
-			use_jsock = get_jsock(jsock_uuid_str);
-		}
-		switch_core_session_rwunlock(session);
+	if (!(direct_id = cJSON_GetObjectCstr(event, "eventChannelSessid"))) {
+		direct_id = event_channel;
 	}
 
-	if (use_jsock || (use_jsock = get_jsock(event_channel))) { /* implicit subscription to channel identical to the connection uuid or session uuid */
+	if ((session_uuid = cJSON_GetObjectCstr(event, "sessid"))) {
+		if (!(use_jsock = get_jsock(session_uuid))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Socket %s not connected\n", session_uuid);
+			return;
+		}
+	} else {
+		if ((session = switch_core_session_locate(direct_id))) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *jsock_uuid_str = switch_channel_get_variable(channel, "jsock_uuid_str");
+			if (jsock_uuid_str) {
+				use_jsock = get_jsock(jsock_uuid_str);
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	if (use_jsock || (use_jsock = get_jsock(direct_id))) { /* implicit subscription to channel identical to the connection uuid or session uuid */
 		cJSON *msg = NULL, *params;
 		params = cJSON_Duplicate(event, 1);
 		msg = jrpc_new_req("verto.event", NULL, &params);
@@ -737,14 +747,6 @@ static void jsock_send_event(cJSON *event)
 		switch_thread_rwlock_unlock(use_jsock->rwlock);
 		use_jsock = NULL;
 		return;
-	}
-
-
-	if ((session_uuid = cJSON_GetObjectCstr(event, "sessid"))) {
-		if (!(use_jsock = get_jsock(session_uuid))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Socket %s not connected\n", session_uuid);
-			return;
-		}
 	}
 
 	switch_thread_rwlock_rdlock(verto_globals.event_channel_rwlock);
@@ -4383,6 +4385,7 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 
 
 	cJSON_AddItemToObject(params, "userid", cJSON_CreateString(jsock->uid));
+	cJSON_AddItemToObject(params, "sessid", cJSON_CreateString(jsock->uuid_str));
 
 	display = switch_event_get_header(jsock->params, "caller-id-name");
 	if (display) {
