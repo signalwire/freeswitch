@@ -91,10 +91,12 @@ static struct {
 	int debug;
 } globals;
 
-const int switch_amrwb_frame_sizes[] = {17, 23, 32, 36, 40, 46, 50, 58, 60, 5};
+const int switch_amrwb_frame_sizes[] = {17, 23, 32, 36, 40, 46, 50, 58, 60, 5, 0, 0, 0, 0, 1, 1};
 
 #define SWITCH_AMRWB_OUT_MAX_SIZE 61
 #define SWITCH_AMRWB_MODES 10 /* Silence Indicator (SID) included */
+
+#define invalid_frame_type (index > SWITCH_AMRWB_MODES && index != 0xe && index != 0xf) /* include SPEECH_LOST and NO_DATA*/
 
 static switch_bool_t switch_amrwb_unpack_oa(unsigned char *buf, uint8_t *tmp, int encoded_data_len)
 {
@@ -107,7 +109,7 @@ static switch_bool_t switch_amrwb_unpack_oa(unsigned char *buf, uint8_t *tmp, in
 	index = ((tocs[0]>>3) & 0xf);
 	buf++; /* point to voice payload */
 
-	if (index > 10) {
+	if (invalid_frame_type) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid TOC: 0x%x", index);
 		return SWITCH_FALSE;
 	}
@@ -144,7 +146,7 @@ static switch_bool_t switch_amrwb_info(switch_codec_t *codec, unsigned char *enc
 		encoded_buf++; /* CMR skip */
 		tocs = encoded_buf;
 		index = (tocs[0] >> 3) & 0x0f;
-		if (index > SWITCH_AMRWB_MODES) {
+		if (invalid_frame_type) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid TOC 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
@@ -163,7 +165,7 @@ static switch_bool_t switch_amrwb_info(switch_codec_t *codec, unsigned char *enc
 		ft = shift_tocs[0] >> 3;
 		ft &= ~(1 << 5); /* Frame Type */
 		index = (shift_tocs[0] >> 3) & 0x0f;
-		if (index > SWITCH_AMRWB_MODES) {
+		if (invalid_frame_type) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_ERROR, "AMRWB decoder (BE): Invalid TOC 0x%x\n", index);
 			return SWITCH_FALSE;
 		}
