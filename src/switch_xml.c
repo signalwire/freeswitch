@@ -2341,7 +2341,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	switch_mutex_unlock(XML_LOCK);
 
 
-	if (root) {
+	if (root && reload) {
 		if (switch_event_create(&event, SWITCH_EVENT_RELOADXML) == SWITCH_STATUS_SUCCESS) {
 			if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
 				switch_event_destroy(&event);
