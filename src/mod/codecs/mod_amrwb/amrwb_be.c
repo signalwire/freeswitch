@@ -109,7 +109,7 @@ extern switch_bool_t switch_amrwb_unpack_be(unsigned char *encoded_buf, uint8_t 
 	switch_amr_array_lshift(2, shift_buf, encoded_len - 1);
 	/* get frame size */
 	index = ((shift_tocs[0] >> 3) & 0x0f);
-	if (index > 10) {
+	if (index > 10 && index != 0xe && index != 0xf) {
 		return SWITCH_FALSE;
 	}
 	framesz = switch_amrwb_frame_sizes[index];
