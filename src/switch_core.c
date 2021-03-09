@@ -1994,7 +1994,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("core_uuid", runtime.uuid_str);
 
 	switch_console_init(runtime.memory_pool);
-	switch_event_init(runtime.memory_pool);
 	switch_channel_global_init(runtime.memory_pool);
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
@@ -2004,6 +2003,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 			return SWITCH_STATUS_MEMERR;
 		}
 	}
+
+	switch_event_init(runtime.memory_pool);
 
 	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
 		switch_nat_init(runtime.memory_pool, switch_test_flag((&runtime), SCF_USE_NAT_MAPPING));
