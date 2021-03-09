@@ -43,6 +43,7 @@
 #define MAX_FEC_SPAN                4
 #define DEFAULT_FEC_ENTRIES         3
 #define DEFAULT_FEC_SPAN            3
+#define T30_IDENT_B64_MAX_KEY       32
 
 /*****************************************************************************
 	OUR DEFINES AND STRUCTS
@@ -310,6 +311,9 @@ static int phase_b_handler(void *user_data, int result)
 	pvt_t *pvt;
 	switch_event_t *event;
 
+	unsigned char local_b64_key[T30_IDENT_B64_MAX_KEY] = "";
+	unsigned char far_b64_key[T30_IDENT_B64_MAX_KEY] = "";
+
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
 
@@ -323,6 +327,9 @@ static int phase_b_handler(void *user_data, int result)
 
 	local_ident = switch_str_nil(t30_get_tx_ident(pvt->t30));
 	far_ident = switch_str_nil(t30_get_rx_ident(pvt->t30));
+
+	switch_b64_encode((unsigned char*)local_ident, strlen(local_ident), local_b64_key, sizeof(local_b64_key));
+	switch_b64_encode((unsigned char*)far_ident, strlen(far_ident), far_b64_key, sizeof(far_b64_key));
 
 	fax_transfer_rate = switch_core_session_sprintf(session, "%i", t30_stats.bit_rate);
 	if (fax_transfer_rate) {
@@ -338,8 +345,8 @@ static int phase_b_handler(void *user_data, int result)
 
 	switch_channel_set_variable(channel, "fax_ecm_used", (t30_stats.error_correcting_mode) ? "on" : "off");
 	switch_channel_set_variable(channel, "fax_t38_status", get_t38_status(pvt->t38_mode));
-	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
-	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
+	switch_channel_set_variable(channel, "fax_local_station_id", (const char*)local_b64_key);
+	switch_channel_set_variable(channel, "fax_remote_station_id", (const char*)far_b64_key);
 	switch_channel_set_variable(channel, "fax_remote_country", switch_str_nil(t30_get_rx_country(pvt->t30)));
 	switch_channel_set_variable(channel, "fax_remote_vendor", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
 	switch_channel_set_variable(channel, "fax_remote_model", switch_str_nil(t30_get_rx_model(pvt->t30)));
@@ -531,6 +538,9 @@ static void phase_e_handler(void *user_data, int result)
 	const char *var;
 	char *expanded;
 
+	unsigned char local_b64_key[T30_IDENT_B64_MAX_KEY] = "";
+	unsigned char far_b64_key[T30_IDENT_B64_MAX_KEY] = "";
+
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
 
@@ -543,6 +553,9 @@ static void phase_e_handler(void *user_data, int result)
 	t30_get_transfer_statistics(pvt->t30, &t);
 	local_ident = switch_str_nil(t30_get_tx_ident(pvt->t30));
 	far_ident = switch_str_nil(t30_get_rx_ident(pvt->t30));
+
+	switch_b64_encode((unsigned char*)local_ident, strlen(local_ident), local_b64_key, sizeof(local_b64_key));
+	switch_b64_encode((unsigned char*)far_ident, strlen(far_ident), far_b64_key, sizeof(far_b64_key));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
@@ -597,8 +610,8 @@ static void phase_e_handler(void *user_data, int result)
 
 	switch_channel_set_variable(channel, "fax_ecm_used", (t.error_correcting_mode) ? "on" : "off");
 	switch_channel_set_variable(channel, "fax_t38_status", get_t38_status(pvt->t38_mode));
-	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
-	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
+	switch_channel_set_variable(channel, "fax_local_station_id", (const char*)local_b64_key);
+	switch_channel_set_variable(channel, "fax_remote_station_id", (const char*)far_b64_key);
 
 	fax_document_transferred_pages = switch_core_session_sprintf(session, "%i", pvt->app_mode == FUNCTION_TX ? t.pages_tx : t.pages_rx);
 	if (fax_document_transferred_pages) {
