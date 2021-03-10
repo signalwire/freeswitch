@@ -42,8 +42,7 @@ struct http_data {
 };
 
 #if defined(HAVE_OPENSSL)
-char *encoded_token(const char *token_uri, const char *client_email, const char *private_key_id, int *token_length) {
-	time_t now = time(NULL);
+char *encoded_token(const char *token_uri, const char *client_email, const char *private_key_id, int *token_length, time_t now) {
 	time_t then = now  + 3600;
 	int tlength = 1 + snprintf(NULL, 0, "{\"typ\":\"JWT\",\"alg\":\"RS256\",\"kid\":\"%s\"}", private_key_id);
 	int payload_length = 1 + snprintf(NULL, 0, "{\"iat\":\"%ld\",\"exp\":\"%ld\",\"iss\":\"%s\",\"aud\":\"%s\",\"scope\":\"https://www.googleapis.com/auth/devstorage.full_control https://www.googleapis.com/auth/devstorage.read_only https://www.googleapis.com/auth/devstorage.read_write\"}", now, then, client_email,token_uri);
@@ -93,7 +92,8 @@ switch_status_t gcs_refresh_authorization (http_profile_t *profile)
 	char content[GCS_SIGNATURE_LENGTH_MAX];
 	char *signature_url_encoded = NULL;
 	time_t exp;
-	token = encoded_token(profile->region, profile->gcs_email, profile->aws_s3_access_key_id, &token_length);
+	time_t now = time(NULL);
+	token = encoded_token(profile->region, profile->gcs_email, profile->aws_s3_access_key_id, &token_length, now);
 	encoded = malloc(sizeof(char) * 343);
 	signtoken(token, token_length, profile->secret_access_key, encoded);
 	assertion = malloc(sizeof(char) * (1 + token_length + 343));
@@ -102,14 +102,11 @@ switch_status_t gcs_refresh_authorization (http_profile_t *profile)
 	signature_url_encoded = switch_string_replace(assertion, "+", "%2B");
 	sprintf(content,"%s%s", "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=", signature_url_encoded);
 	auth = gcs_auth_request(content, profile->region);
-	if (profile->gcs_credentials != NULL) {
-		free(profile->gcs_credentials);
-	}
 	profile->gcs_credentials = auth;
-	exp = time(NULL) + 3540;
+	exp = now + 3540;
 	profile->expires = exp;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Credentials Expries Unix Time: %ld", exp);
-	free(assertion);
+	switch_safe_free(assertion);
 	return SWITCH_STATUS_SUCCESS;
 }
 #endif
@@ -190,19 +187,26 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 			return status;
 		}
 		json = cJSON_Parse(contents);
-
-		jsonstr = cJSON_GetObjectItem(json,"private_key_id")->valuestring;
-		profile->aws_s3_access_key_id = malloc(sizeof(char) * (1+ strlen(jsonstr)));
-		strcpy(profile->aws_s3_access_key_id, jsonstr);
-		jsonstr = cJSON_GetObjectItem(json,"private_key")->valuestring;
-		profile->secret_access_key = malloc(sizeof(char) * (1+ strlen(jsonstr)));
-		strcpy(profile->secret_access_key, jsonstr);
-		jsonstr = cJSON_GetObjectItem(json,"client_email")->valuestring;
-		profile->gcs_email = malloc(sizeof(char) * (1+ strlen(jsonstr)));
-		strcpy(profile->gcs_email, jsonstr);
-		jsonstr = cJSON_GetObjectItem(json,"token_uri")->valuestring;
-		profile->region = malloc(sizeof(char) * (1+ strlen(jsonstr)));
-		strcpy(profile->region, jsonstr);
+		if (cJSON_GetObjectItem(json,"private_key_id") != NULL) {
+			jsonstr = cJSON_GetObjectItem(json,"private_key_id")->valuestring;
+			profile->aws_s3_access_key_id = malloc(sizeof(char) * (1+ strlen(jsonstr)));
+			strcpy(profile->aws_s3_access_key_id, jsonstr);
+		}
+		if (cJSON_GetObjectItem(json,"private_key") != NULL) {
+			jsonstr = cJSON_GetObjectItem(json,"private_key")->valuestring;
+			profile->secret_access_key = malloc(sizeof(char) * (1+ strlen(jsonstr)));
+			strcpy(profile->secret_access_key, jsonstr);
+		}
+		if (cJSON_GetObjectItem(json,"client_email") != NULL) {
+			jsonstr = cJSON_GetObjectItem(json,"client_email")->valuestring;
+			profile->gcs_email = malloc(sizeof(char) * (1+ strlen(jsonstr)));
+			strcpy(profile->gcs_email, jsonstr);
+		}
+		if (cJSON_GetObjectItem(json,"token_uri") != NULL) {
+			jsonstr = cJSON_GetObjectItem(json,"token_uri")->valuestring;
+			profile->region = malloc(sizeof(char) * (1+ strlen(jsonstr)));
+			strcpy(profile->region, jsonstr);
+		}
 		cJSON_Delete(json);
 		free(contents);
 	} else {
@@ -297,21 +301,24 @@ char *gcs_auth_request(char *content, char *url) {
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&http_data);
 
 	res = switch_curl_easy_perform(curl_handle);
-	curl_easy_cleanup(curl_handle);
+	switch_curl_easy_cleanup(curl_handle);
 
-	if (http_data.stream.data && !zstr((char *) http_data.stream.data) && strcmp(" ", http_data.stream.data)) {
-		cJSON *json = {0};
-		char *jsonstr;
-		json = cJSON_Parse(http_data.stream.data);
-		jsonstr = cJSON_GetObjectItem(json,"access_token")->valuestring;
-		response = malloc(sizeof(char) * (1+strlen(jsonstr)));
-		strcpy(response, jsonstr);
-		cJSON_Delete(json);
-	}
-	
 	if(res != CURLE_OK)
 	  fprintf(stderr, "curl_easy_perform() failed: %s\n",
 		  switch_curl_easy_strerror(res));
+
+	if (http_data.stream.data && !zstr((char *) http_data.stream.data) && strcmp(" ", http_data.stream.data)) {
+		cJSON *json = {0};
+		json = cJSON_Parse(http_data.stream.data);
+		
+		if (cJSON_GetObjectItem(json,"access_token") != NULL) {
+			char *jsonstr;
+			jsonstr = cJSON_GetObjectItem(json,"access_token")->valuestring;
+			response = malloc(sizeof(char) * (1+strlen(jsonstr)));
+			strcpy(response, jsonstr);
+		}
+		cJSON_Delete(json);
+	}
 	return response;
 }
 #endif
