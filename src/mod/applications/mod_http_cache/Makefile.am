@@ -11,12 +11,16 @@ mod_http_cache_la_CPPFLAGS = $(CURL_CFLAGS) $(AM_CPPFLAGS)
 mod_http_cache_la_LIBADD   = $(switch_builddir)/libfreeswitch.la libhttpcachemod.la
 mod_http_cache_la_LDFLAGS  = $(CURL_LIBS) -avoid-version -module -no-undefined -shared
 
-noinst_PROGRAMS = test/test_aws
+noinst_PROGRAMS = test/test_aws test/test_gcs
 
 test_test_aws_SOURCES = test/test_aws.c
 test_test_aws_CFLAGS = $(AM_CFLAGS) -I. -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
 test_test_aws_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 test_test_aws_LDADD = libhttpcachemod.la
 
-TESTS = $(noinst_PROGRAMS)
+test_test_gcs_SOURCES = test/test_gcs.c
+test_test_gcs_CFLAGS = $(AM_CFLAGS) -I. -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
+test_test_gcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) -lcurl
+test_test_gcs_LDADD = libhttpcachemod.la
 
+TESTS = $(noinst_PROGRAMS)
