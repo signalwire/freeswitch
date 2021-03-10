@@ -290,11 +290,30 @@ SWITCH_DECLARE(int) switch_frame_buffer_size(switch_frame_buffer_t *fb)
 	return switch_queue_size(fb->queue);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_flush(switch_frame_buffer_t *fb)
+{
+	void *pop;
+	switch_frame_t *frame;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (fb) {
+		while ((status = switch_frame_buffer_trypop(fb, &pop)) == SWITCH_STATUS_SUCCESS) {
+			if (pop) {
+				frame = (switch_frame_t *) pop;
+				switch_frame_buffer_free(fb, &frame);
+			}
+		}
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP)
 {
 	switch_frame_buffer_t *fb = *fbP;
 	switch_memory_pool_t *pool;
 	*fbP = NULL;
+	switch_frame_buffer_flush(fb);
 	pool = fb->pool;
 	switch_core_destroy_memory_pool(&pool);
 
