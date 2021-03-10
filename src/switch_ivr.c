@@ -3861,7 +3861,7 @@ static const char *get_prefixed_str(char *buffer, size_t buffer_size, const char
 
 	if (str_len + prefix_size + 1 > buffer_size) {
 		memcpy(buffer + prefix_size, str, buffer_size - prefix_size - 1);
-		buffer[buffer_size - prefix_size - 1] = '\0';
+		buffer[buffer_size - 1] = '\0';
 	} else {
 		memcpy(buffer + prefix_size, str, str_len + 1);
 	}
