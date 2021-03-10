@@ -14721,7 +14721,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 			status = switch_core_session_write_encoded_video_frame(session, frame, flags, stream_id);
 		}
 
-	} while(status == SWITCH_STATUS_SUCCESS && encode_status == SWITCH_STATUS_MORE_DATA);
+	} while(encode_status == SWITCH_STATUS_MORE_DATA);
 
  done:
 
