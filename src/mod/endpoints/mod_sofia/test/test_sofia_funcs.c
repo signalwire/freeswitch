@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -33,9 +33,9 @@
 #include <test/switch_test.h>
 #include "../mod_sofia.c"
 
-FST_MINCORE_BEGIN("./conf")
+FST_CORE_EX_BEGIN("./conf", SCF_VG | SCF_USE_SQL)
 
-FST_SUITE_BEGIN(switch_hash)
+FST_MODULE_BEGIN(mod_sofia, sofia)
 
 FST_SETUP_BEGIN()
 {
@@ -94,9 +94,27 @@ FST_TEST_BEGIN(test_protect_url)
 }
 FST_TEST_END()
 
-FST_SUITE_END()
+FST_TEST_BEGIN(originate_test)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	switch_status_t status;
+	switch_call_cause_t cause;
+	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{ignore_early_media=true}sofia/internal/park@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	fst_requires(session);
+	fst_check(status == SWITCH_STATUS_SUCCESS);
+	channel = switch_core_session_get_channel(session);
+	fst_requires(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_core_session_rwunlock(session);
+	switch_sleep(1 * 1000 * 1000);
+}
+FST_TEST_END()
 
-FST_MINCORE_END()
+FST_MODULE_END()
+
+FST_CORE_END()
 
 
 /* For Emacs:
