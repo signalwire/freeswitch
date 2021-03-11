@@ -1024,7 +1024,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t
 	data = dup ? switch_must_strdup(s) : s;
 
 	if ((root = (switch_xml_root_t) switch_xml_parse_str(data, strlen(data)))) {
-		root->dynamic = 1;		/* Make sure we free the memory is switch_xml_free() */
+		if (dup) {
+			root->dynamic = 1;	/* Make sure we free the memory is switch_xml_free() */
+		}
 		return &root->xml;
 	} else {
 		if (dup) {
