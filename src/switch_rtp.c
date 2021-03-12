@@ -3732,6 +3732,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	const char *var;
 	int ret;
 	const char *kind = "";
+	unsigned long ssl_method_error = 0;
+	unsigned long ssl_ctx_error = 0;
+	const SSL_METHOD *ssl_method;
+	SSL_CTX *ssl_ctx;
 	BIO *bio;
 	DH *dh;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3787,14 +3791,29 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	dtls->ca = switch_core_sprintf(rtp_session->pool, "%s%sca-bundle.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-	dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLS_server_method() : DTLS_client_method());
+	ssl_method = (type & DTLS_TYPE_SERVER) ? DTLS_server_method() : DTLS_client_method();
 #else
     #ifdef HAVE_OPENSSL_DTLSv1_2_method
-	        dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? (want_DTLSv1_2 ? DTLSv1_2_server_method() : DTLSv1_server_method()) : (want_DTLSv1_2 ? DTLSv1_2_client_method() : DTLSv1_client_method()));
-    #else
-            dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLSv1_server_method() : DTLSv1_client_method());
+		ssl_method = (type & DTLS_TYPE_SERVER) ? (want_DTLSv1_2 ? DTLSv1_2_server_method() : DTLSv1_server_method()) : (want_DTLSv1_2 ? DTLSv1_2_client_method() : DTLSv1_client_method());
+	#else
+		ssl_method = (type & DTLS_TYPE_SERVER) ? DTLSv1_server_method() : DTLSv1_client_method();
     #endif // HAVE_OPENSSL_DTLSv1_2_method
 #endif
+
+	if (!ssl_method) {
+		ssl_method_error = ERR_peek_error();
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s ssl_method is NULL [%lu]\n", rtp_type(rtp_session), ssl_method_error);
+	}
+
+	dtls->ssl_ctx = ssl_ctx = SSL_CTX_new(ssl_method);
+
+	if (!ssl_ctx) {
+		ssl_ctx_error = ERR_peek_error();
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s SSL_CTX_new failed [%lu]\n", rtp_type(rtp_session), ssl_ctx_error);
+		switch_channel_hangup(switch_core_session_get_channel(rtp_session->session), SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+		switch_goto_status(SWITCH_STATUS_FALSE, done);
+	}
+
 	switch_assert(dtls->ssl_ctx);
 
 	bio = BIO_new_file(dtls->pem, "r");
