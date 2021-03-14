@@ -663,6 +663,7 @@ static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json, switch_bo
 	return status;
 }
 
+static switch_bool_t event_channel_check_auth(jsock_t *jsock, const char *event_channel);
 static void write_event(const char *event_channel, const char *super_channel, jsock_t *use_jsock, cJSON *event)
 {
 	jsock_sub_node_head_t *head;
@@ -680,13 +681,21 @@ static void write_event(const char *event_channel, const char *super_channel, js
 				if ((visibility = cJSON_GetObjectCstr(event, "contentVisibility"))) {
 					if (strcasecmp(visibility, "public") && (np->jsock->id && !strncasecmp(np->jsock->id, "guest", 5))) {
 						int perm = 0;
+						
+						perm = event_channel_check_auth(np->jsock, event_channel);
+						
+						if (!perm && super_channel) {
+							perm = event_channel_check_auth(np->jsock, super_channel);
+						}
 
-						perm = switch_event_channel_permission_verify(np->jsock->uuid_str, event_channel);
+						if (!perm) {						
+							perm = switch_event_channel_permission_verify(np->jsock->uuid_str, event_channel);
+						}
 
 						if (!perm && super_channel) {
 							perm = switch_event_channel_permission_verify(np->jsock->uuid_str, super_channel);
 						}
-						
+
 						if (!perm) {
 							continue;
 						}
