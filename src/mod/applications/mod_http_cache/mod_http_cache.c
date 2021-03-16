@@ -36,6 +36,7 @@
 #include <switch_curl.h>
 #include "aws.h"
 #include "azure.h"
+#include "prometheus_metrics.h"
 
 #include <stdlib.h>
 
@@ -753,6 +754,8 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 	}
 
 	if (!u && download) {
+		unsigned int timestamp;
+
 		/* URL is not cached, let's add it.*/
 		/* Set up URL entry and add to map to prevent simultaneous downloads */
 		cache->misses++;
@@ -768,13 +771,20 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 
 		/* download the file */
 		url_cache_unlock(cache, session);
+		timestamp = switch_time_now() / 1000;
 		if (http_get(cache, profile, u, use_mime_ext, event, session) == SWITCH_STATUS_SUCCESS) {
+			unsigned int duration = (switch_time_now() / 1000) - timestamp;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Download duration: %u\n", duration);
+			prometheus_increment_download_duration(duration);
+
 			/* Got the file, let the waiters know it is available */
 			url_cache_lock(cache, session);
 			u->status = CACHED_URL_AVAILABLE;
 			filename = switch_core_strdup(pool, u->filename);
 			cache->size += u->size;
 		} else {
+			prometheus_increment_download_fail_count();
+
 			/* Did not get the file, flag for replacement */
 			url_cache_lock(cache, session);
 			url_cache_remove_soft(cache, session, u);
@@ -2065,6 +2075,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	SWITCH_ADD_API(api, "http_remove_cache", "Remove URL from cache", http_cache_remove, HTTP_CACHE_REMOVE_SYNTAX);
 	SWITCH_ADD_API(api, "http_prefetch", "Prefetch document in a background thread.  Use http_get to get the prefetched document", http_cache_prefetch, HTTP_PREFETCH_SYNTAX);
 
+	prometheus_init(module_interface, api, pool);
+
 	memset(&gcache, 0, sizeof(url_cache_t));
 	gcache.pool = pool;
 	switch_core_hash_init(&gcache.map);
@@ -2154,6 +2166,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
 	switch_core_hash_destroy(&gcache.profiles);
 	switch_core_hash_destroy(&gcache.fqdn_profiles);
 	switch_mutex_destroy(gcache.mutex);
+	prometheus_destroy();
 	return SWITCH_STATUS_SUCCESS;
 }
 
