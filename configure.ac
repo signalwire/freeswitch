@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.6-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.5-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [6-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [5-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -699,13 +699,7 @@ AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Spe
 AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
 AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
 have_libpq=no
-save_LIBS="${LIBS}"
-save_CPPFLAGS="${CPPFLAGS}"
-LIBS="${POSTGRESQL_LDFLAGS}"
-CPPFLAGS="${POSTGRESQL_CFLAGS}"
 AC_CHECK_LIB([pq], [PQgetvalue], [have_libpq="yes"])
-LIBS="${save_LIBS}"
-CPPFLAGS="${save_CPPFLAGS}"
 AM_CONDITIONAL([HAVE_PGSQL],[test "${have_libpq}" = "yes"])
 AC_SUBST([POSTGRESQL_CFLAGS], [$POSTGRESQL_CFLAGS])
 AC_SUBST([POSTGRESQL_LDFLAGS], [$POSTGRESQL_LDFLAGS])
