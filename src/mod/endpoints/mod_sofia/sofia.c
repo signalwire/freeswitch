@@ -10126,6 +10126,28 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		}
 	}
 
+	if (session && channel && sip && sip->sip_user_agent)
+	{
+		const char* ua = switch_channel_get_variable(channel, "sip_user_agent");
+		if (ua &&
+			(switch_string_match(ua, strlen(ua) - 1, "OpenScape 4000", 13) == SWITCH_STATUS_SUCCESS ||
+				switch_string_match(ua, strlen(ua) - 1, "anynode", 6) == SWITCH_STATUS_SUCCESS)) {
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Potential update callee ID\n");
+
+			if (sip->sip_referred_by) {
+				if (sip->sip_referred_by->b_display) {
+					switch_channel_set_variable_printf(channel, "sip_reffered-by_name", "%d", sip->sip_referred_by->b_display);
+				}
+				if (sip->sip_referred_by->b_cid) {
+					switch_channel_set_variable_printf(channel, "sip_reffered-by_cid", "%d", sip->sip_referred_by->b_cid);
+				}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Update callee ID\n");
+				sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+			}
+		}
+	}
+
 	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
