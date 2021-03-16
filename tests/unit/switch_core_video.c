@@ -50,13 +50,13 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(data_url_test)
 		{
+			char *data_url = NULL;
 			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 120, 60, 1);
 			switch_image_t *argb_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, 120, 60, 1);
 			switch_rgb_color_t color = { 0 };
 			color.r = 255;
 			// color.g = 255;
 			// color.b = 255;
-			char *data_url = NULL;
 
 			switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
 			switch_img_add_text(img->planes[0], img->d_w, 10, 10, "-1234567890");

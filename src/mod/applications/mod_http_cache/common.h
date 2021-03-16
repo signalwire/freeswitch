@@ -48,7 +48,9 @@ struct http_profile {
 	switch_time_t expires;   // Expiration time in seconds for URL signature. Default is 604800 seconds. Used by AWS S3
 							 // GCS Expiration used for when the gcs_credentials expires
 	switch_size_t bytes_per_block;
-
+	int header_count;
+	char** header_names;
+	char** header_values;
 	// function to be called to add the profile specific headers to the GET/PUT requests
 	switch_curl_slist_t *(*append_headers_ptr)(struct http_profile *profile, switch_curl_slist_t *headers,
 		const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string);

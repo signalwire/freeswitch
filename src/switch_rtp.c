@@ -8877,6 +8877,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	rtp_msg_t *send_msg = NULL;
 	srtp_hdr_t local_header;
 	int r = 0;
+	switch_status_t status;
 
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
@@ -8941,8 +8942,12 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		}
 
-		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
-			return -1;
+		if ((status = switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes)) != SWITCH_STATUS_SUCCESS) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_ERROR, "bytes: %" SWITCH_SIZE_T_FMT ", status: %d", bytes, status);
+			}
+
+			return -1 * status;
 		}
 
 

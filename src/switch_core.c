@@ -1312,7 +1312,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	   Setting the stack size on FreeBSD results in an instant crash.
 
 	   If anyone knows how to fix this,
-	   feel free to submit a patch to https://freeswitch.org/jira
+	   feel free to submit a patch to https://github.com/signalwire/freeswitch
 	 */
 
 #ifndef __FreeBSD__
@@ -1485,6 +1485,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
@@ -1504,6 +1505,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "::/0", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 

@@ -2950,7 +2950,7 @@ switch_status_t conference_api_sub_saymember(conference_obj_t *conference, switc
 		goto done;
 	}
 
-	stream->write_function(stream, "-ERR (saymember) OK\n");
+	stream->write_function(stream, "+OK (saymember) OK\n");
 	if (test_eflag(member->conference, EFLAG_SPEAK_TEXT_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);

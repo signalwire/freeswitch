@@ -40,7 +40,7 @@
  *
  */
 #include "mod_sofia.h"
-
+#include <switch_ssl.h>
 
 extern su_log_t tport_log[];
 extern su_log_t iptsec_log[];
@@ -3149,6 +3149,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_status_t st;
 	char qname [128] = "";
 
+#if defined(HAVE_OPENSSL)
+	char *key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	char *cert  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	char *chain  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	SSL_CTX *ssl_ctx;
+	const SSL_METHOD *ssl_method = SSLv23_server_method();
+#endif
+
+	switch_bool_t ssl_error = SWITCH_FALSE;
+
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -3165,7 +3175,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto end;
 	}
 
-	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "precondition, 100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
+	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if ( (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) && switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -3184,6 +3194,42 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if ( (profile->tls_verify_policy & TPTLS_VERIFY_SUBJECTS_IN)  && profile->tls_verify_in_subjects_str && ! profile->tls_verify_in_subjects) {
 		profile->tls_verify_in_subjects = su_strlst_dup_split((su_home_t *)profile->nua, profile->tls_verify_in_subjects_str, "|");
 	}
+
+#if defined(HAVE_OPENSSL)
+	ssl_ctx = SSL_CTX_new((SSL_METHOD *)ssl_method);
+	switch_assert(ssl_ctx);
+
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_TLSv1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_COMPRESSION);
+
+	if (!SSL_CTX_use_certificate_chain_file(ssl_ctx, chain)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_use_certificate_file(ssl_ctx, cert, SSL_FILETYPE_PEM)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_use_PrivateKey_file(ssl_ctx, key, SSL_FILETYPE_PEM)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_check_private_key(ssl_ctx)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (ssl_error) {
+		attempts = profile->bind_attempts;
+	}
+
+	SSL_CTX_free(ssl_ctx);
+#endif
 
 	do {
 		profile->nua = nua_create(profile->s_root,	/* Event loop */
@@ -3256,7 +3302,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 										 TPTAG_REUSE(0)),
 								  TAG_END());	/* Last tag should always finish the sequence */
 
-		if (!profile->nua) {
+		if (!ssl_error && !profile->nua) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s) ATTEMPT %d (RETRY IN %d SEC)\n",
 							  profile->name, profile->bindurl, attempts + 1, profile->bind_attempt_interval);
 			if (attempts < profile->bind_attempts) {
@@ -3267,9 +3313,15 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	} while (!profile->nua && attempts++ < profile->bind_attempts);
 
 	if (!profile->nua) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
-						  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
-						  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
+		if (!ssl_error) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
+							  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
+							  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Error Creating SIP UA for profile: %s (%s). Bad WSS.PEM certificate.\n", profile->name, profile->bindurl);
+		}
+
 		sofia_profile_start_failure(profile, profile->name);
 		sofia_glue_del_profile(profile);
 		goto end;
@@ -10278,8 +10330,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s receiving invite from %s:%d version: %s\n",
-					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, switch_version_full_human());
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "%s receiving invite from %s:%d version: %s call-id: %s\n",
+					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, switch_version_full_human(), sip->sip_call_id ? switch_str_nil(sip->sip_call_id->i_id) : "");
 
 
 	if (sip->sip_via && sip->sip_via->v_protocol && switch_stristr("sip/2.0/ws", sip->sip_via->v_protocol)) {
@@ -11313,6 +11365,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if (msg_params_find(privacy->priv_values, "id")) {
 				switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 			}
+		}
+
+		if (sip->sip_identity && sip->sip_identity->id_value) {
+			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
 		}
 
 		/* Loop thru unknown Headers Here so we can do something with them */

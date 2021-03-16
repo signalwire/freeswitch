@@ -110,7 +110,7 @@ package com.adobe.air.filesystem
 				timer.addEventListener(TimerEvent.TIMER, onTimerEvent,false,0, true);
 			}
 			
-			//we reinitialize the hash everytime we start watching
+			//we reinitialize the hash every time we start watching
 			volumes = new Dictionary();
 			
 			var v:Array = FileUtil.getRootDirectories();

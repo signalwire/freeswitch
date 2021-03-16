@@ -20,3 +20,13 @@ else
 mod_amrwb_la_CFLAGS += -DAMRWB_PASSTHROUGH
 endif
 
+if HAVE_AMRWB
+noinst_PROGRAMS = test/test_amrwb
+
+test_test_amrwb_SOURCES = test/test_amrwb.c
+test_test_amrwb_CFLAGS = $(AM_CFLAGS) -I./ -I../ -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\" $(AMRWB_CFLAGS)
+test_test_amrwb_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(AMRWB_LIBS)
+
+TESTS = $(noinst_PROGRAMS)
+endif
+
