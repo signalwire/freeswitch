@@ -1,20 +1,15 @@
-#include <strings.h>
 #include <switch.h>
 #include <test/switch_test.h>
-
-static switch_memory_pool_t *pool = NULL;
 
 static switch_status_t test_detect_long_tone_in_file(const char *filepath, int rate, int freq, int ptime) {
 	teletone_multi_tone_t mt;
 	teletone_tone_map_t map;
 	int16_t data[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-	size_t len = (rate * ptime / 1000) /*packet len in samples */ * 8; /*length of chunk that must contain tone*/
-	size_t fin = 0; 
+	switch_size_t len = (rate * ptime / 1000) /*packet len in samples */ * 8; /*length of chunk that must contain tone*/
+	switch_size_t fin = 0;
 	switch_status_t status;
 	switch_file_handle_t fh = { 0 };
 	uint8_t fail = 0, gaps = 0, audio = 0;
-	uint32_t pos = 0;
-	size_t full_len = 0;
 
 	status = switch_core_file_open(&fh, filepath, 1, rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL);
 	if (status != SWITCH_STATUS_SUCCESS) {
@@ -34,7 +29,7 @@ static switch_status_t test_detect_long_tone_in_file(const char *filepath, int r
 		/*skip silence at the beginning of the file, 1 second max. */
 		if (!teletone_multi_tone_detect(&mt, data, len)) {
 			if ((fin > rate && !audio) || gaps > 30) { 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many gaps in audio or no tone detected 1st second. [%u][%d]\n", fin, gaps);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many gaps in audio or no tone detected 1st second. [%" SWITCH_SIZE_T_FMT "][%d]\n", fin, gaps);
 				fail = 1;
 				break;
 			}
@@ -85,9 +80,9 @@ FST_SUITE_BEGIN(switch_eavesdrop)
 		switch_call_cause_t cause;
 		switch_stream_handle_t stream = { 0 };
 		char eavesdrop_command[256] = { 0 };
-		char rec_path[256];
+		char rec_path[1024];
 		char rec_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-		char eaves_dialstr[256] = { 0 };
+		char eaves_dialstr[512] = { 0 };
 
 		switch_uuid_str(rec_uuid, sizeof(rec_uuid));
 
@@ -160,9 +155,9 @@ FST_SUITE_BEGIN(switch_eavesdrop)
 		switch_call_cause_t cause;
 		switch_stream_handle_t stream = { 0 };
 		char eavesdrop_command[256] = { 0 };
-		char rec_path[256];
+		char rec_path[1024];
 		char rec_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-		char eaves_dialstr[256] = { 0 };
+		char eaves_dialstr[512] = { 0 };
 
 		switch_uuid_str(rec_uuid, sizeof(rec_uuid));
 
@@ -235,9 +230,9 @@ FST_SUITE_BEGIN(switch_eavesdrop)
 		switch_call_cause_t cause;
 		switch_stream_handle_t stream = { 0 };
 		char eavesdrop_command[256] = { 0 };
-		char rec_path[256];
+		char rec_path[1024];
 		char rec_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-		char eaves_dialstr[256] = { 0 };
+		char eaves_dialstr[512] = { 0 };
 
 		switch_uuid_str(rec_uuid, sizeof(rec_uuid));
 
@@ -310,9 +305,9 @@ FST_SUITE_BEGIN(switch_eavesdrop)
 		switch_call_cause_t cause;
 		switch_stream_handle_t stream = { 0 };
 		char eavesdrop_command[256] = { 0 };
-		char rec_path[256];
+		char rec_path[1024];
 		char rec_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
-		char eaves_dialstr[256] = { 0 };
+		char eaves_dialstr[512] = { 0 };
 
 		switch_uuid_str(rec_uuid, sizeof(rec_uuid));
 
