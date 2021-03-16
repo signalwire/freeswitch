@@ -1151,7 +1151,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	http_get_data_t get_data = {0};
 	long httpRes = 0;
 	int start_time_ms = switch_time_now() / 1000;
-	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
+	switch_CURLcode curl_status = CURLE_OK;
 	char errbuf[CURL_ERROR_SIZE] = { 0 };
 
 	/* set up HTTP GET */
@@ -1382,15 +1382,18 @@ SWITCH_STANDARD_API(http_cache_get)
 	} else {
 		if (event) {
 			const char * curl_status = switch_event_get_header(event, "http_cache_curl_status");
+			const char * file_status = switch_event_get_header(event, "http_cache_file_create_result");
 			if (!zstr(curl_status) && strcmp(curl_status, "0")) {
-				stream->write_function(stream, "-ERR CURL:%s\n", switch_event_get_header(event, "http_cache_curl_error"));
+				stream->write_function(stream, "-ERR CURL(%s:%s):%s\n"
+					, curl_status
+					, switch_event_get_header(event, "http_cache_response_code")
+					, switch_event_get_header(event, "http_cache_curl_error"));
+			} else if (!zstr(file_status) && strcmp(file_status, "0")) {
+				stream->write_function(stream, "-ERR FILE(%s):%s\n"
+					, file_status
+					, strerror(atoi(file_status)));
 			} else {
-				const char * file_status = switch_event_get_header(event, "http_cache_file_create_result");
-				if (!zstr(file_status) && strcmp(file_status, "0")) {
-					stream->write_function(stream, "-ERR FILE:%s\n", strerror(atoi(file_status)));
-				} else {
-					stream->write_function(stream, "-ERR UNKNOWN\n");
-				}
+				stream->write_function(stream, "-ERR UNKNOWN\n");
 			}
 		} else {
 			stream->write_function(stream, "-ERR UNKNOWN\n");
