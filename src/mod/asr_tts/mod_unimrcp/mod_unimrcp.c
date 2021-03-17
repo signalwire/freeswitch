@@ -4152,7 +4152,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 		max_connection_count = 100;
 	}
 	if (!zstr(globals.unimrcp_offer_new_connection)) {
-		offer_new_connection = strcasecmp("true", globals.unimrcp_offer_new_connection);
+		offer_new_connection = !strcasecmp("1", globals.unimrcp_offer_new_connection);
 	}
 	connection_agent = mrcp_client_connection_agent_create("MRCPv2ConnectionAgent", max_connection_count, offer_new_connection, pool);
 	if (!connection_agent) {
