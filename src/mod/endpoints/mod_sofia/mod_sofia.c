@@ -3666,6 +3666,8 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 					gateway_ptr->state = REG_STATE_UNREGED;
 					stream->write_function(stream, "+OK\n");
 					sofia_reg_release_gateway(gateway_ptr);
+				} else {
+					stream->write_function(stream, "-ERR NOREG gateway [%s] can't be registered!\n", gname);
 				}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
@@ -3697,6 +3699,8 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 				gateway_ptr->state = REG_STATE_UNREGISTER;
 				stream->write_function(stream, "+OK\n");
 				sofia_reg_release_gateway(gateway_ptr);
+			} else {
+				stream->write_function(stream, "-ERR NOREG gateway [%s] can't be unregistered!\n", gname);
 			}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");

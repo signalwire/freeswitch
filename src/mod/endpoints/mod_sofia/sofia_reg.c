@@ -323,7 +323,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				free(pkey);
 			}
 
-			if (gateway_ptr->state == REG_STATE_NOREG) {
+			if (gateway_ptr->state == REG_STATE_NOREG || gateway_ptr->state == REG_STATE_DOWN) {
 
 				if (last) {
 					last->next = gateway_ptr->next;
@@ -356,7 +356,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		char *user_via = NULL;
 		char *register_host = NULL;
 
-		if (!now) {
+		if (!now && ostate != REG_STATE_NOREG) {
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
 			gateway_ptr->expires_str = "0";
 		}
