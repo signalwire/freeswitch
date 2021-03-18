@@ -37,7 +37,6 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
-%define build_mod_shout 1
 %define build_mod_opusfile 0
 %define build_mod_v8 0
 
@@ -47,7 +46,6 @@
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
-%{?with_mod_shout:%define build_mod_shout 1 }
 %{?with_mod_opusfile:%define build_mod_opusfile 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
 
@@ -176,6 +174,9 @@ Requires: libsndfile
 PreReq:       %insserv_prereq %fillup_prereq
 %endif
 
+%if 0%{?fedora}
+BuildRequires: gumbo-parser-devel
+%endif
 
 ######################################################################################################################
 #
@@ -1078,7 +1079,6 @@ Mod shell stream is a FreeSWITCH module to allow you to stream audio from an
 arbitrary shell command. You could use it to read audio from a database, from 
 a soundcard, etc. 
 
-%if %{build_mod_shout}
 %package format-mod-shout
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1093,7 +1093,6 @@ BuildRequires:	lame-devel
 %description format-mod-shout
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
-%endif
 
 %if %{build_mod_opusfile}
 %package format-mod-opusfile
@@ -1503,10 +1502,7 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 #
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
-                 formats/mod_shell_stream formats/mod_sndfile formats/mod_tone_stream"
-%if %{build_mod_shout}
-FORMATS_MODULES+=" formats/mod_shout "
-%endif
+                 formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
 %endif
@@ -1622,6 +1618,7 @@ autoreconf --force --install
 --with-odbc \
 --with-erlang \
 --with-openssl \
+--enable-zrtp \
 %{?configure_options}
 
 unset MODULES
@@ -1645,6 +1642,7 @@ cd libs/esl
 %{__mkdir} -p %{buildroot}%{prefix}/log
 %{__mkdir} -p %{buildroot}%{logfiledir}
 %{__mkdir} -p %{buildroot}%{runtimedir}
+%{__mkdir} -p %{buildroot}%{_localstatedir}/cache/freeswitch
 
 #install the esl stuff
 cd libs/esl
@@ -2073,6 +2071,7 @@ fi
 %{MODINSTDIR}/mod_httapi.so*
 
 %files application-http-cache
+%dir %attr(0750, freeswitch, daemon) %{_localstatedir}/cache/freeswitch
 %{MODINSTDIR}/mod_http_cache.so*
 
 %files application-lcr
@@ -2324,10 +2323,8 @@ fi
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*
 
-%if %{build_mod_shout}
 %files format-mod-shout
 %{MODINSTDIR}/mod_shout.so*
-%endif
 
 %if %{build_mod_ssml}
 %files format-ssml
@@ -2344,18 +2341,15 @@ fi
 ######################################################################################################################
 %files lua
 %{MODINSTDIR}/mod_lua*.so*
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/lua.conf.xml
 
 %files perl
 %{MODINSTDIR}/mod_perl*.so*
 %{prefix}/perl/*
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/perl.conf.xml
 
 %files python
 %{MODINSTDIR}/mod_python*.so*
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
 %if %{build_mod_v8}
@@ -2365,7 +2359,6 @@ fi
 %{LIBDIR}/libicui18n.so
 %{LIBDIR}/libicuuc.so
 %endif
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/v8.conf.xml
 
 ######################################################################################################################
