@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -106,6 +106,14 @@ struct switch_dial_handle_s {
 	switch_memory_pool_t *pool;
 };
 
+struct switch_dial_handle_list_s {
+	int handle_idx;
+	switch_dial_handle_t *handles[MAX_PEERS];
+	switch_event_t *global_vars;
+	switch_memory_pool_t *pool;
+};
+
+static switch_status_t switch_dial_handle_dup(switch_dial_handle_t **handle, switch_dial_handle_t *todup);
 
 typedef struct {
 	switch_core_session_t *down_session;
@@ -1451,6 +1459,7 @@ typedef struct {
 	int done;
 	switch_thread_t *thread;
 	switch_mutex_t *mutex;
+	switch_dial_handle_t *dh;
 } enterprise_originate_handle_t;
 
 
@@ -1475,7 +1484,7 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 										  handle->ovars,
 										  handle->flags,
 										  &handle->cancel_cause,
-										  NULL);
+										  handle->dh);
 
 
 	handle->done = 1;
@@ -1541,7 +1550,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 																const char *cid_num_override,
 																switch_caller_profile_t *caller_profile_override,
 																switch_event_t *ovars, switch_originate_flag_t flags,
-																switch_call_cause_t *cancel_cause)
+																switch_call_cause_t *cancel_cause,
+																switch_dial_handle_list_t *hl)
 {
 	int x_argc = 0;
 	char *x_argv[MAX_PEERS] = { 0 };
@@ -1549,7 +1559,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	int i;
 	switch_caller_profile_t *cp = NULL;
 	switch_channel_t *channel = NULL;
-	char *data;
+	char *data = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_threadattr_t *thd_attr = NULL;
 	int running = 0, over = 0;
@@ -1565,13 +1575,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	switch_core_new_memory_pool(&pool);
 
-	if (zstr(bridgeto)) {
+	if (zstr(bridgeto) && (!hl || hl->handle_idx == 0)) {
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		getcause = 0;
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	data = switch_core_strdup(pool, bridgeto);
+	if (!hl) {
+		data = switch_core_strdup(pool, bridgeto);
+	}
 
 	if (session) {
 		switch_caller_profile_t *cpp = NULL;
@@ -1632,6 +1644,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 		data = parsed;
 	}
+	if (hl && hl->global_vars) {
+		switch_event_merge(var_event, hl->global_vars);
+	}
 
 	/* strip leading spaces (again) */
 	while (data && *data && *data == ' ') {
@@ -1646,10 +1661,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
-	if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
-		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-		getcause = 0;
-		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	if (data) {
+		if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
+			*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			getcause = 0;
+			switch_goto_status(SWITCH_STATUS_FALSE, end);
+		}
+	} else {
+		x_argc = hl->handle_idx;
 	}
 
 	switch_threadattr_create(&thd_attr, pool);
@@ -1668,6 +1687,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		handles[i].caller_profile_override = cp;
 		switch_event_dup(&handles[i].ovars, var_event);
 		handles[i].flags = flags;
+		if (hl) {
+			switch_dial_handle_dup(&handles[i].dh, hl->handles[i]);
+		}
 		switch_mutex_init(&handles[i].mutex, SWITCH_MUTEX_NESTED, pool);
 		switch_mutex_lock(handles[i].mutex);
 		switch_thread_create(&handles[i].thread, thd_attr, enterprise_originate_thread, &handles[i], pool);
@@ -1756,6 +1778,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		switch_mutex_unlock(hp->mutex);
 		switch_thread_join(&tstatus, hp->thread);
 		switch_event_destroy(&hp->ovars);
+		switch_dial_handle_destroy(&hp->dh);
 	}
 
 	for (i = 0; i < x_argc; i++) {
@@ -1789,6 +1812,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 		switch_thread_join(&tstatus, handles[i].thread);
 		switch_event_destroy(&handles[i].ovars);
+		switch_dial_handle_destroy(&handles[i].dh);
 	}
 
 	if (channel && rb_data.thread) {
@@ -2078,7 +2102,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (strstr(bridgeto, SWITCH_ENT_ORIGINATE_DELIM)) {
 		return switch_ivr_enterprise_originate(session, bleg, cause, bridgeto, timelimit_sec, table, cid_name_override, cid_num_override,
-											   caller_profile_override, ovars, flags, cancel_cause);
+											   caller_profile_override, ovars, flags, cancel_cause, NULL);
 	}
 
 	oglobals.check_vars = SWITCH_TRUE;
@@ -4234,6 +4258,133 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_list_create(switch_dial_handle_list_t **hl)
+{
+	switch_dial_handle_list_t *hlP = NULL;
+	switch_memory_pool_t *pool = NULL;
+
+	switch_core_new_memory_pool(&pool);
+	switch_assert(pool);
+
+	hlP = switch_core_alloc(pool, sizeof(*hlP));
+	switch_assert(hlP);
+
+	hlP->pool = pool;
+
+	*hl = hlP;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_dial_handle_list_add_handle(switch_dial_handle_list_t *hl, switch_dial_handle_t *handle)
+{
+	if (hl->handle_idx < MAX_PEERS && handle) {
+		hl->handles[hl->handle_idx++] = handle;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_list_create_handle(switch_dial_handle_list_t *hl, switch_dial_handle_t **handle)
+{
+	switch_dial_handle_t *hp = NULL;
+	if (hl->handle_idx < MAX_PEERS && switch_dial_handle_create(&hp) == SWITCH_STATUS_SUCCESS && hp) {
+		hl->handles[hl->handle_idx++] = hp;
+		*handle = hp;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_list_destroy(switch_dial_handle_list_t **hl)
+{
+	switch_dial_handle_list_t *hlP = *hl;
+	switch_memory_pool_t *pool = NULL;
+
+	*hl = NULL;
+
+	if (hlP) {
+		int i;
+		for (i = 0; i < hlP->handle_idx; i++) {
+			switch_dial_handle_destroy(&hlP->handles[i]);
+		}
+
+		switch_event_destroy(&hlP->global_vars);
+		pool = hlP->pool;
+		hlP = NULL;
+		switch_core_destroy_memory_pool(&pool);
+	}
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_list_add_global_var(switch_dial_handle_list_t *hl, const char *var, const char *val)
+{
+	switch_assert(hl);
+
+	if (!hl->global_vars) {
+		switch_event_create_plain(&hl->global_vars, SWITCH_EVENT_CHANNEL_DATA);
+	}
+
+	switch_event_add_header_string(hl->global_vars, SWITCH_STACK_BOTTOM, var, val);
+}
+
+SWITCH_DECLARE(void) switch_dial_handle_list_add_global_var_printf(switch_dial_handle_list_t *hl, const char *var, const char *fmt, ...)
+{
+	int ret = 0;
+	char *data = NULL;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (ret == -1) {
+		abort();
+	}
+
+	switch_dial_handle_list_add_global_var(hl, var, data);
+	free(data);
+}
+
+static switch_status_t switch_dial_handle_dup(switch_dial_handle_t **handle, switch_dial_handle_t *todup)
+{
+	int i;
+	switch_dial_handle_t *hp;
+
+	if (!todup || !handle) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	*handle = NULL;
+
+	switch_dial_handle_create(&hp);
+	switch_assert(hp);
+
+	for (i = 0; i < todup->leg_list_idx; i++) {
+		int j;
+		switch_dial_leg_list_t *ll_todup = todup->leg_lists[i];
+		switch_dial_leg_list_t *ll = NULL;
+		switch_dial_handle_add_leg_list(hp, &ll);
+		for (j = 0; j < ll_todup->leg_idx; j++) {
+			switch_dial_leg_t *leg;
+			switch_dial_leg_t *leg_todup = ll_todup->legs[j];
+			switch_dial_leg_list_add_leg(ll, &leg, leg_todup->dial_string);
+			if (leg_todup->leg_vars) {
+				switch_event_dup(&leg->leg_vars, leg_todup->leg_vars);
+			}
+		}
+	}
+
+	if (todup->global_vars) {
+		switch_event_dup(&hp->global_vars, todup->global_vars);
+	}
+
+	hp->is_sub = todup->is_sub;
+
+	*handle = hp;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_dial_handle_create(switch_dial_handle_t **handle)
 {
 	switch_dial_handle_t *hp;
@@ -4605,6 +4756,115 @@ SWITCH_DECLARE(switch_status_t) switch_dial_handle_create_json(switch_dial_handl
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_list_serialize_json_obj(switch_dial_handle_list_t *hl, cJSON **json)
+{
+	int i;
+	cJSON *global_vars_json = NULL;
+	cJSON *handles_json = NULL;
+	if (!hl) {
+		return SWITCH_STATUS_FALSE;
+	}
+	*json = cJSON_CreateObject();
+	if (hl->global_vars && vars_serialize_json_obj(hl->global_vars, &global_vars_json) == SWITCH_STATUS_SUCCESS && global_vars_json) {
+		cJSON_AddItemToObject(*json, "vars", global_vars_json);
+	}
+
+	handles_json = cJSON_CreateArray();
+	cJSON_AddItemToObject(*json, "handles", handles_json);
+	for (i = 0; i < hl->handle_idx; i++) {
+		switch_dial_handle_t *handle = hl->handles[i];
+		cJSON *handle_json = NULL;
+		if (switch_dial_handle_serialize_json_obj(handle, &handle_json) == SWITCH_STATUS_SUCCESS && handle_json) {
+			cJSON_AddItemToArray(handles_json, handle_json);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_list_serialize_json(switch_dial_handle_list_t *hl, char **str)
+{
+	cJSON *json = NULL;
+	if (switch_dial_handle_list_serialize_json_obj(hl, &json) == SWITCH_STATUS_SUCCESS && json) {
+		*str = cJSON_PrintUnformatted(json);
+		cJSON_Delete(json);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_list_create_json_obj(switch_dial_handle_list_t **hl, cJSON *handle_list_json)
+{
+	cJSON *handle_json = NULL;
+	cJSON *handles_json = NULL;
+	cJSON *vars_json = NULL;
+
+	*hl = NULL;
+
+	handles_json = cJSON_GetObjectItem(handle_list_json, "handles");
+	if (!handles_json || !cJSON_IsArray(handles_json)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_dial_handle_list_create(hl);
+	switch_assert(*hl);
+	for (handle_json = handles_json->child; handle_json; handle_json = handle_json->next) {
+		switch_dial_handle_t *handle = NULL;
+		if (switch_dial_handle_create_json_obj(&handle, handle_json) == SWITCH_STATUS_SUCCESS && handle) {
+			if (switch_dial_handle_list_add_handle(*hl, handle) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not adding remaining dial handles: exceeded limit of %d handles\n", MAX_PEERS);
+				switch_dial_handle_destroy(&handle);
+				break;
+			}
+		} else {
+			char *handle_json_str = cJSON_PrintUnformatted(handle_json);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to create dial handle: %s\n", handle_json_str);
+			switch_safe_free(handle_json_str);
+		}
+	}
+
+	if ((*hl)->handle_idx == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to create dial handle list: no handles added!\n");
+		switch_dial_handle_list_destroy(hl);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	vars_json = cJSON_GetObjectItem(handle_list_json, "vars");
+	if (vars_json && vars_json->type == cJSON_Object) {
+		cJSON *var_json = NULL;
+		cJSON_ArrayForEach(var_json, vars_json) {
+			if (!var_json || var_json->type != cJSON_String || !var_json->valuestring || !var_json->string) {
+				continue;
+			}
+			switch_dial_handle_list_add_global_var(*hl, var_json->string, var_json->valuestring);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_dial_handle_list_create_json(switch_dial_handle_list_t **hl, const char *handle_list_string)
+{
+	switch_status_t status;
+	cJSON *handle_list_json = NULL;
+
+	if (zstr(handle_list_string)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	handle_list_json = cJSON_Parse(handle_list_string);
+	if (!handle_list_json) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	status = switch_dial_handle_list_create_json_obj(hl, handle_list_json);
+	cJSON_Delete(handle_list_json);
+	return status;
+}
+
+
 static switch_status_t o_bridge_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	char *str = (char *) buf;
@@ -4617,6 +4877,72 @@ static switch_status_t o_bridge_on_dtmf(switch_core_session_t *session, void *in
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_list_t *hl, switch_call_cause_t *cause)
+{
+	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
+	switch_core_session_t *peer_session = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int fail = 0;
+
+	if ((status = switch_ivr_enterprise_originate(session,
+									   &peer_session,
+									   cause, data, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, hl)) != SWITCH_STATUS_SUCCESS) {
+		fail = 1;
+	}
+
+
+	if (fail) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(*cause));
+
+		switch_channel_set_variable(caller_channel, "originate_failed_cause", switch_channel_cause2str(*cause));
+
+		switch_channel_handle_cause(caller_channel, *cause);
+
+		return status;
+	} else {
+		switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+
+		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
+			switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+		}
+
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
+			switch_ivr_signal_bridge(session, peer_session);
+		} else {
+			char *a_key = (char *) switch_channel_get_variable(caller_channel, "bridge_terminate_key");
+			char *b_key = (char *) switch_channel_get_variable(peer_channel, "bridge_terminate_key");
+			int ok = 0;
+			switch_input_callback_function_t func = NULL;
+
+			if (a_key) {
+				a_key = switch_core_session_strdup(session, a_key);
+				ok++;
+			}
+			if (b_key) {
+				b_key = switch_core_session_strdup(session, b_key);
+				ok++;
+			}
+			if (ok) {
+				func = o_bridge_on_dtmf;
+			} else {
+				a_key = NULL;
+				b_key = NULL;
+			}
+
+			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
+		}
+
+		if (peer_session) {
+			switch_core_session_rwunlock(peer_session);
+		}
+	}
+
+	return status;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_orig_and_bridge(switch_core_session_t *session, const char *data, switch_dial_handle_t *dh, switch_call_cause_t *cause)
 {

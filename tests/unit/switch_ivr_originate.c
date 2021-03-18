@@ -209,6 +209,99 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END();
 
+		FST_TEST_BEGIN(dial_handle_list_create_json)
+		{
+			const char *dh_str_1 = "{\n"
+			"    \"vars\": {\n"
+			"        \"foo\": \"bar\",\n"
+			"        \"absolute_codec_string\": \"pcmu,pcma\",\n"
+			"        \"ignore_early_media\": \"true\"\n"
+			"    },\n"
+			"    \"leg_lists\": [\n"
+			"        { \"legs\": [\n"
+			"            { \n"
+			"                \"dial_string\": \"loopback/dest2\", \n"
+			"                \"vars\": {\n"
+			"                    \"bar\": \"bar\"\n"
+			"                }\n"
+			"            },\n"
+			"            { \n"
+			"                \"dial_string\": \"sofia/gateway/gw/123456\"\n"
+			"            }\n"
+			"        ] },\n"
+			"        { \"legs\": [\n"
+			"            {\n"
+			"                \"dial_string\": \"sofia/external/foo@example.com^5551231234\",\n"
+			"                \"vars\": {\n"
+			"                    \"sip_h_X-Custom\": \"my val 2\"\n"
+			"                }\n"
+			"            }\n"
+			"        ] },\n"
+			"        { \"legs\": [\n"
+			"            {\n"
+			"                \"dial_string\": \"group/my_group_2\"\n"
+			"            }\n"
+			"        ] }\n"
+			"    ]\n"
+			"}";
+			const char *dh_str_2 = "{\n"
+			"    \"vars\": {\n"
+			"        \"foo\": \"bar\",\n"
+			"        \"absolute_codec_string\": \"opus,pcmu,pcma\",\n"
+			"        \"ignore_early_media\": \"true\"\n"
+			"    },\n"
+			"    \"leg_lists\": [\n"
+			"        { \"legs\": [\n"
+			"            { \n"
+			"                \"dial_string\": \"loopback/dest\", \n"
+			"                \"vars\": {\n"
+			"                    \"bar\": \"bar\"\n"
+			"                }\n"
+			"            },\n"
+			"            { \n"
+			"                \"dial_string\": \"sofia/gateway/gw/12345\"\n"
+			"            }\n"
+			"        ] },\n"
+			"        { \"legs\": [\n"
+			"            {\n"
+			"                \"dial_string\": \"sofia/external/foo@example.com^5551231234\",\n"
+			"                \"vars\": {\n"
+			"                    \"sip_h_X-Custom\": \"my val\"\n"
+			"                }\n"
+			"            }\n"
+			"        ] },\n"
+			"        { \"legs\": [\n"
+			"            {\n"
+			"                \"dial_string\": \"group/my_group\"\n"
+			"            }\n"
+			"        ] }\n"
+			"    ]\n"
+			"}";
+			const char *dl_str = switch_core_sprintf(fst_pool, "{ \"handles\": [ %s, %s ], \"vars\": { \"global_1\":\"val_1\" } }", dh_str_1, dh_str_2);
+			// create dial handle from json string, convert back to json and compare
+			switch_dial_handle_list_t *dl = NULL;
+			char *dl_str_2 = NULL;
+			char *dl_str_3 = NULL;
+			cJSON *dl_json = NULL;
+			fst_requires(switch_dial_handle_list_create_json(&dl, dl_str) == SWITCH_STATUS_SUCCESS);
+			fst_requires(dl != NULL);
+			fst_requires(switch_dial_handle_list_serialize_json_obj(dl, &dl_json) == SWITCH_STATUS_SUCCESS);
+			fst_requires(dl_json != NULL);
+			fst_requires(switch_dial_handle_list_serialize_json(dl, &dl_str_2) == SWITCH_STATUS_SUCCESS);
+			fst_requires(dl_str_2 != NULL);
+			fst_check_string_equals(dl_str_2, "{\"vars\":{\"global_1\":\"val_1\"},\"handles\":[{\"vars\":{\"foo\":\"bar\",\"absolute_codec_string\":\"pcmu,pcma\",\"ignore_early_media\":\"true\"},\"leg_lists\":[{\"legs\":[{\"dial_string\":\"loopback/dest2\",\"vars\":{\"bar\":\"bar\"}},{\"dial_string\":\"sofia/gateway/gw/123456\"}]},{\"legs\":[{\"dial_string\":\"sofia/external/foo@example.com^5551231234\",\"vars\":{\"sip_h_X-Custom\":\"my val 2\"}}]},{\"legs\":[{\"dial_string\":\"group/my_group_2\"}]}]},{\"vars\":{\"foo\":\"bar\",\"absolute_codec_string\":\"opus,pcmu,pcma\",\"ignore_early_media\":\"true\"},\"leg_lists\":[{\"legs\":[{\"dial_string\":\"loopback/dest\",\"vars\":{\"bar\":\"bar\"}},{\"dial_string\":\"sofia/gateway/gw/12345\"}]},{\"legs\":[{\"dial_string\":\"sofia/external/foo@example.com^5551231234\",\"vars\":{\"sip_h_X-Custom\":\"my val\"}}]},{\"legs\":[{\"dial_string\":\"group/my_group\"}]}]}]}");
+
+			dl_str_3 = cJSON_PrintUnformatted(dl_json);
+			fst_requires(dl_str_3);
+			fst_check_string_equals(dl_str_2, dl_str_3);
+
+			switch_safe_free(dl_str_2);
+			switch_safe_free(dl_str_3);
+			cJSON_Delete(dl_json);
+			switch_dial_handle_list_destroy(&dl);
+		}
+		FST_TEST_END();
+
 		FST_TEST_BEGIN(originate_test_empty_dial_string)
 		{
 			switch_core_session_t *session = NULL;
@@ -622,6 +715,103 @@ FST_CORE_BEGIN("./conf")
 			fst_check_duration(4500, 600); // (>= 3.9 sec, <= 5.1 sec)
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(enterprise_originate_test_group_confirm_two_handles)
+		{
+			switch_core_session_t *session = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_dial_handle_list_t *dl;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_list_create(&dl);
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_file", "playback silence_stream://1000");
+			switch_dial_handle_add_leg_var(leg, "group_confirm_key", "exec");
+			switch_dial_handle_add_leg_var(leg, "expected_winner", "true");
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "error/user_busy");
+
+			switch_dial_handle_list_add_global_var(dl, "continue_on_fail", "true");
+			switch_dial_handle_list_add_global_var(dl, "is_from_dial_handle_list", "true");
+
+			status = switch_ivr_enterprise_originate(NULL, &session, &cause, NULL, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, dl);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(session);
+			fst_xcheck(switch_true(switch_channel_get_variable(switch_core_session_get_channel(session), "is_from_dial_handle_list")), "Expect dial handle list global var to be set on channel");
+			fst_xcheck(switch_true(switch_channel_get_variable(switch_core_session_get_channel(session), "expected_winner")), "Wrong winning leg");
+			switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_core_session_rwunlock(session);
+			switch_dial_handle_list_destroy(&dl);
+		}
+		FST_TEST_END()
+
+		FST_SESSION_BEGIN(switch_ivr_enterprise_orig_and_bridge)
+		{
+			switch_status_t status;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_dial_handle_list_t *dl;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_list_create(&dl);
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test");
+			switch_dial_handle_add_leg_var(leg, "execute_on_answer", "sched_hangup +2 normal_clearing");
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "error/user_busy");
+
+			switch_dial_handle_list_add_global_var(dl, "continue_on_fail", "true");
+			switch_dial_handle_list_add_global_var(dl, "is_from_dial_handle_list", "true");
+
+			switch_channel_set_variable(fst_channel, "park_after_bridge", "true");
+			status = switch_ivr_enterprise_orig_and_bridge(fst_session, NULL, dl, &cause);
+			fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Expect switch_ivr_enterprise_orig_and_bridge() to succeed");
+			fst_xcheck(cause == SWITCH_CAUSE_SUCCESS, "Expect called party to answer");
+			switch_dial_handle_list_destroy(&dl);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(switch_ivr_enterprise_orig_and_bridge_fail)
+		{
+			switch_status_t status;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_dial_handle_list_t *dl;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+
+			switch_dial_handle_list_create(&dl);
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "error/no_answer");
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "error/user_busy");
+
+			switch_dial_handle_list_add_global_var(dl, "continue_on_fail", "true");
+
+			switch_channel_set_variable(fst_channel, "park_after_bridge", "true");
+			status = switch_ivr_enterprise_orig_and_bridge(fst_session, NULL, dl, &cause);
+			fst_xcheck(status == SWITCH_STATUS_FALSE, "Expect switch_ivr_enterprise_orig_and_bridge() to fail");
+			fst_xcheck(cause == SWITCH_CAUSE_USER_BUSY || cause == SWITCH_CAUSE_NO_ANSWER, "Expect called party not to answer");
+			switch_dial_handle_list_destroy(&dl);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }

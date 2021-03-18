@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -2868,6 +2868,8 @@ typedef struct switch_dial_leg_s switch_dial_leg_t;
 struct switch_dial_leg_list_s;
 typedef struct switch_dial_leg_list_s switch_dial_leg_list_t;
 
+struct switch_dial_handle_list_s;
+typedef struct switch_dial_handle_list_s switch_dial_handle_list_t;
 
 SWITCH_END_EXTERN_C
 #endif
