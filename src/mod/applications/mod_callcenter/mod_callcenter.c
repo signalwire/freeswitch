@@ -998,7 +998,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 {
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
-	char res[256];
+	char res[256] = "";
 	switch_event_t *event;
 
 	/* Check to see if agent already exist */

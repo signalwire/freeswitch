@@ -4175,6 +4175,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 						if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
 							func_val = NULL;
 							sub_val = "<API Execute Permission Denied>";
+							free(stream.data);
 						} else {
 							if (switch_api_execute(vname, vval, channel->session, &stream) == SWITCH_STATUS_SUCCESS) {
 								func_val = stream.data;

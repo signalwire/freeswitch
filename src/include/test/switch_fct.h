@@ -1716,6 +1716,12 @@ fct_clp__parse(fct_clp_t *clp, int argc, char const *argv[])
             arg =NULL;
         }
     }
+
+    if (arg != NULL)
+    {
+        free(arg);
+        arg = NULL;
+    }
 }
 
 

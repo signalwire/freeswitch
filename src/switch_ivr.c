@@ -1011,7 +1011,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			rate = read_impl.actual_samples_per_second;
 			bpf = read_impl.decoded_bytes_per_packet;
 
-			if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+			if (rate && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
 				switch_core_session_get_read_impl(session, &imp);
 
 				if (switch_core_codec_init(&codec,
@@ -2192,7 +2192,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			extension = "service";
 		}
 
-		new_profile = switch_caller_profile_clone(session, profile);
+
+		if (switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
+			new_profile = switch_channel_get_caller_profile(channel);
+		} else {
+			new_profile = switch_caller_profile_clone(session, profile);
+		}
 
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, use_dialplan);
 		new_profile->context = switch_core_strdup(new_profile->pool, use_context);
@@ -2238,7 +2243,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			switch_core_session_rwunlock(other_session);
 		}
 
-		switch_channel_set_caller_profile(channel, new_profile);
+		if (!switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
+			switch_channel_set_caller_profile(channel, new_profile); 	
+		}
 
 		switch_channel_set_state(channel, CS_ROUTING);
 		switch_channel_audio_sync(channel);
@@ -3515,8 +3522,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_set_state(channel, CS_PARK);
 	switch_channel_set_flag(channel, CF_TRANSFER);
+	switch_channel_set_state(channel, CS_PARK);
 
 }
 

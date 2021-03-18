@@ -132,6 +132,7 @@ struct switch_core_session {
 	switch_mutex_t *mutex;
 	switch_mutex_t *stack_count_mutex;
 	switch_mutex_t *resample_mutex;
+	switch_mutex_t *codec_init_mutex;
 	switch_mutex_t *codec_read_mutex;
 	switch_mutex_t *codec_write_mutex;
 	switch_mutex_t *video_codec_read_mutex;

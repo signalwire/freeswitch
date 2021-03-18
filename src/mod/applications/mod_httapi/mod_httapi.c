@@ -1534,6 +1534,7 @@ static switch_status_t httapi_sync(client_t *client)
 		char *q, *p = strstr(dynamic_url, "://");
 		use_url++;
 
+		switch_safe_free(dup_creds);
 		dup_creds = strdup(p+3);
 		*p = '\0';
 

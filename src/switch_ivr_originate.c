@@ -830,6 +830,12 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 
 			}
 		} else if (switch_channel_test_flag(oglobals->originate_status[i].peer_channel, CF_WINNER)) {
+			/* unset group_confirm variables */
+			switch_channel_set_variable(oglobals->originate_status[i].peer_channel, "group_confirm_key", NULL);
+			switch_channel_set_variable(oglobals->originate_status[i].peer_channel, "group_confirm_file", NULL);
+			switch_channel_set_variable(oglobals->originate_status[i].peer_channel, "group_confirm_error_file", NULL);
+			switch_channel_set_variable(oglobals->originate_status[i].peer_channel, "group_confirm_cancel_timeout", NULL);
+			switch_channel_set_variable(oglobals->originate_status[i].peer_channel, "group_confirm_read_timeout", NULL);
 			oglobals->idx = i;
 			rval = 0;
 			pindex = (uint32_t) i;
@@ -2855,6 +2861,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (oglobals.session) {
 					if (!switch_channel_ready(caller_channel)) {
 						status = SWITCH_STATUS_FALSE;
+						if (local_var_event) switch_event_destroy(&local_var_event);
 						goto done;
 					}
 

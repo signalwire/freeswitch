@@ -323,7 +323,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				free(pkey);
 			}
 
-			if (gateway_ptr->state == REG_STATE_NOREG) {
+			if (gateway_ptr->state == REG_STATE_NOREG || gateway_ptr->state == REG_STATE_DOWN) {
 
 				if (last) {
 					last->next = gateway_ptr->next;
@@ -356,7 +356,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		char *user_via = NULL;
 		char *register_host = NULL;
 
-		if (!now) {
+		if (!now && ostate != REG_STATE_NOREG) {
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
 			gateway_ptr->expires_str = "0";
 		}
@@ -398,6 +398,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		}
 
 		switch (ostate) {
+		case REG_STATE_DOWN:
 		case REG_STATE_NOREG:
 			if (!gateway_ptr->ping && !gateway_ptr->pinging && gateway_ptr->status != SOFIA_GATEWAY_UP) {
 				gateway_ptr->status = SOFIA_GATEWAY_UP;
@@ -432,7 +433,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_UNREGISTER:
 			sofia_reg_kill_reg(gateway_ptr);
-			gateway_ptr->state = REG_STATE_NOREG;
+			gateway_ptr->state = REG_STATE_DOWN;
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			break;
 		case REG_STATE_UNREGED:
@@ -1932,7 +1933,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 			switch_mutex_lock(profile->flag_mutex);
 			hnh = switch_core_hash_find(profile->reg_nh_hash, key);
-			switch_mutex_unlock(profile->flag_mutex);
 
 			if (!hnh) {
 				if (!(sofia_private = su_alloc(nua_handle_get_home(nh), sizeof(*sofia_private)))) {
@@ -1953,6 +1953,8 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 				nua_handle_ref(nh);
 				switch_core_hash_insert(profile->reg_nh_hash, key, nh);
 			}
+
+			switch_mutex_unlock(profile->flag_mutex);
 		}
 
 

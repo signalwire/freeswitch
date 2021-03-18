@@ -3855,6 +3855,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 				total_new_messages = total_saved_messages = 0;
 				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
+				free(hi);
 			}
 			switch_mutex_unlock(globals.mutex);
 		}

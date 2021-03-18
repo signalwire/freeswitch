@@ -1309,8 +1309,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						*arg++ = '\0';
 					}
 					if ((status = switch_ivr_phrase_macro(session, dup, arg, lang, args)) != SWITCH_STATUS_SUCCESS) {
-						arg_recursion_check_stop(args);
-						return status;
+						break;
 					}
 					continue;
 				} else {
@@ -1327,8 +1326,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				if (engine && text) {
 					if ((status = switch_ivr_speak_text(session, engine, voice, (char *)text, args)) != SWITCH_STATUS_SUCCESS) {
-						arg_recursion_check_stop(args);
-						return status;
+						break;
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");

@@ -1700,6 +1700,7 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 
 		if (hangup_cause || !strncmp(caller_profile->destination_number, "cause-", 6)) {
 			if (!hangup_cause) hangup_cause = caller_profile->destination_number + 6;
+			switch_core_session_destroy(new_session);
 			return switch_channel_str2cause(hangup_cause);
 		}
 
