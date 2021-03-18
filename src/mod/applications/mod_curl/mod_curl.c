@@ -180,6 +180,8 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	switch_curl_slist_t *headers = NULL;
 	struct data_stream dstream = { NULL };
 
+	assert(options);
+
 	http_data = switch_core_alloc(pool, sizeof(http_data_t));
 	memset(http_data, 0, sizeof(http_data_t));
 	http_data->pool = pool;
@@ -194,28 +196,26 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
 	curl_handle = switch_curl_easy_init();
 
-	if (options) {
-		if (options->connect_timeout) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, options->connect_timeout);
-		}
+	if (options->connect_timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, options->connect_timeout);
+	}
 
-		if (options->timeout) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
-		}
+	if (options->timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
+	}
 
-		if (options->proxy) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_PROXY, options->proxy);
-		}
+	if (options->proxy) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_PROXY, options->proxy);
+	}
 
-		if (!strncasecmp(url, "https", 5)) {
-			if (options->insecure) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
-				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
-			} else {
-				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);
-				switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
-			}
+	if (!strncasecmp(url, "https", 5)) {
+		if (options->insecure) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		} else {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
 		}
 	}
 
