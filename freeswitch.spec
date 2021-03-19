@@ -2283,6 +2283,9 @@ fi
 %files event-format-cdr
 %{MODINSTDIR}/mod_format_cdr.so*
 
+%files event-kazoo
+%{MODINSTDIR}/mod_kazoo.so*
+
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
 
@@ -2291,9 +2294,6 @@ fi
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
-
-%files event-kazoo
-%{MODINSTDIR}/mod_kazoo.so*
 
 %files event-radius-cdr
 %{MODINSTDIR}/mod_radius_cdr.so*
