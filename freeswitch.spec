@@ -964,6 +964,15 @@ BuildRequires:	erlang
 %description event-erlang-event
 Erlang Event Module for FreeSWITCH.
 
+%package event-fail2ban
+Summary:        fail2ban Module for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       fail2ban
+
+%description event-fail2ban
+fail2ban Module for FreeSWITCH.
+
 %package event-format-cdr
 Summary:        JSON and XML Logger for the FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1500,7 +1509,7 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling \
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
 			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
-			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_kazoo event_handlers/mod_radius_cdr \
+			event_handlers/mod_event_socket event_handlers/mod_fail2ban event_handlers/mod_json_cdr event_handlers/mod_kazoo event_handlers/mod_radius_cdr \
 			event_handlers/mod_snmp"
 %if %{build_mod_rayo}
 EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
@@ -2305,6 +2314,9 @@ fi
 
 %files event-erlang-event
 %{MODINSTDIR}/mod_erlang_event.so*
+
+%files event-fail2ban
+%{MODINSTDIR}/mod_fail2ban.so*
 
 %files event-format-cdr
 %{MODINSTDIR}/mod_format_cdr.so*
