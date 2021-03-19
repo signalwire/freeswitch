@@ -557,6 +557,7 @@ struct sofia_gateway {
 	reg_state_t state;
 	switch_memory_pool_t *pool;
 	int deleted;
+	int destroy;
 	switch_event_t *ib_vars;
 	switch_event_t *ob_vars;
 	uint32_t ib_calls;
@@ -760,6 +761,7 @@ struct sofia_profile {
 	uint32_t event_timeout;
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
+	switch_mutex_t *gw_deleting_mutex;
 	uint32_t queued_events;
 	uint32_t last_cseq;
 	int tls_only;

@@ -312,15 +312,18 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 	int delta = 0;
 
 	switch_mutex_lock(profile->gw_mutex);
+	switch_mutex_lock(profile->gw_deleting_mutex);
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		if (gateway_ptr->deleted) {
 			if ((check = switch_core_hash_find(mod_sofia_globals.gateway_hash, gateway_ptr->name)) && check == gateway_ptr) {
 				char *pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
 				switch_assert(pkey);
+				gateway_ptr->destroy = 1;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway %s from hash.\n", pkey);
 				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
 				free(pkey);
+				switch_core_destroy_memory_pool(&(gateway_ptr->pool));
 			}
 
 			if (gateway_ptr->state == REG_STATE_NOREG || gateway_ptr->state == REG_STATE_DOWN) {
@@ -350,6 +353,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			last = gateway_ptr;
 		}
 	}
+	switch_mutex_unlock(profile->gw_deleting_mutex);
 
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		reg_state_t ostate = gateway_ptr->state;
@@ -3410,16 +3414,16 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 	switch_mutex_unlock(profile->gw_mutex);
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-
+	switch_mutex_lock(profile->gw_deleting_mutex);
 	if ((gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
-		if (gp->deleted) {
+		if (gp->deleted && !gp->destroy) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing deleted gateway from hash.\n");
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, key);
-			switch_core_destroy_memory_pool(&(gp->pool));
 		}
 	}
+	switch_mutex_unlock(profile->gw_deleting_mutex);
 
 	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key) && !switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) {
 		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);

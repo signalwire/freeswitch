@@ -4737,6 +4737,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 
 					switch_mutex_init(&profile->gw_mutex, SWITCH_MUTEX_NESTED, pool);
+					switch_mutex_init(&profile->gw_deleting_mutex, SWITCH_MUTEX_NESTED, pool);
 
 					profile->trans_timeout = 100;
 
