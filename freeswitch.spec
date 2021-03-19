@@ -1079,7 +1079,7 @@ Mod shell stream is a FreeSWITCH module to allow you to stream audio from an
 arbitrary shell command. You could use it to read audio from a database, from 
 a soundcard, etc. 
 
-%package format-mod-shout
+%package format-shout
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
@@ -1090,7 +1090,7 @@ BuildRequires:	libshout-devel >= 2.2.2
 BuildRequires:	libmpg123-devel >= 1.20.1
 BuildRequires:	lame-devel
 
-%description format-mod-shout
+%description format-shout
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
 
@@ -2323,7 +2323,7 @@ fi
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*
 
-%files format-mod-shout
+%files format-shout
 %{MODINSTDIR}/mod_shout.so*
 
 %if %{build_mod_ssml}
