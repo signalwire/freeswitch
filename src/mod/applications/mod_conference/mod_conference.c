@@ -1895,7 +1895,7 @@ SWITCH_STANDARD_APP(conference_function)
 	const char *cflags_str, *v_cflags_str;
 	member_flag_t mflags[MFLAG_MAX] = { 0 };
 	switch_core_session_message_t msg = { 0 };
-	uint8_t rl = 0, isbr = 0;
+	uint8_t isbr = 0;
 	char *dpin = "";
 	const char *mdpin = "";
 	conference_xml_cfg_t xml_cfg = { 0 };
@@ -2200,14 +2200,6 @@ SWITCH_STANDARD_APP(conference_function)
 			/* Indicate the conference is dynamic */
 			conference_utils_set_flag_locked(conference, CFLAG_DYNAMIC);
 
-			/* acquire a read lock on the thread so it can't leave without us */
-			if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Read Lock Fail\n");
-				goto done;
-			}
-
-			rl++;
-
 			/* Start the conference thread for this conference */
 			conference_launch_thread(conference);
 
@@ -2215,7 +2207,6 @@ SWITCH_STANDARD_APP(conference_function)
 		} else {				/* setup user variable */
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 			switch_channel_set_variable(channel, SWITCH_RFC7989_APP_SESSION_ID_VARIABLE, conference->uuid_str);
-			rl++;
 		}
 
 		/* Moderator PIN as a channel variable */
@@ -2595,7 +2586,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	/* release the readlock */
-	if (rl) {
+	if (conference) {
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
 
@@ -3798,6 +3789,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_event_fire(&event);
 
  end:
+	if (conference) {
+		switch_thread_rwlock_rdlock(conference->rwlock);
+	}
 
 	switch_mutex_unlock(conference_globals.hash_mutex);
 
