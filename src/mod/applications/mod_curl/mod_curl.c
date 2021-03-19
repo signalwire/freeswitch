@@ -61,11 +61,13 @@ static struct {
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
 	int max_bytes;
+	switch_bool_t validate_certs;
 } globals;
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
 	SWITCH_CONFIG_ITEM("max-bytes", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.max_bytes, (void *) HTTP_DEFAULT_MAX_BYTES, NULL,NULL, NULL),
+	SWITCH_CONFIG_ITEM("validate-certs", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.validate_certs, SWITCH_FALSE, NULL, NULL, NULL),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -828,7 +830,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_curl_slist_t *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
 	int i = 0;
-	curl_options_t options = { 0 };
+	curl_options_t options = { .insecure = !globals.validate_certs };
 	const char *curl_timeout;
 	char *append_headers[HTTP_MAX_APPEND_HEADERS + 1] = { 0 };
 	int ah_index = 0;
@@ -942,7 +944,7 @@ SWITCH_STANDARD_API(curl_function)
 	int ah_index = 0;
 
 	switch_memory_pool_t *pool = NULL;
-	curl_options_t options = { 0 };
+	curl_options_t options = { .insecure = !globals.validate_certs };
 
 	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
