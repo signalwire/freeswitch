@@ -4961,6 +4961,37 @@ fail:
 }
 
 
+static int _wrap_Event_merge(lua_State* L) {
+  int SWIG_arg = 0;
+  Event *arg1 = (Event *) 0 ;
+  Event *arg2 = (Event *) 0 ;
+  bool result;
+  
+  SWIG_check_num_args("Event::merge",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Event::merge",1,"Event *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("Event::merge",2,"Event *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_merge",1,SWIGTYPE_p_Event);
+  }
+  
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_Event,0))){
+    SWIG_fail_ptr("Event_merge",2,SWIGTYPE_p_Event);
+  }
+  
+  result = (bool)(arg1)->merge(arg2);
+  lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_Event(void *obj) {
 Event *arg1 = (Event *) obj;
 delete arg1;
@@ -4991,6 +5022,7 @@ static swig_lua_method swig_Event_methods[]= {
     { "addHeader", _wrap_Event_addHeader},
     { "delHeader", _wrap_Event_delHeader},
     { "fire", _wrap_Event_fire},
+    { "merge", _wrap_Event_merge},
     {0,0}
 };
 static swig_lua_method swig_Event_meta[] = {
