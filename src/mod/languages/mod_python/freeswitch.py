@@ -327,6 +327,9 @@ class Event(_object):
 
     def fire(self):
         return _freeswitch.Event_fire(self)
+
+    def merge(self, to_merge):
+        return _freeswitch.Event_merge(self, to_merge)
 Event_swigregister = _freeswitch.Event_swigregister
 Event_swigregister(Event)
 

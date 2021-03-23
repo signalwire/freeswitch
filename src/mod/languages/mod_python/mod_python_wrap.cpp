@@ -5765,6 +5765,37 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_Event_merge(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  Event *arg1 = (Event *) 0 ;
+  Event *arg2 = (Event *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  bool result;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:Event_merge",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_Event, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_merge" "', argument " "1"" of type '" "Event *""'"); 
+  }
+  arg1 = reinterpret_cast< Event * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_Event, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_merge" "', argument " "2"" of type '" "Event *""'"); 
+  }
+  arg2 = reinterpret_cast< Event * >(argp2);
+  result = (bool)(arg1)->merge(arg2);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *Event_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
@@ -10541,6 +10572,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "Event_addHeader", _wrap_Event_addHeader, METH_VARARGS, NULL},
 	 { "Event_delHeader", _wrap_Event_delHeader, METH_VARARGS, NULL},
 	 { "Event_fire", _wrap_Event_fire, METH_VARARGS, NULL},
+	 { "Event_merge", _wrap_Event_merge, METH_VARARGS, NULL},
 	 { "Event_swigregister", Event_swigregister, METH_VARARGS, NULL},
 	 { "EventConsumer_events_set", _wrap_EventConsumer_events_set, METH_VARARGS, NULL},
 	 { "EventConsumer_events_get", _wrap_EventConsumer_events_get, METH_VARARGS, NULL},
