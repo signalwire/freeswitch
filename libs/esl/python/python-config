@@ -23,24 +23,27 @@ if not opts:
 
 opt = opts[0][0]
 
-pyver = sysconfig.get_config_var('VERSION')
+pyver = sysconfig.get_config_var('LDVERSION')
+if pyver == None:
+	pyver = sysconfig.get_config_var('VERSION')
+
 getvar = sysconfig.get_config_var
 
 if opt == '--help':
     exit_with_usage(0)
 
 elif opt == '--prefix':
-    print sysconfig.PREFIX
+    print (sysconfig.PREFIX)
 
 elif opt == '--exec-prefix':
-    print sysconfig.EXEC_PREFIX
+    print (sysconfig.EXEC_PREFIX)
 
 elif opt in ('--includes', '--cflags'):
     flags = ['-I' + sysconfig.get_python_inc(),
              '-I' + sysconfig.get_python_inc(plat_specific=True)]
     if opt == '--cflags':
         flags.extend(getvar('CFLAGS').split())
-    print ' '.join(flags)
+    print (' '.join(flags))
 
 elif opt in ('--libs', '--ldflags'):
     libs = getvar('LIBS').split() + getvar('SYSLIBS').split()
@@ -49,5 +52,5 @@ elif opt in ('--libs', '--ldflags'):
     # shared library in prefix/lib/.
     if opt == '--ldflags' and not getvar('Py_ENABLE_SHARED'):
         libs.insert(0, '-L' + getvar('LIBPL'))
-    print ' '.join(libs)
+    print (' '.join(libs))
 

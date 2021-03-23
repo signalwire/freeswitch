@@ -43,13 +43,23 @@
 #define _GNU_SOURCE
 #endif
 
+#if PY_VERSION_HEX >= 0x03000000
+#define PyString_AsString PyUnicode_AsUTF8
+#define PyString_Check PyUnicode_Check
+#endif
+
 #include <switch.h>
 #include "mod_python_extra.h"
 #include <string.h>
 
 PyThreadState *mainThreadState = NULL;
 
+#if PY_VERSION_HEX >= 0x03000000
+PyMODINIT_FUNC PyInit__freeswitch(void);
+#else
 void init_freeswitch(void);
+#endif
+
 int py_thread(const char *text);
 static void set_max_recursion_depth(void);
 static switch_api_interface_t python_run_interface;
@@ -224,7 +234,9 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
 	// swap in thread state
 	PyEval_AcquireThread(tstate);
+#if PY_VERSION_HEX < 0x03000000
 	init_freeswitch();
+#endif
 
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -554,6 +566,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	globals.pool = pool;
 
 	if (!Py_IsInitialized()) {
+#if PY_VERSION_HEX >= 0x03000000		
+                /* Add a built-in module, before Py_Initialize */
+		if (PyImport_AppendInittab("_freeswitch", PyInit__freeswitch) == -1) {
+			fprintf(stderr, "Error: could not extend in-built modules table\n");
+		}
+#endif
 
 		// initialize python system
 		Py_Initialize();
@@ -605,7 +623,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 
 	/* Kill all remaining threads */
 	pt = thread_pool_head;
-	PyEval_AcquireLock();
+	//PyEval_AcquireLock();
 	while (pt) {
 		thread_cnt++;
 		nextpt = pt->next;
@@ -642,7 +660,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 	}
 
 
-	PyEval_AcquireLock();
+	//PyEval_AcquireLock();
 	mainInterpreterState = mainThreadState->interp;
 	myThreadState = PyThreadState_New(mainInterpreterState);
 	PyThreadState_Swap(myThreadState);
