@@ -3216,6 +3216,55 @@ SWITCH_STANDARD_API(uuid_capture_text)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define NOTIFY_SYNTAX "<uuid> <content_type> <content> <event>"
+SWITCH_STANDARD_API(uuid_send_notify_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *mycmd = NULL, *argv[4] = { 0 };
+	int argc = 0;
+	char *msg, *uuid,*content_type,*evnt_str;
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc !=4) {
+		stream->write_function(stream, "-USAGE: %s\n", NOTIFY_SYNTAX);
+	} else {
+		switch_core_session_t *lsession = NULL;
+		uuid = argv[0];
+		content_type = argv[1];
+		msg = argv[2];
+		evnt_str = argv[3];
+		if ((lsession = switch_core_session_locate(uuid))) {
+
+			switch_event_t *params = NULL;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending NOTIFY to %s (%s)\n", uuid, msg);
+
+			switch_event_create(&params, SWITCH_EVENT_NOTIFY);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "uuid", uuid);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "event-string", evnt_str);
+			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "content-type", content_type);
+			
+			switch_event_add_body(params, "%s", msg);
+			status = switch_event_fire(&params);
+
+		}
+		else{
+			stream->write_function(stream, "-ERR UUID not found\n");
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 #define UUID_SEND_TEXT_SYNTAX "<uuid> <text>"
 SWITCH_STANDARD_API(uuid_send_text)
@@ -7565,6 +7614,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill channel", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_message", "Send MESSAGE to the endpoint", uuid_send_message_function, SEND_MESSAGE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_send_notify", "Send NOTIFY to the endpoint", uuid_send_notify_function, NOTIFY_SYNTAX);
+	
 	SWITCH_ADD_API(commands_api_interface, "uuid_set_media_stats", "Set media stats", uuid_set_media_stats, UUID_MEDIA_STATS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_bitrate", "Send video bitrate req.", uuid_video_bitrate_function, VIDEO_BITRATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_bandwidth", "Send video bandwidth", uuid_video_bandwidth_function, VIDEO_BANDWIDTH_SYNTAX);
