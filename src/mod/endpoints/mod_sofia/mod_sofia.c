@@ -1328,7 +1328,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			de->session = session;
 		}
 
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_FALSE);
 
 
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
@@ -2740,6 +2740,7 @@ const char *sofia_state_names[] = {
 	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
+	"DOWN",
 	"TIMEOUT",
 	NULL
 };
@@ -3653,15 +3654,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGED;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGED;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+					stream->write_function(stream, "+OK\n");
+					sofia_reg_release_gateway(gateway_ptr);
+				} else {
+					stream->write_function(stream, "-ERR NOREG gateway [%s] can't be registered!\n", gname);
+				}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -3680,15 +3687,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGISTER;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGISTER;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGISTER;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+			if (gateway_ptr->state != REG_STATE_NOREG) {
+				gateway_ptr->retry = 0;
+				gateway_ptr->state = REG_STATE_UNREGISTER;
+				stream->write_function(stream, "+OK\n");
+				sofia_reg_release_gateway(gateway_ptr);
+			} else {
+				stream->write_function(stream, "-ERR NOREG gateway [%s] can't be unregistered!\n", gname);
+			}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -5070,7 +5083,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (gateway_ptr && gateway_ptr->ob_vars) {
 		switch_event_header_t *hp;
 		for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(nsession), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
 							  switch_channel_get_name(nchannel), hp->name, hp->value);
 			if (!strncmp(hp->name, "p:", 2)) {
 				switch_channel_set_profile_var(nchannel, hp->name + 2, hp->value);
@@ -5778,7 +5791,7 @@ void general_event_handler(switch_event_t *event)
 					 TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
 
 			if (call_id && nh) {
-				nua_handle_unref(nh);
+				nua_handle_unref_user(nh);
 			}
 
 		  done:

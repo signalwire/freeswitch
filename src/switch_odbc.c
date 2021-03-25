@@ -605,17 +605,75 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		for (x = 1; x <= c; x++) {
 			SQLSMALLINT NameLength = 0, DataType = 0, DecimalDigits = 0, Nullable = 0;
 			SQLULEN ColumnSize = 0;
+			SQLLEN numRecs = 0;
+			SQLCHAR SqlState[6], Msg[SQL_MAX_MESSAGE_LENGTH];
+			SQLINTEGER NativeError;
+			SQLSMALLINT diagCount, MsgLen;
 			names[y] = malloc(name_len);
 			switch_assert(names[y]);
 			memset(names[y], 0, name_len);
 
 			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT) name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 
-			if (!ColumnSize) {
+			if (ColumnSize <= 16383 || ColumnSize == 2147483647) {
 				SQLCHAR val[16384] = { 0 };
+				SQLLEN StrLen_or_IndPtr;
+				SQLRETURN rc;
 				ColumnSize = 16384;
-				SQLGetData(stmt, x, SQL_C_CHAR, val, ColumnSize, NULL);
-				vals[y] = strdup((char *)val);
+
+				/* check diag record and see if we can get real size
+				 * https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/using-sqlgetdiagrec-and-sqlgetdiagfield?view=sql-server-ver15
+				 * szSqlState = "01004" and StrLen_or_IndPtr=15794 
+				*/
+				rc = SQLGetData(stmt, x, SQL_C_CHAR, val, ColumnSize, &StrLen_or_IndPtr); 
+
+				if (rc == SQL_SUCCESS_WITH_INFO) {
+					int truncated = 0;
+					diagCount = 1;
+
+					SQLGetDiagField(SQL_HANDLE_STMT, stmt, 0, SQL_DIAG_NUMBER, &numRecs, 0, 0);
+
+					while (diagCount <= numRecs) {
+						SQLGetDiagRec(SQL_HANDLE_STMT, stmt, diagCount, SqlState, &NativeError,Msg, sizeof(Msg), &MsgLen);
+						if (!strcmp((char*)SqlState,"01004")){
+							truncated = 1;
+							break;
+						}
+
+						diagCount++;
+					}
+
+					if (truncated) {
+						if (StrLen_or_IndPtr && StrLen_or_IndPtr <= 268435456) {
+							int ValLen = strlen((char*)val);
+							ColumnSize = StrLen_or_IndPtr + 1;
+							vals[y] = malloc(ColumnSize);
+							switch_assert(vals[y]);
+							memset(vals[y], 0, ColumnSize);
+							strcpy(vals[y], (char*)val);
+							rc = SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *)vals[y] + ValLen, ColumnSize - ValLen, NULL);
+							if (rc != SQL_SUCCESS 
+#if (ODBCVER >= 0x0300)
+								&& rc != SQL_NO_DATA
+#endif
+								) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData was truncated and failed to complete.\n");
+								switch_safe_free(vals[y]);
+							}
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sql data truncated - %s\n",SqlState);
+							vals[y] = NULL;
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed\n");
+						vals[y] = NULL;
+					}
+				} else if (rc == SQL_SUCCESS){
+					vals[y] = strdup((char *)val);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQLGetData failed\n");
+					vals[y] = NULL;
+				}
 			} else {
 				ColumnSize++;
 
@@ -633,7 +691,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 		for (x = 0; x < y; x++) {
 			free(names[x]);
-			free(vals[x]);
+			switch_safe_free(vals[x]);
 		}
 		free(names);
 		free(vals);

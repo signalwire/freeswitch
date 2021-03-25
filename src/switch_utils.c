@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Juan Jose Comellas <juanjo@comellas.org>
  * Seven Du <dujinfang@gmail.com>
- *
+ * Windy Wang <xiaofengcanyuexp@163.com>
  *
  * switch_utils.c -- Compatibility and Helper Code
  *
@@ -1081,7 +1081,7 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 
 		while (l >= 8) {
 			op[ol++] = (char) ((b >> (l -= 8)) % 256);
-			if (ol >= olen - 2) {
+			if (ol >= olen - 1) {
 				goto end;
 			}
 		}
@@ -4176,11 +4176,12 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 	char *q;
 	char *next;
 	char *name, *val;
+	char *dup = NULL;
 
 	if (qs) {
 		q = qs;
 	} else { /*parse our own qs, dup to avoid modify the original string */
-		q = strdup(request->qs);
+		dup = q = strdup(request->qs);
 	}
 
 	switch_assert(q);
@@ -4207,9 +4208,7 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 		q = next;
 	} while (q);
 
-	if (!qs) {
-		switch_safe_free(q);
-	}
+	switch_safe_free(dup);
 }
 
 /* clean the uri to protect us from vulnerability attack */

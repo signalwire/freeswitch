@@ -990,7 +990,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 #define SWITCH_SO_TCP_NODELAY 512
 #define SWITCH_SO_TCP_KEEPIDLE 520
 #define SWITCH_SO_TCP_KEEPINTVL 530
-
+#define SWITCH_SO_IPV6_V6ONLY 16384 /* Don't accept IPv4 connections on an IPv6 listening socket. */
 
  /**
  * @def SWITCH_INET
@@ -1144,6 +1144,8 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa
 														 int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t *pool);
 
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool);
+
+SWITCH_DECLARE(switch_status_t) switch_sockaddr_new(switch_sockaddr_t ** sa, const char *ip, switch_port_t port, switch_memory_pool_t *pool);
 
 /**
  * Send data over a network.

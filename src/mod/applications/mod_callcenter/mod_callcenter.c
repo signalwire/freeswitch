@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -426,7 +426,7 @@ static struct {
 	int debug;
 	char *odbc_dsn;
 	char *dbname;
-	char *cc_instance_id;
+	const char *cc_instance_id;
 	switch_bool_t reserve_agents;
 	switch_bool_t truncate_tiers;
 	switch_bool_t truncate_agents;
@@ -998,7 +998,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 {
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
-	char res[256];
+	char res[256] = "";
 	switch_event_t *event;
 
 	/* Check to see if agent already exist */
@@ -1501,7 +1501,7 @@ static int sqlite_column_rename_callback(void *pArg, const char *errmsg)
 	return 0;
 }
 
-static switch_status_t load_config(void)
+static switch_status_t load_config(switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers;
@@ -1536,7 +1536,7 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "global-database-lock")) {
 				globals.global_database_lock = switch_true(val);
 			} else if (!strcasecmp(var, "cc-instance-id")) {
-				globals.cc_instance_id = strdup(val);
+				globals.cc_instance_id = switch_core_strdup(pool, val);
 			} else if (!strcasecmp(var, "agent-originate-timeout")) {
 				globals.agent_originate_timeout = atoi(val);
 			}
@@ -1546,7 +1546,7 @@ static switch_status_t load_config(void)
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
 	if (zstr(globals.cc_instance_id)) {
-		globals.cc_instance_id = strdup("single_box");
+		globals.cc_instance_id = switch_core_strdup(pool, "single_box");
 	}
 	if (!globals.reserve_agents) {
 		globals.reserve_agents = SWITCH_FALSE;
@@ -4227,7 +4227,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_core_hash_init(&globals.queue_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
-	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+	if ((status = load_config(pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_event_unbind(&globals.node);
 		switch_event_free_subclass(CALLCENTER_EVENT);
 		switch_core_hash_destroy(&globals.queue_hash);
@@ -4341,7 +4341,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.dbname);
-	switch_safe_free(globals.cc_instance_id);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;

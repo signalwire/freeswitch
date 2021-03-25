@@ -520,6 +520,24 @@ SWITCH_DECLARE(const char *)Event::getType(void)
 	return (char *) "invalid";
 }
 
+SWITCH_DECLARE(bool)Event::merge(Event *to_merge)
+{
+	this_check(false);
+
+	if (!event) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to merge to an event that does not exist!\n");
+		return false;
+	}
+
+	if (!to_merge || !to_merge->event) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to merge from an event that does not exist!\n");
+		return false;
+	}
+
+	switch_event_merge(event, to_merge->event);
+
+	return true;
+}
 
 SWITCH_DECLARE_CONSTRUCTOR DTMF::DTMF(char idigit, uint32_t iduration)
 {

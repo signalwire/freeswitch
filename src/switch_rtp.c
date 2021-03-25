@@ -50,7 +50,9 @@
 #include <switch_jitterbuffer.h>
 
 //#define DEBUG_TS_ROLLOVER
-//#define TS_ROLLOVER_START 4294951295
+#ifdef DEBUG_TS_ROLLOVER
+#define TS_ROLLOVER_START 4294951295
+#endif
 
 //#define DEBUG_2833
 //#define RTP_DEBUG_WRITE_DELTA
@@ -2991,7 +2993,7 @@ static void ping_socket(switch_rtp_t *rtp_session)
 	switch_size_t len = sizeof(o);
 	switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
 
-	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->rtcp_sock_input) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_input != rtp_session->sock_input) {
 		switch_socket_sendto(rtp_session->rtcp_sock_input, rtp_session->rtcp_local_addr, 0, (void *) &o, &len);
 	}
 }
@@ -3730,11 +3732,17 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	const char *var;
 	int ret;
 	const char *kind = "";
+	unsigned long ssl_method_error = 0;
+	unsigned long ssl_ctx_error = 0;
+	const SSL_METHOD *ssl_method;
+	SSL_CTX *ssl_ctx;
 	BIO *bio;
 	DH *dh;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifndef OPENSSL_NO_EC
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 	EC_KEY* ecdh;
+#endif
 #endif
 
 #ifndef HAVE_OPENSSL_DTLS_SRTP
@@ -3783,14 +3791,29 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	dtls->ca = switch_core_sprintf(rtp_session->pool, "%s%sca-bundle.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-	dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLS_server_method() : DTLS_client_method());
+	ssl_method = (type & DTLS_TYPE_SERVER) ? DTLS_server_method() : DTLS_client_method();
 #else
     #ifdef HAVE_OPENSSL_DTLSv1_2_method
-	        dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? (want_DTLSv1_2 ? DTLSv1_2_server_method() : DTLSv1_server_method()) : (want_DTLSv1_2 ? DTLSv1_2_client_method() : DTLSv1_client_method()));
-    #else
-            dtls->ssl_ctx = SSL_CTX_new((type & DTLS_TYPE_SERVER) ? DTLSv1_server_method() : DTLSv1_client_method());
+		ssl_method = (type & DTLS_TYPE_SERVER) ? (want_DTLSv1_2 ? DTLSv1_2_server_method() : DTLSv1_server_method()) : (want_DTLSv1_2 ? DTLSv1_2_client_method() : DTLSv1_client_method());
+	#else
+		ssl_method = (type & DTLS_TYPE_SERVER) ? DTLSv1_server_method() : DTLSv1_client_method();
     #endif // HAVE_OPENSSL_DTLSv1_2_method
 #endif
+
+	if (!ssl_method) {
+		ssl_method_error = ERR_peek_error();
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s ssl_method is NULL [%lu]\n", rtp_type(rtp_session), ssl_method_error);
+	}
+
+	dtls->ssl_ctx = ssl_ctx = SSL_CTX_new(ssl_method);
+
+	if (!ssl_ctx) {
+		ssl_ctx_error = ERR_peek_error();
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s SSL_CTX_new failed [%lu]\n", rtp_type(rtp_session), ssl_ctx_error);
+		switch_channel_hangup(switch_core_session_get_channel(rtp_session->session), SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+		switch_goto_status(SWITCH_STATUS_FALSE, done);
+	}
+
 	switch_assert(dtls->ssl_ctx);
 
 	bio = BIO_new_file(dtls->pem, "r");
@@ -3871,6 +3894,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
 
 #ifndef OPENSSL_NO_EC
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 	ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 	if (!ecdh) {
 		switch_goto_status(SWITCH_STATUS_FALSE, done);
@@ -3878,6 +3902,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_options(dtls->ssl, SSL_OP_SINGLE_ECDH_USE);
 	SSL_set_tmp_ecdh(dtls->ssl, ecdh);
 	EC_KEY_free(ecdh);
+#elif OPENSSL_VERSION_NUMBER < 0x10100000L
+	SSL_set_ecdh_auto(dtls->ssl, 1);
+	SSL_set_options(dtls->ssl, SSL_OP_SINGLE_ECDH_USE);
+#endif
 #endif
 
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
@@ -5077,11 +5105,11 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
-			if (rtp_session->rtcp_sock_input) {
+			if (rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_input != rtp_session->sock_input) {
 				ping_socket(rtp_session);
 				switch_socket_shutdown(rtp_session->rtcp_sock_input, SWITCH_SHUTDOWN_READWRITE);
 			}
-			if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
+			if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
 				switch_socket_shutdown(rtp_session->rtcp_sock_output, SWITCH_SHUTDOWN_READWRITE);
 			}
 		}
@@ -5197,6 +5225,13 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		free_dtls(&(*rtp_session)->rtcp_dtls);
 	}
 
+	if ((*rtp_session)->rtcp_sock_input == (*rtp_session)->sock_input) {
+		(*rtp_session)->rtcp_sock_input = NULL;
+	}
+
+	if ((*rtp_session)->rtcp_sock_output == (*rtp_session)->sock_output) {
+		(*rtp_session)->rtcp_sock_output = NULL;
+	}
 
 	sock = (*rtp_session)->sock_input;
 	(*rtp_session)->sock_input = NULL;
@@ -5211,13 +5246,12 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	if ((sock = (*rtp_session)->rtcp_sock_input)) {
 		(*rtp_session)->rtcp_sock_input = NULL;
 		switch_socket_close(sock);
+	}
 
-		if ((*rtp_session)->rtcp_sock_output && (*rtp_session)->rtcp_sock_output != sock) {
-			if ((sock = (*rtp_session)->rtcp_sock_output)) {
-				(*rtp_session)->rtcp_sock_output = NULL;
-				switch_socket_close(sock);
-			}
-		}
+	if ((*rtp_session)->rtcp_sock_output && (*rtp_session)->rtcp_sock_output != sock) {
+		sock = (*rtp_session)->rtcp_sock_output;
+		(*rtp_session)->rtcp_sock_output = NULL;
+		switch_socket_close(sock);
 	}
 
 #ifdef ENABLE_SRTP
@@ -8877,6 +8911,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	rtp_msg_t *send_msg = NULL;
 	srtp_hdr_t local_header;
 	int r = 0;
+	switch_status_t status;
 
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
@@ -8941,8 +8976,12 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		}
 
-		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
-			return -1;
+		if ((status = switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes)) != SWITCH_STATUS_SUCCESS) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_ERROR, "bytes: %" SWITCH_SIZE_T_FMT ", status: %d", bytes, status);
+			}
+
+			return -1 * status;
 		}
 
 

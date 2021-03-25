@@ -382,7 +382,7 @@ static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputF
 #if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,7,100))
 		av_strlcpy(s->filename, filename, sizeof(s->filename));
 #else
-		s->url = strdup(filename);
+		s->url = av_strdup(filename);
 		switch_assert(s->url);
 #endif
 	}
@@ -702,7 +702,7 @@ GCC_DIAG_ON(deprecated-declarations)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "sample_rate: %d nb_samples: %d\n", mst->frame->sample_rate, mst->frame->nb_samples);
 
-	if (c->sample_fmt != AV_SAMPLE_FMT_S16) {
+	if (c->sample_fmt != AV_SAMPLE_FMT_S16 || c->sample_rate != mst->sample_rate) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "sample_fmt %d != AV_SAMPLE_FMT_S16, start resampler\n", c->sample_fmt);
 
 		mst->resample_ctx = swr_alloc();
@@ -1231,7 +1231,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		context->audio_st[1].sample_rate = handle->samplerate;
 
 GCC_DIAG_OFF(deprecated-declarations)
-		if (context->audio_st[0].st->codec->sample_fmt != AV_SAMPLE_FMT_S16) {
+		if (context->audio_st[0].st->codec->sample_fmt != AV_SAMPLE_FMT_S16 || context->audio_st[0].st->codec->sample_rate != handle->samplerate) {
 GCC_DIAG_ON(deprecated-declarations)
 			int x;
  			for (x = 0; x < context->has_audio && x < 2 && c[x]; x++) {
@@ -1571,6 +1571,8 @@ GCC_DIAG_ON(deprecated-declarations)
 
 			}
 
+		} else {
+			av_packet_unref(&pkt);
 		}
 	}
 

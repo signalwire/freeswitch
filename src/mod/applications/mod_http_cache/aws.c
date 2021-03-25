@@ -35,13 +35,6 @@
 #include <openssl/sha.h>
 #endif
 
-
-
-#if defined(HAVE_OPENSSL)
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-#endif
-
 #if defined(HAVE_OPENSSL)
 /**
  * Calculate HMAC-SHA256 hash of a message
@@ -151,10 +144,12 @@ static char* aws_s3_signature_key(char* key_signing, switch_aws_s3_profile* aws_
 	char key_service[SHA256_DIGEST_LENGTH];
 	char* aws4_secret_access_key = switch_mprintf("AWS4%s", aws_s3_profile->access_key_secret);
 
-	hmac256(key_date, SHA256_DIGEST_LENGTH, aws4_secret_access_key, strlen(aws4_secret_access_key), aws_s3_profile->date_stamp);
-	hmac256(key_region, SHA256_DIGEST_LENGTH, key_date, SHA256_DIGEST_LENGTH, aws_s3_profile->region);
-	hmac256(key_service, SHA256_DIGEST_LENGTH, key_region, SHA256_DIGEST_LENGTH, "s3");
-	hmac256(key_signing, SHA256_DIGEST_LENGTH, key_service, SHA256_DIGEST_LENGTH, "aws4_request");
+	if (!hmac256(key_date, SHA256_DIGEST_LENGTH, aws4_secret_access_key, (unsigned int)strlen(aws4_secret_access_key), aws_s3_profile->date_stamp)
+		|| !hmac256(key_region, SHA256_DIGEST_LENGTH, key_date, SHA256_DIGEST_LENGTH, aws_s3_profile->region)
+		|| !hmac256(key_service, SHA256_DIGEST_LENGTH, key_region, SHA256_DIGEST_LENGTH, "s3")
+		|| !hmac256(key_signing, SHA256_DIGEST_LENGTH, key_service, SHA256_DIGEST_LENGTH, "aws4_request")) {
+		key_signing = NULL;
+	}
 
 	switch_safe_free(aws4_secret_access_key);
 
@@ -173,7 +168,7 @@ static char* aws_s3_standardized_query_string(switch_aws_s3_profile* aws_s3_prof
 	char* standardized_query_string;
 
 	credential = switch_mprintf("%s%%2F%s%%2F%s%%2Fs3%%2Faws4_request", aws_s3_profile->access_key_id, aws_s3_profile->date_stamp, aws_s3_profile->region);
-	switch_snprintf(expires, 9, "%ld", aws_s3_profile->expires);
+	switch_snprintf(expires, 9, "%" SWITCH_TIME_T_FMT, aws_s3_profile->expires);
 
 	standardized_query_string = switch_mprintf(
 			"X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=%s&X-Amz-Date=%s&X-Amz-Expires=%s&X-Amz-SignedHeaders=host",
@@ -250,13 +245,14 @@ static char *aws_s3_authentication_create(switch_aws_s3_profile* aws_s3_profile)
 	string_to_sign = aws_s3_string_to_sign(standardized_request, aws_s3_profile);
 
 	// Get signature_key
-	aws_s3_signature_key(signature_key, aws_s3_profile);
-
-	// Get signature
-	hmac256_hex(signature, signature_key, SHA256_DIGEST_LENGTH, string_to_sign);
-
-	// Build final query string
-	query_param = switch_mprintf("%s&X-Amz-Signature=%s", standardized_query_string, signature);
+	if (!aws_s3_signature_key(signature_key, aws_s3_profile)
+		// Get signature
+		|| !hmac256_hex(signature, signature_key, SHA256_DIGEST_LENGTH, string_to_sign)) {
+		query_param = NULL;
+	} else {
+		// Build final query string
+		query_param = switch_mprintf("%s&X-Amz-Signature=%s", standardized_query_string, signature);
+	}
 
 	switch_safe_free(string_to_sign);
 	switch_safe_free(standardized_query_string);
@@ -290,6 +286,11 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
 #if defined(HAVE_OPENSSL)
 	switch_aws_s3_profile aws_s3_profile;
 	char* url_dup;
+
+	if (!query_string) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required arg query_string.\n");
+		return headers;
+	}
 
 	// Get bucket and object name from url
 	switch_strdup(url_dup, url);
