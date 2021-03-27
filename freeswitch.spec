@@ -1091,8 +1091,7 @@ BuildRequires:	libmpg123-devel >= 1.16.0
 BuildRequires:	lame-devel
 
 %description format-shout
-Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
-shoutcast stream.
+Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or from shoutcast stream.
 
 %if %{build_mod_opusfile}
 %package format-mod-opusfile
