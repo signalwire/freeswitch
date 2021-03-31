@@ -390,6 +390,7 @@ struct switch_rtp {
 	//uint32_t last_clock_ts;
 	uint32_t last_write_ts;
 	uint32_t last_read_ts;
+	uint32_t prev_read_ts;
 	uint32_t last_cng_ts;
 	uint32_t last_write_samplecount;
 	uint32_t delay_samples;
@@ -6413,6 +6414,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 	if (ts) {
+		rtp_session->prev_read_ts = rtp_session->last_read_ts;
 		rtp_session->last_read_ts = ts;
 	}
 
@@ -6488,7 +6490,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		} else {
 			if (rtp_session->last_rtp_hdr.m && rtp_session->last_rtp_hdr.pt != rtp_session->recv_te &&
-				!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
+				!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT) && 
+				rtp_session->last_read_ts - rtp_session->prev_read_ts < rtp_session->samples_per_interval * 3) {  
 				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			} else if (rtp_session->last_jb_read_ssrc && rtp_session->last_jb_read_ssrc != read_ssrc) {
 				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
