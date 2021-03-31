@@ -1117,6 +1117,8 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, var, val);
 					switch_mutex_unlock(jsock->flag_mutex);
 
+					switch_clear_flag(jsock, JPFLAG_AUTH_EXPIRED);
+					
 					if (!strcmp(var, "login-expires")) {
 						uint32_t tmp = atol(val);
 
@@ -1348,7 +1350,16 @@ static void drop_detached(void)
 		}
 
 		if (tech_pvt->detach_time && (now - tech_pvt->detach_time) > verto_globals.detach_timeout) {
-			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
+			jsock_t *jsock = NULL;
+
+			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
+				if (switch_test_flag(jsock, JPFLAG_AUTH_EXPIRED)) {
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTAUTH);
+				}
+				switch_thread_rwlock_unlock(jsock->rwlock);
+			} else {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
+			}
 		}
 	}
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
@@ -1985,6 +1996,7 @@ static void client_run(jsock_t *jsock)
 			now = switch_epoch_time_now(NULL);
 
 			if (now >= jsock->exptime) {
+				switch_set_flag(jsock, JPFLAG_AUTH_EXPIRED);
 				die("%s Authentication Expired\n", jsock->uid);
 			}
 
@@ -1998,6 +2010,10 @@ static void client_run(jsock_t *jsock)
 			cJSON *params = NULL;
 			cJSON *msg = jrpc_new_req("verto.ping", 0, &params);
 
+			if (jsock->exptime) {
+				cJSON_AddItemToObject(params, "auth-expires", cJSON_CreateNumber(jsock->exptime));
+			}
+			
 			cJSON_AddItemToObject(params, "serno", cJSON_CreateNumber(switch_epoch_time_now(NULL)));
 			jsock_queue_event(jsock, &msg, SWITCH_TRUE);
 			idle = 0;
@@ -3700,6 +3716,11 @@ static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 static switch_bool_t verto__ping_func(const char *method, cJSON *params, jsock_t *jsock, cJSON **response)
 {
 	*response = cJSON_CreateObject();
+
+	if (jsock->exptime) {
+		cJSON_AddItemToObject(*response, "auth-expires", cJSON_CreateNumber(jsock->exptime));
+	}
+			
 	cJSON_AddItemToObject(*response, "message", cJSON_CreateString("PONG"));
 	return SWITCH_TRUE;
 }
