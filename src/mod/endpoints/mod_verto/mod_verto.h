@@ -95,7 +95,8 @@ typedef enum {
 	JPFLAG_CHECK_ATTACH = (1 << 2),
 	JPFLAG_EVENTS = (1 << 3),
 	JPFLAG_AUTH_EVENTS = (1 << 4),
-	JPFLAG_ALL_EVENTS_AUTHED = (1 << 5)
+	JPFLAG_ALL_EVENTS_AUTHED = (1 << 5),
+	JPFLAG_AUTH_EXPIRED = (1 << 6)
 } jpflag_t;
 
 struct verto_profile_s;
