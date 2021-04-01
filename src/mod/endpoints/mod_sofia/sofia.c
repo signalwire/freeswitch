@@ -960,7 +960,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	char st[80] = "";
 #endif
 
-	if (!session) {
+	if (!session || !sip) {
 		return;
 	}
 
@@ -1615,7 +1615,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			authorization = sip->sip_proxy_authorization;
 		}
 
-		if (authorization) {
+		if (authorization && sip->sip_request) {
 			char network_ip[80] = "";
 			int network_port;
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
@@ -10694,8 +10694,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-
-	tech_pvt->from_user = switch_core_session_strdup(session, sip->sip_from->a_url->url_user);
+	if (sip->sip_from && sip->sip_from->a_url) {
+		tech_pvt->from_user = switch_core_session_strdup(session, sip->sip_from->a_url->url_user);
+	}
 	tech_pvt->mparams.remote_ip = switch_core_session_strdup(session, network_ip);
 	tech_pvt->mparams.remote_port = network_port;
 
@@ -11268,7 +11269,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (profile->pres_type) {
 		const char *presence_id = switch_channel_get_variable(channel, "presence_id");
-		if (zstr(presence_id)) {
+		if (zstr(presence_id) && sip->sip_from && sip->sip_from->a_url) {
 			const char *user = switch_str_nil(sip->sip_from->a_url->url_user);
 			const char *host = switch_str_nil(sip->sip_from->a_url->url_host);
 			char *tmp = switch_mprintf("%s@%s", user, host);
