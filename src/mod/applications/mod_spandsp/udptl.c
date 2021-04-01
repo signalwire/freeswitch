@@ -296,7 +296,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 				return -1;
 
 			/* Save the new FEC data */
-			if (s->rx[x].fec_len[i])
+			if (s->rx[x].fec_len[i] && data)
 				memcpy(s->rx[x].fec[i], data, s->rx[x].fec_len[i]);
 #if 0
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC: ");
