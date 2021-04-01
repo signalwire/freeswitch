@@ -201,24 +201,6 @@ static const char *_url_set_chanvars(switch_core_session_t *session, url_t *url,
 	return uri;
 }
 
-static char *strip_quotes(const char *in)
-{
-	char *t = (char *) in;
-	char *r = (char *) in;
-
-	if (t && *t == '"') {
-		t++;
-
-		if (end_of(t) == '"') {
-			r = strdup(t);
-			switch_assert(r);
-			end_of(r) = '\0';
-		}
-	}
-
-	return r;
-}
-
 static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 								switch_core_session_t *session, nua_handle_t *nh)
 {
@@ -324,12 +306,8 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 		}
 
 		if (sip->sip_from) {
-			char *p = strip_quotes(sip->sip_from->a_display);
+			switch_channel_set_variable_strip_quotes(channel, "sip_from_display", sip->sip_from->a_display);
 
-			if (p) {
-				switch_channel_set_variable(channel, "sip_from_display", p);
-			}
-			if (p != sip->sip_from->a_display) free(p);
 			if ((full = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_from))) {
 				switch_channel_set_variable(channel, "sip_full_from", full);
 				su_free(nua_handle_get_home(nh), full);
@@ -337,13 +315,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 		}
 
 		if (sip->sip_to) {
-			char *p = strip_quotes(sip->sip_to->a_display);
-
-			if (p) {
-				switch_channel_set_variable(channel, "sip_to_display", p);
-			}
-
-			if (p != sip->sip_to->a_display) free(p);
+			switch_channel_set_variable_strip_quotes(channel, "sip_to_display", sip->sip_to->a_display);
 
 			if ((full = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_to))) {
 				switch_channel_set_variable(channel, "sip_full_to", full);

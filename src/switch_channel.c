@@ -1496,6 +1496,48 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_strip_quotes_var_check(switch_channel_t *channel,
+	const char *varname, const char *value, switch_bool_t var_check)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->variables && !zstr(varname)) {
+		if (zstr(value)) {
+			switch_event_del_header(channel->variables, varname);
+		} else {
+			int ok = 1;
+			char *t = (char *)value;
+			char *r = (char *)value;
+
+			if (t && *t == '"') {
+				t++;
+				if (end_of(t) == '"') {
+					r = strdup(t);
+					switch_assert(r);
+					end_of(r) = '\0';
+				}
+			}
+
+			if (var_check) {
+				ok = !switch_string_var_check_const(r);
+			}
+			if (ok) {
+				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, r);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
+			}
+
+			if (r != value) free(r);
+		}
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack)
