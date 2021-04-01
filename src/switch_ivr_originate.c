@@ -1145,6 +1145,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 		if (read_frame && !pass) {
 
+			if (!write_frame.codec) {
+				status = SWITCH_STATUS_FALSE;
+				break;
+			}
+
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
