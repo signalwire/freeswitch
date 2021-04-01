@@ -4552,12 +4552,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 															 "deprecated and will be removed - let FS devs know if you think it should stay\n");
 				}
 			} else if (!strcasecmp(var, "rewrite-multicasted-fs-path")) {
-				if( (!strcasecmp(val, "to_host")) || (!strcasecmp(val, "1")) ) {
+				if(val && (!strcasecmp(val, "to_host") || !strcasecmp(val, "1")) ) {
 					/* old behaviour */
 									mod_sofia_globals.rewrite_multicasted_fs_path = 1;
-				} else if (!strcasecmp(val, "original_server_host")) {
+				} else if (val && !strcasecmp(val, "original_server_host")) {
 									mod_sofia_globals.rewrite_multicasted_fs_path = 2;
-				} else if (!strcasecmp(val, "original_hostname")) {
+				} else if (val && !strcasecmp(val, "original_hostname")) {
 									mod_sofia_globals.rewrite_multicasted_fs_path = 3;
 				} else {
 					mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
