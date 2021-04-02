@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * switch_caller.h -- Caller Identification
+ * switch_resample.h
  *
  */
 /*! \file switch_resample.h
@@ -39,7 +39,8 @@
 
 */
 #define switch_normalize_volume(x) if (x > 4) x = 4; if (x < -4) x = -4;
-#define switch_normalize_volume_granular(x) if (x > 13) x = 13; if (x < -13) x = -13;
+#define SWITCH_GRANULAR_VOLUME_MAX 50
+#define switch_normalize_volume_granular(x) if (x > SWITCH_GRANULAR_VOLUME_MAX) x = SWITCH_GRANULAR_VOLUME_MAX; if (x < -SWITCH_GRANULAR_VOLUME_MAX) x = -SWITCH_GRANULAR_VOLUME_MAX;
 
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H

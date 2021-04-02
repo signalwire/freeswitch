@@ -3574,9 +3574,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	conference->agc_level = 0;
 	conference->agc_low_energy_level = 0;
-	conference->agc_margin = 20;
-	conference->agc_change_factor = 3;
-	conference->agc_period_len = (1000 / conference->interval) * 2;
+	conference->agc_margin = 100;
+	conference->agc_change_factor = 2;
+	conference->agc_period_len = 500 / conference->interval;
 
 
 	if (agc_level) {
@@ -3610,7 +3610,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	if (agc_period_len) {
 		tmp = atoi(agc_period_len);
 		if (tmp > 0) {
-			conference->agc_period_len = (1000 / conference->interval) * tmp;
+			conference->agc_period_len = tmp;
 		}
 	}
 
