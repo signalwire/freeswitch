@@ -2441,16 +2441,11 @@ void sofia_event_callback(nua_event_t event,
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);
 
 						if (!zstr(tech_pvt->call_id)) {
-							char *uuid = strdup(switch_core_session_get_uuid(session));
 							tech_pvt->sofia_private = NULL;
 							tech_pvt->nh = NULL;
 							sofia_set_flag(tech_pvt, TFLAG_BYE);
 							switch_mutex_lock(profile->flag_mutex);
-
-							if (switch_core_hash_insert_auto_free(profile->chat_hash, tech_pvt->call_id, uuid) != SWITCH_STATUS_SUCCESS) {
-								switch_safe_free(uuid);
-							}
-
+							switch_core_hash_insert_dup_auto_free(profile->chat_hash, tech_pvt->call_id, switch_core_session_get_uuid(session));
 							switch_mutex_unlock(profile->flag_mutex);
 							nua_handle_destroy(nh);
 						} else {

@@ -85,6 +85,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t 
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_auto_free(switch_hash_t *hash, const char *key, const char *str)
+{
+	char *dkey = strdup(key);
+	char *dup = strdup(str);
+
+	assert(dup);
+
+	if (switch_hashtable_insert_destructor(hash, dkey, (void *)dup, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE | HASHTABLE_DUP_CHECK, NULL)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_safe_free(dup);
+	switch_safe_free(dkey);
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(void *) switch_core_hash_insert_alloc_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ size_t size, hashtable_destructor_t destructor) {
 	char *dkey;
 	void *data;

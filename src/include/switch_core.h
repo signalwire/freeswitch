@@ -1447,6 +1447,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_pointer(switch_hash_t *h
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data);
 
 /*!
+  \brief Insert strdup(str) into a hash and set flags so the value is automatically freed on delete
+  \param hash the hash to add str to
+  \param key the name of the key to add the str to
+  \param str string to strdup and add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_auto_free(switch_hash_t *hash, const char *key, const char *str);
+
+/*!
   \brief Insert data into a hash
   \param hash the hash to add data to
   \param key the name of the key to add the data to
@@ -1469,10 +1479,10 @@ SWITCH_DECLARE(void *) switch_core_hash_insert_alloc_destructor(_In_ switch_hash
 #define switch_core_hash_insert_alloc(_h, _k, _s) switch_core_hash_insert_alloc_destructor(_h, _k, _s, NULL)
 
 /*!
-  \brief Insert strdup(data) into a hash
-  \param hash the hash to add data to
-  \param key the name of the key to add the data to
-  \param data string to strdup and add
+  \brief Insert strdup(str) into a hash
+  \param hash the hash to add str to
+  \param key the name of the key to add the str to
+  \param str string to strdup and add
   \return SWITCH_STATUS_SUCCESS if the data is added
   \note the string key must be a constant or a dynamic string
 */
