@@ -1069,6 +1069,8 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			
 			jsock->logintime = now;
 			jsock->id = switch_core_strdup(jsock->pool, id);
 			jsock->domain = switch_core_strdup(jsock->pool, domain);
@@ -1124,7 +1126,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 						if (tmp > now) {
 							jsock->exptime = tmp;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %ld seconds\n", jsock->uid, tmp - now);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %ld seconds [%ld] [%ld]\n", jsock->uid, tmp - now, jsock->exptime, now);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid expire time for %s. Defaulting to 300 sec\n", jsock->uid);
 							jsock->exptime = now + 300;
@@ -1997,7 +1999,7 @@ static void client_run(jsock_t *jsock)
 
 			if (now >= jsock->exptime) {
 				switch_set_flag(jsock, JPFLAG_AUTH_EXPIRED);
-				die("%s Authentication Expired\n", jsock->uid);
+				die("%s Authentication Expired [%ld] >= [%ld]\n", jsock->uid, now, jsock->exptime);
 			}
 
 		}
