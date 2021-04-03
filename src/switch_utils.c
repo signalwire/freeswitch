@@ -4538,7 +4538,7 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str)
 	text = (char *)stream.data;
 #else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Support for html parser is not compiled.\n");
-	text = strdup(html);
+	text = switch_safe_strdup(html);
 #endif
 
 	return text;
