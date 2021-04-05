@@ -446,7 +446,8 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
+			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
+			free(v);
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
