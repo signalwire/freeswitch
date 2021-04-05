@@ -1511,11 +1511,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_strip_quotes_var_che
 			int ok = 1;
 			char *t = (char *)value;
 			char *r = (char *)value;
+			char *tmp = NULL;
 
 			if (t && *t == '"') {
 				t++;
 				if (end_of(t) == '"') {
-					r = strdup(t);
+					r = tmp = strdup(t);
 					switch_assert(r);
 					end_of(r) = '\0';
 				}
@@ -1530,7 +1531,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_strip_quotes_var_che
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
 
-			if (r != value) free(r);
+			switch_safe_free(tmp);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 	}
