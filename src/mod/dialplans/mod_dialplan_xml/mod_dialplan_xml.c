@@ -361,6 +361,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				switch_regex_safe_free(re);
 
 				switch_safe_free(field_expanded);
+				if (expression == expression_expanded) expression = NULL;
 				switch_safe_free(expression_expanded);
 			}
 
@@ -375,6 +376,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 			}
 
 			switch_safe_free(field_expanded);
+			if (expression == expression_expanded) expression = NULL;
 			switch_safe_free(expression_expanded);
 		} else {
 			if ((xexpression = switch_xml_child(xcond, "expression"))) {
@@ -502,7 +504,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				proceed = 1;
 			}
 		} else {
-			if (field && strchr(expression, '(')) {
+			if (field && expression && strchr(expression, '(')) {
 				switch_channel_set_variable(channel, "DP_MATCH", NULL);
 				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", switch_regex_set_var_callback, session);
 			}
@@ -524,7 +526,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					data = (char *) switch_xml_attr_soft(xaction, "data");
 				}
 
-				if (field && strchr(expression, '(')) {
+				if (field && expression && strchr(expression, '(')) {
 					len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
 					if (!(substituted = malloc(len))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
