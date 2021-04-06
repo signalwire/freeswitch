@@ -1297,6 +1297,8 @@ static int on_subscribe(void *user_data, ikspak *pak)
 		handle->session_callback(handle, NULL, LDL_SIGNAL_SUBSCRIBE, to, from, NULL, NULL);
 	}
 
+	if (id) free(id);
+
 	return IKS_FILTER_EAT;
 }
 
@@ -2325,6 +2327,9 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char 
 	if (strchr(my_body, '<')) {
 		len = (int) strlen(my_body);
 		if (!(bdup = malloc(len))) {
+			if (my_body_base) {
+				free(my_body_base);
+			}
 			return;
 		}
 
