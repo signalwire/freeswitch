@@ -1376,7 +1376,7 @@ SWITCH_STANDARD_API(process_status_function)
 			}
 
 			switch_snprintf(tmp_str, sizeof(tmp_str), "%d", rows);
-			switch_xml_set_attr(switch_xml_set_flag(xml_row, SWITCH_XML_DUP), strdup("row_id"), strdup(tmp_str));
+			switch_xml_set_attr_d(xml_row, "row_id", tmp_str);
 
 			if (!(xml_field = switch_xml_add_child_d(xml_row, "task_id", f_off++))) {				
 				goto end;
