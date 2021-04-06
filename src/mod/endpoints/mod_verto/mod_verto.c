@@ -5496,7 +5496,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 			free(dial_str);
 		}
 
-		return cause;
+		goto end;
 	} else {
 		const char *dialed_user = switch_event_get_header(var_event, "dialed_user");
 		const char *dialed_domain = switch_event_get_header(var_event, "dialed_domain");
