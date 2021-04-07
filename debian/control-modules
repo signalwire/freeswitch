@@ -305,6 +305,7 @@ Build-Depends: libopencore-amrnb-dev
 Module: codecs/mod_amrwb
 Description: mod_amrwb
  Adds mod_amrwb.
+Build-Depends: libopencore-amrwb-dev
 
 Module: codecs/mod_b64
 Description: mod_b64
