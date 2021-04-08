@@ -51,6 +51,10 @@
 #include "gumbo.h"
 #endif
 
+#if defined(HAVE_OPENSSL)
+#include <openssl/evp.h>
+#endif
+
 struct switch_network_node {
 	ip_t ip;
 	ip_t mask;
@@ -4549,6 +4553,89 @@ SWITCH_DECLARE(unsigned long) switch_getpid(void)
 	return (unsigned long)pid;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_digest(const char *digest_name, unsigned char **digest, const void *input, switch_size_t inputLen, unsigned int *outputlen)
+{
+#if defined(HAVE_OPENSSL)
+	EVP_MD_CTX *mdctx;
+	const EVP_MD *md;
+	int size;
+
+	switch_assert(digest);
+
+	if (!digest_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Message digest is not set\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	md = EVP_get_digestbyname(digest_name);
+
+	if (!md) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown message digest %s\n", digest_name);			
+		return SWITCH_STATUS_FALSE;
+	}
+
+	size = EVP_MD_size(md);
+	if (!size || !(*digest = malloc(size))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Zero digest size or can't allocate memory to store results %s\n", digest_name);
+		return SWITCH_STATUS_FALSE;
+	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	mdctx = EVP_MD_CTX_new();
+#else
+	mdctx = EVP_MD_CTX_create();
+#endif
+
+	if (!mdctx) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EVP_MD_CTX_new error\n");
+		switch_safe_free(*digest);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	EVP_MD_CTX_init(mdctx);
+	EVP_DigestInit_ex(mdctx, md, NULL);
+	EVP_DigestUpdate(mdctx, input, inputLen);
+	EVP_DigestFinal_ex(mdctx, *digest, outputlen);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	EVP_MD_CTX_free(mdctx);
+#else
+	EVP_MD_CTX_destroy(mdctx);
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, char **digest_str, const void *input, switch_size_t inputLen, unsigned int *outputlen)
+{
+	unsigned char *digest = NULL;
+	switch_status_t status;
+	short i = 0, x;
+	uint8_t b;
+
+	status = switch_digest(digest_name, &digest, input, inputLen, outputlen);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if ((*digest_str = malloc(*outputlen * 2 + 1))) {
+			for (x = i = 0; x < *outputlen; x++) {
+				b = (digest[x] >> 4) & 15;
+				(*digest_str)[i++] = b + (b > 9 ? 'a' - 10 : '0');
+				b = digest[x] & 15;
+				(*digest_str)[i++] = b + (b > 9 ? 'a' - 10 : '0');
+			}
+
+			(*digest_str)[i] = '\0';
+		}
+	}
+
+	switch_safe_free(digest);
+	*outputlen = i;
+
+	return status;
+}
 
 /* For Emacs:
  * Local Variables:

@@ -1945,6 +1945,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	SSL_library_init();
 	switch_ssl_init_ssl_locks();
+	OpenSSL_add_all_algorithms();
 	switch_curl_init();
 
 	switch_core_set_variable("hostname", runtime.hostname);
@@ -3037,6 +3038,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_curl_destroy();
 
 	switch_ssl_destroy_ssl_locks();
+	EVP_cleanup();
 
 	switch_scheduler_task_thread_stop();
 

@@ -1460,6 +1460,9 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str);
 
 SWITCH_DECLARE(unsigned long) switch_getpid(void);
 
+SWITCH_DECLARE(switch_status_t) switch_digest(const char *digest_name, unsigned char **digest, const void *input, switch_size_t inputLen, unsigned int *outputlen);
+SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, char **digest_str, const void *input, switch_size_t inputLen, unsigned int *outputlen);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

@@ -34,6 +34,10 @@
 
 #include <test/switch_test.h>
 
+#if defined(HAVE_OPENSSL)
+#include <openssl/ssl.h>
+#endif
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_ivr_originate)
@@ -47,6 +51,52 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+#ifdef HAVE_OPENSSL
+		FST_TEST_BEGIN(test_md5)
+		{
+			char *digest_name = "md5";
+			char *digest_str = NULL;
+			const char *str = "test data";
+			unsigned int outputlen;
+
+			switch_status_t status = switch_digest_string(digest_name, &digest_str, str, strlen(str), &outputlen);
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(digest_str, "eb733a00c0c9d336e65691a37ab54293");
+			switch_safe_free(digest_str);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_sha256)
+		{
+			char *digest_name = "sha256";
+			char *digest_str = NULL;
+			const char *str = "test data";
+			unsigned int outputlen;
+
+			switch_status_t status = switch_digest_string(digest_name, &digest_str, str, strlen(str), &outputlen);
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(digest_str, "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9");
+			switch_safe_free(digest_str);
+		}
+		FST_TEST_END()
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+		FST_TEST_BEGIN(test_sha512_256)
+		{
+			char *digest_name = "sha512-256";
+			char *digest_str = NULL;
+			const char *str = "test data";
+			unsigned int outputlen;
+
+			switch_status_t status = switch_digest_string(digest_name, &digest_str, str, strlen(str), &outputlen);
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(digest_str, "9fe875600168548c1954aed4f03974ce06b3e17f03a70980190da2d7ef937a43");
+			switch_safe_free(digest_str);
+		}
+		FST_TEST_END()
+#endif
 
 #ifndef WIN32
 		FST_TEST_BEGIN(test_fork)
