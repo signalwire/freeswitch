@@ -1260,16 +1260,18 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 
 			if (e) {
 				rp += 3;
-				var = rp;
-				*e++ = '\0';
-				rp = e;
+				var = malloc(e - rp + 1);
+				memcpy(var, rp, e - rp);
+				var[e - rp] = 0;
+				rp = e + 1;
 				if ((val = switch_core_get_variable_dup(var))) {
 					char *p;
-					for (p = val; p && *p && wp <= ep; p++) {
+					for (p = val; p && *p && wp < ep; p++) {
 						*wp++ = *p;
 					}
 					free(val);
 				}
+				free(var);
 				continue;
 			} else if (err) {
 				*err = "unterminated ${var}";
