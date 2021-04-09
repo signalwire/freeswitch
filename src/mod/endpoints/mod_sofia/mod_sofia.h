@@ -369,6 +369,8 @@ typedef enum {
 #define SOFIA_MAX_MSG_QUEUE 64
 #define SOFIA_MSG_QUEUE_SIZE 1000
 
+#define SOFIA_MAX_REG_ALGS 7 /* rfc8760 */
+
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
 	switch_hash_t *profile_hash;
@@ -599,6 +601,13 @@ typedef enum {
 	KA_INFO
 } ka_type_t;
 
+typedef enum {
+	ALG_MD5 = (1 << 0),
+	ALG_SHA256 = (1 << 1),
+	ALG_SHA512 = (1 << 2),
+	ALG_NONE = (1 << 3),
+} sofia_auth_algs_t;
+
 struct sofia_profile {
 	int debug;
 	int parse_invite_tel_params;
@@ -789,6 +798,8 @@ struct sofia_profile {
 	char *rfc7989_filter;
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
+	uint8_t rfc8760_algs_count;
+	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
 };
 
 
@@ -1260,6 +1271,8 @@ void sofia_reg_close_handles(sofia_profile_t *profile);
 
 void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwd_type);
 void sofia_glue_clear_soa(switch_core_session_t *session, switch_bool_t partner);
+sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive);
+switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen);
 
 /* For Emacs:
  * Local Variables:
