@@ -3395,7 +3395,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 	const char *call_id = NULL, *dtmf = NULL;
 	switch_bool_t r = SWITCH_TRUE;
 	char *proto = VERTO_CHAT_PROTO;
-	char *pproto = NULL;
+	char *dest_proto = NULL;
 	int err = 0;
 
 	*response = cJSON_CreateObject();
@@ -3491,12 +3491,11 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
-				pproto = strdup(to);
-				switch_assert(pproto);
-				if ((to = strchr(pproto, '+'))) {
+				dest_proto = strdup(to);
+				switch_assert(dest_proto);
+				if ((to = strchr(dest_proto, '+'))) {
 					*to++ = '\0';
 				}
-				proto = pproto;
 			}
 		}
 
@@ -3526,23 +3525,24 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 			switch_event_add_body(event, "%s", body);
 
-			if (strcasecmp(proto, VERTO_CHAT_PROTO)) {
-				switch_core_chat_send(proto, event);
-			}
-
-			if (is_dialog) {
-				if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
-					switch_core_session_t *session = NULL;
-
-					if ((session = switch_core_session_locate(call_id))) {
-						switch_core_session_queue_event(session, &event);
-						switch_core_session_rwunlock(session);
-					}
-				}
+			if (strcasecmp(dest_proto, VERTO_CHAT_PROTO)) {
+				switch_core_chat_send(dest_proto, event);
 
 			} else {
-				switch_core_chat_send("GLOBAL", event);
-			}
+                if (is_dialog) {
+                    if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
+                        switch_core_session_t *session = NULL;
+
+                        if ((session = switch_core_session_locate(call_id))) {
+                            switch_core_session_queue_event(session, &event);
+                            switch_core_session_rwunlock(session);
+                        }
+                    }
+
+				} else {
+				switch_core_chat_send(VERTO_CHAT_PROTO, event);
+				}
+            }
 
 			if (event) {
 				switch_event_destroy(&event);
@@ -3557,7 +3557,7 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		}
 
 
-		switch_safe_free(pproto);
+		switch_safe_free(dest_proto);
 	}
 
  cleanup:
