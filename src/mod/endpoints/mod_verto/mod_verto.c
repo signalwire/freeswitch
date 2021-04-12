@@ -3394,8 +3394,6 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 	cJSON *msg = NULL, *dialog = NULL, *txt = NULL;
 	const char *call_id = NULL, *dtmf = NULL;
 	switch_bool_t r = SWITCH_TRUE;
-	char *proto = VERTO_CHAT_PROTO;
-	char *dest_proto = NULL;
 	int err = 0;
 
 	*response = cJSON_CreateObject();
@@ -3483,8 +3481,8 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 	if ((msg = cJSON_GetObjectItem(params, "msg"))) {
 		switch_event_t *event;
+		char *dest_proto = VERTO_CHAT_PROTO;
 		char *to = (char *) cJSON_GetObjectCstr(msg, "to");
-		//char *from = (char *) cJSON_GetObjectCstr(msg, "from");
 		cJSON *i, *indialog =  cJSON_GetObjectItem(msg, "inDialog");
 		const char *body = cJSON_GetObjectCstr(msg, "body");
 		switch_bool_t is_dialog = indialog && (indialog->type == cJSON_True || (indialog->type == cJSON_String && switch_true(indialog->valuestring)));
@@ -3525,23 +3523,18 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 			switch_event_add_body(event, "%s", body);
 
-			if (strcasecmp(dest_proto, VERTO_CHAT_PROTO)) {
-				switch_core_chat_send(dest_proto, event);
+            if (is_dialog) {
+                if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
+                    switch_core_session_t *session = NULL;
 
-			} else {
-                if (is_dialog) {
-                    if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
-                        switch_core_session_t *session = NULL;
-
-                        if ((session = switch_core_session_locate(call_id))) {
-                            switch_core_session_queue_event(session, &event);
-                            switch_core_session_rwunlock(session);
-                        }
+                    if ((session = switch_core_session_locate(call_id))) {
+                        switch_core_session_queue_event(session, &event);
+                        switch_core_session_rwunlock(session);
                     }
+                }
 
-				} else {
-				switch_core_chat_send(VERTO_CHAT_PROTO, event);
-				}
+            } else {
+                switch_core_chat_send(dest_proto, event);
             }
 
 			if (event) {
@@ -3556,8 +3549,6 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("INVALID MESSAGE to and body params required"));
 		}
 
-
-		switch_safe_free(dest_proto);
 	}
 
  cleanup:
