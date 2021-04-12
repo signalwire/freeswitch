@@ -3536,10 +3536,10 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
             } else {
 
                 if (!strcasecmp(dest_proto, "global")) {
-				    switch_core_chat_send("GLOBAL", event);
+                    switch_core_chat_send("GLOBAL", event);
 
-			    } else {
-			        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+                } else {
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
                     switch_core_chat_send(dest_proto, event);
                 }
             }
