@@ -800,6 +800,12 @@ Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	mariadb-connector-c
 BuildRequires:	mariadb-connector-c-devel
+%if 0%{?rhel} == 7
+# to build mariadb module required gcc >= 4.9 (more details GH #1046)
+# On CentOS 7 dist you can install fresh gcc using command
+# yum install centos-release-scl && yum install devtoolset-9
+BuildRequires: devtoolset-9
+%endif
 
 %description database-mariadb
 MariaDB native support for FreeSWITCH.
@@ -1575,6 +1581,12 @@ export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9 (more details GH #1046)
+export CFLAGS="$CFLAGS -Wno-error=expansion-to-defined"
+. /opt/rh/devtoolset-9/enable
+%endif
+
 ######################################################################################################################
 #
 #				Bootstrap, Configure and Build the whole enchilada
@@ -1635,6 +1647,11 @@ cd libs/esl
 #
 ######################################################################################################################
 %install
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9
+. /opt/rh/devtoolset-9/enable
+%endif
+
 
 %{__make} DESTDIR=%{buildroot} install
 
