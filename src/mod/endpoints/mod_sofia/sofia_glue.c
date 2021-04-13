@@ -1832,6 +1832,16 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 		return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
 	case 487:
 		return SWITCH_CAUSE_ORIGINATOR_CANCEL;
+	case 428:
+		return SWITCH_CAUSE_NO_IDENTITY;
+	case 429:
+		return SWITCH_CAUSE_BAD_IDENTITY_INFO;
+	case 437:
+		return SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE;
+	case 438:
+		return SWITCH_CAUSE_INVALID_IDENTITY;
+	case 439:
+		return SWITCH_CAUSE_STALE_DATE;
 	default:
 		return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
 	}

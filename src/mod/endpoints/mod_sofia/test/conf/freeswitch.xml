@@ -97,6 +97,36 @@
           <action application="park" data=""/>
         </condition>
       </extension>
+      <extension name="verifyidentity">
+        <condition field="destination_number" expression="^verifyidentity$">
+          <action application="pre_answer" data=""/>
+          <action application="set" data="sip_hangup_on_verify_identity_fail=true"/>
+          <action application="set" data="sip_verify_identity_max_age=315569520"/> <!-- 10 years -->
+          <action application="sofia_verify_identity" data=""/>
+          <action application="answer" data=""/>
+          <action application="park" data=""/>
+        </condition>
+      </extension>
+      <extension name="verifyidentitytn">
+        <condition field="destination_number" expression="^\+15553214321$">
+          <action application="pre_answer" data=""/>
+          <action application="set" data="sip_hangup_on_verify_identity_fail=true"/>
+          <action application="set" data="sip_verify_identity_max_age=315569520"/> <!-- 10 years -->
+          <action application="sofia_verify_identity" data=""/>
+          <action application="answer" data=""/>
+          <action application="park" data=""/>
+        </condition>
+      </extension>
+      <extension name="verifyidentitytnexp">
+        <condition field="destination_number" expression="^\+15553214322$">
+          <action application="pre_answer" data=""/>
+          <!-- verifies and makes sure JWT signature is fresh (<= 60 seconds) -->
+          <action application="set" data="sip_hangup_on_verify_identity_fail=true"/>
+          <action application="sofia_verify_identity" data=""/>
+          <action application="answer" data=""/>
+          <action application="park" data=""/>
+        </condition>
+      </extension>
     </context>
   </section>
 </document>
