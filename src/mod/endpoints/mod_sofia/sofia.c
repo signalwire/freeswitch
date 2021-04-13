@@ -6040,15 +6040,30 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "proxy-info-content-types")) {
 						profile->proxy_info_content_types = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rfc8760-auth-algorithms")) {
-						/* the order in which algorithms are allowed matters */
 						char *algs_arr[100] = { 0 };
 						uint8_t algs = switch_separate_string(val, ',', algs_arr, (sizeof(algs_arr) / sizeof(algs_arr[0])));
 						if (algs && algs < SOFIA_MAX_REG_ALGS) {
-							int i;
+							sofia_auth_algs_t temp;
+							int i, j = 0;
 							for (i = 0; i < algs && algs_arr[i]; i++) {
-								profile->auth_algs[i] = sofia_alg_str2id(algs_arr[i], SWITCH_TRUE);
+								temp = sofia_alg_str2id(algs_arr[i], SWITCH_TRUE);
+								if (temp != ALG_NONE) {
+									profile->auth_algs[j] = temp;
+									j++;
+								}
 							}
-							profile->rfc8760_algs_count = algs;
+							profile->rfc8760_algs_count = j;
+							for (i = 0; i < profile->rfc8760_algs_count; i++) {
+								for (j = i + 1; j < profile->rfc8760_algs_count; j++) {
+									/* when adding algs: algs must be kept in priority order in the enum */
+									if (profile->auth_algs[i] < profile->auth_algs[j])
+									{
+										temp = profile->auth_algs[i];
+										profile->auth_algs[i] = profile->auth_algs[j];
+										profile->auth_algs[j] = temp;
+									}
+								}
+							}
 						}
 					}
 				}
