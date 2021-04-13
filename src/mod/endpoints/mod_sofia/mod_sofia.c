@@ -6161,9 +6161,12 @@ static void sofia_create_identity_services(void)
 	}
 
 	if (sofia_create_identity_verification_service(&context) != SWITCH_STATUS_SUCCESS) {
+		stir_shaken_deinit();
 		return;
 	}
 	if (sofia_create_identity_authentication_service(&context) != SWITCH_STATUS_SUCCESS) {
+		stir_shaken_vs_destroy(&identity_verification_service);
+		stir_shaken_deinit();
 		return;
 	}
 #endif
@@ -6345,8 +6348,9 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed signature verification: %s\n", stir_shaken_get_error(&verify_signature_context, &stir_error));
 		if (hangup_on_fail) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-			goto done;
 		}
+
+		goto done;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed signature verification\n");
 	}
@@ -6366,8 +6370,9 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed stale check: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
 			if (hangup_on_fail) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_STALE_DATE);
-				goto done;
 			}
+
+			goto done;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed stale check\n");
 		}
@@ -6378,8 +6383,9 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
 			if (hangup_on_fail) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-				goto done;
 			}
+
+			goto done;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed header and grant validation\n");
 		}
@@ -6396,8 +6402,11 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
 			if (hangup_on_fail) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-				goto done;
 			}
+
+			switch_safe_free(orig);
+			switch_safe_free(dest);
+			goto done;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims match SIP request\n");
 		}
@@ -6432,10 +6441,11 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Failed");
 	}
 
-	stir_shaken_passport_destroy(&passport);
-	stir_shaken_cert_destroy(&cert);
+	switch_safe_free((char*)attestation);
 
 done:
+	stir_shaken_passport_destroy(&passport);
+	stir_shaken_cert_destroy(&cert);
 
 #else
 	switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
