@@ -6441,7 +6441,7 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Failed");
 	}
 
-	switch_safe_free((char*)attestation);
+	switch_safe_free(attestation);
 
 done:
 	stir_shaken_passport_destroy(&passport);
