@@ -2150,7 +2150,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
  *
  * Returns SWITCH_STATUS_SUCCESS on success and anything else on error.
  */
-SWITCH_DECLARE(switch_status_t) switch_rfc822_datetime_to_epoch(const char *date, time_t *out)
+SWITCH_DECLARE(switch_status_t) switch_rfc822_date_to_epoch(const char *date, time_t *out)
 {
 	struct tm t_tm = { 0 };
 
