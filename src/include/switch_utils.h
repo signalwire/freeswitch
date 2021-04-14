@@ -975,6 +975,16 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
 #define switch_time_from_sec(sec)   ((switch_time_t)(sec) * 1000000)
 
+/**
+ * Converts human readable date/time in RFC-822/ISO 8601 format to the epoch
+ * (the number of seconds that have elapsed since the Unix epoch,
+ * that is since the time 00:00:00 UTC on 1 January 1970, minus leap seconds.)
+ *
+ * Returns SWITCH_STATUS_SUCCESS on success and anything else on error.
+ * On success @out is set to epoch time.
+ */
+SWITCH_DECLARE(switch_status_t) switch_rfc822_datetime_to_epoch(const char *date, time_t *out);
+
 /*!
   \brief Declares a function designed to set a dynamic global string
   \param fname the function name to declare
