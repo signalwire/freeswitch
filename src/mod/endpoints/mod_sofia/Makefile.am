@@ -25,7 +25,7 @@ endif
 test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(STIRSHAKEN_LIBS)
 test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIA_SIP_LIBS)
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = test/test_sofia_funcs.sh
 
 if ISMAC
 mod_sofia_la_LDFLAGS += -framework CoreFoundation -framework SystemConfiguration

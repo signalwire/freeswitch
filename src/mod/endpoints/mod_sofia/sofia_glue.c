@@ -1064,6 +1064,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint8_t is_t38 = 0;
 	const char *hold_char = "*";
 	const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+	const char *stir_shaken_attest = NULL;
+	char *identity_to_free = NULL;
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
@@ -1123,7 +1125,14 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		alert_info = switch_core_session_sprintf(tech_pvt->session, "Alert-Info: %s", alertbuf);
 	}
 
-	identity = switch_channel_get_variable(channel, "sip_h_identity");
+	if ((stir_shaken_attest = switch_channel_get_variable(tech_pvt->channel, "sip_stir_shaken_attest"))) {
+		char *dest = caller_profile->destination_number;
+		check_decode(dest, session);
+		identity = identity_to_free = sofia_stir_shaken_as_create_identity_header(tech_pvt->session, stir_shaken_attest, cid_num, dest);
+	}
+	if (!identity) {
+		identity = switch_channel_get_variable(channel, "sip_h_identity");
+	}
 
 	max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 
@@ -1725,6 +1734,8 @@ end:
 		sofia_glue_free_destination(dst);
 	}
 
+	switch_safe_free(identity_to_free);
+
 	return status;
 }
 
@@ -1840,8 +1851,6 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 		return SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE;
 	case 438:
 		return SWITCH_CAUSE_INVALID_IDENTITY;
-	case 439:
-		return SWITCH_CAUSE_STALE_DATE;
 	default:
 		return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
 	}

@@ -365,7 +365,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_INVALID_IDENTITY:
 		return 438;
 	case SWITCH_CAUSE_STALE_DATE:
-		return 439;
+		return 403;
 	default:
 		return 480;
 	}
@@ -6125,58 +6125,61 @@ SWITCH_STANDARD_APP(sofia_sla_function)
 }
 
 #if HAVE_STIRSHAKEN
-static stir_shaken_as_t *identity_authentication_service = NULL;
-static stir_shaken_vs_t *identity_verification_service = NULL;
+static stir_shaken_as_t *sofia_stir_shaken_as = NULL;
+static stir_shaken_vs_t *sofia_stir_shaken_vs = NULL;
 
-static switch_status_t sofia_create_identity_verification_service(stir_shaken_context_t *context)
+static switch_status_t sofia_stir_shaken_vs_create(stir_shaken_context_t *context)
 {
-	identity_verification_service = stir_shaken_vs_create(context);
-	if (!identity_verification_service) {
+	sofia_stir_shaken_vs = stir_shaken_vs_create(context);
+	if (!sofia_stir_shaken_vs) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity verification service!\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	stir_shaken_vs_set_connect_timeout(context, identity_verification_service, 3);
-	//stir_shaken_vs_set_callback(context, identity_verification_service, shaken_callback);
+	if (mod_sofia_globals.stir_shaken_vs_ca_dir) {
+		stir_shaken_vs_load_ca_dir(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_ca_dir);
+	}
+	stir_shaken_vs_set_x509_cert_path_check(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_cert_path_check);
+	stir_shaken_vs_set_connect_timeout(context, sofia_stir_shaken_vs, 3);
+	//stir_shaken_vs_set_callback(context, sofia_stir_shaken_vs, shaken_callback);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sofia_create_identity_authentication_service(stir_shaken_context_t *context)
+static switch_status_t sofia_stir_shaken_as_create(stir_shaken_context_t *context)
 {
-	identity_authentication_service = stir_shaken_as_create(context);
-	if (!identity_authentication_service) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity authentication service!\n");
-		return SWITCH_STATUS_FALSE;
+	if (mod_sofia_globals.stir_shaken_as_key && mod_sofia_globals.stir_shaken_as_url) {
+		sofia_stir_shaken_as = stir_shaken_as_create(context);
+		if (!sofia_stir_shaken_as) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity authentication service!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		if (stir_shaken_as_load_private_key(context, sofia_stir_shaken_as, mod_sofia_globals.stir_shaken_as_key) != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load key for Identity authentication service: %s", mod_sofia_globals.stir_shaken_as_key);
+			stir_shaken_as_destroy(&sofia_stir_shaken_as);
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 #endif
 
-static void sofia_create_identity_services(void)
+static void sofia_stir_shaken_create_services(void)
 {
 #if HAVE_STIRSHAKEN
 	stir_shaken_context_t context = { 0 };
-	if (stir_shaken_init(&context, STIR_SHAKEN_LOGLEVEL_HIGH) != STIR_SHAKEN_STATUS_OK) {
+	if (stir_shaken_init(&context, STIR_SHAKEN_LOGLEVEL_NOTHING) != STIR_SHAKEN_STATUS_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to initialize stirshaken library!\n");
 		return;
 	}
-
-	if (sofia_create_identity_verification_service(&context) != SWITCH_STATUS_SUCCESS) {
-		stir_shaken_deinit();
-		return;
-	}
-	if (sofia_create_identity_authentication_service(&context) != SWITCH_STATUS_SUCCESS) {
-		stir_shaken_vs_destroy(&identity_verification_service);
-		stir_shaken_deinit();
-		return;
-	}
+	sofia_stir_shaken_vs_create(&context);
+	sofia_stir_shaken_as_create(&context);
 #endif
 }
 
-static void sofia_destroy_identity_services(void)
+static void sofia_stir_shaken_destroy_services(void)
 {
 #if HAVE_STIRSHAKEN
-	stir_shaken_vs_destroy(&identity_verification_service);
-	stir_shaken_as_destroy(&identity_authentication_service);
+	stir_shaken_vs_destroy(&sofia_stir_shaken_vs);
+	stir_shaken_as_destroy(&sofia_stir_shaken_as);
 	stir_shaken_deinit();
 #endif
 }
@@ -6199,7 +6202,7 @@ static char *canonicalize_phone_number(const char *number)
 	return canonicalized_number;
 }
 
-static switch_status_t sofia_validate_passport_claims(switch_core_session_t *session, const char *orig, int orig_is_tn, const char *dest, int dest_is_tn)
+static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_session_t *session, const char *orig, int orig_is_tn, const char *dest, int dest_is_tn)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *from = NULL;
@@ -6240,7 +6243,7 @@ static switch_status_t sofia_validate_passport_claims(switch_core_session_t *ses
 /**
  * Returns first dest if found. Must be freed by caller.
  */
-static char* passport_get_dest(stir_shaken_passport_t *passport, int *is_tn)
+static char* sofia_stir_shaken_passport_get_dest(stir_shaken_passport_t *passport, int *is_tn)
 {
 	char *id = NULL;
 	char *dest = NULL;
@@ -6310,8 +6313,14 @@ static char* passport_get_dest(stir_shaken_passport_t *passport, int *is_tn)
 
 #endif
 
+// TODO honor non-standard port in the x5u JWT header
+// TODO Date header must be present
+//   Date header must be < (expiration policy) age
+//   Date header must be within 1 minute of iat
+
+
 /* Check signature in Identity header and save result to sip_verstat */
-SWITCH_STANDARD_APP(sofia_verify_identity_function)
+SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 #if HAVE_STIRSHAKEN
@@ -6327,7 +6336,7 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 	const char *identity_header = switch_channel_get_variable(channel, "sip_h_identity");
 	const char *attestation = NULL;
 	int orig_is_tn = 0;
-	switch_bool_t hangup_on_fail = switch_true(switch_channel_get_variable(channel, "sip_hangup_on_verify_identity_fail"));
+	switch_bool_t hangup_on_fail = switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_hangup_on_fail"));
 
 	// TODO: compact Identity header is not supported - this will require construction of PASSporT from SIP headers in order to check signature
 
@@ -6343,7 +6352,7 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 	}
 
 	// verify the JWT signature in the SIP Identity header
-	verify_signature_status = stir_shaken_vs_sih_verify(&verify_signature_context, identity_verification_service, identity_header, &cert, &passport);
+	verify_signature_status = stir_shaken_vs_sih_verify(&verify_signature_context, sofia_stir_shaken_vs, identity_header, &cert, &passport);
 	if (verify_signature_status != STIR_SHAKEN_STATUS_OK) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed signature verification: %s\n", stir_shaken_get_error(&verify_signature_context, &stir_error));
 		if (hangup_on_fail) {
@@ -6357,7 +6366,7 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 	if (passport) {
 		// validate the PASSporT is not expired
 		int timeout = 60;
-		const char *timeout_str = switch_channel_get_variable(channel, "sip_verify_identity_max_age");
+		const char *timeout_str = switch_channel_get_variable(channel, "sip_stir_shaken_vs_max_age");
 		if (timeout_str && switch_is_number(timeout_str)) {
 			int new_timeout = atoi(timeout_str);
 			if (new_timeout > 0) {
@@ -6381,6 +6390,11 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
 			if (hangup_on_fail) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				if (validate_passport_status == STIR_SHAKEN_STATUS_OK && verify_signature_status == STIR_SHAKEN_STATUS_OK) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMING_CALL_BARRED);
+				} else {
+					switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				}
 				goto done;
 			}
 		} else {
@@ -6393,8 +6407,8 @@ SWITCH_STANDARD_APP(sofia_verify_identity_function)
 		stir_shaken_context_t validate_claims_context = { 0 };
 		int dest_is_tn = 0;
 		char *orig = stir_shaken_passport_get_identity(&validate_claims_context, passport, &orig_is_tn);
-		char *dest = passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
-		claim_status = sofia_validate_passport_claims(session, orig, orig_is_tn, dest, dest_is_tn);
+		char *dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
+		claim_status = sofia_stir_shaken_validate_passport_claims(session, orig, orig_is_tn, dest, dest_is_tn);
 		if (claim_status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
 			if (hangup_on_fail) {
@@ -6448,6 +6462,40 @@ done:
 #endif
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "verstat=%s, verstat_detailed=%s\n", switch_channel_get_variable(channel, "sip_verstat"), switch_channel_get_variable(channel, "sip_verstat_detailed"));
 }
+
+/* This assumes TN attestation for orig and dest only */
+char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session, const char *attest, const char *orig, const char *dest)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_context_t as_context = { 0 };
+	stir_shaken_passport_params_t passport_params = { 0 };
+	char *canonical_desttn = NULL;
+	char *canonical_origtn = NULL;
+	char *passport = NULL;
+
+	if (zstr(attest) || zstr(orig) || zstr(dest) || !mod_sofia_globals.stir_shaken_as_url) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required parameter to create PASSporT\n");
+		return NULL;
+	}
+
+	passport_params.attest = attest;
+	passport_params.x5u = mod_sofia_globals.stir_shaken_as_url;
+	passport_params.desttn_key = "tn";
+	passport_params.desttn_val = canonical_desttn = canonicalize_phone_number(dest);
+	passport_params.iat = switch_epoch_time_now(NULL);
+	passport_params.origtn_key = "tn";
+	passport_params.origtn_val = canonical_origtn = canonicalize_phone_number(orig);
+	passport_params.origid = switch_core_session_get_uuid(session);
+
+	passport = stir_shaken_as_authenticate_to_sih(&as_context, sofia_stir_shaken_as, &passport_params, NULL);
+	switch_safe_free(canonical_desttn);
+	switch_safe_free(canonical_origtn);
+	return passport;
+#else
+	return NULL;
+#endif
+}
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
@@ -6706,8 +6754,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function",
 				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);
 
-	SWITCH_ADD_APP(app_interface, "sofia_verify_identity", "Verify SIP Identity header and store result in sip_verstat channel variable",
-				   "Verify SIP Identity header and store result in sip_verstat channel variable", sofia_verify_identity_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sofia_stir_shaken_vs", "Verify SIP Identity header and store result in sip_verstat channel variable",
+				   "Verify SIP Identity header and store result in sip_verstat channel variable", sofia_stir_shaken_vs_function, "", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
@@ -6751,7 +6799,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	crtp_init(*module_interface);
 
-	sofia_create_identity_services();
+	sofia_stir_shaken_create_services();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -6840,7 +6888,7 @@ void mod_sofia_shutdown_cleanup() {
 	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
-	sofia_destroy_identity_services();
+	sofia_stir_shaken_destroy_services();
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)

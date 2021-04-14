@@ -169,117 +169,54 @@ FST_TEST_BEGIN(sofia_verify_identity_test_valid_identity_no_cert_available)
 }
 FST_TEST_END()
 
-FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_a)
+FST_TEST_BEGIN(sofia_auth_identity_test_attest_a)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	switch_status_t status;
 	switch_call_cause_t cause;
 	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJBIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMSJdfSwiaWF0IjoxNjE4Mjc3NTU3LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.Bv5Uc4AUugBnfIFlVgD8uong7GeWLrRW1gaaLDpeQjdmHBsLXbkYLkV0lKbtCAAWTcchNEyKpTlS0Ksjeht3sw;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214321@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_requires(session);
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_stir_shaken_attest=A}sofia/internal/+15553214322@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	fst_check(status == SWITCH_STATUS_SUCCESS);
-
+	fst_requires(session);
 	channel = switch_core_session_get_channel(session);
-	fst_requires(channel);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_core_session_rwunlock(session);
 	switch_sleep(1 * 1000 * 1000);
 }
 FST_TEST_END()
 
-FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_b)
+FST_TEST_BEGIN(sofia_auth_identity_test_attest_b)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	switch_status_t status;
 	switch_call_cause_t cause;
 	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJCIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMSJdfSwiaWF0IjoxNjE4Mjc5ODM0LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.7y-kj-AU_riQl2t2XNPo3j19LjzqLlnNNO6KdA8ISQd4Nsk7GIRUQazrdcGgomY3xHqcCLUXIo4whuVkIh1ZHw;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214321@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_requires(session);
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_stir_shaken_attest=B}sofia/internal/+15553214322@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	fst_check(status == SWITCH_STATUS_SUCCESS);
-
+	fst_requires(session);
 	channel = switch_core_session_get_channel(session);
-	fst_requires(channel);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_core_session_rwunlock(session);
 	switch_sleep(1 * 1000 * 1000);
 }
 FST_TEST_END()
 
-FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_c)
+FST_TEST_BEGIN(sofia_auth_identity_test_attest_c)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	switch_status_t status;
 	switch_call_cause_t cause;
 	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJDIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMSJdfSwiaWF0IjoxNjE4Mjc5ODQ4LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.pnzg_A_YghGf4hc4WfFk8BMdchKtAFGPu85nSqzgXwy-ULkXdHf60bYBTtuhhEOZ9Y8O9Em37h_Clhfj5PjQZw;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214321@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_requires(session);
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_stir_shaken_attest=C}sofia/internal/+15553214322@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	fst_check(status == SWITCH_STATUS_SUCCESS);
-
+	fst_requires(session);
 	channel = switch_core_session_get_channel(session);
-	fst_requires(channel);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_core_session_rwunlock(session);
 	switch_sleep(1 * 1000 * 1000);
-}
-FST_TEST_END()
-
-FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_a_bad_signature)
-{
-	switch_core_session_t *session = NULL;
-	switch_channel_t *channel = NULL;
-	switch_status_t status;
-	switch_call_cause_t cause;
-	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJBIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMSJdfSwiaWF0IjoxNjE4Mjc3NTU3LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.Bv5Uc4AUugBnfIFlVgD8uong70eWLrRW1gaaLDpeQjdmHBsLXbkYLkV0lKbtCAAWTcchNEyKpTlS0Ksjeht3sw;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214321@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_check(status != SWITCH_STATUS_SUCCESS);
-	fst_check(cause == SWITCH_CAUSE_INVALID_IDENTITY);
-	if (session) {
-		channel = switch_core_session_get_channel(session);
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		switch_core_session_rwunlock(session);
-		switch_sleep(1 * 1000 * 1000);
-	}
-}
-FST_TEST_END()
-
-FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_b_bad_signature)
-{
-	switch_core_session_t *session = NULL;
-	switch_channel_t *channel = NULL;
-	switch_status_t status;
-	switch_call_cause_t cause;
-	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJCIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMSJdfSwiaWF0IjoxNjE4Mjc5ODM0LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.7y-kj-AU_riQl2t2XNPo3j19LjzqLlnNNO6KdA8ISQd4Nsk7GIRU0azrdcGgomY3xHqcCLUXIo4whuVkIh1ZHw;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214321@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_check(status != SWITCH_STATUS_SUCCESS);
-	fst_check(cause == SWITCH_CAUSE_INVALID_IDENTITY);
-	if (session) {
-		channel = switch_core_session_get_channel(session);
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		switch_core_session_rwunlock(session);
-		switch_sleep(1 * 1000 * 1000);
-	}
-}
-FST_TEST_END()
-
-FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_c_bad_signature)
-{
-	switch_core_session_t *session = NULL;
-	switch_channel_t *channel = NULL;
-	switch_status_t status;
-	switch_call_cause_t cause;
-	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJDIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMSJdfSwiaWF0IjoxNjE4Mjc5ODQ4LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.pnzg_A_YghGf4hc4WfFk8BMdchKtAFGPu85nSqzgXwy-ULkXdHf60bYBTtuh0EOZ9Y8O9Em37h_Clhfj5PjQZw;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214321@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_check(status != SWITCH_STATUS_SUCCESS);
-	fst_check(cause == SWITCH_CAUSE_INVALID_IDENTITY);
-	if (session) {
-		channel = switch_core_session_get_channel(session);
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		switch_core_session_rwunlock(session);
-		switch_sleep(1 * 1000 * 1000);
-	}
 }
 FST_TEST_END()
 
@@ -290,9 +227,9 @@ FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_a_expired)
 	switch_status_t status;
 	switch_call_cause_t cause;
 	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMS9wdWIucGVtIn0.eyJhdHRlc3QiOiJBIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMiJdfSwiaWF0IjoxNjE4MjgxMTEwLCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMTMxMzEzMTMifQ.WMRvYqCeEGpjxXJSPz22gLszmf0Rb22AM-Q7jMwvJ0nyKWhOjJeqirdemJ_vi_Ylx5ziZIe24sJDXVyIYjVadA;info=<http://127.0.0.1/pub.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214322@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231234,ignore_early_media=true,sip_h_identity=eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiIsInR5cCI6InBhc3Nwb3J0IiwieDV1IjoiaHR0cDovLzEyNy4wLjAuMTo4MDgwL2NlcnQucGVtIn0.eyJhdHRlc3QiOiJBIiwiZGVzdCI6eyJ0biI6WyIxNTU1MzIxNDMyMiJdfSwiaWF0IjoxNjE4MzczMTc0LCJvcmlnIjp7InRuIjoiMTU1NTEyMzEyMzQifSwib3JpZ2lkIjoiMzliZDYzZDQtOTE1Mi00MzU0LWFkNjctNjg5NjQ2NmI4ZDI3In0.mUaikwHSOb8RVPwwMZTsqBe57MZY29CgbIqmiiEmyq9DzKZO-y4qShiIVT3serg-xHgC9SCMjUOBWaDfeXnEvA;info=<http://127.0.0.1:8080/cert.pem>;alg=ES256;ppt=shaken}sofia/internal/+15553214322@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	fst_check(status != SWITCH_STATUS_SUCCESS);
-	fst_check(cause == SWITCH_CAUSE_STALE_DATE);
+	fst_check(cause == SWITCH_CAUSE_CALL_REJECTED);
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -301,6 +238,7 @@ FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_a_expired)
 	}
 }
 FST_TEST_END()
+
 
 FST_MODULE_END()
 

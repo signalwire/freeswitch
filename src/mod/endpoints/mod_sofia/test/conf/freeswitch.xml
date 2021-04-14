@@ -31,6 +31,10 @@
       <global_settings>
         <param name="log-level" value="9"/>
         <param name="tracelevel" value="debug"/>
+        <param name="stir-shaken-as-key" value="stir-shaken/priv.pem"/>
+        <param name="stir-shaken-as-url" value="http://127.0.0.1:8080/cert.pem"/>
+        <!--param name="stir-shaken-vs-ca-dir" value="stir-shaken/ca"/-->
+        <param name="stir-shaken-vs-cert-path-check" value="false"/>
       </global_settings>
       <profiles>
         <profile name="internal">
@@ -100,9 +104,8 @@
       <extension name="verifyidentity">
         <condition field="destination_number" expression="^verifyidentity$">
           <action application="pre_answer" data=""/>
-          <action application="set" data="sip_hangup_on_verify_identity_fail=true"/>
-          <action application="set" data="sip_verify_identity_max_age=315569520"/> <!-- 10 years -->
-          <action application="sofia_verify_identity" data=""/>
+          <action application="set" data="sip_stir_shaken_vs_hangup_on_fail=true"/>
+          <action application="sofia_stir_shaken_vs" data=""/>
           <action application="answer" data=""/>
           <action application="park" data=""/>
         </condition>
@@ -110,9 +113,8 @@
       <extension name="verifyidentitytn">
         <condition field="destination_number" expression="^\+15553214321$">
           <action application="pre_answer" data=""/>
-          <action application="set" data="sip_hangup_on_verify_identity_fail=true"/>
-          <action application="set" data="sip_verify_identity_max_age=315569520"/> <!-- 10 years -->
-          <action application="sofia_verify_identity" data=""/>
+          <action application="set" data="sip_stir_shaken_vs_hangup_on_fail=true"/>
+          <action application="sofia_stir_shaken_vs" data=""/>
           <action application="answer" data=""/>
           <action application="park" data=""/>
         </condition>
@@ -121,8 +123,8 @@
         <condition field="destination_number" expression="^\+15553214322$">
           <action application="pre_answer" data=""/>
           <!-- verifies and makes sure JWT signature is fresh (<= 60 seconds) -->
-          <action application="set" data="sip_hangup_on_verify_identity_fail=true"/>
-          <action application="sofia_verify_identity" data=""/>
+          <action application="set" data="sip_stir_shaken_vs_hangup_on_fail=true"/>
+          <action application="sofia_stir_shaken_vs" data=""/>
           <action application="answer" data=""/>
           <action application="park" data=""/>
         </condition>
