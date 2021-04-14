@@ -2533,7 +2533,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   expires         BIGINT,"
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
-		"   last_nc         INTEGER\n"
+		"   last_nc         INTEGER,\n"
+		"   algorithm       INTEGER DEFAULT 1 NOT NULL\n"
 		");\n";
 
 	/* should we move this glue to sofia_sla or keep it here where all db init happens? XXX MTK */
@@ -2700,7 +2701,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_presence", pres_sql);
 
 	free(test_sql);
-	test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
+	test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0 or algorithm >= 0", mod_sofia_globals.hostname);
 
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_authentication", auth_sql);
 

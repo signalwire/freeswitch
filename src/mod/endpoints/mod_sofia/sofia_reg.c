@@ -1129,8 +1129,10 @@ static char * sofia_alg_to_str(sofia_auth_algs_t alg)
 {
 	if (alg == ALG_SHA256) 
 		return "SHA-256";
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	if (alg == ALG_SHA512) 
 		return "SHA-512-256";
+#endif 
 	return "MD5";
 }
 
@@ -1148,25 +1150,37 @@ void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_
 		msg = de->data->e_msg;
 	}
 
-	switch_uuid_get(&uuid);
-	switch_uuid_format(uuid_str, &uuid);
-
-	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
-						 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
-						 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + exptime,
-						 profile->name, mod_sofia_globals.hostname);
-	switch_assert(sql != NULL);
-	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-
 	if (!profile->rfc8760_algs_count) {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(uuid_str, &uuid);
+
+		sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
+							 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
+							 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + profile->timer_t1x64 / 1000,
+							 profile->name, mod_sofia_globals.hostname);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+
 		auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
 	} else {
 		int i;
-		for (i = 0 ; i < profile->rfc8760_algs_count; i++) {
-			if (profile->auth_algs[i] != ALG_NONE) {
-				auth_str_rfc8760[i] = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=%s, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "", sofia_alg_to_str(profile->auth_algs[i]));
-			}
+		char *sql_build;
+		switch_stream_handle_t stream = { 0 };
+
+		SWITCH_STANDARD_STREAM(stream);
+		for (i = 0; i < profile->rfc8760_algs_count; i++) {
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
+			sql_build = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc, algorithm) "
+								 "values('%s', %ld, '%q', '%q', 0, %d)", uuid_str,
+								 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + profile->timer_t1x64 / 1000,
+								 profile->name, mod_sofia_globals.hostname, profile->auth_algs[i]);
+
+			auth_str_rfc8760[i] = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=%s, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "", sofia_alg_to_str(profile->auth_algs[i]));
+			stream.write_function(&stream, "%s%s", i ? ";" : "", sql_build);
+			switch_safe_free(sql_build);
 		}
+		sofia_glue_execute_sql_now(profile, (char **)&stream.data, SWITCH_TRUE);
 	}
 
 	if (regtype == REG_REGISTER) {
@@ -2931,11 +2945,12 @@ sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive)
 	if (!strcasecmp(algorithm, "SHA-256") || (permissive && !strcasecmp(algorithm, "SHA256"))) {
 		return ALG_SHA256;
 	}
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	if (!strcasecmp(algorithm, "SHA-512-256") || (permissive && !strcasecmp(algorithm, "SHA512")) 
 			|| (permissive && !strcasecmp(algorithm, "SHA512-256")) || (permissive && !strcasecmp(algorithm, "SHA-512"))) {
 		return ALG_SHA512;
 	}
-
+#endif
 	return ALG_NONE;
 }
 
@@ -2949,9 +2964,11 @@ switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, cons
 		case ALG_SHA256:
 			switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
 			break;
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		case ALG_SHA512:
 			switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
 			break;
+#endif
 		default:
 			return SWITCH_STATUS_FALSE;
 	}
@@ -3536,7 +3553,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
   end:
 
 
-	if (nc && cnonce && qop) {
+	if (nc && cnonce && qop && ret == AUTH_OK) {
+		ret = AUTH_RENEWED;
+	}
+
+	if (((ret == AUTH_OK) || (ret == AUTH_RENEWED)) && nc) {
 		ncl = strtoul(nc, 0, 16);
 
 		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%q'",
@@ -3545,8 +3566,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-		if (ret == AUTH_OK)
-			ret = AUTH_RENEWED;
 	}
 
 	switch_event_destroy(&params);
