@@ -2451,10 +2451,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, NULL);
 
-	if (var_name) {
-		switch_channel_set_variable(channel, var_name, NULL);
-	}
-
 	if ((min_digits && digit_buffer_length < min_digits) || digit_buffer_length < max_digits) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Buffer too small!\n");
 		return SWITCH_STATUS_FALSE;
