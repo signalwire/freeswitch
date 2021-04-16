@@ -46,7 +46,6 @@ struct switch_cache_db_handle {
 	switch_cache_db_native_handle_t native_handle;
 	time_t last_used;
 	switch_mutex_t *mutex;
-	switch_mutex_t *io_mutex;
 	switch_memory_pool_t *pool;
 	int32_t flags;
 	unsigned long hash;
@@ -63,7 +62,6 @@ static struct {
 	switch_thread_t *db_thread;
 	int db_thread_running;
 	switch_bool_t manage;
-	switch_mutex_t *io_mutex;
 	switch_mutex_t *dbh_mutex;
 	switch_mutex_t *ctl_mutex;
 	switch_cache_db_handle_t *handle_pool;
@@ -363,8 +361,6 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 
 		switch_mutex_lock(sql_manager.dbh_mutex);
 		(*dbh)->last_used = switch_epoch_time_now(NULL);
-
-		(*dbh)->io_mutex = NULL;
 
 		if ((*dbh)->use_count) {
 			--(*dbh)->use_count;
@@ -687,9 +683,6 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	char *errmsg = NULL;
 	char *tmp = NULL;
 	char *type = NULL;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	if (err) {
 		*err = NULL;
@@ -737,9 +730,6 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 			switch_safe_free(errmsg);
 		}
 	}
-
-
-	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
 }
@@ -807,9 +797,6 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_handle_t *dbh, char *sql, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	switch (dbh->type) {
 	default:
@@ -819,10 +806,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 		break;
 	}
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
-
 	return status;
-
 }
 
 
@@ -878,9 +862,6 @@ SWITCH_DECLARE(int) switch_cache_db_load_extension(switch_cache_db_handle_t *dbh
 SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t *dbh, char *sql, char *str, size_t len, char **err)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	memset(str, 0, len);
 
@@ -935,8 +916,6 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 
  end:
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
-
 	return status == SWITCH_STATUS_SUCCESS ? str : NULL;
 
 }
@@ -946,7 +925,6 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 	char *errmsg = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint8_t forever = 0;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (!retries) {
 		forever = 1;
@@ -955,10 +933,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute(switch_cache_
 
 	while (retries > 0) {
 
-		if (io_mutex) switch_mutex_lock(io_mutex);
 		switch_cache_db_execute_sql_real(dbh, sql, &errmsg);
-		if (io_mutex) switch_mutex_unlock(io_mutex);
-
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
@@ -991,14 +966,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 	uint8_t forever = 0;
 	unsigned begin_retries = 100;
 	uint8_t again = 0;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (!retries) {
 		forever = 1;
 		retries = 1000;
 	}
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	if (!zstr(pre_trans_execute)) {
 		switch_cache_db_execute_sql_real(dbh, pre_trans_execute, &errmsg);
@@ -1166,8 +1138,6 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 		}
 	}
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
-
 	return status;
 }
 
@@ -1196,15 +1166,11 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switc
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 	struct helper h = {0};
-
 
 	if (err) {
 		*err = NULL;
 	}
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	h.callback = callback;
 	h.pdata = pdata;
@@ -1244,8 +1210,6 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switc
 		break;
 	}
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
-
 	return status;
 }
 
@@ -1256,15 +1220,12 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback_err(s
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 	struct helper h;
 
 
 	if (err) {
 		*err = NULL;
 	}
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	h.callback = callback;
 	h.pdata = pdata;
@@ -1316,7 +1277,6 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback_err(s
 		break;
 	}
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return status;
 }
@@ -1326,14 +1286,10 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (err) {
 		*err = NULL;
 	}
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
-
 
 	switch (dbh->type) {
 		case SCDB_TYPE_DATABASE_INTERFACE:
@@ -1370,8 +1326,6 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 		break;
 	}
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
-
 	return status;
 }
 
@@ -1381,14 +1335,10 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	if (err) {
 		*err = NULL;
 	}
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
-
 
 	switch (dbh->type) {
 	case SCDB_TYPE_DATABASE_INTERFACE:
@@ -1437,8 +1387,6 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 		break;
 	}
 
-	if (io_mutex) switch_mutex_unlock(io_mutex);
-
 	return status;
 }
 
@@ -1480,7 +1428,6 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 															const char *test_sql, const char *drop_sql, const char *reactive_sql, const char *row_size_limited_reactive_sql)
 {
 	switch_bool_t r = SWITCH_TRUE;
-	switch_mutex_t *io_mutex = dbh->io_mutex;
 
 	switch_assert(test_sql != NULL);
 	switch_assert(reactive_sql != NULL);
@@ -1494,8 +1441,6 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 
 		return (status == SWITCH_STATUS_SUCCESS) ? SWITCH_TRUE : SWITCH_FALSE;
 	}
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	switch (dbh->type) {
 	case SCDB_TYPE_DATABASE_INTERFACE:
@@ -1569,9 +1514,6 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 		}
 		break;
 	}
-
-
-	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return r;
 }
@@ -2121,10 +2063,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	void *pop;
 	switch_status_t status;
 	uint32_t ttl = 0;
-	switch_mutex_t *io_mutex = qm->event_db->io_mutex;
 	uint32_t i;
-
-	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	if (!zstr(qm->pre_trans_execute)) {
 		switch_cache_db_execute_sql_real(qm->event_db, qm->pre_trans_execute, &errmsg);
@@ -2256,9 +2195,6 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		qm->written[i] = qm->pre_written[i];
 	}
 	switch_mutex_unlock(qm->mutex);
-
-
-	if (io_mutex) switch_mutex_unlock(io_mutex);
 
 	return ttl;
 }
@@ -3628,7 +3564,6 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	sql_manager.manage = manage;
 
 	switch_mutex_init(&sql_manager.dbh_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
-	switch_mutex_init(&sql_manager.io_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
 	switch_mutex_init(&sql_manager.ctl_mutex, SWITCH_MUTEX_NESTED, sql_manager.memory_pool);
 
 	if (!sql_manager.manage) goto skip;
