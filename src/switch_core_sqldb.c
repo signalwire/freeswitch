@@ -106,6 +106,7 @@ static void add_handle(switch_cache_db_handle_t *dbh, const char *db_str, const 
 	switch_ssize_t hlen = -1;
 
 	switch_mutex_lock(sql_manager.dbh_mutex);
+	switch_mutex_lock(dbh->mutex);
 
 	switch_set_string(dbh->creator, db_callsite_str);
 
@@ -115,12 +116,11 @@ static void add_handle(switch_cache_db_handle_t *dbh, const char *db_str, const 
 
 	dbh->use_count++;
 	dbh->total_used_count++;
-	sql_manager.total_used_handles++;
 	dbh->next = sql_manager.handle_pool;
 
 	sql_manager.handle_pool = dbh;
 	sql_manager.total_handles++;
-	switch_mutex_lock(dbh->mutex);
+	sql_manager.total_used_handles++;
 	switch_mutex_unlock(sql_manager.dbh_mutex);
 }
 
@@ -359,15 +359,16 @@ SWITCH_DECLARE(void) switch_cache_db_release_db_handle(switch_cache_db_handle_t 
 			break;
 		}
 
-		switch_mutex_lock(sql_manager.dbh_mutex);
 		(*dbh)->last_used = switch_epoch_time_now(NULL);
-
 		if ((*dbh)->use_count) {
 			--(*dbh)->use_count;
 		}
+
 		switch_mutex_unlock((*dbh)->mutex);
-		sql_manager.total_used_handles--;
 		*dbh = NULL;
+
+		switch_mutex_lock(sql_manager.dbh_mutex);
+		sql_manager.total_used_handles--;
 		switch_mutex_unlock(sql_manager.dbh_mutex);
 	}
 }
