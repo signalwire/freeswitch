@@ -156,10 +156,12 @@ top:
 	for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
 		if (switch_mutex_trylock(dbh_ptr->mutex) == SWITCH_STATUS_SUCCESS) {
 			if (dbh_ptr->type != SCDB_TYPE_DATABASE_INTERFACE) {
+				switch_mutex_unlock(dbh_ptr->mutex);
 				continue;
 			}
 
 			if (dbh_ptr->native_handle.database_interface_dbh->connection_options.database_interface != database_interface) {
+				switch_mutex_unlock(dbh_ptr->mutex);
 				continue;
 			}
 
