@@ -10492,6 +10492,7 @@ SWIGINTERN PyObject *_wrap_Session_setSelf(PyObject *SWIGUNUSEDPARM(self), PyObj
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setSelf" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
   }
   arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
+  if (!arg1) SWIG_exception_fail(SWIG_ValueError, "in method '" "Session_setSelf" "', argument " "1"" is NULL"); 
   arg2 = obj1;
   (arg1)->setSelf(arg2);
   resultobj = SWIG_Py_Void();
