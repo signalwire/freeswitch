@@ -4558,6 +4558,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.stir_shaken_vs_ca_dir = switch_core_strdup(mod_sofia_globals.pool, val);
 			} else if (!strcasecmp(var, "stir-shaken-vs-cert-path-check")) {
 				mod_sofia_globals.stir_shaken_vs_cert_path_check = switch_true(val);
+			} else if (!strcasecmp(var, "stir-shaken-vs-require-date")) {
+				mod_sofia_globals.stir_shaken_vs_require_date = switch_true(val);
 			}
 		}
 	}

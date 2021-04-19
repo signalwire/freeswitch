@@ -239,6 +239,22 @@ FST_TEST_BEGIN(sofia_verify_identity_test_verified_attest_a_expired)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(sofia_auth_identity_test_attest_a_date)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	switch_status_t status;
+	switch_call_cause_t cause;
+	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{origination_caller_id_number=+15551231235,ignore_early_media=true,sip_stir_shaken_attest=A}sofia/internal/+15553214323@%s:53060", local_ip_v4), 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	fst_check(status == SWITCH_STATUS_SUCCESS);
+	fst_requires(session);
+	channel = switch_core_session_get_channel(session);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_core_session_rwunlock(session);
+	switch_sleep(1 * 1000 * 1000);
+}
+FST_TEST_END()
 
 FST_MODULE_END()
 

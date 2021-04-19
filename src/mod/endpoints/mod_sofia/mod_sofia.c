@@ -6202,7 +6202,7 @@ static char *canonicalize_phone_number(const char *number)
 	return canonicalized_number;
 }
 
-static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_session_t *session, const char *orig, int orig_is_tn, const char *dest, int dest_is_tn)
+static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_session_t *session, long iat, const char *orig, int orig_is_tn, const char *dest, int dest_is_tn)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *from = NULL;
@@ -6211,7 +6211,13 @@ static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_se
 	char *canonicalized_to = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	// TODO check iat if we have Date header
+	if (mod_sofia_globals.stir_shaken_vs_require_date || switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_require_date"))) {
+		const char *date = switch_channel_get_variable(channel, "sip_date");
+		if (zstr(date)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required SIP Date\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	}
 
 	if (orig_is_tn) {
 		from = switch_channel_get_variable(channel, "sip_from_user");
@@ -6313,7 +6319,6 @@ static char* sofia_stir_shaken_passport_get_dest(stir_shaken_passport_t *passpor
 
 #endif
 
-// TODO honor non-standard port in the x5u JWT header
 // TODO Date header must be present
 //   Date header must be < (expiration policy) age
 //   Date header must be within 1 minute of iat
@@ -6408,7 +6413,8 @@ SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
 		int dest_is_tn = 0;
 		char *orig = stir_shaken_passport_get_identity(&validate_claims_context, passport, &orig_is_tn);
 		char *dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
-		claim_status = sofia_stir_shaken_validate_passport_claims(session, orig, orig_is_tn, dest, dest_is_tn);
+		long iat = stir_shaken_passport_get_grant_int(&validate_claims_context, passport, "iat");
+		claim_status = sofia_stir_shaken_validate_passport_claims(session, iat, orig, orig_is_tn, dest, dest_is_tn);
 		if (claim_status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
 			if (hangup_on_fail) {

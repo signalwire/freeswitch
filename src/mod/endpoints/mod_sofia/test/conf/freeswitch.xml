@@ -35,6 +35,7 @@
         <param name="stir-shaken-as-url" value="http://127.0.0.1:8080/cert.pem"/>
         <!--param name="stir-shaken-vs-ca-dir" value="stir-shaken/ca"/-->
         <param name="stir-shaken-vs-cert-path-check" value="false"/>
+        <param name="stir-shaken-vs-require-date" value="false"/>
       </global_settings>
       <profiles>
         <profile name="internal">
@@ -119,11 +120,22 @@
           <action application="park" data=""/>
         </condition>
       </extension>
-      <extension name="verifyidentitytnexp">
+      <extension name="verifyidentitytn2">
         <condition field="destination_number" expression="^\+15553214322$">
           <action application="pre_answer" data=""/>
           <!-- verifies and makes sure JWT signature is fresh (<= 60 seconds) -->
           <action application="set" data="sip_stir_shaken_vs_hangup_on_fail=true"/>
+          <action application="sofia_stir_shaken_vs" data=""/>
+          <action application="answer" data=""/>
+          <action application="park" data=""/>
+        </condition>
+      </extension>
+      <extension name="verifyidentitytndate">
+        <condition field="destination_number" expression="^\+15553214323$">
+          <action application="pre_answer" data=""/>
+          <action application="info"/>
+          <action application="set" data="sip_stir_shaken_vs_hangup_on_fail=true"/>
+          <action application="set" data="sip_stir_shaken_vs_require_date=true"/>
           <action application="sofia_stir_shaken_vs" data=""/>
           <action application="answer" data=""/>
           <action application="park" data=""/>
