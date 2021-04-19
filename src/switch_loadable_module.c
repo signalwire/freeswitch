@@ -1843,11 +1843,11 @@ static switch_status_t switch_loadable_module_load_module_ex(const char *dir, co
 		if ((dot = strchr(file, '.'))) {
 			*dot = '\0';
 		}
-		len = strlen(dir);
+		len = strlen(switch_str_nil(dir));
 		len += strlen(file);
 		len += 8;
 		path = (char *) switch_core_alloc(loadable_modules.pool, len);
-		switch_snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+		switch_snprintf(path, len, "%s%s%s%s", switch_str_nil(dir), SWITCH_PATH_SEPARATOR, file, ext);
 	}
 
 
