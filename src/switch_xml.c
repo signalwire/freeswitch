@@ -882,7 +882,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				continue;
 			else
 				*s = '\0';		/* null terminate tag name */
-			for (i = 0; root->attr[i] && strcmp(n, root->attr[i][0]); i++);
+			for (i = 0; root->attr[i] && n && strcmp(n, root->attr[i][0]); i++);
 
 			//while (*(n = ++s + strspn(s, SWITCH_XML_WS)) && *n != '>') {
 			// gcc 4.4 you are a creep
