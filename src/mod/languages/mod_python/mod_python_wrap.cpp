@@ -3500,7 +3500,9 @@ SWIG_AsCharArray(PyObject * obj, char *val, size_t size)
     if (csize <= size) {
       if (val) {
 	if (csize) memcpy(val, cptr, csize*sizeof(char));
+#ifndef __clang_analyzer__
 	if (csize < size) memset(val + csize, 0, (size - csize)*sizeof(char));
+#endif
       }
       if (alloc == SWIG_NEWOBJ) {
 	delete[] cptr;
@@ -4677,7 +4679,7 @@ SWIGINTERN PyObject *_wrap_DTMF_digit_set(PyObject *SWIGUNUSEDPARM(self), PyObje
   char arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  char val2 ;
+  char val2 = '\0';
   int ecode2 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
@@ -4787,7 +4789,7 @@ SWIGINTERN PyObject *_wrap_new_DTMF(PyObject *SWIGUNUSEDPARM(self), PyObject *ar
   PyObject *resultobj = 0;
   char arg1 ;
   uint32_t arg2 = (uint32_t) SWITCH_DEFAULT_DTMF_DURATION ;
-  char val1 ;
+  char val1 = '\0';
   int ecode1 = 0 ;
   void *argp2 ;
   int res2 = 0 ;
