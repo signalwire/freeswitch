@@ -12,12 +12,17 @@ mod_sofia_la_SOURCES =
 mod_sofia_la_LIBADD = $(switch_builddir)/libfreeswitch.la libsofiamod.la
 mod_sofia_la_LDFLAGS = -avoid-version -module -no-undefined -shared $(SOFIA_SIP_LIBS)
 
-noinst_PROGRAMS = test/test_sofia_funcs
+noinst_PROGRAMS = test/test_sofia_funcs test/test_sofia_profile
 
 test_test_sofia_funcs_SOURCES = test/test_sofia_funcs.c
 test_test_sofia_funcs_CFLAGS = $(AM_CFLAGS) $(SOFIA_SIP_CFLAGS) -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
 test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) 
 test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIA_SIP_LIBS)
+
+test_test_sofia_profile_SOURCES = test/test_sofia_profile.c
+test_test_sofia_profile_CFLAGS  = $(AM_CFLAGS) $(SOFIA_SIP_CFLAGS) -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
+test_test_sofia_profile_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) -rdynamic -export-dynamic
+test_test_sofia_profile_LDADD   = libsofiamod.la $(SOFIA_SIP_LIBS)
 
 TESTS = $(noinst_PROGRAMS)
 

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_sofia"/>
+      </modules>
+    </configuration>
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="loglevel" value="debug"/>
+      </settings>
+    </configuration>
+    <configuration name="sofia.conf" description="sofia endpoint">
+      <profiles>
+        <profile name="normal">
+          <settings/>
+        </profile>
+        <profile name="">
+          <aliases>
+            <alias name="empty_name"/>
+          </aliases>
+          <settings>
+            <param name="sip-port" value="10060"/>
+          </settings>
+        </profile>
+      </profiles>
+    </configuration>
+  </section>
+</document>
