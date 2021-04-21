@@ -2090,7 +2090,7 @@ static void switch_send_rtcp_event(switch_rtp_t *rtp_session ,struct switch_rtcp
 
 				// Add sources info
 				snprintf(header, sizeof(header), "Source-SSRC");
-				snprintf(value, sizeof(value), "%.8x", rtcp_report_block->ssrc);
+				snprintf(value, sizeof(value), "%.8x", rtp_session->stats.rtcp.peer_ssrc);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
 				snprintf(header, sizeof(header), "Source-Fraction");
 				snprintf(value, sizeof(value), "%u", (uint8_t)rtcp_report_block->fraction);
