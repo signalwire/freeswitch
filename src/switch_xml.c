@@ -2095,10 +2095,9 @@ static void switch_xml_user_cache(const char *key, const char *user_name, const 
 		switch_safe_free(expires_lookup);
 	}
 	if (expires) {
-		char *expires_val = switch_must_malloc(1024);
-		if (sprintf(expires_val, "%ld", (long)expires)) {
-			switch_core_hash_insert(CACHE_EXPIRES_HASH, mega_key, expires_val);
-		} else {
+		char *expires_val = (char *)switch_core_hash_insert_alloc(CACHE_EXPIRES_HASH, mega_key, 22);
+		if (!snprintf(expires_val, 22, "%ld", (long)expires)) {
+			switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
 			switch_safe_free(expires_val);
 		}
 	}
