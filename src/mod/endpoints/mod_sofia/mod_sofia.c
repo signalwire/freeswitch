@@ -1429,6 +1429,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						   SIPTAG_PAYLOAD_STR(msg->string_arg),
 						   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 						   SIPTAG_EVENT_STR("refer"), TAG_END());
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
 				goto end;
 			}
 
