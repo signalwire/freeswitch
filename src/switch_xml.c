@@ -968,6 +968,9 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 	if (be == -1)
 		return NULL;			/* not UTF-16 */
 
+	if (*len <= 3)
+		return NULL;
+
 	u = (char *) switch_must_malloc(max);
 	for (sl = 2; sl < *len - 1; sl += 2) {
 		c = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)	/* UTF-16BE */
