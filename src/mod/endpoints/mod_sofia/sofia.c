@@ -11424,6 +11424,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (sip->sip_identity && sip->sip_identity->id_value) {
 			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
 		}
+		if (sip->sip_date && sip->sip_date->d_time > 0) {
+			// This INVITE has a SIP Date header.
+			// sofia-sip stores the Date header value in sip_date->d_time as seconds since January 1, 1900 0:00:00.
+			// Unix epoch time is seconds since January 1, 1970 0:00:00, making d_time larger by 2208988800.
+			// Convert to Unix epoch time and save it.
+			switch_channel_set_variable_printf(channel, "sip_date_epoch_time", "%ld", sip->sip_date->d_time - 2208988800);
+		}
 
 		/* Loop thru unknown Headers Here so we can do something with them */
 		for (un = sip->sip_unknown; un; un = un->un_next) {

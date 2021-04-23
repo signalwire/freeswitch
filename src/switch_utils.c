@@ -2141,40 +2141,6 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 	return ret;
 }
 
-/**
- * Converts human readable date/time in RFC-822/ISO 8601 format to the epoch
- * (the number of seconds that have elapsed since the Unix epoch,
- * that is since the time 00:00:00 UTC on 1 January 1970, minus leap seconds.)
- * First attempts to convert date assuming time zone in RFC-822/ISO 8601 standard timezone specification,
- * if this fails then tries general timezone name format.
- *
- * Returns SWITCH_STATUS_SUCCESS on success and anything else on error.
- */
-SWITCH_DECLARE(switch_status_t) switch_rfc822_date_to_epoch(const char *date, time_t *out)
-{
-	struct tm t_tm = { 0 };
-
-	if (!date || *out) {
-		return SWITCH_STATUS_TERM;
-	}
-
-	if (NULL == strptime(date, "%a, %d %b %Y %T %z", &t_tm)) {
-
-		// Not in strict RFC-822/ISO 8601 standard timezone specification, try general zone format
-
-		memset(&t_tm, 0, sizeof(t_tm));
-
-		if (NULL == strptime(date, "%a, %d %b %Y %T %Z", &t_tm)) {
-
-			return SWITCH_STATUS_FALSE;
-		}
-	}
-
-	*out = mktime(&t_tm);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority)
 {
 	switch (priority) {			/*lol */

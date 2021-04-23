@@ -6210,13 +6210,38 @@ static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_se
 	char *canonicalized_from = NULL;
 	char *canonicalized_to = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_time_t now = switch_epoch_time_now(NULL);
+
+	if (iat > now) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "PASSporT iat is in the future\n");
+		return SWITCH_STATUS_FALSE;
+	} else if (now - iat > 60) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "PASSporT iat is too old\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (mod_sofia_globals.stir_shaken_vs_require_date || switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_require_date"))) {
-		const char *date = switch_channel_get_variable(channel, "sip_date");
-		if (zstr(date)) {
+		const char *sip_epoch_time_var = switch_channel_get_variable(channel, "sip_date_epoch_time");
+		switch_time_t sip_epoch_time;
+
+		if (zstr(sip_epoch_time_var)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required SIP Date\n");
 			return SWITCH_STATUS_FALSE;
 		}
+		sip_epoch_time = strtol(sip_epoch_time_var, NULL, 10);
+		if (sip_epoch_time > now) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is in the future\n", sip_epoch_time_var);
+			return SWITCH_STATUS_FALSE;
+		}
+		if (now - sip_epoch_time > 60) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is too old\n", sip_epoch_time_var);
+			return SWITCH_STATUS_FALSE;
+		}
+		if ((iat > sip_epoch_time && iat - sip_epoch_time > 60) || (iat < sip_epoch_time && sip_epoch_time - iat > 60)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is too far from PASSporT iat %ld\n", sip_epoch_time_var, iat);
+			return SWITCH_STATUS_FALSE;
+		}
+		// Date is within 60 seconds of now and within 60 seconds of iat
 	}
 
 	if (orig_is_tn) {
