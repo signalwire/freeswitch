@@ -4639,6 +4639,13 @@ SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, ch
 	return status;
 }
 
+char *switch_must_strdup(const char *_s)
+{
+	char *s = strdup(_s);
+	switch_assert(s);
+	return s;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

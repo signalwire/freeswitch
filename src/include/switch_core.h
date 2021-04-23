@@ -243,14 +243,6 @@ static inline void *switch_must_realloc(void *_b, size_t _z)
 	return m;
 }
 
-static inline char *switch_must_strdup(const char *_s)
-{
-	char *s = strdup(_s);
-	switch_assert(s);
-	return s;
-}
-
-
 /*!
   \defgroup core1 Core Library
   \ingroup FREESWITCH
