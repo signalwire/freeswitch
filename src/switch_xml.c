@@ -1000,15 +1000,15 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 /* frees a tag attribute list */
 static void switch_xml_free_attr(char **attr)
 {
-	int i = 0;
+	int i, c = 0;
 	char *m;
 
 	if (!attr || attr == SWITCH_XML_NIL)
 		return;					/* nothing to free */
-	while (attr[i])
-		i += 2;					/* find end of attribute list */
-	m = attr[i + 1];			/* list of which names and values are malloced */
-	for (i = 0; m[i]; i++) {
+	while (attr[c])
+		c += 2;					/* find end of attribute list */
+	m = attr[c + 1];			/* list of which names and values are malloced */
+	for (i = c / 2 - 1; i >= 0 ; i--) {
 		if (m[i] & SWITCH_XML_NAMEM)
 			free(attr[i * 2]);
 		if (m[i] & SWITCH_XML_TXTM)
