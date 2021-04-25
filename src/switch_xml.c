@@ -839,6 +839,8 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 		if (!*s)
 			break;
 		else if (!strncmp(s, "<!ENTITY", 8)) {	/* parse entity definitions */
+			int use_pe;
+
 			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	/* skip white space separator */
 			n = s + strspn(s, SWITCH_XML_WS "%");	/* find name */
 			*(s = n + strcspn(n, SWITCH_XML_WS)) = ';';	/* append ; to name */
@@ -849,10 +851,11 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				continue;
 			}
 
-			for (i = 0, ent = (*c == '%') ? pe : root->ent; ent[i]; i++);
+			use_pe = (*c == '%');
+			for (i = 0, ent = (use_pe) ? pe : root->ent; ent[i]; i++);
 			sstmp = (char **) switch_must_realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
 			ent = sstmp;
-			if (*c == '%')
+			if (use_pe)
 				pe = ent;
 			else
 				root->ent = ent;
