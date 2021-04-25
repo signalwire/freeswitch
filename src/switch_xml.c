@@ -2998,12 +2998,16 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		strcpy(xml->attr[l + 3] + c, " ");	/* set name/value as not malloced */
 		if (xml->flags & SWITCH_XML_DUP)
 			xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
-	} else if (xml->flags & SWITCH_XML_DUP)
-		free((char *) name);	/* name was strduped */
+		c = l + 2; /* end of attribute list */
+	} else {
+		for (c = l; xml->attr[c]; c += 2);	/* find end of attribute list */
 
-	for (c = l; xml->attr[c]; c += 2);	/* find end of attribute list */
-	if (xml->attr[c + 1][l / 2] & SWITCH_XML_TXTM)
-		free(xml->attr[l + 1]);	/* old val */
+		if (xml->flags & SWITCH_XML_DUP)
+			free((char*)name);	/* name was strduped */
+		if (xml->attr[c + 1][l / 2] & SWITCH_XML_TXTM)
+			free(xml->attr[l + 1]);	/* old val */
+	}
+
 	if (xml->flags & SWITCH_XML_DUP)
 		xml->attr[c + 1][l / 2] |= SWITCH_XML_TXTM;
 	else
@@ -3014,9 +3018,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 	else {						/* remove attribute */
 		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
 			free(xml->attr[l]);
-		memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char *));
-		xml->attr = (char **) switch_must_realloc(xml->attr, (c + 2) * sizeof(char *));
-		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
+		c -= 2;
+		if (c > 0) {
+			memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char*));
+			xml->attr = (char**)switch_must_realloc(xml->attr, (c + 2) * sizeof(char*));
+			memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
+			xml->attr[c + 1][c / 2] = '\0';
+		} else {
+			/* last attribute removed, reset attribute list */
+			free(xml->attr[3]);
+			free(xml->attr);
+			xml->attr = SWITCH_XML_NIL;
+		}
 	}
 	xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
 

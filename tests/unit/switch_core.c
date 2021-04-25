@@ -53,6 +53,24 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_xml_set_attr)
+		{
+			switch_xml_t parent_xml = switch_xml_new("xml");
+			switch_xml_t xml = switch_xml_add_child_d(parent_xml, "test", 1);
+			switch_xml_set_attr_d(xml, "test1", "1");
+			switch_xml_set_attr(xml, "a1", "v1");
+			switch_xml_set_attr_d(xml, "a2", "v2");
+			switch_xml_set_attr(xml, "test1", NULL);
+			switch_xml_set_attr_d(xml, "test2", "2");
+			switch_xml_set_attr_d(xml, "a3", "v3");
+			switch_xml_set_attr(xml, "test2", NULL);
+			switch_xml_set_attr(xml, "a1", NULL);
+			switch_xml_set_attr(xml, "a2", NULL);
+			switch_xml_set_attr(xml, "a3", NULL);
+			switch_xml_free(parent_xml);
+		}
+		FST_TEST_END()
+
 #ifdef HAVE_OPENSSL
 		FST_TEST_BEGIN(test_md5)
 		{
