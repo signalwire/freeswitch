@@ -252,7 +252,7 @@ FST_TEST_BEGIN(sofia_auth_identity_test_attest_a_date)
 	channel = switch_core_session_get_channel(session);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_core_session_rwunlock(session);
-	switch_sleep(1 * 1000 * 1000);
+	switch_sleep(10 * 1000 * 1000);
 }
 FST_TEST_END()
 
