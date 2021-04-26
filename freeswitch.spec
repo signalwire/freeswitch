@@ -170,6 +170,19 @@ Requires: zlib
 Requires: libxml2
 Requires: libsndfile
 
+%if 0%{?rhel} == 7
+# to build mariadb module required gcc >= 4.9 (more details GH #1046)
+# On CentOS 7 dist you can install fresh gcc using command
+# yum install centos-release-scl && yum install devtoolset-9
+BuildRequires: devtoolset-9
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+# On CentOS 8 dist you can install fresh gcc using command
+# dnf install gcc-toolset-9
+BuildRequires: gcc-toolset-9
+%endif
+
 %if 0%{?suse_version} > 800
 PreReq:       %insserv_prereq %fillup_prereq
 %endif
@@ -1575,6 +1588,16 @@ export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9 (more details GH #1046)
+export CFLAGS="$CFLAGS -Wno-error=expansion-to-defined"
+. /opt/rh/devtoolset-9/enable
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+. /opt/rh/gcc-toolset-9/enable
+%endif
+
 ######################################################################################################################
 #
 #				Bootstrap, Configure and Build the whole enchilada
@@ -1635,6 +1658,15 @@ cd libs/esl
 #
 ######################################################################################################################
 %install
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9
+. /opt/rh/devtoolset-9/enable
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+. /opt/rh/gcc-toolset-9/enable
+%endif
+
 
 %{__make} DESTDIR=%{buildroot} install
 
