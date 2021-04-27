@@ -39,6 +39,8 @@
 %define build_mod_ssml 1
 %define build_mod_opusfile 0
 %define build_mod_v8 0
+%define build_mod_av 0
+%define build_mod_vlc 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -48,6 +50,8 @@
 %{?with_mod_esl:%define build_mod_esl 1 }
 %{?with_mod_opusfile:%define build_mod_opusfile 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
+%{?with_mod_av:%define build_mod_av 1 }
+%{?with_mod_vlc:%define build_mod_vlc 1 }
 
 %define nonparsedversion 1.7.0
 %define version %(echo '%{nonparsedversion}' | sed 's/-//g')
@@ -244,6 +248,19 @@ Requires:       %{name} = %{version}-%{release}
 
 %description application-abstraction
 Provide an abstraction to FreeSWITCH API calls
+
+%if %{build_mod_av}
+%package application-av
+Summary:        FS Video Codec / File Format using libav.org for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       ffmpeg
+BuildRequires:  ffmpeg-devel
+
+%description application-av
+FS Video Codec / File Format using libav.org for FreeSWITCH open source telephony platform
+%endif
+
 
 %package application-avmd
 Summary:	FreeSWITCH voicemail detector
@@ -831,13 +848,15 @@ PostgreSQL native support for FreeSWITCH.
 #				FreeSWITCH Directory Modules
 ######################################################################################################################
 
-#%package directory-ldap
-#Summary:        LDAP Directory support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
+%package directory-ldap
+Summary:        LDAP Directory support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       openldap
+BuildRequires:  openldap-devel
 
-#%description directory-ldap
-#LDAP Directory support for FreeSWITCH open source telephony platform.
+%description directory-ldap
+LDAP Directory support for FreeSWITCH open source telephony platform.
 
 ######################################################################################################################
 #				FreeSWITCH Endpoint Modules
@@ -958,11 +977,20 @@ SQLite CDR Logger for FreeSWITCH.
 Summary:	Erlang Event Module for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	 %{name} = %{version}-%{release}
-Requires:	erlang
+Requires:	(erlang-erts or erlang)
 BuildRequires:	erlang
 
 %description event-erlang-event
 Erlang Event Module for FreeSWITCH.
+
+%package event-fail2ban
+Summary:        fail2ban Module for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:       fail2ban
+
+%description event-fail2ban
+fail2ban Module for FreeSWITCH.
 
 %package event-format-cdr
 Summary:        JSON and XML Logger for the FreeSWITCH open source telephony platform
@@ -1136,6 +1164,17 @@ Requires:	%{name} = %{version}-%{release}
 
 %description format-tone-stream
 Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
+
+%if %{build_mod_vlc}
+%package format-vlc
+Summary:        Add H264 codec support playback and streaming to/from network
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+BuildRequires:  vlc-devel
+
+%description format-vlc
+Add H264 codec support playback and streaming to/from network.
+%endif
 
 ######################################################################################################################
 #				FreeSWITCH Programming Language Modules
@@ -1427,6 +1466,9 @@ APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applicati
 			applications/mod_dptools applications/mod_easyroute applications/mod_enum applications/mod_esf \
 			applications/mod_expr "
 
+%if %{build_mod_av}
+APPLICATION_MODULES_AC+=" applications/mod_av"
+%endif
 %if %{build_mod_esl}
 APPLICATION_MODULES_DE+="applications/mod_esl"
 %endif
@@ -1482,7 +1524,7 @@ DIALPLANS_MODULES="dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
 #					Directory Modules
 #
 ######################################################################################################################
-DIRECTORIES_MODULES=""
+DIRECTORIES_MODULES="directories/mod_ldap"
 
 ######################################################################################################################
 #
@@ -1502,7 +1544,7 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling \
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
 			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
-			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_kazoo event_handlers/mod_radius_cdr \
+			event_handlers/mod_event_socket event_handlers/mod_fail2ban event_handlers/mod_json_cdr event_handlers/mod_kazoo event_handlers/mod_radius_cdr \
 			event_handlers/mod_snmp"
 %if %{build_mod_rayo}
 EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
@@ -1521,6 +1563,9 @@ FORMATS_MODULES+=" formats/mod_ssml"
 %endif
 %if %{build_mod_opusfile}
 FORMATS_MODULES+=" formats/mod_opusfile"
+%endif
+%if %{build_mod_vlc}
+FORMATS_MODULES+=" formats/mod_vlc"
 %endif
 
 ######################################################################################################################
@@ -2043,6 +2088,11 @@ fi
 %files application-abstraction
 %{MODINSTDIR}/mod_abstraction.so*
 
+%if %{build_mod_av}
+%files application-av
+%{MODINSTDIR}/mod_av.so*
+%endif
+
 %files application-avmd
 %{MODINSTDIR}/mod_avmd.so*
 
@@ -2256,8 +2306,8 @@ fi
 #
 ######################################################################################################################
 
-#%files directory-ldap
-#%{MODINSTDIR}/mod_ldap.so*
+%files directory-ldap
+%{MODINSTDIR}/mod_ldap.so*
 
 ######################################################################################################################
 #
@@ -2310,6 +2360,9 @@ fi
 
 %files event-erlang-event
 %{MODINSTDIR}/mod_erlang_event.so*
+
+%files event-fail2ban
+%{MODINSTDIR}/mod_fail2ban.so*
 
 %files event-format-cdr
 %{MODINSTDIR}/mod_format_cdr.so*
@@ -2365,6 +2418,11 @@ fi
 
 %files format-tone-stream
 %{MODINSTDIR}/mod_tone_stream.so*
+
+%if %{build_mod_vlc}
+%files format-vlc
+%{MODINSTDIR}/mod_vlc.so*
+%endif
 
 ######################################################################################################################
 #
