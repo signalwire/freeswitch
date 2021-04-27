@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,6 +40,10 @@
 /*************************************************************************************************************************************************************/
 #include "mod_sofia.h"
 #include "sofia-sip/sip_extra.h"
+
+#if HAVE_STIRSHAKEN
+#include <stir_shaken.h>
+#endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
@@ -351,6 +355,17 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 		return 606;
 	case SWITCH_CAUSE_UNWANTED:
 		return 607;
+	/* STIR/SHAKEN */
+	case SWITCH_CAUSE_NO_IDENTITY:
+		return 428;
+	case SWITCH_CAUSE_BAD_IDENTITY_INFO:
+		return 429;
+	case SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE:
+		return 437;
+	case SWITCH_CAUSE_INVALID_IDENTITY:
+		return 438;
+	case SWITCH_CAUSE_STALE_DATE:
+		return 403;
 	default:
 		return 480;
 	}
@@ -6109,6 +6124,409 @@ SWITCH_STANDARD_APP(sofia_sla_function)
 	switch_ivr_eavesdrop_session(session, data, NULL, ED_MUX_READ | ED_MUX_WRITE | ED_COPY_DISPLAY);
 }
 
+#if HAVE_STIRSHAKEN
+static stir_shaken_as_t *sofia_stir_shaken_as = NULL;
+static stir_shaken_vs_t *sofia_stir_shaken_vs = NULL;
+
+static switch_status_t sofia_stir_shaken_vs_create(stir_shaken_context_t *context)
+{
+	sofia_stir_shaken_vs = stir_shaken_vs_create(context);
+	if (!sofia_stir_shaken_vs) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity verification service!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	if (mod_sofia_globals.stir_shaken_vs_ca_dir) {
+		stir_shaken_vs_load_ca_dir(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_ca_dir);
+	}
+	stir_shaken_vs_set_x509_cert_path_check(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_cert_path_check);
+	stir_shaken_vs_set_connect_timeout(context, sofia_stir_shaken_vs, 3);
+	//stir_shaken_vs_set_callback(context, sofia_stir_shaken_vs, shaken_callback);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sofia_stir_shaken_as_create(stir_shaken_context_t *context)
+{
+	if (mod_sofia_globals.stir_shaken_as_key && mod_sofia_globals.stir_shaken_as_url) {
+		sofia_stir_shaken_as = stir_shaken_as_create(context);
+		if (!sofia_stir_shaken_as) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity authentication service!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		if (stir_shaken_as_load_private_key(context, sofia_stir_shaken_as, mod_sofia_globals.stir_shaken_as_key) != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load key for Identity authentication service: %s", mod_sofia_globals.stir_shaken_as_key);
+			stir_shaken_as_destroy(&sofia_stir_shaken_as);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
+static void sofia_stir_shaken_create_services(void)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_context_t context = { 0 };
+	if (stir_shaken_init(&context, STIR_SHAKEN_LOGLEVEL_NOTHING) != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to initialize stirshaken library!\n");
+		return;
+	}
+	sofia_stir_shaken_vs_create(&context);
+	sofia_stir_shaken_as_create(&context);
+#endif
+}
+
+static void sofia_stir_shaken_destroy_services(void)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_vs_destroy(&sofia_stir_shaken_vs);
+	stir_shaken_as_destroy(&sofia_stir_shaken_as);
+	stir_shaken_deinit();
+#endif
+}
+
+#if HAVE_STIRSHAKEN
+static char *canonicalize_phone_number(const char *number)
+{
+	// remove all characters except for digits, *, and # from the phone number
+	// TODO determine if dial number and remove dial codes or add country code
+	char *canonicalized_number = strdup(number ? number : "");
+	size_t i = 0, j = 0;
+	size_t number_len = strlen(canonicalized_number);
+	for (i = 0; i < number_len; i++) {
+		if (isdigit(canonicalized_number[i]) || canonicalized_number[i] == '#' || canonicalized_number[i] == '*') {
+			canonicalized_number[j] = canonicalized_number[i];
+			j++;
+		}
+	}
+	canonicalized_number[j] = '\0';
+	return canonicalized_number;
+}
+
+static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_session_t *session, long iat, const char *orig, int orig_is_tn, const char *dest, int dest_is_tn)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *from = NULL;
+	const char *to = NULL;
+	char *canonicalized_from = NULL;
+	char *canonicalized_to = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_time_t now = switch_epoch_time_now(NULL);
+
+	if (iat > now) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "PASSporT iat is in the future\n");
+		return SWITCH_STATUS_FALSE;
+	} else if (now - iat > 60) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "PASSporT iat is too old\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (mod_sofia_globals.stir_shaken_vs_require_date || switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_require_date"))) {
+		const char *sip_epoch_time_var = switch_channel_get_variable(channel, "sip_date_epoch_time");
+		switch_time_t sip_epoch_time;
+
+		if (zstr(sip_epoch_time_var)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required SIP Date\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		sip_epoch_time = strtol(sip_epoch_time_var, NULL, 10);
+		if (sip_epoch_time > now) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is in the future\n", sip_epoch_time_var);
+			return SWITCH_STATUS_FALSE;
+		}
+		if (now - sip_epoch_time > 60) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is too old\n", sip_epoch_time_var);
+			return SWITCH_STATUS_FALSE;
+		}
+		if ((iat > sip_epoch_time && iat - sip_epoch_time > 60) || (iat < sip_epoch_time && sip_epoch_time - iat > 60)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is too far from PASSporT iat %ld\n", sip_epoch_time_var, iat);
+			return SWITCH_STATUS_FALSE;
+		}
+		// Date is within 60 seconds of now and within 60 seconds of iat
+	}
+
+	if (orig_is_tn) {
+		from = switch_channel_get_variable(channel, "sip_from_user");
+		from = canonicalized_from = canonicalize_phone_number(from);
+	} else {
+		from = switch_channel_get_variable(channel, "sip_from_uri");
+	}
+	if (dest_is_tn) {
+		to = switch_channel_get_variable(channel, "sip_to_user");
+		to = canonicalized_to = canonicalize_phone_number(to);
+	} else {
+		to = switch_channel_get_variable(channel, "sip_to_uri");
+	}
+
+	if (zstr(from) || zstr(to) || zstr(orig) || zstr(dest)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing data to verify SIP From/To matches PASSporT claims. From=%s, To=%s, orig=%s, dest=%s\n", from, to, orig, dest);
+		status = SWITCH_STATUS_FALSE;
+	} else if (strcmp(orig, from) || strcmp(dest, to)) {
+		status = SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP From/To does not match PASSporT claims. From=%s, To=%s, orig=%s, dest=%s\n", from, to, orig, dest);
+	} else {
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_safe_free(canonicalized_from);
+	switch_safe_free(canonicalized_to);
+	return status;
+}
+
+/**
+ * Returns first dest if found. Must be freed by caller.
+ */
+static char* sofia_stir_shaken_passport_get_dest(stir_shaken_passport_t *passport, int *is_tn)
+{
+	char *id = NULL;
+	char *dest = NULL;
+	int tn_form = 0;
+	int id_int = 0;
+	cJSON *item = NULL;
+	cJSON *destjson = NULL;
+	stir_shaken_context_t ss = { 0 };
+
+	if (!passport) return NULL;
+
+	dest = stir_shaken_passport_get_grants_json(&ss, passport, "dest");
+	if (!dest) {
+		return NULL;
+	}
+
+	destjson = cJSON_Parse(dest);
+	if (!destjson) {
+		free(dest);
+		return NULL;
+	}
+
+	if ((item = cJSON_GetObjectItem(destjson, "tn"))) {
+		tn_form = 1;
+	} else if ((item = cJSON_GetObjectItem(destjson, "uri"))) {
+		tn_form = 0;
+	} else {
+		cJSON_Delete(destjson);
+		free(dest);
+		return NULL;
+	}
+
+	if (cJSON_IsArray(item)) {
+		item = cJSON_GetArrayItem(item, 0);
+		if (!item) {
+			cJSON_Delete(destjson);
+			free(dest);
+			return NULL;
+		}
+	} else {
+		item = destjson;
+	}
+
+	if (cJSON_IsString(item)) {
+		id = strdup(item->valuestring);
+	} else if (cJSON_IsNumber(item)) {
+		id_int = item->valueint;
+		id = malloc(20);
+		if (!id) {
+			cJSON_Delete(destjson);
+			free(dest);
+			return NULL;
+		}
+		snprintf(id, 20, "%d", id_int);
+	} else {
+		cJSON_Delete(destjson);
+		free(dest);
+		return NULL;
+	}
+
+	if (is_tn) *is_tn = tn_form;
+	cJSON_Delete(destjson);
+	free(dest);
+	return id;
+}
+
+
+#endif
+
+// TODO Date header must be present
+//   Date header must be < (expiration policy) age
+//   Date header must be within 1 minute of iat
+
+
+/* Check signature in Identity header and save result to sip_verstat */
+SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+#if HAVE_STIRSHAKEN
+	stir_shaken_status_t verify_signature_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_context_t verify_signature_context = { 0 };
+	stir_shaken_status_t validate_passport_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_context_t validate_passport_context = { 0 };
+	stir_shaken_context_t get_grant_context = { 0 };
+	stir_shaken_passport_t *passport = NULL;
+	stir_shaken_cert_t *cert = NULL;
+	stir_shaken_error_t stir_error = { 0 };
+	switch_status_t claim_status = SWITCH_STATUS_FALSE;
+	const char *identity_header = switch_channel_get_variable(channel, "sip_h_identity");
+	const char *attestation = NULL;
+	int orig_is_tn = 0;
+	switch_bool_t hangup_on_fail = switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_hangup_on_fail"));
+
+	// TODO: compact Identity header is not supported - this will require construction of PASSporT from SIP headers in order to check signature
+
+	if (zstr(identity_header)) {
+		// Nothing to do
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: no SIP Identity\n");
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NO_IDENTITY);
+		}
+		goto done;
+	}
+
+	// verify the JWT signature in the SIP Identity header
+	verify_signature_status = stir_shaken_vs_sih_verify(&verify_signature_context, sofia_stir_shaken_vs, identity_header, &cert, &passport);
+	if (verify_signature_status != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed signature verification: %s\n", stir_shaken_get_error(&verify_signature_context, &stir_error));
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+			goto done;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed signature verification\n");
+	}
+
+	if (passport) {
+		// validate the PASSporT is not expired
+		int timeout = 60;
+		const char *timeout_str = switch_channel_get_variable(channel, "sip_stir_shaken_vs_max_age");
+		if (timeout_str && switch_is_number(timeout_str)) {
+			int new_timeout = atoi(timeout_str);
+			if (new_timeout > 0) {
+				timeout = new_timeout;
+			}
+		}
+		validate_passport_status = stir_shaken_passport_validate_iat_against_freshness(&validate_passport_context, passport, timeout);
+		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed stale check: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_STALE_DATE);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed stale check\n");
+		}
+
+		// validate the required PASSporT headers and grants are set
+		validate_passport_status = stir_shaken_passport_validate_headers_and_grants(&validate_passport_context, passport);
+		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				if (validate_passport_status == STIR_SHAKEN_STATUS_OK && verify_signature_status == STIR_SHAKEN_STATUS_OK) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMING_CALL_BARRED);
+				} else {
+					switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				}
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed header and grant validation\n");
+		}
+	}
+
+	if (passport) {
+		// validate the PASSporT claims match the SIP headers
+		stir_shaken_context_t validate_claims_context = { 0 };
+		int dest_is_tn = 0;
+		char *orig = stir_shaken_passport_get_identity(&validate_claims_context, passport, &orig_is_tn);
+		char *dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
+		long iat = stir_shaken_passport_get_grant_int(&validate_claims_context, passport, "iat");
+		claim_status = sofia_stir_shaken_validate_passport_claims(session, iat, orig, orig_is_tn, dest, dest_is_tn);
+		if (claim_status != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				switch_safe_free(orig);
+				switch_safe_free(dest);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims match SIP request\n");
+		}
+		switch_safe_free(orig);
+		switch_safe_free(dest);
+	}
+
+	attestation = stir_shaken_passport_get_grant(&get_grant_context, passport, "attest");
+
+	if (!zstr(attestation) && verify_signature_status == STIR_SHAKEN_STATUS_OK && validate_passport_status == STIR_SHAKEN_STATUS_OK && claim_status == SWITCH_STATUS_SUCCESS) {
+		if (orig_is_tn) {
+			switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Passed-%s", attestation);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT orig is not a telephone number\n");
+			switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		}
+		if (orig_is_tn && !strcmp(attestation, "A")) {
+			// Signature is valid and call has "A" attestation
+			switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Passed");
+		} else {
+			// Signature is valid and call has "B" or "C" attestation or is not from a phone number
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT only has \"%s\" attestation\n", attestation);
+			switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		}
+	} else if (!passport || !cert || zstr(attestation) || verify_signature_status == STIR_SHAKEN_STATUS_OK) {
+		// failed to get cert / bad passport / no attestation / claims don't match SIP
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+	} else {
+		// bad signature
+		switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Failed-%s", attestation);
+		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Failed");
+	}
+
+
+done:
+	stir_shaken_passport_destroy(&passport);
+	stir_shaken_cert_destroy(&cert);
+
+#else
+	switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+	switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+#endif
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "verstat=%s, verstat_detailed=%s\n", switch_channel_get_variable(channel, "sip_verstat"), switch_channel_get_variable(channel, "sip_verstat_detailed"));
+}
+
+/* This assumes TN attestation for orig and dest only */
+char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session, const char *attest, const char *orig, const char *dest)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_context_t as_context = { 0 };
+	stir_shaken_passport_params_t passport_params = { 0 };
+	char *canonical_desttn = NULL;
+	char *canonical_origtn = NULL;
+	char *passport = NULL;
+
+	if (zstr(attest) || zstr(orig) || zstr(dest) || !mod_sofia_globals.stir_shaken_as_url) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required parameter to create PASSporT\n");
+		return NULL;
+	}
+
+	passport_params.attest = attest;
+	passport_params.x5u = mod_sofia_globals.stir_shaken_as_url;
+	passport_params.desttn_key = "tn";
+	passport_params.desttn_val = canonical_desttn = canonicalize_phone_number(dest);
+	passport_params.iat = switch_epoch_time_now(NULL);
+	passport_params.origtn_key = "tn";
+	passport_params.origtn_val = canonical_origtn = canonicalize_phone_number(orig);
+	passport_params.origid = switch_core_session_get_uuid(session);
+
+	passport = stir_shaken_as_authenticate_to_sih(&as_context, sofia_stir_shaken_as, &passport_params, NULL);
+	switch_safe_free(canonical_desttn);
+	switch_safe_free(canonical_origtn);
+	return passport;
+#else
+	return NULL;
+#endif
+}
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
@@ -6367,6 +6785,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function",
 				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);
 
+	SWITCH_ADD_APP(app_interface, "sofia_stir_shaken_vs", "Verify SIP Identity header and store result in sip_verstat channel variable",
+				   "Verify SIP Identity header and store result in sip_verstat channel variable", sofia_stir_shaken_vs_function, "", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
@@ -6409,6 +6829,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
 	crtp_init(*module_interface);
+
+	sofia_stir_shaken_create_services();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -6496,6 +6918,8 @@ void mod_sofia_shutdown_cleanup() {
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
 	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	sofia_stir_shaken_destroy_services();
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)

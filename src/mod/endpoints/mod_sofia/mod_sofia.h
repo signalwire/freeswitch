@@ -407,6 +407,11 @@ struct mod_sofia_globals {
 	time_t presence_epoch;
 	int presence_year;
 	int abort_on_empty_external_ip;
+	const char *stir_shaken_as_key;
+	const char *stir_shaken_as_url;
+	const char *stir_shaken_vs_ca_dir;
+	int stir_shaken_vs_cert_path_check;
+	int stir_shaken_vs_require_date;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -1273,6 +1278,8 @@ void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, 
 void sofia_glue_clear_soa(switch_core_session_t *session, switch_bool_t partner);
 sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive);
 switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen);
+
+char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session, const char *attest, const char *orig, const char *dest);
 
 /* For Emacs:
  * Local Variables:

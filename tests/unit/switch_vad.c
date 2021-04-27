@@ -75,11 +75,12 @@ FST_CORE_BEGIN("./conf")
 			int duration;
 			float pos = 0.0;
 			int got_transition = 0;
+			int res;
 			switch_vad_state_t cur_state = SWITCH_VAD_STATE_NONE;
 
 			switch_vad_t *vad = switch_vad_init(8000, 1);
 			fst_requires(vad);
-			int res = switch_vad_set_mode(vad, 0); // tone is detected as speech in mode 0
+			res = switch_vad_set_mode(vad, 0); // tone is detected as speech in mode 0
 			fst_requires(res == 0);
 			switch_vad_set_param(vad, "silence_ms", 400);
 			switch_vad_set_param(vad, "voice_ms", 80);

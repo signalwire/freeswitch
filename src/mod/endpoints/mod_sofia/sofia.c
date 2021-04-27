@@ -4547,6 +4547,19 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				}
 			} else if (!strcasecmp(var, "capture-server")) {
 				mod_sofia_globals.capture_server = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-as-key")) {
+				/* The private key to authenticate SIP Identity when sip_identity_attest is set */
+				mod_sofia_globals.stir_shaken_as_key = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-as-url")) {
+				/* The x5u URL to advertise when sip_identity_attest is set */
+				mod_sofia_globals.stir_shaken_as_url = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-vs-ca-dir")) {
+				/* The dir that contains the trusted CA root certs. */
+				mod_sofia_globals.stir_shaken_vs_ca_dir = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-vs-cert-path-check")) {
+				mod_sofia_globals.stir_shaken_vs_cert_path_check = switch_true(val);
+			} else if (!strcasecmp(var, "stir-shaken-vs-require-date")) {
+				mod_sofia_globals.stir_shaken_vs_require_date = switch_true(val);
 			}
 		}
 	}
@@ -11425,6 +11438,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		if (sip->sip_identity && sip->sip_identity->id_value) {
 			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
+		}
+		if (sip->sip_date && sip->sip_date->d_time > 0) {
+			// This INVITE has a SIP Date header.
+			// sofia-sip stores the Date header value in sip_date->d_time as seconds since January 1, 1900 0:00:00.
+			// Unix epoch time is seconds since January 1, 1970 0:00:00, making d_time larger by 2208988800.
+			// Convert to Unix epoch time and save it.
+			switch_channel_set_variable_printf(channel, "sip_date_epoch_time", "%ld", sip->sip_date->d_time - 2208988800);
 		}
 
 		/* Loop thru unknown Headers Here so we can do something with them */
