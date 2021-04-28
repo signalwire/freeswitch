@@ -3860,13 +3860,35 @@ retry:
 	}
 
 	if (switch_core_codec_ready(&a_engine->read_codec)) {
+		uint32_t rrate = !strcasecmp(a_engine->read_impl.iananame, "g722")
+						 ? a_engine->read_impl.samples_per_second
+						 : a_engine->read_impl.actual_samples_per_second;
+
 		if (!force) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 
 		if (strcasecmp(a_engine->read_impl.iananame, a_engine->cur_payload_map->iananame) ||
-			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
-			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
+				(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
+				rrate != a_engine->cur_payload_map->rm_rate ) {
+
+			switch_yield(a_engine->read_impl.microseconds_per_packet);
+			switch_core_session_lock_codec_write(session);
+			switch_core_session_lock_codec_read(session);
+			resetting = 1;
+			switch_yield(a_engine->read_impl.microseconds_per_packet);
+
+			if (session->write_resampler) {
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					if (other_session->write_resampler) {
+						switch_mutex_lock(other_session->resample_mutex);
+						switch_resample_destroy(&other_session->write_resampler);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(other_session), SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+						switch_mutex_unlock(other_session->resample_mutex);
+					}
+					switch_core_session_rwunlock(other_session);
+				}
+			}
 
 			if (switch_core_session_try_reset(session, 0, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_time_t elapsed = switch_micro_time_now() - start;
@@ -3892,11 +3914,6 @@ retry:
 							  a_engine->cur_payload_map->codec_ms,
 							  a_engine->cur_payload_map->rm_rate);
 
-			switch_yield(a_engine->read_impl.microseconds_per_packet);
-			switch_core_session_lock_codec_write(session);
-			switch_core_session_lock_codec_read(session);
-			resetting = 1;
-			switch_yield(a_engine->read_impl.microseconds_per_packet);
 			switch_core_codec_destroy(&a_engine->read_codec);
 			switch_core_codec_destroy(&a_engine->write_codec);
 			switch_channel_audio_sync(session->channel);
@@ -16433,6 +16450,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			write_frame = &session->raw_write_frame;
 			write_frame->rate = frame->codec->implementation->actual_samples_per_second;
 			if (!session->write_resampler) {
+				if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+					switch_mutex_unlock(session->codec_write_mutex);
+				} else {
+					goto done;
+				}
+
 				switch_mutex_lock(session->resample_mutex);
 				status = switch_resample_create(&session->write_resampler,
 												frame->codec->implementation->actual_samples_per_second,
@@ -16765,6 +16788,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					session->enc_write_frame.payload = session->write_impl.ianacode;
 					write_frame = &session->enc_write_frame;
 					if (!session->write_resampler) {
+						if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+							switch_mutex_unlock(session->codec_write_mutex);
+						} else {
+							goto done;
+						}
+
 						switch_mutex_lock(session->resample_mutex);
 						if (!session->write_resampler) {
 							status = switch_resample_create(&session->write_resampler,
