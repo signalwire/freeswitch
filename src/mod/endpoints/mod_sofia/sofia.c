@@ -8200,12 +8200,18 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				goto done;
 			}
 
-			if (switch_channel_var_true(channel, "sip_unhold_nosdp")) {
-				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, "sendrecv",
-												zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
+			if (sofia_test_pflag(profile, PFLAG_ALWAYS_REGENERATE_OFFER) || switch_channel_var_true(channel, "3pcc_always_regenerate_offer")) {
+				switch_channel_set_variable(channel, "sdp_clear_previous_negotiation", "true");
+				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+				switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
+				switch_core_media_check_video_codecs(session);
+				switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, 
+										switch_channel_var_true(channel, "sip_unhold_nosdp") ? "sendrecv" : NULL,
+										zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
 			} else {
-				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL,
-											zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
+				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0,
+										switch_channel_var_true(channel, "sip_unhold_nosdp") ? "sendrecv" : NULL,
+										zstr(tech_pvt->mparams.local_sdp_str) || !switch_channel_test_flag(channel, CF_PROXY_MODE));
 			}
 
 			if (zstr(tech_pvt->mparams.local_sdp_str)) {

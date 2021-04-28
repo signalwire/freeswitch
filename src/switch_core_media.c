@@ -10782,6 +10782,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	int include_external;
 	const char* audio_mid = switch_channel_get_variable_dup(session->channel, "rtp_audio_mid", SWITCH_FALSE, -1);
 	const char* video_mid = switch_channel_get_variable_dup(session->channel, "rtp_video_mid", SWITCH_FALSE, -1);
+	const char *clear_previous_negotiation = NULL;
 
 	switch_assert(session);
 
@@ -10796,6 +10797,17 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	include_external = switch_channel_var_true(session->channel, "include_external_ip");
 
 	use_rtcp_mux = switch_channel_get_variable(session->channel, "rtcp_mux");
+
+	clear_previous_negotiation = switch_channel_get_variable(session->channel, "sdp_clear_previous_negotiation");
+
+	if (clear_previous_negotiation && switch_true(clear_previous_negotiation)) {
+		switch_channel_set_variable(session->channel, "sdp_clear_previous_negotiation", NULL);
+		a_engine->codec_negotiated = 0;
+		v_engine->codec_negotiated = 0;
+		if (sdp_type == SDP_TYPE_REQUEST) {
+			smh->payload_space = 0;
+		}
+	}
 
 	if (use_rtcp_mux && switch_false(use_rtcp_mux)) {
 		a_engine->rtcp_mux = -1;
