@@ -268,6 +268,7 @@ typedef struct conference_cdr_node_s {
 	uint32_t id;
 	conference_member_t *member;
 	switch_event_t *var_event;
+	switch_event_t *channel_event;
 	struct conference_cdr_node_s *next;
 } conference_cdr_node_t;
 
@@ -734,6 +735,7 @@ typedef struct conference_obj {
 	switch_time_t end_time;
 	char *log_dir;
 	cdr_event_mode_t cdr_event_mode;
+	char *cdr_include_channel_vars;
 	struct vid_helper vh[2];
 	struct vid_helper mh;
 	conference_record_t *rec_node_head;

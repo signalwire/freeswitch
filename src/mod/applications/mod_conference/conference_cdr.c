@@ -501,6 +501,7 @@ void conference_cdr_add(conference_member_t *member)
 	conference_cdr_node_t *np;
 	switch_caller_profile_t *cp;
 	switch_channel_t *channel;
+	char *cdr_include_channel_vars = NULL;
 
 	switch_mutex_lock(member->conference->member_mutex);
 
@@ -532,7 +533,44 @@ void conference_cdr_add(conference_member_t *member)
 
 	member->cdr_node->id = member->id;
 
+	if (!zstr(member->conference->cdr_include_channel_vars)) {
+		switch_event_t *channel_event;
+		char *fields[32] = {0};
+		int argc = 0;
+		int index = 0;
+
+		cdr_include_channel_vars = strdup(member->conference->cdr_include_channel_vars);
+
+		argc = switch_split(cdr_include_channel_vars, ',', fields);
+		if (argc < 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CDR include channels is empty\n");
+			goto end;
+		}
+
+		if (switch_event_create_plain(&channel_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not create CDR channel variable\n");
+			goto end;
+		}
+
+		for (index = 0; index < argc; ++index) {
+			const char * channel_var;
+			if (zstr(fields[index])) {
+				continue;
+			}
+
+			if ((channel_var = switch_channel_get_variable_dup(member->channel, fields[index], SWITCH_FALSE, -1))) {
+				switch_event_add_header_string(channel_event, SWITCH_STACK_BOTTOM, fields[index], channel_var);
+			}
+		}
+
+		member->cdr_node->channel_event = channel_event;
+	}
+
  end:
+
+	if (cdr_include_channel_vars) {
+		switch_safe_free(cdr_include_channel_vars);
+	}
 
 	switch_mutex_unlock(member->conference->member_mutex);
 
@@ -561,7 +599,7 @@ void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *cha
 
 void conference_cdr_render(conference_obj_t *conference)
 {
-	switch_xml_t cdr, x_ptr, x_member, x_members, x_conference, x_cp, x_flags, x_tag, x_rejected, x_attempt;
+	switch_xml_t cdr, x_ptr, x_member, x_members, x_conference, x_cp, x_channel, x_flags, x_tag, x_rejected, x_attempt, x_var;
 	conference_cdr_node_t *np;
 	conference_cdr_reject_t *rp;
 	int cdr_off = 0, conference_off = 0;
@@ -629,6 +667,7 @@ void conference_cdr_render(conference_obj_t *conference)
 	for (np = conference->cdr_nodes; np; np = np->next) {
 		int member_off = 0;
 		int flag_off = 0;
+		int channel_off = 0;
 
 
 		if (!(x_member = switch_xml_add_child_d(x_members, "member", conference_off++))) {
@@ -672,6 +711,21 @@ void conference_cdr_render(conference_obj_t *conference)
 				abort();
 			}
 			switch_ivr_set_xml_profile_data(x_cp, np->cp, 0);
+
+			if (np->channel_event) {
+				switch_event_header_t *hp;
+
+				if (!(x_channel = switch_xml_add_child_d(x_member, "channel_info", member_off++))) {
+					abort();
+				}
+
+				for(hp = np->channel_event->headers; hp; hp = hp->next) {
+					x_var = switch_xml_add_child_d(x_channel, hp->name, channel_off++);
+					switch_xml_set_txt_d(x_var, hp->value);
+				}
+
+				switch_event_destroy(&(np->channel_event));
+			}
 		}
 
 		if (!zstr(np->record_path)) {
