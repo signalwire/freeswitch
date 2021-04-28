@@ -2756,6 +2756,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	int min_recording_participants = 1;
 	char *conference_log_dir = NULL;
 	char *cdr_event_mode = NULL;
+	char *cdr_include_channel_vars = NULL;
 	char *terminate_on_silence = NULL;
 	char *endconference_grace_time = NULL;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
@@ -2974,6 +2975,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				conference_log_dir = val;
 			} else if (!strcasecmp(var, "cdr-event-mode") && !zstr(val)) {
 				cdr_event_mode = val;
+			} else if (!strcasecmp(var, "cdr-include-channel-vars") && !zstr(val)) {
+				cdr_include_channel_vars = val;
 			} else if (!strcasecmp(var, "kicked-sound") && !zstr(val)) {
 				kicked_sound = val;
 			} else if (!strcasecmp(var, "pin") && !zstr(val)) {
@@ -3386,6 +3389,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		} else {
 			conference->cdr_event_mode = CDRE_NONE;
 		}
+	}
+
+	if (!zstr(cdr_include_channel_vars)) {
+		conference->cdr_include_channel_vars = switch_core_strdup(conference->pool, cdr_include_channel_vars);
 	}
 
 	if (!zstr(perpetual_sound)) {
