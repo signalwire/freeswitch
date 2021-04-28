@@ -8039,8 +8039,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					//switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
 					sofia_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
 					//Moves into CS_INIT so call moves forward into the dialplan
-					switch_channel_set_state(channel, CS_INIT);
-					switch_channel_set_flag(channel, CF_3PCC_PROXY);
+					if (switch_channel_get_state(channel) == CS_NEW) {
+						switch_channel_set_state(channel, CS_INIT);
+						switch_channel_set_flag(channel, CF_3PCC_PROXY);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Invalid State on handling 3PCC (RE)Invite\n");
+						nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No SDP in INVITE and 3pcc not enabled, hanging up.\n");
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
