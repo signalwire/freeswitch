@@ -77,7 +77,8 @@ void signtoken(char *token, int tokenlen,char *pkey, char *out) {
 	BIO_free(b);
 	sig = malloc(RSA_size(r));
 	RSA_sign(NID_sha256, digest, SHA256_DIGEST_LENGTH, sig, &sig_len, r);
-	switch_b64_encode(sig,(switch_size_t) sizeof(sig) * sig_len,(unsigned char *) out, 344 * sizeof(char));
+	// 343 = ceil(256 * 4/3) + 1
+	switch_b64_encode(sig,(switch_size_t) sizeof(sig) * (sig_len + 1),(unsigned char *) out, 343 * sizeof(char));
 	free(sig);
 }
 
