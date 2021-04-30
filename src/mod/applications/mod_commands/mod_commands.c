@@ -967,6 +967,10 @@ SWITCH_STANDARD_API(timer_test_function)
 	stream->write_function(stream, "Avg: %0.3fms Total Time: %0.3fms\n", (float) ((float) (total / (x - 1)) / 1000),
 						   (float) ((float) (end - start) / 1000));
 
+	if (switch_core_timer_destroy(&timer) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "Timer Destroy Error!\n");
+	}
+
   end:
 
 	switch_core_destroy_memory_pool(&pool);
