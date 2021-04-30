@@ -781,7 +781,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Waiting for URL %s to be available\n", url);
 			u->waiters++;
 			url_cache_unlock(cache, session);
-			while(u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
+			while(!gcache.shutdown && u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
 				switch_sleep(10 * 1000); /* 10 ms */
 			}
 			url_cache_lock(cache, session);
