@@ -2094,7 +2094,7 @@ static void switch_send_rtcp_event(switch_rtp_t *rtp_session ,struct switch_rtcp
 				snprintf(value, sizeof(value), "%" SWITCH_TIME_T_FMT, switch_time_now());
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", value);
 
-				// Add sources info
+				/* Add sources info */
 				snprintf(header, sizeof(header), "Source-SSRC");
 				snprintf(value, sizeof(value), "%.8x", rtp_session->stats.rtcp.peer_ssrc);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
@@ -2103,10 +2103,10 @@ static void switch_send_rtcp_event(switch_rtp_t *rtp_session ,struct switch_rtcp
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
 				snprintf(header, sizeof(header), "Source-Lost");
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-				tmpLost = report->lost; // signed 24bit will extended signess to int32_t automatically
+				tmpLost = report->lost; /* signed 24bit will extended signess to int32_t automatically */
 #else
 				tmpLost = ntohl(rtcp_report_block->lost)>>8;
-				tmpLost = tmpLost | ((tmpLost & 0x00800000) ? 0xff000000 : 0x00000000); // ...and signess compensation
+				tmpLost = tmpLost | ((tmpLost & 0x00800000) ? 0xff000000 : 0x00000000); /* ...and signess compensation */
 #endif
 				snprintf(value, sizeof(value), "%u", tmpLost);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
