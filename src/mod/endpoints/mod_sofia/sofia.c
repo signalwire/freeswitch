@@ -11268,6 +11268,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (gateway) {
 			context = switch_core_session_strdup(session, gateway->register_context);
 			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
+			tech_pvt->reply_contact = switch_core_session_sprintf(session, gateway->register_contact);
 
 			if (!zstr(extension)) {
 				if (!strcasecmp(extension, "auto_to_user") && sip->sip_to) {
