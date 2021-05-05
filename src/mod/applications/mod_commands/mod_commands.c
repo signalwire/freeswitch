@@ -5771,12 +5771,13 @@ SWITCH_STANDARD_API(show_function)
 				}
 				if (strchr(argv[2], '%')) {
 					switch_snprintfv(sql, sizeof(sql),
-						"select * from channels where hostname='%q' and uuid like '%q' or name like '%q' or cid_name like '%q' or cid_num like '%q' or presence_data like '%q' or accountcode like '%q' order by created_epoch",
-						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
+						"select * from channels where hostname='%q' and uuid like '%q' or name like '%q' or cid_name like '%q' or cid_num like '%q' or presence_id like '%q' or presence_data like '%q' or accountcode like '%q' order by created_epoch",
+						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
 				} else {
 					switch_snprintfv(sql, sizeof(sql),
-						"select * from channels where hostname='%q' and uuid like '%%%q%%' or name like '%%%q%%' or cid_name like '%%%q%%' or cid_num like '%%%q%%' or presence_data like '%%%q%%' or accountcode like '%%%q%%' order by created_epoch",
-						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
+						"select * from channels where hostname='%q' and uuid like '%%%q%%' or name like '%%%q%%' or cid_name like '%%%q%%' or cid_num like '%%%q%%' or presence_id like '%%%q%%' or presence_data like '%%%q%%' or accountcode like '%%%q%%' order by created_epoch",
+						switch_core_get_switchname(), argv[2], argv[2], argv[2], argv[2], argv[2], argv[2], argv[2]);
+
 				}
 				if (argv[4] && !strcasecmp(argv[3], "as")) {
 					as = argv[4];
