@@ -1333,6 +1333,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *sip_reply_contact;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -1354,6 +1355,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	if (switch_channel_down(channel) || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
+	}
+
+	if ((sip_reply_contact = switch_channel_get_variable(channel, "sip_reply_contact"))) {
+		tech_pvt->reply_contact = switch_core_session_sprintf(session, sip_reply_contact);
 	}
 
 	if (switch_channel_test_flag(channel, CF_CONFERENCE) && !zstr(tech_pvt->reply_contact) && !switch_stristr(";isfocus", tech_pvt->reply_contact)) {
