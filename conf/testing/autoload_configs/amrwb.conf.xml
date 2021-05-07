@@ -18,5 +18,7 @@
 	<param name="adjust-bitrate" value="0"/>
 	<!-- force OA when originating -->
 	<param name="force-oa" value="0"/>
+	<!-- don't mirror mode-set in SDP answer, but use our own (default-bitrate). -->
+	<param name="mode-set-overwrite" value="0"/>
   </settings>
 </configuration>
