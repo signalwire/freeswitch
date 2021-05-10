@@ -1121,6 +1121,9 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, const char *key);
 #define sofia_reg_find_gateway(x) sofia_reg_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
+sofia_gateway_t *sofia_reg_find_profile_gateway__(const char *file, const char *func, int line, sofia_profile_t *profile, const char *key);
+#define sofia_reg_find_profile_gateway(p, x) sofia_reg_find_profile_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, p, x)
+
 sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key);
 #define sofia_reg_find_gateway_by_realm(x) sofia_reg_find_gateway_by_realm__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
