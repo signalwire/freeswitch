@@ -1456,6 +1456,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		ADDBOOL(json_conference_member_flags, "has_floor", member->id == member->conference->floor_holder);
 		ADDBOOL(json_conference_member_flags, "is_moderator", conference_utils_member_test_flag(member, MFLAG_MOD));
 		ADDBOOL(json_conference_member_flags, "end_conference", conference_utils_member_test_flag(member, MFLAG_ENDCONF));
+		ADDBOOL(json_conference_member_flags, "pass_digits", conference_utils_member_test_flag(member, MFLAG_DIST_DTMF));
 	}
 	switch_mutex_unlock(conference->member_mutex);
 }
