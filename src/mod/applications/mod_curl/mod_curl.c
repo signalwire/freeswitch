@@ -50,7 +50,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]] [get|head|post|delete|put [data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]|insecure|secure|[proxy <http://proxy:port>]] [get|head|post|delete|put [data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -61,11 +61,13 @@ static struct {
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
 	int max_bytes;
+	switch_bool_t validate_certs;
 } globals;
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
 	SWITCH_CONFIG_ITEM("max-bytes", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.max_bytes, (void *) HTTP_DEFAULT_MAX_BYTES, NULL,NULL, NULL),
+	SWITCH_CONFIG_ITEM("validate-certs", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.validate_certs, SWITCH_FALSE, NULL, NULL, NULL),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -124,6 +126,8 @@ typedef struct callback_obj callback_t;
 struct curl_options_obj {
 	long connect_timeout;
 	long timeout;
+	int insecure;
+	char *proxy;
 };
 typedef struct curl_options_obj curl_options_t;
 
@@ -178,6 +182,8 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	switch_curl_slist_t *headers = NULL;
 	struct data_stream dstream = { NULL };
 
+	assert(options);
+
 	http_data = switch_core_alloc(pool, sizeof(http_data_t));
 	memset(http_data, 0, sizeof(http_data_t));
 	http_data->pool = pool;
@@ -192,20 +198,27 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
 	curl_handle = switch_curl_easy_init();
 
-	if (options) {
-		if (options->connect_timeout) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, options->connect_timeout);
-		}
+	if (options->connect_timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, options->connect_timeout);
+	}
 
-		if (options->timeout) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
-		}
+	if (options->timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
+	}
+
+	if (options->proxy) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_PROXY, options->proxy);
 	}
 
 	if (!strncasecmp(url, "https", 5)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		if (options->insecure) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		} else {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 1);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 1);
+		}
 	}
 
 	if (append_headers) {
@@ -228,6 +241,16 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 			switch_safe_free(ct);
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
+	} else if (!strcasecmp(method, "patch")) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "PATCH");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
+		if (content_type) {
+			char *ct = switch_mprintf("Content-Type: %s", content_type);
+			headers = switch_curl_slist_append(headers, ct);
+			switch_safe_free(ct);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PATCH data: %s\n", data);
 	} else if (!strcasecmp(method, "delete")) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
 		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
@@ -807,7 +830,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_curl_slist_t *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
 	int i = 0;
-	curl_options_t options = { 0 };
+	curl_options_t options = { .insecure = !globals.validate_certs };
 	const char *curl_timeout;
 	char *append_headers[HTTP_MAX_APPEND_HEADERS + 1] = { 0 };
 	int ah_index = 0;
@@ -830,24 +853,8 @@ SWITCH_STANDARD_APP(curl_app_function)
 				do_json = SWITCH_TRUE;
 			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
-			} else if (!strcasecmp("post", argv[i])) {
-				method = "post";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("delete", argv[i])) {
-				method = "delete";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("put", argv[i])) {
-				method = "put";
+			} else if (!strcasecmp("post", argv[i]) || !strcasecmp("patch", argv[i]) || !strcasecmp("put", argv[i]) || !strcasecmp("delete", argv[i])) {
+				method = argv[i];
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
@@ -862,6 +869,14 @@ SWITCH_STANDARD_APP(curl_app_function)
 				if (++i < argc) {
 					if (ah_index == HTTP_MAX_APPEND_HEADERS) continue;
 					append_headers[ah_index++] = argv[i];
+				}
+			} else if (!strcasecmp("insecure", argv[i])) {
+				options.insecure = 1;
+			} else if (!strcasecmp("secure", argv[i])) {
+				options.insecure = 0;
+			} else if (!strcasecmp("proxy", argv[i])) {
+				if (++i < argc) {
+					options.proxy = argv[i];
 				}
 			}
 		}
@@ -931,7 +946,7 @@ SWITCH_STANDARD_API(curl_function)
 	int ah_index = 0;
 
 	switch_memory_pool_t *pool = NULL;
-	curl_options_t options = { 0 };
+	curl_options_t options = { .insecure = !globals.validate_certs };
 
 	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
@@ -958,24 +973,8 @@ SWITCH_STANDARD_API(curl_function)
 				do_json = SWITCH_TRUE;
 			} else if (!strcasecmp("get", argv[i]) || !strcasecmp("head", argv[i])) {
 				method = switch_core_strdup(pool, argv[i]);
-			} else if (!strcasecmp("post", argv[i])) {
-				method = "post";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("delete", argv[i])) {
-				method = "delete";
-				if (++i < argc) {
-					postdata = switch_core_strdup(pool, argv[i]);
-					switch_url_decode(postdata);
-				} else {
-					postdata = "";
-				}
-			} else if (!strcasecmp("put", argv[i])) {
-				method = "put";
+			} else if (!strcasecmp("post", argv[i]) || !strcasecmp("patch", argv[i]) || !strcasecmp("put", argv[i]) || !strcasecmp("delete", argv[i])) {
+				method = argv[i];
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
@@ -1010,6 +1009,14 @@ SWITCH_STANDARD_API(curl_function)
 				if (++i < argc) {
 					if (ah_index == HTTP_MAX_APPEND_HEADERS) continue;
 					append_headers[ah_index++] = argv[i];
+				}
+			} else if (!strcasecmp("insecure", argv[i])) {
+				options.insecure = 1;
+			} else if (!strcasecmp("secure", argv[i])) {
+				options.insecure = 0;
+			}  else if (!strcasecmp("proxy", argv[i])) {
+				if (++i < argc) {
+					options.proxy = argv[i];
 				}
 			}
 		}
