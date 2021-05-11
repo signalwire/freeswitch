@@ -2443,14 +2443,13 @@ void sofia_reg_handle_sip_r_register(int status,
 {
 	sofia_gateway_t *gateway = NULL;
 
-
-	if (!sofia_private) {
+	if (!profile || !sofia_private) {
 		nua_handle_destroy(nh);
 		return;
 	}
 
 	if (!zstr(sofia_private->gateway_name)) {
-		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
+		gateway = sofia_reg_find_profile_gateway(profile, sofia_private->gateway_name);
 	}
 
 	if (gateway) {
@@ -2621,7 +2620,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (!gateway) {
 		if (gw_name) {
-			var_gateway = sofia_reg_find_gateway((char *) gw_name);
+			var_gateway = sofia_reg_find_profile_gateway(profile,(char *) gw_name);
 		}
 
 
@@ -2635,13 +2634,17 @@ void sofia_reg_handle_sip_r_challenge(int status,
 			if ((p = strchr(rb, '"'))) {
 				*p = '\0';
 			}
-			if (!(var_gateway = sofia_reg_find_gateway(rb))) {
+			if (!(var_gateway = sofia_reg_find_profile_gateway(profile, rb))) {
 				var_gateway = sofia_reg_find_gateway_by_realm(rb);
+				if(var_gateway && var_gateway->profile != profile) {
+					sofia_reg_release_gateway(var_gateway);
+					var_gateway = NULL;
+				}
 			}
 		}
 
 		if (!var_gateway && sip && sip->sip_to) {
-			var_gateway = sofia_reg_find_gateway(sip->sip_to->a_url->url_host);
+			var_gateway = sofia_reg_find_profile_gateway(profile,sip->sip_to->a_url->url_host);
 		}
 
 		if (var_gateway) {
@@ -3334,7 +3337,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 									name = "anonymous";
 								}
 
-								if ((gateway_ptr = sofia_reg_find_gateway(name))) {
+								if ((gateway_ptr = sofia_reg_find_profile_gateway(profile, name))) {
 									reg_state_t ostate = gateway_ptr->state;
 									gateway_ptr->retry = 0;
 									if (exptime) {
@@ -3360,7 +3363,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 						argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 
 						for (x = 0; x < argc; x++) {
-							if ((gateway_ptr = sofia_reg_find_gateway((char *) argv[x]))) {
+							if ((gateway_ptr = sofia_reg_find_profile_gateway(profile,(char *) argv[x]))) {
 								reg_state_t ostate = gateway_ptr->state;
 								gateway_ptr->retry = 0;
 								if (exptime) {

@@ -421,15 +421,16 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	const char *gateway_name = NULL;
 	sofia_gateway_t *gateway_ptr = NULL;
 
-	if ((gateway_name = switch_channel_get_variable(channel, "sip_gateway_name"))) {
-		gateway_ptr = sofia_reg_find_gateway(gateway_name);
-	}
-
 	if (!tech_pvt) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	switch_mutex_lock(tech_pvt->sofia_mutex);
+
+	if (tech_pvt->gateway_name && tech_pvt->profile) {
+		gateway_name = tech_pvt->gateway_name;
+		gateway_ptr = sofia_reg_find_profile_gateway(tech_pvt->profile, gateway_name);
+	}
 
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
