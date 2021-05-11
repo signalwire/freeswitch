@@ -3461,6 +3461,26 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 }
 
 
+sofia_gateway_t *sofia_reg_find_profile_gateway__(const char *file, const char *func, int line, sofia_profile_t *profile, const char *key) {
+	char *pkey = NULL;
+	sofia_gateway_t *gw = NULL;
+	if (!strstr(key, "::")) {
+		pkey = switch_mprintf("%s::%s", profile->name, key);
+		key = pkey;
+	}
+	gw = sofia_reg_find_gateway__(file, func, line,  key);
+	switch_safe_free(pkey);
+	if (gw) {
+		if (gw->profile != profile) {
+			sofia_reg_release_gateway__(file, func, line, gw);
+			gw = NULL;
+		}
+	}
+
+	return gw;
+}
+
+
 sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key)
 {
 	sofia_gateway_t *gateway = NULL;
