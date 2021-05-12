@@ -2514,6 +2514,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									switch_call_cause_t cause = sofia_glue_sip_cause_to_freeswitch(code);
 									if (code == 401 || cause == 407) cause = SWITCH_CAUSE_USER_CHALLENGE;
 
+									if (switch_channel_var_true(channel, "telnyx_force_cdr")) {
+										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Force CDR Generation.\n");
+										switch_channel_clear_flag(channel, CF_NO_CDR);
+									} else if (switch_channel_var_false(channel, "telnyx_force_cdr")) {
+										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable CDR Generation.\n");
+										switch_channel_set_flag(channel, CF_NO_CDR);
+									}
+
 									tech_pvt->respond_code = code;
 									tech_pvt->respond_phrase = switch_core_session_strdup(tech_pvt->session, reason);
 									prometheus_increment_dialplan_terminated_counter(code);
