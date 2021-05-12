@@ -602,9 +602,9 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 
 	if ((json_text = cJSON_PrintUnformatted(*json))) {
 		if (jsock->profile->debug || verto_globals.debug) {
-			char *log_text = cJSON_Print(*json);
-			switch_log_printf(SWITCH_CHANNEL_LOG, verto_globals.debug_level, "WRITE %s [%s]\n", jsock->name, log_text);
-			free(log_text);
+			//char *log_text = cJSON_Prin(*json);
+			switch_log_printf(SWITCH_CHANNEL_LOG, verto_globals.debug_level, "WRITE %s [%s]\n", jsock->name, json_text);
+			//free(log_text);
 		}
 		switch_mutex_lock(jsock->write_mutex);
 		r = kws_write_frame(jsock->ws, WSOC_TEXT, json_text, strlen(json_text));
@@ -1539,7 +1539,7 @@ static switch_status_t process_input(jsock_t *jsock, uint8_t *data, switch_ssize
 	if (json) {
 
 		if (jsock->profile->debug || verto_globals.debug) {
-			char *log_text = cJSON_Print(json);
+			char *log_text = cJSON_PrintUnformatted(json);
 			switch_log_printf(SWITCH_CHANNEL_LOG, verto_globals.debug_level, "READ %s [%s]\n", jsock->name, log_text);
 			free(log_text);
 		}
@@ -6173,7 +6173,7 @@ void verto_broadcast(const char *event_channel, cJSON *json, const char *key, sw
 {
 	if (verto_globals.debug > 9) {
 		char *json_text;
-		if ((json_text = cJSON_Print(json))) {
+		if ((json_text = cJSON_PrintUnformatted(json))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, verto_globals.debug_level, "EVENT BROADCAST %s %s\n", event_channel, json_text);
 			free(json_text);
 		}
