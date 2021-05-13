@@ -348,7 +348,7 @@ struct switch_rtp {
 	uint32_t tmmbn;
 
 	ts_normalize_t ts_norm;
-	switch_sockaddr_t *remote_addr, *rtcp_remote_addr;
+	switch_sockaddr_t *remote_addr, *rtcp_remote_addr, *fork_write_addr;
 	rtp_msg_t recv_msg;
 	rtcp_msg_t rtcp_recv_msg;
 	rtcp_msg_t *rtcp_recv_msg_p;
@@ -370,7 +370,7 @@ struct switch_rtp {
 	uint32_t srtp_errs[2];
 	uint32_t srctp_errs[2];
 
-
+	int fork_write;
 	int srtp_idx_rtp;
 	int srtp_idx_rtcp;
 
@@ -410,6 +410,7 @@ struct switch_rtp {
 	char *local_host_str;
 	char *remote_host_str;
 	char *eff_remote_host_str;
+	char *fork_write_host_str;
 	switch_time_t first_stun;
 	switch_time_t last_stun;
 	uint32_t wrong_addrs;
@@ -427,6 +428,7 @@ struct switch_rtp {
 	switch_port_t local_port;
 	switch_port_t remote_port;
 	switch_port_t eff_remote_port;
+	switch_port_t fork_write_port;
 	switch_port_t remote_rtcp_port;
 
 	struct switch_rtp_vad_data vad_data;
@@ -3185,6 +3187,48 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_fork_write_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
+{
+	switch_sockaddr_t *fork_write_addr;
+	*err = "Success";
+
+	if (switch_sockaddr_info_get(&fork_write_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !fork_write_addr) {
+		*err = "Remote Address Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(rtp_session->write_mutex);
+
+	rtp_session->fork_write_addr = fork_write_addr;
+	rtp_session->fork_write_host_str = switch_core_strdup(rtp_session->pool, host);
+	rtp_session->fork_write_port = port;
+
+	switch_mutex_unlock(rtp_session->write_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_fork_write(switch_rtp_t *rtp_session)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_mutex_lock(rtp_session->write_mutex);
+	if (rtp_session->fork_write_addr) {
+		rtp_session->fork_write = 1;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fail to activate fork write. Fork Address is missing\n");
+		status = SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_unlock(rtp_session->write_mutex);
+
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_rtp_deactivate_fork_write(switch_rtp_t *rtp_session)
+{
+	switch_mutex_lock(rtp_session->write_mutex);
+	rtp_session->fork_write = 0;
+	switch_mutex_unlock(rtp_session->write_mutex);
+}
 
 static const char *dtls_state_names_t[] = {"OFF", "HANDSHAKE", "SETUP", "READY", "FAIL", "INVALID"};
 static const char *dtls_state_names(dtls_state_t s)
@@ -8722,6 +8766,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && send_msg->header.pt == rtp_session->payload) {
 			switch_swap_linear((int16_t *)send_msg->body, (int) datalen);
+		}
+
+		if (rtp_session->fork_write && rtp_session->fork_write_addr) {
+			if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork_write_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
+#ifdef DEBUG_RTP_FORK_MEDIA
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "WRITE Fork Failed! %d\n", (int) bytes);
+#endif
+			}
 		}
 
 #ifdef ENABLE_SRTP
