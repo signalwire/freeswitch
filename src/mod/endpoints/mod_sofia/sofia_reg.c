@@ -38,6 +38,8 @@
  *
  */
 #include "mod_sofia.h"
+#include "sofia-sip/hostdomain.h"
+#include "sip-dig.h"
 
 static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 {
@@ -2432,6 +2434,126 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 
 }
 
+switch_bool_t sip_resolve_prepare_transport(struct dig *dig, sofia_transport_t tport)
+{
+	struct transport *tports = dig->tports;
+
+	if (tport == SOFIA_TRANSPORT_UDP) {
+		tports[0].name = "udp";
+		tports[0].service = "SIP+D2U";
+		tports[0].srv = "_sip._udp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_TCP) {
+		tports[0].name = "tcp";
+		tports[0].service = "SIP+D2T";
+		tports[0].srv = "_sip._tcp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_TCP_TLS) {
+		tports[0].name = "tls";
+		tports[0].service = "SIPS+D2T";
+		tports[0].srv = "_sips._tcp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_SCTP) {
+		tports[0].name = "sctp";
+		tports[0].service = "SIP+D2S";
+		tports[0].srv = "_sip._sctp.";
+	} else {
+		return SWITCH_FALSE;
+	}
+	return SWITCH_TRUE;
+}
+
+/* resolve domain name (SRV + A + AAAA) and compare result with passed IP address */
+switch_bool_t sip_resolve_compare(const char *domainname, const char *ip, sofia_transport_t transport)
+{
+	url_t *uri = NULL;
+	char const *host;
+	char const *port;
+	struct dig dig[1] = {{ NULL }};
+	su_home_t *home = NULL;
+	sres_record_t **answers = NULL;
+	switch_bool_t ret = SWITCH_FALSE, ipv6 = SWITCH_FALSE;
+	
+	if (!host_is_domain(domainname)) {
+		return ret;
+	}
+
+	if (!sip_resolve_prepare_transport(dig, transport)) {
+		return ret;
+	}
+
+	home = su_home_new(sizeof(*home));
+
+	dig->sres = sres_resolver_new(getenv("SRESOLV_CONF"));
+
+	uri = url_hdup(home, (void *)domainname);
+
+	if (uri && uri->url_type == url_unknown)
+		url_sanitize(uri);
+
+	if (uri && uri->url_type == url_any) {
+		goto out;
+	}
+
+	if (!uri || (uri->url_type != url_sip && uri->url_type != url_sips)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid uri\n");
+		goto out;
+	}
+
+	port = url_port(uri);
+	if (port && !port[0]) port = NULL;
+
+	host = uri->url_host;
+
+	if (strchr(ip, ':')) {
+		ipv6 = SWITCH_TRUE;
+	}
+	ret = dig_all_srvs_simple(dig, domainname, ip, ipv6);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "verify 1\n");
+
+	if (!ret) {
+		answers = dig_addr_simple(dig, host, ipv6?sres_type_aaaa:sres_type_a);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "verify 2\n");
+		ret = verify_ip(answers, ip, ipv6);
+	}
+
+out:
+	su_home_unref(home);
+	sres_resolver_unref(dig->sres);
+
+	return ret;
+}
+
+static switch_bool_t is_legitimate_gateway(sofia_dispatch_event_t *de, sofia_gateway_t *gateway) 
+{
+	char remote_ip[80] = { 0 };
+	switch_bool_t ret = SWITCH_FALSE;
+
+	sofia_glue_get_addr(de->data->e_msg, remote_ip, sizeof(remote_ip), NULL);
+
+	if (gateway->gw_auth_acl) {
+		ret = switch_check_network_list_ip(remote_ip, gateway->gw_auth_acl);
+		if (!ret) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challange from [%s] denied by gw-auth-acl.\n", remote_ip);
+		}
+		return ret;
+	} else {
+		char *register_host = sofia_glue_get_register_host(gateway->register_proxy);
+		const char *host = sofia_glue_strip_proto(register_host);
+
+		if (host_is_ip_address(host)) {
+			if (host && !strcmp(host, remote_ip)) {
+				ret = SWITCH_TRUE;
+			}
+			switch_safe_free(register_host);
+			return ret;
+		} else {
+			ret = sip_resolve_compare(host, remote_ip, gateway->register_transport);
+			switch_safe_free(register_host); 
+			return ret;
+		}
+	}
+}
 
 void sofia_reg_handle_sip_r_register(int status,
 									 char const *phrase,
@@ -2463,6 +2585,7 @@ void sofia_reg_handle_sip_r_register(int status,
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
 			if (!zstr_buf(network_ip)) {
 				snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+
 			}
 		}
 
@@ -2684,11 +2807,22 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (sip_auth_username && sip_auth_password) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, sip_auth_username, sip_auth_password);
-	} else if (gateway) {
+	} else if (gateway && is_legitimate_gateway(de, gateway)) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
+		if (gateway) {
+			switch_event_t *s_event;
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_INVALID_DIGEST_REQ) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", gateway->profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+				switch_event_fire(&s_event);
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-						  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+							  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+
 		goto cancel;
 	}
 

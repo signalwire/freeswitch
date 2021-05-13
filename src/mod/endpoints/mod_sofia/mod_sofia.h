@@ -91,6 +91,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REINVITE "sofia::reinvite"
 #define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
 #define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
+#define MY_EVENT_GATEWAY_INVALID_DIGEST_REQ "sofia::gateway_invalid_digest_req"
 #define MY_EVENT_RECOVERY "sofia::recovery_recv"
 #define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
 #define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
@@ -570,6 +571,7 @@ struct sofia_gateway {
 	sofia_cid_type_t cid_type;
 	char register_network_ip[80];
 	int register_network_port;
+	char *gw_auth_acl;
 };
 
 typedef enum {

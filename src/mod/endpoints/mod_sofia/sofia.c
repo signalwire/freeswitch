@@ -3973,6 +3973,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					}
 
 					gateway->register_transport = transport;
+				} else if (!strcmp(var, "gw-auth-acl")) {
+					if (!zstr(val)) {
+						gateway->gw_auth_acl = switch_core_strdup(gateway->pool, val);
+					}
 				}
 			}
 
