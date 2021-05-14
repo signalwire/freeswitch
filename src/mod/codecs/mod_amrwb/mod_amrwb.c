@@ -88,6 +88,7 @@ static struct {
 	switch_byte_t volte;
 	switch_byte_t adjust_bitrate;
 	switch_byte_t force_oa; /*force OA when originating*/
+	switch_byte_t mode_set_overwrite;
 	int debug;
 } globals;
 
@@ -273,7 +274,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			}
 		}
 
-		if (context->enc_modes) {
+		if (context->enc_modes && !globals.mode_set_overwrite) {
 			/* choose the highest mode (bitrate) for high audio quality. */
 			for (i = SWITCH_AMRWB_MODES-2; i > -1; i--) {
 				if (context->enc_modes & (1 << i)) {
@@ -571,6 +572,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 				}
 				if (!strcasecmp(var, "force-oa")) {
 					globals.force_oa = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "mode-set-overwrite")) {
+					globals.mode_set_overwrite = (switch_byte_t) atoi(val);
 				}
 			}
 		}
