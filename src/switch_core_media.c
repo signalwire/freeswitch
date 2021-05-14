@@ -5774,7 +5774,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							pmap->adv_channels = 2; /* IKR ???*/
 						}
 						if (!zstr((char *) mmap->rm_fmtp) && switch_stristr("stereo=1", (char *) mmap->rm_fmtp)) {
-							pmap->channels = 2;
+							uint32_t allow_channels = switch_core_max_audio_channels(0);
+							if (!allow_channels || allow_channels >= 2) { /*default*/
+								pmap->channels = 2;
+							} else { /* allow_channels == 1 */
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opus: setting 1 audio channel via config.\n");
+								pmap->channels = 1;
+							}
 						} else {
 							pmap->channels = 1;
 						}
