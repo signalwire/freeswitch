@@ -31,6 +31,7 @@
  *
  */
 #include <switch.h>
+#include "mod_event_socket_hash.h"
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
@@ -123,7 +124,7 @@ static struct {
 	switch_mutex_t *mutex;
 	char *ip;
 	uint16_t port;
-	char *password;
+	char *authentication_hash;
 	int done;
 	int threads;
 	char *acl[MAX_ACL];
@@ -162,7 +163,7 @@ static uint32_t next_id(void)
 }
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_auth_hash, prefs.authentication_hash);
 
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
 static switch_status_t launch_listener_thread(listener_t *listener);
@@ -596,7 +597,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 	switch_event_unbind(&globals.node);
 
 	switch_safe_free(prefs.ip);
-	switch_safe_free(prefs.password);
+	switch_safe_free(prefs.authentication_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1745,7 +1746,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			pass = cmd + 5;
 
-			if (!strcmp(prefs.password, pass)) {
+			if (validate_password(prefs.authentication_hash, pass)) {
 				switch_set_flag_locked(listener, LFLAG_AUTHED);
 				switch_snprintf(reply, reply_len, "+OK accepted");
 			} else {
@@ -2895,9 +2896,29 @@ static int config(void)
 					}
 				} else if (!strcmp(var, "listen-port")) {
 					prefs.port = (uint16_t) atoi(val);
-				} else if (!strcmp(var, "password")) {
-					set_pref_pass(val);
-				} else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
+				} else if (!strcmp(var, "authentication-hash")) {
+					if (validate_hash(val)) {
+						if (!zstr(prefs.authentication_hash)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Replacing authentication-hash '%s' with '%s'\n", prefs.authentication_hash, val);
+							switch_safe_free(prefs.authentication_hash);
+						}
+						set_pref_auth_hash(val);
+					}
+					else
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "authentication-hash '%s' is not valid\n", val);
+					}
+				}
+				else if (!strcmp(var, "password")) {
+					if (prefs.authentication_hash) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "The authentication-hash has already been established. Ignoring password entry\n");
+					}
+					else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Creating authentication hash from insecure cleartext password. Replacing the password entry with an authentication-hash entry is strongly recommended!\n");
+						set_pref_auth_hash(create_auth_hash(val));
+					}
+				}
+				else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
 					if (prefs.acl_count < MAX_ACL) {
 						prefs.acl[prefs.acl_count++] = strdup(val);
 					} else {
@@ -2915,8 +2936,9 @@ static int config(void)
 		set_pref_ip("127.0.0.1");
 	}
 
-	if (zstr(prefs.password)) {
-		set_pref_pass("ClueCon");
+	if (zstr(prefs.authentication_hash)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "UNSECURE execution - the event socket module is running with the default plaintext password!!!\n");
+		set_pref_auth_hash(create_auth_hash("ClueCon"));
 	}
 
 	if (!prefs.nat_map) {
@@ -2971,7 +2993,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 #ifdef WIN32
 		/* Enable dual-stack listening on Windows (if the listening address is IPv6), it's default on Linux */
 		if (switch_sockaddr_get_family(sa) == AF_INET6) {
-			rv = switch_socket_opt_set(listen_list.sock, SWITCH_SO_IPV6_V6ONLY, 0);
+			rv = switch_socket_opt_set(listen_list.sock, 16384, 0);
 			if (rv) goto sock_fail;
 		}
 #endif
