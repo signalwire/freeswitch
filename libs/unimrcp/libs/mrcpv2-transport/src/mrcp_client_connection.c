@@ -644,6 +644,8 @@ static apt_bool_t mrcp_client_poller_signal_process(void *obj, const apr_pollfd_
 	do {
 		msg_status = mrcp_parser_run(connection->parser,stream,&message);
 		if(mrcp_client_message_handler(connection,message,msg_status) == FALSE) {
+			/* scroll remaining stream */
+			apt_text_stream_scroll(stream);
 			return FALSE;
 		}
 	}
