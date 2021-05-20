@@ -2430,6 +2430,13 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	return context->cache_file;
 }
 
+static size_t dummy_save_file_callback(void* ptr, size_t size, size_t nmemb, void* data)
+{
+	(void)ptr;
+	(void)data;
+	return (size * nmemb);
+}
+
 static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
@@ -2616,19 +2623,20 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
+
+		/* Prevent writing the data (headers in this case) to stdout */
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, dummy_save_file_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, 0);
 	}
 
 	if (headers) {
 		if (!client->headers) {
 			switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
 		}
-		if (save_path) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) client);
-		} else {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_header_callback);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) client);
-		}
+
+		/* CURLOPT_HEADERFUNCTION guarantees to call the callback for each complete header line, CURLOPT_WRITEFUNCTION does not! */
+		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) client);
 	}
 
 	if (!zstr(dup_creds)) {
