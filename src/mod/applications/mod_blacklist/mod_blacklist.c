@@ -168,6 +168,8 @@ static switch_status_t do_config(switch_bool_t reload)
 	"blacklist del <listname> <item>\n"	\
 	"blacklist save <listname>\n"   \
 	"blacklist reload\n"			\
+	"blacklist list\n"			\
+	"blacklist show <listname>\n"			\
 	"blacklist help\n"
 
 SWITCH_STANDARD_API(blacklist_api_function)
@@ -295,6 +297,47 @@ SWITCH_STANDARD_API(blacklist_api_function)
 	} else if (!strcasecmp(argv[0], "reload"))  {
 		do_config(SWITCH_TRUE);
 		stream->write_function(stream, "+OK\n");
+	} else if (!strcasecmp(argv[0], "list"))  {
+		switch_hash_index_t *hi = NULL;
+		switch_mutex_lock(globals.lists_mutex);
+
+		for (hi = switch_core_hash_first(globals.lists); hi; hi = switch_core_hash_next(&hi)) {
+			const void *key;
+			void *val;
+			switch_core_hash_this(hi, &key, NULL, &val);
+			stream->write_function(stream, "%s\n",(char*)key);
+		}
+
+		switch_mutex_unlock(globals.lists_mutex);
+	} else if (!strcasecmp(argv[0], "show"))  {
+		blacklist_t *bl = NULL;
+		switch_hash_index_t *hi = NULL;
+
+		if (argc < 2 || zstr(argv[1]) || zstr(argv[0])) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Wrong syntax");
+			goto done;
+		}
+
+		switch_mutex_lock(globals.lists_mutex);
+		bl = switch_core_hash_find(globals.lists, argv[1]);
+		switch_mutex_unlock(globals.lists_mutex);
+
+		if (!bl) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown blacklist [%s]\n", argv[1]);
+			stream->write_function(stream, "false");
+			goto done;
+		}
+
+		stream->write_function(stream, "%s items:\n",argv[1]);
+		switch_mutex_lock(bl->list_mutex);
+		for (hi = switch_core_hash_first(bl->list); hi; hi = switch_core_hash_next(&hi)) {
+			const void *key;
+			void *val;
+			switch_core_hash_this(hi, &key, NULL, &val);
+			stream->write_function(stream, "%s\n",(char*)key);
+		}
+
+		switch_mutex_unlock(bl->list_mutex);
 	} else if (!strcasecmp(argv[0], "help")) {
 		stream->write_function(stream, BLACKLIST_API_SYNTAX "+OK\n");
 	} else if (!zstr(argv[0])) {
