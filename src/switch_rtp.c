@@ -2391,6 +2391,10 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			int stat = 0;
 			int sbytes = (int) rtcp_bytes;
 
+			if (!rtp_session->send_ctx[rtp_session->srtp_idx_rtcp] || rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_RESET]) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "RTCP: no SRTP send context.\n");
+				goto end;
+			}
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
 				stat = srtp_protect_rtcp(rtp_session->send_ctx[rtp_session->srtp_idx_rtcp], &rtp_session->rtcp_send_msg.header, &sbytes);
 			} else {
