@@ -192,7 +192,7 @@ typedef enum { /* FMT Values for PSFB Payload Types http://www.iana.org/assignme
 
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session, switch_rtp_crypto_direction_t direction, uint32_t index, switch_secure_settings_t *ssec);
-typedef void (*rtcp_probe_func)(switch_rtp_t *, rtcp_pt_t, switch_bool_t, struct switch_rtcp_report_block*, struct switch_rtcp_sender_info*);
+typedef void (*rtcp_probe_func)(switch_channel_t*, switch_rtp_t *, rtcp_pt_t, switch_bool_t, struct switch_rtcp_report_block*, struct switch_rtcp_sender_info*);
 typedef void (*rtp_create_probe_func)(switch_rtp_t *, switch_channel_t*);
 
 SWITCH_DECLARE(void) switch_rtp_set_rtcp_probe(switch_rtp_t * rtp_session, rtcp_probe_func probe);
@@ -307,7 +307,10 @@ SWITCH_DECLARE(void) switch_rtp_reset_jb(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(char *) switch_rtp_get_local_host(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(char *) switch_rtp_get_eff_remote_host(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_local_port(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(switch_port_t) switch_rtp_get_eff_remote_port(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(switch_port_t) switch_rtcp_get_remote_port(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max);
 SWITCH_DECLARE(void) switch_rtp_set_media_timeout(switch_rtp_t *rtp_session, uint32_t ms);

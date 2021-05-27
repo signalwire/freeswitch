@@ -2223,7 +2223,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtcp_pt_t type = (rtp_session->stats.rtcp.sent_pkt_count || force_send_rr) ? _RTCP_PT_RR : _RTCP_PT_SR;
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 			if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
-				rtp_session->rtcp_probe(rtp_session, type, TRUE, rtcp_report_block, rtcp_sender_info);
+				rtp_session->rtcp_probe(channel, rtp_session, type, TRUE, rtcp_report_block, rtcp_sender_info);
 			}
 		}
 
@@ -3012,6 +3012,11 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_get_remote_port(switch_rtp_t *rtp_sessi
 	return rtp_session->remote_port;
 }
 
+SWITCH_DECLARE(char *) switch_rtp_get_eff_remote_host(switch_rtp_t *rtp_session)
+{
+	return zstr(rtp_session->eff_remote_host_str) ? "0.0.0.0" : rtp_session->eff_remote_host_str;
+}
+
 SWITCH_DECLARE(char *) switch_rtp_get_local_host(switch_rtp_t *rtp_session)
 {
 	return zstr(rtp_session->local_host_str) ? "0.0.0.0" : rtp_session->local_host_str;
@@ -3020,6 +3025,16 @@ SWITCH_DECLARE(char *) switch_rtp_get_local_host(switch_rtp_t *rtp_session)
 SWITCH_DECLARE(switch_port_t) switch_rtp_get_local_port(switch_rtp_t *rtp_session)
 {
 	return rtp_session->local_port;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtp_get_eff_remote_port(switch_rtp_t *rtp_session)
+{
+	return rtp_session->eff_remote_port;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtcp_get_remote_port(switch_rtp_t *rtp_session)
+{
+	return rtp_session->remote_rtcp_port;
 }
 
 static void ping_socket(switch_rtp_t *rtp_session)
@@ -6828,7 +6843,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			if (rtp_session->rtcp_probe) {
 				switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 				if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
-					rtp_session->rtcp_probe(rtp_session, msg->header.type, FALSE, report, rtcp_sender_info);
+					rtp_session->rtcp_probe(channel, rtp_session, msg->header.type, FALSE, report, rtcp_sender_info);
 				}
 			}
 
