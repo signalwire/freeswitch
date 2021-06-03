@@ -4262,6 +4262,23 @@ static switch_status_t ip_choose_family(switch_media_handle_t *smh, const char *
 	return status;
 }
 
+static switch_bool_t is_valid_ip(char *cand, int family)
+{
+	char buf[16] = { 0 };
+	int result = switch_inet_pton(family, cand, buf);
+	return result == 1;
+}
+
+static switch_bool_t is_valid_ipv4(char *cand)
+{
+	return is_valid_ip(cand, AF_INET);
+}
+
+static switch_bool_t is_valid_ipv6(char *cand)
+{
+	return is_valid_ip(cand, AF_INET6);
+}
+
 //?
 static switch_bool_t ip_possible(switch_media_handle_t *smh, const char *ip)
 {
@@ -4441,6 +4458,10 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "CAND %d [%s]\n", i, fields[i]);
 				}
 
+				if (ignore_ice_mdns) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG1, "ignore_ice_mdns is set\n");
+				}
+
 				if (!ip_possible(smh, fields[4])) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (no network path)\n",
@@ -4454,6 +4475,33 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 									  cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
 					continue;
 				} else {
+
+					if (!strchr(fields[4], ':')) {
+
+						// It is IPv4
+
+						if (!is_valid_ipv4(fields[4])) {
+
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
+								"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not a valid IPv4)\n",
+								type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+								cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+							continue;
+						}
+					} else {
+
+						// It is IPv6
+
+						if (!is_valid_ipv6(fields[4])) {
+
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
+								"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not a valid IPv6)\n",
+								type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+								cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+							continue;
+						}
+					}
+
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
 									  "Save %s Candidate cid: %d proto: %s type: %s addr: %s:%s\n",
 									  type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
