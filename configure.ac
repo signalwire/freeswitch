@@ -1986,6 +1986,45 @@ if test "${enable_address_sanitizer}" = "yes"; then
   APR_ADDTO(LDFLAGS, -fsanitize=address)
 fi
 
+#  Enable HEAP profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(heap_profiler,
+  [AC_HELP_STRING([--enable-heap-profiler],[build with google heap profiler])],
+  [enable_heap_profiler="$enable_heap_profiler"],
+  [enable_heap_profiler="no"])
+
+#  Enable CPU profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(cpu_profiler,
+  [AC_HELP_STRING([--enable-cpu-profiler],[build with google cpu profiler])],
+  [enable_cpu_profiler="$enable_cpu_profiler"],
+  [enable_cpu_profiler="no"])
+
+PKG_CHECK_MODULES([TCMALLOC], [libtcmalloc], [have_tcmalloc=yes], [have_tcmalloc=no])
+
+if test "${enable_heap_profiler}" = "yes" || test "${enable_cpu_profiler}" = "yes"; then
+  if test "x$have_tcmalloc" != "xyes" ; then
+    AC_MSG_ERROR([You must install libgoogle-perftools-dev in order to use heap or cpu profiler])
+  fi
+fi
+
+# WARNING: When both enabled you can NOT link them statically and MUST use the special library
+if test "${enable_heap_profiler}" = "yes" && test "${enable_cpu_profiler}" = "yes"; then
+  APR_ADDTO(CFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(CXXFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(LDFLAGS, -ltcmalloc_and_profiler)
+else
+  if test "${enable_heap_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -ltcmalloc)
+    APR_ADDTO(CXXFLAGS, -ltcmalloc)
+    APR_ADDTO(LDFLAGS, -ltcmalloc)
+  fi
+
+  if test "${enable_cpu_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -lprofiler)
+    APR_ADDTO(CXXFLAGS, -lprofiler)
+    APR_ADDTO(LDFLAGS, -lprofiler)
+  fi
+fi
+
 #  Enable fake dlclose
 AC_ARG_ENABLE(fake_dlclose,
   [AC_HELP_STRING([--enable-fake-dlclose],[Do not unload dynamic libraries])],
