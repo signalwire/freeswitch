@@ -2311,7 +2311,8 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	int network_port = 0;
 	char *is_nat = NULL;
 	const char *acl_token = NULL;
-
+	sip_unknown_t *un;
+	char proxied_client_ip[80];
 
 #if 0 /* This seems to cause undesirable effects so nevermind */
 	if (sip->sip_to && sip->sip_to->a_url && sip->sip_to->a_url->url_host) {
@@ -2400,7 +2401,53 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		if (ok && !sofia_test_pflag(profile, PFLAG_BLIND_REG)) {
 			type = REG_AUTO_REGISTER;
 			acl_token = token_sw;
-		} else if (!ok) {
+		} else if (!ok) { 
+
+			int network_ip_is_proxy = 0;
+			/* Check if network_ip is a proxy allowed to send us calls */
+			if (profile->proxy_acl_count) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d acls to check for proxy\n", profile->proxy_acl_count);
+			}
+
+			for (x = 0; x < profile->proxy_acl_count; x++) {
+					last_acl = profile->proxy_acl[x];
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "checking %s against acl %s\n", network_ip, last_acl);
+					if (switch_check_network_list_ip_token(network_ip, last_acl, &token_sw)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s is a proxy according to the %s acl\n", network_ip, last_acl);
+							network_ip_is_proxy = 1;
+							break;
+					}
+			}
+			/*
+				* if network_ip is a proxy allowed to send calls, check for auth
+				* ip header and see if it matches against the inbound acl
+				*/
+			if (network_ip_is_proxy) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "network ip is a proxy\n");
+
+				for (un = sip->sip_unknown; un; un = un->un_next) {
+					if (!strcasecmp(un->un_name, "X-AUTH-IP")) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found auth ip [%s] header of [%s]\n", un->un_name, un->un_value);
+						if (!zstr(un->un_value)) {
+							for (x = 0; x < profile->acl_count; x++) {
+								last_acl = profile->reg_acl[x];
+								if ((ok = switch_check_network_list_ip_token(un->un_value, last_acl, &token_sw))) {
+										switch_copy_string(proxied_client_ip, un->un_value, sizeof(proxied_client_ip));
+										type = REG_AUTO_REGISTER;
+										acl_token = token_sw;
+										break;
+								}
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", (un->un_value, profile->reg_acl[x]);
+								nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+								goto end;
+							}
+						}
+					}
+				}	
+			}
+		}
+		if (!ok) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", network_ip, profile->reg_acl[x]);
 			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
