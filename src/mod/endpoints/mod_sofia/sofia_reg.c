@@ -2436,11 +2436,11 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 										type = REG_AUTO_REGISTER;
 										acl_token = token_sw;
 										break;
-								}
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", (un->un_value, profile->reg_acl[x]);
-								nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
-								goto end;
+                                } else {
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", un->un_value, profile->reg_acl[x]);
+                                    nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+                                    goto end;
+                                }
 							}
 						}
 					}
