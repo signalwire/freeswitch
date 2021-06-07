@@ -1343,7 +1343,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			de->session = session;
 		}
 
-		sofia_process_dispatch_event(&de, SWITCH_FALSE);
+		sofia_process_dispatch_event(&de);
 
 
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
