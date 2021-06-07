@@ -2413,7 +2413,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 					last_acl = profile->proxy_acl[x];
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "checking %s against acl %s\n", network_ip, last_acl);
 					if (switch_check_network_list_ip_token(network_ip, last_acl, &token_sw)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s is a proxy according to the %s acl\n", network_ip, last_acl);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s is a proxy according to the %s acl\n", network_ip, last_acl);
 							network_ip_is_proxy = 1;
 							break;
 					}
