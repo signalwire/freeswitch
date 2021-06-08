@@ -1137,7 +1137,7 @@ switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *valu
 void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, int off)
 {
 	conference_member_t *member = NULL;
-	switch_xml_t x_member = NULL, x_members = NULL, x_flags, x_variables;
+	switch_xml_t x_member = NULL, x_members = NULL, x_flags, x_variables, x_relationships = NULL, x_relationship = NULL;
 	switch_event_header_t *hp;
 	int moff = 0;
 	char i[30] = "";
@@ -1238,9 +1238,11 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 	for (member = conference->members; member; member = member->next) {
 		switch_channel_t *channel;
 		switch_caller_profile_t *profile;
+		conference_relationship_t *rel;
 		char *uuid;
 		//char *name;
 		uint32_t count = 0;
+		int roff = 0;
 		switch_xml_t x_tag;
 		int toff = 0;
 		char tmp[50] = "";
@@ -1343,6 +1345,43 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 
 		switch_snprintf(tmp, sizeof(tmp), "%d", member->volume_out_level);
 		add_x_tag(x_member, "output-volume", tmp, toff++);
+
+		// relationships
+		x_relationships = switch_xml_add_child_d(x_member, "relationships", toff++);
+		if (x_relationships == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not create relationships.\n");
+		} else {
+			for (rel = member->relationships, roff = 0; rel; rel = rel->next, roff++) {
+				uint32_t count = 0;
+				char id[30] = "";
+
+				if (rel->id == member->id) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Same target.\n");
+					continue;
+				}
+
+				x_relationship = switch_xml_add_child_d(x_relationships, "relationship", roff);
+				if (x_relationship == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not create relationship.\n");
+					continue;
+				}
+
+				switch_snprintf(id, sizeof(id), "%d", rel->id);
+				add_x_tag(x_relationship, "id", id, 0);
+
+				// can speak
+				x_tag = switch_xml_add_child_d(x_relationship, "can_speak", count++);
+				switch_xml_set_txt_d(x_tag, switch_test_flag(rel, RFLAG_CAN_SPEAK) ? "true" : "false");
+
+				// can hear
+				x_tag = switch_xml_add_child_d(x_relationship, "can_hear", count++);
+				switch_xml_set_txt_d(x_tag, switch_test_flag(rel, RFLAG_CAN_HEAR) ? "true" : "false");
+
+				// can send video
+				x_tag = switch_xml_add_child_d(x_relationship, "can_send_video", count++);
+				switch_xml_set_txt_d(x_tag, switch_test_flag(rel, RFLAG_CAN_SEND_VIDEO) ? "true" : "false");
+			}
+		}
 	}
 
 	switch_mutex_unlock(conference->member_mutex);
