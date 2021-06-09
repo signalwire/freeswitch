@@ -623,7 +623,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 
 	/* Kill all remaining threads */
 	pt = thread_pool_head;
-	//PyEval_AcquireLock();
+	PyEval_AcquireLock();
 	while (pt) {
 		thread_cnt++;
 		nextpt = pt->next;
@@ -660,7 +660,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 	}
 
 
-	//PyEval_AcquireLock();
+	PyEval_AcquireLock();
 	mainInterpreterState = mainThreadState->interp;
 	myThreadState = PyThreadState_New(mainInterpreterState);
 	PyThreadState_Swap(myThreadState);
