@@ -5,6 +5,11 @@ using namespace PYTHON;
 
 #define py_init_vars() cb_function = cb_arg = hangup_func = hangup_func_arg = NULL; hh = mark = 0; TS = NULL
 
+#if PY_VERSION_HEX >= 0x03000000
+#define PyString_AsString PyUnicode_AsUTF8
+#define PyString_Check PyUnicode_Check
+#endif
+
 Session::Session():CoreSession()
 {
 	py_init_vars();
