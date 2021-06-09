@@ -89,6 +89,9 @@ static const switch_payload_t INVALID_PT = 255;
 								 * characters when sending, but an implementation MUST accept up to 256
 								 * characters when receiving." */
 
+#define MAX_VIDEO_BUFFER_SIZE_FACTOR 100
+#define MIN_VIDEO_BUFFER_SIZE_FACTOR 10
+
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
@@ -4761,6 +4764,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_get_video_buffer_size(switch_rtp_t *r
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *rtp_session, uint32_t frames, uint32_t max_frames)
 {
+	char *tmp;
+	int vb_size_factor = 0;
+
+	if ((tmp = switch_core_get_variable("video_jb_size_factor"))) {
+		vb_size_factor = atoi(tmp);
+	}
+
 	if (!switch_rtp_ready(rtp_session)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -4770,7 +4780,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *r
 	}
 
 	if (!max_frames || frames >= max_frames) {
-		max_frames = frames * 10;
+		if (vb_size_factor && vb_size_factor < MAX_VIDEO_BUFFER_SIZE_FACTOR + 1 && vb_size_factor > MIN_VIDEO_BUFFER_SIZE_FACTOR) {
+			max_frames = frames * vb_size_factor;
+		}
+		else {
+			max_frames = frames * MIN_VIDEO_BUFFER_SIZE_FACTOR;
+		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Set video buffer to %d\n", max_frames);
 	}
 
 	rtp_session->last_max_vb_frames = max_frames;
