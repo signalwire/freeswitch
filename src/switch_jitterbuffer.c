@@ -743,8 +743,6 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 {
 	switch_jb_node_t *node = NULL;
 
- top:
-
 	if (jb->type == SJB_VIDEO) {
 		if (jb->dropped) {
 			jb->dropped = 0;
@@ -774,38 +772,13 @@ static inline switch_status_t jb_next_packet_by_seq(switch_jb_t *jb, switch_jb_n
 		jb_miss(jb);
 
 		if (jb->type == SJB_VIDEO) {
-			int x;
 
 			if (jb->session) {
 				switch_core_session_request_video_refresh(jb->session);
 			}
 
-			for (x = 0; x < 10; x++) {
-				increment_seq(jb);
-				if ((node = switch_core_inthash_find(jb->node_hash, jb->target_seq))) {
-					jb_debug(jb, 2, "FOUND incremental seq: %u\n", ntohs(jb->target_seq));
+			increment_seq(jb);
 
-					if (node->packet.header.m ||  node->packet.header.ts == jb->highest_read_ts) {
-						jb_debug(jb, 2, "%s", "SAME FRAME DROPPING\n");
-						jb->dropped++;
-						drop_ts(jb, node->packet.header.ts);
-						jb->highest_dropped_ts = ntohl(node->packet.header.ts);
-
-
-						if (jb->period_miss_count > 2 && jb->period_miss_inc < 1) {
-							jb->period_miss_inc++;
-							jb_frame_inc(jb, 1);
-						}
-
-						node = NULL;
-						goto top;
-					}
-					break;
-				} else {
-					jb_debug(jb, 2, "MISSING incremental seq: %u\n", ntohs(jb->target_seq));
-				}
-			}
-			
 		} else {
 			increment_seq(jb);
 		}
