@@ -15754,12 +15754,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 
 	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
-	if (!t_engine || !t_engine->tf) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "text engine not available for processing\n");
-		switch_goto_status(SWITCH_STATUS_BREAK, done);
-	}
-
 	if (!is_msrp && switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
+
+		if (!t_engine || !t_engine->tf) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "text engine not available for processing\n");
+			switch_goto_status(SWITCH_STATUS_BREAK, done);
+		}
 
 		if (frame) {
 			char *str = (char *) frame->data;
@@ -15824,6 +15824,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_text_frame(switch_core
 
 
 	if (!is_msrp && switch_channel_test_cap(session->channel, CC_RTP_RTT)) {
+		if (!t_engine || (t_engine->red_pt && !t_engine->tf)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "text engine not available for processing\n");
+			switch_goto_status(SWITCH_STATUS_BREAK, done);
+		}
+
 		if (t_engine->red_pt) {
 			t_engine->tf->red_pos++;
 			if (t_engine->tf->red_pos == t_engine->tf->red_max) {
