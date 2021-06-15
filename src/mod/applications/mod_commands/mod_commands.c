@@ -2828,7 +2828,7 @@ SWITCH_STANDARD_API(reload_xml_function)
 SWITCH_STANDARD_API(kill_function)
 {
 	char *mycmd = NULL, *kcause = NULL;
-	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_call_cause_t cause = SWITCH_CAUSE_MANAGER_REQUEST;
 
 	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
