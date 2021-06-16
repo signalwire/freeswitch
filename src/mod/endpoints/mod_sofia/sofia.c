@@ -2581,8 +2581,8 @@ void sofia_event_callback(nua_event_t event,
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
-			nua_handle_unref(nh);
-			nua_unref(nua);
+			nua_handle_unref_user(nh);
+			nua_unref_user(nua);
 
 			goto end;
 		}
@@ -2619,8 +2619,8 @@ void sofia_event_callback(nua_event_t event,
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
-			nua_handle_unref(nh);
-			nua_unref(nua);
+			nua_handle_unref_user(nh);
+			nua_unref_user(nua);
 
 			goto end;
 		}
