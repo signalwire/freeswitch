@@ -4476,29 +4476,32 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 					continue;
 				} else {
 
-					if (!strchr(fields[4], ':')) {
+					if (!is_mdns(fields[4])) {
 
-						// It is IPv4
+						if (!strchr(fields[4], ':')) {
 
-						if (!is_valid_ipv4(fields[4])) {
+							// Could be IPv4
 
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
-								"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not a valid IPv4)\n",
-								type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-								cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
-							continue;
-						}
-					} else {
+							if (!is_valid_ipv4(fields[4])) {
 
-						// It is IPv6
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
+										"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not a valid IPv4)\n",
+										type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+										cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+								continue;
+							}
+						} else {
 
-						if (!is_valid_ipv6(fields[4])) {
+							// Could be IPv6
 
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
-								"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not a valid IPv6)\n",
-								type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
-								cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
-							continue;
+							if (!is_valid_ipv6(fields[4])) {
+
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG,
+										"Drop %s Candidate cid: %d proto: %s type: %s addr: %s:%s (not a valid IPv6)\n",
+										type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio",
+										cid+1, fields[2], fields[7] ? fields[7] : "N/A", fields[4], fields[5]);
+								continue;
+							}
 						}
 					}
 
