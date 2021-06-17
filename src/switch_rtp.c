@@ -6849,6 +6849,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			if (rtp_session->rtcp_probe) {
 				switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 				if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "(received) RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u]\n", msg->header.type, ntohl(report->ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc);
 					if (msg->header.type == _RTCP_PT_SR && (rtp_session->remote_ssrc != ntohl(report->ssrc))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u does not match selected remote ssrc=%u\n",
 							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report->ssrc), rtp_session->remote_ssrc);
