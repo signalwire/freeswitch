@@ -1128,6 +1128,8 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	switch_bool_t rval = SWITCH_FALSE;
 	const char *err = NULL;
 
+	filename[0] = '\0';
+
 	if (zstr(to)) {
 		err = "No to address specified";
 		goto end;
@@ -1323,7 +1325,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		close(fd);
 	}
 
-	if (unlink(filename) != 0) {
+	if (!zstr_buf(filename) && unlink(filename) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", filename);
 	}
 

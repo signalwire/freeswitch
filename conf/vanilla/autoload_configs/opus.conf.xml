@@ -28,6 +28,8 @@
 	<!-- Max capture rate, 8000, 12000, 16000, 24000 and 48000 are valid options -->
         <!--<param name="sprop-maxcapturerate" value="0"/>-->
 	<!-- Enable automatic bitrate variation during the call based on RTCP feedback -->
-        <!--<param name="adjust-bitrate" value="1"/>-->
+	<!--<param name="adjust-bitrate" value="1"/>-->
+	<!-- will enforce mono even if the remote party wants stereo. must be used in conjunction with param "max-audio-channels" set to 1 in switch.conf.xml. -->
+		<param name="mono" value="0"/>
     </settings>
 </configuration>
