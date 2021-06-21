@@ -2230,7 +2230,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 	if (de) {
 		pool = de->pool;
 		de->pool = NULL;
-		sofia_process_dispatch_event(&de, SWITCH_FALSE);
+		sofia_process_dispatch_event(&de);
 	}
 
 	if (pool) {
@@ -2263,7 +2263,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	switch_thread_pool_launch_thread(&td);
 }
 
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t stack_thread)
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
@@ -2282,15 +2282,9 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t st
 	profile->queued_events--;
 	switch_mutex_unlock(profile->flag_mutex);
 
-	if (stack_thread) {
-		/* Safe to unref directly */
-		if (nh) nua_handle_unref(nh);
-		nua_unref(nua);
-	} else {
-		/* This is not a stack thread, need to call via stack (_user) using events */
-		if (nh) nua_handle_unref_user(nh);
-		nua_unref_user(nua);
-	}
+	/* This is not a stack thread, need to call via stack (_user) using events */
+	if (nh) nua_handle_unref_user(nh);
+	nua_unref_user(nua);
 }
 
 
@@ -2327,7 +2321,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-			sofia_process_dispatch_event(&de, SWITCH_FALSE);
+			sofia_process_dispatch_event(&de);
 		} else {
 			break;
 		}
@@ -2382,7 +2376,7 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 
 	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue) {
 		/* Calling with SWITCH_TRUE as we are sure this is the stack's thread */
-		sofia_process_dispatch_event(&de, SWITCH_TRUE);
+		sofia_process_dispatch_event(&de);
 		return;
 	}
 
@@ -2587,8 +2581,8 @@ void sofia_event_callback(nua_event_t event,
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
-			nua_handle_unref(nh);
-			nua_unref(nua);
+			nua_handle_unref_user(nh);
+			nua_unref_user(nua);
 
 			goto end;
 		}
@@ -2625,8 +2619,8 @@ void sofia_event_callback(nua_event_t event,
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
-			nua_handle_unref(nh);
-			nua_unref(nua);
+			nua_handle_unref_user(nh);
+			nua_unref_user(nua);
 
 			goto end;
 		}
