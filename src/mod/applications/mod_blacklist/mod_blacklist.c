@@ -356,7 +356,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_blacklist_load)
 	//switch_application_interface_t *app_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
@@ -375,6 +374,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_blacklist_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_blacklist_shutdown)
 {
+	switch_hash_index_t *hi = NULL;
+	
+	switch_mutex_lock(globals.lists_mutex);
+	while ((hi = switch_core_hash_first_iter(globals.lists, hi))) {
+		const void *key;
+		void *val;
+		switch_core_hash_this(hi, &key, NULL, &val);
+		blacklist_free((blacklist_t*)val);
+		switch_core_hash_delete(globals.lists, (const char*)key);
+	}
+	switch_core_hash_destroy(&globals.lists);
+	switch_mutex_unlock(globals.lists_mutex);
+
+	switch_mutex_lock(globals.files_mutex);
+	switch_core_hash_destroy(&globals.files);
+	switch_mutex_unlock(globals.files_mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
