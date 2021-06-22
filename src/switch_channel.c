@@ -3220,6 +3220,12 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 	const char *tmp = NULL;
 
 	switch_mutex_lock(channel->profile_mutex);
+
+	if (switch_channel_test_flag(channel, CF_RECOVERING) && switch_true(switch_channel_get_variable(channel, "channel_cid_flipped"))) {
+		switch_mutex_unlock(channel->profile_mutex);
+		return;
+	}
+
 	if (channel->caller_profile->callee_id_name) {
 		tmp = channel->caller_profile->caller_id_name;
 		switch_channel_set_variable(channel, "pre_transfer_caller_id_name", channel->caller_profile->caller_id_name);
@@ -3243,6 +3249,8 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 	} else if (tmp) {
 		channel->caller_profile->callee_id_number = tmp;
 	}
+
+	switch_channel_set_variable(channel, "channel_cid_flipped", "yes");
 
 	switch_mutex_unlock(channel->profile_mutex);
 
