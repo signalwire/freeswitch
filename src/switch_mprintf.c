@@ -85,8 +85,8 @@
 #define etSRCLIST    14			/* a pointer to a SrcList */
 #endif
 #define etPOINTER    15			/* The %p conversion */
-#define etSQLESCAPE3 16
-#define etSQLESCAPE4 17
+#define etSQLESCAPE3 16			/* Strings with '\'' and '\\' doubled. %w */
+#define etSQLESCAPE4 17			/* Add '\\' in front of the string '\''.  %y */
 
 /*
 ** An "etByte" is an 8-bit unsigned value.
@@ -705,7 +705,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 				for (i = 0; (ch = escarg[i]) != 0; i++) {
 					bufpt[j++] = (char) ch;
 					if (xtype == etSQLESCAPE4) {
-						if (ch == '\'' || (xtype == etSQLESCAPE3 && ch == '\\')) {
+						if (ch == '\'') {
 							bufpt[j] = (char) ch;
 							bufpt[j-1] = (char) '\\';
 							j++;
