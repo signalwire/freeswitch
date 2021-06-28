@@ -203,12 +203,14 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 		if (gateway_ptr->state == REG_STATE_REGED) {
 			sofia_reg_kill_reg(gateway_ptr);
 		}
+		sofia_private_free(gateway_ptr->sofia_private);
 
 		for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
 
 			if (gw_sub_ptr->state == SUB_STATE_SUBED) {
 				sofia_reg_kill_sub(gw_sub_ptr);
 			}
+			sofia_private_free(gw_sub_ptr->sofia_private);
 		}
 
 		gateway_ptr->subscriptions = NULL;
