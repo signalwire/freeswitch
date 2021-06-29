@@ -1210,6 +1210,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 	}
 
 	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Remembering last crypto (%s) as rtp_last_%s_local_crypto_key\n", engine->ssec[ctype].local_crypto_key, type2str(type));
 	switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Set Local %s crypto Key [%s]\n",
@@ -1893,7 +1894,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
 		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key) && sdp_type == SDP_TYPE_RESPONSE) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid. (sdp type %s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
 			got_crypto = 1;
 		} else {
 			const char *a = switch_stristr("AE", engine->ssec[engine->crypto_type].remote_crypto_key);
@@ -6022,6 +6023,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					crypto = attr->a_value;
 					crypto_tag = atoi(crypto);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking incoming crypto\n");
 					got_crypto = switch_core_session_check_incoming_crypto(session,
 																		   "rtp_has_crypto", SWITCH_MEDIA_TYPE_AUDIO, crypto, crypto_tag, sdp_type);
 
@@ -6612,6 +6614,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					crypto = attr->a_value;
 					crypto_tag = atoi(crypto);
 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking incoming crypto\n");
 					got_text_crypto = switch_core_session_check_incoming_crypto(session,
 																				"rtp_has_text_crypto",
 																				SWITCH_MEDIA_TYPE_TEXT, crypto, crypto_tag, sdp_type);
@@ -6766,6 +6769,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					crypto = attr->a_value;
 					crypto_tag = atoi(crypto);
 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Checking incoming crypto\n");
 					got_video_crypto = switch_core_session_check_incoming_crypto(session,
 																				 "rtp_has_video_crypto",
 																				 SWITCH_MEDIA_TYPE_VIDEO, crypto, crypto_tag, sdp_type);
@@ -14820,6 +14824,8 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_local_crypto_key")) && a_engine->ssec[a_engine->crypto_type].remote_crypto_key) {
 		int idx = atoi(tmp);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding crypto due to rtp_last_audio_local_crypto_key set idx=%d\n", idx);
 
 		a_engine->ssec[a_engine->crypto_type].local_crypto_key = switch_core_session_strdup(session, tmp);
 		switch_core_media_add_crypto(session, &a_engine->ssec[a_engine->crypto_type],SWITCH_RTP_CRYPTO_SEND);
