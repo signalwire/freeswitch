@@ -9903,15 +9903,11 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			}
 		}
 
-		if (smh->ianacodes[i] < 128) {
-			if (already_did[smh->ianacodes[i]]) {
-				continue;
-			}
-
-			already_did[smh->ianacodes[i]] = 1;
+		if (smh->ianacodes[i] >= 128 || already_did[smh->ianacodes[i]]) {
+			continue;
 		}
 
-
+		already_did[smh->ianacodes[i]] = 1;
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->ianacodes[i]);
 	}
 
@@ -9921,8 +9917,13 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			if (a_engine) {
 				payload_map_t *pmap;
 				for (pmap = a_engine->payload_map; pmap; pmap = pmap->next) {
+					if (pmap->pt >= 128 || already_did[pmap->pt]) {
+						continue;
+					}
+
 					if (!strncasecmp(pmap->iananame, "telephone-event", 15)) {
 						switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", pmap->pt);
+						already_did[pmap->pt] = 1;
 					}
 				}
 			}
@@ -9930,11 +9931,13 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			int i;
 
 			for (i = 0; i < smh->num_rates; i++) {
-				if (smh->dtmf_ianacodes[i]) {
+				if (smh->dtmf_ianacodes[i] < 128 && !already_did[smh->dtmf_ianacodes[i]]) {
 					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->dtmf_ianacodes[i]);
+					already_did[smh->dtmf_ianacodes[i]] = 1;
 				}
-				if (smh->cng_ianacodes[i] && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
+				if (smh->cng_ianacodes[i] < 128 && !already_did[smh->cng_ianacodes[i]] && !switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && cng_type && use_cng) {
 					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->cng_ianacodes[i]);
+					already_did[smh->cng_ianacodes[i]] = 1;
 				}
 			}
 		}
@@ -9975,14 +9978,11 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			}
 		}
 
-		if (smh->ianacodes[i] < 128) {
-			if (already_did[smh->ianacodes[i]]) {
-				continue;
-			}
-
-			already_did[smh->ianacodes[i]] = 1;
+		if (smh->ianacodes[i] >= 128 || already_did[smh->ianacodes[i]]) {
+			continue;
 		}
 
+		already_did[smh->ianacodes[i]] = 1;
 		rate = imp->samples_per_second;
 
 		if (map) {
