@@ -31,104 +31,157 @@
  */
 #include <switch.h>
 #include <switch_utils.h>
+#include <switch_stun.h>
+#include <openssl/ssl.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 #include "mod_event_socket_hash.h"
 
+typedef enum {
+	HASH_INVALID = 0,
+	HASH_MD5 = 1,
+	HASH_SHA256 = 5,
+	HASH_SHA512 = 6
+} hash_algorithm_t;
+
 typedef struct {
-	wchar_t * alg;
+	hash_algorithm_t algId;
 	char * salt;
 	char * hash;
 } auth_data_t;
 
+/*
+	Concatenates the provided salt and password values and returns memory holding the result.
+	This memory should be freed by the caller using switch_safe_free
+*/
+char * generate_hash_data(char * salt, const char * password) {
+	
+	if ((password) && (salt)) {
+		char * data_to_hash = malloc(strlen(salt) + strlen(password) + 1);
 
+		if (data_to_hash)
+		{
+			strcpy(data_to_hash, salt);
+			strcat(data_to_hash, password);
 
-char *generate_salt() {
-	UINT random_factor = 0;
-	char salt_buffer[40];
-	char num_buffer[15];
-
-	salt_buffer[0] = '\0';	
-
-	while (strlen(salt_buffer) < 22)
-	{
-		if (SUCCEEDED(BCryptGenRandom(NULL, (BYTE*)&random_factor, sizeof(UINT), BCRYPT_USE_SYSTEM_PREFERRED_RNG))) {
-			sprintf_s(num_buffer, 15, "%u", random_factor);
-			strcat(salt_buffer, num_buffer);
+			return data_to_hash;
 		}
-		else
-			return NULL;
 	}
 
-	return strdup(salt_buffer);
+	return NULL;
 }
 
-char *generate_hash(wchar_t* alg, char* salt, const char* password) {
+/*
+	Generate an MD5 hash from the provided data
+	This memory should be freed by the caller using switch_safe_free
+*/
+uint32_t generate_md5_hash(char * data_to_hash, unsigned char ** hash) {
+	uint32_t hash_length = SWITCH_MD5_DIGESTSIZE;
+	MD5_CTX context;
 
+	*hash = malloc(hash_length);
+
+	if (*hash) {
+		MD5_Init(&context);
+		MD5_Update(&context, data_to_hash, strlen(data_to_hash));
+		MD5_Final(*hash, &context);
+	}
+	else
+		hash_length = 0;
+
+	return hash_length;
+}
+
+/*
+	Generate a SHA-256 hash from the provided data
+	This memory should be freed by the caller using switch_safe_free
+*/
+uint32_t generate_sha256_hash(char * data_to_hash, unsigned char ** hash) {
+	uint32_t hash_length = SHA256_DIGEST_LENGTH;
+	SHA256_CTX context;
+
+	*hash = malloc(hash_length);
+
+	if (*hash) {
+		SHA256_Init(&context);
+		SHA256_Update(&context, data_to_hash, strlen(data_to_hash));
+		SHA256_Final(*hash, &context);
+	}
+	else
+		hash_length = 0;
+
+	return hash_length;
+}
+
+/*
+	Generate a SHA-512 hash from the provided data
+	This memory should be freed by the caller using switch_safe_free
+*/
+uint32_t generate_sha512_hash(char * data_to_hash, unsigned char ** hash) {
+	uint32_t hash_length = SHA512_DIGEST_LENGTH;
+	SHA512_CTX context;
+
+	*hash = malloc(hash_length);
+
+	if (*hash) {
+		SHA512_Init(&context);
+		SHA512_Update(&context, data_to_hash, strlen(data_to_hash));
+		SHA512_Final(*hash, &context);
+	}
+	else
+		hash_length = 0;
+
+	return hash_length;
+}
+
+char *generate_hash(hash_algorithm_t algId, char* salt, const char* password) {
+
+	uint32_t(*hash_func)(char *, unsigned char **);
 	unsigned char		b64_key[512];
 
 	b64_key[0] = '\0';
+	hash_func = NULL;
 
-	BCRYPT_ALG_HANDLE	alg_handle = NULL;
-	NTSTATUS			status = BCryptOpenAlgorithmProvider(&alg_handle, alg, NULL, 0);
+	/* Select a hashing function based upon the specified algorithm Id*/
+	switch (algId) {
+		case HASH_MD5: {
+			hash_func = generate_md5_hash;
+			break;
+		}
+		case HASH_SHA256: {
+			hash_func = generate_sha256_hash;
+			break;
+		}
+		case HASH_SHA512: {
+			hash_func = generate_sha512_hash;
+			break;
+		}
+		default:
+			break;
+	}
 
-	if (SUCCEEDED(status)) 	{
-		DWORD data_size = 0;
-		DWORD hash_object_size = 0;
+	if (hash_func) {
+		/* Merge the salt with the password */
+		char * data_to_hash = generate_hash_data(salt, password);
 
-		status = BCryptGetProperty(alg_handle, BCRYPT_OBJECT_LENGTH, (PBYTE)&hash_object_size, sizeof(DWORD), &data_size, 0);
+		unsigned char * hash = NULL;
+		uint32_t hash_size = 0;
 
-		if (SUCCEEDED(status)) {
-			//allocate the hash object on the heap
-			PBYTE pbHashObject = (PBYTE)HeapAlloc(GetProcessHeap(), 0, hash_object_size);
-
-			if (NULL != pbHashObject) {
-				DWORD hash_size = 0;
-
-				//calculate the length of the hash
-				status = BCryptGetProperty(alg_handle, BCRYPT_HASH_LENGTH, (PBYTE)&hash_size, sizeof(DWORD), &data_size, 0);
-
-				if (SUCCEEDED(status)) {
-
-					//allocate the hash buffer on the heap
-					PBYTE	hash = (PBYTE)HeapAlloc(GetProcessHeap(), 0, hash_size);
-
-					if (NULL != hash) {
-
-						BCRYPT_HASH_HANDLE	hash_handle = NULL;
-
-						status = BCryptCreateHash(alg_handle, &hash_handle, pbHashObject, hash_object_size, NULL, 0, 0);
-
-						if (SUCCEEDED(status)) {
-
-							size_t salted_data_len = strlen(salt) + strlen(password);
-							char* salted_data = malloc(salted_data_len + 1);
-
-							if (salted_data) {
-
-								strcpy_s(salted_data, salted_data_len + 1, salt);
-								strcat_s(salted_data, salted_data_len + 1, password);
-
-								status = BCryptHashData(hash_handle, (PBYTE)salted_data, (ULONG)salted_data_len, 0);
-
-								if (SUCCEEDED(status)) {
-
-									status = BCryptFinishHash(hash_handle, hash, hash_size, 0);
-
-									if (SUCCEEDED(status)) {
-										switch_b64_encode(hash, hash_size, b64_key, sizeof(b64_key));
-									}
-								}
-							}
-						}
-
-						HeapFree(GetProcessHeap(), 0, hash);
-					}
-				}
-
-				HeapFree(GetProcessHeap(), 0, pbHashObject);
-			}
+		/* If we have any data to hash then generate a hash */
+		if (data_to_hash) {
+			hash_size = hash_func(data_to_hash, &hash);
 		}
 
-		BCryptCloseAlgorithmProvider(alg_handle, 0);
+		/* If we have a valid hash then base64 encode it */
+		if (hash_size > 0) {
+			switch_b64_encode(hash, hash_size, b64_key, sizeof(b64_key));
+
+			/* Free the hash data */
+			switch_safe_free(hash);
+		}
+
+		/* Free the data to hash */
+		switch_safe_free(data_to_hash);
 	}
 
 	return strdup((const char *)b64_key);
@@ -139,7 +192,6 @@ void free_hash_data(auth_data_t** hash_data) {
 	{
 		if (*hash_data)
 		{
-			(*hash_data)->alg = NULL;
 			switch_safe_free((*hash_data)->salt);
 			switch_safe_free((*hash_data)->hash);
 			switch_safe_free(*hash_data);
@@ -149,9 +201,11 @@ void free_hash_data(auth_data_t** hash_data) {
 
 auth_data_t* parse_hash(const char *auth_hash) {
 
+	switch_bool_t valid_b64 = SWITCH_TRUE;
 	auth_data_t* data = NULL;
 
 	if (auth_hash) {
+
 		const char *next = auth_hash;
 		uint16_t index = 0;
 		char *components[3];
@@ -169,7 +223,7 @@ auth_data_t* parse_hash(const char *auth_hash) {
 					size_t length = strlen(next) - strlen(delim);
 					char *component = malloc(length + 1);
 					if (component) {
-						strncpy(component, next, length);
+						memcpy(component, next, length);
 						component[length] = '\0';
 					}
 					else
@@ -185,26 +239,24 @@ auth_data_t* parse_hash(const char *auth_hash) {
 		} while (index < component_size);
 
 		if (component_size == index) {
-			wchar_t* alg = NULL;
-			if (strlen(components[0]) == 1)
-			{
-				switch (components[0][0]) {
-					case '1': {
-						alg = BCRYPT_MD5_ALGORITHM;
-						break;
-					}
-					case '5': {
-						alg = BCRYPT_SHA256_ALGORITHM;
-						break;
-					}
-					case '6': {
-						alg = BCRYPT_SHA512_ALGORITHM;
-						break;
-					}
+			hash_algorithm_t algId = HASH_INVALID;
+
+			switch (switch_safe_atoi(components[0], 0)) {
+				case 1: {
+					algId = HASH_MD5;
+					break;
+				}
+				case 5: {
+					algId = HASH_SHA256;
+					break;
+				}
+				case 6: {
+					algId = HASH_SHA512;
+					break;
 				}
 			}
 
-			if (alg) {
+			if (algId != HASH_INVALID) {
 				size_t b64_length = strlen(components[2]);
 
 				/* Account for any padding characters at the end of the string */
@@ -217,7 +269,6 @@ auth_data_t* parse_hash(const char *auth_hash) {
 				}
 
 				/* Confirm that the component contains only legitimate b64 characters */
-				switch_bool_t valid_b64 = SWITCH_TRUE;
 				for (size_t idx = 0; idx < b64_length; idx++) {
 					if (switch_isalnum(components[2][idx]))
 						continue;
@@ -239,7 +290,7 @@ auth_data_t* parse_hash(const char *auth_hash) {
 					{
 						switch_safe_free(components[0]);
 
-						data->alg = alg;
+						data->algId = algId;
 						data->salt = strdup(components[1]);
 						data->hash = strdup(components[2]);
 					}
@@ -253,7 +304,6 @@ auth_data_t* parse_hash(const char *auth_hash) {
 			switch_safe_free(components[0]);
 		}
 	}
-
 	return data;
 }
 
@@ -276,7 +326,7 @@ switch_bool_t validate_password(const char *auth_hash, const char *password) {
 
 	if (data)
 	{
-		char *hash = generate_hash(data->alg, data->salt, password);
+		char *hash = generate_hash(data->algId, data->salt, password);
 
 		if ((hash) && (!strcmp(hash, data->hash)))
 		{
@@ -291,20 +341,19 @@ switch_bool_t validate_password(const char *auth_hash, const char *password) {
 const char * create_auth_hash(const char *password) {
 
 	char *auth_hash = NULL;
-	char *salt = generate_salt();
+	char *hash = NULL;
+	char salt[30];
 
-	if (salt) {
-		char *hash = generate_hash(BCRYPT_SHA512_ALGORITHM, salt, password);
+	switch_stun_random_string(salt, 20, NULL);
 
-		if (hash)
-		{
-			size_t auth_hash_len = 5 + strlen(salt) + strlen(hash);
+	hash = generate_hash(HASH_SHA512, salt, password);
 
-			auth_hash = malloc(auth_hash_len);
-			sprintf_s(auth_hash, auth_hash_len, "$6$%s$%s", salt, hash);
-		}
+	if (hash)
+	{
+		size_t auth_hash_len = 5 + strlen(salt) + strlen(hash);
 
-		switch_safe_free(salt);
+		auth_hash = malloc(auth_hash_len);
+		sprintf(auth_hash, "$6$%s$%s", salt, hash);
 	}
 
 	return auth_hash;
