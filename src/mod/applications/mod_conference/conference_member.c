@@ -1399,6 +1399,10 @@ void conference_member_send_all_dtmf(conference_member_t *member, conference_obj
 		if (imember->id == member->id) {
 			continue;
 		}
+		if (conference_utils_member_test_flag(imember, MFLAG_SKIP_DTMF)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skipping dist-dtmf to member due to skip-dtmf flag.\n");
+			continue;
+		}
 		if (imember->session) {
 			const char *p;
 			for (p = dtmf; p && *p; p++) {

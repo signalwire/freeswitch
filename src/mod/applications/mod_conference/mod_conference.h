@@ -214,6 +214,7 @@ typedef enum {
 	MFLAG_VIDEO_JOIN,
 	MFLAG_DED_VID_LAYER,
 	MFLAG_HOLD,
+	MFLAG_SKIP_DTMF,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
