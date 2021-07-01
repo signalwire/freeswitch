@@ -124,6 +124,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 				f[MFLAG_MUTE_DETECT] = 1;
 			} else if (!strcasecmp(argv[i], "dist-dtmf")) {
 				f[MFLAG_DIST_DTMF] = 1;
+			} else if (!strcasecmp(argv[i], "skip-dtmf")) {
+				f[MFLAG_SKIP_DTMF] = 1;
 			} else if (!strcasecmp(argv[i], "moderator")) {
 				f[MFLAG_MOD] = 1;
 			} else if (!strcasecmp(argv[i], "nomoh")) {
