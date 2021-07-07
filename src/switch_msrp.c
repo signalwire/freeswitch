@@ -1413,7 +1413,7 @@ end:
 
 	if (!client_mode) switch_core_destroy_memory_pool(&pool);
 
-	if (client_mode && ssl) SSL_free(ssl);
+	if (ssl) SSL_free(ssl);
 
 	if (msrp_session) msrp_session->running = 0;
 
