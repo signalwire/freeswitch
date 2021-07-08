@@ -4142,8 +4142,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	keysalt_len = switch_core_media_crypto_keysalt_len(ssec->crypto_type);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Adding crypto for idx=%u\n", index);
-
 	if (direction >= SWITCH_RTP_CRYPTO_MAX || keysalt_len > SWITCH_RTP_MAX_CRYPTO_LEN) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -4168,11 +4166,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		key_material_n = &ssec->local_key_material_n;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "CRYPTO: Adding crypto (idx=%u, direction=%s)\n", index, direction == SWITCH_RTP_CRYPTO_SEND ? "SEND" : "RECV");
+
 	switch_b64_encode(keysalt, keysalt_len, b64_key, sizeof(b64_key));
 
 	if (switch_true(switch_core_get_variable("rtp_retain_crypto_keys"))) {
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Retaining crypto due to rtp_reain_crypto_keys is set\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "CRYPTO: Retaining crypto due to rtp_retain_crypto_keys is set\n");
 
 		switch(direction) {
 			case SWITCH_RTP_CRYPTO_SEND:
