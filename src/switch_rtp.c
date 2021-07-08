@@ -59,6 +59,7 @@
 //#define DEBUG_EXTRA
 //#define DEBUG_RTCP
 #define DEBUG_ESTIMATORS_
+#define DEBUG_HOMER 0
 
 #define HIGH_JITTER_LOG_THRESHOLD 100000000
 #define RTCP_BUG_SSRC 2177499142u
@@ -2226,18 +2227,26 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			rtcp_pt_t type = (rtp_session->stats.rtcp.sent_pkt_count || force_send_rr) ? _RTCP_PT_RR : _RTCP_PT_SR;
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 			if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
+#ifdef DEBUG_HOMER
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "[ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u]\n",
 					type, ntohl(rtcp_report_block->ssrc), ntohl(rtcp_report_block->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc);
+#endif
 				if (rtp_session->remote_ssrc != ntohl(rtcp_report_block->ssrc)) {
+#ifdef DEBUG_HOMER
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u does not match selected remote ssrc=%u\n",
 						rtp_type(rtp_session), rtp_session->rtcp_send_msg.header.type, ntohl(rtcp_report_block->jitter), ntohl(rtcp_report_block->ssrc), rtp_session->remote_ssrc);
+#endif
 				} else if (RTCP_BUG_SSRC == ntohl(rtcp_report_block->ssrc)) {
+#ifdef DEBUG_HOMER
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u matches RTCP bug ssrc=%u\n",
 						rtp_type(rtp_session), rtp_session->rtcp_send_msg.header.type, ntohl(rtcp_report_block->jitter), ntohl(rtcp_report_block->ssrc), RTCP_BUG_SSRC);
+#endif
 				} else {
 					if (ntohl(rtcp_report_block->jitter) > HIGH_JITTER_LOG_THRESHOLD) {
+#ifdef DEBUG_HOMER
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "(huge jitter) [ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u]\n",
 							type, ntohl(rtcp_report_block->ssrc), ntohl(rtcp_report_block->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc);
+#endif
 					}
 					rtp_session->rtcp_probe(channel, rtp_session, type, TRUE, rtcp_report_block, rtcp_sender_info);
 				}
@@ -6865,18 +6874,26 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			if (rtp_session->rtcp_probe) {
 				switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 				if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
+#ifdef DEBUG_HOMER
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "[not ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u local ssrc=%u]\n",
 						msg->header.type, ntohl(report->ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc, rtp_session->ssrc);
+#endif
 					if (ntohl(report->ssrc) != rtp_session->ssrc) {
+#ifdef DEBUG_HOMER
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u does not match local ssrc=%u\n",
 							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report->ssrc), rtp_session->ssrc);
+#endif
 					} else if (RTCP_BUG_SSRC == ntohl(report->ssrc)) {
+#ifdef DEBUG_HOMER
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u matches RTCP bug ssrc=%u\n",
 							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report->ssrc), RTCP_BUG_SSRC);
+#endif
 					} else {
 						if (ntohl(report->jitter) > HIGH_JITTER_LOG_THRESHOLD) {
+#ifdef DEBUG_HOMER
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "(huge jitter) [not ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u local ssrc=%u]\n",
 								msg->header.type, ntohl(report->ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc, rtp_session->ssrc);
+#endif
 						}
 						rtp_session->rtcp_probe(channel, rtp_session, msg->header.type, FALSE, report, rtcp_sender_info);
 					}
