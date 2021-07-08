@@ -41,6 +41,7 @@ SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_MAX_CAND_ACL 25
 #define SWITCH_NO_CRYPTO_TAG -1
+#define SWITCH_REMOTE_CRYPTO_TAG_INVALID -1
 
 typedef enum {
 	DTMF_AUTO,
@@ -199,7 +200,7 @@ SWITCH_DECLARE(void) switch_media_handle_set_media_flag(switch_media_handle_t *s
 SWITCH_DECLARE(void) switch_media_handle_clear_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(int32_t) switch_media_handle_test_media_flag(switch_media_handle_t *smh, switch_core_media_flag_t flag);
 SWITCH_DECLARE(void) switch_media_handle_set_media_flags(switch_media_handle_t *smh, switch_core_media_flag_t flags[]);
-SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, int sdp_type);
 SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session,
 															  const char *varname,
