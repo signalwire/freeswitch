@@ -316,6 +316,7 @@ static switch_status_t switch_opusfile_close(switch_file_handle_t *handle)
 	}
 #ifdef HAVE_OPUSFILE_ENCODE
 	if (context->enc) {
+		ope_encoder_drain(context->enc);
 		ope_encoder_destroy(context->enc);
 	}
 	if (context->comments) {
