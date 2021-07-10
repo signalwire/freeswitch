@@ -5105,6 +5105,50 @@ SWITCH_STANDARD_API(originate_function)
 	return status;
 }
 
+struct switch_schedule_list_task_id_holder {
+	switch_console_callback_match_t *my_matches;
+	uint32_t count;
+};
+
+static int switch_schedule_list_task_id_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct switch_schedule_list_task_id_holder *holder = (struct switch_schedule_list_task_id_holder *)pArg;
+
+	switch_console_push_match(&holder->my_matches, argv[0]);
+
+	holder->count++;
+	return 0;
+}
+
+SWITCH_DECLARE_NONSTD(switch_status_t)
+switch_schedule_list_task_id(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	char sql[1024];
+	char *errmsg;
+	switch_cache_db_handle_t *db;
+	struct switch_schedule_list_task_id_holder holder = {0};
+	switch_core_flag_t cflags = switch_core_flags();
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!(cflags & SCF_USE_SQL)) { return status; }
+
+	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) { return status; }
+
+	switch_snprintfv(sql, sizeof(sql), "select task_id from tasks where hostname='%q'",
+					 switch_core_get_hostname());
+
+	switch_cache_db_execute_sql_callback(db, sql, switch_schedule_list_task_id_callback, &holder, &errmsg);
+
+	switch_cache_db_release_db_handle(&db);
+
+	if (holder.my_matches) {
+		*matches = holder.my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
 SWITCH_STANDARD_API(sched_del_function)
 {
 	uint32_t cnt = 0;
@@ -7680,6 +7724,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add reload ::console::list_loaded_modules");
 	switch_console_set_complete("add reloadacl reloadxml");
 	switch_console_set_complete("add show aliases");
+	switch_console_set_complete("add sched_del ::schedule::tasks");
 	switch_console_set_complete("add show api");
 	switch_console_set_complete("add show application");
 	switch_console_set_complete("add show calls");
@@ -7707,6 +7752,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add shutdown");
 	switch_console_set_complete("add sql_escape");
 	switch_console_set_complete("add unload ::console::list_loaded_modules");
+	switch_console_set_complete("add unsched_api ::schedule::tasks");
 	switch_console_set_complete("add uptime ms");
 	switch_console_set_complete("add uptime s");
 	switch_console_set_complete("add uptime m");
@@ -7797,6 +7843,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add ...");
 	switch_console_set_complete("add file_exists");
 	switch_console_set_complete("add getcputime");
+
+	switch_console_add_complete_func("::schedule::tasks", (switch_console_complete_callback_t)switch_schedule_list_task_id);
 
 	switch_msrp_load_apis_and_applications(module_interface);
 
