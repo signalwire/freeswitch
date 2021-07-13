@@ -3327,7 +3327,7 @@ char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_b
 		su_free(nua_handle_home(nh), route);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Record-Route headers [%s]\n", count, route_encoded_buf);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Record-Route headers [%s]\n", count, route_encoded_buf);
 	return route_encoded_buf;
 }
 
