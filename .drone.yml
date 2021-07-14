@@ -5,14 +5,14 @@ name: unit-tests
 steps:
     - name: bootstrap
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
 
     - name: configure
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
@@ -27,7 +27,7 @@ steps:
 
     - name: build
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
@@ -37,7 +37,7 @@ steps:
 
     - name: run-tests
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
@@ -53,7 +53,7 @@ steps:
 
     - name: notify
       image: signalwire/drone-notify
-      pull: true
+      pull: always
       environment:
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
@@ -76,13 +76,13 @@ name: scan-build
 steps:
     - name: bootstrap
       image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      pull: always
       commands:
       - ./bootstrap.sh -j
 
     - name: configure
       image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
@@ -113,7 +113,7 @@ steps:
 
     - name: scan-build
       image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
@@ -126,7 +126,7 @@ steps:
 
     - name: notify
       image: signalwire/drone-notify
-      pull: true
+      pull: always
       environment:
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
@@ -145,6 +145,6 @@ trigger:
 
 ---
 kind: signature
-hmac: af77439b382612b49140cb95f04d6d695e0a188c411ae227abcba205bf96bab9
+hmac: bc24832140c40a8fde4bb04bd6bcce43029bf1641ed4acc3585fe52049ae24dc
 
 ...
