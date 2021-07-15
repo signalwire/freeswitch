@@ -323,7 +323,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
 				free(pkey);
-				switch_core_destroy_memory_pool(&(gateway_ptr->pool));
 			}
 
 			if (gateway_ptr->state == REG_STATE_NOREG || gateway_ptr->state == REG_STATE_DOWN) {
@@ -345,6 +344,10 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				}
 				if (gateway_ptr->ib_vars) {
 					switch_event_destroy(&gateway_ptr->ib_vars);
+				}
+
+				if (gateway_ptr->destroy) {
+					switch_core_destroy_memory_pool(&(gateway_ptr->pool));
 				}
 			} else {
 				last = gateway_ptr;
@@ -3421,6 +3424,7 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, key);
+			gp->destroy = 1;
 		}
 	}
 	switch_mutex_unlock(profile->gw_deleting_mutex);
