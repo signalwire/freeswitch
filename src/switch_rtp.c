@@ -271,6 +271,9 @@ typedef struct {
 
 struct switch_rtp;
 
+static void switch_rtp_dtls_init();
+static void switch_rtp_dtls_destroy();
+
 #define MAX_DTLS_MTU 4096
 
 typedef struct switch_dtls_s {
@@ -1551,6 +1554,7 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	srtp_init();
 #endif
 	switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
+	switch_rtp_dtls_init();
 	global_init = 1;
 }
 
@@ -2576,7 +2580,7 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 #ifdef ENABLE_SRTP
 	srtp_crypto_kernel_shutdown();
 #endif
-
+	switch_rtp_dtls_destroy();
 }
 
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)
@@ -3713,6 +3717,25 @@ static BIO_METHOD dtls_bio_filter_methods = {
 static BIO_METHOD *dtls_bio_filter_methods = NULL;
 #endif
 
+static void switch_rtp_dtls_init() {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
+	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
+	BIO_meth_set_ctrl(dtls_bio_filter_methods, dtls_bio_filter_ctrl);
+	BIO_meth_set_create(dtls_bio_filter_methods, dtls_bio_filter_new);
+	BIO_meth_set_destroy(dtls_bio_filter_methods, dtls_bio_filter_free);
+#endif
+}
+
+static void switch_rtp_dtls_destroy() {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	if (dtls_bio_filter_methods) {
+		BIO_meth_free(dtls_bio_filter_methods);
+		dtls_bio_filter_methods = NULL;
+	}
+#endif
+}
+
 ///////////
 
 
@@ -3955,11 +3978,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	dtls->filter_bio = BIO_new(BIO_dtls_filter());
 #else
-	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
-	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
-	BIO_meth_set_ctrl(dtls_bio_filter_methods, dtls_bio_filter_ctrl);
-	BIO_meth_set_create(dtls_bio_filter_methods, dtls_bio_filter_new);
-	BIO_meth_set_destroy(dtls_bio_filter_methods, dtls_bio_filter_free);
+	switch_assert(dtls_bio_filter_methods);
 	dtls->filter_bio = BIO_new(dtls_bio_filter_methods);
 #endif
 
