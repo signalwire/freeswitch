@@ -3255,7 +3255,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (!sofia_glue_init_sql(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database [%s]!\n", profile->name);
 		sofia_profile_start_failure(profile, profile->name);
-		sofia_glue_del_profile(profile);
 		goto end;
 	}
 
@@ -3378,7 +3377,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 						  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
 						  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
 		sofia_profile_start_failure(profile, profile->name);
-		sofia_glue_del_profile(profile);
 		goto end;
 	}
 
@@ -3546,6 +3544,20 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
+	/* Do gateway cleanups */
+	sofia_glue_del_every_gateway(profile);
+	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+	sofia_glue_fire_events(profile);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
+
+	if (worker_thread) {
+		switch_thread_join(&st, worker_thread);
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Sofia worker thead failed to start\n");
+	}
 
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
@@ -3560,13 +3572,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 	sofia_clear_pflag_locked(profile, PFLAG_SHUTDOWN);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
-
-	if ( worker_thread ) {
-		switch_thread_join(&st, worker_thread);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Sofia worker thead failed to start\n");
-	}
 
 	sanity = 4;
 	while (profile->inuse) {
@@ -3615,6 +3620,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
+  end:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
 	switch_thread_rwlock_wrlock(profile->rwlock);
 
@@ -3636,7 +3642,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_profile_destroy(profile);
 
-  end:
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads--;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
