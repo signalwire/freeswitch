@@ -907,12 +907,16 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				if (conference->count >= conference->announce_count && conference->announce_count > 1) {
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
-				} else if (conference->count == 1 && !conference->perpetual_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
+				} else if (conference->count == 1 && !conference->perpetual_sound) {
 					/* as long as its not a bridge_to conference, announce if person is alone */
 					if (!conference_utils_test_flag(conference, CFLAG_BRIDGE_TO)) {
-						if (conference->alone_sound  && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
+						if (conference->alone_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
 							conference_file_stop(conference, FILE_STOP_ASYNC);
 							conference_file_play(conference, conference->alone_sound, CONF_DEFAULT_LEADIN,
+												 switch_core_session_get_channel(member->session), 0);
+						} else if (conference->waiting_sound && conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
+							conference_file_stop(conference, FILE_STOP_ASYNC);
+							conference_file_play(conference, conference->waiting_sound, CONF_DEFAULT_LEADIN,
 												 switch_core_session_get_channel(member->session), 0);
 						} else {
 							switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
