@@ -1237,6 +1237,7 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		switch_channel_t *channel;
 		switch_caller_profile_t *profile;
 		char *uuid;
+		const char *custom_chan_data;
 		//char *name;
 		uint32_t count = 0;
 		switch_xml_t x_tag;
@@ -1299,6 +1300,10 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 
 		switch_snprintf(i, sizeof(i), "%d", member->volume_out_level);
 		add_x_tag(x_member, "volume_out", i, toff++);
+
+		if ((custom_chan_data = switch_channel_get_variable_dup(channel, "conference_custom_channel_data", SWITCH_FALSE, -1))) {
+			add_x_tag(x_member, "custom_channel_data", custom_chan_data, toff++);
+		}
 
 		x_flags = switch_xml_add_child_d(x_member, "flags", count++);
 		switch_assert(x_flags);
@@ -1401,6 +1406,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		switch_channel_t *channel;
 		switch_caller_profile_t *profile;
 		char *uuid;
+		const char *custom_chan_data;
 		switch_bool_t hold = conference_utils_member_test_flag(member, MFLAG_HOLD);
 
 		cJSON_AddItemToObject(json_conference_members, "member", json_conference_member = cJSON_CreateObject());
@@ -1434,6 +1440,9 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		cJSON_AddNumberToObject(json_conference_member, "volume_out", member->volume_out_level);
 		cJSON_AddNumberToObject(json_conference_member, "output-volume", member->volume_out_level);
 		cJSON_AddNumberToObject(json_conference_member, "input-volume", member->volume_in_level);
+		if ((custom_chan_data = switch_channel_get_variable_dup(channel, "conference_custom_channel_data", SWITCH_FALSE, -1))) {
+			cJSON_AddStringToObject(json_conference_member, "custom_channel_data", custom_chan_data);
+		}
 		ADDBOOL(json_conference_member_flags, "can_hear", !hold && conference_utils_member_test_flag(member, MFLAG_CAN_HEAR));
 		ADDBOOL(json_conference_member_flags, "can_see", !hold && conference_utils_member_test_flag(member, MFLAG_CAN_SEE));
 		ADDBOOL(json_conference_member_flags, "can_speak", !hold && conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK));

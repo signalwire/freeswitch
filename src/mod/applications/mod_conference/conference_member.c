@@ -236,6 +236,7 @@ void conference_member_update_status_field(conference_member_t *member)
 switch_status_t conference_member_add_event_data(conference_member_t *member, switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *v;
 
 	if (!member)
 		return status;
@@ -255,7 +256,9 @@ switch_status_t conference_member_add_event_data(conference_member_t *member, sw
 		}
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Video", "%s",
 								switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false" );
-
+		if ((v = switch_channel_get_variable_dup(channel, "conference_custom_channel_data", SWITCH_FALSE, -1))) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Custom-Channel-Data", v);
+		}
 	}
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hear", "%s", conference_utils_member_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false" );
