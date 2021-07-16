@@ -90,6 +90,14 @@
             <param name="tls" value="false"/>
           </settings>
         </profile>
+        <profile name="">
+          <aliases>
+            <alias name="empty_name"/>
+          </aliases>
+          <settings>
+            <param name="sip-port" value="auto"/>
+          </settings>
+        </profile>
       </profiles>
     </configuration>
   </section>

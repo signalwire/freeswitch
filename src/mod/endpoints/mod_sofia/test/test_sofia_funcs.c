@@ -256,6 +256,15 @@ FST_TEST_BEGIN(sofia_auth_identity_test_attest_a_date)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(empty_profile_name)
+{
+    sofia_profile_t *profile = sofia_glue_find_profile("empty_name");
+    fst_requires(profile);
+    fst_check_string_equals(profile->name, "unnamed");
+    sofia_glue_release_profile(profile);
+}
+FST_TEST_END()
+
 FST_MODULE_END()
 
 FST_CORE_END()

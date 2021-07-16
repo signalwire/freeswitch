@@ -22,7 +22,7 @@ test_test_sofia_funcs_CFLAGS = $(AM_CFLAGS) $(SOFIA_SIP_CFLAGS) $(STIRSHAKEN_CFL
 if HAVE_STIRSHAKEN
 test_test_sofia_funcs_CFLAGS += -DHAVE_STIRSHAKEN
 endif
-test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(STIRSHAKEN_LIBS)
+test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(STIRSHAKEN_LIBS) -rdynamic -export-dynamic
 test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIA_SIP_LIBS)
 
 TESTS = test/test_sofia_funcs.sh
