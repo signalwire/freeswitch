@@ -2907,11 +2907,13 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 		/* If Agent Logoff, we might need to recalculare score based on skill */
 		/* Play the periodic announcement if it is time to do so */
-		if (announce_valid == SWITCH_TRUE && queue->announce && queue->announce_freq > 0 &&
+		if (switch_channel_get_private(member_channel, queue->announce)) {
+		    last_announce = time_now;
+		}
+		else if (announce_valid == SWITCH_TRUE && queue->announce && queue->announce_freq > 0 &&
 			queue->announce_freq <= time_now - last_announce) {
 			switch_status_t status = SWITCH_STATUS_FALSE;
-			/* Stop previous announcement in case it's still running */
-			switch_ivr_stop_displace_session(member_session, queue->announce);
+
 			/* Play the announcement */
 			status = switch_ivr_displace_session(member_session, queue->announce, 0, NULL);
 
@@ -2919,9 +2921,6 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING,
 								  "Couldn't play announcement '%s'\n", queue->announce);
 				announce_valid = SWITCH_FALSE;
-			}
-			else {
-				last_announce = time_now;
 			}
 		}
 
@@ -3225,9 +3224,13 @@ SWITCH_STANDARD_APP(callcenter_function)
 		agent_found = switch_true(p);
 	}
 
-	/* Stop member thread */
+	/* Stop member thread and announcement*/
 	if (h) {
 		h->running = 0;
+	}
+
+	if (switch_channel_get_private(member_channel, queue->announce)) {
+		switch_ivr_stop_displace_session(member_session, queue->announce);
 	}
 
 	/* Check if we were removed because FS Core(BREAK) asked us to */
