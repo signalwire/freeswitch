@@ -3394,8 +3394,6 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 	cJSON *msg = NULL, *dialog = NULL, *txt = NULL;
 	const char *call_id = NULL, *dtmf = NULL;
 	switch_bool_t r = SWITCH_TRUE;
-	char *proto = VERTO_CHAT_PROTO;
-	char *pproto = NULL;
 	int err = 0;
 
 	*response = cJSON_CreateObject();
@@ -3483,20 +3481,19 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 	if ((msg = cJSON_GetObjectItem(params, "msg"))) {
 		switch_event_t *event;
+		char *dest_proto = VERTO_CHAT_PROTO;
 		char *to = (char *) cJSON_GetObjectCstr(msg, "to");
-		//char *from = (char *) cJSON_GetObjectCstr(msg, "from");
 		cJSON *i, *indialog =  cJSON_GetObjectItem(msg, "inDialog");
 		const char *body = cJSON_GetObjectCstr(msg, "body");
 		switch_bool_t is_dialog = indialog && (indialog->type == cJSON_True || (indialog->type == cJSON_String && switch_true(indialog->valuestring)));
 
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
-				pproto = strdup(to);
-				switch_assert(pproto);
-				if ((to = strchr(pproto, '+'))) {
+				dest_proto = strdup(to);
+				switch_assert(dest_proto);
+				if ((to = strchr(dest_proto, '+'))) {
 					*to++ = '\0';
 				}
-				proto = pproto;
 			}
 		}
 
@@ -3526,23 +3523,26 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 			switch_event_add_body(event, "%s", body);
 
-			if (strcasecmp(proto, VERTO_CHAT_PROTO)) {
-				switch_core_chat_send(proto, event);
-			}
+            if (is_dialog) {
+                if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
+                    switch_core_session_t *session = NULL;
 
-			if (is_dialog) {
-				if ((dialog = cJSON_GetObjectItem(params, "dialogParams")) && (call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
-					switch_core_session_t *session = NULL;
+                    if ((session = switch_core_session_locate(call_id))) {
+                        switch_core_session_queue_event(session, &event);
+                        switch_core_session_rwunlock(session);
+                    }
+                }
 
-					if ((session = switch_core_session_locate(call_id))) {
-						switch_core_session_queue_event(session, &event);
-						switch_core_session_rwunlock(session);
-					}
-				}
+            } else {
 
-			} else {
-				switch_core_chat_send("GLOBAL", event);
-			}
+                if (!strcasecmp(dest_proto, "global")) {
+                    switch_core_chat_send("GLOBAL", event);
+
+                } else {
+                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+                    switch_core_chat_send(dest_proto, event);
+                }
+            }
 
 			if (event) {
 				switch_event_destroy(&event);
@@ -3556,8 +3556,6 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("INVALID MESSAGE to and body params required"));
 		}
 
-
-		switch_safe_free(pproto);
 	}
 
  cleanup:
