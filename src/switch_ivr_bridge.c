@@ -1800,7 +1800,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_stop_broadcast(peer_channel);
 
 
-			while (switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA) {
+			while (switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(peer_channel, CF_ATTENDED_TRANSFER)) {
 				switch_ivr_parse_all_messages(session);
 				switch_cond_next();
 			}
