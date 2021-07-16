@@ -2445,10 +2445,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (caller_channel && switch_channel_test_flag(caller_channel, CF_3PCC_PROXY)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Set ignore early media for 3PCC Proxy calls\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Set ignore early media to ring ready for 3PCC Proxy calls\n");
 		if (!oglobals.ignore_early_media) {
 			oglobals.early_ok = 0;
-			oglobals.ignore_early_media = 1;
+			oglobals.ignore_early_media = 2;
 		}
 	}
 
