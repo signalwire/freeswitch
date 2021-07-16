@@ -1,0 +1,11 @@
+<include>
+  <context name="default">
+    <extension name="asr_demo">
+        <condition field="destination_number" expression="^.*$">
+          <action application="answer"/>
+          <action application="play_and_detect_speech" data="ivr/ivr-welcome.wav detect:vosk default"/>
+          <action application="speak" data="tts_commandline|espeak|You said ${detect_speech_result}!"/>
+        </condition>
+    </extension>
+  </context>
+</include>

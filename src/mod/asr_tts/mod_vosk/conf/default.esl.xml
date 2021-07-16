@@ -1,0 +1,12 @@
+<include>
+  <context name="default">
+    <extension name="asr_demo">
+        <condition field="destination_number" expression="^.*$">
+          <action application="answer"/>
+          <action application="set" data="fire_asr_events=true"/>
+          <action application="detect_speech" data="vosk default default"/>
+          <action application="sleep" data="10000000"/>
+        </condition>
+    </extension>
+  </context>
+</include>
