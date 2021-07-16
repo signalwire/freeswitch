@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(srtp, 1.4.2, mcgrew@cisco.com)
+AC_INIT(srtp, 2.3.0, mcgrew@cisco.com)
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE
 
@@ -11,161 +11,155 @@ LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 AC_LANG_C
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_AWK
-AC_PROG_MAKE_SET
+AC_PROG_CPP
+AC_PROG_CXX
+AC_ARG_VAR(
+  [EXTRA_CFLAGS],
+  [C compiler flags appended to the regular C compiler flags instead of overriding them])
+AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-AX_COMPILER_VENDOR
+AC_PROG_SED
 
-# Optimization
-AC_ARG_ENABLE(optimization,
-[AC_HELP_STRING([--enable-optimization],[Set if you want us to add max optimising compiler flags])],[enable_optimizer="$enableval"],[enable_optimizer="no"])
+dnl Check the byte order
+AC_C_BIGENDIAN
 
-if test "${enable_optimizer}" = "yes" ; then
-        AC_DEFINE([OPTIMZER],[],[Enable Optimization.])
-        AX_CC_MAXOPT
-fi
+AC_CANONICAL_HOST
 
-#  Enable debugging
-AC_ARG_ENABLE(debug,
-[AC_HELP_STRING([--enable-debug],[build with debug information])],[enable_debug="$enable_debug"],[enable_debug="yes"])
-
-if test "${enable_debug}" = "yes"; then
-        AC_DEFINE([DEBUG],[],[Enable extra debugging.])
-        AX_CFLAGS_WARN_ALL_ANSI
-fi
-
-
-AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
-
-IN_LINE=inline
-
-case "$host" in
-                *-solaris2*)
-                        if test "x${ax_cv_c_compiler_vendor}"  = "xsun" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-R${prefix}/lib"
-                                FUNC_DEF=__func__
-                                IN_LINE=""
-                        elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
-                                new_AM_LDFLAGS=""
-                                IN_LINE=inline
-                        fi
-                ;;
-                *-darwin*)
-                        if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-dynamic -bundle -force-flat-namespace"
-                                new_AM_CFLAGS="-DMACOSX"
-                                new_AM_LDFLAGS=""
-                        fi
-                ;;
-                x86_64-*-linux-gnu)
-                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-R${prefix}/lib"
-                                FUNC_DEF=__func__
-                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                               SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
-                                new_AM_LDFLAGS=""
-                        fi
-                ;;
-                i*6-*-linux-gnu)
-                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-R${prefix}/lib"
-                                FUNC_DEF=__func__
-                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fpic -Wall -O4 -fexpensive-optimizations -funroll-loops"
-                                new_AM_LDFLAGS=""
-                        fi
-                ;;
-		i*6*-*-freebsd*)
-                        SOLINK="-shared -Xlinker -x"
-                        new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
-                        new_AM_LDFLAGS=""
-		;;
-		x86_64-*-freebsd*|amd64-*-freebsd*)
-                        SOLINK="-shared -Xlinker -x"
-                        new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
-                        new_AM_LDFLAGS=""
-		;;
+dnl check host_cpu type, set defines appropriately
+case $host_cpu in
+  i*86 | x86_64 )
+    AC_DEFINE([CPU_CISC], [1], [Define if building for a CISC machine (e.g. Intel).])
+    AC_DEFINE([HAVE_X86], [1], [Define to use X86 inlined assembly code])
+    ;;
+  * )
+    AC_DEFINE([CPU_RISC], [1], [Define if building for a RISC machine (assume slow byte access).])
+    ;;
 esac
 
-#  Enable 64 bit build
-AC_ARG_ENABLE(64,
-[AC_HELP_STRING([--enable-64],[build with 64 bit support])],[enable_64="$enable_64"],[enable_64="no"])
+dnl Check if we are on a Windows platform.
+case $host_os in
+  *cygwin*|*mingw* )
+    EXE=.exe
+    ;;
+  * )
+    EXE=""
+    ;;
+esac
+AC_SUBST([EXE])   # define executable suffix; this is needed for `make clean'
 
-if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
-    if test "${enable_64}" = "yes"; then
-        new_AM_CFLAGS="$new_AM_CFLAGS -m64"
+dnl Checks for supported compiler flags.
+supported_cflags=""
+if test "$EMPTY_CFLAGS" = "no"; then
+  supported_cflags="$CFLAGS"
+fi
+
+dnl For accurate detection, we need warnings as errors.
+dnl I.e. Clang will issue a warning about unsupported flags.
+dnl For the compilation to fail, those warnings needs to be upgraded to errors.
+dnl This will be removed again once the tests are complete (see below).
+WERROR=""
+for w in -Werror -errwarn; do
+  if test "x$WERROR" = "x"; then
+    AC_MSG_CHECKING([whether ${CC-c} accepts $w])
+    save_cflags="$CFLAGS"
+    AS_IF([test "x$CFLAGS" = "x"], [CFLAGS="$w"], [CFLAGS="$CFLAGS $w"])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
+      [WERROR="$w"
+       AC_MSG_RESULT([yes])],
+      [CFLAGS="$save_cflags"
+       AC_MSG_RESULT([no])])
+  fi
+done
+
+dnl Note that -fPIC is not explicitly added to LDFLAGS.
+dnl Since the compiler is used as the link driver, CFLAGS will be part of the
+dnl link line as well and the linker will get the flag from there.
+dnl Adding it to LDFLAGS explicitly would duplicate the flag on the link line,
+dnl but otherwise do no harm.
+AC_MSG_CHECKING([whether ${CC-c} accepts -fPIC])
+save_cflags="$CFLAGS"
+AS_IF([test "x$CFLAGS" = "x"], [CFLAGS="-fPIC"], [CFLAGS="$CFLAGS -fPIC"])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
+  [AS_IF([test "x$supported_cflags" = "x"], [supported_cflags="-fPIC"], [supported_cflags="$supported_cflags -fPIC"])
+   AC_MSG_RESULT([yes])],
+  [CFLAGS="$save_cflags"
+   AC_MSG_RESULT([no])])
+
+if test "$EMPTY_CFLAGS" = "yes"; then
+  for f in -Wall -pedantic -Wstrict-prototypes; do
+    AC_MSG_CHECKING([whether ${CC-c} accepts $f])
+    save_cflags="$CFLAGS"
+    AS_IF([test "x$CFLAGS" = "x"], [CFLAGS="$f"], [CFLAGS="$CFLAGS $f"])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
+      [AS_IF([test "x$supported_cflags" = "x"], [supported_cflags="$f"], [supported_cflags="$supported_cflags $f"])
+       AC_MSG_RESULT([yes])],
+      [CFLAGS="$save_cflags"
+       AC_MSG_RESULT([no])])
+  done
+
+  OOPT=""
+  for f in -O4 -O3; do
+    if test "x$OOPT" = "x"; then
+      AC_MSG_CHECKING([whether ${CC-c} accepts $f])
+      save_cflags="$CFLAGS"
+      AS_IF([test "x$CFLAGS" = "x"], [CFLAGS="$f"], [CFLAGS="$CFLAGS $f"])
+      AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
+        [AS_IF([test "x$supported_cflags" = "x"], [supported_cflags="$f"], [supported_cflags="$supported_cflags $f"])
+         OOPT="$f"
+         AC_MSG_RESULT([yes])],
+        [CFLAGS="$save_cflags"
+         AC_MSG_RESULT([no])])
     fi
+  done
+
+  for f in -fexpensive-optimizations -funroll-loops; do
+    AC_MSG_CHECKING([whether ${CC-c} accepts $f])
+    save_cflags="$CFLAGS"
+    AS_IF([test "x$CFLAGS" = "x"], [CFLAGS="$f"], [CFLAGS="$CFLAGS $f"])
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
+      [AS_IF([test "x$supported_cflags" = "x"], [supported_cflags="$f"], [supported_cflags="$supported_cflags $f"])
+       AC_MSG_RESULT([yes])],
+      [CFLAGS="$save_cflags"
+       AC_MSG_RESULT([no])])
+  done
 fi
 
-AC_SUBST(new_AM_CFLAGS)
-AC_SUBST(new_AM_LDFLAGS)
-AC_SUBST(SOLINK)
-if test "x$FUNC_DEF" != "x"; then
-   AC_DEFINE_UNQUOTED([__FUNCTION__],[$FUNC_DEF],[define it the right way ;)])
-fi
-AC_DEFINE_UNQUOTED([inline],[$IN_LINE],[sunpro is bad at inline])
+dnl When turning off warnigns, we're expecting unrecognized command line option errors if they're not
+dnl supported. However, the -Wno-<warning> form isn't consulted unless a warning is triggered.
+dnl At least that's the case for GCC. So to check which warnings we can turn off, we need to check
+dnl if they can be turned on, thereby forcing GCC to take the argument into account right away.
+for f in -Wno-language-extension-token; do
+  AC_MSG_CHECKING([whether ${CC-c} accepts $f])
+  save_cflags="$CFLAGS"
+  testf=$(echo "$f" | $SED 's|-Wno-\(.*\)|-W\1|g')
+  AS_IF([test "x$CFLAGS" = "x"], [CFLAGS="$testf"], [CFLAGS="$CFLAGS $testf"])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
+    [AS_IF([test "x$supported_cflags" = "x"], [supported_cflags="$f"], [supported_cflags="$supported_cflags $f"])
+     AC_MSG_RESULT([yes])],
+    [CFLAGS="$save_cflags"
+     AC_MSG_RESULT([no])])
+done
 
-
-AC_ARG_ENABLE(kernel-linux,
-  [AS_HELP_STRING([--enable-kernel-linux],
-		  [build library to run in Linux kernel context])],
-  [], enable_kernel_linux=no)
-AC_MSG_CHECKING(whether to build for Linux kernel context)
-if test "$enable_kernel_linux" = "yes"; then
-   AC_DEFINE(SRTP_KERNEL, 1,
-	[Define to compile for kernel contexts.])
-   AC_DEFINE(SRTP_KERNEL_LINUX, 1,
-	[Define to compile for Linux kernel context.])
-fi
-AC_MSG_RESULT($enable_kernel_linux)
-
-dnl Check for /dev/urandom
-AC_CHECK_FILE(/dev/urandom, DEV_URANDOM=/dev/urandom,
-   [AC_CHECK_FILE(/dev/random, DEV_URANDOM=/dev/random)])
+dnl Remowing -Werror again
+CFLAGS="$supported_cflags"
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(stdlib.h)
-AC_CHECK_HEADERS(unistd.h)
-AC_CHECK_HEADERS(stdint.h)
-AC_CHECK_HEADERS(sys/uio.h)
-AC_CHECK_HEADERS(inttypes.h)
-AC_CHECK_HEADERS(sys/types.h)
-AC_CHECK_HEADERS(machine/types.h)
-AC_CHECK_HEADERS(sys/int_types.h)
-
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <inttypes.h>
-#include <byteswap.h>
-]],[[
-uint64_t y = 0x1122334455667788LL;
-bswap_64(y);
-]])],byteswap_cv_bswap_64_usable=yes,byteswap_cv_bswap_64_usable=no)
-
-if test "x${byteswap_cv_bswap_64_usable}" = "xyes" ; then
-AC_DEFINE([HAVE_BYTESWAP_H],1,[define if you have a usable bswap_64 in byteswap.h])
-fi
+AC_CHECK_HEADERS(
+    [unistd.h byteswap.h stdint.h sys/uio.h inttypes.h sys/types.h machine/types.h sys/int_types.h],
+    [], [], [AC_INCLUDES_DEFAULT])
 
 dnl socket() and friends
-AC_CHECK_HEADERS(sys/socket.h netinet/in.h arpa/inet.h)
-AC_CHECK_HEADERS(windows.h, [AC_CHECK_HEADERS(winsock2.h)])
+AC_CHECK_HEADERS([sys/socket.h netinet/in.h arpa/inet.h], [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS(
+    [windows.h],
+    [AC_CHECK_HEADERS([winsock2.h], [], [], [AC_INCLUDES_DEFAULT])],
+    [], [AC_INCLUDES_DEFAULT])
 
-AC_CHECK_HEADERS(syslog.h)
-
-AC_CHECK_TYPES([int8_t,uint8_t,int16_t,uint16_t,int32_t,uint32_t,uint64_t])
-AC_CHECK_SIZEOF(unsigned long)
-AC_CHECK_SIZEOF(unsigned long long)
+AC_CHECK_TYPES([int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, uint64_t])
+AC_CHECK_SIZEOF([unsigned long])
+AC_CHECK_SIZEOF([unsigned long long])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -173,176 +167,267 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 dnl Checks for library functions.
-AC_CHECK_FUNCS(socket inet_aton usleep sigaction)
+AC_CHECK_FUNCS([socket inet_aton usleep sigaction])
 
 dnl Find socket function if not found yet.
 if test "x$ac_cv_func_socket" = "xno"; then
-  AC_CHECK_LIB(socket, socket)
+  AC_CHECK_LIB([socket], [socket])
   AC_MSG_CHECKING([for socket in -lwsock32])
   SAVELIBS="$LIBS"
   LIBS="$LIBS -lwsock32"
-  AC_TRY_LINK([
+  AC_LINK_IFELSE(
+    [AC_LANG_SOURCE([
 #include <winsock2.h>
-],[
-socket(0, 0, 0);
-],
-    ac_cv_func_socket=yes
-    AC_MSG_RESULT(yes),
-    LIBS="$SAVELIBS"
-    AC_MSG_RESULT(no))
+int main(void)
+{
+    int fd = socket(0, 0, 0);
+    if (fd < 0)
+      return -1;
+    else
+      return 0;
+}
+    ])],
+    [ac_cv_func_socket=yes
+     AC_MSG_RESULT([yes])],
+    [LIBS="$SAVELIBS"
+     AC_MSG_RESULT([no])])
 fi
 
-dnl Check the byte order
-AC_C_BIGENDIAN
-
-
-dnl check host_cpu type, set defines appropriately
-case $host_cpu in
-     i*86 | x86_64 )
-	AC_DEFINE(CPU_CISC, 1,
-	   [Define if building for a CISC machine (e.g. Intel).])
-	# Do not enable use of asm for MACOSX
-        if test "x$new_AM_CFLAGS" != "x-DMACOSX"; then 
-	  AC_DEFINE(HAVE_X86, 1,
-	   [Define to use X86 inlined assembly code]) 
-	fi
-	;;
-	* )
-	# CPU_RISC is only supported for big endian machines.
-	if test "$ac_cv_c_bigendian" = "yes"; then
-	   AC_DEFINE(CPU_RISC, 1,
-	    [Define if building for a RISC machine (assume slow byte access).])
-	else
-	   AC_DEFINE(CPU_CISC, 1)
-	fi
-	;;
-esac	
-
-dnl Check if we're on a Windows platform.
-case $host_os in
-  *cygwin*|*mingw* ) 
-	      EXE=.exe;;
-         * )  EXE="";;
-esac
-
-AC_SUBST(EXE)   # define executable suffix; this is needed for `make clean'
-
-AC_MSG_CHECKING(whether to compile in debugging)
-AC_ARG_ENABLE(debug,
-  [AS_HELP_STRING([--disable-debug],
-		  [do not compile in dynamic debugging system])],
-  [], enable_debug=yes)
-if test "$enable_debug" = "yes"; then
-   AC_DEFINE(ENABLE_DEBUGGING, 1,
-      [Define to compile in dynamic debugging system.])
+AC_MSG_CHECKING([whether to enable debug logging in all modules])
+AC_ARG_ENABLE([debug-logging],
+  [AS_HELP_STRING([--enable-debug-logging], [Enable debug logging in all modules])],
+  [], enable_debug_logging=no)
+if test "$enable_debug_logging" = "yes"; then
+   AC_DEFINE([ENABLE_DEBUG_LOGGING], [1], [Define to enabled debug logging for all mudules.])
 fi
-AC_MSG_RESULT($enable_debug)
+AC_MSG_RESULT([$enable_debug_logging])
 
-AC_MSG_CHECKING(whether to use ISMAcryp code)
-AC_ARG_ENABLE(generic-aesicm,
-  [AS_HELP_STRING([--enable-generic-aesicm],
-		  [compile in changes for ISMAcryp])],
-  [], enable_generic_aesicm=no)
-if test "$enable_generic_aesicm" = "yes"; then
-   AC_DEFINE(GENERIC_AESICM, 1, [Define this to use ISMAcryp code.])
-fi
-AC_MSG_RESULT($enable_generic_aesicm)
+PKG_PROG_PKG_CONFIG
+AS_IF([test "x$PKG_CONFIG" != "x"], [PKG_CONFIG="$PKG_CONFIG --static"])
 
-AC_MSG_CHECKING(whether to leverage OpenSSL crypto)
-AC_ARG_ENABLE(openssl,
-  [AS_HELP_STRING([--enable-openssl],
-		  [compile in OpenSSL crypto engine])],
-  [], enable_openssl=no)
+AC_MSG_CHECKING([whether to leverage OpenSSL crypto])
+AC_ARG_ENABLE([openssl],
+  [AS_HELP_STRING([--enable-openssl], [compile in OpenSSL crypto engine])],
+  [], [enable_openssl=no])
+AC_MSG_RESULT([$enable_openssl])
+
+AC_MSG_CHECKING([whether to leverage NSS crypto])
+AC_ARG_ENABLE([nss],
+  [AS_HELP_STRING([--enable-nss], [compile in NSS crypto engine])],
+  [], [enable_nss=no])
+AC_MSG_RESULT([$enable_nss])
+
 if test "$enable_openssl" = "yes"; then
-   echo $enable_openssl
-   LDFLAGS="$LDFLAGS $(pkg-config --libs openssl)";
-   CFLAGS="$CFLAGS $(pkg-config --cflags openssl)";
+   AC_MSG_CHECKING([for user specified OpenSSL directory])
+   AC_ARG_WITH([openssl-dir],
+      [AS_HELP_STRING([--with-openssl-dir], [Location of OpenSSL installation])],
+      [if test "x$PKG_CONFIG" != "x" && test -f $with_openssl_dir/lib/pkgconfig/libcrypto.pc; then
+         if test "x$PKG_CONFIG_PATH" = "x"; then
+           export PKG_CONFIG_PATH="$with_openssl_dir/lib/pkgconfig"
+         else
+           export PKG_CONFIG_PATH="$with_openssl_dir/lib/pkgconfig:$PKG_CONFIG_PATH"
+         fi
+         AC_MSG_RESULT([$with_openssl_dir])
+       elif test -d $with_openssl_dir/lib; then
+         CFLAGS="$CFLAGS -I$with_openssl_dir/include"
+         if test "x$LDFLAGS" = "x"; then
+           LDFLAGS="-L$with_openssl_dir/lib"
+         else
+           LDFLAGS="$LDFLAGS -L$with_openssl_dir/lib"
+         fi
+         AC_MSG_RESULT([$with_openssl_dir])
+       else
+         AC_MSG_RESULT([invalid])
+         AC_MSG_FAILURE([Invalid OpenSSL location: $with_openssl_dir])
+       fi],
+      [AC_MSG_RESULT([no])])
 
-   AC_CHECK_LIB([crypto], [EVP_EncryptInit], [],
-             [AC_MSG_FAILURE([can't find openssl >1.0.1 crypto lib])])
-   AC_CHECK_LIB([crypto], [EVP_aes_128_ctr], [],
-             [AC_MSG_FAILURE([can't find openssl >1.0.1 crypto lib])])
-   AC_CHECK_LIB([crypto], [EVP_aes_128_gcm], [],
-             [AC_MSG_FAILURE([can't find openssl >1.0.1 crypto lib])])
-   AC_DEFINE(OPENSSL, 1, [Define this to use OpenSSL crypto.])
+   if test "x$PKG_CONFIG" != "x"; then
+     PKG_CHECK_MODULES([crypto], [libcrypto >= 1.0.1],
+       [CFLAGS="$CFLAGS $crypto_CFLAGS"
+        LIBS="$crypto_LIBS $LIBS"])
+   else
+     AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_WARN([can't find libdl])])
+     AC_CHECK_LIB([z], [inflate], [], [AC_MSG_WARN([can't find libz])])
+   fi
+
+   AC_SEARCH_LIBS([EVP_EncryptInit], [crypto],
+     [], [AC_MSG_FAILURE([can't find openssl >= 1.0.1 crypto lib])])
+   AC_SEARCH_LIBS([EVP_aes_128_ctr], [crypto],
+     [], [AC_MSG_FAILURE([can't find openssl >= 1.0.1 crypto lib])])
+   AC_SEARCH_LIBS([EVP_aes_128_gcm], [crypto],
+     [], [AC_MSG_FAILURE([can't find openssl >= 1.0.1 crypto lib])])
+
+   AC_DEFINE([GCM], [1], [Define this to use AES-GCM.])
+   AC_DEFINE([OPENSSL], [1], [Define this to use OpenSSL crypto.])
    AES_ICM_OBJS="crypto/cipher/aes_icm_ossl.o crypto/cipher/aes_gcm_ossl.o"
    HMAC_OBJS=crypto/hash/hmac_ossl.o
-   USE_OPENSSL=1
-   AC_SUBST(USE_OPENSSL)
-else
-   echo $enable_openssl
-   AES_ICM_OBJS="crypto/cipher/aes_icm.o crypto/cipher/aes.o crypto/cipher/aes_cbc.o"
-   AC_MSG_CHECKING(which random device to use)
-   if test "$enable_kernel_linux" = "yes"; then
-      AC_MSG_RESULT([Linux kernel builtin])
-   else
-      if test -n "$DEV_URANDOM"; then
-         AC_DEFINE_UNQUOTED(DEV_URANDOM, "$DEV_URANDOM",[Path to random device])
-         AC_MSG_RESULT([$DEV_URANDOM])
-      else
-         AC_MSG_RESULT([standard rand() function...])
-      fi
+   AC_SUBST([USE_EXTERNAL_CRYPTO], [1])
+
+   AC_MSG_CHECKING([if OPENSSL_cleanse is broken])
+   AC_RUN_IFELSE([AC_LANG_PROGRAM([
+     #include <stdio.h>
+     #include <openssl/crypto.h>
+   ], [
+     #define BUFFER_SIZE (16)
+     char buffer[[BUFFER_SIZE]];
+     int i;
+     for (i = 0; i < BUFFER_SIZE; i++) {
+       buffer[[i]] = i & 0xff;
+     }
+     OPENSSL_cleanse(buffer, BUFFER_SIZE);
+     for (i = 0; i < BUFFER_SIZE; i++) {
+       if (buffer[[i]]) {
+         printf("Buffer contents not zero at position %d (is %d)\n", i,
+             buffer[[i]]);
+         return 1;
+       }
+     }
+   ])], [openssl_cleanse_broken=no], [
+     openssl_cleanse_broken=yes
+     AC_DEFINE([OPENSSL_CLEANSE_BROKEN], [1], [Define this if OPENSSL_cleanse is broken.])
+   ])
+   AC_MSG_RESULT([$openssl_cleanse_broken])
+
+   AC_MSG_CHECKING([whether to leverage OpenSSL KDF algorithm])
+   AC_ARG_ENABLE([openssl-kdf],
+      [AS_HELP_STRING([--enable-openssl-kdf], [Use OpenSSL KDF algorithm])],
+      [], [enable_openssl_kdf=no])
+   AC_MSG_RESULT([$enable_openssl_kdf])
+   if test "$enable_openssl_kdf" = "yes"; then
+     AC_SEARCH_LIBS([kdf_srtp], [crypto],
+       [], [AC_MSG_FAILURE([can't find openssl KDF lib])])
+     AC_DEFINE([OPENSSL_KDF], [1], [Define this to use OpenSSL KDF for SRTP.])
    fi
+elif test "$enable_nss" = "yes"; then
+   AC_MSG_CHECKING([for user specified NSS directory])
+   AC_ARG_WITH([nss-dir],
+      [AS_HELP_STRING([--with-nss-dir], [Location of NSS installation])],
+      [if test "x$PKG_CONFIG" != "x" && test -f $with_nss_dir/lib/pkgconfig/nss.pc; then
+         if test "x$PKG_CONFIG_PATH" = "x"; then
+           export PKG_CONFIG_PATH="$with_nss_dir/lib/pkgconfig"
+         else
+           export PKG_CONFIG_PATH="$with_nss_dir/lib/pkgconfig:$PKG_CONFIG_PATH"
+         fi
+         AC_MSG_RESULT([$with_nss_dir])
+       elif test -d $with_nss_dir/lib; then
+         CFLAGS="$CFLAGS -I$with_nss_dir/include"
+         CFLAGS="$CFLAGS -I$with_nss_dir/../public/nss"
+         if test "x$LDFLAGS" = "x"; then
+           LDFLAGS="-L$with_nss_dir/lib"
+         else
+           LDFLAGS="$LDFLAGS -L$with_nss_dir/lib"
+         fi
+         nss_skip_pkg_config=yes
+         AC_MSG_RESULT([$with_nss_dir])
+       else
+         AC_MSG_RESULT([invalid])
+         AC_MSG_FAILURE([Invalid NSS location: $with_nss_dir])
+       fi
+       AC_SUBST([CRYPTO_LIBDIR], [$with_nss_dir/lib])],
+      [AC_MSG_RESULT([no])])
+
+   if test "x$PKG_CONFIG" != "x" && test "$nss_skip_pkg_config" != "yes"; then
+     PKG_CHECK_MODULES([nss], [nss],
+       [CFLAGS="$CFLAGS $nss_CFLAGS"
+         LIBS="$nss_LIBS $LIBS"])
+   else
+     AC_CHECK_HEADERS(
+       [nss.h],
+       [], [AC_MSG_FAILURE([can't find useable NSS headers])],
+       [AC_INCLUDES_DEFAULT])
+     AC_CHECK_LIB(
+       [nspr4], [PR_GetError],
+       [], [AC_MSG_WARN([can't find libnspr4])])
+     AC_CHECK_LIB(
+       [nss3], [NSS_NoDB_Init],
+       [], [AC_MSG_FAILURE([can't find useable libnss3])])
+   fi
+
+   AC_DEFINE([GCM], [1], [Define this to use AES-GCM.])
+   AC_DEFINE([NSS], [1], [Define this to use NSS crypto.])
+   AES_ICM_OBJS="crypto/cipher/aes_icm_nss.o crypto/cipher/aes_gcm_nss.o"
+
+   # TODO(RLB): Use NSS for HMAC
+   HMAC_OBJS="crypto/hash/hmac.o crypto/hash/sha1.o"
+
+   # TODO(RLB): Use NSS for KDF
+
+   AC_SUBST([USE_EXTERNAL_CRYPTO], [1])
+else
+   AES_ICM_OBJS="crypto/cipher/aes_icm.o crypto/cipher/aes.o"
    HMAC_OBJS="crypto/hash/hmac.o crypto/hash/sha1.o"
 fi
 AM_CONDITIONAL([ENABLE_OPENSSL],[test "${enable_openssl}" = "yes"])
 
-AC_SUBST(AES_ICM_OBJS)                              
-AC_SUBST(HMAC_OBJS)
+AC_SUBST([AES_ICM_OBJS])
+AC_SUBST([HMAC_OBJS])
 AC_MSG_RESULT($enable_openssl)
 
-AC_MSG_CHECKING(whether to use syslog for error reporting)
-AC_ARG_ENABLE(syslog,
-  [AS_HELP_STRING([--enable-syslog], [use syslog for error reporting])],
-  [], enable_syslog=no)
-if test "$enable_syslog" = "yes"; then
-   AC_DEFINE(USE_SYSLOG, 1, [Define to use syslog logging.])
+dnl Checking for PCAP
+
+PCAP_LIB=""
+AC_ARG_ENABLE([pcap], AS_HELP_STRING([--disable-pcap], [Build without `pcap' library (-lpcap)]))
+AS_IF([test "x$enable_pcap" != "xno"], [
+  AC_CHECK_LIB([pcap], [pcap_create],
+    [PCAP_LIB="-lpcap"
+     AC_DEFINE([HAVE_PCAP], [1], [Define to 1 if you have the `pcap' library (-lpcap)])
+     AC_SUBST([HAVE_PCAP], [1])])
+
+  AC_CHECK_LIB([wpcap], [pcap_create],
+    [PCAP_LIB="-lwpcap"
+     AC_DEFINE([HAVE_PCAP], [1], [Define to 1 if you have the `winpcap' library (-lwpcap)])
+     AC_SUBST([HAVE_PCAP], [1])])
+])
+AC_SUBST([PCAP_LIB])
+   
+AC_MSG_CHECKING([whether to redirect logging to stdout])
+AC_ARG_ENABLE([log-stdout],
+  [AS_HELP_STRING([--enable-log-stdout], [redirecting logging to stdout])],
+  [], [enable_log_stdout=no])
+if test "$enable_log_stdout" = "yes"; then
+   AC_DEFINE([ERR_REPORTING_STDOUT], [1], [Define to redirect logging to stdout.])
 fi
-AC_MSG_RESULT($enable_syslog)
+AC_MSG_RESULT([$enable_log_stdout])
 
-AC_MSG_CHECKING(whether to use stdout for error reporting)
-AC_ARG_ENABLE(stdout,
-  [AS_HELP_STRING([--disable-stdout], [don't use stdout for error reporting])],
-  [], enable_stdout=yes)
-if test "$enable_stdout" = "yes"; then
-   AC_DEFINE(ERR_REPORTING_STDOUT, 1, [Define to use logging to stdout.])
-fi
-AC_MSG_RESULT($enable_stdout)
+AC_MSG_CHECKING([wheather to use a file for logging])
+AC_ARG_WITH([log-file],
+  [AS_HELP_STRING([--with-log-file], [Use file for logging])],
+  [AS_CASE([x$with_log_file],
+     [x], [valid_with_log_file="no"],
+     [xyes], [valid_with_log_file="no"],
+     [valid_with_error_file="yes"])
+   AS_IF([test "$valid_with_log_file" = "no"],
+     [AC_MSG_RESULT([invalid])
+      AC_MSG_FAILURE([Invalid value for --with-log-file: "$with_log_file"])],
+     [AC_DEFINE_UNQUOTED([ERR_REPORTING_FILE], ["$with_log_file"], [Logging statments will be writen to this file.])
+      AC_MSG_RESULT([using log file: "$with_log_file"])])],
+  [AC_MSG_RESULT([no])])
 
-AC_MSG_CHECKING(whether to use /dev/console for error reporting)
-AC_ARG_ENABLE(console,
-  [AS_HELP_STRING([--enable-console], [use /dev/console for error reporting])],
-  [], enable_console=no)
-if test "$enable_console" = "yes"; then
-   AC_DEFINE(USE_ERR_REPORTING_FILE, 1, [Write errors to this file])
-   AC_DEFINE(ERR_REPORTING_FILE, "/dev/console", [Report errors to this file.])
-fi
-AC_MSG_RESULT($enable_console)
+AS_IF(
+  [test "$enable_log_stdout" = "yes" && test "x$with_log_file" != "x"],
+  [AC_MSG_FAILURE([Can only use one of --enable-log-stdout and --with-log-file; they are mutually exclusive])])
 
-AC_MSG_CHECKING(whether to use GDOI key management)
-AC_ARG_ENABLE(gdoi,
-  [AS_HELP_STRING([--enable-gdoi], [enable GDOI key management])],
-  [], enable_gdoi=no)
-if test "$enable_gdoi" = "yes"; then
-   AC_DEFINE(SRTP_GDOI, 1, [Define to use GDOI.])
-   GDOI_OBJS=gdoi/srtp+gdoi.o
-   AC_SUBST(GDOI_OBJS)                              
-fi
-AC_MSG_RESULT($enable_gdoi)
-AM_CONDITIONAL([GDOI],[test "SRTP_GDOI" = "1"])
+dnl Appending EXTRA_CFLAGS, if given
+AC_MSG_CHECKING([for extra C compiler flags])
+AS_IF([test "x$EXTRA_CFLAGS" != "x"],
+   [AS_IF([test "x$CFLAGS" = "x"],
+      [CFLAGS="$EXTRA_CFLAGS"], [CFLAGS="$CFLAGS $EXTRA_CFLAGS"])
+    AC_MSG_RESULT([$EXTRA_CFLAGS])],
+   [AC_MSG_RESULT(no)])
 
-AC_CONFIG_HEADERS(crypto/include/config.h:config_in.h)
+AC_CONFIG_HEADERS([crypto/include/config.h:config_in.h])
 
-AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile libsrtp2.pc)
+AC_CONFIG_FILES([Makefile crypto/Makefile doc/Makefile test/Makefile libsrtp2.pc])
+AC_OUTPUT
 
 # This is needed when building outside the source dir.
-AS_MKDIR_P(crypto/cipher)
-AS_MKDIR_P(crypto/hash)
-AS_MKDIR_P(crypto/kernel)
-AS_MKDIR_P(crypto/math)
-AS_MKDIR_P(crypto/replay)
-AS_MKDIR_P(crypto/test)
-AS_MKDIR_P(doc)
-AS_MKDIR_P(srtp)
-AS_MKDIR_P(tables)
-AS_MKDIR_P(test)
+AS_MKDIR_P([crypto/cipher])
+AS_MKDIR_P([crypto/hash])
+AS_MKDIR_P([crypto/kernel])
+AS_MKDIR_P([crypto/math])
+AS_MKDIR_P([crypto/replay])
+AS_MKDIR_P([crypto/test])
+AS_MKDIR_P([doc])
+AS_MKDIR_P([srtp])
+AS_MKDIR_P([test])
