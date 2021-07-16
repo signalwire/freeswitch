@@ -856,7 +856,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 
 		if (sofia_test_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY)) {
 			const char *mwi_status = NULL;
-			char network_ip[80];
+			char network_ip[80] = "";
 			uint32_t x = 0;
 			int acl_ok = 1;
 			char *last_acl = NULL;
@@ -1616,7 +1616,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 
 		if (authorization) {
-			char network_ip[80];
+			char network_ip[80] = "";
 			int network_port;
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
@@ -10192,7 +10192,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-		char network_ip[80];
+		char network_ip[80] = "";
 		int network_port = 0;
 		char via_space[2048];
 		char branch[16] = "";
@@ -10308,7 +10308,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	const char *referred_by_user = NULL;//, *referred_by_host = NULL;
 	const char *context = NULL;
 	const char *dialplan = NULL;
-	char network_ip[80];
+	char network_ip[80] = "";
 	char proxied_client_ip[80];
 	switch_event_t *v_event = NULL;
 	switch_xml_t x_user = NULL;
