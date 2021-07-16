@@ -23,7 +23,9 @@ if not opts:
 
 opt = opts[0][0]
 
-pyver = sysconfig.get_config_var('VERSION')
+pyver = sysconfig.get_config_var('LDVERSION')
+if pyver == None:
+    pyver = sysconfig.get_config_var('VERSION')
 getvar = sysconfig.get_config_var
 
 if opt == '--help':
