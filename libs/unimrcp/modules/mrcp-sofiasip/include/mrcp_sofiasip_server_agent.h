@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_sofiasip_server_agent.h 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SOFIASIP_SERVER_AGENT_H
@@ -51,6 +49,17 @@ struct mrcp_sofia_server_config_t {
 	/** Force destination IP address. Should be used only in case 
 	SDP contains incorrect connection address (local IP address behind NAT) */
 	apt_bool_t force_destination;
+	/** Disable the Sofia SIP SDP Offer/Answer Engine Module (soa). Should
+	only be used if dynamic payload type negotiation is needed AND you know
+	that your clients will only use the 'Basic Call' SDP Offer/Answer
+	scenario. */
+	apt_bool_t disable_soa;
+	/** Extract feature tags (Accept-Contact) */
+	apt_bool_t extract_feature_tags;
+	/** Extract call id */
+	apt_bool_t extract_call_id;
+	/** Extract user name */
+	apt_bool_t extract_user_name;
 	/** SIP T1 timer */
 	apr_size_t sip_t1;
 	/** SIP T2 timer */
@@ -59,6 +68,10 @@ struct mrcp_sofia_server_config_t {
 	apr_size_t sip_t4;
 	/** SIP T1x64 timer */
 	apr_size_t sip_t1x64;
+	/** SIP Sessione-Expires */
+	apr_size_t session_expires;
+	/** SIP Min-SE */
+	apr_size_t min_session_expires;
 	/** Print out SIP messages to the console */
 	apt_bool_t tport_log;
 	/** Dump SIP messages to the specified file */
@@ -74,11 +87,6 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_sofiasip_server_agent_create(const char *id
  * Allocate Sofia-SIP config.
  */
 MRCP_DECLARE(mrcp_sofia_server_config_t*) mrcp_sofiasip_server_config_alloc(apr_pool_t *pool);
-
-/**
- * Initialize Sofia-SIP logger.
- */
-MRCP_DECLARE(apt_bool_t) mrcp_sofiasip_server_logger_init(const char *name, const char *level_str, apt_bool_t redirect);
 
 APT_END_EXTERN_C
 

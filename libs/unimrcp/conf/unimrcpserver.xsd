@@ -57,6 +57,10 @@
                     <xsd:element name="sip-port" type="xsd:short" />
                     <xsd:element name="sip-transport" type="xsd:string" />
                     <xsd:element name="force-destination" type="xsd:boolean" default="false" minOccurs="0" />
+                    <xsd:element name="disable-soa" type="xsd:boolean" default="false" minOccurs="0" />
+                    <xsd:element name="extract-feature-tags" type="xsd:boolean" default="true" minOccurs="0" />
+                    <xsd:element name="extract-call-id" type="xsd:boolean" default="false" minOccurs="0" />
+                    <xsd:element name="extract-user-name" type="xsd:boolean" default="false" minOccurs="0" />
                     <xsd:element name="ua-name" type="xsd:string" minOccurs="0" />
                     <xsd:element name="sdp-origin" type="xsd:string" minOccurs="0" />
                     <xsd:element name="sip-t1" type="xsd:long" minOccurs="0" />
@@ -239,6 +243,7 @@
                     <xsd:element name="media-engine" type="xsd:string" />
                     <xsd:element name="rtp-factory" type="xsd:string" />
                     <xsd:element name="rtp-settings" type="xsd:string" />
+                    <xsd:element name="resource-engine-map" type="xsd:string" />
                   </xsd:sequence>
                   <xsd:attribute name="id" type="xsd:string" use="required" />
                   <xsd:attribute name="enable" type="xsd:boolean" use="optional" />
@@ -254,6 +259,7 @@
                     <xsd:element name="media-engine" type="xsd:string" />
                     <xsd:element name="rtp-factory" type="xsd:string" />
                     <xsd:element name="rtp-settings" type="xsd:string" />
+                    <xsd:element name="resource-engine-map" type="xsd:string" />
                   </xsd:sequence>
                   <xsd:attribute name="id" type="xsd:string" use="required" />
                   <xsd:attribute name="enable" type="xsd:boolean" use="optional" />
@@ -275,3 +281,4 @@
     </xsd:complexType>
   </xsd:element>
 </xsd:schema>
+

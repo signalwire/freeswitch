@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: synthscenario.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -27,8 +25,10 @@
 
 SynthScenario::SynthScenario() :
 	m_Speak(true),
+	m_SpeechLanguage(NULL),
 	m_ContentType("application/synthesis+ssml"),
-	m_Content(NULL)
+	m_Content(NULL),
+	m_ContentLength(0)
 {
 }
 
@@ -63,13 +63,17 @@ bool SynthScenario::LoadSpeak(const apr_xml_elem* pElem, apr_pool_t* pool)
 		{
 			m_Speak = atoi(pAttr->value) > 0;
 		}
+		else if (strcasecmp(pAttr->name, "speech-language") == 0)
+		{
+			m_SpeechLanguage = pAttr->value;
+		}
 		else if(strcasecmp(pAttr->name,"content-type") == 0)
 		{
 			m_ContentType = pAttr->value;
 		}
 		else if(strcasecmp(pAttr->name,"content-location") == 0)
 		{
-			m_Content = LoadFileContent(pAttr->value,pool);
+			m_Content = LoadFileContent(pAttr->value,m_ContentLength,pool);
 		}
 	}
 

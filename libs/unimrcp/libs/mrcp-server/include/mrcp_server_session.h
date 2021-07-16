@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_server_session.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_SESSION_H
@@ -100,6 +98,11 @@ struct mrcp_server_session_t {
 	/** In-progres answer */
 	mrcp_session_descriptor_t  *answer;
 
+	/** Last offer received */
+	mrcp_session_descriptor_t  *last_offer;
+	/** Last answer sent */
+	mrcp_session_descriptor_t  *last_answer;
+
 	/** MPF task message, which construction is in progress */
 	mpf_task_msg_t             *mpf_task_msg;
 
@@ -115,7 +118,7 @@ struct mrcp_server_profile_t {
 	const char                *id;
 	/** MRCP version */
 	mrcp_version_e             mrcp_version;
-	/** Table of engines (mrcp_engine_t*) */
+	/** Table of engines (mrcp_engine_settings_t*) */
 	apr_hash_t                *engine_table;
 	/** MRCP resource factory */
 	mrcp_resource_factory_t   *resource_factory;

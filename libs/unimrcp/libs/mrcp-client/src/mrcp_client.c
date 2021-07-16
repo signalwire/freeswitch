@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_client.c 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #include <apr_thread_cond.h>
@@ -664,12 +662,10 @@ MRCP_DECLARE(apt_dir_layout_t*) mrcp_client_dir_layout_get(const mrcp_client_t *
 	return client->dir_layout;
 }
 
-mrcp_client_session_t* mrcp_client_session_create(mrcp_client_t *client)
+mrcp_client_session_t* mrcp_client_session_create_ex(mrcp_client_t *client, apt_bool_t take_ownership, apr_pool_t *pool)
 {
-	apr_pool_t *pool;
-	mrcp_client_session_t *session = (mrcp_client_session_t*) mrcp_session_create(sizeof(mrcp_client_session_t)-sizeof(mrcp_session_t));
-	
-	pool = session->base.pool;
+	mrcp_client_session_t *session = (mrcp_client_session_t*) mrcp_session_create_ex(pool,take_ownership,sizeof(mrcp_client_session_t)-sizeof(mrcp_session_t));
+
 	session->base.name = apr_psprintf(pool,"0x%pp",session);
 	session->base.response_vtable = &session_response_vtable;
 	session->base.event_vtable = &session_event_vtable;
@@ -691,13 +687,14 @@ mrcp_client_session_t* mrcp_client_session_create(mrcp_client_t *client)
 	session->disconnected = FALSE;
 	session->state = SESSION_STATE_NONE;
 	session->status = MRCP_SIG_STATUS_CODE_SUCCESS;
+	session->attribs = NULL;
 	return session;
 }
 
 void mrcp_client_session_add(mrcp_client_t *client, mrcp_client_session_t *session)
 {
 	if(session) {
-		apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,session->base.log_obj,"Add MRCP Handle "APT_NAMESID_FMT,
+		apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,session->base.log_obj,"Add MRCP Handle " APT_NAMESID_FMT,
 			session->base.name,
 			MRCP_SESSION_SID(&session->base));
 		apr_hash_set(client->session_table,session,sizeof(void*),session);
@@ -707,7 +704,7 @@ void mrcp_client_session_add(mrcp_client_t *client, mrcp_client_session_t *sessi
 void mrcp_client_session_remove(mrcp_client_t *client, mrcp_client_session_t *session)
 {
 	if(session) {
-		apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,session->base.log_obj,"Remove MRCP Handle "APT_NAMESID_FMT,
+		apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,session->base.log_obj,"Remove MRCP Handle " APT_NAMESID_FMT,
 			session->base.name,
 			MRCP_SESSION_SID(&session->base));
 		apr_hash_set(client->session_table,session,sizeof(void*),NULL);

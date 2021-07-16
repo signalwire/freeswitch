@@ -1,3 +1,0 @@
-#include "setup.txt"
-#define uni_outdir "..\..\Release"
-OutputBaseFilename=unimrcp-{#= uni_version}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_engine_types.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_ENGINE_TYPES_H
@@ -25,6 +23,7 @@
  */ 
 
 #include <apr_tables.h>
+#include <apr_hash.h>
 #include "mrcp_state_machine.h"
 #include "mpf_types.h"
 #include "apt_string.h"
@@ -35,6 +34,8 @@ APT_BEGIN_EXTERN_C
 typedef struct mrcp_engine_t mrcp_engine_t;
 /** MRCP engine config declaration */
 typedef struct mrcp_engine_config_t mrcp_engine_config_t;
+/** MRCP engine profile settings declaration */
+typedef struct mrcp_engine_settings_t mrcp_engine_settings_t;
 /** MRCP engine vtable declaration */
 typedef struct mrcp_engine_method_vtable_t mrcp_engine_method_vtable_t;
 /** MRCP engine event vtable declaration */
@@ -87,9 +88,11 @@ struct mrcp_engine_channel_t {
 	/** MRCP version */
 	mrcp_version_e                             mrcp_version;
 	/** Is channel successfully opened */
-	apt_bool_t                                is_open;
+	apt_bool_t                                 is_open;
 	/** Pool to allocate memory from */
 	apr_pool_t                                *pool;
+	/** Name/value attributes */
+	apr_table_t                               *attribs;
 };
 
 /** Table of MRCP engine virtual methods */
@@ -149,6 +152,18 @@ struct mrcp_engine_config_t {
 	apr_size_t   max_channel_count;
 	/** Table of name/value string params */
 	apr_table_t *params;
+};
+
+/** MRCP engine profile settings */
+struct mrcp_engine_settings_t {
+	/** Identifier of the resource loaded from configuration */
+	const char    *resource_id;
+	/** Identifier of the engine loaded from configuration */
+	const char    *engine_id;
+	/** Table of name/value string attributes loaded from configuration */
+	apr_table_t   *attribs;
+	/** Associated engine */
+	mrcp_engine_t *engine;
 };
 
 APT_END_EXTERN_C

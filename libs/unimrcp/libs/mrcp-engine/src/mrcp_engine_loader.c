@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_engine_loader.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <apr_dso.h>
@@ -117,6 +115,14 @@ static apt_bool_t plugin_logger_load(apr_dso_handle_t *plugin)
 		mrcp_plugin_log_accessor_f log_accessor;
 		log_accessor = (mrcp_plugin_log_accessor_f)(intptr_t)func_handle;
 		log_accessor(logger);
+	}
+
+	if(apr_dso_sym(&func_handle,plugin,MRCP_PLUGIN_LOG_SOURCE_SYM_NAME) == APR_SUCCESS) {
+		if(func_handle) {
+			mrcp_plugin_log_source_accessor_f log_source_accessor;
+			log_source_accessor = (mrcp_plugin_log_source_accessor_f)(intptr_t)func_handle;
+			log_source_accessor(&def_log_source);
+		}
 	}
 	return TRUE;
 }

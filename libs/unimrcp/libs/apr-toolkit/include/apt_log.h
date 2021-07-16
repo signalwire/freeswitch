@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_log.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef APT_LOG_H
@@ -35,8 +33,26 @@ APT_BEGIN_EXTERN_C
 /** Default max number of log files used in rotation */
 #define MAX_LOG_FILE_COUNT 100
 
-/** File:line mark */
-#define APT_LOG_MARK   __FILE__,__LINE__
+/** Opaque log source declaration */
+typedef struct apt_log_source_t apt_log_source_t;
+
+/** Declaration of log mark to be used by custom log sources */
+#define APT_LOG_MARK_DECLARE(LOG_SOURCE)   LOG_SOURCE,__FILE__,__LINE__
+
+/** Use this macro in a header file to declare a custom log source */
+#define APT_LOG_SOURCE_DECLARE(SCOPE,LOG_SOURCE) \
+	extern apt_log_source_t *LOG_SOURCE; \
+	SCOPE##_DECLARE(void) LOG_SOURCE##_init();
+
+/** Use this macro in a source file to implement a custom log source */
+#define APT_LOG_SOURCE_IMPLEMENT(SCOPE, LOG_SOURCE, LOG_SOURCE_TAG) \
+	apt_log_source_t *LOG_SOURCE = &def_log_source; \
+	SCOPE##_DECLARE(void) LOG_SOURCE##_init() {apt_log_source_assign(LOG_SOURCE_TAG,&LOG_SOURCE);}
+
+/** Default (globally available) log source */
+extern apt_log_source_t def_log_source;
+/** Default log mark providing log source, file and line information */
+#define APT_LOG_MARK   APT_LOG_MARK_DECLARE(&def_log_source)
 
 /*
  * Definition of common formats used with apt_log().
@@ -58,8 +74,8 @@ APT_BEGIN_EXTERN_C
 /** Format to log string identifiers and resources */
 #define APT_SIDRES_FMT    "<%s@%s>"
 /** Format to log pointers and identifiers */
-#define APT_PTRSID_FMT    APT_PTR_FMT" " APT_SID_FMT
-/** Format to log pointers and identifiers */
+#define APT_PTRSID_FMT    APT_PTR_FMT " " APT_SID_FMT
+/** Format to log names and identifiers */
 #define APT_NAMESID_FMT   "%s " APT_SID_FMT
 /** Format to log names, identifiers and resources */
 #define APT_NAMESIDRES_FMT "%s " APT_SIDRES_FMT
@@ -94,7 +110,8 @@ typedef enum {
 typedef enum {
 	APT_LOG_OUTPUT_NONE     = 0x00, /**< disable logging */
 	APT_LOG_OUTPUT_CONSOLE  = 0x01, /**< enable console output */
-	APT_LOG_OUTPUT_FILE     = 0x02  /**< enable log file output */
+	APT_LOG_OUTPUT_FILE     = 0x02, /**< enable log file output */
+	APT_LOG_OUTPUT_SYSLOG   = 0x04  /**< enable syslog output */
 } apt_log_output_e;
 
 /** Masking mode of private data */
@@ -139,8 +156,22 @@ APT_DECLARE(apt_logger_t*) apt_log_instance_get(void);
 
 /**
  * Set the singleton instance of the logger.
+ * @param logger the logger to set
  */
 APT_DECLARE(apt_bool_t) apt_log_instance_set(apt_logger_t *logger);
+
+/**
+ * Set the default log source.
+ * @param log_source the log source to set
+ */
+APT_DECLARE(void) apt_def_log_source_set(apt_log_source_t *log_source);
+
+/**
+ * Find and assign log source by its name.
+ * @param name the unique name associated to the log source
+ * @param log_source the log source to be returned, if found
+ */
+APT_DECLARE(apt_bool_t) apt_log_source_assign(const char *name, apt_log_source_t **log_source);
 
 /**
  * Open the log file.
@@ -150,6 +181,7 @@ APT_DECLARE(apt_bool_t) apt_log_instance_set(apt_logger_t *logger);
  * @param max_file_count the max number of files used in log rotation
  * @param append whether to append or to truncate (start over) the log file
  * @param pool the memory pool to use
+ * @deprecated @see apt_log_file_open_ex()
  */
 APT_DECLARE(apt_bool_t) apt_log_file_open(
 							const char *dir_path,
@@ -160,9 +192,31 @@ APT_DECLARE(apt_bool_t) apt_log_file_open(
 							apr_pool_t *pool);
 
 /**
+ * Open the log file (extended version).
+ * @param dir_path the path to the log directory
+ * @param prefix the prefix used to compose the log file name
+ * @param config_file the path to configuration file to load settings from
+ * @param pool the memory pool to use
+ */
+APT_DECLARE(apt_bool_t) apt_log_file_open_ex(const char *dir_path, const char *prefix, const char *config_file, apr_pool_t *pool);
+
+/**
  * Close the log file.
  */
 APT_DECLARE(apt_bool_t) apt_log_file_close(void);
+
+/**
+ * Open the syslog.
+ * @param prefix the prefix used to compose the log file name
+ * @param config_file the path to configuration file to load settings from
+ * @param pool the memory pool to use
+ */
+APT_DECLARE(apt_bool_t) apt_syslog_open(const char *prefix, const char *config_file, apr_pool_t *pool);
+
+/**
+ * Close the syslog.
+ */
+APT_DECLARE(apt_bool_t) apt_syslog_close(void);
 
 /**
  * Set the logging output mode.
@@ -224,7 +278,7 @@ APT_DECLARE(apt_log_masking_e) apt_log_masking_get(void);
 APT_DECLARE(apt_log_masking_e) apt_log_masking_translate(const char *str);
 
 /**
- * Mask private data based on the masking mode
+ * Mask private data based on the masking mode.
  * @param data_in the data to mask
  * @param length the length of the data to mask on input, the length of the masked data on output
  * @param pool the memory pool to use if needed
@@ -242,32 +296,35 @@ APT_DECLARE(apt_bool_t) apt_log_ext_handler_set(apt_log_ext_handler_f handler);
 
 /**
  * Do logging.
+ * @param log_source the log source
  * @param file the file name log entry is generated from
  * @param line the line number log entry is generated from
  * @param priority the priority of the entire log entry
  * @param format the format of the entire log entry
  */
-APT_DECLARE(apt_bool_t) apt_log(const char *file, int line, apt_log_priority_e priority, const char *format, ...);
+APT_DECLARE(apt_bool_t) apt_log(apt_log_source_t *log_source, const char *file, int line, apt_log_priority_e priority, const char *format, ...);
 
 /**
  * Do logging (this version uses an object externally associated with the logger).
+ * @param log_source the log source
  * @param file the file name log entry is generated from
  * @param line the line number log entry is generated from
  * @param priority the priority of the entire log entry
  * @param obj the associated object
  * @param format the format of the entire log entry
  */
-APT_DECLARE(apt_bool_t) apt_obj_log(const char *file, int line, apt_log_priority_e priority, void *obj, const char *format, ...);
+APT_DECLARE(apt_bool_t) apt_obj_log(apt_log_source_t *log_source, const char *file, int line, apt_log_priority_e priority, void *obj, const char *format, ...);
 
 /**
  * Do logging (this version accepts va_list argument).
+ * @param log_source the log source
  * @param file the file name log entry is generated from
  * @param line the line number log entry is generated from
  * @param priority the priority of the entire log entry
  * @param format the format of the entire log entry
  * @param arg_ptr the arguments
  */
-APT_DECLARE(apt_bool_t) apt_va_log(const char *file, int line, apt_log_priority_e priority, const char *format, va_list arg_ptr);
+APT_DECLARE(apt_bool_t) apt_va_log(apt_log_source_t *log_source, const char *file, int line, apt_log_priority_e priority, const char *format, va_list arg_ptr);
 
 APT_END_EXTERN_C
 

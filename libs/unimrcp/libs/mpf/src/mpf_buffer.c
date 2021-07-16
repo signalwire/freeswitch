@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_buffer.c 2181 2014-09-14 04:29:38Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -61,6 +59,9 @@ void mpf_buffer_destroy(mpf_buffer_t *buffer)
 apt_bool_t mpf_buffer_restart(mpf_buffer_t *buffer)
 {
 	apr_thread_mutex_lock(buffer->guard);
+	buffer->cur_chunk = NULL;
+	buffer->remaining_chunk_size = 0;
+	buffer->size = 0;
 	APR_RING_INIT(&buffer->head, mpf_chunk_t, link);
 	apr_thread_mutex_unlock(buffer->guard);
 	return TRUE;

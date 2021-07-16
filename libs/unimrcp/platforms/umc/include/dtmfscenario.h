@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: dtmfscenario.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef DTMF_SCENARIO_H
@@ -44,14 +42,18 @@ public:
 	const char* GetDigits() const;
 
 /* ============================ INQUIRIES ================================== */
-
+	bool IsDefineGrammarEnabled() const;
+	bool IsRecognizeEnabled() const;
 protected:
 /* ============================ MANIPULATORS =============================== */
 	virtual bool LoadElement(const apr_xml_elem* pElem, apr_pool_t* pool);
 
+	bool LoadDefineGrammar(const apr_xml_elem* pElem, apr_pool_t* pool);
 	bool LoadRecognize(const apr_xml_elem* pElem, apr_pool_t* pool);
 
 /* ============================ DATA ======================================= */
+	bool        m_DefineGrammar;
+	bool        m_Recognize;
 	const char* m_ContentType;
 	const char* m_Grammar;
 	const char* m_Digits;
@@ -71,6 +73,16 @@ inline const char* DtmfScenario::GetGrammar() const
 inline const char* DtmfScenario::GetDigits() const
 {
 	return m_Digits;
+}
+
+inline bool DtmfScenario::IsDefineGrammarEnabled() const
+{
+	return m_DefineGrammar;
+}
+
+inline bool DtmfScenario::IsRecognizeEnabled() const
+{
+	return m_Recognize;
 }
 
 

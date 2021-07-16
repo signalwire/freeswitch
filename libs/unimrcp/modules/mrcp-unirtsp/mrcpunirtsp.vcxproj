@@ -122,11 +122,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\mrcp_unirtsp_client_agent.h" />
+    <ClInclude Include="include\mrcp_unirtsp_logger.h" />
     <ClInclude Include="include\mrcp_unirtsp_sdp.h" />
     <ClInclude Include="include\mrcp_unirtsp_server_agent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mrcp_unirtsp_client_agent.c" />
+    <ClCompile Include="src\mrcp_unirtsp_logger.c" />
     <ClCompile Include="src\mrcp_unirtsp_sdp.c" />
     <ClCompile Include="src\mrcp_unirtsp_server_agent.c" />
   </ItemGroup>

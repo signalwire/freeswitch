@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_codec_descriptor.h 2239 2014-11-12 01:52:59Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_CODEC_DESCRIPTOR_H
@@ -136,20 +134,20 @@ static APR_INLINE  mpf_codec_descriptor_t* mpf_codec_descriptor_create(apr_pool_
 /** Calculate encoded frame size in bytes */
 static APR_INLINE apr_size_t mpf_codec_frame_size_calculate(const mpf_codec_descriptor_t *descriptor, const mpf_codec_attribs_t *attribs)
 {
-	return (size_t) descriptor->channel_count * attribs->bits_per_sample * CODEC_FRAME_TIME_BASE * 
+	return (apr_size_t) descriptor->channel_count * attribs->bits_per_sample * CODEC_FRAME_TIME_BASE * 
 			descriptor->sampling_rate / 1000 / 8; /* 1000 - msec per sec, 8 - bits per byte */
 }
 
 /** Calculate samples of the frame (ts) */
 static APR_INLINE apr_size_t mpf_codec_frame_samples_calculate(const mpf_codec_descriptor_t *descriptor)
 {
-	return (size_t) descriptor->channel_count * CODEC_FRAME_TIME_BASE * descriptor->sampling_rate / 1000;
+	return (apr_size_t) descriptor->channel_count * CODEC_FRAME_TIME_BASE * descriptor->sampling_rate / 1000;
 }
 
 /** Calculate linear frame size in bytes */
 static APR_INLINE apr_size_t mpf_codec_linear_frame_size_calculate(apr_uint16_t sampling_rate, apr_byte_t channel_count)
 {
-	return (size_t) channel_count * BYTES_PER_SAMPLE * CODEC_FRAME_TIME_BASE * sampling_rate / 1000;
+	return (apr_size_t) channel_count * BYTES_PER_SAMPLE * CODEC_FRAME_TIME_BASE * sampling_rate / 1000;
 }
 
 
@@ -273,6 +271,8 @@ MPF_DECLARE(apt_bool_t) mpf_codec_list_match(mpf_codec_list_t *codec_list, const
 /** Intersect two codec lists */
 MPF_DECLARE(apt_bool_t) mpf_codec_lists_intersect(mpf_codec_list_t *codec_list1, mpf_codec_list_t *codec_list2);
 
+/** Compare two codec lists */
+MPF_DECLARE(apt_bool_t) mpf_codec_lists_compare(const mpf_codec_list_t *codec_list1, const mpf_codec_list_t *codec_list2);
 
 /** Get sampling rate mask (mpf_sample_rate_e) by integer value  */
 MPF_DECLARE(int) mpf_sample_rate_mask_get(apr_uint16_t sampling_rate);

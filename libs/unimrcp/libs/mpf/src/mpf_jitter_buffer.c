@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_jitter_buffer.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_jitter_buffer.h"
@@ -23,6 +21,9 @@
 #define JB_TRACE printf
 #elif ENABLE_JB_TRACE == 2
 #define JB_TRACE mpf_debug_output_trace
+#elif ENABLE_JB_TRACE == 3
+#define JB_TRACE(msg, args...) \
+  apt_log(MPF_LOG_MARK, APT_PRIO_INFO, msg, ##args);
 #else
 #define JB_TRACE mpf_null_trace
 #endif
@@ -77,7 +78,7 @@ struct mpf_jitter_buffer_t {
 
 mpf_jitter_buffer_t* mpf_jitter_buffer_create(mpf_jb_config_t *jb_config, mpf_codec_descriptor_t *descriptor, mpf_codec_t *codec, apr_pool_t *pool)
 {
-	size_t i;
+	apr_size_t i;
 	mpf_frame_t *frame;
 	mpf_jitter_buffer_t *jb = apr_palloc(pool,sizeof(mpf_jitter_buffer_t));
 	if(!jb_config) {

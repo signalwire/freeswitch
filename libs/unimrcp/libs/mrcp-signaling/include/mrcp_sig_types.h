@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_sig_types.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SIG_TYPES_H
@@ -39,6 +37,9 @@ typedef struct mrcp_sa_factory_t mrcp_sa_factory_t;
 
 /** Opaque MRCP session declaration */
 typedef struct mrcp_session_t mrcp_session_t;
+
+/** Opaque MRCP session attributes declaration */
+typedef struct mrcp_session_attribs_t mrcp_session_attribs_t;
 
 /** Opaque MRCP session descriptor declaration */
 typedef struct mrcp_session_descriptor_t mrcp_session_descriptor_t;

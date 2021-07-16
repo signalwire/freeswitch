@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -123,13 +123,16 @@
   <ItemGroup>
     <ClInclude Include="include\mrcp_sdp.h" />
     <ClInclude Include="include\mrcp_sofiasip_client_agent.h" />
+    <ClInclude Include="include\mrcp_sofiasip_logger.h" />
     <ClInclude Include="include\mrcp_sofiasip_server_agent.h" />
+    <ClInclude Include="include\mrcp_sofiasip_task.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mrcp_sdp.c" />
     <ClCompile Include="src\mrcp_sofiasip_client_agent.c" />
     <ClCompile Include="src\mrcp_sofiasip_logger.c" />
     <ClCompile Include="src\mrcp_sofiasip_server_agent.c" />
+    <ClCompile Include="src\mrcp_sofiasip_task.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libs\mrcp-signaling\mrcpsignaling.vcxproj">

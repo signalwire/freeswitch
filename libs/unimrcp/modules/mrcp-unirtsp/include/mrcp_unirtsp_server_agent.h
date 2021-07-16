@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_unirtsp_server_agent.h 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_UNIRTSP_SERVER_AGENT_H
@@ -49,6 +47,9 @@ struct rtsp_server_config_t {
 
 	/** Number of max RTSP connections */
 	apr_size_t   max_connection_count;
+
+	/** Inactivity timeout for an RTSP connection [sec] */
+	apr_size_t   inactivity_timeout;
 
 	/** Force destination IP address. Should be used only in case 
 	SDP contains incorrect connection address (local IP address behind NAT) */

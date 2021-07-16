@@ -5,18 +5,29 @@
                version="1.0"
                subfolder="client-profiles">
   <properties>
-    <!-- If the attribute "type" is set to "auto", IP address is 
-    determined implicitly by the hostname. This is the default setting. -->
+    <!--
+      If the attribute "type" is set to "auto", IP address is determined implicitly by the hostname.
+      This is the default setting.
+    -->
     <ip type="auto"/>
-    
-    <!-- If the attribute "type" is set to "iface", IP address is 
-    determined by the specified name of network interface/adapter. -->
+
+    <!--
+      If the attribute "type" is set to "iface", IP address is determined by the specified name of
+      network interface/adapter.
+    -->
     <!-- <ip type="iface">eth0</ip>-->
-    
-    <!-- IP address can also be specified explicitly. -->
+
+    <!--
+      IP address can also be specified explicitly.
+    -->
     <!-- <ip>10.10.0.1</ip> -->
-    
+
     <!-- <ext-ip>a.b.c.d</ext-ip> -->
+
+    <!--
+      Server IP address should be specified explicitly, unless the client and the server are located on
+      the same host. The server IP address can also be specified per <sip-settings> and <rtsp-settings>.
+    -->
     <!-- <server-ip>a.b.c.d</server-ip> -->
   </properties>
 
@@ -31,8 +42,9 @@
 
     <!-- SofiaSIP MRCPv2 signaling agent -->
     <sip-uac id="SIP-Agent-1" type="SofiaSIP">
-      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
-           They still can be explicitly specified (overriden) here.
+      <!--
+        By default, "ip" and "ext-ip" addresses, set in the properties, are used. These parameters can
+        explicitly be specified per "sip-uas" by means of "sip-ip" and "sip-ext-ip" correspondingly.
       -->
       <!-- <sip-ip>10.10.0.1</sip-ip> -->
       <!-- <sip-ext-ip>a.b.c.d</sip-ext-ip> -->
@@ -44,6 +56,7 @@
       <!-- <sip-t2>4000</sip-t2> -->
       <!-- <sip-t4>4000</sip-t4> -->
       <!-- <sip-t1x64>32000</sip-t1x64> -->
+      <!-- <sip-timer-c>185000</sip-timer-c> -->
       <!-- <sip-message-output>true</sip-message-output> -->
       <!-- <sip-message-dump>sofia-sip-uac.log</sip-message-dump> -->
     </sip-uac>
@@ -54,25 +67,27 @@
       <!-- <request-timeout>5000</request-timeout> -->
       <sdp-origin>UniMRCPClient</sdp-origin>
     </rtsp-uac>
-    
+
     <!-- MRCPv2 connection agent -->
     <mrcpv2-uac id="MRCPv2-Agent-1">
       <max-connection-count>100</max-connection-count>
+      <max-shared-use-count>100</max-shared-use-count>
       <offer-new-connection>false</offer-new-connection>
       <rx-buffer-size>1024</rx-buffer-size>
       <tx-buffer-size>1024</tx-buffer-size>
       <!-- <request-timeout>5000</request-timeout> -->
     </mrcpv2-uac>
-    
+
     <!-- Media processing engine -->
     <media-engine id="Media-Engine-1">
       <realtime-rate>1</realtime-rate>
     </media-engine>
-    
+
     <!-- Factory of RTP terminations -->
     <rtp-factory id="RTP-Factory-1">
-      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
-           They still can be explicitly specified (overriden) here.
+      <!--
+        By default, "ip" and "ext-ip" addresses, set in the properties, are used. These parameters can
+        explicitly be specified per "rtp-factory" by means of "rtp-ip" and "rtp-ext-ip" correspondingly.
       -->
       <!-- <rtp-ip>10.10.0.1</rtp-ip> -->
       <!-- <rtp-ext-ip>a.b.c.d</rtp-ext-ip> -->
@@ -80,9 +95,9 @@
       <rtp-port-max>5000</rtp-port-max>
     </rtp-factory>
   </components>
-  
+
   <settings>
-    <!-- common (default) RTP/RTCP settings -->
+    <!-- Common (default) RTP/RTCP settings -->
     <rtp-settings id="RTP-Settings-1">
       <jitter-buffer>
         <adaptive>1</adaptive>
@@ -93,17 +108,18 @@
       <ptime>20</ptime>
       <codecs>PCMU PCMA L16/96/8000 telephone-event/101/8000</codecs>
       <!-- <codecs>PCMU PCMA L16/96/8000 PCMU/97/16000 PCMA/98/16000 L16/99/16000</codecs> -->
-      <!-- enable/disable RTCP support -->
+      <!-- Enable/disable RTCP support -->
       <rtcp enable="false">
-        <!-- RTCP BYE policies (RTCP must be enabled first)
-              0 - disable RTCP BYE
-              1 - send RTCP BYE at the end of session
-              2 - send RTCP BYE also at the end of each talkspurt (input)
+        <!--
+          RTCP BYE policies (RTCP must be enabled first)
+            0 - disable RTCP BYE
+            1 - send RTCP BYE at the end of session
+            2 - send RTCP BYE also at the end of each talkspurt (input)
         -->
         <rtcp-bye>1</rtcp-bye>
-        <!-- rtcp transmission interval in msec (set 0 to disable) -->
+        <!-- RTCP transmission interval in msec (set 0 to disable) -->
         <tx-interval>5000</tx-interval>
-        <!-- period (timeout) to check for new rtcp messages in msec (set 0 to disable) -->
+        <!-- Period (timeout) to check for new RTCP messages in msec (set 0 to disable) -->
         <rx-resolution>1000</rx-resolution>
       </rtcp>
     </rtp-settings>

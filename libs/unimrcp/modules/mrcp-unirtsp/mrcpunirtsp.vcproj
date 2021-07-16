@@ -249,6 +249,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mrcp_unirtsp_logger.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mrcp_unirtsp_sdp.h"
 				>
 			</File>
@@ -263,6 +267,10 @@
 			>
 			<File
 				RelativePath=".\src\mrcp_unirtsp_client_agent.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_unirtsp_logger.c"
 				>
 			</File>
 			<File

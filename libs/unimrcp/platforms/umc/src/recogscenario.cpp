@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: recogscenario.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -77,7 +75,7 @@ bool RecogScenario::LoadRecognize(const apr_xml_elem* pElem, apr_pool_t* pool)
 		}
 		else if(strcasecmp(pAttr->name,"content-location") == 0)
 		{
-			m_Content = LoadFileContent(pAttr->value,pool);
+			m_Content = LoadFileContent(pAttr->value,m_ContentLength,pool);
 		}
 		else if(strcasecmp(pAttr->name,"audio-source") == 0)
 		{
@@ -108,7 +106,6 @@ bool RecogScenario::LoadDefineGrammar(const apr_xml_elem* pElem, apr_pool_t* poo
 	}
 	return true;
 }
-
 
 UmcSession* RecogScenario::CreateSession()
 {

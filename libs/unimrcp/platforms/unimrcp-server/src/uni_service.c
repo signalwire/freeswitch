@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: uni_service.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <windows.h>
@@ -23,6 +21,9 @@
 
 #define WIN_SERVICE_NAME "unimrcp"
 
+#define SERVICE_CONTROL_USER_OFFLINE 128
+#define SERVICE_CONTROL_USER_ONLINE 129
+
 static SERVICE_STATUS_HANDLE win_service_status_handle = NULL;
 static SERVICE_STATUS win_service_status;
 
@@ -31,7 +32,7 @@ static apt_dir_layout_t *service_dir_layout = NULL;
 static const char *svcname = NULL;
 
 /** Display error message with Windows error code and description */
-static void winerror(const char *file, int line, const char *msg)
+static void winerror(apt_log_source_t *log_source, const char *file, int line, const char *msg)
 {
 	char buf[128];
 	DWORD err = GetLastError();
@@ -40,14 +41,15 @@ static void winerror(const char *file, int line, const char *msg)
 		err,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		buf, sizeof(buf), NULL);
-	apt_log(file, line, APT_PRIO_WARNING, "%s: %lu %.*s\n", msg, err, ret, buf);
+	apt_log(log_source, file, line, APT_PRIO_WARNING, "%s: %lu %.*s\n", msg, err, ret, buf);
 }
 
 /** SCM state change handler */
-static void WINAPI win_service_handler(DWORD control)
+static DWORD WINAPI win_service_handler(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Service Handler 0x%02lx",control);
-	switch (control)
+	DWORD returnVal = NO_ERROR;
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Service Handler 0x%02lx", dwControl);
+	switch (dwControl)
 	{
 		case SERVICE_CONTROL_INTERROGATE:
 			break;
@@ -66,11 +68,23 @@ static void WINAPI win_service_handler(DWORD control)
 			win_service_status.dwCheckPoint = 0; 
 			win_service_status.dwWaitHint = 0; 
 			break;
+		case SERVICE_CONTROL_USER_OFFLINE:
+			apt_log(APT_LOG_MARK, APT_PRIO_INFO, "Service Handler - Offline request - 0x%02lx", dwControl);
+			mrcp_server_offline(server);
+			break;
+		case SERVICE_CONTROL_USER_ONLINE:
+			apt_log(APT_LOG_MARK, APT_PRIO_INFO, "Service Handler - Online request - 0x%02lx", dwControl);
+			mrcp_server_online(server);
+			break;
+		default:
+			returnVal = ERROR_CALL_NOT_IMPLEMENTED;
 	}
 
 	if(!SetServiceStatus(win_service_status_handle, &win_service_status)) {
 		winerror(APT_LOG_MARK, "Failed to Set Service Status");
 	}
+
+	return returnVal;
 }
 
 static void WINAPI win_service_main(DWORD argc, LPTSTR *argv)
@@ -83,7 +97,7 @@ static void WINAPI win_service_main(DWORD argc, LPTSTR *argv)
 	win_service_status.dwCheckPoint = 0;
 	win_service_status.dwWaitHint = 0;
 
-	win_service_status_handle = RegisterServiceCtrlHandler(svcname, win_service_handler);
+	win_service_status_handle = RegisterServiceCtrlHandlerEx(svcname, win_service_handler, NULL);
 	if(win_service_status_handle == (SERVICE_STATUS_HANDLE)0) {
 		winerror(APT_LOG_MARK, "Failed to Register Service Control Handler");
 		return;

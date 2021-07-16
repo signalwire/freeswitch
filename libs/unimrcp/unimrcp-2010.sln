@@ -15,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{62083CC3
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conf", "conf", "{9155EBB8-E7DD-49AE-A86A-7B90B9F09888}"
 	ProjectSection(SolutionItems) = preProject
+		conf\logfile.xml = conf\logfile.xml
 		conf\logger.xml = conf\logger.xml
 		conf\unimrcpclient.xml = conf\unimrcpclient.xml
 		conf\unimrcpclient.xsd = conf\unimrcpclient.xsd

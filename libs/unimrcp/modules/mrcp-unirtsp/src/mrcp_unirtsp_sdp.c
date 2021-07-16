@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_unirtsp_sdp.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -21,6 +19,7 @@
 #include <sofia-sip/sdp.h>
 #include "rtsp_message.h"
 #include "mrcp_unirtsp_sdp.h"
+#include "mrcp_unirtsp_logger.h"
 #include "mpf_rtp_attribs.h"
 #include "mpf_rtp_pt.h"
 #include "apt_text_stream.h"
@@ -162,22 +161,20 @@ static apt_bool_t mrcp_descriptor_generate_by_rtsp_sdp_session(mrcp_session_desc
 		switch(sdp_media->m_type) {
 			case sdp_media_audio:
 			{
-				mpf_rtp_media_descriptor_t *media = apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
-				mpf_rtp_media_descriptor_init(media);
+				mpf_rtp_media_descriptor_t *media = mpf_rtp_media_descriptor_alloc(pool);
 				media->id = mrcp_session_audio_media_add(descriptor,media);
 				mpf_rtp_media_generate(media,sdp_media,&descriptor->ip,pool);
 				break;
 			}
 			case sdp_media_video:
 			{
-				mpf_rtp_media_descriptor_t *media = apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
-				mpf_rtp_media_descriptor_init(media);
+				mpf_rtp_media_descriptor_t *media = mpf_rtp_media_descriptor_alloc(pool);
 				media->id = mrcp_session_video_media_add(descriptor,media);
 				mpf_rtp_media_generate(media,sdp_media,&descriptor->ip,pool);
 				break;
 			}
 			default:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Not Supported SDP Media [%s]", sdp_media->m_type_name);
+				apt_log(RTSP_LOG_MARK,APT_PRIO_INFO,"Not Supported SDP Media [%s]", sdp_media->m_type_name);
 				break;
 		}
 	}
@@ -215,7 +212,7 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_descriptor_generate_by_rtsp_reques
 				mrcp_descriptor_generate_by_rtsp_sdp_session(descriptor,sdp,force_destination_ip,pool);
 			}
 			else {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse SDP Message");
+				apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse SDP Message");
 			}
 			sdp_parser_free(parser);
 		}
@@ -223,8 +220,7 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_descriptor_generate_by_rtsp_reques
 			/* create default descriptor in case RTSP SETUP contains no SDP */
 			mpf_rtp_media_descriptor_t *media;
 			descriptor = mrcp_session_descriptor_create(pool);
-			media = apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
-			mpf_rtp_media_descriptor_init(media);
+			media = mpf_rtp_media_descriptor_alloc(pool);
 			media->state = MPF_MEDIA_ENABLED;
 			media->id = mrcp_session_audio_media_add(descriptor,media);
 			if(rtsp_header_property_check(&request->header,RTSP_HEADER_FIELD_TRANSPORT) == TRUE) {
@@ -282,7 +278,7 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_descriptor_generate_by_rtsp_respon
 				descriptor->response_code = response->start_line.common.status_line.status_code;
 			}
 			else {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse SDP Message");
+				apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse SDP Message");
 			}
 
 			sdp_parser_free(parser);
@@ -291,6 +287,7 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_descriptor_generate_by_rtsp_respon
 			descriptor = mrcp_session_descriptor_create(pool);
 			apt_string_assign(&descriptor->resource_name,resource_name,pool);
 			descriptor->resource_state = FALSE;
+			descriptor->response_code = response->start_line.common.status_line.status_code;
 		}
 	}
 	else if(request->start_line.common.request_line.method_id == RTSP_METHOD_TEARDOWN) {
@@ -582,7 +579,7 @@ MRCP_DECLARE(const char*) mrcp_name_get_by_rtsp_name(const apr_table_t *resource
 				return entry[i].key;
 			}
 		}
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown RTSP Resource Name [%s]", rtsp_name);
+		apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Unknown RTSP Resource Name [%s]", rtsp_name);
 	}
 	return "unknown";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_server_connection.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_CONNECTION_H
@@ -101,6 +99,33 @@ MRCP_DECLARE(void) mrcp_server_connection_rx_size_set(
 MRCP_DECLARE(void) mrcp_server_connection_tx_size_set(
 								mrcp_connection_agent_t *agent,
 								apr_size_t size);
+
+/**
+ * Set max shared use count for an MRCPv2 connection.
+ * @param agent the agent to set the parameter for
+ * @param max_shared_use_count the number of max shared use count of an MRCPv2 connection
+ */
+MRCP_DECLARE(void) mrcp_server_connection_max_shared_use_set(
+								mrcp_connection_agent_t *agent,
+								apr_size_t max_shared_use_count);
+
+/**
+ * Set inactivity timeout for an MRCPv2 connection.
+ * @param agent the agent to set the parameter for
+ * @param timeout the inactivity timeout to set in seconds
+ */
+MRCP_DECLARE(void) mrcp_server_connection_timeout_set(
+								mrcp_connection_agent_t *agent,
+								apr_size_t timeout);
+
+/**
+ * Set termination timeout for an MRCPv2 connection.
+ * @param agent the agent to set the parameter for
+ * @param timeout the termination timeout to set in seconds
+ */
+MRCP_DECLARE(void) mrcp_server_connection_term_timeout_set(
+								mrcp_connection_agent_t *agent,
+								apr_size_t timeout);
 
 /**
  * Get task.

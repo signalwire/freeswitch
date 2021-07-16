@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_client_session.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CLIENT_SESSION_H
@@ -93,6 +91,9 @@ struct mrcp_client_session_t {
 	apr_size_t                  subrequest_count;
 	/** True, if server unexpectedly closed session/connection */
 	apt_bool_t                  disconnected;
+
+	/** Optional session attributes */
+	mrcp_session_attribs_t     *attribs;
 };
 
 /** MRCP channel */

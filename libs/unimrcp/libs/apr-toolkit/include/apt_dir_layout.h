@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_dir_layout.h 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
 #ifndef APT_DIR_LAYOUT_H
@@ -30,7 +28,7 @@ APT_BEGIN_EXTERN_C
 
 /*
  * This define allows user applications to support both the old interface,
- * where members of apt_dir_layout_t structure were accessable to the
+ * where members of apt_dir_layout_t structure were accessible to the
  * application, and the new opaque interface, where OPAQUE_DIR_LAYOUT
  * is defined.
  */
@@ -64,6 +62,7 @@ APT_DECLARE(apt_dir_layout_t*) apt_default_dir_layout_create(const char *root_di
  * @param conf_dir_path the path to the config dir
  * @param plugin_dir_path the path to the plugin dir
  * @param log_dir_path the path to the log dir
+ * @param data_dir_path the path to the data dir
  * @param var_dir_path the path to the var dir
  * @param pool the memory pool to use
  */
@@ -82,7 +81,7 @@ APT_DECLARE(apt_dir_layout_t*) apt_custom_dir_layout_create(
 APT_DECLARE(apt_dir_layout_t*) apt_dir_layout_create(apr_pool_t *pool);
 
 /**
- * Create am extended bare directories layout.
+ * Create an extended bare directories layout.
  * @param count the number of directories in the layout
  * @param pool the memory pool to use
  */

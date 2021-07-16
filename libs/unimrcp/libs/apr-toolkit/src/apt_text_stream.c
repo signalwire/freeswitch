@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_text_stream.c 2223 2014-11-12 00:37:40Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -25,12 +23,6 @@
 #define TOKEN_FALSE "false"
 #define TOKEN_TRUE_LENGTH  (sizeof(TOKEN_TRUE)-1)
 #define TOKEN_FALSE_LENGTH (sizeof(TOKEN_FALSE)-1)
-
-#if _MSC_VER >= 1900
-#pragma warning(disable: 4477)
-// 'sprintf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'apr_size_t' apt_text_stream.c 495
-// 'sprintf' : format string '%03d' requires an argument of type 'int', but variadic argument 1 has type 'apr_size_t' apt_text_stream.c 515
-#endif
 
 
 /** Navigate through the lines of the text stream (message) */
@@ -392,7 +384,7 @@ APT_DECLARE(apt_bool_t) apt_boolean_value_generate(apt_bool_t value, apt_str_t *
 }
 
 
-/** Parse size_t value */
+/** Parse apr_size_t value */
 APT_DECLARE(apr_size_t) apt_size_value_parse(const apt_str_t *str)
 {
 	return str->buf ? atol(str->buf) : 0;

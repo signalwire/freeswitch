@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<umcscenario name="recog" class="Recognizer" profile="uni2">
+  <resource-discovery enable="0"/>
+  <define-grammar enable="1" content-type="application/srgs+xml" content-location="grammar.xml"/>
+  <!-- <define-grammar enable="1" content-type="application/grammar+xml" content-location="grammar.xml"/> -->
+  <!-- <define-grammar enable="1" content-type="application/x-jsgf" content-location="grammar.jsgf"/> -->
+  <recognize enable="1"/>
+  <!-- <recognize enable="1" audio-source="one-8kHz.pcm"/> -->
+  <!-- <recognize enable="1" content-type="application/srgs+xml" content-location="grammar.xml"/> -->
+
+  <termination enable="1">
+    <capabilities>
+      <codec name="LPCM" rates="8000 16000"/>
+      <!-- <codec name="PCMU" rates="8000 16000"/> -->
+    </capabilities>
+  </termination>
+  <!--
+  <rtp-termination enable="1" ip="127.0.0.1" port="5678">
+    <codecs="PCMU PCMA L16/96/8000 PCMU/97/16000 telephone-event/101/8000"/>
+  </rtp-termination>
+  -->
+</umcscenario>

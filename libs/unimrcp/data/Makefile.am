@@ -4,7 +4,7 @@ DATAFILES            =
 
 if COMMON_CLIENT_DATA
 DATAFILES           += grammar.jsgf grammar.mixed grammar.srgs grammar.xml \
-                       speak.txt speak.xml \
+                       speak.txt speak.xml params_default.txt \
                        one-16kHz.pcm one-8kHz.pcm \
                        johnsmith-16kHz.pcm johnsmith-8kHz.pcm
 endif
