@@ -1,0 +1,12 @@
+<configuration name="pulseaudio.conf" description="Soundcard Endpoint">
+  <settings>
+    <!--Default dialplan and caller-id info -->
+    <param name="dialplan" value="XML"/>
+    <param name="cid-name" value="PulseAudio"/>
+    <param name="cid-num" value="5555551212"/>
+
+    <!--audio sample rate and interval -->
+    <param name="sample-rate" value="16000"/>
+    <param name="codec-ms" value="10"/>
+  </settings>
+</configuration>
