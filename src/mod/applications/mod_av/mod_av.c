@@ -103,13 +103,13 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
  
 	/* naggy messages */
-	if ((level == AV_LOG_DEBUG || level == AV_LOG_WARNING || level == AV_LOG_TRACE) && !mod_av_globals.debug) return;
+	if ((level == AV_LOG_DEBUG  || level == AV_LOG_TRACE) && !mod_av_globals.debug) return;
 
 	switch(level) {
 		case AV_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
-		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case AV_LOG_PANIC:   switch_level = SWITCH_LOG_ERROR;   break;
+		case AV_LOG_FATAL:   switch_level = SWITCH_LOG_ERROR;   break;
+		case AV_LOG_ERROR:   switch_level = SWITCH_LOG_ERROR;   break;
 		case AV_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
 		case AV_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
 		case AV_LOG_VERBOSE: switch_level = SWITCH_LOG_INFO;    break;
@@ -199,7 +199,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 #endif
 
 	av_log_set_callback(log_callback);
-	av_log_set_level(AV_LOG_INFO);
+	av_log_set_level(AV_LOG_DEBUG);
 	avformat_network_init();
 
 #if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,9,100))
