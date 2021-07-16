@@ -330,7 +330,7 @@ static int switch_console_process(char *xcmd)
 			r = 0;
 		}
 		if (handle) {
-			fprintf(handle, "Unknown Command: %s\n", xcmd);
+			fprintf(handle, "Command %s: %s\n", status == SWITCH_STATUS_NOTFOUND ? "not found": "return error", xcmd);
 			fflush(handle);
 		}
 	}
