@@ -1059,9 +1059,8 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 
 	if (conference_utils_member_test_flag(member, MFLAG_JOIN_VID_FLOOR)) {
-		conference_video_set_floor_holder(conference, member, SWITCH_TRUE);
 		conference_utils_set_flag(member->conference, CFLAG_VID_FLOOR_LOCK);
-
+		conference_video_set_floor_holder(conference, member, SWITCH_TRUE);
 		if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "conference %s OK video floor %d %s\n",
 							  conference->name, member->id, switch_channel_get_name(member->channel));
