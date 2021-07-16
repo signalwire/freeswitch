@@ -1899,8 +1899,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		const char *agent_uuid = switch_core_session_get_uuid(agent_session);
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_t *agent_channel = switch_core_session_get_channel(agent_session);
-		const char *o_announce = NULL;
-
+		const char *o_announce = NULL, *cc_announce_file = NULL;
+		
+		if ((cc_announce_file = switch_channel_get_variable(member_channel, "cc_announce_file"))) {
+			switch_ivr_stop_displace_session(member_session, cc_announce_file);
+		}
+		
 		switch_channel_set_variable(agent_channel, "cc_member_pre_answer_uuid", NULL);
 
 		if (!strcasecmp(h->queue_strategy,"ring-all") || !strcasecmp(h->queue_strategy,"ring-progressively")) {
@@ -2852,6 +2856,11 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Queue %s not found\n", m->queue_name);
 			break;
 		}
+		
+		if(!zstr(queue->announce)) {
+			switch_channel_set_variable(member_channel, "cc_announce_file", queue->announce);
+		}
+		
 		/* Make the Caller Leave if he went over his max wait time */
 		if (queue->max_wait_time > 0 && queue->max_wait_time <=  time_now - m->t_member_called) {
 			/* timeout reached, check if we're originating at this time and give caller a one more chance */
