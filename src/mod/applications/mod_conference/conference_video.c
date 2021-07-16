@@ -4965,7 +4965,7 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 	
 	switch_assert(member);
 
-	if (switch_test_flag(frame, SFF_CNG) || !frame->packet) {
+	if (switch_test_flag(frame, SFF_CNG) || !frame->data) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
