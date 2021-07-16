@@ -986,6 +986,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_ses
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	file = switch_core_absolute_filepath(file, session);
 	if ((bug = switch_channel_get_private(channel, file))) {
 		switch_channel_set_private(channel, file, NULL);
 		switch_core_media_bug_remove(session, &bug);
@@ -1001,8 +1002,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	time_t to = 0;
-	char *ext;
-	const char *prefix;
 	displace_helper_t *dh;
 	const char *p;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
@@ -1027,6 +1026,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_FALSE;
 	}
 
+	file = switch_core_absolute_filepath(file, session);
+
 	if ((bug = switch_channel_get_private(channel, file))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only 1 of the same file per channel please!\n");
 		return SWITCH_STATUS_FALSE;
@@ -1034,35 +1035,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 
 	if (!(dh = switch_core_session_alloc(session, sizeof(*dh)))) {
 		return SWITCH_STATUS_MEMERR;
-	}
-
-	if (!(prefix = switch_channel_get_variable(channel, "sound_prefix"))) {
-		prefix = SWITCH_GLOBAL_dirs.base_dir;
-	}
-
-	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
-		if (!switch_is_file_path(file)) {
-			char *tfile = NULL;
-			char *e;
-
-			if (*file == '[') {
-				tfile = switch_core_session_strdup(session, file);
-				if ((e = switch_find_end_paren(tfile, '[', ']'))) {
-					*e = '\0';
-					file = e + 1;
-				} else {
-					tfile = NULL;
-				}
-			}
-
-			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
-		}
-		if ((ext = strrchr(file, '.'))) {
-			ext++;
-		} else {
-			ext = read_impl.iananame;
-			file = switch_core_session_sprintf(session, "%s.%s", file, ext);
-		}
 	}
 
 	dh->fh.channels = read_impl.number_of_channels;
