@@ -651,27 +651,6 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 	jb_debug(jb, (packet->header.m ? 2 : 3), "PUT packet last_ts:%u ts:%u seq:%u%s\n",
 			 ntohl(jb->highest_wrote_ts), ntohl(node->packet.header.ts), ntohs(node->packet.header.seq), packet->header.m ? " <MARK>" : "");
 
-	if (jb->write_init && jb->type == SJB_VIDEO) {
-		int seq_diff = 0, ts_diff = 0;
-
-		if (ntohs(jb->highest_wrote_seq) > (USHRT_MAX - 100) && ntohs(packet->header.seq) < 100) {
-			seq_diff = (USHRT_MAX - ntohs(jb->highest_wrote_seq)) + ntohs(packet->header.seq);
-		} else {
-			seq_diff = abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq)));
-		}
-
-		if (ntohl(jb->highest_wrote_ts) > (UINT_MAX - 1000) && ntohl(node->packet.header.ts) < 1000) {
-			ts_diff = (UINT_MAX - ntohl(node->packet.header.ts)) + ntohl(node->packet.header.ts);
-		} else {
-			ts_diff = abs((int)((int64_t)ntohl(node->packet.header.ts) - (int64_t)ntohl(jb->highest_wrote_ts)));
-		}
-
-		if (((seq_diff >= 100) || (ts_diff > (900000 * 5)))) {
-			jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
-			switch_jb_reset(jb);
-		}
-	}
-
 	if (!jb->write_init || ntohs(packet->header.seq) > ntohs(jb->highest_wrote_seq) ||
 		(ntohs(jb->highest_wrote_seq) > USHRT_MAX - 100 && ntohs(packet->header.seq) < 100) ) {
 		jb->highest_wrote_seq = packet->header.seq;
@@ -1220,6 +1199,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 {
 	uint32_t i;
 	uint16_t want = ntohs(jb->next_seq), got = ntohs(packet->header.seq);
+	int ucycle = 0, max = 0;
 
 	if (len >= sizeof(switch_rtp_packet_t)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "trying to put %" SWITCH_SIZE_T_FMT " bytes exceeding buffer, truncate to %" SWITCH_SIZE_T_FMT "\n", len, sizeof(switch_rtp_packet_t));
@@ -1255,30 +1235,64 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 			}
 		}
 
-		if (got > want) {
-			if (got - want > jb->max_frame_len && got - want > 17) {
-				jb_debug(jb, 2, "Missing %u frames, Resetting\n", got - want);
-				switch_jb_reset(jb);
-			} else {
-
-				if (jb->type != SJB_VIDEO && jb->frame_len < got - want) {
-					jb_frame_inc(jb, 1);
-				}
-
-				jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, want, got - 1);
-
-				for (i = want; i < got; i++) {
-					jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
-					switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)1);
-				}
-			}
+		if ( (got > (USHRT_MAX - 1000) && want < 1000) || (want > (USHRT_MAX - 1000) && got < 1000 ) ) {
+		    ucycle = 1;
+		    jb_debug(jb, 2, "Set ucycle on Got:%d Want:%d\n",got,want);
 		}
 
-		if (got >= want || (want - got) > 1000) {
+		if (got > want && !ucycle) {
+
+		    int minwant = 0;
+		    jb_debug(jb, 2, "Non-ucycle Got:%d Want:%d\n",got,want);
+
+		    if (got - want > jb->max_frame_len) {
+			minwant = got - jb->max_frame_len;
+			jb_debug(jb, 2, "Non-ucycle Missed more frames than buffer size. Shift want seq from %d to %d\n",want,minwant);
+		    } else {
+			minwant = want;
+		    }
+
+		    if (jb->type != SJB_VIDEO && jb->frame_len < got - want) {
+			jb_frame_inc(jb, 1);
+		    }
+
+		    jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, minwant, got - 1);
+
+		    for (i = minwant; i < got; i++) {
+			jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
+			switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i), (void *)(intptr_t)1);
+		    }
+		} else if (ucycle && want > got) {
+
+		    int minwant = 0;
+		    int subgotwant = got + (USHRT_MAX - want);
+
+		    jb_debug(jb, 2, "Ucycle Got:%d Want:%d\n",got,want);
+
+		    if (subgotwant > jb->max_frame_len) {
+			minwant = got - jb->max_frame_len;
+			jb_debug(jb, 2, "Ucycle Missed more frames than buffer size. Shift want seq from %d to %d\n",want,minwant);
+		    } else {
+			minwant = want;
+		    }
+
+		    if (jb->type != SJB_VIDEO && jb->frame_len < subgotwant) {
+			jb_frame_inc(jb, 1);
+		    }
+
+		    jb_debug(jb, 2, "GOT %u WANTED %u; MARK SEQS MISSING %u - %u\n", got, want, minwant, got - 1);
+
+		    max = minwant > (USHRT_MAX - 1000) ? (got + USHRT_MAX) : got;
+		    for (i = minwant; i < max; i++) {
+			jb_debug(jb, 2, "MARK MISSING %u ts:%u\n", i, ntohl(packet->header.ts));
+			switch_core_inthash_insert(jb->missing_seq_hash, (uint32_t)htons(i > USHRT_MAX ? i - USHRT_MAX : i), (void *)(intptr_t)1);
+		    }
+		}
+
+		if ((got == want) || (got > want && !ucycle) || (want > got && ucycle)) {
 			jb->next_seq = htons(got + 1);
 		}
 	}
-
 
 	add_node(jb, packet, len);
 
