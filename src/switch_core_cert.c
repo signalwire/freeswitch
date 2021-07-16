@@ -474,7 +474,7 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	 */
 	X509_set_issuer_name(x, name);
 
-	if (!X509_sign(x, pk, EVP_sha1()))
+	if (!X509_sign(x, pk, EVP_sha256()))
 		goto err;
 
 	*x509p = x;
