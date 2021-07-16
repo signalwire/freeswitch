@@ -35,8 +35,8 @@
 
                 <configuration name="enum.conf" description="ENUM Module">
                         <settings>
-                                <param name="default-root" value="e164.org"/>
-                                <param name="default-isn-root" value="freenum.org"/>
+                                <param name="default-root" value="enum.enumer.org"/>
+                                <param name="default-isn-root" value="nrenum.net"/>
                                 <param name="query-timeout" value="10"/>
                                 <param name="auto-reload" value="true"/>
                         </settings>
