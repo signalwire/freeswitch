@@ -2128,7 +2128,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch (cause) {
 			/* When we hang-up agents that did not answer in ring-all strategy */
 			case SWITCH_CAUSE_LOSE_RACE:
+				break;
+			/* originator cancel can happen when agent changes state during offering*/
 			case SWITCH_CAUSE_ORIGINATOR_CANCEL:
+				delay_next_agent_call = (h->busy_delay_time > delay_next_agent_call? h->busy_delay_time : delay_next_agent_call);
 				break;
 			/* Busy: Do Not Disturb, Circuit congestion */
 			case SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION:
