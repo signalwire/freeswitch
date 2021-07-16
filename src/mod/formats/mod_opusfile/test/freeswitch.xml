@@ -5,6 +5,7 @@
       <modules>
         <load module="mod_loopback"/>
         <load module="mod_opusfile"/>
+        <load module="mod_sndfile"/>
       </modules>
     </configuration>
   </section>
