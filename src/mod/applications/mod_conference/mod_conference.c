@@ -2760,6 +2760,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL, *force_canvas_size = NULL;
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 	switch_event_t *event;
+	switch_event_header_t *eh = NULL;
 
 	int scale_h264_canvas_width = 0;
 	int scale_h264_canvas_height = 0;
@@ -3778,6 +3779,19 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				}
 			}
 		}
+	}
+
+	/* set conference variables from any channel variables which start with the conference variable prefix */
+	if ((eh = switch_channel_variable_first(channel))) {
+		for (; eh; eh = eh->next) {
+			const char *name = (char *) eh->name;
+			if (!strncasecmp(name, CONFERENCE_VARIABLE_PREFIX, strlen(CONFERENCE_VARIABLE_PREFIX))) {
+					const char *varname = name + strlen(CONFERENCE_VARIABLE_PREFIX);
+					char *value = (char *) eh->value;
+					conference_set_variable(conference, switch_core_strdup(conference->pool, varname), switch_core_strdup(conference->pool, value));
+			}
+		}
+		switch_channel_variable_last(channel);
 	}
 
 	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
