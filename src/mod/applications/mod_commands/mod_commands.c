@@ -5077,7 +5077,7 @@ SWITCH_STANDARD_API(originate_function)
 		char *app_name = switch_core_session_strdup(caller_session, (exten + 1));
 		char *arg = NULL, *e;
 
-		if ((e = strchr(app_name, ')'))) {
+		if ((e = strrchr(app_name, ')'))) {
 			*e = '\0';
 		}
 
