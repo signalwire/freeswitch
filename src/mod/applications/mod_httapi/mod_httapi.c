@@ -37,6 +37,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown);
 SWITCH_MODULE_DEFINITION(mod_httapi, mod_httapi_load, mod_httapi_shutdown, NULL);
 
+#ifndef _WIN32
+#define O_BINARY 0
+#endif
+
 typedef struct profile_perms_s {
 	switch_byte_t set_params;
 	switch_byte_t set_vars;
@@ -2497,7 +2501,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 	if (save_path) {
 		while(--tries && (client->fd == 0 || client->fd == -1)) {
-			client->fd = open(save_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+			client->fd = open(save_path, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
 		}
 
 		if (client->fd < 0) {
