@@ -1211,7 +1211,7 @@ switch_status_t conference_api_sub_energy(conference_member_t *member, switch_st
 		unlock_member(member);
 	}
 	if (stream != NULL) {
-		stream->write_function(stream, "Energy %u = %d\n", member->id, member->energy_level);
+		stream->write_function(stream, "+OK Energy %u = %d\n", member->id, member->energy_level);
 	}
 
 	if (member->auto_energy_level && member->energy_level > member->auto_energy_level) {
