@@ -690,7 +690,7 @@ void detectAndDraw(cv_context_t *context)
 		//printf("WTF %d\n", object_neighbors);
         //cout << "Detected " << object_neighbors << " object neighbors" << endl;
         const int rect_height = cvRound((float)img.rows * object_neighbors / max_neighbors);
-        CvScalar col = CV_RGB((float)255 * object_neighbors / max_neighbors, 0, 0);
+        CvScalar col = cvScalar(0, 0, (float)255 * object_neighbors / max_neighbors, 0);
         rectangle(img, cvPoint(0, img.rows), cvPoint(img.cols/10, img.rows - rect_height), col, -1);
 
         parse_stats(&context->nestDetected, nestedObjects.size(), context->skip);
