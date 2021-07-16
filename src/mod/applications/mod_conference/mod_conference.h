@@ -1298,6 +1298,7 @@ void conference_loop_deaf_on(conference_member_t *member, caller_control_action_
 void conference_loop_deaf_off(conference_member_t *member, caller_control_action_t *action);
 void conference_set_variable(conference_obj_t *conference, const char *var, const char *val);
 const char *conference_get_variable(conference_obj_t *conference, const char *var);
+void conference_member_fb_flush(conference_member_t *member);
 
 
 /* Global Structs */

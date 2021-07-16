@@ -1971,6 +1971,9 @@ void conference_video_write_canvas_image_to_codec_group(conference_obj_t *confer
 					dupframe = NULL;
 				}
 
+                if (!imember->video_muxing_write_thread)
+	                conference_member_fb_flush(imember);
+
 				switch_clear_flag(frame, SFF_ENCODED);
 
 				switch_core_session_rwunlock(imember->session);
@@ -2332,14 +2335,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 		}
 	}
 
-	while (switch_frame_buffer_trypop(member->fb, &pop) == SWITCH_STATUS_SUCCESS) {
-		if (pop) {
-			if ((switch_size_t)pop != 1) {
-				frame = (switch_frame_t *) pop;
-				switch_frame_buffer_free(member->fb, &frame);
-			}
-		}
-	}
+	conference_member_fb_flush(member);
 
 	switch_thread_rwlock_unlock(member->rwlock);
 
@@ -3968,6 +3964,10 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 						}
 						dupframe = NULL;
 					}
+
+                    if (!imember->video_muxing_write_thread)
+	                    conference_member_fb_flush(imember);
+
 				}
 
 				switch_img_free(&imember->pcanvas_img);
@@ -4223,6 +4223,9 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					}
 					dupframe = NULL;
 				}
+
+				if (!imember->video_muxing_write_thread)
+	                conference_member_fb_flush(imember);
 
 				if (imember->session) {
 					switch_core_session_rwunlock(imember->session);
@@ -4602,6 +4605,9 @@ void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_
 				dupframe = NULL;
 			}
 
+			if (!imember->video_muxing_write_thread)
+				conference_member_fb_flush(imember);
+
 			if (imember->session) {
 				switch_core_session_rwunlock(imember->session);
 			}
@@ -4912,6 +4918,10 @@ void conference_video_write_frame(conference_obj_t *conference, conference_membe
 								}
 								dupframe = NULL;
 							}
+
+							if (!imember->video_muxing_write_thread)
+								conference_member_fb_flush(imember);
+
 						} else {
 							switch_core_session_write_video_frame(imember->session, &tmp_frame, SWITCH_IO_FLAG_NONE, 0);
 						}
@@ -5083,6 +5093,20 @@ switch_status_t conference_video_thread_callback(switch_core_session_t *session,
 	switch_thread_rwlock_unlock(member->conference->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+void conference_member_fb_flush(conference_member_t *member)
+{
+        switch_frame_t *tmpframe;
+        void *pop;
+        while (switch_frame_buffer_trypop(member->fb, &pop) == SWITCH_STATUS_SUCCESS) {
+            if (pop) {
+                if ((switch_size_t)pop != 1) {
+                    tmpframe = (switch_frame_t *) pop;
+                    switch_frame_buffer_free(member->fb, &tmpframe);
+                }
+            }
+        }
 }
 
 /* For Emacs:
