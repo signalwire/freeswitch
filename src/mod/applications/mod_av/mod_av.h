@@ -41,6 +41,7 @@
 
 struct mod_av_globals {
 	int debug;
+	char* watermark_descr;
 };
 
 extern struct mod_av_globals mod_av_globals;

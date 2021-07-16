@@ -54,6 +54,10 @@ GCC_DIAG_OFF(deprecated-declarations)
 #include <libswresample/swresample.h>
 #endif
 
+#include <libavfilter/buffersink.h>	
+#include <libavfilter/buffersrc.h>		
+
+
 GCC_DIAG_ON(deprecated-declarations)
 #define SCALE_FLAGS SWS_BICUBIC
 #define DFT_RECORD_OFFSET 0
@@ -99,6 +103,11 @@ typedef struct MediaStream {
 	int64_t next_pts;
 	int active;
 	int r;
+
+	AVFilterContext *buffersink_ctx;
+	AVFilterContext *buffersrc_ctx;
+	AVFilterGraph *filter_graph;
+	AVFrame *filter_frame;
 } MediaStream;
 
 typedef struct record_helper_s {
@@ -906,27 +915,63 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pts: %" SWITCH_INT64_T_FMT "\n", context->eh.video_st->frame->pts);
 
-		/* encode the image */
-GCC_DIAG_OFF(deprecated-declarations)
-		ret = avcodec_encode_video2(context->eh.video_st->st->codec, &pkt, context->eh.video_st->frame, &got_packet);
-GCC_DIAG_ON(deprecated-declarations)
- 
-		if (ret < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoding Error %d\n", ret);
-			continue;
+
+		if (mod_av_globals.watermark_descr == NULL)
+		{
+			GCC_DIAG_OFF(deprecated-declarations)
+				ret = avcodec_encode_video2(context->eh.video_st->st->codec, &pkt, context->eh.video_st->frame, &got_packet);
+			GCC_DIAG_ON(deprecated-declarations)
+
+			if (ret < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoding Error %d\n", ret);
+				continue;
+			}
+
+			if (got_packet) {
+				switch_mutex_lock(context->eh.mutex);
+				GCC_DIAG_OFF(deprecated-declarations)
+					write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
+				GCC_DIAG_ON(deprecated-declarations)
+					switch_mutex_unlock(context->eh.mutex);
+				av_packet_unref(&pkt);
+			}
+
+			context->eh.in_callback = 0;
+		}
+		else if (context->eh.video_st->filter_frame)
+		{
+
+			if (av_buffersrc_add_frame_flags(context->eh.video_st->buffersrc_ctx, context->eh.video_st->frame, AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
+                av_log(NULL, AV_LOG_ERROR, "Error while feeding the filtergraph\n");
+                break;
+            }
+
+			while (1) {				
+				ret = av_buffersink_get_frame(context->eh.video_st->buffersink_ctx, context->eh.video_st->filter_frame);
+				if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+					break;
+				if (ret < 0)
+					break;
+
+				GCC_DIAG_OFF(deprecated-declarations)
+				ret = avcodec_encode_video2(context->eh.video_st->st->codec, &pkt, context->eh.video_st->filter_frame, &got_packet);
+				GCC_DIAG_ON(deprecated-declarations)
+
+				if (got_packet) {
+					switch_mutex_lock(context->eh.mutex);
+					GCC_DIAG_OFF(deprecated-declarations)
+						write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
+					GCC_DIAG_ON(deprecated-declarations)
+						switch_mutex_unlock(context->eh.mutex);
+					av_packet_unref(&pkt);
+				}
+
+				context->eh.in_callback = 0;
+				av_frame_unref(context->eh.video_st->filter_frame);
+			}
+
 		}
 
-		if (got_packet) {
-			switch_mutex_lock(context->eh.mutex);
-GCC_DIAG_OFF(deprecated-declarations)
-			write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
-GCC_DIAG_ON(deprecated-declarations) 
-			switch_mutex_unlock(context->eh.mutex);
-			av_packet_unref(&pkt);
-		}
-
-		context->eh.in_callback = 0;
-		//switch_mutex_unlock(context->eh.mutex);
 	}
 
  endfor:
@@ -977,6 +1022,11 @@ static void close_stream(AVFormatContext *fc, MediaStream *mst)
 	if (mst->sws_ctx) sws_freeContext(mst->sws_ctx);
 	if (mst->frame) av_frame_free(&mst->frame);
 	if (mst->tmp_frame) av_frame_free(&mst->tmp_frame);
+
+
+	if (mst->filter_graph)	avfilter_graph_free(&mst->filter_graph);
+	if (mst->filter_frame)	av_frame_free(&mst->filter_frame);
+
 
 GCC_DIAG_OFF(deprecated-declarations)
 	if (mst->st && mst->st->codec) {
@@ -2280,6 +2330,80 @@ static switch_status_t av_file_read(switch_file_handle_t *handle, void *data, si
 }
 
 
+static switch_status_t init_watermark_filters(const char *filters_descr, const av_file_context_t *context)
+{
+	switch_status_t rt_status = SWITCH_STATUS_SUCCESS;
+	AVCodecParameters *codecParm = NULL;
+	const AVFilter *buffersrc = avfilter_get_by_name("buffer");
+	const AVFilter *buffersink = avfilter_get_by_name("buffersink");
+	AVFilterInOut *outputs = avfilter_inout_alloc();
+	AVFilterInOut *inputs = avfilter_inout_alloc();
+	enum AVPixelFormat pix_fmts[] = { AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE };
+	int ret = 0;
+	char args[512];
+
+	context->eh.video_st->filter_graph = avfilter_graph_alloc();											
+																										
+	
+	codecParm = context->eh.video_st->st->codecpar;
+	snprintf(args, sizeof(args),
+		"video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+		codecParm->width, codecParm->height, AV_PIX_FMT_YUVJ420P,
+		context->eh.video_st->st->time_base.num, context->eh.video_st->st->time_base.den,			
+		codecParm->sample_aspect_ratio.num, codecParm->sample_aspect_ratio.den);
+
+		
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,"init watermark filters buffersrc_ctx args:%s \r\n",args);
+
+		
+	ret = avfilter_graph_create_filter(&(context->eh.video_st->buffersrc_ctx), buffersrc, "in",	args, NULL, context->eh.video_st->filter_graph);
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot create buffer source\n");
+		rt_status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
+
+	ret = avfilter_graph_create_filter(&(context->eh.video_st->buffersink_ctx), buffersink, "out", NULL, NULL, context->eh.video_st->filter_graph);
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot create buffer sink\n");
+		goto end;
+	}
+	ret = av_opt_set_int_list(context->eh.video_st->buffersink_ctx, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot set output pixel format\n");
+		goto end;
+	}
+
+
+	outputs->name = av_strdup("in");
+	outputs->filter_ctx = context->eh.video_st->buffersrc_ctx;
+	outputs->pad_idx = 0;
+	outputs->next = NULL;
+
+	inputs->name = av_strdup("out");
+	inputs->filter_ctx = context->eh.video_st->buffersink_ctx;
+	inputs->pad_idx = 0;
+	inputs->next = NULL;
+
+	ret = avfilter_graph_parse_ptr(context->eh.video_st->filter_graph, filters_descr,&inputs, &outputs, NULL);	
+		
+	if (ret < 0){
+		av_log(NULL, AV_LOG_ERROR, "Cannot graph parse \n");
+		rt_status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
+	ret = avfilter_graph_config(context->eh.video_st->filter_graph, NULL);			
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot graph config \n");
+		rt_status = SWITCH_STATUS_FALSE;
+		goto end;
+	}
+end:
+	avfilter_inout_free(&inputs);
+	avfilter_inout_free(&outputs);
+	return rt_status;
+}
+
 #ifdef ALT_WAY
 static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
 {
@@ -2607,6 +2731,14 @@ GCC_DIAG_ON(deprecated-declarations)
 		context->eh.video_timer = &context->video_timer;
 		context->audio_st[0].frame->pts = 0;
 		context->audio_st[0].next_pts = 0;
+
+		if (mod_av_globals.watermark_descr){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "config watermark describe:%s, so will init watermark filter \n", mod_av_globals.watermark_descr);
+			if (init_watermark_filters(mod_av_globals.watermark_descr, context) == SWITCH_STATUS_SUCCESS) {
+				context->eh.video_st->filter_frame = av_frame_alloc();
+			}			
+		}
+
 		switch_thread_create(&context->eh.video_thread, thd_attr, video_thread_run, context, handle->memory_pool);
 	}
 
@@ -2685,6 +2817,12 @@ static switch_status_t load_config()
 				if (avformat_globals.colorspace > AVCOL_SPC_NB) {
 					avformat_globals.colorspace = AVCOL_SPC_RGB;
 				}
+			}
+
+			if (!strcmp(var, "watermark_describe") && val != NULL) {
+				mod_av_globals.watermark_descr = strdup(val); 
+				assert(mod_av_globals.watermark_descr);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod_av load avformat.conf  watermark_describe:%s \n", mod_av_globals.watermark_descr);
 			}
 		}
 	}
