@@ -1067,6 +1067,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint8_t is_t38 = 0;
 	const char *hold_char = "*";
 	const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+	const char *identity = NULL;
+	const char *identity_div = NULL;
 
 	switch_size_t mp_data_len = 0;
 	sip_payload_t *mp_payload = 0;
@@ -1623,6 +1625,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		cseq = sip_cseq_create(tech_pvt->nh->nh_home, callsequence, SIP_METHOD_INVITE);
 	}
 
+	if ((val = switch_channel_get_variable(channel, "sip_identity"))) {
+		identity = switch_core_session_strdup(session, val);
+	}
+
+	if ((val = switch_channel_get_variable(channel, "sip_identity_div"))) {
+		identity_div = switch_core_session_strdup(session, val);
+	}
 
 	switch_channel_clear_flag(channel, CF_MEDIA_ACK);
 
@@ -1712,6 +1721,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 				   TAG_IF(!zstr(alert_info), SIPTAG_HEADER_STR(alert_info)),
 				   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+				   TAG_IF(!zstr(identity), SIPTAG_IDENTITY_STR(identity)),
+				   TAG_IF(!zstr(identity_div), SIPTAG_IDENTITY_STR(identity_div)),
 				   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
 				   TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 				   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
