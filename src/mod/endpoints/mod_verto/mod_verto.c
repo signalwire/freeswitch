@@ -882,6 +882,12 @@ static void login_fire_custom_event(jsock_t *jsock, cJSON *params, int success, 
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_sessid", cJSON_GetObjectCstr(params, "sessid"));
 			}
 		}
+		if (jsock->id) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_id", jsock->id);
+		}
+		if (jsock->domain) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_domain", jsock->domain);
+		}
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_success", "%d", success);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_result_txt", result_txt);
 		switch_event_fire(&s_event);
