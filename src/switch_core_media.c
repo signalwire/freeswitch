@@ -260,7 +260,7 @@ struct switch_media_handle_s {
 	switch_time_t last_codec_refresh;
 	switch_time_t last_video_refresh_req;
 	switch_timer_t video_timer;
-
+	int video_refresh_requested;
 
 	switch_vid_params_t vid_params;
 	switch_file_handle_t *video_read_fh;
@@ -2961,6 +2961,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				if (video_globals.fps && (!video_globals.synced || ((smh->vid_frames % 300) == 0))) {
 					check_jb_sync(session);
 				}
+			}
+			{
+			    switch_time_t now = switch_micro_time_now();
+			    if (smh->video_refresh_requested > 1 && (now - smh->last_video_refresh_req >= VIDEO_REFRESH_FREQ)) {
+				switch_core_session_request_video_refresh(session);
+			    }
 			}
 		}
 
@@ -14366,9 +14372,11 @@ SWITCH_DECLARE(switch_status_t) _switch_core_session_request_video_refresh(switc
 		switch_time_t now = switch_micro_time_now();
 
 		if (!force && (smh->last_video_refresh_req && (now - smh->last_video_refresh_req) < VIDEO_REFRESH_FREQ)) {
+			smh->video_refresh_requested++;
 			return SWITCH_STATUS_BREAK;
 		}
 
+		smh->video_refresh_requested=0;
 		smh->last_video_refresh_req = now;
 
 		if (force) {
