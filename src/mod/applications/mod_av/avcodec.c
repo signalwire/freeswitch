@@ -1964,6 +1964,9 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 	ctx = &aprofile->ctx;
 
+	ctx->profile = FF_PROFILE_H264_BASELINE;
+	ctx->level = 31;
+
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
 		const char *name = switch_xml_attr(param, "name");
 		const char *value = switch_xml_attr(param, "value");
@@ -1974,9 +1977,6 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
 
 		val = atoi(value);
-
-		ctx->profile = FF_PROFILE_H264_BASELINE;
-		ctx->level = 31;
 
 		if (!strcmp(name, "dec-threads")) {
 			aprofile->decoder_thread_count = switch_parse_cpu_string(value);
