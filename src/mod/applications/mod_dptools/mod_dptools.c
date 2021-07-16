@@ -1194,6 +1194,42 @@ SWITCH_STANDARD_APP(flush_dtmf_function)
 	switch_channel_flush_dtmf(switch_core_session_get_channel(session));
 }
 
+#define refer_3pcc_DESC "Send a REFER with Replace: to <uuid> specifying to replace the caller specified in <uuid-to-refer>"
+#define refer_3pcc_SYNTAX "<uuid-to-refer>"
+SWITCH_STANDARD_APP(refer_3pcc_function)
+{
+	char *argv[1] = { 0 };
+	int argc;
+	char *split_argv;
+	char *uuid_to_refer = argv[0];
+	switch_core_session_t *session_to_send_refer = session;
+	switch_core_session_t *session_to_refer;
+
+	split_argv = switch_core_session_strdup(session, data);
+	argc = switch_split(split_argv, ' ', argv);
+
+	if (argc < 1 || zstr(argv[0])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s refer_3pcc error USAGE: %s\n",
+		                  switch_core_session_get_name(session), refer_3pcc_SYNTAX);
+		return;
+	}
+
+	session_to_refer = switch_core_session_locate(uuid_to_refer);
+
+	if (session_to_refer) {
+		switch_core_session_message_t msg = {0};
+
+		msg.from = __FILE__;
+		msg.string_arg = argv[0];
+		msg.message_id = SWITCH_MESSAGE_INDICATE_REFER_3PCC;
+		switch_core_session_receive_message(session_to_send_refer, &msg);
+		switch_core_session_rwunlock(session_to_refer);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s refer_3pcc error session UUID not found: %s\n",
+		                  switch_core_session_get_name(session), uuid_to_refer);
+	}
+}
+
 SWITCH_STANDARD_APP(transfer_function)
 {
 	int argc;
@@ -6477,6 +6513,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "unhold", "Send a un-hold message", "Send a un-hold message", unhold_function, UNHOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mutex", "block on a call flow only allowing one at a time", "", mutex_function, MUTEX_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "page", "", "", page_function, PAGE_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "refer_3pcc", "Send a REFER/Replace to a channel", refer_3pcc_DESC, refer_3pcc_function, refer_3pcc_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "check_acl", "Check an ip against an ACL list", "Check an ip against an ACL list", check_acl_function,
