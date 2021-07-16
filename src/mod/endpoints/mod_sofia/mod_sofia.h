@@ -107,6 +107,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_BYE_RESPONSE "sofia::bye_response"
 
 #define MULTICAST_EVENT "multicast::event"
+#define SOFIA_CUSTOM_NUA_EVENT_REFER 9999
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
