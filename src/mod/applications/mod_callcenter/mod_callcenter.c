@@ -2251,6 +2251,7 @@ struct agent_callback {
 	switch_bool_t tier_rule_wait_multiply_level;
 	switch_bool_t tier_rule_no_agent_no_wait;
 	switch_bool_t agent_found;
+	switch_bool_t agent_unavailable;
 	switch_bool_t skip_agents_with_external_calls;
 	cc_agent_status_t agent_no_answer_status;
 
@@ -2287,6 +2288,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_bool_t contact_agent = SWITCH_TRUE;
 
 	cbt->agent_found = SWITCH_TRUE;
+	cbt->agent_unavailable = SWITCH_FALSE;
 
 	/* Check if we switch to a different tier, if so, check if we should continue further for that member */
 
@@ -2330,6 +2332,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 		contact_agent = SWITCH_FALSE;
 	}
 	if (contact_agent == SWITCH_FALSE) {
+		cbt->agent_unavailable = SWITCH_TRUE;
 		return 0; /* Continue to next Agent */
 	}
 
@@ -2598,6 +2601,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	cbt.strategy = queue_strategy;
 	cbt.record_template = queue_record_template;
 	cbt.agent_found = SWITCH_FALSE;
+	cbt.agent_unavailable = SWITCH_TRUE;
 
 	if (!strcasecmp(queue->strategy, "top-down")) {
 		/* WARNING this use channel variable to help dispatch... might need to be reviewed to save it in DB to make this multi server prooft in the future */
@@ -2718,7 +2722,8 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		queue->last_agent_exist_check = local_epoch_time_now(NULL);
 		if (cbt.agent_found) {
 			queue->last_agent_exist = queue->last_agent_exist_check;
-		} else {
+		}
+		if (cbt.agent_unavailable) {
 			/* If no agent found in top-down mode, restart to the begining */
 			if (!strcasecmp(queue->strategy, "top-down")) {
 				switch_core_session_t *member_session = switch_core_session_locate(cbt.member_session_uuid);
