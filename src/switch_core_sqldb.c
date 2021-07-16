@@ -81,6 +81,7 @@ static void switch_core_sqldb_stop_thread(void);
 #define database_interface_handle_callback_exec(database_interface, dih, sql, callback, pdata, err) database_interface->callback_exec_detailed(__FILE__, (char *)__SWITCH_FUNC__, __LINE__, dih, sql, callback, pdata, err)
 #define database_interface_handle_exec(database_interface, dih, sql, err) database_interface->exec_detailed(__FILE__, (char *)__SWITCH_FUNC__, __LINE__, dih, sql, err)
 
+
 static switch_cache_db_handle_t *create_handle(switch_cache_db_handle_type_t type)
 {
 	switch_cache_db_handle_t *new_dbh = NULL;
@@ -689,6 +690,8 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 	char *type = NULL;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
 
+	DEBUG_SQL_TIMING_START(start);
+
 	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	if (err) {
@@ -740,6 +743,8 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 
 
 	if (io_mutex) switch_mutex_unlock(io_mutex);
+
+	DEBUG_SQL_TIMING_END(start, sql);
 
 	return status;
 }
@@ -884,6 +889,8 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
 
+	DEBUG_SQL_TIMING_START(start);
+
 	if (io_mutex) switch_mutex_lock(io_mutex);
 
 	memset(str, 0, len);
@@ -940,6 +947,8 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
  end:
 
 	if (io_mutex) switch_mutex_unlock(io_mutex);
+
+	DEBUG_SQL_TIMING_END(start, sql);
 
 	return status == SWITCH_STATUS_SUCCESS ? str : NULL;
 
@@ -1331,6 +1340,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
+	DEBUG_SQL_TIMING_START(start);
 
 	if (err) {
 		*err = NULL;
@@ -1376,6 +1386,8 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cach
 
 	if (io_mutex) switch_mutex_unlock(io_mutex);
 
+	DEBUG_SQL_TIMING_END(start, sql);
+
 	return status;
 }
 
@@ -1386,6 +1398,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *errmsg = NULL;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
+	DEBUG_SQL_TIMING_START(start);
 
 	if (err) {
 		*err = NULL;
@@ -1443,6 +1456,8 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 
 	if (io_mutex) switch_mutex_unlock(io_mutex);
 
+	DEBUG_SQL_TIMING_END(start, sql);
+
 	return status;
 }
 
@@ -1485,6 +1500,8 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 {
 	switch_bool_t r = SWITCH_TRUE;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
+
+	DEBUG_SQL_TIMING_START(start);
 
 	switch_assert(test_sql != NULL);
 	switch_assert(reactive_sql != NULL);
@@ -1576,6 +1593,8 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive_ex(switch_cache_db_h
 
 
 	if (io_mutex) switch_mutex_unlock(io_mutex);
+
+	DEBUG_SQL_TIMING_END(start, reactive_sql);
 
 	return r;
 }

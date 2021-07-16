@@ -560,6 +560,25 @@ SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const ch
 
 SWITCH_DECLARE(char*)switch_sql_concat(void);
 
+#ifdef DEBUG_SQL_TIMING
+
+#define DEBUG_SQL_TIMING_START(_start) switch_time_t _start = switch_time_now()
+#define DEBUG_SQL_TIMING_RESTART(_start) _start = switch_time_now()
+
+#define DEBUG_SQL_TIMING_END(_start, _sql) do { \
+	if (runtime.debug_level >= SWITCH_LOG_DEBUG) { \
+		switch_time_t end = switch_time_now(); \
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL callback took: [%" PRId64 "] microseconds %s\n", end - (_start), (_sql)); \
+	} \
+} while (0)
+#else
+#define DEBUG_SQL_TIMING_START(_start)
+#define DEBUG_SQL_TIMING_RESTART(_start)
+#define DEBUG_SQL_TIMING_END(_start, _sql)
+#endif
+
+
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
