@@ -188,7 +188,7 @@ switch_jb_node_t *sort_nodes(switch_jb_node_t *list, int (*cmp)(const void *, co
 				e->prev = tail;
 
 				tail = e;
-			}
+			};
 
 			/* now p has stepped `insize' places along, and q has too */
 			p = q;
@@ -207,56 +207,11 @@ switch_jb_node_t *sort_nodes(switch_jb_node_t *list, int (*cmp)(const void *, co
 
 // static inline void thin_frames(switch_jb_t *jb, int freq, int max);
 
-
-static inline switch_jb_node_t *new_node(switch_jb_t *jb)
+static inline void sort_free_nodes(switch_jb_t *jb)
 {
-	switch_jb_node_t *np;
-
 	switch_mutex_lock(jb->list_mutex);
-
-	for (np = jb->node_list; np; np = np->next) {
-		if (!np->visible) {
-			break;
-		}
-	}
-
-	if (!np) {
-		int mult = 2;
-
-		if (jb->type != SJB_VIDEO) {
-			mult = 2;
-		} else {
-			if (jb->max_packet_len > mult) {
-				mult = jb->max_packet_len;
-			}
-		}
-
-		if (jb->allocated_nodes > jb->max_frame_len * mult) {
-			jb_debug(jb, 2, "ALLOCATED FRAMES TOO HIGH! %d\n", jb->allocated_nodes);
-			switch_jb_reset(jb);
-			switch_mutex_unlock(jb->list_mutex);
-			return NULL;
-		}
-		
-		np = switch_core_alloc(jb->pool, sizeof(*np));
-		jb->allocated_nodes++;
-		np->next = jb->node_list;
-		if (np->next) {
-			np->next->prev = np;
-		}
-		jb->node_list = np;
-
-	}
-
-	switch_assert(np);
-	np->bad_hits = 0;
-	np->visible = 1;
-	jb->visible_nodes++;
-	np->parent = jb;
-
+	jb->node_list = sort_nodes(jb->node_list, node_cmp);
 	switch_mutex_unlock(jb->list_mutex);
-
-	return np;
 }
 
 static inline void push_to_top(switch_jb_t *jb, switch_jb_node_t *node)
@@ -314,11 +269,88 @@ static inline void hide_node(switch_jb_node_t *node, switch_bool_t pop)
 	switch_mutex_unlock(jb->list_mutex);
 }
 
-static inline void sort_free_nodes(switch_jb_t *jb)
+static inline int drop_lower_seq(switch_jb_t *jb, uint32_t seq)
 {
+	switch_jb_node_t *np;
+	int x = 0;
+
 	switch_mutex_lock(jb->list_mutex);
-	jb->node_list = sort_nodes(jb->node_list, node_cmp);
+	for (np = jb->node_list; np; np = np->next) {
+		if (!np->visible) continue;
+
+		if (np->packet.header.seq < seq) {
+			hide_node(np, SWITCH_FALSE);
+			jb_debug(jb, 2, "Dropped packet %u - no longer needed\n",ntohs(np->packet.header.seq));
+			x++;
+		}
+	}
+
+	if (x) {
+		sort_free_nodes(jb);
+	}
+
 	switch_mutex_unlock(jb->list_mutex);
+
+	return x;
+}
+
+
+static inline switch_jb_node_t *new_node(switch_jb_t *jb)
+{
+	switch_jb_node_t *np;
+
+	switch_mutex_lock(jb->list_mutex);
+
+	begin:
+
+	for (np = jb->node_list; np; np = np->next) {
+		if (!np->visible) {
+			break;
+		}
+	}
+
+	if (!np) {
+		int mult = 2;
+		int dropped = 0;
+
+		if (jb->type != SJB_VIDEO) {
+			mult = 2;
+		} else {
+			if (jb->max_packet_len > mult) {
+				mult = jb->max_packet_len;
+			}
+		}
+
+		if (jb->allocated_nodes > jb->max_frame_len * mult) {
+			jb_debug(jb, 2, "Allocated frames too high. Need to clean rubish packets %d / %d / %d / %d\n", jb->allocated_nodes,jb->max_frame_len,mult,jb->visible_nodes);
+
+			dropped = drop_lower_seq(jb, jb->target_seq);
+			jb_debug(jb, 2, "Dropped %d rubish packets. Target sequence: %u , New Visible Count: %d\n",dropped,ntohs(jb->target_seq),jb->visible_nodes);
+			
+			if (dropped > 0) {
+				goto begin;
+			}
+		}
+		
+		np = switch_core_alloc(jb->pool, sizeof(*np));
+		jb->allocated_nodes++;
+		np->next = jb->node_list;
+		if (np->next) {
+			np->next->prev = np;
+		}
+		jb->node_list = np;
+
+	}
+
+	switch_assert(np);
+	np->bad_hits = 0;
+	np->visible = 1;
+	jb->visible_nodes++;
+	np->parent = jb;
+
+	switch_mutex_unlock(jb->list_mutex);
+
+	return np;
 }
 
 static inline void hide_nodes(switch_jb_t *jb)
