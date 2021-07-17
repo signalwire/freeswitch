@@ -1488,6 +1488,7 @@ SWITCH_DECLARE(switch_status_t) switch_digest(const char *digest_name, unsigned 
 SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, char **digest_str, const void *input, switch_size_t inputLen, unsigned int *outputlen);
 
 SWITCH_DECLARE(char *) switch_must_strdup(const char *_s);
+SWITCH_DECLARE(const char *) switch_memory_usage_stream(switch_stream_handle_t *stream);
 
 SWITCH_END_EXTERN_C
 #endif
