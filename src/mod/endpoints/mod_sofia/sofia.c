@@ -2654,7 +2654,7 @@ void sofia_event_callback(nua_event_t event,
 		goto end;
 	}
 
-	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
+	if (sofia_private && nua_i_bye != event && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		switch_core_session_t *session;
 
 		if ((session = switch_core_session_locate(sofia_private->uuid))) {
