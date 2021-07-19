@@ -38,7 +38,6 @@
 
 FST_BEGIN()
 {
-
 FST_SUITE_BEGIN()
 {
 
@@ -59,6 +58,12 @@ FST_TEST_BEGIN(encoded_token)
 	time_t now = 1615402513;
 	char *token = NULL;
 	int token_length;
+
+	char *tkn = "TESTER";
+	unsigned char *tknb64 = 0;
+	int encoded_tlength = 8;
+    switch_b64_encode((unsigned char *) tkn,sizeof(tkn), tknb64, encoded_tlength);
+
     token = encoded_token("https://accounts.google.com/o/oauth2/token", "gcs@freeswitch.com", "667265657377697463682D676373", &token_length, now);
 	fst_check_string_equals("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjY2NzI2NTY1NzM3NzY5NzQ2MzY4MkQ2NzYzNzMifQ.eyJpYXQiOiIxNjE1NDAyNTEzIiwiZXhwIjoiMTYxNTQwNjExMyIsImlzcyI6Imdjc0BmcmVlc3dpdGNoLmNvbSIsImF1ZCI6Imh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi90b2tlbiIsInNjb3BlIjoiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vYXV0aC9kZXZzdG9yYWdlLmZ1bGxfY29udHJvbCBodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL2RldnN0b3JhZ2UucmVhZF9vbmx5IGh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL2F1dGgvZGV2c3RvcmFnZS5yZWFkX3dyaXRlIn0", token);
 	free(token);
