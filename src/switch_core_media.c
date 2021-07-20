@@ -1168,6 +1168,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 	engine = &smh->engines[type];
 
 	if (!force && engine->ssec[ctype].local_raw_key[0]) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto SKIP\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1999,7 +2000,7 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_handle_t *smh;
-	int i = 0, idx_audio = 1, idx_video = 1, idx_text = 1;
+	int i;
 
 	if (switch_core_session_media_handle_ready(session) != SWITCH_STATUS_SUCCESS) {
 		return;
