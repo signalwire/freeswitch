@@ -869,7 +869,7 @@ static void on_sofia_gateway_state(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SignalWire SIP Gateway registered to %s:%s\n", ip, port);
 			switch_set_string(globals.gateway_ip, ip);
 			switch_set_string(globals.gateway_port, port);
-		} else if (!strcmp(state, "NOREG")) {
+		} else if (!strcmp(state, "DOWN")) {
 			globals.gateway_ip[0] = '\0';
 			globals.gateway_port[0] = '\0';
 		}
