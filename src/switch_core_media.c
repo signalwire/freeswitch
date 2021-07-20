@@ -1863,7 +1863,6 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	int ctype = 0;
 	const char *vval = NULL;
 	int use_alias = 0;
-	int fix_1 = 0;
 	switch_rtp_engine_t *engine;
 	switch_media_handle_t *smh;
 
@@ -1880,8 +1879,6 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	}
 
 	engine = &session->media_handle->engines[type];
-	fix_1 = switch_channel_var_true(session->channel, "srtp_fix_1");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: switch_core_session_check_incoming_crypto fix_1=%d\n", fix_1);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking incoming crypto (type=%s, varname=%s, crypto=%s, crypto_tag=%d, sdp_type=%s)\n", type2str(type), varname, crypto, crypto_tag, sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
@@ -1906,11 +1903,8 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
-		if (!fix_1 && (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key))) {
+		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Existing key is still valid. (sdp type %s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
-			got_crypto = 1;
-		} else if (fix_1 && (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key) && sdp_type == SDP_TYPE_RESPONSE)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Fix_1 Existing key is still valid. (sdp type %s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
 			got_crypto = 1;
 		} else {
 			const char *a = switch_stristr("AE", engine->ssec[engine->crypto_type].remote_crypto_key);
@@ -1994,7 +1988,6 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
  end:
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: switch_core_session_check_incoming_crypto ret=%d\n", got_crypto);
 	return got_crypto;
 }
 
