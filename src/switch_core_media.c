@@ -1165,16 +1165,14 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	engine = &smh->engines[type];
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto (type=%s, index=%d, direction=%s, force=%d)\n", type2str(type), index, direction == SWITCH_RTP_CRYPTO_SEND ? "SEND" : "RECV", force);
-
 	if (!force && engine->ssec[ctype].local_raw_key[0]) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto SKIP\n");
-		return SWITCH_STATUS_IGNORE;
+		return SWITCH_STATUS_SUCCESS;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto (type=%s, index=%d, direction=%s, force=%d)\n", type2str(type), index, direction == SWITCH_RTP_CRYPTO_SEND ? "SEND" : "RECV", force);
 
 //#define SAME_KEY
 #ifdef SAME_KEY
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto with SAME_KEY\n");
 	if (switch_channel_test_flag(channel, CF_AVPF) && type == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
 			memcpy(engine->ssec[ctype].local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keysalt_len);
@@ -1185,7 +1183,6 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		}
 	} else {
 #endif
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto without SAME_KEY\n");
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
 			key = engine->ssec[ctype].local_raw_key;
 		} else {
@@ -2018,23 +2015,14 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto\n");
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+		switch_core_media_build_crypto(session->media_handle,
+									   SWITCH_MEDIA_TYPE_AUDIO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto: build it at (i=%d, idx_audio=%d, idx_video=%d, idx_text=%d)\n", i, idx_audio, idx_video, idx_text);
+		switch_core_media_build_crypto(session->media_handle,
+									   SWITCH_MEDIA_TYPE_VIDEO, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
 
-		if (SWITCH_STATUS_SUCCESS == switch_core_media_build_crypto(session->media_handle, SWITCH_MEDIA_TYPE_AUDIO, idx_audio, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Built outgoing crypto audio (i=%d, index=%d => %d)\n", i, idx_audio, idx_audio + 1);
-			idx_audio += 1;
-		}
-
-		if (SWITCH_STATUS_SUCCESS == switch_core_media_build_crypto(session->media_handle, SWITCH_MEDIA_TYPE_VIDEO, idx_video, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Built outgoing crypto video (i=%d, index=%d => %d)\n", i, idx_video, idx_video + 1);
-			idx_video += 1;
-		}
-
-		if (SWITCH_STATUS_SUCCESS == switch_core_media_build_crypto(session->media_handle, SWITCH_MEDIA_TYPE_TEXT, idx_text, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Built outgoing crypto text (i=%d, index=%d => %d)\n", i, idx_text, idx_text + 1);
-			idx_text += 1;
-		}
+		switch_core_media_build_crypto(session->media_handle,
+									   SWITCH_MEDIA_TYPE_TEXT, SWITCH_NO_CRYPTO_TAG, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
 	}
 
 }
