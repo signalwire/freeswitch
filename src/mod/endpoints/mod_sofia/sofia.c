@@ -4568,6 +4568,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				sofia_profile_start_failure(NULL, xprofilename);
 			} else {
 				switch_memory_pool_t *pool = NULL;
+				char *auth_messages_value = NULL;
+				uint8_t disable_auth_flag = 0;
 
 				if (!xprofilename) {
 					xprofilename = "unnamed";
@@ -5561,11 +5563,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_AUTH_CALLS);
 						}
 					} else if (!strcasecmp(var, "auth-messages")) {
+						auth_messages_value = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "disable-auth-messages")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
-						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_MESSAGES);
+						} else {
+							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 						}
+
+						disable_auth_flag = 1;
 					} else if (!strcasecmp(var, "auth-subscriptions")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
@@ -6073,6 +6079,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 								}
 							}
 						}
+					}
+				}
+
+				if (!disable_auth_flag) {
+					if (!auth_messages_value || switch_true(auth_messages_value)) {
+						sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
+					} else {
+						sofia_clear_pflag(profile, PFLAG_AUTH_MESSAGES);
 					}
 				}
 
