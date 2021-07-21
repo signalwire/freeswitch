@@ -7244,7 +7244,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int check = 0;
 	int ret = -1;
 	int sleep_mss = 1000;
-	int poll_sec = 5;
+	int poll_msec = 200;
 	int poll_loop = 0;
 	int fdr = 0;
 	int rtcp_fdr = 0;
@@ -7413,7 +7413,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->read_pollfd) {
-			int pt = poll_sec * 1000000;
+			int pt = poll_msec * 1000;
 
 			do_2833(rtp_session);
 
@@ -7537,7 +7537,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-				rtp_session->missed_count += (poll_sec * 1000) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet / 1000 : 20);
+				rtp_session->missed_count += (poll_msec) / (rtp_session->ms_per_packet ? rtp_session->ms_per_packet / 1000 : 20);
 				bytes = 0;
 
 				if (rtp_session->media_timeout && rtp_session->last_media) {
