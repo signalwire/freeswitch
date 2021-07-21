@@ -1101,6 +1101,19 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 	return k ? FTDM_SUCCESS : FTDM_FAIL;
 }
 
+static __inline__ int handle_pulse_event(ftdm_channel_t *fchan, zt_event_t zt_event_id)
+{
+	if ((zt_event_id & ZT_EVENT_PULSEDIGIT)) {
+		int digit = (zt_event_id & (~ZT_EVENT_PULSEDIGIT));
+		char tmp_pulse[2] = { digit, 0 };
+		ftdm_log_chan(fchan, FTDM_LOG_DEBUG, "PULSEDIGIT [%c]\n", (char)digit);
+		ftdm_channel_queue_dtmf(fchan, tmp_pulse);
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
 static __inline__ int handle_dtmf_event(ftdm_channel_t *fchan, zt_event_t zt_event_id)
 {
 	if ((zt_event_id & ZT_EVENT_DTMFUP)) {
@@ -1234,6 +1247,12 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 			*event_id = FTDM_OOB_POLARITY_REVERSE;
 		}
 		break;
+	case ZT_EVENT_PULSE_START:
+		{
+			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "Received start of pulse sequence (ZT_EVENT_PULSE_START)\n");
+			*event_id = FTDM_OOB_PULSE_START;
+		}
+		break;
 	case ZT_EVENT_NONE:
 		{
 			ftdm_log_chan_msg(fchan, FTDM_LOG_DEBUG, "No event\n");
@@ -1242,11 +1261,13 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 		break;
 	default:
 		{
-			if (handle_dtmf_event(fchan, zt_event_id)) {
+			if (!handle_pulse_event(fchan, zt_event_id)) {
+				*event_id = FTDM_OOB_PULSE_END;
+			} else if (!handle_dtmf_event(fchan, zt_event_id)) {
+				*event_id = FTDM_OOB_NOOP;
+			} else {
 				ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
 				*event_id = FTDM_OOB_INVALID;
-			} else {
-				*event_id = FTDM_OOB_NOOP;
 			}
 		}
 		break;

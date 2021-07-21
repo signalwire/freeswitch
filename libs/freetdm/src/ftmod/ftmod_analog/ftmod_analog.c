@@ -822,6 +822,16 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 
 
 		if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALTONE || ftdmchan->state == FTDM_CHANNEL_STATE_COLLECT) {
+
+			if (ftdm_test_sflag(ftdmchan, AF_PULSE_INCOMING)) {
+
+				if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALTONE) {
+					ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+					collecting = 1;
+				}
+				last_digit = elapsed;
+			}
+
 			if ((dlen = ftdm_channel_dequeue_dtmf(ftdmchan, dtmf + dtmf_offset, sizeof(dtmf) - strlen(dtmf)))) {
 
 				if (ftdmchan->state == FTDM_CHANNEL_STATE_DIALTONE) {
@@ -1159,6 +1169,18 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 			}
 			/* we have a good channel, set the polarity flag and let the channel thread deal with it */
 			ftdm_set_sflag(event->channel, AF_POLARITY_REVERSE);
+		}
+		break;
+	case FTDM_OOB_PULSE_START:
+		{
+			ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, "Incoming pulse event!\n");
+			ftdm_set_sflag(event->channel, AF_PULSE_INCOMING);
+		}
+		break;
+	case FTDM_OOB_PULSE_END:
+		{
+			ftdm_log_chan_msg(event->channel, FTDM_LOG_DEBUG, "Incoming pulse event completed\n");
+			ftdm_clear_sflag(event->channel, AF_PULSE_INCOMING);
 		}
 		break;
 	default:
