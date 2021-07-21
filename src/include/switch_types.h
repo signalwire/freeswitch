@@ -1805,7 +1805,8 @@ typedef enum {
 	SWITCH_ASR_FLAG_FREE_POOL = (1 << 1),
 	SWITCH_ASR_FLAG_CLOSED = (1 << 2),
 	SWITCH_ASR_FLAG_FIRE_EVENTS = (1 << 3),
-	SWITCH_ASR_FLAG_AUTO_RESUME = (1 << 4)
+	SWITCH_ASR_FLAG_AUTO_RESUME = (1 << 4),
+	SWITCH_ASR_FLAG_QUEUE_EVENTS = (1 << 5)
 
 } switch_asr_flag_enum_t;
 typedef uint32_t switch_asr_flag_t;

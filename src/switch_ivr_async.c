@@ -4987,9 +4987,9 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 						switch_event_fire(&dup);
 					}
 
-				}
-
-				if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
+				} 
+				
+				if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_QUEUE_EVENTS) && switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 					switch_event_fire(&event);
@@ -5017,7 +5017,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 		}
 
-		if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
+		if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_QUEUE_EVENTS) && switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 			switch_event_fire(&event);
@@ -5299,6 +5299,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
+	if ((p = switch_channel_get_variable(channel, "queue_asr_events")) && switch_false(p)) {
+		switch_clear_flag(ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
+	} else {
+		switch_set_flag(ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
+	}
+
 	switch_snprintf(key, sizeof(key), "%s/%s/%s/%s", mod_name, NULL, NULL, dest);
 
 	if ((status = switch_core_media_bug_add(session, "detect_speech", key,
@@ -5383,6 +5389,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 
 	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
 		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "queue_asr_events")) && switch_false(p)) {
+		switch_clear_flag(ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
+	} else {
+		switch_set_flag(ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
