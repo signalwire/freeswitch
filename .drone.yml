@@ -14,8 +14,10 @@ steps:
       image: signalwire/freeswitch-public-base
       pull: always
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - git clone https://github.com/freeswitch/sofia-sip.git
+      - cd sofia-sip && ./autogen.sh && ./configure.gnu && make -j`nproc` && make install && cd ..
       - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
@@ -29,8 +31,9 @@ steps:
       image: signalwire/freeswitch-public-base
       pull: always
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - cd sofia-sip && make install && cd ..
       - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
@@ -39,8 +42,9 @@ steps:
       image: signalwire/freeswitch-public-base
       pull: always
       commands:
-      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - cd sofia-sip && make install && cd ..
       - make install || true
       - cd tests/unit
       - ./run-tests.sh
@@ -145,6 +149,6 @@ trigger:
 
 ---
 kind: signature
-hmac: bc24832140c40a8fde4bb04bd6bcce43029bf1641ed4acc3585fe52049ae24dc
+hmac: a7ae7220f99ca30639e9e3cfc48489de37a2be5acc5c160269f1bdf6dc5c9d8d
 
 ...

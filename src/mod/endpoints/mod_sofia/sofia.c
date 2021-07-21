@@ -2666,8 +2666,17 @@ void sofia_event_callback(nua_event_t event,
 
 	sofia_queue_message(de);
 
+	return;
+
  end:
 	//switch_cond_next();
+
+	/* 
+	 * This sofia_event_callback() function is called by nua_application_event()
+	 * which strictly requires application to call nua_handle_destroy()
+	 * Since we did not queue the message we should call nua_handle_destroy() now so handles don't pool swell.
+	 */
+	nua_handle_destroy(nh);
 
 	return;
 }
