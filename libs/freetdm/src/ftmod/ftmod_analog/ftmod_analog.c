@@ -481,7 +481,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 		ftdm_wait_flag_t flags = FTDM_READ;
 		ftdm_size_t dlen = 0;
 		
-		len = sizeof(frame);
+		len = sizeof(frame) / 2;
 		
 		elapsed += interval;
 		state_counter += interval;
