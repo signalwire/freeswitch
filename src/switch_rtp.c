@@ -1914,7 +1914,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	}
 	rtcp_report_block->lsr = stats->last_recv_lsr_peer;
 	rtcp_report_block->dlsr = htonl(dlsr);
-	rtcp_report_block->ssrc = htonl(rtp_session->stats.rtcp.peer_ssrc);
+	rtcp_report_block->ssrc = htonl(rtp_session->stats.rtcp.peer_ssrc ? rtp_session->stats.rtcp.peer_ssrc : rtp_session->remote_ssrc);
 	stats->rtcp_rtp_count++;
 }
 
