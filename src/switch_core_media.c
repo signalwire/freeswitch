@@ -278,15 +278,15 @@ struct switch_media_handle_s {
 };
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
-	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
-	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
-	{ "AES_256_CM_HMAC_SHA1_80", "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
-	{ "AES_192_CM_HMAC_SHA1_80", "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
-	{ "AES_CM_128_HMAC_SHA1_80", "", AES_CM_128_HMAC_SHA1_80, 30, 14},
-	{ "AES_256_CM_HMAC_SHA1_32", "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46, 14},
-	{ "AES_192_CM_HMAC_SHA1_32", "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38, 14},
-	{ "AES_CM_128_HMAC_SHA1_32", "", AES_CM_128_HMAC_SHA1_32, 30, 14},
-	{ "AES_CM_128_NULL_AUTH", "", AES_CM_128_NULL_AUTH, 30, 14}
+	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12 },
+	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12 },
+	{ "AES_256_CM_HMAC_SHA1_80", "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14 },
+	{ "AES_192_CM_HMAC_SHA1_80", "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14 },
+	{ "AES_CM_128_HMAC_SHA1_80", "", AES_CM_128_HMAC_SHA1_80, 30, 14 },
+	{ "AES_256_CM_HMAC_SHA1_32", "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46, 14 },
+	{ "AES_192_CM_HMAC_SHA1_32", "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38, 14 },
+	{ "AES_CM_128_HMAC_SHA1_32", "", AES_CM_128_HMAC_SHA1_32, 30, 14 },
+	{ "AES_CM_128_NULL_AUTH", "", AES_CM_128_NULL_AUTH, 30, 14 }
 };
 
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str)
@@ -1169,7 +1169,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	if (!force && engine->ssec[ctype].local_raw_key[0]) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto SKIP\n");
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_IGNORE;
 	}
 
 //#define SAME_KEY
@@ -1863,7 +1863,6 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	int ctype = 0;
 	const char *vval = NULL;
 	int use_alias = 0;
-	int fix_1 = 0;
 	switch_rtp_engine_t *engine;
 	switch_media_handle_t *smh;
 
@@ -1880,9 +1879,14 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	}
 
 	engine = &session->media_handle->engines[type];
-	fix_1 = switch_channel_var_true(session->channel, "srtp_fix_1");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: switch_core_session_check_incoming_crypto fix_1=%d\n", fix_1);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking incoming crypto (type=%s, varname=%s, crypto=%s, crypto_tag=%d, sdp_type=%s)\n", type2str(type), varname, crypto, crypto_tag, sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
+
+/**
+	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+		engine->ssec[j].remote_crypto_tag = SWITCH_REMOTE_CRYPTO_TAG_INVALID;
+	}
+**/
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
@@ -1898,6 +1902,10 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 			vval = use_alias ? SUITES[j].alias : SUITES[j].name;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
 			switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
+			if (sdp_type == SDP_TYPE_REQUEST) {
+				engine->ssec[j].remote_crypto_tag = crypto_tag;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Saved remote crypto_tag %d for suite %s\n", crypto_tag, vval);
+			}
 			break;
 		}
 
@@ -1906,11 +1914,8 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
-		if (!fix_1 && (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key))) {
+		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Existing key is still valid. (sdp type %s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
-			got_crypto = 1;
-		} else if (fix_1 && (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key) && sdp_type == SDP_TYPE_RESPONSE)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Fix_1 Existing key is still valid. (sdp type %s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
 			got_crypto = 1;
 		} else {
 			const char *a = switch_stristr("AE", engine->ssec[engine->crypto_type].remote_crypto_key);
@@ -1923,6 +1928,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				}
 				switch_channel_set_variable(session->channel, varname, vval);
 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: build crypto for tag %d\n", crypto_tag);
 				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
 				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), &engine->ssec[engine->crypto_type]);
 			}
@@ -1988,6 +1994,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: build crypto for tag %d\n", crypto_tag);
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
 		}
 	}
@@ -1999,11 +2006,12 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, int sdp_type)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_handle_t *smh;
-	int i;
+	int i = 0, idx = 0, ctype = 0;
+	switch_rtp_engine_t *audio_engine = NULL, *video_engine = NULL, *text_engine = NULL;
 
 	if (switch_core_session_media_handle_ready(session) != SWITCH_STATUS_SUCCESS) {
 		return;
@@ -2022,22 +2030,45 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	}
 
 	switch_channel_set_flag(channel, CF_SECURE);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto (%s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
+
+	audio_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	video_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	text_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
 	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto: build it at index=%d\n", i + 1);
+		ctype = smh->crypto_suite_order[i];
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto: %s (i=%d)\n", SUITES[ctype].name, i);
 
-		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_AUDIO, i + 1, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
+		idx = sdp_type == SDP_TYPE_RESPONSE ? audio_engine->ssec[ctype].remote_crypto_tag : i + 1;
 
-		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_VIDEO, i + 1, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
+		if (sdp_type == SDP_TYPE_RESPONSE && idx > 0) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Checking outgoing crypto: using restored remote crypto tag (i=%d, idx=%d) for suite %s\n", i, idx, SUITES[ctype].name);
+		}
 
-		switch_core_media_build_crypto(session->media_handle,
-									   SWITCH_MEDIA_TYPE_TEXT, i + 1, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0, 0);
+		if (idx > 0) {
+			if (SWITCH_STATUS_SUCCESS == switch_core_media_build_crypto(session->media_handle, SWITCH_MEDIA_TYPE_AUDIO, idx, ctype, SWITCH_RTP_CRYPTO_SEND, 0, 0)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Built outgoing crypto audio (i=%d, at index=%d)\n", i, idx);
+			}
+		}
+
+		idx = sdp_type == SDP_TYPE_RESPONSE ? video_engine->ssec[ctype].remote_crypto_tag : i + 1;
+
+		if (idx > 0) {
+			if (SWITCH_STATUS_SUCCESS == switch_core_media_build_crypto(session->media_handle, SWITCH_MEDIA_TYPE_VIDEO, idx, ctype, SWITCH_RTP_CRYPTO_SEND, 0, 0)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Built outgoing crypto video (i=%d, at index=%d)\n", i, idx);
+			}
+		}
+
+		idx = sdp_type == SDP_TYPE_RESPONSE ? text_engine->ssec[ctype].remote_crypto_tag : i + 1;
+
+		if (idx > 0) {
+			if (SWITCH_STATUS_SUCCESS == switch_core_media_build_crypto(session->media_handle, SWITCH_MEDIA_TYPE_TEXT, idx, ctype, SWITCH_RTP_CRYPTO_SEND, 0, 0)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Built outgoing crypto text (i=%d, at index=%d)\n", i, idx);
+			}
+		}
 	}
-
 }
 
 #define add_stat(_i, _s)												\
@@ -4951,7 +4982,8 @@ static void check_stream_changes(switch_core_session_t *session, const char *r_s
 
 			if (switch_channel_test_flag(session->channel, CF_SECURE)) {
 				other_session->media_handle->crypto_mode = session->media_handle->crypto_mode;
-				switch_core_session_check_outgoing_crypto(other_session);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: CHECK OUTGOING\n");
+				switch_core_session_check_outgoing_crypto(other_session, sdp_type);
 			}
 
 			msg = switch_core_session_alloc(other_session, sizeof(*msg));
@@ -5564,6 +5596,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 	switch_core_media_set_rmode(smh->session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_MEDIA_FLOW_INACTIVE, sdp_type);
 	switch_core_media_set_rmode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_INACTIVE, sdp_type);
+
+	{
+		int i = 0;
+
+		for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+			switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+			a_engine->ssec[j].remote_crypto_tag = SWITCH_REMOTE_CRYPTO_TAG_INVALID;
+			v_engine->ssec[j].remote_crypto_tag = SWITCH_REMOTE_CRYPTO_TAG_INVALID;
+			t_engine->ssec[j].remote_crypto_tag = SWITCH_REMOTE_CRYPTO_TAG_INVALID;
+		}
+	}
 	
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
@@ -11043,7 +11086,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (switch_channel_test_flag(session->channel, CF_PROXY_OFF) && (tmp = switch_channel_get_variable(smh->session->channel, "uuid_media_secure_media"))) {
 		switch_channel_set_variable(smh->session->channel, "rtp_secure_media", tmp);
 		switch_core_session_parse_crypto_prefs(session);
-		switch_core_session_check_outgoing_crypto(session);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: CHECK OUTGOING\n");
+		switch_core_session_check_outgoing_crypto(session, sdp_type);
 	}
 
 	if (is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING) ||
@@ -11070,7 +11114,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 		}
 		switch_core_session_parse_crypto_prefs(session);
-		switch_core_session_check_outgoing_crypto(session);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: CHECK OUTGOING\n");
+		switch_core_session_check_outgoing_crypto(session, sdp_type);
 	}
 
 	fmtp_out = a_engine->cur_payload_map->fmtp_out;

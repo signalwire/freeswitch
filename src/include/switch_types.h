@@ -2827,6 +2827,7 @@ typedef struct secure_settings_s {
 	switch_rtp_crypto_key_type_t crypto_type;
 	char *local_crypto_key;
 	char *remote_crypto_key;
+	int remote_crypto_tag;
 
 	/* 
 	 * MKI support (as per rfc4568).
