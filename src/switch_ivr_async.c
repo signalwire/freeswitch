@@ -5392,9 +5392,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	}
 
 	if ((p = switch_channel_get_variable(channel, "queue_asr_events")) && switch_false(p)) {
-		switch_clear_flag(ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
+		switch_clear_flag(sth->ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
 	} else {
-		switch_set_flag(ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
+		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
