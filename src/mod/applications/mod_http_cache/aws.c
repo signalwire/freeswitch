@@ -47,7 +47,7 @@
  */
 static char *hmac256(char* buffer, unsigned int buffer_length, const char* key, unsigned int key_length, const char* message)
 {
-	if (zstr(key) || zstr(message) || buffer_length < SHA256_DIGEST_LENGTH) {
+	if (!key || zstr(message) || buffer_length < SHA256_DIGEST_LENGTH) {
 		return NULL;
 	}
 
