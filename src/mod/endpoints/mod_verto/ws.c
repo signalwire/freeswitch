@@ -981,7 +981,8 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			if (*oc == WSOC_PING) {
 				ws_write_frame(wsh, WSOC_PONG, wsh->body, wsh->rplen);
-				goto again;
+				// goto again;
+				return 0;
 			}
 
 			*(wsh->body+wsh->rplen) = '\0';
