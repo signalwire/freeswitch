@@ -9047,6 +9047,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					int deny_refer_requests = 0;
 
 					if (!(b_session = switch_core_session_locate(b_private->uuid))) {
+						nua_handle_unref_user(bnh);
 						goto done;
 					}
 					b_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
@@ -9402,7 +9403,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					}
 					switch_core_session_rwunlock(b_session);
 				}
-				nua_handle_unref_user(bnh);
 			} else {		/* the other channel is on a different box, we have to go find them */
 				if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 					switch_core_session_t *a_session;
@@ -9592,6 +9592,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							   TAG_END());
 				}
 			}
+
+			if (bnh) nua_handle_unref_user(bnh);
 			goto done;
 		}
 
