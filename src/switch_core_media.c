@@ -9806,7 +9806,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 }
 
-static const char *get_media_profile_name(switch_core_session_t *session, int secure)
+static const char *get_media_profile_name(switch_core_session_t *session, int secure, switch_core_media_avp_secure_t avp)
 {
 	switch_assert(session);
 
@@ -9827,7 +9827,15 @@ static const char *get_media_profile_name(switch_core_session_t *session, int se
 	}
 
 	if (secure) {
-		return "RTP/SAVP";
+		switch (avp) {
+			case AVP_NO_SECURE:
+				break;
+			case AVP_SECURE:
+			case AVP_UNDEFINED:
+				return "RTP/SAVP";
+			default:
+				break;
+		}
 	}
 
 	return "RTP/AVP";
@@ -9862,6 +9870,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
 	int include_external;
+	switch_core_media_avp_secure_t avp_secure = AVP_NO_SECURE;
 
 	switch_assert(session);
 
@@ -9874,8 +9883,22 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP%s",
 	//port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_AVPF) ? "F" : "");
 
+	/* Check if there is a crypto */
+	if (secure && !switch_channel_test_flag(session->channel, CF_DTLS)) {
+		int i;
+
+		for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+			switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+
+			if ((a_engine->crypto_type == j || a_engine->crypto_type == CRYPTO_INVALID) && !zstr(a_engine->ssec[j].local_crypto_key)) {
+				avp_secure = AVP_SECURE;
+				break;
+			}
+		}
+	}
+
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port,
-					get_media_profile_name(session, secure || a_engine->crypto_type != CRYPTO_INVALID));
+					get_media_profile_name(session, secure || a_engine->crypto_type != CRYPTO_INVALID, avp_secure));
 
 	include_external = switch_channel_var_true(session->channel, "include_external_ip");
 
@@ -10684,7 +10707,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (a_engine->codec_negotiated && !switch_channel_test_flag(session->channel, CF_NOSDP_REINVITE)) {
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d %s", port,
 						get_media_profile_name(session, !a_engine->no_crypto &&
-											   (switch_channel_test_flag(session->channel, CF_DTLS) || a_engine->crypto_type != CRYPTO_INVALID)));
+											   (switch_channel_test_flag(session->channel, CF_DTLS) || a_engine->crypto_type != CRYPTO_INVALID), AVP_UNDEFINED));
 
 
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", a_engine->cur_payload_map->pt);
@@ -11017,7 +11040,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							get_media_profile_name(session,
 												   (switch_channel_test_flag(session->channel, CF_SECURE)
 													&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) ||
-												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS), AVP_UNDEFINED));
 		}
 	} else {
 		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
@@ -11051,7 +11074,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 								get_media_profile_name(session,
 													   (loops == 0 && switch_channel_test_flag(session->channel, CF_SECURE)
 														&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) ||
-													   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+													   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS), AVP_UNDEFINED));
 
 
 
@@ -11564,7 +11587,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							get_media_profile_name(session,
 												   (switch_channel_test_flag(session->channel, CF_SECURE)
 													&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) ||
-												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+												   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS), AVP_UNDEFINED));
 		}
 	} else if ((switch_channel_test_flag(session->channel, CF_WANT_RTT) || switch_channel_test_flag(session->channel, CF_RTT) ||
 				switch_channel_var_true(session->channel, "rtp_enable_text")) &&
@@ -11629,7 +11652,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 								get_media_profile_name(session,
 													   (loops == 0 && switch_channel_test_flag(session->channel, CF_SECURE)
 														&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) ||
-													   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS)));
+													   a_engine->crypto_type != CRYPTO_INVALID || switch_channel_test_flag(session->channel, CF_DTLS), AVP_UNDEFINED));
 
 
 				/*****************************/
