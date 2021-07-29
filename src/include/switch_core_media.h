@@ -50,6 +50,12 @@ typedef enum {
 } switch_core_media_dtmf_t;
 
 typedef enum {
+	AVP_NO_SECURE,
+	AVP_SECURE,
+	AVP_UNDEFINED
+} switch_core_media_avp_secure_t;
+
+typedef enum {
 	SM_NDLB_ALLOW_BAD_IANANAME = (1 << 0),
 	SM_NDLB_ALLOW_NONDUP_SDP = (1 << 1),
 	SM_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 2),
