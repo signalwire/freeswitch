@@ -10952,8 +10952,8 @@ else
     return ret;
   }
 
-  public static int switch_cmp_addr(SWIGTYPE_p_switch_sockaddr_t sa1, SWIGTYPE_p_switch_sockaddr_t sa2) {
-    int ret = freeswitchPINVOKE.switch_cmp_addr(SWIGTYPE_p_switch_sockaddr_t.getCPtr(sa1), SWIGTYPE_p_switch_sockaddr_t.getCPtr(sa2));
+  public static int switch_cmp_addr(SWIGTYPE_p_switch_sockaddr_t sa1, SWIGTYPE_p_switch_sockaddr_t sa2, switch_bool_t ip_only) {
+    int ret = freeswitchPINVOKE.switch_cmp_addr(SWIGTYPE_p_switch_sockaddr_t.getCPtr(sa1), SWIGTYPE_p_switch_sockaddr_t.getCPtr(sa2), (int)ip_only);
     return ret;
   }
 
@@ -20482,7 +20482,7 @@ class freeswitchPINVOKE {
   public static extern int get_addr_int(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_cmp_addr___")]
-  public static extern int switch_cmp_addr(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  public static extern int switch_cmp_addr(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, int jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_cp_addr___")]
   public static extern int switch_cp_addr(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);

@@ -21127,15 +21127,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_get_addr_int___(void * jarg1
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_cmp_addr___(void * jarg1, void * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_cmp_addr___(void * jarg1, void * jarg2, int jarg3) {
   int jresult ;
   switch_sockaddr_t *arg1 = (switch_sockaddr_t *) 0 ;
   switch_sockaddr_t *arg2 = (switch_sockaddr_t *) 0 ;
+  switch_bool_t arg3 ;
   int result;
   
   arg1 = (switch_sockaddr_t *)jarg1; 
   arg2 = (switch_sockaddr_t *)jarg2; 
-  result = (int)switch_cmp_addr(arg1,arg2);
+  arg3 = (switch_bool_t)jarg3; 
+  result = (int)switch_cmp_addr(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
