@@ -40,10 +40,11 @@
 
 FST_CORE_BEGIN("./conf")
 {
-	FST_SUITE_BEGIN(switch_ivr_originate)
+	FST_SUITE_BEGIN(switch_core)
 	{
 		FST_SETUP_BEGIN()
 		{
+			switch_core_set_variable("spawn_instead_of_system", "false");
 		}
 		FST_SETUP_END()
 
@@ -101,17 +102,17 @@ FST_CORE_BEGIN("./conf")
 #ifndef WIN32
 		FST_TEST_BEGIN(test_fork)
 		{
-            switch_stream_handle_t exec_result = { 0 };
-    		SWITCH_STANDARD_STREAM(exec_result);
-	    	fst_requires(switch_stream_system_fork("ip ad sh", &exec_result) == 0);
-		    fst_requires(!zstr(exec_result.data));
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", (char *)exec_result.data);
+			switch_stream_handle_t exec_result = { 0 };
+			SWITCH_STANDARD_STREAM(exec_result);
+			fst_requires(switch_stream_system_fork("ip ad sh", &exec_result) == 0);
+			fst_requires(!zstr(exec_result.data));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", (char *)exec_result.data);
 
-	    	fst_requires(switch_stream_system_fork("ip ad sh | grep link", &exec_result) == 0);
-		    fst_requires(!zstr(exec_result.data));
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", (char *)exec_result.data);
+			fst_requires(switch_stream_system_fork("ip ad sh | grep link", &exec_result) == 0);
+			fst_requires(!zstr(exec_result.data));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", (char *)exec_result.data);
 
-            switch_safe_free(exec_result.data);
+			switch_safe_free(exec_result.data);
 		}
 		FST_TEST_END()
 #endif
@@ -158,6 +159,68 @@ FST_CORE_BEGIN("./conf")
 			}
 
 			fst_check_int_equals(r, SWITCH_TRUE);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_spawn)
+		{
+#ifdef __linux__
+			int status;
+			switch_stream_handle_t stream = { 0 };
+
+			status = switch_spawn("echo CHECKING_BAD_FILE_DESCRIPTOR", SWITCH_TRUE);
+			fst_check_int_equals(status, 0);
+
+			SWITCH_STANDARD_STREAM(stream);
+			status = switch_stream_spawn("echo DEADBEEF", SWITCH_FALSE, SWITCH_TRUE, &stream);
+			fst_check_int_equals(status, 0);
+			fst_check_string_equals(stream.data, "DEADBEEF\n");
+			switch_safe_free(stream.data);
+
+			SWITCH_STANDARD_STREAM(stream);
+			status = switch_stream_spawn("echo DEADBEEF", SWITCH_FALSE, SWITCH_FALSE, &stream);
+			fst_check_int_equals(status, 0);
+			fst_check_string_equals(stream.data, "DEADBEEF\n");
+			switch_safe_free(stream.data);
+
+			printf("\nExpected warning check ... ");
+			status = switch_spawn("false", SWITCH_TRUE);
+			fct_chk_neq_int(status, 0);
+
+			status = switch_spawn("false", SWITCH_FALSE);
+			fct_chk_eq_int(status, 0);
+
+			status = switch_spawn("true", SWITCH_TRUE);
+			fct_chk_eq_int(status, 0);
+#endif
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_spawn_instead_of_system)
+		{
+#ifdef __linux__
+			int status;
+			char file_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+			const char *filename = NULL;
+			const char *cmd = NULL;
+
+			// tell FS core to use posix_spawn() instead of popen() and friends
+			switch_core_set_variable("spawn_instead_of_system", "true");
+
+			// echo text to a file using shell redirection- this will ensure the command was executed in a shell, as expected
+			switch_uuid_str(file_uuid, sizeof(file_uuid));
+			filename = switch_core_sprintf(fst_pool, "%s" SWITCH_PATH_SEPARATOR "%s", SWITCH_GLOBAL_dirs.temp_dir, file_uuid);
+			cmd = switch_core_sprintf(fst_pool, "echo test_switch_spawn_instead_of_system with spaces > %s", filename);
+			status = switch_system(cmd, SWITCH_TRUE);
+
+			fst_check_int_equals(status, 0);
+			fst_xcheck(status == 0, "Expect switch_system() command to return 0");
+			fst_xcheck(switch_file_exists(filename, fst_pool) == SWITCH_STATUS_SUCCESS, "Expect switch_system() to use shell to create file via > redirection");
+			unlink(filename);
+
+			// verify exec-set works- see conf/freeswitch.xml for test setup of shell_exec_set_test global variable
+			fst_check_string_equals(switch_core_get_variable("shell_exec_set_test"), "usr");
+#endif
 		}
 		FST_TEST_END()
 	}

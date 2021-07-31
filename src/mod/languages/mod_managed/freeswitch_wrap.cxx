@@ -18684,6 +18684,38 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_stream_system_fork___
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_spawn___(char * jarg1, int jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_bool_t arg2 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  result = (int)switch_spawn((char const *)arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_stream_spawn___(char * jarg1, int jarg2, int jarg3, void * jarg4) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_bool_t arg2 ;
+  switch_bool_t arg3 ;
+  switch_stream_handle_t *arg4 = (switch_stream_handle_t *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  arg4 = (switch_stream_handle_t *)jarg4; 
+  result = (int)switch_stream_spawn((char const *)arg1,arg2,arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_core_session_debug_pool___(void * jarg1) {
   switch_stream_handle_t *arg1 = (switch_stream_handle_t *) 0 ;
   
@@ -23197,6 +23229,58 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_getpid___()
   
   result = (unsigned long)switch_getpid();
   jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_digest___(char * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  unsigned char **arg2 = (unsigned char **) 0 ;
+  void *arg3 = (void *) 0 ;
+  switch_size_t arg4 ;
+  unsigned int *arg5 = (unsigned int *) 0 ;
+  switch_size_t *argp4 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (unsigned char **)jarg2; 
+  arg3 = (void *)jarg3; 
+  argp4 = (switch_size_t *)jarg4; 
+  if (!argp4) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg4 = *argp4; 
+  arg5 = (unsigned int *)jarg5; 
+  result = (switch_status_t)switch_digest((char const *)arg1,arg2,(void const *)arg3,arg4,arg5);
+  jresult = (int)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_digest_string___(char * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  char **arg2 = (char **) 0 ;
+  void *arg3 = (void *) 0 ;
+  switch_size_t arg4 ;
+  unsigned int *arg5 = (unsigned int *) 0 ;
+  switch_size_t *argp4 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char **)jarg2; 
+  arg3 = (void *)jarg3; 
+  argp4 = (switch_size_t *)jarg4; 
+  if (!argp4) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg4 = *argp4; 
+  arg5 = (unsigned int *)jarg5; 
+  result = (switch_status_t)switch_digest_string((char const *)arg1,arg2,(void const *)arg3,arg4,arg5);
+  jresult = (int)result; 
   return jresult;
 }
 
@@ -39938,6 +40022,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_event_channel_permis
   
   arg1 = (char *)jarg1; 
   switch_event_channel_permission_clear((char const *)arg1);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_GRANULAR_VOLUME_MAX_get___() {
+  int jresult ;
+  int result;
+  
+  result = (int)(50);
+  jresult = result; 
+  return jresult;
 }
 
 

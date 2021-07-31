@@ -317,12 +317,18 @@
              register for nat handling -->
         <!-- <param name="NDLB-received-in-nat-reg-contact" value="true"/> -->
         <param name="auth-calls" value="$${internal_auth_calls}"/>
-        <!-- <param name="auth-messages" value="false"/> -->
         <!-- <param name="auth-subscriptions" value="false"/> -->
         <!-- Force the user and auth-user to match. -->
         <param name="inbound-reg-force-matching-username" value="true"/>
         <!-- on authed calls, authenticate *all* the packets not just invite -->
         <param name="auth-all-packets" value="false"/>
+        <!-- NOTICE: auth-messages was deprecated and authentication is enabled by default now.
+             See disable-auth-messages param for more details. -->
+        <!-- <param name="auth-messages" value="false"/> -->
+        <!-- Uncomment to stop authentication on message packets.
+             By default authentication is enabled.
+             disable-auth-messages param has higher priority than the deprecated auth-messages param. -->
+        <!-- <param name="disable-auth-messages" value="true"/> -->
 
         <!-- external_sip_ip
              Used as the public IP address for SDP.

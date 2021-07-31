@@ -10315,6 +10315,16 @@ else
     return ret;
   }
 
+  public static int switch_spawn(string cmd, switch_bool_t wait) {
+    int ret = freeswitchPINVOKE.switch_spawn(cmd, (int)wait);
+    return ret;
+  }
+
+  public static int switch_stream_spawn(string cmd, switch_bool_t shell, switch_bool_t wait, switch_stream_handle stream) {
+    int ret = freeswitchPINVOKE.switch_stream_spawn(cmd, (int)shell, (int)wait, switch_stream_handle.getCPtr(stream));
+    return ret;
+  }
+
   public static void switch_core_session_debug_pool(switch_stream_handle stream) {
     freeswitchPINVOKE.switch_core_session_debug_pool(switch_stream_handle.getCPtr(stream));
   }
@@ -11488,6 +11498,18 @@ else
 
   public static uint switch_getpid() {
     uint ret = freeswitchPINVOKE.switch_getpid();
+    return ret;
+  }
+
+  public static switch_status_t switch_digest(string digest_name, SWIGTYPE_p_p_unsigned_char digest, SWIGTYPE_p_void input, SWIGTYPE_p_switch_size_t inputLen, SWIGTYPE_p_unsigned_int outputlen) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_digest(digest_name, SWIGTYPE_p_p_unsigned_char.getCPtr(digest), SWIGTYPE_p_void.getCPtr(input), SWIGTYPE_p_switch_size_t.getCPtr(inputLen), SWIGTYPE_p_unsigned_int.getCPtr(outputlen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public static switch_status_t switch_digest_string(string digest_name, ref string digest_str, SWIGTYPE_p_void input, SWIGTYPE_p_switch_size_t inputLen, SWIGTYPE_p_unsigned_int outputlen) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_digest_string(digest_name, ref digest_str, SWIGTYPE_p_void.getCPtr(input), SWIGTYPE_p_switch_size_t.getCPtr(inputLen), SWIGTYPE_p_unsigned_int.getCPtr(outputlen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
@@ -15096,6 +15118,7 @@ else
   public static readonly int SWITCH_SMIN = freeswitchPINVOKE.SWITCH_SMIN_get();
   public static readonly int NO_EVENT_CHANNEL_ID = freeswitchPINVOKE.NO_EVENT_CHANNEL_ID_get();
   public static readonly string SWITCH_EVENT_CHANNEL_GLOBAL = freeswitchPINVOKE.SWITCH_EVENT_CHANNEL_GLOBAL_get();
+  public static readonly int SWITCH_GRANULAR_VOLUME_MAX = freeswitchPINVOKE.SWITCH_GRANULAR_VOLUME_MAX_get();
   public static readonly int SWITCH_RESAMPLE_QUALITY = freeswitchPINVOKE.SWITCH_RESAMPLE_QUALITY_get();
   public static readonly int SWITCH_RTP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTCP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTCP_MAX_BUF_LEN_get();
@@ -19900,6 +19923,12 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_stream_system_fork___")]
   public static extern int switch_stream_system_fork(string jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_spawn___")]
+  public static extern int switch_spawn(string jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_stream_spawn___")]
+  public static extern int switch_stream_spawn(string jarg1, int jarg2, int jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_session_debug_pool___")]
   public static extern void switch_core_session_debug_pool(global::System.Runtime.InteropServices.HandleRef jarg1);
 
@@ -20898,6 +20927,12 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_getpid___")]
   public static extern uint switch_getpid();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_digest___")]
+  public static extern int switch_digest(string jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_digest_string___")]
+  public static extern int switch_digest_string(string jarg1, ref string jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_profile_node_t_var_set___")]
   public static extern void profile_node_t_var_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
@@ -25080,6 +25115,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_event_channel_permission_clear___")]
   public static extern void switch_event_channel_permission_clear(string jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_GRANULAR_VOLUME_MAX_get___")]
+  public static extern int SWITCH_GRANULAR_VOLUME_MAX_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_RESAMPLE_QUALITY_get___")]
   public static extern int SWITCH_RESAMPLE_QUALITY_get();
@@ -30824,7 +30862,12 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_DECLINE = 616,
   SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 617,
   SWITCH_CAUSE_NOT_ACCEPTABLE = 618,
-  SWITCH_CAUSE_UNWANTED = 619
+  SWITCH_CAUSE_UNWANTED = 619,
+  SWITCH_CAUSE_NO_IDENTITY = 620,
+  SWITCH_CAUSE_BAD_IDENTITY_INFO = 621,
+  SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 622,
+  SWITCH_CAUSE_INVALID_IDENTITY = 623,
+  SWITCH_CAUSE_STALE_DATE = 624
 }
 
 }

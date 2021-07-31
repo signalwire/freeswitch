@@ -856,7 +856,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 
 		if (sofia_test_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY)) {
 			const char *mwi_status = NULL;
-			char network_ip[80];
+			char network_ip[80] = "";
 			uint32_t x = 0;
 			int acl_ok = 1;
 			char *last_acl = NULL;
@@ -1616,7 +1616,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 
 		if (authorization) {
-			char network_ip[80];
+			char network_ip[80] = "";
 			int network_port;
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
@@ -2230,7 +2230,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 	if (de) {
 		pool = de->pool;
 		de->pool = NULL;
-		sofia_process_dispatch_event(&de, SWITCH_FALSE);
+		sofia_process_dispatch_event(&de);
 	}
 
 	if (pool) {
@@ -2263,7 +2263,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	switch_thread_pool_launch_thread(&td);
 }
 
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t stack_thread)
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
@@ -2282,15 +2282,9 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t st
 	profile->queued_events--;
 	switch_mutex_unlock(profile->flag_mutex);
 
-	if (stack_thread) {
-		/* Safe to unref directly */
-		if (nh) nua_handle_unref(nh);
-		nua_unref(nua);
-	} else {
-		/* This is not a stack thread, need to call via stack (_user) using events */
-		if (nh) nua_handle_unref_user(nh);
-		nua_unref_user(nua);
-	}
+	/* This is not a stack thread, need to call via stack (_user) using events */
+	if (nh) nua_handle_unref_user(nh);
+	nua_unref_user(nua);
 }
 
 
@@ -2327,7 +2321,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-			sofia_process_dispatch_event(&de, SWITCH_FALSE);
+			sofia_process_dispatch_event(&de);
 		} else {
 			break;
 		}
@@ -2382,7 +2376,7 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 
 	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue) {
 		/* Calling with SWITCH_TRUE as we are sure this is the stack's thread */
-		sofia_process_dispatch_event(&de, SWITCH_TRUE);
+		sofia_process_dispatch_event(&de);
 		return;
 	}
 
@@ -2587,8 +2581,8 @@ void sofia_event_callback(nua_event_t event,
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
-			nua_handle_unref(nh);
-			nua_unref(nua);
+			nua_handle_unref_user(nh);
+			nua_unref_user(nua);
 
 			goto end;
 		}
@@ -2625,8 +2619,8 @@ void sofia_event_callback(nua_event_t event,
 			profile->queued_events--;
 			switch_mutex_unlock(profile->flag_mutex);
 
-			nua_handle_unref(nh);
-			nua_unref(nua);
+			nua_handle_unref_user(nh);
+			nua_unref_user(nua);
 
 			goto end;
 		}
@@ -4574,6 +4568,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				sofia_profile_start_failure(NULL, xprofilename);
 			} else {
 				switch_memory_pool_t *pool = NULL;
+				char *auth_messages_value = NULL;
+				uint8_t disable_auth_flag = 0;
 
 				if (!xprofilename) {
 					xprofilename = "unnamed";
@@ -5567,11 +5563,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_AUTH_CALLS);
 						}
 					} else if (!strcasecmp(var, "auth-messages")) {
+						auth_messages_value = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "disable-auth-messages")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
-						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_MESSAGES);
+						} else {
+							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 						}
+
+						disable_auth_flag = 1;
 					} else if (!strcasecmp(var, "auth-subscriptions")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
@@ -6079,6 +6079,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 								}
 							}
 						}
+					}
+				}
+
+				if (!disable_auth_flag) {
+					if (!auth_messages_value || switch_true(auth_messages_value)) {
+						sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
+					} else {
+						sofia_clear_pflag(profile, PFLAG_AUTH_MESSAGES);
 					}
 				}
 
@@ -10198,7 +10206,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-		char network_ip[80];
+		char network_ip[80] = "";
 		int network_port = 0;
 		char via_space[2048];
 		char branch[16] = "";
@@ -10314,7 +10322,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	const char *referred_by_user = NULL;//, *referred_by_host = NULL;
 	const char *context = NULL;
 	const char *dialplan = NULL;
-	char network_ip[80];
+	char network_ip[80] = "";
 	char proxied_client_ip[80];
 	switch_event_t *v_event = NULL;
 	switch_xml_t x_user = NULL;
