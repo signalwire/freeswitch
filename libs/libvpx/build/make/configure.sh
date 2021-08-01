@@ -865,7 +865,12 @@ process_common_toolchain() {
   case ${toolchain} in
     *-darwin-*)
       mvmin=$(sw_vers -productVersion)
-      mvmin="-mmacosx-version-min="${mvmin%.*}
+      if [[ $mvmin == 10.* ]]; then
+        mvmin="${mvmin%.*}"
+      else
+        mvmin="${mvmin%%.*}"
+      fi
+      mvmin="-mmacosx-version-min=""$mvmin"
       add_cflags  $mvmin
       add_ldflags $mvmin
       ;;
