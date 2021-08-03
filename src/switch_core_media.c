@@ -3932,6 +3932,7 @@ retry:
 			switch_yield(a_engine->read_impl.microseconds_per_packet);
 
 			if (session->write_resampler) {
+				switch_core_session_t *other_session = NULL;
 				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					if (other_session->write_resampler) {
 						switch_mutex_lock(other_session->resample_mutex);

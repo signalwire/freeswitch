@@ -1360,7 +1360,7 @@ static switch_status_t avmd_parse_cmd_data(avmd_session_t *s, switch_core_sessio
                 status = avmd_parse_cmd_data_one_entry(argv[idx], &settings);
                 if (status != SWITCH_STATUS_SUCCESS) {
                     if (argv[idx]) {
-                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_ERROR,
+                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
                             "Error parsing option [%d] [%s]\n", idx + 1, argv[idx]);    /* idx + 1 to report option 0 as 1 for users convenience */
                     }
                     switch (status)
