@@ -41,6 +41,7 @@
 #include "mod_sofia.h"
 #include "sofia-sip/sip_extra.h"
 #include "sofia-sip/nta.h"
+#include "sofia-sip/nua.h"
 #include "prometheus_metrics.h"
 #include "switch_telnyx.h"
 
@@ -525,7 +526,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			int skip_bye = 0;
 			if (switch_channel_test_flag(channel, CF_RECOVERED) && !zstr(invite_route_uri)) {
 				recover_route_set = invite_route_uri;
-				tech_pvt->nh->nh_no_strip_routes = 1;
+				nua_handle_set_no_strip_routes(tech_pvt->nh);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CF_RECOVERED forced route-set %s\n", recover_route_set);
 			}
 			if (!tech_pvt->got_bye) {

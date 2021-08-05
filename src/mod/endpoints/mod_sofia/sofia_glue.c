@@ -1031,7 +1031,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *alert_info = NULL;
 	const char *max_forwards = NULL;
 	const char *alertbuf;
-	const char *identity = NULL;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
@@ -1651,18 +1650,18 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	
 	if ((val = switch_channel_get_variable(channel, "bleg_enable_compact_headers")) && switch_true(val)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Compact headers forced by dialplan for %s\n",  switch_channel_get_name(channel));
-		tech_pvt->nh->nh_use_compact = 1;
+		nua_handle_set_nh_use_compact(tech_pvt->nh);
 	}
 	
 	if ((val = switch_channel_get_variable(channel, "bleg_enable_100rel")) && switch_true(val)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "100rel forced by dialplan for %s\n",  switch_channel_get_name(channel));
-		tech_pvt->nh->nh_offer_100rel = 1;
+		nua_handle_set_offer_100rel(tech_pvt->nh);
 	}
 	
 	if ((mp = sofia_media_get_multipart(session, "sip_multipart", tech_pvt->mparams.local_sdp_str, &mp_type, &mp_data_len))) {
 		void *isup = 0;
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
-		mp_payload = sip_payload_create(tech_pvt->nh->nh_home, mp, (isize_t)mp_data_len);
+		mp_payload = sip_payload_create(nua_handle_get_home(tech_pvt->nh), mp, (isize_t)mp_data_len);
 		
 		isup = switch_channel_get_private(channel, "_isup_payload");
 		if (isup) {
@@ -2368,7 +2367,6 @@ int sofia_recover_callback(switch_core_session_t *session)
 	 * Note:  We used SWITCH_CALL_DIRECTION as a transaction type indicator (uac/uas) and not really the channel direction
 	 */
 	if (direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
->>>>>>> TEL-0000:  Various bug fixes and enhancements to core library and modules
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_req_uri"));
 		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, swap ? "sip_full_to" : "sip_full_from"));
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, swap ? "sip_full_from" : "sip_full_to"));

@@ -983,7 +983,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 		return;
 	}
 	
-	profile->nua_handle_count = nua_count_handles(nh->nh_nua);
+	profile->nua_handle_count = nua_handle_count_handles(nh);
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
@@ -10593,7 +10593,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	switch_time_t sip_invite_time;
 	const char *session_id_header;
 
-	profile->nua_handle_count = nua_count_handles(nh->nh_nua);
+	profile->nua_handle_count = nua_handle_count_handles(nh);
 
 	sofia_glue_store_session_id(session, profile, sip, 0);
 	session_id_header = sofia_glue_session_id_header(session, profile);
