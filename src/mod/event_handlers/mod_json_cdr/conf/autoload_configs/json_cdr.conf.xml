@@ -23,6 +23,8 @@
 			<!-- HTTP(S) logging -->
 			<!-- URL where to POST JSON CDRs. Leave empty for no URL logging. Up to 20 URLs may be specified. -->
 			<param name="url" value=""/>
+			<!-- optional timeout : second -->
+			<param name="timeout" value="5"/>
 			<!-- Authentication scheme for the above URL. May be one of basic|digest|NTLM|GSS-NEGOTIATE|any-->
 			<param name="auth-scheme" value="basic"/>
 			<!-- Credentials in the form  username:password  if auth-scheme is used. Leave empty for no authentication. -->
