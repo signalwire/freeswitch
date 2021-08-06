@@ -70,15 +70,18 @@ void signtoken(char *token, int tokenlen,char *pkey, char *out) {
 	BIO *b = NULL;
 	RSA *r = NULL;
 	unsigned int sig_len;
-	unsigned char *digest = SHA256((const unsigned char *) token, tokenlen, NULL);
+	unsigned char *md = malloc(SHA256_DIGEST_LENGTH * sizeof(char));
+	unsigned char *digest = SHA256((const unsigned char *) token, tokenlen, md);
 	b = BIO_new_mem_buf(pkey, -1);
 	r = PEM_read_bio_RSAPrivateKey(b, NULL, NULL, NULL);
 	BIO_set_close(b, BIO_CLOSE);
 	BIO_free(b);
 	sig = malloc(RSA_size(r));
-	RSA_sign(NID_sha256, digest, SHA256_DIGEST_LENGTH, sig, &sig_len, r);
+	RSA_sign(NID_sha256, digest, sizeof(char) * SHA256_DIGEST_LENGTH, sig, &sig_len, r);
 	switch_b64_encode(sig,(switch_size_t) sizeof(char) * sig_len,(unsigned char *) out, 343 * sizeof(char));
 	free(sig);
+	free(md);
+	RSA_free(r);
 }
 
 char *gcs_auth_request(char *content, char *url);
