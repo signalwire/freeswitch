@@ -22,6 +22,7 @@ switch_core_video
 switch_eavesdrop
 switch_event
 switch_hash
+switch_hold
 switch_ivr_async
 switch_ivr_originate
 switch_ivr_play_say
