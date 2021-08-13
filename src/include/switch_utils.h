@@ -831,14 +831,38 @@ static inline char *switch_clean_name_string(char *s)
 
 
 /*!
-  \brief Turn a string into a number (default if NULL)
+  \brief Turn a string into an integer (default if NULL)
   \param nptr the string
   \param dft the default
-  \return the number version of the string or the default
+  \return the integer version of the string or the default
 */
 static inline int switch_safe_atoi(const char *nptr, int dft)
 {
 	return nptr ? atoi(nptr) : dft;
+}
+
+
+/*!
+  \brief Turn a string into a long integer (default if NULL)
+  \param nptr the string
+  \param dft the default
+  \return the long integer version of the string or the default
+*/
+static inline long int switch_safe_atol(const char *nptr, long int dft)
+{
+	return nptr ? atol(nptr) : dft;
+}
+
+
+/*!
+  \brief Turn a string into a long long integer (default if NULL)
+  \param nptr the string
+  \param dft the default
+  \return the long long integer version of the string or the default
+*/
+static inline long long int switch_safe_atoll(const char *nptr, long long int dft)
+{
+	return nptr ? atoll(nptr) : dft;
 }
 
 

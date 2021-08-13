@@ -223,6 +223,22 @@ FST_CORE_BEGIN("./conf")
 #endif
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_safe_atoXX)
+		{
+			fst_check_int_equals(switch_safe_atoi("1", 0), 1);
+			fst_check_int_equals(switch_safe_atoi("", 2), 0);
+			fst_check_int_equals(switch_safe_atoi(0, 3), 3);
+
+			fst_check_int_equals(switch_safe_atol("9275806", 0), 9275806);
+			fst_check_int_equals(switch_safe_atol("", 2), 0);
+			fst_check_int_equals(switch_safe_atol(0, 3), 3);
+
+			fst_check_int_equals(switch_safe_atoll("9275806", 0), 9275806);
+			fst_check_int_equals(switch_safe_atoll("", 2), 0);
+			fst_check_int_equals(switch_safe_atoll(0, 3), 3);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
