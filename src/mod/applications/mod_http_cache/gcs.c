@@ -156,7 +156,7 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 
 	/* check if environment variables set the keys */
 	if (!zstr(envfile)) {
-		file = switch_core_strdup(pool, envfile);
+		file = strdup(envfile);
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 		//				  "Using GOOGLE_APPLICATION_CREDENTIALS environment variables for GCS access on profile \"%s\"\n", profile->name);
 	} else {
@@ -194,6 +194,7 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 		if (status != SWITCH_STATUS_SUCCESS) {
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERR, "Could not close credencial file\n", profile->bytes_per_block);
 			switch_safe_free(file);
+			free(contents);
 			return status;
 		}
 		json = cJSON_Parse(contents);
@@ -218,7 +219,7 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 			strcpy(profile->region, jsonstr);
 		}
 		cJSON_Delete(json);
-		free(contents);
+		switch_safe_free(contents);
 	} else {
 		switch_xml_t private_key = switch_xml_child(xml, "private_key");
 		switch_xml_t private_key_id = switch_xml_child(xml, "private_key_id");
