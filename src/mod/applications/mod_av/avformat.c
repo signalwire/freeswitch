@@ -161,6 +161,9 @@ struct av_file_context {
 
 	switch_time_t last_vid_write;
 	int audio_timer;
+
+	unsigned int connect_start_time;
+	unsigned int connect_timeout;
 };
 
 typedef struct av_file_context av_file_context_t;
@@ -1580,6 +1583,31 @@ GCC_DIAG_ON(deprecated-declarations)
 	return NULL;
 }
 
+static int avio_interrupt_cb(void *ctx) 
+{ 
+	av_file_context_t* context = (av_file_context_t*)ctx;
+	unsigned int duration = 0;
+
+	if (context == NULL) {
+		return 0;
+	}
+
+	if (context->connect_timeout <= 0) {
+		return 0;
+	}
+
+	duration = (switch_time_now() / 1000) - context->connect_start_time;
+	if (duration >= context->connect_timeout) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTMP connection timeout! '%s://%s'\n"
+			, context->handle->stream_name
+			, context->handle->file_path);
+		return 1;
+	}
+		
+
+	return 0;
+} 
+
 static switch_status_t av_file_open(switch_file_handle_t *handle, const char *path)
 {
 	av_file_context_t *context = NULL;
@@ -1724,6 +1752,10 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		}
 	}
 
+	if (handle->params && (tmp = switch_event_get_header(handle->params, "connect_timeout"))) {
+		context->connect_timeout = atoi(tmp);
+	}
+
 	if (!strcasecmp(ext, "wav") || (handle->params && switch_true(switch_event_get_header(handle->params, "av_record_audio_only")))) {
 		context->has_video = 0;
 		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
@@ -1731,7 +1763,18 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	/* open the output file, if needed */
 	if (!(fmt->flags & AVFMT_NOFILE)) {
-		ret = avio_open(&context->fc->pb, file, AVIO_FLAG_WRITE);
+		if (context->connect_timeout > 0) {
+			AVIOInterruptCB cb = {
+				.callback = avio_interrupt_cb,
+				.opaque = context,
+			};
+
+			context->connect_start_time = switch_time_now() / 1000;
+			ret = avio_open2(&context->fc->pb, file, AVIO_FLAG_WRITE, &cb, NULL);
+		} else {
+			ret = avio_open(&context->fc->pb, file, AVIO_FLAG_WRITE);
+		}
+
 		if (ret < 0) {
 			char ebuf[255] = "";
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open '%s': %s\n", file, get_error_text(ret, ebuf, sizeof(ebuf)));
