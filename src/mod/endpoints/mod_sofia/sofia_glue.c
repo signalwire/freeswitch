@@ -1813,8 +1813,10 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 	case 403:
 	case 407:
 	case 603:
-	case 607:
+	case 608:
 		return SWITCH_CAUSE_CALL_REJECTED;
+	case 607:
+		return SWITCH_CAUSE_UNWANTED;
 	case 404:
 		return SWITCH_CAUSE_UNALLOCATED_NUMBER;
 	case 485:
