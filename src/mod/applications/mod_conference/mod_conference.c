@@ -3185,6 +3185,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		conference->tts_voice = switch_core_strdup(conference->pool, tts_voice);
 	}
 
+	conference->name = switch_core_strdup(conference->pool, name);
 	conference->video_layout_conf = switch_core_strdup(conference->pool, video_layout_conf);
 	conference->comfort_noise_level = comfort_noise_level;
 	conference->pin_retries = pin_retries;
@@ -3548,9 +3549,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	/* its going to be 0 by default, set to a value otherwise so this should be safe */
 	conference->max_members = max_members;
 	conference->announce_count = announce_count;
-
-	conference->name = switch_core_strdup(conference->pool, name);
-
+	
 	if ((name_domain = strchr(conference->name, '@'))) {
 		name_domain++;
 		conference->domain = switch_core_strdup(conference->pool, name_domain);
