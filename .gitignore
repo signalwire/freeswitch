@@ -115,15 +115,6 @@ Release/
 /libs/esl/fs_ivrd
 /libs/esl/testclient
 /libs/esl/testserver
-/libs/freetdm/detect_dtmf
-/libs/freetdm/detect_tones
-/libs/freetdm/testanalog
-/libs/freetdm/testapp
-/libs/freetdm/testcid
-/libs/freetdm/testpri
-/libs/freetdm/testr2
-/libs/freetdm/testsangomaboost
-/libs/freetdm/testtones
 /libs/fsg729-*-installer
 /libs/g729/
 /libs/libcodec2/compile
