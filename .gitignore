@@ -231,6 +231,7 @@ libs/libsndfile/tests/pedantic-header-test.sh
 yum/RPMS
 yum/temp
 .vs/
+.idea/
 
 Freeswitch.2015.VC.db
 Freeswitch.2015.VC.VC.opendb
