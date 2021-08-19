@@ -1,6 +1,0 @@
-#!/bin/sh
-autoheader
-libtoolize --force --copy
-aclocal
-automake -f --copy --add-missing
-autoconf
