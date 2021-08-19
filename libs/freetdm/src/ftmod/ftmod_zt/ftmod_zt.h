@@ -196,6 +196,7 @@ typedef enum {
 	ZT_EVENT_TIMER_PING		= 16,
 	ZT_EVENT_POLARITY		= 17,
 	ZT_EVENT_RINGBEGIN		= 18,
+	ZT_EVENT_PULSEDIGIT		= (1 << 16),
 	ZT_EVENT_DTMFDOWN		= (1 << 17),
 	ZT_EVENT_DTMFUP			= (1 << 18),
 } zt_event_t;

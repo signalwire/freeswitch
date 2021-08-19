@@ -57,6 +57,7 @@ struct ftdm_analog_data {
 
 /* Analog flags to be set in the sflags (signaling flags) channel memeber */
 #define AF_POLARITY_REVERSE (1 << 0)
+#define AF_PULSE_INCOMING   (1 << 1)
 
 static void *ftdm_analog_run(ftdm_thread_t *me, void *obj);
 typedef struct ftdm_analog_data ftdm_analog_data_t;
