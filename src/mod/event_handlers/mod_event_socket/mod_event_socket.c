@@ -31,9 +31,15 @@
  *
  */
 #include <switch.h>
+#include <openssl/ssl.h>
+
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
+
+#define set_string(x,y) strncpy(x, y, sizeof(x)-1)
+#define SSL_WANT_READ_WRITE(err) (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE)
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -100,6 +106,8 @@ struct listener {
 	switch_pollfd_t *pollfd;
 	uint8_t lock_acquired;
 	uint8_t finished;
+    uint8_t secure;
+	SSL *ssl;
 };
 
 typedef struct listener listener_t;
@@ -113,6 +121,7 @@ static struct {
 static struct {
 	switch_socket_t *sock;
 	switch_mutex_t *sock_mutex;
+	switch_socket_t *sock_secure;
 	listener_t *listeners;
 	uint8_t ready;
 } listen_list;
@@ -123,6 +132,10 @@ static struct {
 	switch_mutex_t *mutex;
 	char *ip;
 	uint16_t port;
+	uint16_t port_secure;
+    char key[512];
+    char cert[512];
+    char chain[512];
 	char *password;
 	int done;
 	int threads;
@@ -131,6 +144,9 @@ static struct {
 	uint32_t id;
 	int nat_map;
 	int stop_on_bind_error;
+	const SSL_METHOD *ssl_method;
+	SSL_CTX *ssl_ctx;
+	int ssl_ready;
 } prefs;
 
 
@@ -175,7 +191,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 			switch_log_node_t *dnode = switch_log_node_dup(node);
-			qstatus = switch_queue_trypush(l->log_queue, dnode); 
+			qstatus = switch_queue_trypush(l->log_queue, dnode);
 			if (qstatus == SWITCH_STATUS_SUCCESS) {
 				if (l->lost_logs) {
 					int ll = l->lost_logs;
@@ -185,12 +201,12 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			} else {
 				char errbuf[512] = {0};
 				unsigned int qsize = switch_queue_size(l->log_queue);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-						"Log enqueue ERROR [%d] | [%s] Queue size: [%u/%u] %s\n", 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+						"Log enqueue ERROR [%d] | [%s] Queue size: [%u/%u] %s\n",
 						(int)qstatus, switch_strerror(qstatus, errbuf, sizeof(errbuf)), qsize, MAX_QUEUE_LEN, (qsize == MAX_QUEUE_LEN)?"Max queue size reached":"");
 				switch_log_node_free(&dnode);
 				if (++l->lost_logs > MAX_MISSED) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
 							"Killing listener because of too many lost log lines. Lost [%d] Queue size [%u/%u]!\n", l->lost_logs, qsize, MAX_QUEUE_LEN);
 					kill_listener(l, "killed listener because of lost log lines\n");
 				}
@@ -384,7 +400,7 @@ static void event_handler(switch_event_t *event)
 
 		if (send) {
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-				qstatus = switch_queue_trypush(l->event_queue, clone); 
+				qstatus = switch_queue_trypush(l->event_queue, clone);
 				if (qstatus == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_events) {
 						int le = l->lost_events;
@@ -394,8 +410,8 @@ static void event_handler(switch_event_t *event)
 				} else {
 					char errbuf[512] = {0};
 					unsigned int qsize = switch_queue_size(l->event_queue);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
-							"Event enqueue ERROR [%d] | [%s] | Queue size: [%u/%u] %s\n", 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+							"Event enqueue ERROR [%d] | [%s] | Queue size: [%u/%u] %s\n",
 							(int)qstatus, switch_strerror(qstatus, errbuf, sizeof(errbuf)), qsize, MAX_QUEUE_LEN, (qsize == MAX_QUEUE_LEN)?"Max queue size reached":"");
 					if (++l->lost_events > MAX_MISSED) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Killing listener because of too many lost events. Lost [%d] Queue size[%u/%u]\n", l->lost_events, qsize, MAX_QUEUE_LEN);
@@ -651,10 +667,20 @@ static void send_disconnect(listener_t *listener, const char *message)
 	if (!listener->sock) return;
 
 	len = strlen(disco_buf);
-	switch_socket_send(listener->sock, disco_buf, &len);
+
+	if (listener->secure) {
+		SSL_write(listener->ssl, disco_buf, len);
+	} else {
+		switch_socket_send(listener->sock, disco_buf, &len);
+	}
+
 	if (len > 0) {
 		len = mlen;
-		switch_socket_send(listener->sock, message, &len);
+		if (listener->secure) {
+			SSL_write(listener->ssl, message, len);
+		} else {
+			switch_socket_send(listener->sock, message, &len);
+		}
 	}
 }
 
@@ -1257,7 +1283,19 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 		}
 
-		status = switch_socket_recv(listener->sock, ptr, &mlen);
+		if (listener->secure) {
+			int rv = SSL_read(listener->ssl, ptr, mlen);
+
+			if (rv) {
+				status = SWITCH_STATUS_SUCCESS;
+				mlen = rv;
+			} else {
+				status = SWITCH_STATUS_FALSE;
+				mlen = 0;
+			}
+		} else {
+			status = switch_socket_recv(listener->sock, ptr, &mlen);
+		}
 
 		if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
@@ -1324,7 +1362,19 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 										while (clen > 0) {
 											mlen = clen;
 
-											status = switch_socket_recv(listener->sock, p, &mlen);
+											if (listener->secure) {
+												int rv = SSL_read(listener->ssl, p, mlen);
+
+												if (rv) {
+													status = SWITCH_STATUS_SUCCESS;
+													mlen = rv;
+												} else {
+													status = SWITCH_STATUS_FALSE;
+													mlen = 0;
+												}
+											} else {
+												status = switch_socket_recv(listener->sock, p, &mlen);
+											}
 
 											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 												free(body);
@@ -1590,8 +1640,14 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 		switch_snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", rlen);
 		blen = strlen(buf);
-		switch_socket_send(acs->listener->sock, buf, &blen);
-		switch_socket_send(acs->listener->sock, reply, &rlen);
+
+		if (acs->listener->secure) {
+			SSL_write(acs->listener->ssl, buf, blen);
+			SSL_write(acs->listener->ssl, reply, rlen);
+		} else {
+			switch_socket_send(acs->listener->sock, buf, &blen);
+			switch_socket_send(acs->listener->sock, reply, &rlen);
+		}
 	}
 
 	switch_safe_free(stream.data);
@@ -1857,7 +1913,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					edup = strdup(allowed_events);
 
 					switch_assert(edup);
-					
+
 					if (strchr(edup, ' ')) {
 						delim = ' ';
 					}
@@ -2034,7 +2090,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_event_serialize(call_event, &event_str, SWITCH_TRUE);
 			switch_assert(event_str);
 			len = strlen(event_str);
-			switch_socket_send(listener->sock, event_str, &len);
+
+			if (listener->secure) {
+				SSL_write(listener->ssl, event_str, len);
+			} else {
+				switch_socket_send(listener->sock, event_str, &len);
+			}
+
 			switch_safe_free(event_str);
 			switch_event_destroy(&call_event);
 			//switch_snprintf(reply, reply_len, "+OK");
@@ -2625,6 +2687,74 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	return status;
 }
 
+static int init_ssl()
+{
+	const char *err = "";
+
+	prefs.ssl_method = SSLv23_server_method();
+	prefs.ssl_ctx = SSL_CTX_new(prefs.ssl_method);
+	prefs.ssl_ready = 1;
+	assert(prefs.ssl_ctx);
+
+	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_SSLv2);
+	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_SSLv3);
+	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_TLSv1);
+	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_COMPRESSION);
+
+	if (!zstr(prefs.chain)) {
+		if (switch_file_exists(prefs.chain, NULL) != SWITCH_STATUS_SUCCESS) {
+			err = "SUPPLIED CHAIN FILE NOT FOUND\n";
+			goto fail;
+		}
+
+		if (!SSL_CTX_use_certificate_chain_file(prefs.ssl_ctx, prefs.chain)) {
+			err = "CERT CHAIN FILE ERROR";
+			goto fail;
+		}
+	}
+
+	if (switch_file_exists(prefs.cert, NULL) != SWITCH_STATUS_SUCCESS) {
+		err = "SUPPLIED CERT FILE NOT FOUND\n";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_certificate_file(prefs.ssl_ctx, prefs.cert, SSL_FILETYPE_PEM)) {
+		err = "CERT FILE ERROR";
+		goto fail;
+	}
+
+	if (switch_file_exists(prefs.key, NULL) != SWITCH_STATUS_SUCCESS) {
+		err = "SUPPLIED KEY FILE NOT FOUND\n";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_PrivateKey_file(prefs.ssl_ctx, prefs.key, SSL_FILETYPE_PEM)) {
+		err = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
+	if (!SSL_CTX_check_private_key(prefs.ssl_ctx)) {
+		err = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
+	SSL_CTX_set_cipher_list(prefs.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+
+	return 1;
+
+ fail:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
+
+	prefs.ssl_ready = 0;
+
+	if (prefs.ssl_ctx) {
+		SSL_CTX_free(prefs.ssl_ctx);
+		prefs.ssl_ctx = NULL;
+	}
+
+	return 0;
+}
+
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 {
 	listener_t *listener = (listener_t *) obj;
@@ -2662,6 +2792,25 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		goto done;
 	}
 
+	if (listener->secure) {
+		int code;
+
+		if (!listener->ssl) {
+			listener->ssl = SSL_new(prefs.ssl_ctx);
+			assert(listener->ssl);
+
+			SSL_set_fd(listener->ssl, switch_socket_fd_get(listener->sock));
+		}
+
+		code = SSL_accept(listener->ssl);
+
+		if (code != 1) {
+			int ssl_err = SSL_get_error(listener->ssl, code);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "SSL accept error %d\n", ssl_err);
+			goto done;
+		}
+	}
+
 	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 
@@ -2678,9 +2827,17 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length: %d\n\n", mlen);
 				len = strlen(buf);
-				switch_socket_send(listener->sock, buf, &len);
+				if (listener->secure) {
+					SSL_write(listener->ssl, buf, len);
+				} else {
+					switch_socket_send(listener->sock, buf, &len);
+				}
 				len = mlen;
-				switch_socket_send(listener->sock, message, &len);
+				if (listener->secure) {
+					SSL_write(listener->ssl, message, len);
+				} else {
+					switch_socket_send(listener->sock, message, &len);
+				}
 				goto done;
 			}
 		}
@@ -2722,7 +2879,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_snprintf(buf, sizeof(buf), "Content-Type: auth/request\n\n");
 
 		len = strlen(buf);
-		switch_socket_send(listener->sock, buf, &len);
+
+		if (listener->secure) {
+			SSL_write(listener->ssl, buf, len);
+		} else {
+			switch_socket_send(listener->sock, buf, &len);
+		}
 
 		while (!switch_test_flag(listener, LFLAG_AUTHED)) {
 			status = read_packet(listener, &event, 25);
@@ -2744,7 +2906,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 					switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
 				}
 				len = strlen(buf);
-				switch_socket_send(listener->sock, buf, &len);
+
+				if (listener->secure) {
+					SSL_write(listener->ssl, buf, len);
+				} else {
+					switch_socket_send(listener->sock, buf, &len);
+				}
 			}
 			break;
 		}
@@ -2779,7 +2946,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				switch_snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
 			}
 			len = strlen(buf);
-			switch_socket_send(listener->sock, buf, &len);
+
+			if (listener->secure) {
+				SSL_write(listener->ssl, buf, len);
+			} else {
+				switch_socket_send(listener->sock, buf, &len);
+			}
 		}
 
 	}
@@ -2816,6 +2988,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	if (listener->sock) {
 		send_disconnect(listener, "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n");
+
+		if (listener->secure && listener->ssl) {
+			SSL_shutdown(listener->ssl);
+			SSL_free(listener->ssl);
+		}
+
 		close_socket(&listener->sock);
 	}
 
@@ -2894,7 +3072,17 @@ static int config(void)
 						prefs.nat_map = 1;
 					}
 				} else if (!strcmp(var, "listen-port")) {
-					prefs.port = (uint16_t) atoi(val);
+                    const char *secure = switch_xml_attr_soft(param, "secure");
+                    if (switch_true(secure) && !prefs.port_secure) {
+                        prefs.port_secure = (uint16_t) atoi(val);
+                    } else if (!prefs.port) {
+                        prefs.port = (uint16_t) atoi(val);
+                    }
+                } else if (!strcmp(var, "secure-combined")) {
+                    set_string(prefs.key, val);
+                    set_string(prefs.cert, val);
+                } else if (!strcmp(var, "secure-chain")) {
+                    set_string(prefs.chain, val);
 				} else if (!strcmp(var, "password")) {
 					set_pref_pass(val);
 				} else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
@@ -2943,9 +3131,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 {
 	switch_memory_pool_t *pool = NULL, *listener_pool = NULL;
 	switch_status_t rv;
-	switch_sockaddr_t *sa;
+	switch_sockaddr_t *sa, *sa_secure;
 	switch_socket_t *inbound_socket = NULL;
 	listener_t *listener;
+	switch_waitlist_t sockets_waitlist[2];
+    uint8_t secure_err = 0;
+    uint8_t is_secure_socket = 0;
 	uint32_t x = 0;
 	uint32_t errs = 0;
 
@@ -2987,9 +3178,54 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 			switch_nat_add_mapping(prefs.port, SWITCH_NAT_TCP, NULL, SWITCH_FALSE);
 		}
 
+		if (prefs.port_secure) {
+			rv = switch_sockaddr_info_get(&sa_secure, prefs.ip, SWITCH_UNSPEC, prefs.port_secure, 0, pool);
+			if (rv) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot get information about IP address %s\n", prefs.ip);
+				goto fail;
+			}
+			rv = switch_socket_create(&listen_list.sock_secure, switch_sockaddr_get_family(sa_secure), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
+			if (rv)
+				goto sock_fail_secure;
+
+			rv = switch_socket_opt_set(listen_list.sock_secure, SWITCH_SO_REUSEADDR, 1);
+			if (rv)
+				goto sock_fail_secure;
+
+#ifdef WIN32
+			if (switch_sockaddr_get_family(sa_secure) == AF_INET6) {
+				rv = switch_socket_opt_set(listen_list.sock_secure, SWITCH_SO_IPV6_V6ONLY, 0);
+				if (rv)
+					goto sock_fail_secure;
+			}
+#endif
+
+			rv = switch_socket_bind(listen_list.sock_secure, sa_secure);
+			if (rv)
+				goto sock_fail_secure;
+
+			rv = switch_socket_listen(listen_list.sock_secure, 5);
+			if (rv)
+				goto sock_fail_secure;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", prefs.ip, prefs.port_secure);
+
+			if (prefs.nat_map) {
+				switch_nat_add_mapping(prefs.port_secure, SWITCH_NAT_TCP, NULL, SWITCH_FALSE);
+			}
+
+			if (!init_ssl()) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL INIT ERROR\n");
+				goto sock_fail_secure;
+			}
+		}
+
 		break;
-	  sock_fail:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", prefs.ip, prefs.port);
+sock_fail_secure:
+		secure_err = 1;
+sock_fail:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", prefs.ip,
+				secure_err ? prefs.port_secure : prefs.port);
 		if (prefs.stop_on_bind_error) {
 			prefs.done = 1;
 			goto fail;
@@ -2999,29 +3235,70 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	listen_list.ready = 1;
 
+	sockets_waitlist[0].sock = switch_socket_fd_get(listen_list.sock);
+	sockets_waitlist[0].events = SWITCH_POLL_READ | SWITCH_POLL_ERROR;
+	sockets_waitlist[1].sock = switch_socket_fd_get(listen_list.sock_secure);
+	sockets_waitlist[1].events = SWITCH_POLL_READ | SWITCH_POLL_ERROR;
 
 	while (!prefs.done) {
+		is_secure_socket = 0;
+
 		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 			goto fail;
 		}
 
+		rv = switch_wait_socklist(sockets_waitlist, 2, -1);
 
-		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
-			if (prefs.done) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
-				goto end;
-			} else {
-				/* I wish we could use strerror_r here but its not defined everywhere =/ */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
-				if (++errs > 100) {
-					goto end;
-				}
-			}
-		} else {
-			errs = 0;
+		if (prefs.done) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+			goto end;
 		}
 
+		if (rv) {
+			if (sockets_waitlist[0].revents & SWITCH_POLL_READ) {
+				if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
+					if (prefs.done) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+						goto end;
+					} else {
+						/* I wish we could use strerror_r here but its not defined everywhere =/ */
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
+						if (++errs > 100) {
+							goto end;
+						}
+					}
+				} else {
+					errs = 0;
+				}
+			} else if (sockets_waitlist[1].revents & SWITCH_POLL_READ) {
+				is_secure_socket = 1;
+
+				if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock_secure, listener_pool))) {
+					if (prefs.done) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+						goto end;
+					} else {
+						/* I wish we could use strerror_r here but its not defined everywhere =/ */
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
+						if (++errs > 100) {
+							goto end;
+						}
+					}
+				} else {
+					errs = 0;
+				}
+			} else if (++errs > 100) {
+				goto end;
+			} else {
+				continue;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Poll Error [%s]\n", strerror(errno));
+			if (++errs > 100) {
+				goto end;
+			}
+		}
 
 		if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
@@ -3032,6 +3309,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener_pool);
 		switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener_pool);
 
+		listener->secure = is_secure_socket;
 		listener->sock = inbound_socket;
 		listener->pool = listener_pool;
 		listener_pool = NULL;
@@ -3045,9 +3323,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_core_hash_init(&listener->event_hash);
 		switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
 
-
-
-		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
+		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS &&  listener->sa) {
 			switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
 			if ((listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
 				if (launch_listener_thread(listener) == SWITCH_STATUS_SUCCESS)
@@ -3057,13 +3333,15 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initilizing connection\n");
 		close_socket(&listener->sock);
-		expire_listener(&listener);
 
+		expire_listener(&listener);
 	}
 
   end:
 
 	close_socket(&listen_list.sock);
+	if (prefs.port_secure)
+		close_socket(&listen_list.sock_secure);
 
 	if (prefs.nat_map && switch_nat_get_type()) {
 		switch_nat_del_mapping(prefs.port, SWITCH_NAT_TCP);
