@@ -6,11 +6,12 @@ After=postgresql.service postgresql-9.3.service postgresql-9.4.service mysqld.se
 [Service]
 EnvironmentFile=-/etc/sysconfig/freeswitch
 Environment="USER=freeswitch"
+Environment="GROUP=freeswitch"
 # RuntimeDirectory is not yet supported in CentOS 7. A workaround is to use /etc/tmpfiles.d/freeswitch.conf
 #RuntimeDirectory=/run/freeswitch
 #RuntimeDirectoryMode=0750
 WorkingDirectory=/run/freeswitch
-ExecStart=/usr/bin/freeswitch -nc -nf -u ${USER} $FREESWITCH_PARAMS
+ExecStart=/usr/bin/freeswitch -nc -nf -u ${USER} -g ${GROUP} $FREESWITCH_PARAMS
 ExecReload=/usr/bin/kill -HUP $MAINPID
 
 [Install]
