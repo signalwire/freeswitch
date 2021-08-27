@@ -584,6 +584,13 @@
 		</condition>
     </extension>
 
+    <extension name="sipp_telephone_check">
+      <condition field="destination_number" expression="^1212121212$">
+        <action application="answer"/>
+        <action application="set" data="park_after_bridge=true"/>
+        <action application="park"/>
+      </condition>
+    </extension>
 
 	<extension name="sipp">
 		<condition>
