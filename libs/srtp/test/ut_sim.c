@@ -1,12 +1,13 @@
 /*
- * aes_icm.h
+ * ut_sim.c
  *
- * Header for AES Integer Counter Mode.
+ * an unreliable transport simulator
+ * (for testing replay databases and suchlike)
  *
  * David A. McGrew
  * Cisco Systems, Inc.
- *
  */
+
 /*
  *
  * Copyright (c) 2001-2017, Cisco Systems, Inc.
@@ -43,19 +44,64 @@
  *
  */
 
-#ifndef AES_ICM_H
-#define AES_ICM_H
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
-#include "cipher.h"
-#include "datatypes.h"
-#include <openssl/evp.h>
-#include <openssl/aes.h>
+#include "ut_sim.h"
+#include "cipher_priv.h"
 
-typedef struct {
-    v128_t counter; /* holds the counter value          */
-    v128_t offset;  /* initial offset value             */
-    int key_size;
-    EVP_CIPHER_CTX *ctx;
-} srtp_aes_icm_ctx_t;
+int ut_compar(const void *a, const void *b)
+{
+    uint8_t r;
+    srtp_cipher_rand_for_tests(&r, sizeof(r));
+    return r > (UINT8_MAX / 2) ? -1 : 1;
+}
 
-#endif /* AES_ICM_H */
+void ut_init(ut_connection *utc)
+{
+    int i;
+    utc->index = 0;
+
+    for (i = 0; i < UT_BUF; i++)
+        utc->buffer[i] = i;
+
+    qsort(utc->buffer, UT_BUF, sizeof(uint32_t), ut_compar);
+
+    utc->index = UT_BUF - 1;
+}
+
+uint32_t ut_next_index(ut_connection *utc)
+{
+    uint32_t tmp;
+
+    tmp = utc->buffer[0];
+    utc->index++;
+    utc->buffer[0] = utc->index;
+
+    qsort(utc->buffer, UT_BUF, sizeof(uint32_t), ut_compar);
+
+    return tmp;
+}
+
+#ifdef UT_TEST
+
+#include <stdio.h>
+
+int main()
+{
+    uint32_t i, irecvd, idiff;
+    ut_connection utc;
+
+    ut_init(&utc);
+
+    for (i = 0; i < 1000; i++) {
+        irecvd = ut_next_index(&utc);
+        idiff = i - irecvd;
+        printf("%lu\t%lu\t%d\n", i, irecvd, idiff);
+    }
+
+    return 0;
+}
+
+#endif

@@ -1,0 +1,3 @@
+# Meson build file maintainers
+meson.build @nirbheek @tp-m @xhaakon
+meson_options.txt @nirbheek @tp-m @xhaakon
