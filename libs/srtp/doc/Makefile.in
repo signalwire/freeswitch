@@ -21,7 +21,7 @@ libsrtpdoc:
 	@if test ! -e Doxyfile.in; then \
 		echo "*** Sorry, can't build doc outside source dir"; exit 1; \
 	fi
-	sed 's/LIBSRTPVERSIONNUMBER/$(version)/' Doxyfile.in > Doxyfile
+	sed 's/@LIBSRTPVERSIONNUMBER@/$(version)/' Doxyfile.in > Doxyfile
 	doxygen
 
 clean:

@@ -1,17 +1,13 @@
-/* Hacked config.h for Windows XP 32-bit & VC7  */
+/* config_in.h.  Generated from configure.ac by autoheader.  */
 
-#ifdef (_MSC_VER >= 1400)
-# define HAVE_RAND_S	1
-#endif
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
 
 /* Define if building for a CISC machine (e.g. Intel). */
-#define CPU_CISC 1
+#undef CPU_CISC
 
 /* Define if building for a RISC machine (assume slow byte access). */
 #undef CPU_RISC
-
-/* Path to random device */
-#undef DEV_URANDOM
 
 /* Define to enabled debug logging for all mudules. */
 #undef ENABLE_DEBUG_LOGGING
@@ -22,6 +18,9 @@
 /* Define to redirect logging to stdout. */
 #undef ERR_REPORTING_STDOUT
 
+/* Define this to use AES-GCM. */
+#undef GCM
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
@@ -29,7 +28,7 @@
 #undef HAVE_BYTESWAP_H
 
 /* Define to 1 if you have the `inet_aton' function. */
-#define HAVE_INET_ATON 1
+#undef HAVE_INET_ATON
 
 /* Define to 1 if the system has the type `int16_t'. */
 #undef HAVE_INT16_T
@@ -43,32 +42,53 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `nspr4' library (-lnspr4). */
+#undef HAVE_LIBNSPR4
+
+/* Define to 1 if you have the `nss3' library (-lnss3). */
+#undef HAVE_LIBNSS3
+
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
 
 /* Define to 1 if you have the <machine/types.h> header file. */
 #undef HAVE_MACHINE_TYPES_H
 
 /* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
+#undef HAVE_MEMORY_H
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
+/* Define to 1 if you have the <nss.h> header file. */
+#undef HAVE_NSS_H
+
+/* Define to 1 if you have the `winpcap' library (-lwpcap) */
+#undef HAVE_PCAP
+
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
 /* Define to 1 if you have the `socket' function. */
-#define HAVE_SOCKET 1
+#undef HAVE_SOCKET
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#define HAVE_STDLIB_H 1
+#undef HAVE_STDLIB_H
 
 /* Define to 1 if you have the <strings.h> header file. */
-#define HAVE_STRINGS_H 1
+#undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H 1
+#undef HAVE_STRING_H
 
 /* Define to 1 if you have the <sys/int_types.h> header file. */
 #undef HAVE_SYS_INT_TYPES_H
@@ -89,7 +109,7 @@
 #undef HAVE_UINT16_T
 
 /* Define to 1 if the system has the type `uint32_t'. */
-#undef HAVE_UINT32_T 
+#undef HAVE_UINT32_T
 
 /* Define to 1 if the system has the type `uint64_t'. */
 #undef HAVE_UINT64_T
@@ -98,19 +118,31 @@
 #undef HAVE_UINT8_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
+#undef HAVE_UNISTD_H
 
 /* Define to 1 if you have the `usleep' function. */
-#define HAVE_USLEEP 1
+#undef HAVE_USLEEP
 
 /* Define to 1 if you have the <windows.h> header file. */
-#define HAVE_WINDOWS_H 1
+#undef HAVE_WINDOWS_H
 
 /* Define to 1 if you have the <winsock2.h> header file. */
-#define HAVE_WINSOCK2_H 1
+#undef HAVE_WINSOCK2_H
 
 /* Define to use X86 inlined assembly code */
 #undef HAVE_X86
+
+/* Define this to use NSS crypto. */
+#undef NSS
+
+/* Define this to use OpenSSL crypto. */
+#undef OPENSSL
+
+/* Define this if OPENSSL_cleanse is broken. */
+#undef OPENSSL_CLEANSE_BROKEN
+
+/* Define this to use OpenSSL KDF for SRTP. */
+#undef OPENSSL_KDF
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
@@ -124,39 +156,41 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* The size of a `unsigned long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG 4
+/* The size of `unsigned long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG
 
-/* The size of a `unsigned long long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG_LONG 8
-
-/* Define to use GDOI. */
-#undef SRTP_GDOI
-
-/* Define to compile for kernel contexts. */
-#undef SRTP_KERNEL
-
-/* Define to compile for Linux kernel context. */
-#undef SRTP_KERNEL_LINUX
+/* The size of `unsigned long long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG_LONG
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 /* Define to empty if `const' does not conform to ANSI C. */
-//#undef const
+#undef const
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
-//#ifndef __cplusplus
-//#undef inline
-//#endif
-#define inline __inline
+#ifndef __cplusplus
+#undef inline
+#endif
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
-//#undef size_t
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t

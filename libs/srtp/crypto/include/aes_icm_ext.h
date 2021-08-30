@@ -1,15 +1,15 @@
 /*
- * aes_gcm_ossl.h
+ * aes_icm.h
  *
- * Header for AES Galois Counter Mode.
+ * Header for AES Integer Counter Mode.
  *
- * John A. Foley
+ * David A. McGrew
  * Cisco Systems, Inc.
  *
  */
 /*
  *
- * Copyright (c) 2013-2017, Cisco Systems, Inc.
+ * Copyright (c) 2001-2017, Cisco Systems, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,20 +43,57 @@
  *
  */
 
-#ifndef AES_GCM_OSSL_H
-#define AES_GCM_OSSL_H
+#ifndef AES_ICM_H
+#define AES_ICM_H
 
 #include "cipher.h"
-#include "srtp.h"
 #include "datatypes.h"
+
+#ifdef OPENSSL
+
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 
 typedef struct {
+    v128_t counter; /* holds the counter value          */
+    v128_t offset;  /* initial offset value             */
     int key_size;
-    int tag_len;
     EVP_CIPHER_CTX *ctx;
-    srtp_cipher_direction_t dir;
-} srtp_aes_gcm_ctx_t;
+} srtp_aes_icm_ctx_t;
 
-#endif /* AES_GCM_OSSL_H */
+#endif /* OPENSSL */
+
+#ifdef MBEDTLS
+
+#include <mbedtls/aes.h>
+typedef struct {
+    v128_t counter; /* holds the counter value          */
+    v128_t offset;  /* initial offset value             */
+    v128_t stream_block;
+    size_t nc_off;
+    int key_size;
+    mbedtls_aes_context *ctx;
+} srtp_aes_icm_ctx_t;
+
+#endif /* MBEDTLS */
+
+#ifdef NSS
+
+#define NSS_PKCS11_2_0_COMPAT 1
+
+#include <nss.h>
+#include <pk11pub.h>
+
+typedef struct {
+    v128_t counter;
+    v128_t offset;
+    int key_size;
+    uint8_t iv[16];
+    NSSInitContext *nss;
+    PK11SymKey *key;
+    PK11Context *ctx;
+} srtp_aes_icm_ctx_t;
+
+#endif /* NSS */
+
+#endif /* AES_ICM_H */

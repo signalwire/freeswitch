@@ -1,15 +1,6 @@
 /*
- * stats.h
  *
- * interface to statistical test functions
- *
- * David A. McGrew
- * Cisco Systems, Inc.
- */
-
-/*
- *
- * Copyright(c) 2001-2017, Cisco Systems, Inc.
+ * Copyright (c) 2013-2021, Cisco Systems, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,24 +34,37 @@
  *
  */
 
-#ifndef STAT_H
-#define STAT_H
+#include "auth_test_cases.h"
+#include <stddef.h>
 
-#include "datatypes.h" /* for uint8_t                       */
-#include "err.h"       /* for srtp_err_status_t             */
+/* clang-format off */
+static const uint8_t srtp_hmac_test_case_0_key[20] = {
+    0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+    0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+    0x0b, 0x0b, 0x0b, 0x0b
+};
+/* clang-format on */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* clang-format off */
+static const uint8_t srtp_hmac_test_case_0_data[8] = {
+    0x48, 0x69, 0x20, 0x54, 0x68, 0x65, 0x72, 0x65 /* "Hi There" */
+};
+/* clang-format on */
 
-srtp_err_status_t stat_test_monobit(uint8_t *data);
+/* clang-format off */
+static const uint8_t srtp_hmac_test_case_0_tag[20] = {
+    0xb6, 0x17, 0x31, 0x86, 0x55, 0x05, 0x72, 0x64,
+    0xe2, 0x8b, 0xc0, 0xb6, 0xfb, 0x37, 0x8c, 0x8e,
+    0xf1, 0x46, 0xbe, 0x00
+};
+/* clang-format on */
 
-srtp_err_status_t stat_test_poker(uint8_t *data);
-
-srtp_err_status_t stat_test_runs(uint8_t *data);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* STAT_H */
+const srtp_auth_test_case_t srtp_hmac_test_case_0 = {
+    sizeof(srtp_hmac_test_case_0_key),  /* octets in key            */
+    srtp_hmac_test_case_0_key,          /* key                      */
+    sizeof(srtp_hmac_test_case_0_data), /* octets in data           */
+    srtp_hmac_test_case_0_data,         /* data                     */
+    sizeof(srtp_hmac_test_case_0_tag),  /* octets in tag            */
+    srtp_hmac_test_case_0_tag,          /* tag                      */
+    NULL                                /* pointer to next testcase */
+};
