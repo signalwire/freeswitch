@@ -3500,10 +3500,24 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
-	/* Do gateway cleanups */
+	/* Gateway cleanup start */
+	/* Mark all gateways as deleted and set REG_STATE_UNREGISTER state on REG gateways */
 	sofia_glue_del_every_gateway(profile);
+	/* First call will unregister and set state to DOWN so a gateway is ready for deletion */
 	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
 	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+	/*
+	 * The gateway life cycle requires a gateway to go though different states before it's destroyed.
+	 * Normally sofia_reg_check_gateway() is called periodically
+	 * but it's not the case on profile shutdown.
+	 *
+	 * All REG gateways should be DOWN now and can be finally deleted.
+	 * Calling sofia_reg_check_gateway() second time.
+	 */
+	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+	/* Gateway cleanup end */
+
 	sofia_glue_fire_events(profile);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
