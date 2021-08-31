@@ -23,6 +23,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #ifdef WIN32
+#include "Winsock2.h"
 typedef unsigned __int32 uint32_t;
 #else
 #ifdef HAVE_SYS_SELECT_H
