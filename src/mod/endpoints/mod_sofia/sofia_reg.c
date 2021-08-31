@@ -2509,11 +2509,9 @@ switch_bool_t sip_resolve_compare(const char *domainname, const char *ip, sofia_
 		ipv6 = SWITCH_TRUE;
 	}
 	ret = dig_all_srvs_simple(dig, domainname, ip, ipv6);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "verify 1\n");
 
 	if (!ret) {
 		answers = dig_addr_simple(dig, host, ipv6?sres_type_aaaa:sres_type_a);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "verify 2\n");
 		ret = verify_ip(answers, ip, ipv6);
 	}
 
