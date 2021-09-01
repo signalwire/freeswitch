@@ -6285,7 +6285,7 @@ SWITCH_STANDARD_APP(vad_test_function)
 	if ((var = switch_channel_get_variable(channel, "vad_silence_ms"))) {
 		tmp = atoi(var);
 
-		if (tmp > 0) switch_vad_set_param(vad, "sicence_ms", tmp);
+		if (tmp > 0) switch_vad_set_param(vad, "silence_ms", tmp);
 	}
 
 	if ((var = switch_channel_get_variable(channel, "vad_thresh"))) {
