@@ -3816,6 +3816,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 	sofia_gateway_t *gp;
 	switch_memory_pool_t *pool;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
+	switch_mutex_lock(profile->gw_mutex);
+	sofia_reg_truly_del_gateway(profile);
+	switch_mutex_unlock(profile->gw_mutex);
 
 	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
 		char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
