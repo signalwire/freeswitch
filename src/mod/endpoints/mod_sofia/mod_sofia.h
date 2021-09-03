@@ -1185,6 +1185,7 @@ void sofia_reg_check_sync(sofia_profile_t *profile);
 char *sofia_glue_get_register_host(const char *uri);
 const char *sofia_glue_strip_proto(const char *uri);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
+void sofia_reg_truly_del_gateway(sofia_profile_t *profile);
 void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *stream, int up);
 void sofia_glue_del_every_gateway(sofia_profile_t *profile);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const char *user, const char *host, const char *contact, const char *user_agent,

@@ -166,6 +166,67 @@ void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int sta
 	}
 }
 
+void sofia_reg_truly_del_gateway(sofia_profile_t *profile)
+{
+	sofia_gateway_t *gateway_ptr, *check, *last = NULL;
+	switch_event_t *event;
+	sofia_gateway_subscription_t *gw_sub_ptr;
+	
+	switch_mutex_lock(profile->gw_deleting_mutex);
+	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+		if (gateway_ptr->deleted) {
+			
+			if ((check = switch_core_hash_find(mod_sofia_globals.gateway_hash, gateway_ptr->name)) && check == gateway_ptr) {
+				char *pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
+				switch_assert(pkey);
+				gateway_ptr->destroy = 1;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway %s from hash.\n", pkey);
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
+				free(pkey);
+			}
+			
+			if (gateway_ptr->state == REG_STATE_REGED) {
+				sofia_reg_kill_reg(gateway_ptr);
+			}
+
+			for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
+
+				if (gw_sub_ptr->state == SUB_STATE_SUBED) {
+					sofia_reg_kill_sub(gw_sub_ptr);
+				}
+			}
+
+			if (last) {
+				last->next = gateway_ptr->next;
+			} else {
+				profile->gateways = gateway_ptr->next;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
+				switch_event_fire(&event);
+			}
+			if (gateway_ptr->ob_vars) {
+				switch_event_destroy(&gateway_ptr->ob_vars);
+			}
+			if (gateway_ptr->ib_vars) {
+				switch_event_destroy(&gateway_ptr->ib_vars);
+			}
+
+			if (gateway_ptr->destroy) {
+				switch_core_destroy_memory_pool(&(gateway_ptr->pool));
+			}
+			
+		} else {
+			last = gateway_ptr;
+		}
+	}
+	switch_mutex_unlock(profile->gw_deleting_mutex);
+}
+
 void sofia_reg_fire_custom_sip_user_state_event(sofia_profile_t *profile, const char *sip_user, const char *contact,
 							const char* from_user, const char* from_host, const char *call_id, sofia_sip_user_status_t status, int options_res, const char *phrase)
 {
@@ -307,56 +368,11 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
-	sofia_gateway_t *check, *gateway_ptr, *last = NULL;
-	switch_event_t *event;
+	sofia_gateway_t *gateway_ptr;
 	int delta = 0;
 
 	switch_mutex_lock(profile->gw_mutex);
-	switch_mutex_lock(profile->gw_deleting_mutex);
-	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-		if (gateway_ptr->deleted) {
-			if ((check = switch_core_hash_find(mod_sofia_globals.gateway_hash, gateway_ptr->name)) && check == gateway_ptr) {
-				char *pkey = switch_mprintf("%s::%s", profile->name, gateway_ptr->name);
-				switch_assert(pkey);
-				gateway_ptr->destroy = 1;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway %s from hash.\n", pkey);
-				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
-				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->name);
-				free(pkey);
-			}
-
-			if (gateway_ptr->state == REG_STATE_NOREG || gateway_ptr->state == REG_STATE_DOWN) {
-
-				if (last) {
-					last->next = gateway_ptr->next;
-				} else {
-					profile->gateways = gateway_ptr->next;
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Gateway", gateway_ptr->name);
-					switch_event_fire(&event);
-				}
-				if (gateway_ptr->ob_vars) {
-					switch_event_destroy(&gateway_ptr->ob_vars);
-				}
-				if (gateway_ptr->ib_vars) {
-					switch_event_destroy(&gateway_ptr->ib_vars);
-				}
-
-				if (gateway_ptr->destroy) {
-					switch_core_destroy_memory_pool(&(gateway_ptr->pool));
-				}
-			} else {
-				last = gateway_ptr;
-			}
-		} else {
-			last = gateway_ptr;
-		}
-	}
-	switch_mutex_unlock(profile->gw_deleting_mutex);
+	sofia_reg_truly_del_gateway(profile);
 
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		reg_state_t ostate = gateway_ptr->state;
