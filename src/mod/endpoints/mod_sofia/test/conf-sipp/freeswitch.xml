@@ -322,11 +322,41 @@
                 <param name="username" value="not-used"/>
                 <param name="password" value="not-used"/>
                 <param name="proxy" value="127.0.0.1:5080"/>
+                <param name="realm" value="no.local"/>
                 <param name="register" value="false"/>
                 <param name="retry-seconds" value="30"/>
                 <param name="dtmf-type" value="rfc2833"/>
-                <variables>   
-                 <variable name="rtp_secure_media"  value="false"  direction="outbound"/>  
+                <variables>
+                    <variable name="rtp_secure_media" value="false" direction="outbound"/>
+                </variables>
+           </gateway>
+
+           <gateway name="testgw">
+                <param name="username" value="1001"/>
+                <param name="password" value="1234"/>
+                <param name="proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register" value="true"/>
+                <param name="realm" value="unresolvable.local"/>
+                <param name="outbound_proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register_proxy" value="127.0.0.1:6080"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>
+                    <variable name="rtp_secure_media" value="false" direction="outbound"/>
+                </variables>
+           </gateway>
+           <gateway name="testgw-noreg">
+                <param name="username" value="1001"/>
+                <param name="password" value="1234"/>
+                <param name="proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register" value="false"/>
+                <param name="realm" value="freeswitch.org"/>
+                <param name="outbound_proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register_proxy" value="127.0.0.1:6080"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>
+                    <variable name="rtp_secure_media" value="false" direction="outbound"/>
                 </variables>
             </gateway>
         </gateways>
@@ -365,7 +395,7 @@
         <param name="rtp-hold-timeout-sec" value="1800"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
-		<param name="tls" value="false"/>
+        <param name="tls" value="false"/>
       </settings>
   </profile>
 

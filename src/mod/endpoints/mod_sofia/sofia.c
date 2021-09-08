@@ -3950,8 +3950,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					contact_host = val;
 				} else if (!strcmp(var, "register-proxy")) {
 					register_proxy = val;
+					gateway->register_proxy_host_cfg = sofia_glue_get_host_from_cfg(register_proxy, gateway->pool); 
 				} else if (!strcmp(var, "outbound-proxy")) {
 					outbound_proxy = val;
+					gateway->outbound_proxy_host_cfg = sofia_glue_get_host_from_cfg(outbound_proxy, gateway->pool); 
 				} else if (!strcmp(var, "distinct-to")) {
 					distinct_to = switch_true(val);
 				} else if (!strcmp(var, "destination-prefix")) {
@@ -4024,6 +4026,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			if (zstr(proxy)) {
 				proxy = realm;
 			}
+
+			gateway->proxy_host_cfg = sofia_glue_get_host_from_cfg(proxy, gateway->pool);
 
 			if (!switch_true(register_str)) {
 				gateway->state = REG_STATE_NOREG;

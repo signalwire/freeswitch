@@ -57,6 +57,22 @@ static switch_bool_t has_ipv6()
 	return SWITCH_TRUE;
 }
 
+static void register_gw()
+{
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute("sofia", "profile external register testgw", NULL, &stream);
+	switch_safe_free(stream.data);
+}
+
+static void unregister_gw()
+{
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute("sofia", "profile external unregister testgw", NULL, &stream);
+	switch_safe_free(stream.data);
+}
+
 static int start_sipp_uac(const char *ip, int remote_port,const char *scenario_uac, const char *extra)
 {
 	char *cmd = switch_mprintf("sipp %s:%d -nr -p 5062 -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, remote_port, scenario_uac, extra);
@@ -65,30 +81,74 @@ static int start_sipp_uac(const char *ip, int remote_port,const char *scenario_u
 	printf("%s\n", cmd);
 	switch_safe_free(cmd);
 	switch_sleep(1000 * 1000);
+
 	return sys_ret;
 } 
 
+static int start_sipp_uas(const char *ip, int listen_port, const char *scenario_uas, const char *extra)
+{
+	char *cmd = switch_mprintf("sipp %s -p %d -nr -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, listen_port, scenario_uas, extra);
+	int sys_ret = switch_system(cmd, SWITCH_TRUE);
+
+	printf("%s\n", cmd);
+	switch_safe_free(cmd);
+	switch_sleep(1000 * 1000);
+
+	return sys_ret;
+}
 static void kill_sipp(void)
 {
 	switch_system("pkill -x sipp", SWITCH_TRUE);
 	switch_sleep(1000 * 1000);
 }
 
-static void event_handler(switch_event_t *event) 
-{
-	const char *new_ev = switch_event_get_header(event, "Event-Subclass");
+static void show_event(switch_event_t *event) {
 	char *str;
-	
-	if (new_ev && !strcmp(new_ev, "sofia::gateway_invalid_digest_req")) { 
-		test_success = 1;
-	}
-
 	/*print the event*/
 	switch_event_serialize_json(event, &str);
 	if (str) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", str);
 		switch_safe_free(str);
 	}
+}
+
+static void event_handler(switch_event_t *event) 
+{
+	const char *new_ev = switch_event_get_header(event, "Event-Subclass");
+
+	if (new_ev && !strcmp(new_ev, "sofia::gateway_invalid_digest_req")) { 
+		test_success = 1;
+	}
+
+	show_event(event);
+}
+
+static void event_handler_reg_ok(switch_event_t *event) 
+{
+	const char *new_ev = switch_event_get_header(event, "Event-Subclass");
+	
+	if (new_ev && !strcmp(new_ev, "sofia::gateway_state")) {
+		const char *state = switch_event_get_header(event, "State");
+		if (state && !strcmp(state, "REGED")) {
+			test_success++;
+		}
+	}
+
+	show_event(event);
+}
+
+static void event_handler_reg_fail(switch_event_t *event) 
+{
+	const char *new_ev = switch_event_get_header(event, "Event-Subclass");
+
+	if (new_ev && !strcmp(new_ev, "sofia::gateway_state")) {
+		const char *state = switch_event_get_header(event, "State");
+		if (state && !strcmp(state, "FAIL_WAIT")) {
+			test_success++;
+		}
+	}
+
+	show_event(event);
 }
 
 FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
@@ -286,6 +346,132 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			fst_check(test_success);
 skiptest:
 			test_success = 0;
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(register_ok)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			int sipp_ret;
+
+			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_reg_ok, NULL);
+
+			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uas_register.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+
+			switch_sleep(1000 * 1000);
+
+			register_gw();
+
+			switch_sleep(5000 * 1000);
+
+			switch_event_unbind_callback(event_handler_reg_ok);
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
+			fst_check(test_success);
+			test_success = 0;
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(register_403)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			int sipp_ret;
+
+			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_reg_fail, NULL);
+
+			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uas_register_403.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+
+			switch_sleep(1000 * 1000);
+
+			register_gw();
+
+			switch_sleep(5000 * 1000);
+
+			switch_event_unbind_callback(event_handler_reg_fail);
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
+			fst_check(test_success);
+			test_success = 0;
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(register_no_challange)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			int sipp_ret;
+
+			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_reg_ok, NULL);
+
+			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uas_register_no_challange.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+
+			switch_sleep(1000 * 1000);
+
+			register_gw();
+
+			switch_sleep(5000 * 1000);
+
+			/*the REGISTER with Expires 0 */
+			unregister_gw();
+
+			switch_sleep(1000 * 1000);
+
+			register_gw();
+
+			switch_sleep(1000 * 1000);
+
+			switch_event_unbind_callback(event_handler_reg_ok);
+
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
+			fst_check(test_success);
+			test_success = 0;
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(invite_407)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			int sipp_ret;
+			switch_core_session_t *session; 
+			switch_call_cause_t cause;
+			switch_status_t status;
+			switch_channel_t *channel;
+			char *to;
+			const int inv_sipp_port = 6082;
+
+			sipp_ret = start_sipp_uas(local_ip_v4, inv_sipp_port, "sipp-scenarios/uas_407.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+
+			switch_sleep(1000 * 1000);
+			to = switch_mprintf("sofia/gateway/testgw-noreg/sipp@%s:%d", local_ip_v4, inv_sipp_port);
+			/*originate will fail if the 407 we get from sipp is dropped due to wrong IP.*/
+			status = switch_ivr_originate(NULL, &session, &cause, to, 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			/*test is considered PASSED if we get a session*/
+			if (!session) {
+				fst_requires(session);
+			}
+
+			switch_sleep(1000 * 1000);
+
+			channel = switch_core_session_get_channel(session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_core_session_rwunlock(session);
+			switch_safe_free(to);
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
 		}
 		FST_TEST_END()
 
