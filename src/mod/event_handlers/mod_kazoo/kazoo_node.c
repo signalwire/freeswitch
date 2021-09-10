@@ -1244,7 +1244,8 @@ static switch_status_t handle_mod_kazoo_request(ei_node_t *ei_node, erlang_msg *
 	} else if (arity == 3 && !strncmp(atom, "$gen_call", 9)) {
 		switch_status_t status;
 		ei_send_msg_t *send_msg = NULL;
-		erlang_ref ref;
+		int ref_start, ref_len = 0;
+		char *ref = NULL;
 
 		switch_malloc(send_msg, sizeof(*send_msg));
 		ei_x_new_with_version(&send_msg->buf);
@@ -1272,16 +1273,23 @@ static switch_status_t handle_mod_kazoo_request(ei_node_t *ei_node, erlang_msg *
 		}
 
 		/* ...ref()}, {_, _}} = Buf */
-		if (ei_decode_ref(buf->buff, &buf->index, &ref)) {
+		ref_start = buf->index;
+		if (ei_skip_term(buf->buff, &buf->index)) { /* skip the whole tag/ref, is an opaque after all */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received erlang call without a reply tag (ensure you are using Kazoo v2.14+).\n");
 			ei_x_free(&send_msg->buf);
 			switch_safe_free(send_msg);
 			return SWITCH_STATUS_GENERR;
 		}
+		ref_len = buf->index - ref_start;
+
+		switch_malloc(ref, ref_len);
+		memcpy(ref, &buf->buff[ref_start], ref_len);
 
 		/* send_msg->buf = {ref(), ... */
 		ei_x_encode_tuple_header(&send_msg->buf, 2);
-		ei_x_encode_ref(&send_msg->buf, &ref);
+		ei_x_append_buf(&send_msg->buf, ref, ref_len);
+
+		switch_safe_free(ref);
 
 		status = handle_kazoo_request(ei_node, &msg->from, buf, &send_msg->buf);
 
@@ -1301,9 +1309,10 @@ static switch_status_t handle_mod_kazoo_request(ei_node_t *ei_node, erlang_msg *
 /* fake enough of the net_kernel module to be able to respond to net_adm:ping */
 static switch_status_t handle_net_kernel_request(ei_node_t *ei_node, erlang_msg *msg, ei_x_buff *buf) {
 	int version, size, type, arity;
+	int ref_start, ref_len = 0;
 	char atom[MAXATOMLEN + 1];
 	ei_send_msg_t *send_msg = NULL;
-	erlang_ref ref;
+	char *ref = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received net_kernel message, attempting to reply\n");
 
@@ -1351,8 +1360,18 @@ static switch_status_t handle_net_kernel_request(ei_node_t *ei_node, erlang_msg 
 	}
 
 	/* {Pid, Ref}=Sender */
-	if (ei_decode_pid(buf->buff, &buf->index, &send_msg->pid) || ei_decode_ref(buf->buff, &buf->index, &ref)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to decode erlang pid or ref of the net_kernel tuple second element\n");
+	if (!ei_decode_pid(buf->buff, &buf->index, &send_msg->pid)) {
+		ref_start = buf->index;
+		if (ei_skip_term(buf->buff, &buf->index)) { /* skip the whole tag/ref, is an opaque after all */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to decode erlang ref/tag of the net_kernel tuple second element\n");
+			goto error;
+		}
+		ref_len = buf->index - ref_start;
+
+		switch_malloc(ref, ref_len);
+		memcpy(ref, &buf->buff[ref_start], ref_len);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to decode erlang pid of the net_kernel tuple second element\n");
 		goto error;
 	}
 
@@ -1380,8 +1399,10 @@ static switch_status_t handle_net_kernel_request(ei_node_t *ei_node, erlang_msg 
 
 	/* To ! {Tag, Reply} */
 	ei_x_encode_tuple_header(&send_msg->buf, 2);
-	ei_x_encode_ref(&send_msg->buf, &ref);
+	ei_x_append_buf(&send_msg->buf, ref, ref_len);
 	ei_x_encode_atom(&send_msg->buf, "yes");
+
+	switch_safe_free(ref);
 
 	if (switch_queue_trypush(ei_node->send_msgs, send_msg) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to queue net kernel message\n");
@@ -1393,6 +1414,7 @@ static switch_status_t handle_net_kernel_request(ei_node_t *ei_node, erlang_msg 
 error:
 	ei_x_free(&send_msg->buf);
 	switch_safe_free(send_msg);
+	switch_safe_free(ref);
 	return SWITCH_STATUS_GENERR;
 }
 
