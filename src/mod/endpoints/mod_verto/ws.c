@@ -876,6 +876,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 					ssize_t bytes = ws_raw_read_blocking(wsh, wsh->buffer + wsh->datalen, need - wsh->datalen, 10);
 					if (bytes < 0 || (wsh->datalen += bytes) < need) {
 						/* too small - protocol err */
+						*oc = WSOC_CLOSE;
 						return ws_close(wsh, WS_NONE);
 					}
 				}
@@ -893,6 +894,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 					ssize_t bytes = ws_raw_read_blocking(wsh, wsh->buffer + wsh->datalen, need - wsh->datalen, 10);
 					if (bytes < 0 || (wsh->datalen += bytes) < need) {
 						/* too small - protocol err */
+						*oc = WSOC_CLOSE;
 						return ws_close(wsh, WS_NONE);
 					}
 				}
@@ -909,6 +911,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 					ssize_t bytes = ws_raw_read_blocking(wsh, wsh->buffer + wsh->datalen, need - wsh->datalen, 10);
 					if (bytes < 0 || (wsh->datalen += bytes) < need) {
 						/* too small - protocol err */
+						*oc = WSOC_CLOSE;
 						return ws_close(wsh, WS_NONE);
 					}
 				}
