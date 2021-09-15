@@ -237,6 +237,7 @@ struct avmd_session {
     switch_mutex_t          *mutex_detectors_done;
     switch_thread_cond_t    *cond_detectors_done;
     struct avmd_detector    *detectors;
+	uint8_t closed;
 };
 
 static struct avmd_globals
@@ -526,6 +527,10 @@ static void avmd_session_close(avmd_session_t *s) {
     struct avmd_detector    *d;
     switch_status_t         status;
 
+	if (!s || s->closed) {
+		return;
+	}
+
     switch_mutex_lock(s->mutex);
 
     switch_mutex_lock(s->mutex_detectors_done);
@@ -556,6 +561,7 @@ static void avmd_session_close(avmd_session_t *s) {
     switch_mutex_destroy(s->mutex_detectors_done);
     switch_thread_cond_destroy(s->cond_detectors_done);
     switch_mutex_destroy(s->mutex);
+	s->closed = 1;
 }
 
 static switch_bool_t avmd_media_bug_init(avmd_session_t *avmd_session) {
@@ -618,55 +624,63 @@ static switch_bool_t avmd_media_bug_init(avmd_session_t *avmd_session) {
  * @param type The switch callback type.
  * @return The success or failure of the function.
  */
-static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, switch_abc_type_t type) {
-    avmd_session_t *avmd_session;
-    switch_frame_t *frame;
-    switch_bool_t ret = SWITCH_TRUE;
-    int lock_flag = (type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE);
+static switch_bool_t avmd_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type) {
+	avmd_session_t *avmd_session;
+	switch_frame_t *frame;
+	switch_bool_t ret = SWITCH_TRUE;
+	int lock_flag = (type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE);
 
-    avmd_session = (avmd_session_t *) user_data;
-    if (avmd_session == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No avmd session assigned!\n");
-        return SWITCH_FALSE;
-    }
-    if (lock_flag) {
-        switch_mutex_lock(avmd_session->mutex);
-    }
+	avmd_session = (avmd_session_t *) user_data;
+	if (avmd_session == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No avmd session assigned!\n");
+		return SWITCH_FALSE;
+	}
+	switch_mutex_lock(avmd_globals.mutex);
+	if (avmd_session->closed) {
+		switch_mutex_unlock(avmd_globals.mutex);
+		return ret;
+	}
+	switch_mutex_unlock(avmd_globals.mutex);
+	if (lock_flag) {
+		switch_mutex_lock(avmd_session->mutex);
+	}
 
-    switch (type) {
+	switch (type) {
 
-        case SWITCH_ABC_TYPE_INIT:
-            ret = avmd_media_bug_init(avmd_session);
-            break;
+		case SWITCH_ABC_TYPE_INIT:
+			ret = avmd_media_bug_init(avmd_session);
+			break;
 
-        case SWITCH_ABC_TYPE_READ_REPLACE:
-            frame = switch_core_media_bug_get_read_replace_frame(bug);
-            avmd_process(avmd_session, frame, AVMD_READ_REPLACE);
-            break;
+		case SWITCH_ABC_TYPE_READ_REPLACE:
+			frame = switch_core_media_bug_get_read_replace_frame(bug);
+			avmd_process(avmd_session, frame, AVMD_READ_REPLACE);
+			break;
 
-        case SWITCH_ABC_TYPE_WRITE_REPLACE:
-            frame = switch_core_media_bug_get_write_replace_frame(bug);
-            avmd_process(avmd_session, frame, AVMD_WRITE_REPLACE);
-            break;
+		case SWITCH_ABC_TYPE_WRITE_REPLACE:
+			frame = switch_core_media_bug_get_write_replace_frame(bug);
+			avmd_process(avmd_session, frame, AVMD_WRITE_REPLACE);
+			break;
 
-        case SWITCH_ABC_TYPE_CLOSE:
-            avmd_session_close(avmd_session);
+		case SWITCH_ABC_TYPE_CLOSE:
+
 			switch_mutex_lock(avmd_globals.mutex);
-            if (avmd_globals.session_n > 0) {
-                --avmd_globals.session_n;
-            }
+			avmd_session_close(avmd_session);
+
+			if (avmd_globals.session_n > 0) {
+				--avmd_globals.session_n;
+			}
 			switch_mutex_unlock(avmd_globals.mutex);
-            break;
+			break;
 
-        default:
-            break;
-    }
+		default:
+			break;
+	}
 
-    if (lock_flag) {
-        switch_mutex_unlock(avmd_session->mutex);
-    }
+	if (lock_flag) {
+		switch_mutex_unlock(avmd_session->mutex);
+	}
 
-    return ret;
+	return ret;
 }
 
 static switch_status_t avmd_register_all_events(void) {
@@ -1450,6 +1464,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         status = SWITCH_STATUS_FALSE;
         goto end;
     }
+    memset(avmd_session, 0, sizeof(avmd_session_t));
 
     status = avmd_parse_cmd_data(avmd_session, session, data, AVMD_APP_START_APP);   /* dynamic configuation */
     switch (status) {
@@ -1533,14 +1548,16 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         goto end_unlock;
     }
 
-    status = switch_core_media_bug_add(session, "avmd", NULL, avmd_callback, avmd_session, 0, flags, &bug); /* Add a media bug that allows me to intercept the audio stream */
-    if (status != SWITCH_STATUS_SUCCESS) { /* If adding a media bug fails exit */
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
+	status = switch_core_media_bug_add(session, "avmd", NULL, avmd_callback, avmd_session, 0, flags, &bug); /* Add a media bug that allows me to intercept the audio stream */
+	if (status != SWITCH_STATUS_SUCCESS) { /* If adding a media bug fails exit */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
 
 		switch_mutex_unlock(avmd_session->mutex);
+		switch_mutex_lock(avmd_globals.mutex);
 		avmd_session_close(avmd_session);
-        goto end;
-    }
+		switch_mutex_unlock(avmd_globals.mutex);
+		goto end;
+	}
 
     switch_mutex_lock(avmd_globals.mutex);
     ++avmd_globals.session_n;
@@ -1595,6 +1612,10 @@ SWITCH_STANDARD_APP(avmd_stop_app) {
     if (avmd_session == NULL) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Stop failed - no avmd session object, stop event not fired on this channel [%s]!\n", switch_channel_get_name(channel));
     } else {
+		switch_mutex_lock(avmd_globals.mutex);
+		avmd_session_close(avmd_session);
+		switch_mutex_unlock(avmd_globals.mutex);
+
         switch_mutex_lock(avmd_session->mutex);
         report_status = avmd_session->settings.report_status;
         beep_status = avmd_session->state.beep_state;
