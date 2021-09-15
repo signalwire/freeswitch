@@ -37,6 +37,39 @@
 int test_success = 0;
 int test_sofia_debug = 1;
 
+static void test_wait_for_uuid(char *uuid)
+{
+	switch_stream_handle_t stream = { 0 };
+	int loop_count = 50;
+	char *channel_data=NULL;
+
+	do {
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute("show", "channels", NULL, &stream);
+
+		if (!strncmp((char *)stream.data, "uuid,", 5)) {
+			channel_data = switch_mprintf("%s", (char *)stream.data);
+			switch_safe_free(stream.data);
+			break;
+		}
+		switch_safe_free(stream.data);
+		switch_sleep(100 * 1000);
+	} while (loop_count--);
+
+	if (channel_data) {
+		char *temp = NULL;
+		int i;
+
+		if ((temp = strchr(channel_data, '\n'))) {
+			temp++;
+			for (i = 0; temp[i] != ',' && i < 99; i++) {
+				uuid[i] = temp[i];
+			}
+		}
+		free(channel_data);
+	}
+}
+
 static const char *test_wait_for_chan_var(switch_channel_t *channel, const char *seq) 
 {
 	int loop_count = 50;
@@ -219,84 +252,106 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 		FST_TEST_BEGIN(uac_telephone_event_check)
 		{
 			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
-			char *channel_data = NULL;
 			char uuid[100] = "";
 			int sipp_ret;
-			int sdp_count = 0 , loop_count =50;
-			switch_stream_handle_t stream = { 0 };
+			int sdp_count = 0;
 
 			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1212121212", "sipp-scenarios/uac_telephone_event.xml", "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_requires(0); /* sipp not found */
 			}
 
-			do {
-				SWITCH_STANDARD_STREAM(stream);
-				switch_api_execute("show", "channels", NULL, &stream);
-				if (!strncmp((char *)stream.data, "uuid,", 5)) {
-					channel_data = switch_mprintf("%s", (char *)stream.data);
-					switch_safe_free(stream.data);
-					break;
-				}
+			test_wait_for_uuid(uuid);
+			if (!zstr(uuid)) {
+				const char *sdp_str1 = NULL, *sdp_str2 = NULL;
+				switch_core_session_t *session = switch_core_session_locate(uuid);
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				fst_requires(channel);
 
-				switch_safe_free(stream.data);
-				switch_sleep(100 * 1000);
-			} while (loop_count--);
+				sdp_str1 = test_wait_for_chan_var(channel,"1");
+				sdp_str2 = test_wait_for_chan_var(channel,"2");
 
-			if (channel_data) {
-				char *temp = NULL;
-				int i;
+				if (sdp_str1 && sdp_str2 && (strstr(sdp_str1,"telephone-event")) && (strstr(sdp_str2,"telephone-event"))){
+					char *temp = NULL;
+					sdp_count = 1;
 
-				if ((temp = strchr(channel_data, '\n'))) {
-					temp++;
-					for (i = 0; temp[i] != ',' && i < 99; i++){
-						uuid[i] = temp[i];
+					if ((temp = strstr(sdp_str2,"RTP/AVP"))) {
+						int count = 0, i;
+
+						for (i = 7; temp[i] != '\n' && i < 99; i++) {
+							/* checking for payload-type 101.*/
+							if(temp[i++] == '1' && temp[i++] == '0' && temp[i++] == '1')
+								count++;
+						}
+						if (count > 1) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Duplicate entry of payload in SDP.\n");
+							sdp_count = 0;
+						}
 					}
-					uuid[i] = '\0';
+
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Telephone-event missing in SDP.\n");
 				}
+				switch_core_session_rwunlock(session);
 
-				if (!zstr(uuid)) {
-					switch_core_session_t *session = switch_core_session_locate(uuid);
-					switch_channel_t *channel;
-					const char *sdp_str1 = NULL, *sdp_str2 = NULL;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Uuid not found in Channel Data.\n");
+			}
 
-					fst_requires(session);
-					channel = switch_core_session_get_channel(session);
+			fst_check(sdp_count == 1);
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
+		}
+		FST_TEST_END()
 
-					sdp_str1 = test_wait_for_chan_var(channel,"1");
-					sdp_str2 = test_wait_for_chan_var(channel,"2");
+        FST_TEST_BEGIN(uac_savp_check)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			char uuid[100] = "";
+			int sipp_ret;
+			int sdp_count = 0;
 
-					if (sdp_str1 && sdp_str2 && (strstr(sdp_str1,"telephone-event")) && (strstr(sdp_str2,"telephone-event"))){
-						temp = NULL;
-						sdp_count = 1;
+			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1212121212", "sipp-scenarios/uac_savp_check.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
 
-						if ((temp = strstr(sdp_str2,"RTP/AVP"))) {
-							int count = 0;
+			test_wait_for_uuid(uuid);
+			if (!zstr(uuid)) {
+				const char *sdp_str1 = NULL, *sdp_str2 = NULL;
+				const char *temp = NULL, *temp1 = NULL;
+				switch_core_session_t *session = switch_core_session_locate(uuid);
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				fst_requires(channel);
 
-							for (i = 7; temp[i] != '\n' && i < 99; i++) {
-								/* checking for payload-type 101.*/
-								if(temp[i++] == '1' && temp[i++] == '0' && temp[i++] == '1') {
-									count++;
-								}
-							}
+				sdp_str1 = test_wait_for_chan_var(channel,"1");
+				sdp_str2 = test_wait_for_chan_var(channel,"2");
 
-							if (count > 1) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Duplicate entry of payload in SDP.\n");
+				if (sdp_str1 && sdp_str2 && (temp = strstr(sdp_str2,"RTP/SAVP")) && (temp1 = strstr(temp,"crypto"))) {
+					int i = 0;
+
+					sdp_count = 1;
+					for (i = 0; temp1[i]; i++) {
+
+						if ((temp = strstr(temp1,"RTP/SAVP"))) {
+							if ((temp1 = strstr(temp,"crypto"))) {
+								i = 0;
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fail due to no crypto found with SAVP.\n");
 								sdp_count = 0;
+								break;
 							}
 						}
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Telephone-event missing in SDP.\n");
+
 					}
 
-					switch_core_session_rwunlock(session);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Uuid not found in Channel Data.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SAVP not found in SDP.\n");
 				}
+				switch_core_session_rwunlock(session);
 
-				free(channel_data);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find Channel Data.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Uuid not found in Channel Data.\n");
 			}
 
 			fst_check(sdp_count == 1); 
