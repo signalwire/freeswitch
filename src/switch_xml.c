@@ -684,7 +684,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 }
 
 /* called when parser finds start of new tag */
-static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
+static void switch_xml_open_tag(switch_xml_root_t root, char *name, char *open_pos, char **attr)
 {
 	switch_xml_t xml;
 
@@ -701,6 +701,7 @@ static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 
 	xml->attr = attr;
 	root->cur = xml;			/* update tag insertion point */
+	root->cur->open = open_pos;
 }
 
 /* called when parser finds character content between open and closing tag */
@@ -742,11 +743,12 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 }
 
 /* called when parser finds closing tag */
-static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, char *s)
+static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, char *s, char *close_pos)
 {
 	if (!root || !root->cur || !root->cur->name || strcmp(name, root->cur->name))
 		return switch_xml_err(root, s, "unexpected closing tag </%s>", name);
 
+	root->cur->close = close_pos;
 	root->cur = root->cur->parent;
 	return NULL;
 }
@@ -1118,11 +1120,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 						switch_xml_free_attr(attr);
 					return switch_xml_err(root, d, "missing >");
 				}
-				switch_xml_open_tag(root, d, attr);
-				switch_xml_close_tag(root, d, s);
+				switch_xml_open_tag(root, d, s + 1, attr);
+				switch_xml_close_tag(root, d, s, NULL);
 			} else if ((q = *s) == '>' || (!*s && e == '>')) {	/* open tag */
 				*s = '\0';		/* temporarily null terminate tag name */
-				switch_xml_open_tag(root, d, attr);
+				switch_xml_open_tag(root, d, s, attr);
 				*s = q;
 			} else {
 				if (l)
@@ -1130,11 +1132,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 				return switch_xml_err(root, d, "missing >");
 			}
 		} else if (*s == '/') {	/* close tag */
+			char *close_pos = d - 1;
 			s += strcspn(d = s + 1, SWITCH_XML_WS ">") + 1;
 			if (!(q = *s) && e != '>')
 				return switch_xml_err(root, d, "missing >");
 			*s = '\0';			/* temporarily null terminate tag name */
-			if (switch_xml_close_tag(root, d, s))
+			if (switch_xml_close_tag(root, d, s, close_pos))
 				return &root->xml;
 			if (isspace((int) (*s = q)))
 				s += strspn(s, SWITCH_XML_WS);

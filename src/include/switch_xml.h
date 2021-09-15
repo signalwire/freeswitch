@@ -102,6 +102,10 @@ struct switch_xml {
 	/*! is_switch_xml_root bool */
 	switch_bool_t is_switch_xml_root_t;
 	uint32_t refs;
+	/*! pointer to end of opening tag, '>', in the original parsed text */
+	const char *open;
+	/*! pointer to start of closing tag, '<', in the original parsed text */
+	const char *close;
 };
 
 /*!
