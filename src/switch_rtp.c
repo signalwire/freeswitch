@@ -1501,6 +1501,41 @@ static void zrtp_logger(int level, const char *data, int len, int offset)
 }
 #endif
 
+#ifdef ENABLE_SRTP
+SWITCH_DECLARE(void) switch_srtp_err_to_txt(srtp_err_status_t stat, char **msg)
+{
+	if (stat == srtp_err_status_replay_fail) *msg="replay check failed";
+	else if (stat == srtp_err_status_auth_fail) *msg="auth check failed";
+	else if (stat == srtp_err_status_fail) *msg="unspecified failure";
+	else if (stat == srtp_err_status_bad_param) *msg="unsupported parameter";
+	else if (stat == srtp_err_status_alloc_fail) *msg="couldn't allocate memory";
+	else if (stat == srtp_err_status_dealloc_fail) *msg="couldn't deallocate properly";
+	else if (stat == srtp_err_status_init_fail) *msg="couldn't initialize";
+	else if (stat == srtp_err_status_terminus) *msg="can't process as much data as requested";
+	else if (stat == srtp_err_status_cipher_fail) *msg="cipher failure";
+	else if (stat == srtp_err_status_replay_old) *msg="replay check failed";
+	else if (stat == srtp_err_status_algo_fail) *msg="algorithm failed test routine";
+	else if (stat == srtp_err_status_no_such_op) *msg="unsupported operation";
+	else if (stat == srtp_err_status_no_ctx) *msg="no appropriate context found";
+	else if (stat == srtp_err_status_cant_check) *msg="auth check failed";
+	else if (stat == srtp_err_status_key_expired) *msg="can't use key any more";
+	else if (stat == srtp_err_status_socket_err) *msg="error in use of socket";
+	else if (stat == srtp_err_status_signal_err) *msg="error in use POSIX signals";
+	else if (stat == srtp_err_status_nonce_bad) *msg="nonce check failed";
+	else if (stat == srtp_err_status_read_fail) *msg="couldn't read data";
+	else if (stat == srtp_err_status_write_fail) *msg="couldn't write data";
+	else if (stat == srtp_err_status_parse_err) *msg="error parsing data";
+	else if (stat == srtp_err_status_write_fail) *msg="couldn't read data";
+	else if (stat == srtp_err_status_encode_err) *msg="error encoding data";
+	else if (stat == srtp_err_status_semaphore_err) *msg="error while using semaphores";
+	else if (stat == srtp_err_status_pfkey_err) *msg="error while using pfkey ";
+	else if (stat == srtp_err_status_bad_mki) *msg="error MKI present in packet is invalid";
+	else if (stat == srtp_err_status_pkt_idx_old) *msg="packet index is too old to consider";
+	else if (stat == srtp_err_status_pkt_idx_adv) *msg="packet index advanced, reset needed";
+	else *msg="";
+}
+#endif
+
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 #ifdef ENABLE_ZRTP
@@ -6419,11 +6454,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 					int errs = ++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp];
-					if (stat != 10) {
+					if (rtp_session->flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] && stat != srtp_err_status_replay_old) {
 						char *msg;
-						if (stat == srtp_err_status_replay_fail) msg="replay check failed";
-						else if (stat == srtp_err_status_auth_fail) msg="auth check failed";
-						else msg="";
+						switch_srtp_err_to_txt(stat, &msg);
 						if (errs >= MAX_SRTP_ERRS) {
 							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
