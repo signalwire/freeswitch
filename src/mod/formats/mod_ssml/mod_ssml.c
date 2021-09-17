@@ -728,14 +728,14 @@ static int process_cdata_tts(struct ssml_parser *parsed_data, char *data, size_t
 	}
 	if (cur_node && parsed_data->num_files < parsed_data->max_files) {
 		int i = 0;
-		int empty = 1;
+		int present = 0;
 		char *to_say;
 
-		/* is CDATA empty? */
-		for (i = 0; i < len && empty; i++) {
-			empty &= !isgraph(data[i]);
+		/* is CDATA either non-ascii or graphic? */
+		for (i = 0; i < len && !present; i++) {
+			present |= !isascii(data[i]) | isgraph(data[i]);
 		}
-		if (empty) {
+		if (!present) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skipping empty tts\n");
 			return IKS_OK;
 		}
@@ -1249,3 +1249,4 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_ssml_shutdown)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
+ 
