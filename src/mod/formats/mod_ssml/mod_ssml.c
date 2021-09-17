@@ -733,7 +733,7 @@ static int process_cdata_tts(struct ssml_parser *parsed_data, char *data, size_t
 
 		/* is CDATA either non-ascii or graphic? */
 		for (i = 0; i < len && !present; i++) {
-			present |= (!isascii(data[i]) | isgraph(data[i]));
+			present |= ((!isascii(data[i])) | isgraph(data[i]));
 		}
 		if (!present) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skipping empty tts\n");
