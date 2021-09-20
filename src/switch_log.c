@@ -771,6 +771,8 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 	switch_thread_join(&st, thread);
 
 	switch_core_memory_reclaim_logger();
+	switch_mutex_destroy(BINDLOCK);
+	switch_mutex_destroy(COUNTERLOCK);
 
 	return SWITCH_STATUS_SUCCESS;
 }
