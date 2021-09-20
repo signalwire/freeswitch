@@ -1,7 +1,7 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_CORE_DB_BEGIN("./conf_hold")
+FST_CORE_DB_BEGIN("./conf_test")
 {
 FST_SUITE_BEGIN(switch_hold)
 {
@@ -23,7 +23,7 @@ FST_SUITE_BEGIN(switch_hold)
 		switch_status_t status;
 		switch_call_cause_t cause;
 
-		status = switch_ivr_originate(NULL, &session, &cause, "{ignore_early_media=true}sofia/gateway/hold_unhold_test/+15553332900", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+		status = switch_ivr_originate(NULL, &session, &cause, "{ignore_early_media=true}sofia/gateway/test_gateway/+15553332900", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 		fst_requires(session);
 		fst_check(status == SWITCH_STATUS_SUCCESS);
 
