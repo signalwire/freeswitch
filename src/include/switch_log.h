@@ -57,8 +57,12 @@ SWITCH_BEGIN_EXTERN_C
 	char func[80];
 	/*! The log level of the message */
 	switch_log_level_t level;
-	/*! The time when the log line was sent */
+	/*! The time when the log line was sent, microseconds resolution */
 	switch_time_t timestamp;
+	/*! The time when the log line was sent, nanoseconds resolution */
+	uint64_t timestamp_nano;
+	/*! Node log message counter, increasing monotonically by 1 on each new message pushed to node queue */
+	uint64_t counter;
 	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */
 	char *content;
 	char *userdata;
