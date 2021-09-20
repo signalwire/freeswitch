@@ -1,5 +1,5 @@
 <include/>
-    <gateway name="hold_unhold_test">
+    <gateway name="test_gateway">
       <param name="username" value="not-used"/>
       <param name="password" value="not-used"/>
       <param name="proxy" value="127.0.0.1"/>

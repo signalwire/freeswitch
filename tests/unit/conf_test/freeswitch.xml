@@ -15,6 +15,7 @@
 			<load module="mod_tone_stream"/>
 			<load module="mod_commands"/>
 			<load module="mod_sndfile"/>
+			<load module="mod_hash"/>
       </modules>
     </configuration>
 
@@ -39,7 +40,7 @@
     <profile name="external">
         <gateways>
 
-           <gateway name="hold_unhold_test">
+           <gateway name="test_gateway">
                 <param name="username" value="not-used"/>
                 <param name="password" value="not-used"/>
                 <param name="proxy" value="$${local_ip_v4}:61068"/>
@@ -62,7 +63,7 @@
         <param name="p-asserted-id-parse" value="verbatim"/>
         <param name="username" value="SignalWire-STACK"/>
         <param name="user-agent-string" value="SignalWire STACK Unit Test"/>
-        <param name="sip-trace" value="yes"/>
+        <param name="sip-trace" value="no"/>
         <param name="sip-capture" value="no"/>
         <param name="rfc2833-pt" value="101"/>
         <param name="sip-port" value="61068"/>
@@ -104,7 +105,7 @@
         <param name="p-asserted-id-parse" value="verbatim"/>
         <param name="username" value="SignalWire-STACK"/>
         <param name="user-agent-string" value="SignalWire STACK Unit Test"/>
-        <param name="sip-trace" value="yes"/>
+        <param name="sip-trace" value="no"/>
         <param name="sip-capture" value="no"/>
         <param name="rfc2833-pt" value="101"/>
         <param name="sip-port" value="61069"/>
@@ -144,12 +145,20 @@
 
   <section name="dialplan" description="Regex/XML Dialplan">
     <context name="default">
+		<extension name="two">
+			<condition field="destination_number" expression="^\+15553332901$">
+				<action application="log" data="${sip_h_identity}"/>
+				<action application="hash" data="insert/realm/identity_check/${sip_h_identity}"/>
+				<action application="answer"/>
+				<action application="park"/>
+			</condition>
+		</extension>
 		<extension name="one">
 			<condition field="destination_number" expression="^\+15553332900$">
 				<action application="set" data="absolute_codec_string=PCMU@20i"/>
 				<action application="info"/>
 				<action application="answer"/>
-				<action application="park""/>
+				<action application="park"/>
 			</condition>
 		</extension>
     </context>
