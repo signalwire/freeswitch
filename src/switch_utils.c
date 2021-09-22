@@ -4549,6 +4549,78 @@ SWITCH_DECLARE(unsigned long) switch_getpid(void)
 	return (unsigned long)pid;
 }
 
+#include <execinfo.h>
+
+SWITCH_DECLARE(void) switch_addr2line(char *exe, char *inc, char *path)
+{
+	FILE *fp;
+	char cmd[500] = { 0 };
+
+	snprintf(cmd, sizeof(cmd), "addr2line -e %s %s 2>&1", exe, inc);
+
+	fp = popen(cmd, "r");
+	if (fp == NULL) {
+		printf("Failed to run command\n" );
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "addr2line failed\n");
+		return;
+	}
+
+	fgets(path, 1000, fp);
+	pclose(fp);
+
+}
+
+SWITCH_DECLARE(char*) switch_debug_concat(const char *header, char **words, size_t num_words)
+{
+	char path[1035] = { 0 };
+	size_t message_len = strlen(header) + 1; /* + 1 for terminating NULL */
+	char *message = (char*) malloc(message_len);
+	strcpy(message, header);
+
+	for(int i = 0; i < num_words; ++i)
+	{
+		message_len += 1 + strlen(words[i]); /* 1 + for separator ';' */
+		message = (char*) realloc(message, message_len);
+		strncat(strncat(message, "\n", message_len), words[i], message_len);
+
+		{
+			// try addr2line
+			char *p = NULL, *e = NULL, *inc = NULL;
+			if ((p = strchr(words[i], '('))) {
+				*p = '\0';
+				p++;
+				e = words[i];
+				if ((p = strstr(p, "0x"))) {
+					inc = p;
+					if ((p = strchr(p, ')'))) {
+						*p = '\0';
+						switch_addr2line(e, inc, path);
+						message_len += strlen(path) + strlen(": addr2line:");
+						message = (char*) realloc(message, message_len);
+						strncat(strncat(message, ": addr2line:", message_len), path, message_len);
+					}
+				}
+			}
+		}
+	}
+
+	return message;
+}
+
+SWITCH_DECLARE(char*) switch_print_backtrace(void)
+{
+	char **strings, *bt = NULL;
+	size_t size;
+	enum Constexpr { MAX_SIZE = 1024 };
+	void *array[MAX_SIZE];
+	size = backtrace(array, MAX_SIZE);
+	strings = backtrace_symbols(array, size);
+	bt = switch_debug_concat("backtrace:\n", strings, size);
+	if (strings) free(strings);
+	return bt;
+}
+
+
 
 /* For Emacs:
  * Local Variables:

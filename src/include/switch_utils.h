@@ -1460,6 +1460,10 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str);
 
 SWITCH_DECLARE(unsigned long) switch_getpid(void);
 
+SWITCH_DECLARE(void) switch_addr2line(char *exe, char *inc, char *path);
+SWITCH_DECLARE(char*) switch_debug_concat(const char *header, char **words, size_t num_words);
+SWITCH_DECLARE(char*) switch_print_backtrace(void);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
