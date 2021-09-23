@@ -257,8 +257,6 @@ libs/libsilk-*/
 libs/rabbitmq-c-*/
 libs/rabbitmq-c-*.zip
 libs/ffmpeg-*/
-libs/sofia-sip*/
-libs/sofia-sip*
 
 src/mod/applications/mod_test/test/test_asr
 src/mod/applications/mod_test/test/test_tts

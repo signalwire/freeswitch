@@ -15,7 +15,7 @@ steps:
       pull: true
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
       - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
@@ -30,7 +30,7 @@ steps:
       pull: true
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
       - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
@@ -40,7 +40,7 @@ steps:
       pull: true
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
       - make install || true
       - cd tests/unit
       - ./run-tests.sh
@@ -85,7 +85,7 @@ steps:
       pull: true
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -116,7 +116,7 @@ steps:
       pull: true
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
-      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
       - mkdir -p scan-build
       - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh

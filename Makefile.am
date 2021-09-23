@@ -30,7 +30,8 @@ endif
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
 AM_CPPFLAGS =
 AM_CPPFLAGS += -I$(switch_srcdir)/libs/libvpx
-AM_CPPFLAGS += $(SWITCH_AM_CXXFLAGS)
+AM_CPPFLAGS += $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/sdp
+AM_CPPFLAGS += -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/su -I$(switch_builddir)/libs/sofia-sip/libsofia-sip-ua/su
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
@@ -589,6 +590,14 @@ libs/libvpx/Makefile: libs/libvpx/.update
 libs/libvpx/libvpx.a: libs/libvpx/Makefile libs/libvpx/.update
 	@cd libs/libvpx && $(MAKE)
 
+libs/sofia-sip/Makefile:
+	cd libs/sofia-sip && sh ./configure.gnu $(MY_DEFAULT_ARGS)
+
+libs/sofia-sip/libsofia-sip-ua/sdp/.libs/libsdp.a libs/sofia-sip/libsofia-sip-ua/su/.libs/libsu.a: libs/sofia-sip/.update libs/sofia-sip/Makefile
+	@cd libs/sofia-sip && $(MAKE) noop
+	@cd libs/sofia-sip && $(MAKE) SOFIA_CFLAGS="$(SWITCH_AM_CFLAGS)"
+	@$(TOUCH_TARGET)
+
 libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr/.update
 	@cd libs/apr && ./config.status
 	@$(TOUCH_TARGET)
@@ -742,6 +751,7 @@ pristine:
 	git reset --hard
 
 update-clean: clean python-reconf
+	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
@@ -774,6 +784,11 @@ iks-reconf:
 	cd libs/iksemel && autoreconf -fi
 	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	$(MAKE) mod_dingaling-clean
+
+sofia-reconf:
+	cd libs/sofia-sip && sh ./autogen.sh
+	cd libs/sofia-sip && $(MAKE) clean
+	cd libs/sofia-sip && ./configure $(MY_DEFAULT_ARGS) --with-pic --with-glib=no --disable-shared
 
 cluecon:
 	@clear
