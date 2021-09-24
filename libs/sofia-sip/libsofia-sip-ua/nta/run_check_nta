@@ -1,0 +1,2 @@
+#!/bin/sh
+$VALGRIND exec ./check_nta "$@"

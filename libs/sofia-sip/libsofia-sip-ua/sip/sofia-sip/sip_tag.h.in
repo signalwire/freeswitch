@@ -1,0 +1,256 @@
+/**@file sofia-sip/sip_tag.h.in
+ *
+ * Template for <sip_tag.h>.
+ *
+ * @date Created: Wed Feb 21 11:01:45 2001 ppessi
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+#ifndef SIP_TAG_H
+/** Defined when <sofia-sip/sip_tag.h> has been included. */
+#define SIP_TAG_H
+
+/**@file sofia-sip/sip_tag.h
+ * @brief Tag class for SIP headers
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ *
+ */
+
+#ifndef SU_TAG_H
+#include <sofia-sip/su_tag.h>
+#endif
+#ifndef SU_TAG_CLASS_H
+#include <sofia-sip/su_tag_class.h>
+#endif
+
+#ifndef SIP_H
+#include <sofia-sip/sip.h>
+#endif
+
+SOFIA_BEGIN_DECLS
+
+/** Test if tag type marks a sip_t structure. @HIDE */
+#define SIPTAG_P(tt)     ((tt)->tt_class == siphdrtag_class)
+/** Test if tag type marks a SIP header string. @HIDE */
+#define SIPTAG_STR_P(tt) ((tt)->tt_class == sipstrtag_class)
+/** Test if tag type marks a SIP header structure. @HIDE */
+#define SIPTAG_SIP_P(tt) ((tt)->tt_class == sipmsgtag_class)
+
+/** Test if tag item contains sip_t structure. @HIDE */
+#define SIPTAGI_P(t)     (SIPTAG_P((t)->t_tag))
+/** Test if tag item contains a SIP header string. @HIDE */
+#define SIPTAGI_STR_P(t) (SIPTAG_STR_P((t)->t_tag))
+/** Test if tag item contains a SIP header structure. @HIDE */
+#define SIPTAGI_SIP_P(t) (SIPTAG_SIP_P((t)->t_tag))
+
+/** Tag class for SIP headers */
+SOFIAPUBVAR tag_class_t siphdrtag_class[1];
+/** Tag class for string values of SIP headers */
+SOFIAPUBVAR tag_class_t sipstrtag_class[1];
+/** Tag class for SIP message */
+SOFIAPUBVAR tag_class_t sipmsgtag_class[1];
+
+/** Lists of SIP tags. */
+SOFIAPUBVAR tag_type_t sip_tag_list[], sip_tag_str_list[];
+
+/** Filter tag matching any sip tag. */
+#define SIPTAG_ANY()         siptag_any, ((tag_value_t)0)
+SOFIAPUBVAR tag_typedef_t siptag_any;
+
+/** End of SIP headers */
+#define SIPTAG_END()         siptag_end, (tag_value_t)0
+SOFIAPUBVAR tag_typedef_t siptag_end;
+
+/**Tag list item for #sip_t object.
+ *
+ * The SIPTAG_SIP() macro is used to include a tag item for a #sip_t struct
+ * in the tag list.
+ *
+ * @param x pointer to a #sip_t message structure, or NULL.
+ *
+ * @HIDE
+ */
+#define SIPTAG_SIP(x)       siptag_sip, siptag_sip_v((x))
+
+/** Tag for @c sip_t */
+SOFIAPUBVAR tag_typedef_t siptag_sip;
+
+#define SIPTAG_SIP_REF(x)   siptag_sip_ref, siptag_sip_vr(&(x))
+SOFIAPUBVAR tag_typedef_t siptag_sip_ref;
+
+#if SU_INLINE_TAG_CAST
+su_inline
+tag_value_t siptag_sip_v(sip_t const *v) { return (tag_value_t)v; }
+su_inline
+tag_value_t siptag_sip_vr(sip_t const **vp) { return (tag_value_t)vp; }
+#else
+#define siptag_sip_v(v)   (tag_value_t)(v)
+#define siptag_sip_vr(vp) (tag_value_t)(vp)
+#endif
+
+/**Tag list item for header string.
+ *
+ * The SIPTAG_HEADER() macro is used to include a tag item containing an
+ * unknown SIP header in the tag list, e.g.,
+ * @code
+ * sip_header_t *hdr;
+ *
+ * SIPTAG_HEADER(hdr).
+ * @endcode
+ *
+ * @param x pointer to a header structure, or NULL.
+ *
+ * @HIDE
+ */
+#define SIPTAG_HEADER(x)       siptag_header, siptag_header_v((x))
+
+/** Tag for header string */
+SOFIAPUBVAR tag_typedef_t siptag_header;
+
+#define SIPTAG_HEADER_REF(x)   siptag_header_ref, siptag_header_vr(&(x))
+SOFIAPUBVAR tag_typedef_t siptag_header_ref;
+
+#if SU_INLINE_TAG_CAST
+su_inline tag_value_t
+siptag_header_v(sip_header_t const *v)
+{ return (tag_value_t)v; }
+su_inline tag_value_t
+siptag_header_vr(sip_header_t const **vp)
+{ return (tag_value_t)vp; }
+#else
+#define siptag_header_v(v)   (tag_value_t)(v)
+#define siptag_header_vr(vp) (tag_value_t)(vp)
+#endif
+
+/**Tag list item for header string.
+ *
+ * Macro is used to include a tag item containing an unknown extension
+ * header in the tag list, e.g.,
+ * @code
+ * SIPTAG_HEADER_STR("P-Alternative-URL: <+358718008000>")
+ * @endcode
+ *
+ * It is also possible to include multiple headers at once
+ * @code
+ * SIPTAG_HEADER_STR("P-Access-Network-Info: IEEE-802.11g;"
+ *                   "    access-point-id=00:11:5C:34:E5:C0\r\n"
+ "                   "P-Visited-Network-ID: other.net\r\n")
+ * @endcode
+ *
+ * (See @RFC3455 for more information about these headers.)
+ *
+ * @param s pointer to a string, or NULL.
+ *
+ * The corresponding tag item taking reference parameter is
+ * SIPTAG_HEADER_STR_REF().
+ *
+ * @HIDE
+ */
+#define SIPTAG_HEADER_STR(s)       siptag_header_str, tag_str_v((s))
+
+/** Tag for header string */
+SOFIAPUBVAR tag_typedef_t siptag_header_str;
+
+#define SIPTAG_HEADER_STR_REF(s)   siptag_header_str_ref, tag_str_vr(&(s))
+SOFIAPUBVAR tag_typedef_t siptag_header_str_ref;
+
+/**@ingroup sip_#xxxxxx#
+ *
+ * Tag list item for pointer to a @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#"
+ * structure #sip_#xxxxxx#_t.
+ *
+ * The SIPTAG_#XXXXXX#() macro is used to include a tag item with a
+ * pointer to a #sip_#xxxxxx#_t structure in a tag list.
+ *
+ * @param x pointer to a #sip_#xxxxxx#_t structure, or NULL.
+ *
+ * The corresponding tag taking reference parameter is
+ * SIPTAG_#XXXXXX#_REF().
+ *
+ * @since New in #version#.
+ *
+ * @HIDE
+ */
+#define SIPTAG_#XXXXXX#(x) siptag_#xxxxxx#, siptag_#xxxxxx#_v(x)
+
+SOFIAPUBVAR tag_typedef_t siptag_#xxxxxx#;
+
+/**@ingroup sip_#xxxxxx#
+ * Tag list item for reference to a
+ * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" pointer.
+ */
+#define SIPTAG_#XXXXXX#_REF(x) siptag_#xxxxxx#_ref, siptag_#xxxxxx#_vr(&(x))
+SOFIAPUBVAR tag_typedef_t siptag_#xxxxxx#_ref;
+
+/**@ingroup sip_#xxxxxx#
+ *
+ * Tag list item for string with @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" value.
+ *
+ * The SIPTAG_#XXXXXX#_STR() macro is used to include a tag item with a
+ * string containing value of a #sip_#xxxxxx#_t header in a tag list.
+ *
+ * @param s pointer to a string containing
+ *    @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" value, or NULL.
+ *
+ * The string in SIPTAG_#XXXXXX#_STR() can be converted to a
+ * #sip_#xxxxxx#_t header structure by giving the string @a s has
+ * second argument to function sip_#xxxxxx#_make().
+ *
+ * The corresponding tag taking reference parameter is
+ * SIPTAG_#XXXXXX#_STR_REF().
+ *
+ * @since New in #version#.
+ *
+ * @HIDE
+ */
+#define SIPTAG_#XXXXXX#_STR(s) siptag_#xxxxxx#_str, tag_str_v(s)
+
+SOFIAPUBVAR tag_typedef_t siptag_#xxxxxx#_str;
+
+/**@ingroup sip_#xxxxxx#
+ * Tag list item for reference to a
+ * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" string.
+ */
+#define SIPTAG_#XXXXXX#_STR_REF(x) siptag_#xxxxxx#_str_ref, tag_str_vr(&(x))
+SOFIAPUBVAR tag_typedef_t siptag_#xxxxxx#_str_ref;
+
+#if SU_INLINE_TAG_CAST
+su_inline tag_value_t
+siptag_#xxxxxx#_v(sip_#xxxxxx#_t const *v)
+{ return (tag_value_t)v; }
+su_inline tag_value_t
+siptag_#xxxxxx#_vr(sip_#xxxxxx#_t const **vp)
+{ return (tag_value_t)vp; }
+#else
+#define siptag_#xxxxxx#_v(v)   (tag_value_t)(v)
+#define siptag_#xxxxxx#_vr(vp) (tag_value_t)(vp)
+#endif
+
+SOFIA_END_DECLS
+#endif

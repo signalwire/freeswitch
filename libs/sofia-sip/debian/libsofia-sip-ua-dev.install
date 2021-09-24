@@ -1,0 +1,7 @@
+usr/include/*/*/*.h
+usr/include/*/*/*.h.in
+usr/lib/libsofia-sip-ua.a
+usr/lib/libsofia-sip-ua.so
+usr/lib/pkgconfig/sofia-sip-ua.pc
+usr/share/sofia-sip/msg_parser.awk
+usr/share/sofia-sip/tag_dll.awk

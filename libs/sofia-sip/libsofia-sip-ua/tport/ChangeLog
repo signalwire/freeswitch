@@ -1,0 +1,45 @@
+2006-10-19  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* tport.c (tport_is_shutdown, tport_is_closed): Added to
+	public API.
+
+2006-01-15  Martti Mela  <martti.mela@nokia.com>
+
+	* tport.c: integrated initial new STUN support.
+
+2005-11-08  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Renamed tport_test.c as test_tport.c.
+
+2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added tls_version[] to tport/tport_tls.[hc].
+
+    M ./libsofia-sip-ua/tport/tport_tls.c -2 +4
+    M ./libsofia-sip-ua/tport/tport_tls.h -3 +2
+
+2005-10-24  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* tport.c (tport_bind_server): Avoid segfault
+	if init for a NAT traversal mechanism has failed.
+
+2005-10-18  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Feature #1326002.
+
+  * Added stun_test(), but not running it.
+
+    M ./libsofia-sip-ua/tport/tport_test.c +32
+
+  * Passing tags to stun_engine_tcreate().
+
+    M ./libsofia-sip-ua/tport/tport.c -17 +14
+
+2005-09-08  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* tport_test.c: Fixed error when building without
+	SSL support.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

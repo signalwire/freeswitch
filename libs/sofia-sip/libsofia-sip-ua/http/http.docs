@@ -1,0 +1,40 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "http" - HTTP Parser Module
+ *
+ * @section http_meta Module Meta Information
+ *
+ * The @b http module contains interface to the HTTP parser and the header
+ * and message objects.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @section http_overview Overview
+ *
+ * Each HTTP header has a structure defined for it in <sofia-sip/http.h>. All the
+ * variables, objects and functions related to a particular HTTP header are
+ * documented in a <a href="modules.html">submodule</a> for the header. In
+ * addition to the header structure, there is defined a @em header @em class
+ * structure and some standard functions for each header in the
+ * <sofia-sip/http_header.h> include file. For header @c X, there are types,
+ * functions, macros and header class as follows:
+ *
+ *  - @c http_X_t is the structure used to store parsed header,
+ *  - @c HTTP_X_INIT() initializes a static instance of http_X_t,
+ *  - @c http_X_p() tests if header object is instance of header X,
+ *  - @c http_X_make() is a macro that creates a header X object by
+         decoding given string,
+ *  - @c http_X_dup() duplicates (deeply copies) the header X (macro),
+ *  - @c http_X_copy() is a macro that copies the header X (macro),
+ *  - @c #msg_hclass_t http_X_class[] contains the @em header @em class
+ *    for header X.
+ *
+ * In addition to this interface, the parser provider interface is
+ * documented in the <a href="../sip/group__sip__parser.html">SIP Parser module</a>.
+ * The parser provider interface makes it possible to extend HTTP parser with
+ * new headers or extend existing ones.
+ */

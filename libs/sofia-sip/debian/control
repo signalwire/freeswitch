@@ -1,0 +1,88 @@
+Source: sofia-sip
+Section: net
+Priority: optional
+Maintainer: FreeSWITCH Solutions <packages@freeswitch.com>
+Build-Depends: debhelper (>= 9), pkg-config, libglib2.0-dev, libssl1.0-dev | libssl-dev,
+              dpkg-dev (>= 1.13.19)
+Build-Depends-Indep:  doxygen, graphviz,
+Standards-Version: 3.9.6
+Homepage: http://sofia-sip.sourceforge.net/
+Vcs-Git: git://github.com/freeswitch/sofia-sip
+Vcs-Browser: git://github.com/freeswitch/sofia-sip
+
+Package: sofia-sip-bin
+Architecture: any
+Section: net
+Depends: libsofia-sip-ua0 (>= ${binary:Version}), ${shlibs:Depends}
+Description: Sofia-SIP library utilities
+ Sofia-SIP is an open-source SIP User-Agent library, compliant
+ with the IETF RFC3261 specification. It can be used as
+ a building block for SIP client software for uses such as VoIP,
+ IM, and many other real-time and person-to-person communication
+ services.
+ .
+ This package provides a set of console tools and helper
+ applications for use in scripts, testing and other uses. All
+ the tools utilize the Sofia-SIP library.
+
+Package: libsofia-sip-ua0
+Architecture: any
+Section: libs
+Depends: ${shlibs:Depends}
+Description: Sofia-SIP library runtime
+ Sofia-SIP is an open-source SIP User-Agent library, compliant
+ with the IETF RFC3261 specification. It can be used as
+ a building block for SIP client software for uses such as VoIP,
+ IM, and many other real-time and person-to-person communication
+ services.
+ .
+ The library is implemented in ANSI C, and provides an extensive
+ set of features for implementing SIP/SIMPLE User-Agents. Highlights
+ include full UDP/TCP/TLS support, IPv4/6 support, SIMPLE presence
+ and messaging support, SIP offer/answer engine and numerous
+ mechanisms for NAT/FW traversal.
+ .
+ This package provides the main library runtime files.
+
+Package: libsofia-sip-ua-dev
+Architecture: any
+Section: libdevel
+Depends: libsofia-sip-ua0 (= ${binary:Version})
+Description: Sofia-SIP library development files
+ Sofia-SIP is an open-source SIP User-Agent library, compliant
+ with the IETF RFC3261 specification. It can be used as
+ a building block for SIP client software for uses such as VoIP,
+ IM, and many other real-time and person-to-person communication
+ services.
+ .
+ This package provides the headers and libraries needed to build
+ applications against the Sofia-SIP library.
+
+Package: libsofia-sip-ua-glib3
+Architecture: any
+Section: libs
+Depends: libsofia-sip-ua0 (= ${binary:Version}), ${shlibs:Depends}
+Suggests: sofia-sip-doc
+Description: Sofia-SIP library glib/gobject interfaces runtime
+ Sofia-SIP is an open-source SIP User-Agent library, compliant
+ with the IETF RFC3261 specification. It can be used as
+ a building block for SIP client software for uses such as VoIP,
+ IM, and many other real-time and person-to-person communication
+ services.
+ .
+ This package provides glib/object interfaces to the Sofia-SIP library.
+
+Package: libsofia-sip-ua-glib-dev
+Architecture: any
+Section: libdevel
+Depends: libsofia-sip-ua-glib3 (= ${binary:Version}), libsofia-sip-ua-dev, libglib2.0-dev
+Suggests: sofia-sip-doc
+Description: Sofia-SIP library glib/gobject interface development files
+ Sofia-SIP is an open-source SIP User-Agent library, compliant
+ with the IETF RFC3261 specification. It can be used as
+ a building block for SIP client software for uses such as VoIP,
+ IM, and many other real-time and person-to-person communication
+ services.
+ .
+ This package provides the headers and libraries needed to build
+ applications against the glib/object interfaces of Sofia-SIP library.

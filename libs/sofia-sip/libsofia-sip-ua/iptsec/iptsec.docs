@@ -1,0 +1,71 @@
+/* -*- C -*- */
+
+/**@MODULEPAGE "iptsec" - Authentication Module
+ *
+ * @section iptsec_meta Module Meta Information
+ *
+ * The iptsec module currently provides interfaces to HTTP
+ * Basic and Digest authentication, used by HTTP and SIP protocol elements.
+ * There are both
+ * @ref auth_client "client-side" and
+ * @ref auth_module "server-side"
+ * (authentication verification) functionality available.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @section auth_module Server Verifying Authentication
+ *
+ * The file <sofia-sip/auth_module.h> defines the interface used by a server
+ * verifying the authentication from client. After the server has created an
+ * @ref auth_mod_t "authentication module", the usual authentication
+ * operation is simple enough:
+ * -# server initializes an #auth_status_t structure with information from
+ *    the request
+ * -# server calls auth_mod_method()
+ * -# server checks the status from auth_status_t structure, sends an error
+ *    response to the client if authentication fails
+ * -# server proceeds serving the authenticated request.
+ *
+ * If the operation is asynchronous, only a preliminary result is stored in
+ * the auth_status_t structure when the call to auth_mod_method() returns.
+ * In that case, the application can assign a callback function to the
+ * structure. The callback function is invoked when the authentication
+ * operation is completed. An asynchronous authentication operation can be
+ * terminated before its completion by calling auth_mod_cancel().
+ *
+ * @subsection auth_module_tags Server-Side Authentication Parameters
+ *
+ * When the server creates the authentication module with auth_mod_create(),
+ * it can specify numerous parameters affecting the authentication protocol
+ * and algorithms. The parameter tags are defined in
+ * <sofia-sip/auth_module.h>. The most important parameters include:
+ *
+ * - AUTHTAG_METHOD(),
+ * - AUTHTAG_ALGORITHM(),
+ * - AUTHTAG_QOP(), and
+ * - AUTHTAG_REMOTE().
+ *
+ * @section auth_client Client Authenticating User
+ *
+ * The file <sofia-sip/auth_client.h> defines the interface used by a client
+ * authenticating a user with a server. Because there may be multiple
+ * servers or proxies requiring authentication, the client-side
+ * authentication information is represented using a list of #auth_client_t
+ * objects. The client-side operation is as follows:
+ *
+ * -# send a request
+ * -# get a response with specific response code (401 or 407) and challenge
+ * -# store the challenge to a list with auc_challenge()
+ * -# prompt user and feed credentials (username and password) to the list
+ *    with auc_credentials() or auc_all_credentials()
+ * -# authorize a request (add credential headers to it) with
+ *    auc_authorization() and resend the request
+ *
+ * If there are several username/password pairs for multiple authentication
+ * realms required, the application must provide the corresponding realm as
+ * an argument to auc_all_credentials().
+ */

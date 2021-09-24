@@ -1,0 +1,15 @@
+// sofiatest component properties
+
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0x1F001AC2
+
+RESOURCE APP_REGISTRATION_INFO
+  {
+  app_file="torture_url";
+
+  embeddability=KAppNotEmbeddable;
+  newfile=KAppDoesNotSupportNewFile;
+  }
+

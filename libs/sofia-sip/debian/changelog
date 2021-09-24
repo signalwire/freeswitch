@@ -1,0 +1,41 @@
+sofia-sip (1.13.5-1) unstable; urgency=medium
+
+  * New Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Wed, 25 Aug 2021 17:15:29 +0200
+
+sofia-sip (1.13.4-1) unstable; urgency=medium
+
+  * New Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Mon, 14 Jun 2021 19:20:09 +0200
+
+sofia-sip (1.13.3-1) unstable; urgency=medium
+
+  * New Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Fri, 11 Dec 2020 01:13:37 +0200
+
+sofia-sip (1.13.2-1) unstable; urgency=medium
+
+  * New Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Tue, 27 Oct 2020 21:32:37 +0200
+
+sofia-sip (1.13.1-1) unstable; urgency=medium
+
+  * New Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Wed, 12 Aug 2020 23:58:37 +0200
+
+sofia-sip (1.12.12-1) unstable; urgency=medium
+
+  * Initial Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Wed, 22 Jul 2020 23:58:37 +0200
+
+sofia-sip (1.12.12-0) unstable; urgency=low
+
+  * Stub Release.
+
+ -- FreeSWITCH Solutions <packages@freeswitch.com>  Wed, 22 Jul 2020 23:54:37 +0200

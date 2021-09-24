@@ -1,0 +1,24 @@
+#! /bin/sh
+
+rc=0
+
+run=no
+
+export SU_PORT=CoreFoundation
+
+
+if $VALGRIND ./test_su_osx ; then
+    echo PASS: multithread test_su_osx with $SU_PORT
+else
+    echo FAIL: multithread test_su_osx with $SU_PORT failed
+    rc=1
+fi
+
+if $VALGRIND ./test_su_osx -s ; then
+    echo PASS: singlethread test_su_osx with $SU_PORT
+else
+    echo FAIL: singlethread test_su_osx with $SU_PORT failed
+    rc=1
+fi
+
+exit $rc

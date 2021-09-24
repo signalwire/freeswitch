@@ -1,0 +1,18 @@
+===============================================================
+ChangeLog / Sofia-SIP - SIP User-Agent library
+===============================================================
+
+Sofia-SIP library ChangeLog files are available in the
+following places:
+
+- per subdirectory ChangeLog files
+    - all non-trivial changes to files (unless documented
+      elsewhere)
+- version control system changelogs
+    - darcs and CVS tree repositories (see README.developers
+      for latest repository location information)
+- RELEASE files
+    - changes for the current version store in top-level
+      RELEASE files of the source tree
+    - old RELEASE files available at:
+      http://sofia-sip.sourceforge.net/relnotes/

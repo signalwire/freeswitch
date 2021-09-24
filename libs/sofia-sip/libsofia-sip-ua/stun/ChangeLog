@@ -1,0 +1,244 @@
+2006-07-11  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sofia-sip/stun_common.h: New defines for STUN attributes defined
+	in RFC3489bis. Some old defines have been deprecated, but are still
+	supported in the API.
+
+2006-05-22  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Makefile.am: Install the stunc tool.
+
+2006-05-07  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sofia-sip/stun.h: Added new NAT types stun_nattype_t. The
+	naming is now compliant with the terms used by IETF BEHAVE
+	documents.
+
+2006-05-06  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sofia-sip/stun.h (stun_nattype_str): Added a new function to the
+	public API.
+
+	* sofia-sip/stun.h (stun_nattype): Modified the function signature.
+
+	* sofia-sip/stun.h (stun_state_t): Moved all request-specific states
+	to private stun_req_state_t struct in stun.c.
+
+2006-05-05  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sofia-sip/stun.h, stun.c: Removed various deprecated functions
+	that were already commented out from the code. Closed sf.net
+	bug #1456403.
+
+2006-03-27  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* stun.h: Added stun_server_address().
+
+	* stun.h: Added stun_dns_lookup*() interface.
+
+	* stun.h: Renamed get_nattype to test_nattype and
+	get_lifetime to test_lifetime. Removed deprecated
+	wrappers.
+
+	* stun.h: Deprecated stun_handle_release().
+
+2006-01-26  Martti Mela  <martti.mela@nokia.com>
+
+	* STUN: initial keepalive dispatcher
+
+	M ./libsofia-sip-ua/stun/stun.c -28 +149
+	M ./libsofia-sip-ua/stun/stun.h +9
+	M ./libsofia-sip-ua/stun/stun_tag.c +16
+	M ./libsofia-sip-ua/stun/stun_tag.h +6
+	M ./libsofia-sip-ua/stun/stunc.c +6
+
+2006-02-09  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* stun_tag.h: Added STUN_DOMAIN() and STUN_REQUIRE_INTEGRITY().
+	Deprecated STUN_INTEGRITY.
+
+	* stun.c: Mark wait entries as deregistered after
+	su_root_deregister().
+
+2006-01-26  Martti Mela  <martti.mela@nokia.com>
+
+	* STUN: initial keepalive dispatcher
+
+	M ./libsofia-sip-ua/stun/stun.c -28 +149
+	M ./libsofia-sip-ua/stun/stun.h +9
+	M ./libsofia-sip-ua/stun/stun_tag.c +16
+	M ./libsofia-sip-ua/stun/stun_tag.h +6
+	M ./libsofia-sip-ua/stun/stunc.c +6
+
+2006-01-19  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: assign_socket() now takes care of socket registering and
+	binding operations
+
+2006-01-17  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: tls callback now fails if connect() fails. Random
+	cleanup.
+
+2006-01-15  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: bug fixes in get NAT type.
+
+	* stun.h: changed request_get_localinfo() to
+	discovery_get_address()
+
+	* stunc.c: debugging info cleanup
+
+	* stun_common.c, stun_common.h: cleanup + SU_DEBUG is now
+	determined from stun_internal.h
+
+	* stun_internal.h: included stun_common.h
+
+	* torture_stun.c: updated get_localinfo() to get_address()
+
+2006-01-13  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: actions are now very separate from each other. Bug fixes.
+
+	* stun.h: added some new error states
+
+	* stunc.c: passing STUN_SOCKET() for each of the actions.
+
+2006-01-11  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: Fixed bug in timing problem in get_lifetime. Added
+	stun_message_length() and stun_handle_process_message() for
+	glueing into TPORT.
+
+	* stunc.c: Removed unnecessary su_root_break()s.
+
+2006-01-10  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: First working version of get_lifetime functionality. All
+	stun_requests are now destroyed automatically by their timers if
+	the request's state is marked as "stun_dispose_me".
+
+	* stun.h: Updated stun_lifetime() API, moved discovery type enums
+	here from stun.c.
+
+2006-01-05  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: Finished get_nattype functionality. Might
+	work. Different stun actions are now kept in stun_discovery_t struct.
+
+	* stun.h: Updated event to support nattype discovery; get_nattype
+	definition, too.
+
+	* stunc.c: Support for discovery events
+
+	* torture_stun.c: stun_states_t -> stun_state_t
+
+2006-01-04  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: Functionality changed to support transactions; initial
+	support for NAT type discovery
+
+	* stun.h: API changed to support transactions
+
+	* stun_internal.h: API changed to support transactions
+
+	* stun_tag.[ch]: added tag STUNTAG_ACTION for different actions
+	(lifetime, NAT type, bind, keepalive)
+
+	* stunc.c: enabled get_nattype
+
+	* torture_stun.c: changed to support new API
+
+	*stun_common.h: removed NAT type strings to stun.c.
+
+2005-12-19  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: fixed TLS and bind timers.
+
+	* stun_common.c: changed every SU_DEBUG to contain __func__.
+
+2005-12-19  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.c: TLS connection works now.
+
+	* stun.h: removed stun_socket_t references, replaced by
+	stun_handle functionality.
+
+	* stunc.c, torture_stun.c: modified in accordance to stun.h.
+
+2005-12-16  Martti Mela  <martti.mela@nokia.com>
+
+	* stun.h: changed stun_engine_t to stun_handle_t.
+
+	* stun.c: STUN handle is now created independently of
+	stun_connect_start(). Callback events have now string
+	representation, too.
+
+	* stunc.c, torture_stun.c: behave now in conformance to stun.h
+
+2005-12-15  Martti Mela  <martti.mela@nokia.com>
+
+	* STUN updated to work asynchronously.
+
+	* stun.c: added timeout timer for connect() (defaults to 8 seconds).
+
+	* stun_internal.h: added.
+
+	* stun.h: Does not contain functions that are interal. Cleaned the API. Specified
+	more states for stun_states_t.
+
+2005-11-19  Kai Vehmanen  <kaiv@.devtag.AUTHORS>
+
+	* stun.h (stun_set_uname_pwd): Changed from unsigned to signed
+	char pointers for passing username and password.
+
+2005-11-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* stun.c: Print the error state code if discovery
+	process fails.
+	* stunc.c (stun_bind_test): The fd_set was not
+	properly reseted between calls to select().
+
+2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Always building stun tags.
+
+    M ./libsofia-sip-ua/stun/Makefile.am -3 +3
+
+2005-10-24  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* stun.c: Fixed stun_bind() behaviour when STUN
+	discovery fails. Added enum for tracking client
+	state.
+
+2005-10-18  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Checking that we have got valid server address as parameter.
+
+    M ./libsofia-sip-ua/stun/stun.c -6 +14
+
+  * Added stun_is_requested().
+
+    M ./libsofia-sip-ua/stun/stun.c +22
+    M ./libsofia-sip-ua/stun/stun.h +2
+
+  * Added tagged call stun_engine_tcreate().
+
+    M ./libsofia-sip-ua/stun/Makefile.am -10 +7
+    M ./libsofia-sip-ua/stun/stun.c -7 +44
+    M ./libsofia-sip-ua/stun/stun.h +7
+    A ./libsofia-sip-ua/stun/stun_tag.c
+    A ./libsofia-sip-ua/stun/stun_tag.h
+
+2005-10-13  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* stun_common.h, stun.h: Updated inline docs to use
+	the doxygen syntax.
+
+	* stun_common.c: Fixed memory leaks.
+
+	* stun.c (stun_engine_create): Add hostname resolving.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

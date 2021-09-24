@@ -1,0 +1,32 @@
+2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed features.
+  Added libfeatures.la into .so. Renamed sofia_has_* as sofia_sip_has_*. Using
+  features in nua_cli.c
+
+    M ./libsofia-sip-ua/Makefile.am +1
+    M ./libsofia-sip-ua/features/Makefile.am -2 +2
+    M ./libsofia-sip-ua/features/sofia_sip_features.c -14 +14
+    M ./libsofia-sip-ua/features/sofia_sip_features.docs -10 +10
+    M ./libsofia-sip-ua/features/sofia_sip_features.h.in -10 +10
+    M ./libsofia-sip-ua/stun/stun.c -2 +2
+    M ./utils/Makefile.am -1 +2
+    M ./utils/nua_cli.c -2 +29
+
+  * Added "features" module.
+
+     ./libsofia-sip-ua/nua/sofia_config.c -> ./libsofia-sip-ua/sofia/sofia_sip_features.c
+     ./libsofia-sip-ua/nua/sofia_config.h.in -> ./libsofia-sip-ua/sofia/sofia_sip_features.h.in
+     ./libsofia-sip-ua/sofia -> ./libsofia-sip-ua/features
+    M ./configure.ac -2 +3
+    M ./libsofia-sip-ua/Makefile.am -1 +1
+    A ./libsofia-sip-ua/features/Doxyfile
+    A ./libsofia-sip-ua/features/Makefile.am
+    M ./libsofia-sip-ua/features/sofia_sip_features.c -21 +78
+    A ./libsofia-sip-ua/features/sofia_sip_features.docs
+    M ./libsofia-sip-ua/features/sofia_sip_features.h.in -15 +20
+    M ./libsofia-sip-ua/nua/Makefile.am -4 +3
+    A ./libsofia-sip-ua/sofia/
+    M ./libsofia-sip-ua/stun/stun.c -1 +6
+    M ./libsofia-sip-ua/stun/stun.h +2
+

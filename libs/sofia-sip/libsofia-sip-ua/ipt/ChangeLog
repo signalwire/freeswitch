@@ -1,0 +1,14 @@
+2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed token64_e() prototype in ipt/token64.[hc].
+
+    M ./libsofia-sip-ua/ipt/token64.c -1 +1
+    M ./libsofia-sip-ua/ipt/token64.h -1 +1
+
+2005-07-24  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* sha1.c: Added RFC 3174 copyright notice.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

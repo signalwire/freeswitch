@@ -1,0 +1,3 @@
+#! /bin/sh
+# Test localinfo with -n flag
+./localinfo -n | sed 's:^: :'

@@ -1,0 +1,19 @@
+PROJECT_NAME         = "http"
+OUTPUT_DIRECTORY     = ../docs/html/http
+
+INPUT 		     = @srcdir@/http.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
+
+@INCLUDE_PATH = . @srcdir@
+@INCLUDE = ../docs/Doxyfile.conf
+
+TAGFILES            += \
+	../docs/su.doxytags=../su \
+	../docs/ipt.doxytags=../ipt \
+	../docs/bnf.doxytags=../bnf \
+	../docs/url.doxytags=../url \
+	../docs/msg.doxytags=../msg
+
+GENERATE_TAGFILE    = ../docs/http.doxytags
+
+ALIASES += \
+	"HTTP_HEADER=@ingroup http_headers\n@defgroup" \

@@ -1,0 +1,20 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "ipt" - Utility Module
+ *
+ * @section ipt_meta Module Meta Information
+ *
+ * Utility library for IP Telephony applications.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @section ipt_overview Overview
+ *
+ * This module contain some routines useful for IPT applications, like
+ * - <sofia-sip/base64.h> BASE64 encoding/decoding, and
+ * - <sofia-sip/token64.h> encoding/decoding binary as SIP/HTTP token.
+ */

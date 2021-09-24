@@ -1,0 +1,111 @@
+/* -*- C -*- */
+
+/**@MODULEPAGE "su" - OS Services and Utilities
+ *
+ * @section su_meta Module Information
+ *
+ * The @b su module contains a simple, portable socket/timing/synchronizing
+ * library developed for Sofia communications software.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @section su_overview Overview
+ *
+ * The @b su module provides following interfaces for application programs:
+ *
+ * - <sofia-sip/su_types.h> - integral types
+ * - <sofia-sip/su_alloc.h> - @ref su_alloc memory management
+ * - <sofia-sip/su.h> - @ref su_socket
+ *   - <sofia-sip/su_localinfo.h> - get list of local IP addresses
+ * - <sofia-sip/su_wait.h> - @ref su_wait
+ * - <sofia-sip/su_time.h> - @ref su_time
+ * - <sofia-sip/su_log.h> - @ref su_log
+ * - <sofia-sip/su_tag.h> - @ref su_tag
+ * - <sofia-sip/su_md5.h> - @ref su_md5
+ * - <sofia-sip/su_uniqueid.h> - @ref su_uniqueid Unique ID and random number generators
+ *
+ * The @b su library also contains some collection datatypes:
+ * - <sofia-sip/htable.h> - @ref su_htable
+ * - <sofia-sip/rbtree.h> - balanced red-black trees
+ * - <sofia-sip/su_strlst.h> - @ref su_strlst list of strings
+ * - <sofia-sip/su_vector.h> - @ref su_vector dynamic arrays of pointers
+ *
+ * There are also some convenience macros for unit test programs:
+ * - sofia-sip/tstdef.h - macros for unit tests
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ * @author Jari Selin <Jari.Selin@nokia.com>
+ *
+ * @par SU Debug Log
+ *
+ * The debugging output from @b su module is controlled by #su_log_global
+ * log object. The environment variable #SU_DEBUG sets the default log
+ * level.
+ */
+
+/**@maindefgroup su OS Utilities
+ *
+ * The "su" module contains OS utilies for Sofia.
+ *
+ * The @b su is a simple, portable socket/timing/synchronizing library
+ * developed for Sofia communications software. Currently, interface to
+ * it consists of following parts:
+ *
+ * - <sofia-sip/su_types.h> - basic integer types
+ * - <a href=group_su_socket.html>su_socket</a> - socket functions
+ * - <a href=group_su_wait.html>su_wait</a> - synchronization functions
+ * - <a href=group_su_time.html>su_time</a> - time functions
+ * - <a href=group_su_alloc.html>su_alloc</a> - memory management functions
+ * - <a href=group_su_log.html>su_log</a> - generic logging functions
+ * - <a href=group_su_tag.html>su_tag</a> - tag list function
+ * - <a href=group_su_md5.html>su_md5</a> - MD5 hashing
+ */
+
+/**@defgroup su_programs Shell Programs
+ *
+ * The @b su module provides few shell utilities:
+ * - @ref localinfo (localinfo.c)
+ * - @ref addrinfo (addrinfo.c)
+ */
+
+/**@defgroup su_socket Socket Functions
+ *
+ *  @brief The <sofia-sip/su.h> contains the portable socket functions.
+ *
+ *  The <sofia-sip/su.h> contains following functions, macros, and types:
+ *    - su_init(): initializes sockets
+ *    - su_deinit(): deinitializes sockets
+ *    - su_socket(): creates a socket
+ *    - su_close(): closes a socket
+ *    - su_ioctl(): ioctl to a socket
+ *    - su_setreuseaddr(): set/reset reusing the addresses/ports for a socket
+ *    - su_setblocking(): enables/disables blocking
+ *    - su_is_blocking(): checks if the previous call failed because it
+ *  	would have blocked
+ *    - su_errno(): the latest socket error
+ *    - su_perror(): prints the latest socket error message to stderr
+ *    - su_strerror(): returns the given socket error message
+ *    - su_perror2(): prints the  given socket error message to stderr
+ *    - su_soerror(): returns the error code associated with the socket
+ *    - su_getmsgsize(): return the number of bytes that can be recv()ed from
+ *  	a socket
+ *    - su_getlocalip(): return an IP address belonging to the local host
+ *    - su_send(), su_sendto(): type-compatible send()
+ *    - su_recv(), su_recvfrom(): type-compatible recv()
+ *    - su_vsend(): scatter-gather send
+ *    - su_vrecv(): scatter-gather receive
+ *    - #su_iovec_t: structure holding scatter-gather IO vector
+ */
+
+/**@defgroup su_htable Hash tables
+ *
+ * Hash tables.
+ *
+ * The hash table interface and implementation is defined in
+ * <sofia-sip/htable.h>. Example code and tests for the implementation is in
+ * test_htable.c.
+ */

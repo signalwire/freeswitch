@@ -1,0 +1,2285 @@
+/* -*- text -*- */
+
+/**@MODULEPAGE "nua" - High-Level User Agent Module
+
+@section nua_meta Module Meta Information
+
+The @b nua module contains the user-agent library taking care of basic
+SIP User Agent functions. Its functionality includes call management,
+messaging and event retrieval.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@par Contributor(s):
+- Pekka Pessi <Pekka.Pessi@nokia.com>
+- Pasi Rinne-Rahkola <Pasi.Rinne-Rahkola@nokia.com>
+- Kai Vehmanen <Kai.Vehmanen@nokia.com>
+- Martti Mela <Martti.Mela@nokia.com>
+
+@section nua_overview Overview
+
+The NUA API gives the high-level application programmer transparent and
+full control to the SIP protocol engine below it. NUA provides the call
+semantics on top of existing transaction semantics found in
+<a href="../nta/index.html"><b>nta</b></a> module.
+With NUA it is possible to create different kind of SIP User Agents,
+like terminals, gateways or MCUs.
+
+The @b nua engine hides many low-level signaling and media management
+aspects from the application programmer. It is possible to use different
+kind of media interfaces - even remote ones - in a fully transparent way.
+
+The application and the protocol engine within User Agent library can be run
+in separate threads. The protocol engine communicates with the application
+using @ref nua_event_e "events", delivered to the application with a a
+callback function. The callback function is called within the thread context
+of the application, represented with a #su_root_t object.
+
+@section nua_concepts_user Sofia Concepts for NUA User
+
+@subsection nua_intro Introduction
+
+The Sofia software suite is based on certain basic ideas and concepts that
+are used in all levels of Sofia software. Many of those are implemented in
+Sofia utility library (<a href="../su/index.html"><b>su</b></a>) providing
+unified interface to the most important OS services and utilities .
+
+The following sections contain descriptions of the concepts that a user of
+NUA library must understand to create a working application. The other
+utilities (in the SU library and other libraries of Sofia software suite)
+might also be useful for an application developer but one must be careful
+when using them because they might change the behavior of the Sofia
+software suite in a way that causes NUA library to work incorrectly.
+See [<a href="../su/index.html"><b>su</b></a>] for more detailed
+description of the SU services.
+
+@subsection nua_root Event loop - root object
+
+The NUA uses the reactor pattern (also known as dispatcher pattern and
+notifier pattern) for event driven systems (see [Using Design Patterns
+to Develop Reusable Object-oriented Communication Software, D.C. Schmidt,
+CACM October '95, 38(10): 65-74]). Sofia uses a task as basic execution
+unit for the programming model. According to the model, the program can
+ask that the event loop invokes a callback function when a certain event
+occurs. Such events include I/O activity, timers or a asynchronously
+delivered messages from other task.
+
+The root object is a handle representing the task in the application.
+Another way of seeing the same thing is that the root object represents
+the main event loop of the task. Through the root object the task code
+can access its context information (magic) and thread-synchronization
+features like wait objects, timers, and messages.
+
+An application using NUA services must create a root object and the callback
+routine to handle @ref nua_event_e "NUA events". The root object is created
+with su_root_create() function and the callback routine is registered with
+nua_create() function.
+
+Root object has type #su_root_t.
+
+See documentation of <sofia-sip/su_wait.h> and <su_root.c> for more information
+of root object.
+
+See section #nua_event_e for more information of the callback function.
+
+@subsection nua_magic Magic
+
+The magic is a term used for the context pointer that can be bound
+to various objects in Sofia stack (for example root object and operation
+handle) by the application code. This context pointer is passed back
+to the application code when a registered callback function is called by
+the main event loop. The Sofia stack retains the context information between
+calls to the callback function. An application can use the context information
+to store any information it needs for processing the events.
+
+@subsection nua_memmgmt Memory Handling
+
+The home-based memory management is useful when a lot of memory blocks are
+allocated for given task. The allocations are done via the memory home,
+which keeps a reference to each allocated memory block. When the memory
+home is then freed, it will free all memory blocks to which it has
+reference. This simplifies application logic because application code does
+not need to keep track of the allocated memory and free every allocated block
+separately.
+
+An application using NUA services can use the memory management services
+provided by the SU library but it is not mandatory.
+
+See documentation of <sofia-sip/su_alloc.h> for more information of memory
+management services.
+
+@subsection nua_tags Tags
+
+Tagging is the mechanism used in Sofia software for packing parameters to
+functions. It enables passing a variable number of parameters having
+non-fixed types. For an application programmer the tagging is visible as
+macros that are used to encapsulate the passed parameters. When evaluated a
+tagging macro creates a structure that contains a tag (telling what is the
+type of a parameter) and a value (pointer to opaque data). By checking the
+tag the layers of Sofia software check whether they can handle the parameter
+or should it just be passed to lower layers for processing.
+
+There are some tags with special meaning:
+- TAG_NULL() (synonymous to TAG_END()) end of tag list
+- TAG_SKIP()  empty tag item
+- TAG_NEXT()  tag item pointing to another tag list, ends the current tag list
+- TAG_ANY() filter tag accepting any tag
+- TAG_IF() conditional inclusion of tag item
+
+The NUA functions can be called with a list of tagged values if they have
+following parameters at the end of parameter list:
+
+@code
+tag_type_t   tag,
+tag_value_t  value,
+...);
+@endcode
+
+The last tagged value on the parameter list must be TAG_NULL()
+(or TAG_END(), synonym for TAG_NULL()).
+
+Every tag has two versions: \n
+NUTAG_<tagname> \n
+which takes a value parameter and \n
+NUTAG_<tagname>_REF \n
+which takes a reference parameter. The latter is used with
+tl_gets() function to retrieve tag values from tag list.
+
+For SIP headers there exists also additional
+version of tags: \n
+SIPTAG_<tagname>_STR \n
+This tag version takes a C-language character string as parameter.
+The corresponding tag without _STR suffix takes a parsed value structure
+as parameter.
+
+The following is an example of call to NUA function containing tagged values:
+@code
+nua_unregister(op->op_handle,
+               TAG_IF(use_registrar, NUTAG_REGISTRAR(registrar)),
+               SIPTAG_CONTACT_STR("*"),
+               SIPTAG_EXPIRES_STR("0"),
+               TAG_NULL());
+@endcode
+
+An application using NUA services must use tagged arguments for passing the
+parameters to functions. See nua_invite() for discussion on how a SIP
+message is constructed from the tags.
+
+See documentation of <sofia-sip/su_tag.h> for more information of tags and the
+module-specific documentation of each Sofia module for information of
+tags specific for that module.
+
+@subsection nua_debugandlogging Debugging and Logging
+
+The modules of Sofia stack contain configurable debugging and logging
+functionality based on the services defined in <sofia-sip/su_log.h>. The debugging
+and logging details (for example level of details on output and output
+file name) can be configured by environment variables, directives in
+configuration files and compilation directives in the source files.
+
+Examples of useful directives/ environment variables are:
+- #SOFIA_DEBUG	Default debug level (0..9)
+- #NUA_DEBUG	NUA debug level (0..9)
+- #NTA_DEBUG	Transaction engine debug level (0..9)
+- #TPORT_DEBUG	Transport event debug level (0..9)
+- #TPORT_LOG	If set, print out all parsed SIP messages on transport layer
+- #TPORT_DUMP	Filename for dumping unparsed messages from transport
+
+The defined debug output levels are:
+- 0 fatal errors, panic
+- 1 critical errors, minimal progress at subsystem level
+- 2 non-critical errors
+- 3 warnings, progress messages
+- 5 signaling protocol actions (incoming packets, ...)
+- 7 media protocol actions (incoming packets, ...)
+- 9 entering/exiting functions, very verbatim progress
+
+An application using NUA services can also use the debugging and
+logging services provided by the Sofia stack but it is not mandatory.
+
+See documentation of <sofia-sip/su_log.h> for more information of debugging and
+logging services.
+
+@section nua_concepts NUA Concepts
+
+@subsection nua_stackobject NUA Stack Object
+
+Stack object represents an instance of SIP stack and media engine. It
+contains reference to root object of that stack, user-agent-specific
+settings, and reference to the SIP transaction engine, for example.
+
+A NUA stack object is created by nua_create() function and deleted by
+nua_destroy() function. The nua_shutdown() function is used to gracefully
+release active the sessions by @b nua engine.
+
+NUA stack object has type nua_t.
+
+@subsection nua_operationhandle NUA Operation Handle
+
+Operation handle represents an abstract SIP call/session. It contains
+information of SIP dialog and media session, and state machine that
+takes care of the call, high-level SDP offer-answer protocol, registration,
+subscriptions, publications and simple SIP transactions. An operation
+handle may contain list of tags used when SIP messages are created by
+NUA (e.g. From and To headers).
+
+An operation handle is created explicitly by the application using NUA
+for sending messages (function nua_handle()) and by stack for incoming
+calls/sessions (starting with INVITE or MESSAGE). The handle is destroyed
+by the application using NUA (function nua_handle_destroy()).
+
+Indication and response events are associated with an operation handle.
+
+NUA operation handle has type nua_handle_t.
+
+@subsection nua_stacktread Stack Thread and Message Passing Concepts
+
+The stack thread is a separate thread from application that provides the
+real-time protocol stack operations so that application thread can for
+example block or redraw UI as it likes.
+
+The communication between stack thread and application thread is asynchronous.
+Most of the NUA API functions cause a send of a message to the stack thread
+for processing and similarly when something happens in the stack thread it
+sends a message to the application thread. The messages to the application
+thread are delivered as invokes of the application callback function when
+the application calls su_root_run() or su_root_step() function.
+
+@subsection nua_sip_message SIP Message and Header Manipulation
+
+SIP messages are manipulated with typesafe SIPTAG_ tags. There are
+three versions of each SIP tag:
+- SIPTAG_<tagname>() takes a parsed value as parameter.
+- SIPTAG_<tagname>_STR() takes an unparsed string as parameter.
+- SIPTAG_<tagname>_REF() takes a reference as parameter, is used
+        with tl_gets() function to retrieve tag values from tag list.
+- SIPTAG_<tagname>__STR_REF() takes a reference as parameter, is used
+        with tl_gets() function to retrieve string tag values from tag list.
+
+For example a header named "Example" would have tags names SIPTAG_EXAMPLE(),
+SIPTAG_EXAMPLE_STR(), and SIPTAG_EXAMPLE_REF().
+
+When tags are used in NUA calls the corresponding headers are added to
+the message. In case the header can be present only once in a message
+and there already exists a value for the header the value given by
+tag replaces the existing header value. Passing tag value NULL has no
+effect on headers. Passing tag value (void *)-1 removes corresponding
+headers from the message.
+
+For example:
+
+- sending a SUBSCRIBE with @b Event: header and two @b Accept: headers:
+
+@code
+	nua_subscribe(nh,
+                      SIPTAG_EVENT_STR("presence"),
+                      SIPTAG_ACCEPT(accept1),
+                      SIPTAG_ACCEPT(accept2),
+                      TAG_END());
+@endcode
+
+- fetching tag values when processing nua_r_subscribe event:
+
+@code
+           sip_accept_t *ac = NULL;
+           sip_event_t  *o  = NULL;
+
+           tl_gets(tl,
+                   SIPTAG_EVENT_REF(o),   /* _REF takes a reference! */
+                   SIPTAG_ACCEPT_REF(ac),
+                   TAG_END());
+@endcode
+
+@section nua_tutorial SIP/NUA tutorial
+
+This section describes basic usage scenarios of NUA/Sofia stack using
+message sequence charts.
+
+@subsection nua_outgoingcall Outgoing Call
+
+@image latex SIP_outgoing_call.eps
+
+@image html SIP_outgoing_call.gif
+
+
+@subsection nua_incomingcall Incoming Call
+
+@image latex SIP_incoming_call.eps
+
+@image html SIP_incoming_call.gif
+
+@subsection nua_basicoutgoingoperation Basic Outgoing Operation
+
+@image latex SIP_basic_outgoing_operation.eps
+
+@image html SIP_basic_outgoing_operation.gif
+
+
+@subsection nua_basicincomingoperation Basic Incoming Operation
+
+@image latex SIP_basic_incoming_operation.eps
+
+@image html SIP_basic_incoming_operation.gif
+
+
+@subsection nua_outgoingoperationwithauth Outgoing Operation with Authentication
+
+@image latex SIP_outgoing_operation_with_auth.eps
+
+@image html SIP_outgoing_operation_with_auth.gif
+
+@section nua_simpleapplication Simple Application
+
+The following sections will present code examples from a simple application
+that uses services of NUA. The example is not complete but should present
+all relevant details of the basic use of NUA.
+
+On sourceforge.net there is available an example application
+<a href="http://sourceforge.net/project/showfiles.php?group_id=143636&package_id=179933">
+sofisip_cli.c</a> that can be studied for more complete example.
+
+@subsection nua_datastructures Data Structures & Defines
+
+An application using services of NUA normally defines data areas that are
+used to store context information (i.e., "magic"). The types of pointers to
+these context information areas are passed to NUA by defines.
+
+@code
+/* type for application context data */
+typedef struct application application;
+#define NUA_MAGIC_T   application
+
+/* type for operation context data */
+typedef union oper_ctx_u oper_ctx_t;
+#define NUA_HMAGIC_T  oper_ctx_t
+@endcode
+
+The information area contents themselves can be defined as
+C structures or unions:
+
+@code
+/* example of application context information structure */
+typedef struct application
+{
+  su_home_t       home[1];  /* memory home */
+  su_root_t      *root;     /* root object */
+  nua_t          *nua;      /* NUA stack object */
+
+  /* other data as needed ... */
+} application;
+
+/* Example of operation handle context information structure */
+typedef union operation
+{
+  nua_handle_t    *handle;  /* operation handle /
+
+  struct
+  {
+    nua_handle_t  *handle;  /* operation handle /
+    ...                     /* call-related information */
+  } call;
+
+  struct
+  {
+    nua_handle_t  *handle;  /* operation handle /
+    ...                     /* subscription-related information */
+  } subscription;
+
+  /* other data as needed ... */
+
+} operation;
+@endcode
+
+NUA stack object and handle are opaque to the application programmer.
+Likewise, the application context is completely opaque to the NUA stack
+module. NUA functions are passed a pointer, and that pointer is then
+given back to the application within the callback parameters. In this
+case the application context information structure is also used to
+store a root object and memory home for memory handling. The application
+context information also contains the NUA stack object information.
+
+@subsection nua_initanddeinit Initialization and deinitialization
+
+The following code is an example of application function that initializes
+the system, enters the main loop for processing the messages, and, after
+message processing is ended, deinitalizes the system.
+
+If the application is not just responding to incoming SIP messages there must
+also be means to send messages to NUA. This can be handled for example by
+having a separate thread that calls NUA functions to send messages or by
+having a socket connection to the application for sending commands to the
+application (see documentation of su_wait_create() and su_root_register()).
+
+@code
+/* Application context structure */
+application appl[1] = {{{{(sizeof appl)}}}};
+
+/* initialize system utilities */
+su_init();
+
+/* initialize memory handling */
+su_home_init(appl->home);
+
+/* initialize root object */
+appl->root = su_root_create(appl);
+
+if (appl->root != NULL) {
+  /* create NUA stack */
+  appl->nua = nua_create(appl->root,
+                             app_callback,
+                             appl,
+                             /* tags as necessary ...*/
+                             TAG_NULL());
+
+  if (appl->nua != NULL) {
+    /* set necessary parameters */
+    nua_set_params(appl->nua,
+                    /* tags as necessary ... */
+                    TAG_NULL());
+
+    /* enter main loop for processing of messages */
+    su_root_run(appl->root);
+
+    /* destroy NUA stack */
+    nua_destroy(appl->nua);
+  }
+
+  /* deinit root object */
+  su_root_destroy(appl->root);
+  appl->root = NULL;
+}
+
+/* deinitialize memory handling */
+su_home_deinit(appl->home);
+
+/* deinitialize system utilities */
+su_deinit();
+@endcode
+
+@subsection nua_handlingevents Handling events
+
+Handling of the events coming from NUA stack is done in the callback
+function that is registered for NUA stack with the nua_create() function
+when the application is initialized. The content of callback function is
+in its simplest form just a switch/case statement that dispatches the
+incoming events for processing to separate functions.
+
+@code
+void app_callback(nua_event_t   event,
+                  int           status,
+                  char const   *phrase,
+                  nua_t        *nua,
+                  nua_magic_t  *magic,
+                  nua_handle_t *nh,
+                  nua_hmagic_t *hmagic,
+                  sip_t const  *sip,
+                  tagi_t        tags[])
+{
+  switch (event) {
+  case nua_i_invite:
+    app_i_invite(status, phrase, nua, magic, nh, hmagic, sip, tags);
+    break;
+
+  case nua_r_invite:
+    app_r_invite(status, phrase, nua, magic, nh, hmagic, sip, tags);
+    break;
+
+  /* and so on ... */
+
+  default:
+    /* unknown event -> print out error message */
+    if (status > 100) {
+      printf("unknown event %d: %03d %s\n",
+             event,
+             status,
+             phrase);
+    }
+    else {
+      printf("unknown event %d\n", event);
+    }
+    tl_print(stdout, "", tags);
+    break;
+  }
+} /* app_callback */
+@endcode
+
+@subsection nua_placeacall Place a call
+
+The following three functions show an example of how a basic SIP
+call is created.
+
+The place_a_call() function creates an operation handle and invokes the
+SIP INVITE method.
+
+@code
+operation *place_a_call(char const *name, url_t const *url)
+{
+  operation *op;
+  sip_to_t *to;
+
+  /* create operation context information */
+  op = su_zalloc(appl->home, (sizeof *op));
+  if (!op)
+     return NULL;
+
+  /* Destination address */
+  to = sip_to_create(NULL, url);
+  if (!to)
+     return NULL;
+
+  to->a_display = name;
+
+  /* create operation handle */
+  op->handle = nua_handle(appl->nua, op, SIPTAG_TO(to), TAG_END());
+
+  if (op->handle == NULL) {
+    printf("cannot create operation handle\n");
+    return NULL;
+  }
+
+  nua_invite(op->handle,
+              /* other tags as needed ... */
+              TAG_END());
+
+} /* place_a_call */
+@endcode
+
+The app_r_invite() function is called by callback function when response to
+INVITE message is received. Here it is assumed that automatic acknowledge
+is not enabled so ACK response must be sent explicitly.
+
+@code
+void app_r_invite(int           status,
+                  char const   *phrase,
+                  nua_t        *nua,
+                  nua_magic_t  *magic,
+                  nua_handle_t *nh,
+                  nua_hmagic_t *hmagic,
+                  sip_t const  *sip,
+                  tagi_t        tags[])
+{
+  if (status == 200) {
+    nua_ack(nh, TAG_END());
+  }
+  else {
+    printf("response to INVITE: %03d %s\n", status, phrase);
+  }
+} /* app_r_invite */
+@endcode
+
+The nua_i_state event is sent (and app_i_state() function called by callback
+function) when the call state changes (see @ref nua_uac_call_model
+"client-side call model").
+
+@code
+void app_i_state(int           status,
+		 char const   *phrase,
+		 nua_t        *nua,
+		 nua_magic_t  *magic,
+		 nua_handle_t *nh,
+		 nua_hmagic_t *hmagic,
+		 sip_t const  *sip,
+		 tagi_t        tags[])
+{
+  nua_callstate_t state = nua_callstate_init;
+
+  tl_gets(tags,
+          NUTAG_CALLSTATE_REF(state),
+          NUTAG__REF(state),
+
+
+    state = (nua_callstate_t)t->t_value;
+
+  printf("call %s\n", nua_callstate_name(state));
+
+} /* app_i_state */
+@endcode
+
+@subsection nua_receiveacall Receive a call
+
+The app_i_invite() function is called by callback function when incoming
+INVITE message is received. This example assumes that autoanswer is
+not enabled so the response must be sent explicitly.
+
+@code
+void app_i_invite(int           status,
+                  char const   *phrase,
+                  nua_t        *nua,
+                  nua_magic_t  *magic,
+                  nua_handle_t *nh,
+                  nua_hmagic_t *hmagic,
+                  sip_t const  *sip,
+                  tagi_t        tags[])
+{
+  printf("incoming call\n");
+
+  nua_respond(nh, 200, "OK", SOA_USER_SDP(magic->sdp), TAG_END());
+
+} /* app_i_invite */
+@endcode
+
+The app_i_state() function is called by the callback function when call has
+been successfully set up and the media has been activated.
+
+@code
+void app_i_active(int           status,
+                   char const   *phrase,
+                   nua_t        *nua,
+                   nua_magic_t  *magic,
+                   nua_handle_t *nh,
+                   nua_hmagic_t *hmagic,
+                   sip_t const  *sip,
+                   tagi_t        tags[])
+{
+  printf("call active\n");
+
+} /* app_i_active */
+@endcode
+
+@subsection nua_terminatingcall Terminating a call
+
+The following three functions show an example of how a basic SIP
+call is terminated.
+
+The terminate_call() function sends the SIP BYE message.
+
+@code
+void terminate_call(void)
+{
+  nua_bye(op->handle, TAG_END());
+
+} /* terminate call */
+@endcode
+
+The app_r_bye() function is called by the callback function when answer to
+the BYE message is received. The function destroys the call handle and
+releases the memory allocated to operation context information.
+
+@code
+void app_r_bye(int           status,
+               char const   *phrase,
+               nua_t        *nua,
+               nua_magic_t  *magic,
+               nua_handle_t *nh,
+               nua_hmagic_t *hmagic,
+               sip_t const  *sip,
+               tagi_t        tags[])
+{
+  if (status < 200)
+     return;
+
+  printf("call released\n");
+
+  /* release operation handle */
+  nua_handle_destroy(hmagic->handle);
+  op->handle = NULL;
+
+  /* release operation context information */
+  su_free(appl->home, hmagic);
+
+} /* app_r_bye */
+@endcode
+
+The app_i_bye() function is called by the callback function when an incoming
+BYE message is received. The function destroys the call handle and releases
+the memory allocated to operation context information.
+
+@code
+void app_i_bye(int           status,
+               char const   *phrase,
+               nua_t        *nua,
+               nua_magic_t  *magic,
+               nua_handle_t *nh,
+               nua_hmagic_t *hmagic,
+               sip_t const  *sip,
+               tagi_t        tags[])
+{
+  printf("call released\n");
+
+  /* release operation handle */
+  nua_handle_destroy(hmagic->handle);
+  op->handle = NULL;
+
+  /* release operation context information */
+  su_free(appl->home, hmagic);
+
+} /* app_i_bye */
+@endcode
+
+@subsection nua_sendamessage Sending a message
+
+The following functions show an example of how a SIP MESSAGE is sent.
+
+The send_message() function sends the SIP MESSAGE.
+
+@code
+void send_message(void)
+{
+  op_t *op;
+
+  /* create operation context information */
+  op = su_zalloc(appl->home, sizeof(op_t));
+  if (op = NULL) {
+    printf("cannot create operation context information\n");
+    return;
+  }
+
+  /* how we create destination_address? */
+
+  /* create operation handle */
+  op->handle = nua_handle(appl->nua,
+                                op,
+                                NUTAG_URL(destination_address),
+                                TAG_END());
+
+  if (op->handle == NULL) {
+    printf("cannot create operation handle\n");
+    return;
+  }
+
+  /* send MESSAGE */
+  nua_message(op->handle,
+               SIPTAG_CONTENT_TYPE_STR("text/plain"),
+               SIPTAG_PAYLOAD_STR("Hello, world!"),
+               /* other tags as needed ... */
+               TAG_END());
+
+} /* send_message */
+@endcode
+
+The app_r_message() function is called by the callback function when
+answer to the MESSAGE is received.
+
+@code
+void app_r_message(int           status,
+                    char const   *phrase,
+                    nua_t        *nua,
+                    nua_magic_t  *magic,
+                    nua_handle_t *nh,
+                    nua_hmagic_t *hmagic,
+                    sip_t const  *sip,
+                    tagi_t        tags[])
+{
+  printf("response to MESSAGE: %03d %s\n", status, phrase);
+} /* app_r_message */
+@endcode
+
+@subsection nua_receivemessage Receiving a message
+
+The following function shows an example of how a SIP MESSAGE is received.
+
+The app_i_message() function is called by the callback function when
+a SIP MESSAGE is received.
+
+@code
+void app_i_message(int           status,
+                   char const   *phrase,
+                   nua_t        *nua,
+                   nua_magic_t  *magic,
+                   nua_handle_t *nh,
+                   nua_hmagic_t *hmagic,
+                   sip_t const  *sip,
+                   tagi_t        tags[])
+{
+  printf("received MESSAGE: %03d %s\n", status, phrase);
+
+  printf("From: %s%s" URL_PRINT_FORMAT "\n",
+         sip->sip_from->a_display ? sip->sip_from->a_display : "",
+         sip->sip_from->a_display ? " " : "",
+         URL_PRINT_ARGS(sip->sip_from->a_url));
+
+  if (sip->sip_subject) {
+    printf("Subject: %s\n", sip->sip_subject->g_value);
+  }
+
+  if (sip->sip_payload) {
+    fwrite(sip->sip_payload->pl_data, sip->sip_payload->pl_len, 1, stdout);
+    fputs("\n", stdout);
+  }
+} /* app_i_message */
+@endcode
+
+@subsection nua_notifier Creating a Presence Server
+
+@code
+
+...
+  application_t *app;
+  operation_t   *oper;
+
+...
+
+  oper->app = app;
+
+
+  app->nua = nua_create(ssip->s_root,
+                        app_callback,
+                        app,
+                        TAG_NULL());
+...
+
+  oper->handle = nua_handle(app->nua, app,
+                            NUTAG_URL(to->a_url),
+                            SIPTAG_TO(to),
+                            ta_tags(ta));
+...
+
+    nua_notifier(oper->handle,
+		 SIPTAG_EXPIRES_STR("3600"),
+		 SIPTAG_EVENT_STR("presence"),
+		 SIPTAG_CONTENT_TYPE_STR("application/pidf-partial+xml"),
+		 NUTAG_SUBSTATE(nua_substate_pending),
+		 TAG_END());
+@endcode
+
+After the nua_notifier object -- the presence server -- is created, an
+event nua_r_notifier is returned. Status and phrase values of the
+app_callback function indicate the success of the creation.
+
+Authorization of an incoming subscription (to the local presence
+server) can be handled in the callback function.
+
+@code
+void app_callback(nua_event_t event,
+                  int status, char const *phrase,
+                  nua_t *nua, application_t *app,
+                  nua_handle_t *nh, oper_t *op,
+                  sip_t const *sip, tagi_t tags[])
+{
+  nea_sub_t *subscriber = NULL;
+
+  switch (event) {
+  case nua_i_subscription:
+    tl_gets(tags,
+	    NEATAG_SUB_REF(subscriber),
+	    TAG_END());
+
+
+    nua_authorize(nua_substate_active);
+
+
+  default:
+    break;
+}
+
+
+@endcode
+
+
+@subsection nua_shutting_down Shutdown
+
+The following functions show an example of how application terminates
+the NUA stack.
+
+The shutdown() function starts the termination.
+
+@code
+void shutdown(void)
+{
+  nua_shutdown(appl->nua);
+
+} /* shutdown */
+@endcode
+
+The app_r_shutdown() function is called by the callback function when NUA
+stack termination is either finished or failed.
+
+@code
+void app_r_shutdown(int           status,
+                    char const   *phrase,
+                    nua_t        *nua,
+                    nua_magic_t  *magic,
+                    nua_handle_t *nh,
+                    nua_hmagic_t *hmagic,
+                    sip_t const  *sip,
+                    tagi_t        tags[])
+{
+  printf("shutdown: %d %s\n", status, phrase);
+
+  if (status < 200) {
+    /* shutdown in progress -> return */
+    return;
+  }
+
+  /* end the event loop. su_root_run() will return */
+  su_root_break(magic->root);
+
+} /* app_r_shutdown */
+@endcode
+
+*/
+
+/** @page nua_call_model NUA Call Model
+
+The NUA call follows a relatively simple state model presented below. The call
+model is used to present changes in call: when media starts to flow, when
+call is considered established, when call is terminated.
+
+In the figure below, a simplified state diagram for a SIP call is presented.
+After the call state has changes the application will receive an
+#nua_i_state event indicating the change. The states in NUA call model are
+represented by @e enum #nua_callstate, and the current value of state is
+included as the tag NUTAG_CALLSTATE() with the #nua_i_state event.
+
+The @RFC3264 SDP Offer/Answer negotiation status is also included in the
+#nua_i_state event. The negotiation status includes the local SDP (in
+SOATAG_LOCAL_SDP()) sent and flags indicating whether the local SDP was an
+offer or answer (NUTAG_OFFER_SENT(), NUTAG_ANSWER_SENT()). Likewise, the
+received remote SDP is included in tag SOATAG_REMOTE_SDP() and flags
+indicating whether the remote SDP was an offer or an answer in tags
+NUTAG_OFFER_RECV() or NUTAG_ANSWER_RECV(). SOATAG_ACTIVE_AUDIO() and
+SOATAG_ACTIVE_VIDEO() are informational tags used to indicate what is the
+status of these media.
+
+The #nua_i_state event is not sent, however, if the change is invoked by
+application calling API functions like nua_bye() and there is no change in
+SDP offer/answer status.
+
+@code
+                    +---------------+
+             +------|     INIT      |-----+
+    INVITE/- |      +---------------+     | INVITE/100
+             V                            |
+       +------------+               +------------+
+  +----|  CALLING   |--+        +---|  RECEIVED  |--+
+  |    +------------+  |        |   +------------+  |
+  |          |         |        |         |         |
+  |          | 18X/-   |        |         | -/18X   |
+  |          V         |        |         V         |
+  |    +------------+  |        |   +------------+  |
+  |<---| PROCEEDING |  |        |   |   EARLY    |->|
+  |    +------------+  |        |   +------------+  |  -/[3456]XX
+  |          |         |        |         |         |
+  |          | 2XX/-   | 2XX/-  | -/2XX   | -/2XX   |    or
+  |          V         |        |         V         |
+  |    + - - - - - -+  |        |   +------------+  |  CANCEL/200,487
+  |    : COMPLETING :<-+        +-->|  COMPLETE  |  |
+  |    + - - - - - -+               +------------+  |
+  |          |                            |         |
+  |          | -/ACK                ACK/- |         |
+  |          |                            |         |
+  |          |                            |         |
+  |          |      +---------------+     |         |
+  |          +----->|     READY     |<----+         |
+  |                 +---------------+               |
+  |                   |           |                 |
+  |          BYE/200  |           | -/BYE           |
+  |                   |           |                 |
+  |                   |           V                 |
+  |                   |   +--------------+          |
+  | [3456]XX/ACK      |   | TERMINATING  |          |
+  |                   |   +--------------+          |
+  |                   |           |                 |
+  |                   |           | [23456]XX/-     |
+  |                   V           V                 |
+  |                 +---------------+               |
+  +---------------->|  TERMINATED   |<--------------+
+                    +---------------+
+@endcode
+
+The labels "input/output" along each transition indicates SIP messages
+received from and sent to network, for instance, state transition
+"INVITE/100" occurs when a SIP @b INVITE request is received, and it is
+immediately returned a 100 (<i>Trying</i>) response. Label "2XX" means any
+200-series response, e.g., <i>200 OK</i> or <i>202 Accepted</i>). Notation
+"[3456]XX" means any final error response in 300, 400, 500, or 600
+series. Label "18X" means any provisional response from 101 to 199, most
+typically 180 (<i>Ringing</i>) or 183 (<i>Session Progress</i>).
+
+@section nua_uac_call_model Detailed Client Call Model
+
+The detailed call model at client side is presented below. This model does
+not include the extensions like @b 100rel or @b UPDATE.
+
+@code
+            +------------+
+            |    INIT    |
+            +------------+
+                  |
+                 (1) nua_invite/INVITE
+                  |
+                  V
+            +------------+
+            |            |-----------------------------(6a)-----+
+            |            |----+  nua_cancel                     |
+     +------|  CALLING   |  (7a)  /CANCEL                       |
+     |      |            |<---+                                 |
+     |      |            |----------------------+               |
+     |      +------------+                      |               |
+     |            |                           (8a) nua_bye      |
+     |           (2) 18X/-                      |   /CANCEL     |
+     |            |                             |               |
+     |            V                             |               |
+     |      +------------+                      |               |
+     |      |            |-----------------------------(6b)---->|
+     |      |            |----+  nua_cancel     |               |
+     |      | PROCEEDING |  (7b)  /CANCEL       |               |
+     |      |            |<---+                 |               |
+     |      |            |----------------------+               |
+     |      +------------+                      |               |
+     |            |                             |               |
+   (3a) 2XX/-   (3b) 2XX/-                      |              (6) [3456]XX/ACK
+     |            |                             |               |
+     |            V                             |               |
+     |      + - - - - - -+                      |               |
+     +----->:            :                      |               |
+            : COMPLETING :-------+              |               |
+     + - - -:            :       |              |               |
+     :      + - - - - - -+       |              |               |
+     :     	  |         	 |              |               |
+     :<auto_ack>  |         	 |              |               |
+     :or nua_ack  | <auto_ack>   |              |               |
+     :and media   | or nua_ack   | nua_bye      |               |
+    (5) error 	 (4) /ACK   	(9) /ACK+BYE  (8b) nua_bye/BYE  |
+     : /ACK+BYE	  |         	 |              |               |
+     :     	  V         	 |              V               |
+     :      +------------+       |       +-------------+        |
+     :      |            |       |       |             |        |
+     :      |   READY    |       |       | TERMINATING*|        |
+     :      |            |       |       |             |        |
+     :      +------------+       |       +-------------+        |
+     :                           |        |	     |		|
+     :                           |      (10) 2XX   (11) 3XX 4XX |
+     :      +-------------+      |        |   /BYE   |	5XX 6XX |
+     :      |             |      V        V          |   /-     |
+     + - - >| TERMINATING |<-------------------------+	        |
+            |             |                                     |
+            +-------------+			      	        |
+                  |        			      		|
+                (12) [23456]XX to BYE/-		      		|
+                  |             		      		|
+                  V             		      		|
+            +------------+             		      		|
+            | TERMINATED |<-------------------------------------+
+            +------------+
+@endcode
+
+The detailed description of state transitions on the client side is as
+follows:
+
+<table>
+<tr><th>#</th>
+    <th>Previous state</th>
+    <th>Input</th>
+    <th>Output</th>
+    <th>Next state</th>
+    <th>Offer/ Answer</th>
+    <th align="left">Description</th>
+</tr>
+<tr><td>C1</td>			<!-- transition -->
+    <td>init</td>		<!-- previous state -->
+    <td>nua_invite()</td>	<!-- input -->
+    <td>INVITE</td>		<!-- output -->
+    <td>calling</td>		<!-- next state -->
+    <td>Generate offer</td>	<!-- offer/answer -->
+    <td>
+   Client application starts call be invoking nua_invite(). By default, stack runs
+   the initial offer/answer step and sends @b INVITE request with the SDP
+   offer.
+</td></tr>
+<tr><td>C2</td>
+    <td>calling</td><td>18X</td><td>-</td><td>proceeding</td>
+    <td>(Save answer)</td>
+  <td>
+   Stack receives a 18X response (a provisional response between 101
+   and 199). It establishes an early dialog with server.  If the provisional
+   response contains an SDP answer, a session with early media is
+   established. The caller can be listen to, for instance, ring tone or
+   announcements about call progress using the early media session.
+</td></tr>
+<tr><td>C3a</td>
+    <td>calling</td><td rowspan="2">2XX</td>
+    <td rowspan="2">-</td><td rowspan="2">completing</td>
+    <td rowspan="2">Save answer</td>
+  <td rowspan="2">
+   Client receives a 2XX response (usually <i>200 OK</i>) indicating that
+   call has been accepted by the server. If there is an SDP session
+   description included with response, it is stored.
+
+   Unless the @ref NUTAG_AUTOACK() "auto-ack" mode is explicitly turned off
+   by application the client does not stay in @b completing state, but
+   proceeds immediately to next state transition.
+</td></tr>
+<tr><td>C3b</td>
+    <td>proceeding</td></tr>
+<tr><td>C4</td>
+    <td>completing</td>
+    <td>nua_ack() or<br>@ref NUTAG_AUTOACK() "auto-ack" </td>
+    <td>ACK</td><td>ready</td>
+    <td>Process answer</td>
+    <td>
+   Client sends an ACK request in this state transition. If the initial
+   offer was sent with INVITE, the answer must have been received by this
+   time, usually in the 2XX response. Client now completes the SDP
+   offer-answer exchange and activates the media.
+</td></tr>
+<tr><td>C5</td>
+    <td>completing</td>
+    <td>nua_ack() or<br>@ref NUTAG_AUTOACK() "auto-ack" and<br> media error</td>
+    <td>ACK<br>BYE</td>
+    <td>terminating</td>
+    <td>Process answer</td>
+    <td>
+   If there was a failure in SDP negotiation or other failure with media,
+   the stack will automatically terminate the call. The BYE follows
+   immediately after the ACK.
+</td></tr>
+<tr><td>C6a</td>
+    <td>calling</td>
+    <td rowspan=2>3XX 4XX <br> 5XX 6XX</td>
+    <td rowspan=2>ACK*</td>
+    <td rowspan=2>terminated</td>
+    <td rowspan=2>-</td>
+    <td rowspan=2>
+   Call is terminated when client receives a final error response (from 300
+   to 699) to its INVITE request. In this case, the underlying transaction
+   engine takes care of sending ACK even when application-driven-ack mode is
+   requested by application.
+</td></tr>
+<tr><td>C6b</td>
+    <td>proceeding</td>
+</tr>
+
+<tr><td>C7a</td>
+    <td>calling</td>
+    <td rowspan=2>nua_cancel()</td>
+    <td rowspan=2>CANCEL</td>
+    <td>calling</td>
+    <td rowspan=2>-</td>
+    <td rowspan=2>
+   Client can ask server to cancel the call attempt while in @b calling or
+   @b proceeding state. There is no direct call state transition caused by
+   nua_cancel(). The call state changes when the server returns a response.
+   After receiving a CANCEL request the server will usually return a <i>487
+   Request Terminated</i> response and call is terminated as in previous
+   item.
+
+   However, there is a race condition and the server can respond with a
+   succesful 2XX response before receiving CANCEL. In that case, the call is
+   established as usual. It is up to application to terminate the call with
+   nua_bye().
+</td></tr>
+<tr><td>C7b</td>
+    <td>proceeding</td>
+    <td>proceeding</td>
+</tr>
+<tr><td>C8a</td>
+    <td>proceeding</td>
+    <td>nua_bye()</td>
+    <td>CANCEL</td>
+    <td rowspan=2>terminating*</td>
+    <td rowspan=2>-</td>
+    <td>
+   The call cannot be terminated with BYE before the dialog is established
+   with a non-100 preliminary response. So, instead of a @b BYE, stack sends
+   a @b CANCEL request, and enters terminating state.
+
+   However, there is a race condition and the server can respond with a
+   succesful 2XX response before receiving CANCEL. If the server responds with
+   a 2XX response, the nua will automatically send a BYE request asking server
+   to terminate the call.
+</td></tr>
+<tr><td>C8b</td>
+    <td>proceeding</td>
+    <td>nua_bye()</td>
+    <td>BYE</td>
+<td>
+   Even an early session can be terminated after entering @b proceeding
+   state with nua_bye(). Stack sends a @b BYE request, and enters
+   terminating state. Unlike @b CANCEL, @b BYE affects only one fork.
+
+   However, there is a race condition and the server can respond with a
+   succesful 2XX response before receiving BYE. If the server responds with
+   a 2XX response, the nua will automatically send a BYE request asking server
+   to terminate the call.
+</td></tr>
+<tr><td>C9</td>
+    <td>completing</td><td>nua_bye()</td><td>ACK<br>BYE</td><td>terminating</td>
+    <td>-</td>
+    <td>
+   If the stack is in @b completing state (it has already
+   received 2XX response), it will have to @b ACK the final response, too.
+</td></tr>
+
+<tr><td>C10</td>
+    <td>terminating*</td>
+    <td>2XX<br>to INVITE</td>
+    <td>BYE</td>
+    <td>terminating</td>
+    <td>-</td>
+    <td>
+   There is a race condition between @b BYE and @b INVITE. The call may have
+   been re-established with @b INVITE after @b BYE was processed. @b BYE is
+   re-sent and call state transitions to normal terminating state.
+</td></tr>
+
+<tr><td>C11</td>
+    <td>terminating*</td>
+    <td>3XX 4XX<br>5XX 6XX<br>to INVITE</td>
+    <td>BYE</td>
+    <td>terminating</td>
+    <td>-</td>
+    <td>
+   The @b INVITE transaction is completed without a call being created. The
+   call state transitions to normal terminating state.
+</td></tr>
+
+<tr><td>C12</td>
+    <td>terminating</td>
+    <td>3XX 4XX<br>5XX 6XX<br>to BYE</td>
+    <td>-</td>
+    <td>terminated</td>
+    <td>-</td>
+    <td>
+   Call is terminated when the final response to the BYE is received.
+</td></tr>
+
+</table>
+
+@section nua_uas_call_model Detailed Server-Side Call Model
+
+The detailed call model at server side (UAS) is presented below. This model
+does not include the extensions like @b 100rel or @b UPDATE.
+
+@code
+
+                           +----------------------------------+
+                           |                INIT              |
+                           +----------------------------------+
+                             |              :               :
+                             |              :               :
+                            (1) INVITE/100 (2b) INVITE/18X (3c) INVITE/2XX
+                             |              :               :
+                             |              :               :
+                             V              :               :
+                          +------------+    :               :
+     +--------------------|            |    :               :
+     |                    |  RECEIVED  |--------------+     :
+     |    +---------------|            |    :         |     :
+     |    |               +------------+    :         |     :
+     |    |                           |     :         |     :
+     |    |          nua_respond/18X (2a)   :         |     :
+     |    |                           |     :         |     :
+     |    |                           V     V         |     :
+     |    |                          +------------+   |     :
+     |<------------------------------|            |   |     :
+     |    |<-------------------------|    EARLY   |   |     :
+     |    |               +----------|            |   |     :
+     |    |               |          +------------+   |     :
+     | nua_respond/       |                     |     |     :
+    (6) /[3456]XX         |    nua_respond/2XX (3b)  (3a)   :
+     |    |               |                     |     |     :
+     |    |               |                     V     V     V
+     |    |               |                    +-------------+
+     |    |               |                    |             |
+     |    |               |              +-----|  COMPLETED  |- - +
+     |    |               |              |     |             |    :
+     |    |               |              |     +-------------+    :
+     |    |               |              |            |           :
+     |    |               |              |           (4) ACK/-    :
+     |    |               |              |            |           :
+     |    |               |              |            V           :
+     |    |               |              |     +-------------+    :
+     |    |               |              |     |             |    :
+     |    |               |              |     |    READY    |    :
+     |    |               |              |     |             |    :
+     |    |               |              |     +-------------+    :
+     |    |               |              |                        :
+     |   (7) CANCEL/487  (8) BYE/487    (9) BYE/200              (5) timeout
+     |    |               |              |                        :     /BYE
+     |    |               |              |     +-------------+    :
+     |    |               |              |     | TERMINATING |<- -+
+     |    |               |              |     +-------------+
+     |    |               |              |            |
+     |    |               |              |            | [23456]XX/-
+     |    |               |              |            |
+     |    |               |              |            V
+     |    V               V              V     +-------------+
+     +---------------------------------------->| TERMINATED  |
+                                               +-------------+
+@endcode
+
+The detailed description of state transitions on the server side is as
+follows:
+<table>
+<tr><th>#</th>
+    <th>Previous state</th>
+    <th>Input</th>
+    <th>Output</th>
+    <th>Next state</th>
+    <th>Offer/ Answer</th>
+    <th align="left">Description</th>
+</tr>
+<tr><td>S1</td>				<!-- transition -->
+    <td>init</td>			<!-- previous state -->
+    <td>INVITE</td>			<!-- input -->
+    <td>100 Trying</td>			<!-- output -->
+    <td>received</td>			<!-- next state -->
+    <td>Save offer</td>			<!-- offer/answer -->
+    <td>
+   When a @b INVITE request for a new call is received, the server creates a
+   fresh call handle for it, responds to the client with <i>100 Trying</i>
+   and enters in the @b received state by default. It saves the possible SDP
+   offer included in @b INVITE and passes it to the application.
+</td></tr>
+<tr><td>S2a</td>			<!-- transition -->
+    <td>received</td>			<!-- previous state -->
+    <td>nua_respond()</td>		<!-- input -->
+    <td>18X</td>			<!-- output -->
+    <td rowspan=2>early</td>		<!-- next state -->
+    <td>(Generate early answer)</td>	<!-- offer/answer -->
+    <td>
+   When server returns a preliminary response for the initial @b INVITE request,
+   a early dialog is created. The server can also send an SDP answer with
+   the preliminary answer and establish an early session, too. It can use
+   the early session to send early media, e.g., ringing tone and
+   announcements towards the client.
+</td></tr>
+<tr><td>S2b</td>			<!-- transition -->
+    <td>init</td>			<!-- previous state -->
+    <td>INVITE and			<!-- input -->
+        @ref NUTAG_AUTOALERT() "auto-alert"</td>
+    <td>180 Ringing</td>		<!-- output -->
+    <td>Save offer (and
+        generate early answer)</td>	<!-- offer/answer -->
+    <td>
+    When @ref NUTAG_AUTOALERT() "auto-alert" option is enabled, stack sends
+    180 Ringing immediately after receiving INVITE and enters @b early state.
+</td></tr>
+<tr><td>S3a</td>			<!-- transition -->
+    <td>received</td>			<!-- previous state -->
+    <td rowspan=2>nua_respond()</td>	<!-- input -->
+    <td rowspan=2>2XX</td>		<!-- output -->
+    <td rowspan=3>completed</td>	<!-- next state -->
+    <td rowspan=2>Generate answer</td>	<!-- offer/answer -->
+    <td rowspan=2>
+   When the server sends a 2XX response towards the client, it accepts the
+   call. The @b INVITE transaction is now considered complete but unconfirmed
+   at the server side. If the offer was sent in @b INVITE request, the answer
+   should be included in the 2XX response.
+</td></tr>
+<tr><td>S3b</td>			<!-- transition -->
+    <td>early</td>			<!-- previous state -->
+</td></tr>
+<tr><td>S3c</td>			<!-- transition -->
+    <td>init</td>			<!-- previous state -->
+    <td>INVITE and @ref NUTAG_AUTOANSWER() "auto-answer"
+    </td>				<!-- input -->
+    <td>200 OK</td>			<!-- output -->
+    <td>Save offer and
+    <br>generate answer</td>		<!-- offer/answer -->
+    <td>
+    When @ref NUTAG_AUTOANSWER() "auto-answer" option is enabled, stack send
+    200 OK immediately after receiving INVITE and enters @b completed state.
+</td></tr>
+</td></tr>
+<tr><td>S4</td>				<!-- transition -->
+    <td>completed</td>			<!-- previous state -->
+    <td>ACK</td>			<!-- input -->
+    <td>-</td>				<!-- output -->
+    <td>ready</td>			<!-- next state -->
+    <td>-</td>				<!-- offer/answer -->
+    <td>
+   The ready state is entered at server side after receiving @b ACK request
+   from client, indicating that the client have received server's 2XX
+   response. The call is ready, the @b INVITE transaction is confirmed.
+</td></tr>
+<tr><td>S5td>				<!-- transition -->
+    <td>completed</td>			<!-- previous state -->
+    <td>timeout</td>			<!-- input -->
+    <td>BYE</td>			<!-- output -->
+    <td>terminating</td>		<!-- next state -->
+    <td>-</td>				<!-- offer/answer -->
+    <td>
+   If the server does not receive an @b ACK request in timely fashion, it will
+   terminate the call by sending a @b BYE request to client.
+</td></tr>
+<tr><td>S6a</td>			<!-- transition -->
+    <td>received</td>			<!-- previous state -->
+    <td rowspan=2>nua_respond()</td>	<!-- input -->
+    <td rowspan=2>3XX 4XX<br>5XX 6XX</td><!-- output -->
+    <td rowspan=2>terminated</td>	<!-- next state -->
+    <td rowspan=2>-</td>		<!-- offer/answer -->
+    <td rowspan=2>
+   The server can reject the call by sending a 3XX, 4XX, 5XX, or 6XX response
+   towards the client. The underlying transaction engine takes care of
+   retransmitting the response when needed. It consumes the ACK response
+   sent by the client, too.
+</td></tr>
+<tr><td>S6b</td>			<!-- transition -->
+    <td>early</td>			<!-- previous state -->
+</td></tr>
+<tr><td>S7a</td>			<!-- transition -->
+    <td>received</td>			<!-- previous state -->
+    <td rowspan=2>CANCEL</td>		<!-- input -->
+    <td rowspan=2>487 Request terminated</td><!-- output -->
+    <td rowspan=2>terminated</td>	<!-- next state -->
+    <td rowspan=2>-</td>		<!-- offer/answer -->
+    <td rowspan=2>
+   The client can cancel the call attempt before it is completed with a @b
+   CANCEL request. Server returns a <i>200 OK</i> response to @b CANCEL and
+   a <i>487 Request Terminated</i> response to the @b INVITE transaction and
+   the call is terminated.
+</td></tr>
+<tr><td>S7b</td>			<!-- transition -->
+    <td>early</td>			<!-- previous state -->
+</td></tr>
+<tr><td>S8</td>				<!-- transition -->
+    <td>early</td>			<!-- previous state -->
+    <td>BYE</td>			<!-- input -->
+    <td>487 to INVITE<br>
+        200 to BYE</td>			<!-- output -->
+    <td>terminated</td>			<!-- next state -->
+    <td>-</td>				<!-- offer/answer -->
+    <td>
+   The client can terminate an early session with a @b BYE request, too. Like
+   in the @b CANCEL case above, the server will terminate call immediately,
+   return a <i>200 OK</i> response to @b BYE and a <i>487 Request
+   Terminated</i> response to the @b INVITE transaction.
+</td></tr>
+<tr><td>S9</td>				<!-- transition -->
+    <td>completed</td>			<!-- previous state -->
+    <td>BYE</td>			<!-- input -->
+    <td>200 to BYE</td>			<!-- output -->
+    <td>terminated</td>			<!-- next state -->
+    <td>-</td>				<!-- offer/answer -->
+    <td>
+   The client can terminate a completed dialog with a @b BYE request. Server
+   terminates call immediately, returns a <i>200 OK</i> response to @b BYE
+   and lets the underlying transaction engine to take care of consuming @b
+   ACK.
+</td></tr>
+</table>
+
+@section nua_3pcc_call_model Third Party Call Control
+
+There is an alternative offer-answer model for third party call control
+(3pcc).  The call setup involves a 3rd party, client C, which sends initial
+INVITE to server A without SDP. The call setup looks perfectly ordinary to
+server B, however.
+
+@code
+	A		        C		        B
+	|			|			|
+	|<-------INVITE---------|			|
+	|			|			|
+	|			|			|
+	|------200 (offer)----->|  	  		|
+	|			|----INVITE (offer)---->|
+	|			|			|
+	|			|			|
+	|			|<-----200 (answer)-----|
+	|<-----ACK (answer)-----|			|
+	|			|     			|
+	|			|----------ACK--------->|
+	|			|			|
+@endcode
+
+The modifications to the call model affect mainly offer-answer model.
+The detailed description of state transitions for 3pcc on the server side is as
+follows:
+
+<table>
+<tr><th>#</th>
+    <th>Previous state</th>
+    <th>Input</th>
+    <th>Output</th>
+    <th>Next state</th>
+    <th>Offer/ Answer</th>
+    <th align="left">Description</th>
+</tr>
+<tr><td>S1'</td>			<!-- transition -->
+    <td>init</td>			<!-- previous state -->
+    <td>INVITE</td>			<!-- input -->
+    <td>100 Trying</td>			<!-- output -->
+    <td>received</td>			<!-- next state -->
+    <td>-</td>				<!-- offer/answer -->
+    <td>
+    There is no SDP to save.
+</td></tr>
+<tr><td>S2b'</td>			<!-- transition -->
+    <td>init</td>			<!-- previous state -->
+    <td>INVITE and			<!-- input -->
+        @ref NUTAG_AUTOALERT() "auto-alert"</td>
+    <td>180 Ringing</td>		<!-- output -->
+    <td>early</td>			<!-- next state -->
+    <td>-</td>				<!-- offer/answer -->
+    <td>
+    There is no SDP to save.
+</td></tr>
+<tr><td>S3a'</td>			<!-- transition -->
+    <td>early</td>			<!-- previous state -->
+    <td rowspan=2>nua_respond()</td>	<!-- input -->
+    <td rowspan=2>2XX</td>		<!-- output -->
+    <td rowspan=3>completed</td>	<!-- next state -->
+    <td rowspan=3>Generate offer</td>	<!-- offer/answer -->
+    <td rowspan=3>
+    The offer is sent in 200 OK.
+</td></tr>
+<tr><td>S3b'</td>			<!-- transition -->
+    <td>received</td>			<!-- previous state -->
+</td></tr>
+<tr><td>S3c'</td>			<!-- transition -->
+    <td>init</td>			<!-- previous state -->
+    <td>INVITE and			<!-- input -->
+        @ref NUTAG_AUTOANSWER() "auto-answer"</td>
+    <td>200 OK</td>			<!-- output -->
+</td></tr>
+<tr><td>S4'</td>			<!-- transition -->
+    <td>completed</td>			<!-- previous state -->
+    <td>ACK</td>			<!-- input -->
+    <td>-</td>				<!-- output -->
+    <td>ready</td>			<!-- next state -->
+    <td>Save and process answer</td>	<!-- offer/answer -->
+    <td>
+    The answer is processed and media activated after receiving @b ACK.
+</td></tr>
+<tr><td>S9b'</td>			<!-- transition -->
+    <td>completed</td>			<!-- previous state -->
+    <td>ACK and O/A error</td>		<!-- input -->
+    <td>BYE</td>			<!-- output -->
+    <td>terminating</td>		<!-- next state -->
+    <td>Save and process answer</td>	<!-- offer/answer -->
+    <td>
+    If the offer/answer negotiation ends in error after the server receives
+    answer in @b ACK request, the server will have to terminate call by
+    sending a @b BYE request.
+</td></tr>
+</table>
+
+
+@section nua_terminate_call_model Model for Modifying and Terminating Call
+
+After the SIP session has been established, it can be further modified by @b
+INVITE transactions, initiated by either the original client or the original
+server. These so-called re-INVITE transactions can be used to upgrade
+session (add new media to it), put the session on hold or resume a held
+call.
+
+A session can be terminated with a @b BYE request at any time.
+
+If any in-dialog request (including re-INVITE) fails with certain response
+code, the session can be considered terminated, too. These response codes
+are documented with sip_response_terminates_dialog(). In some cases, the
+session should be terminated gracefully by sending a @b BYE request after
+the failed requests.
+
+@code
+    +-------------------------------------------------------------+
+    |                            READY                            |
+    +-------------------------------------------------------------+
+      |           |                |		    |
+      |           |                |		    |
+     (1) BYE/200 (2) nua_bye/BYE  (4) graceful/BYE (5) fatal/-
+      |           |		   |     	    |
+      |           V		   V     	    |
+      |     +-----------------------------+         |
+      |     |         TERMINATING         |         |
+      |     +-----------------------------+	    |
+      |                    |			    |
+      |                   (3) [23456]XX/-	    |
+      |                    |			    |
+      V                    V			    V
+    +-------------------------------------------------------------+
+    |                         TERMINATED                          |
+    +-------------------------------------------------------------+
+@endcode
+
+The detailed description of state transitions while call is terminated is as
+follows:
+<table>
+<tr><th>#</th>
+    <th>Previous state</th>
+    <th>Input</th>
+    <th>Output</th>
+    <th>Next state</th>
+    <th align="left">Description</th>
+</tr>
+<tr><td>T1</td>				<!-- transition -->
+    <td>ready</td>			<!-- previous state -->
+    <td>BYE</td>			<!-- input -->
+    <td>200 OK</td>			<!-- output -->
+    <td>terminated</td>			<!-- next state -->
+    <td>
+    	When the @b BYE request is received, the recipient terminates the
+    	currently ongoing @b INVITE transaction, the session and its dialog
+    	usage (if there is another dialog usage active, e.g., a subscription
+    	creted by @b REFER.)
+</td></tr>
+<tr><td>T2</td>				<!-- transition -->
+    <td>ready</td>			<!-- previous state -->
+    <td>nua_bye</td>			<!-- input -->
+    <td>BYE</td>			<!-- output -->
+    <td>terminating</td>		<!-- next state -->
+    <td>
+        The application terminates the session by calling nua_bye(). All the
+    	call-related requests on the dialog are rejected while in
+    	terminating state with <i>487 No Such Call</i> response.
+</td></tr>
+<tr><td>T3</td>				<!-- transition -->
+    <td>terminating</td>		<!-- previous state -->
+    <td>2XX 3XX 4XX 5XX 6XX</td>	<!-- input -->
+    <td>-</td>				<!-- output -->
+    <td>terminated</td>			<!-- next state -->
+    <td>
+        The session is finally terminated when a final response to @b BYE is
+    	received. Note that nua stack does retry @b BYE requests.
+</td></tr>
+<tr><td>T4</td>				<!-- transition -->
+    <td>ready</td>			<!-- previous state -->
+    <td>"graceful" response</td>	<!-- input -->
+    <td>BYE</td>			<!-- output -->
+    <td>terminating</td>		<!-- next state -->
+    <td>
+        A call-related request (@b re-INVITE, @b UPDATE, @b INFO, @b PRACK,
+    	@b REFER) fails with a response code indicating that the client
+    	should gracefully terminate the call.
+</td></tr>
+<tr><td>T5</td>				<!-- transition -->
+    <td>ready</td>			<!-- previous state -->
+    <td>"fatal" response</td>		<!-- input -->
+    <td>-</td>				<!-- output -->
+    <td>terminated</td>			<!-- next state -->
+    <td>
+        A call-related request (@b re-INVITE, @b UPDATE, @b INFO, @b PRACK,
+    	@b REFER) fails with a response code indicating that the call has
+    	been terminated.
+</td></tr>
+</table>
+
+@sa http://www.ietf.org/internet-drafts/draft-sparks-sipping-dialogusage-01.txt
+@sa sip_response_terminates_dialog()
+
+*/
+
+/*
+For reference:
+
+                    +---------------+
+             +-(1)--|     INIT      |-----+
+    INVITE/- |      +---------------+    (A) INVITE/100
+             V                            |
+       +------------+               +------------+
+  +----|  CALLING   |           +---|  RECEIVED  |--+
+  |    +------------+           |   +------------+  |
+  |          |                  |         |         |
+  |         (2) 18X/-           |        (B) -/18X  |
+  |          V                  |         V         |
+  |    +------------+           |   +------------+  |
+  |<---| PROCEEDING |--+        |   |   EARLY    |->|
+  |    +------------+  |        |   +------------+ (F) -/[3456]XX
+  |          :         |        |         |         |
+  |         (4) 2XX/-  |       (E) -/2XX (C) -/2XX  |    or
+  |          V         |        |         V         |
+  |    + - - - - - -+  |        |   +------------+ (G) CANCEL/200,487
+  |    : COMPLETING :  |        +-->|  COMPLETE  |  |
+  |    + - - - - - -+  |            +------------+  |
+  |          :         |                  |    :    |
+  |         (5)-/ACK  (3) 2XX/ACK   ACK/-(D)   :    |
+  |          :         |                  |    :    |
+  |          :         V                  |    :    |
+  |          :      +---------------+     |    :    |
+  |          + - - >|     READY     |<----+    :    |
+  |                 +---------------+          :    |
+  |                   |     |                  :    |
+  |          BYE/200 (i)  (ii) -/BYE  timeout/ :    |
+  |                   |     |             BYE (H)   |
+  |                   |     V                  :    |
+  |                   |   +--------------+     :    |
+ (6) [3456]XX/ACK     |   | TERMINATING  |<- - +    |
+  |                   |   +--------------+          |
+  |                   |           |                 |
+  |                   |         (iii) [23456]XX/-   |
+  |                   V           V                 |
+  |                 +---------------+               |
+  +---------------->|  TERMINATED   |<--------------+
+                    +---------------+
+                            |
+                            V
+                           INIT
+
+*/
+
+/**@page nua_event_diagrams NUA Event Diagrams
+
+The example diagrams below try to present how to use NUA API with different
+SIP use cases.
+
+@section nua_event_diagram_call Basic Call
+
+The SIP following event diagram shows a pretty simple, succesful call case.
+The nua events and nua function calls are show in the diagram below as well
+as the SIP messages.
+
+The call setup above assumes parameters NUTAG_AUTOALERT(0),
+NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
+
+@code
+
+                   Alice           Proxy            Bob
+ 0                  |                |                |
+ 1  nua_handle()    |                |                |
+ 2  nua_invite() -> |-----INVITE---->|                |
+ 3   nua_i_state <- |                |                |
+ 4                  |                |-----INVITE---->| -> nua_i_invite
+ 5                  |<--100 Trying---|                | -> nua_i_state
+ 6                  |                |                |
+ 7                  |                |                |
+ 8                  |                |                |
+ 9                  |                |<--180 Ringing--| <- nua_respond(180)
+10  nua_i_invite <- |<--180 Ringing--|                | -> nua_i_state
+11   nua_i_state <- |                |                |
+12                  |                |<--200 OK-------| <- nua_respond(200)
+13  nua_i_invite <- |<---200 OK------|                | -> nua_i_state
+14   nua_i_state <- |                |                |
+15     nua_ack() -> |-----ACK------->|                |
+16   nua_i_state <- |                |-----ACK------->| -> nua_i_ack
+17                  |                |                | -> nua_i_state
+18                  |                |                |
+19               <<====== SIP Session Established =======>>
+20                  |                |                |
+21                  |                |                |
+22     nua_bye() -> |-----BYE------->|                |
+23                  |                |-----BYE------->| -> nua_i_bye
+24                  |                |<----200 OK-----| -> nua_i_state
+25     nua_r_bye <- |<---200 OK------|                |
+26   nua_i_state <- |                |                |
+                    |                |                |
+@endcode
+
+@section nua_event_diagram_call_hold Holding Call
+
+The media (audio, video) can be put on hold. In SIP system this means that
+application can indicate to the remote end that it is engaged in other
+activity (another call, for instance) and does not wish to receive media
+from the remove end.
+
+The call hold is usully implemented using re-INVITE. Re-INVITE is an INVITE
+request sent on existing SIP session. Both original caller and callee can
+send re-INVITEs. The main use of re-INVITE is modifying sessions: adding
+media lines to the session, changing codecs on existing media, and, as you
+might expect, putting existing media on hold as well as resuming media from
+hold.
+
+A re-INVITE is sent by calling nua_invite() on handle with existing call.
+When putting call on hold, the application can include SOATAG_HOLD("audio")
+or SOATAG_HOLD("video") or SOATAG_HOLD("audio, video") or SOATAG_HOLD("*")
+as parameters to re-INVITE nua_invite(). (Note that last SOATAG_HOLD() in
+the tag list will override the SOATAG_HOLD() tags before it.)
+
+Another feature where nua tries to be helpful is autoanswer and auto-ACK on
+existing sessions: the re-INVITE is automatically responded with <i>200 OK</i>
+and ACK is automatically sent. (If the application wants to respond and ACK
+by itself, it should explicitly set NUTAG_AUTOANSWER(0) and/or
+NUTAG_AUTOACK(0) in the handle; either include them in nua_invite() or
+nua_respond() parameters or call nua_set_hparams() explicitly.
+
+@code
+                   Alice           Proxy            Bob
+ 0     nua_handle() |                |                |
+ 1                  |                |                |
+ 2  nua_invite() -> |-----INVITE---->|                |
+ 3   nua_i_state <- |                |                |
+ 4                  |                |-----INVITE---->| -> nua_i_invite
+ 5                  |<--100 Trying---|                | -> nua_i_state
+ 6                  |                |                |
+ 7                  |                |                |
+ 8                  |                |                |
+ 9                  |                |<--180 Ringing--| <- nua_respond(180)
+10  nua_i_invite <- |<--180 Ringing--|                | -> nua_i_state
+11   nua_i_state <- |                |                |
+12                  |                |<--200 OK-------| <- nua_respond(200)
+13  nua_i_invite <- |<---200 OK------|                | -> nua_i_state
+14   nua_i_state <- |                |                |
+15     nua_ack() -> |-----ACK------->|                |
+16   nua_i_state <- |                |-----ACK------->| -> nua_i_ack
+17                  |                |                | -> nua_i_state
+18                  |                |                |
+19               <<== Bi-Directional RTP Established ==>>
+20                  |                |                |
+21                  |                |                |
+22                  |                |<--INVITE(hold)-| <- nua_invite(..
+21                  |                |                |       NUTAG_HOLD("*")..)
+23  nua_i_invite <- |<-INVITE(hold)--|                | -> nua_i_state
+25   nua_i_state <- |----200 OK----->|    	      |
+26                  |                |----200 OK----->| -> nua_i_invite
+28                  |                |<-----ACK-------| -> nua_i_state
+29     nua_i_ack <- |<----ACK--------|                |
+24                  |                |                |
+30               <<== Uni-Directional RTP Established ==>>
+24                  |                |                |
+31                  |                |                |
+32                  |                |<--INVITE-------| <- nua_invite(..
+21                  |                |                |      NUTAG_HOLD(NULL)..)
+33  nua_i_invite <- |<--INVITE-------|                | -> nua_i_state
+35   nua_i_state <- |---200 OK------>|                |
+36                  |                |---200 OK------>| -> nua_i_invite
+38                  |                |<----ACK--------| -> nua_i_state
+39     nua_i_ack <- |<----ACK--------|                |
+40   nua_i_state <- |                |                |
+19               <<== Bi-Directional RTP Established ==>>
+42                  |                |                |
+43     nua_bye() -> |-----BYE------->|                |
+44   nua_i_state <- |                |-----BYE------->| -> nua_i_bye
+46                  |                |<----200 OK-----| -> nua_i_state
+47                  |<---200 OK------|                |
+                    |                |                |
+@endcode
+
+
+
+@section nua_event_diagram_call_transfer  Call Transfer
+
+This is the unattended call transfer case.
+
+1st MSC showing Alice's end:
+
+@code
+           Alice                      Bob                 Carol
+ 0                     |                    |                    |
+ 1     nua_i_invite <- |<-----INVITE--------|                    |
+ 2      nua_i_state <- |                    |                    |
+ 2                     |                    |                    |
+ 3 nua_respond(180) -> |----180 Ringing---->|                    |
+ 2      nua_i_state <- |                    |                    |
+ 4                     |                    |                    |
+ 5 nua_respond(200) -> |------200 OK------->|                    |
+ 6      nua_i_state <- |                    |                    |
+ 8                     |                    |                    |
+ 7        nua_i_ack <- |<-------ACK---------|                    |
+ 8      nua_i_state <- |                    |                    |
+ 9                     |<========RTP=======>|                    |
+10                     |                    |                    |
+11             << Alice performs unattended transfer >>          |
+12                     |                    |                    |
+13                     |                    |                    |
+14      nua_refer() -> |---REFER("r: C")--->|                    |
+15                     |                    |                    |
+16      nua_r_refer <- |<---202 Accepted----|                    |
+17                     |                    |                    |
+18     nua_i_notify <- |<-----NOTIFY--------|                    |
+19                     |                    |                    |
+20                     |------200 OK------->|                    |
+21                     |                    |---INVITE("b: A")-->|
+23                     |                    |                    |
+22        nua_bye() -> |-------BYE--------->|                    |
+23                     |                    |                    |
+24        nua_r_bye <- |<----200 OK---------|                    |
+25      nua_i_state <- |   No RTP Session   |                    |
+28                     |                    |<----180 Ringing----|
+26     nua_i_notify <- |<- - -NOTIFY - - - -|                    |
+27                     |                    |                    |
+20                     |- - - 200 OK- - - ->|                    |
+29                     |                    |                    |
+30                     |                    |<------200 OK-------|
+31                     |                    |                    |
+32                     |                    |---------ACK------->|
+33                     |                    |        RTP         |
+34                     |                    |<==================>|
+35                     |                    |                    |
+36                     |<-----NOTIFY--------|                    |
+37                     |                    |                    |
+38                     |------200 OK------->|                    |
+                       |                    |                    |
+@endcode
+
+2nd MSC showing Bobs's end:
+
+@code
+   Alice               Bob (nh1)            Bob (nh2)             Carol
+ 0   |      	          |                    |                    |
+ 1   |<-----INVITE--------|                    |                    |
+ 2   |   	          |                    |                    |
+ 3   |---180 Ringing----->|                    |                    |
+ 4   |      	          |                    |                    |
+ 5   |------200 OK------->|                    |                    |
+ 6   |        	          |                    |                    |
+ 7   |<-------ACK---------|                    |                    |
+ 8   |        RTP         |                    |                    |
+ 9   |<==================>|                    |                    |
+10   |                    |                    |                    |
+11<< Alice performs unattended transfer >>     |                    |
+12   |                    |                    |                    |
+13   | 	     Refer-To:C F5|                    |                    |
+14   |-REFER------------->| -> nua_i_refer     |                    |
+15   |  	          |                    |                    |
+16   |<-202 Accepted------|                    |                    |
+17   |      	          |                    |                    |
+18   |<-----NOTIFY--------|                    |                    |
+19   |      	          |                    |                    |
+20   |------200 OK------->| -> nua_r_notify    |                    |
+21   |       	          |                    |                    |
+22   |-------BYE--------->| -> nua_i_bye       |                    |
+23   |     	          | -> nua_i_state     |                    |
+24   |<----200 OK---------|    nua_handle() -> |                    |
+25   |   No RTP Session   |    nua_invite() -> |                    |
+26   |                    |                    |--INVITE("b: A")--->|
+27   |                    |                    |   	            |
+28   |                    |    nua_i_invite <- |<--180 Ringing------|
+29   |                    |     nua_i_state <- |     	            |
+30   |                    |    nua_i_invite <- |<----200 OK---------|
+31   |                    |     nua_i_state <- |       	            |
+32   |                    |         nua_ack -> |-------ACK--------->|
+33   |                    |                    |                    |
+34   |                    |                    |<=======RTP========>|
+35   |      	          |                    |                    |
+36   |<-----NOTIFY--------|                    |                    |
+37   |      	          |
+38   |------200 OK------->| -> nua_r_notify
+39   |                    | <- nua_handle_destroy
+     |                    |
+@endcode
+
+Bob includes nh1 in nua_invite()/25 as NUTAG_NOTIFY_REFER() parameter.
+
+Open Issue 1:
+
+- how Bob know when to destroy nh1?
+
+
+@section nua_event_diagram_3gpp_call 3GPP Call Model
+
+The 3GPP call model is defined in 3GPP TS 24.229. In order to select only a
+single codec and ensure that the QoS reservationa are made before the call
+is alerting, the 3GPP call model employs multiple offer/answer exchanges. It
+uses 100rel and PRACK (@RFC3262), UPDATE (@RFC3311) and preconditions
+(@RFC3312) extensions specified by IETF.
+
+The call setup below assumes parameters NUTAG_AUTOALERT(0),
+NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
+
+@code
+                      A                       B
+ 0    nua_handle()    |                       |
+ 1    nua_invite() -> |                       |
+ 2     nua_i_state <- |----INVITE (offer)---->|
+ 3                    |                       | -> nua_i_invite
+ 4                    |                       | -> nua_i_state
+ 5                    |                       |
+ 6                    |                       | <- nua_respond(183)
+ 7    nua_i_invite <- |<----183 (answer)------| -> nua_i_state
+ 8     nua_i_state <- |                       |
+ 9                << single codec is selected now >>
+10                    |-----PRACK(offer2)---->| -> nua_i_prack
+11                    |                       | -> nua_i_state
+12    nua_r_prack  <- |<--200/PRACK(answer2)--|
+13                    |                       |
+14                    |                       |
+15            << resource reservations are done now >>
+16                    |                       |
+17    nua_update() -> |----UPDATE (offer3)--->|
+18    nua_i_state  <- |                       |
+19    nua_i_state  <- |<-200/UPDATE (answer3)-| -> nua_i_update
+20                    |                       | -> nua_i_state
+21                    |                       |
+22                    |                       |    << B rings >>
+23                    |                       |
+24                    |                       | <- nua_respond(180)
+25    nua_i_invite <- |<---------180----------|
+26    nua_i_state  <- |                       |
+27                    |--------PRACK--------->| -> nua_i_prack
+28    nua_r_prack  <- |<-----200/PRACK------->| -> nua_i_state
+29                    |                       |
+30                    |                       | <- nua_respond(200)
+31    nua_i_invite <- |<---------200----------| -> nua_i_state
+32    nua_i_state  <- |                       |
+33    nua_ack()    -> |                       |
+34    nua_i_state  <- |----------ACK--------->| -> nua_i_ack
+35                    |                       | -> nua_i_state
+                      |                       |
+@endcode
+
+*/
+
+/**@var nua_event_e
+ *
+ * @brief Events
+ *
+ * The NUA event loop calls an event callback function when an application
+ * needs to act on something that happened in the Sofia stack. The callback
+ * function is registered when nua_create() function call is used to create
+ * the NUA stack object.
+ *
+ * The prototype of the event callback function is:
+ * @code
+ * void nua_callback_f(nua_event_t   event,
+ *                     int           status,
+ *                     char const   *phrase,
+ *                     nua_t        *nua,
+ *                     nua_magic_t  *magic,
+ *                     nua_handle_t *nh,
+ *                     nua_hmagic_t *hmagic,
+ *                     sip_t const  *sip,
+ *                     tagi_t        tags[]);
+ * @endcode
+ *
+ * @param event  Callback event identification. \n
+ *               Always present
+ * @param status Protocol status code. \n
+ *               Always present
+ * @param phrase Text corresponding to status code. \n
+ *               Always present
+ * @param nua    Pointer to NUA stack object. \n
+ *               Always present
+ * @param magic  Pointer to callback context from nua_create(). \n
+ *               Always present
+ * @param nh     Pointer to operation handle.
+ * @param hmagic Pointer to callback context from nua_handle().
+ * @param sip    Headers in parsed incoming message. May be NULL.
+ *               See also nua_current_request().
+ * @param tags   Tag list containing more information about the state of NUA.
+ *               May be empty.
+ *
+ * Note that the contents of the last four parameters vary depending on
+ * the event. The descriptions can be found from the description of the
+ * individual event.
+ *
+ * The events can be divided into the following categories: \n
+ * @par Status or Error Indications:
+ * #nua_i_active           \n
+ * #nua_i_error            \n
+ * #nua_i_fork             \n
+ * #nua_i_media_error      \n
+ * #nua_i_subscription     \n
+ * #nua_i_state            \n
+ * #nua_i_terminated
+ *
+ * @par SIP requests:
+ * #nua_i_ack              \n
+ * #nua_i_bye              \n
+ * #nua_i_cancel           \n
+ * #nua_i_chat             \n
+ * #nua_i_info             \n
+ * #nua_i_invite           \n
+ * #nua_i_message          \n
+ * #nua_i_method           \n
+ * #nua_i_notify           \n
+ * #nua_i_options          \n
+ * #nua_i_prack            \n
+ * #nua_i_publish          \n
+ * #nua_i_refer            \n
+ * #nua_i_register         \n
+ * #nua_i_subscribe        \n
+ * #nua_i_update
+ *
+ * @par Responses:
+ * #nua_r_get_params       \n
+ * #nua_r_notifier         \n
+ * #nua_r_shutdown         \n
+ * #nua_r_terminate
+ *
+ * @par SIP responses:
+ * #nua_r_bye         \n
+ * #nua_r_cancel      \n
+ * #nua_r_info        \n
+ * #nua_r_invite      \n
+ * #nua_r_message     \n
+ * #nua_r_notify      \n
+ * #nua_r_options     \n
+ * #nua_r_prack       \n
+ * #nua_r_publish     \n
+ * #nua_r_refer       \n
+ * #nua_r_register    \n
+ * #nua_r_subscribe   \n
+ * #nua_r_unpublish   \n
+ * #nua_r_unregister  \n
+ * #nua_r_unsubscribe \n
+ * #nua_r_update
+ *
+ * @sa nua_event_is_incoming_request(), nua_event_name()
+ */
+
+/** @NUA_EVENT nua_i_chat
+ *
+ * Incoming chat message.
+ *
+ * @param nh     operation handle associated with the message
+ * @param hmagic operation magic associated with the handle
+ * @param sip    incoming chat message
+ * @param tags   empty
+ *
+ * @END_NUA_EVENT
+ */
+
+/** @NUA_EVENT nua_i_error
+ *
+ * Error indication.
+ *
+ * Will be sent when an internal error happened or
+ * an error occurred while responding a request.
+ *
+ * @param status SIP status code or NUA status code (>= 900)
+ *               describing the problem
+ * @param phrase a short textual description of @a status code
+ * @param nh     NULL or operation handle associated with the call
+ * @param hmagic NULL or operation magic associated with the call
+ * @param sip    NULL
+ * @param tags   empty or error specific information
+ *
+ * @END_NUA_EVENT
+ */
+
+/** @NUA_EVENT nua_i_fork
+ *
+ * Outgoing call has been forked.
+ *
+ * This is sent when an INVITE request is answered with multiple 2XX series
+ * responses.
+ *
+ * @param status response status code
+ * @param phrase a short textual description of @a status code
+ * @param nh     operation handle associated with the original call
+ * @param hmagic operation magic associated with the original call
+ * @param sip    preliminary or 2XX response to INVITE
+ * @param tags   NUTAG_HANDLE() of the new forked call
+ *
+ * @sa #nua_r_invite, #nua_i_state, @ref nua_call_model
+ *
+ * @END_NUA_EVENT
+ */
+
+/** @NUA_EVENT nua_i_media_error
+ *
+ * Media error indication.
+ *
+ * This may be sent after an SOA operation has failed while processing
+ * incoming or outgoing call.
+ *
+ * @param status SIP status code or NUA status code (>= 900)
+ *               describing the problem
+ * @param phrase a short textual description of @a status code
+ * @param nh     operation handle associated with the call
+ * @param hmagic operation magic associated with this handle
+ *               (maybe NULL if call handle was created for this call)
+ * @param sip    NULL
+ * @param tags   empty
+ *
+ * @END_NUA_EVENT
+ */
+
+/* nua_i_message is documented with nua_stack_process_message() */
+
+/* nua_i_method is documented with nua_stack_process_method() */
+
+/** @NUA_EVENT nua_i_network_changed
+ *
+ * Local IP(v6) address has changed.
+ *
+ * @param nh     default operation handle
+ * @param hmagic operation magic associated with the default operation handle
+ * @param sip    NULL
+ * @param tags   empty
+ *
+ * @since Experimental in @VERSION_1_12_2.
+ *
+ * @END_NUA_EVENT
+ */
+
+/* nua_i_notify is documented with nua_stack_process_notify() */
+
+/* nua_i_options is documented with nua_stack_process_options() */
+
+/* nua_i_publish is documented with nua_stack_process_publish() */
+
+/* nua_i_refer is documented with nua_stack_process_refer() */
+
+/* nua_i_subscribe is documented with nua_stack_process_subscribe() */
+
+/** @NUA_EVENT nua_i_subscription
+ *
+ * Incoming subscription to be authorized.
+ *
+ * This event is launched by nua_notifier() to inform application of the
+ * current state of the subscriber. The subscriber state is included in the
+ * NUTAG_SUBSTATE() tag. If the state is #nua_substate_pending or
+ * #nua_substate_embryonic, application should to authorize the subscriber
+ * with nua_authorize().
+ *
+ * @param nh     operation handle associated with the notifier
+ * @param hmagic operation magic
+ * @param status statuscode of response sent automatically by stack
+ * @param sip    incoming SUBSCRIBE request
+ * @param tags   NEATAG_SUB(),
+ *               NUTAG_SUBSTATE()
+ *
+ * @sa nua_notifier(), #nua_i_subscribe, nua_authorize(), nua_terminate()
+ * @RFC3265
+ *
+ * @END_NUA_EVENT
+ */
+
+/* nua_i_update is documented with nua_stack_process_update() */
+
+/* nua_r_bye is documented with process_response_to_bye() */
+
+/* nua_r_cancel is documented with process_response_to_cancel() */
+
+/** @NUA_EVENT nua_r_chat
+ *
+ * Answer to outgoing chat message.
+ *
+ * @param nh     operation handle associated with the notifier
+ * @param hmagic operation magic associated with the notifier
+ * @param sip    response to MESSAGE request or NULL upon an error
+ *               (error code and message are in status and phrase parameters)
+ * @param tags   empty
+ *
+ * @sa nua_chat(), #nua_r_message
+ *
+ * @END_NUA_EVENT
+ */
+
+/* nua_r_info is documented with process_response_to_info() */
+
+/* nua_r_invite is documented with process_response_to_invite() */
+
+/* nua_r_message is documented with process_response_to_message() */
+
+/** @NUA_EVENT nua_r_notifier
+ *
+ * Answer to nua_notitier()
+ *
+ * @param nh     operation handle associated with the call
+ * @param hmagic operation magic associated with the call
+ * @param sip    NULL
+ * @param tags   SIPTAG_EVENT() \n
+ *               SIPTAG_CONTENT_TYPE()
+ *
+ * @sa nua_notitier(), #nua_i_subscription, @RFC3265
+ *
+ * @END_NUA_EVENT
+ */
+
+/* nua_r_notify is documented with process_response_to_notify() */
+
+/* nua_r_options is documented with process_response_to_options() */
+
+/* nua_r_prack is documented with process_response_to_prack() */
+
+/* nua_r_publish is documented with process_response_to_publish() */
+
+/* nua_r_refer is documented with process_response_to_refer() */
+
+/* nua_r_shutdown is documented with nua_stack_shutdown() */
+
+/* nua_r_subscribe is documented with process_response_to_subscribe() */
+
+/** @NUA_EVENT nua_r_terminate
+ *
+ * Answer to nua_terminate().
+ *
+ * @param nh     operation handle associated with the notifier
+ * @param hmagic operation magic associated with the notifier
+ * @param sip    NULL
+ * @param tags   empty
+ *
+ * @sa nua_terminate(), nua_handle_destroy()
+ *
+ * @END_NUA_EVENT
+ */
+
+/* nua_r_unsubscribe is documented with process_response_to_subscribe() */

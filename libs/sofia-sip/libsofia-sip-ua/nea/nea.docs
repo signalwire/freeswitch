@@ -1,0 +1,123 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "nea" - SIP Events Module
+ *
+ * @section nea_meta Module Meta Information
+ *
+ * Sofia Event API provides an interface to different events used in SIP
+ * presence and conferencing. Interface used both in client and server sides
+ * is presented in <sofia-sip/nea.h>.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @section Creating NEA server and events
+ *
+ * @section nea_server_create Creating NEA server
+ *
+ * NEA server generates, receives and sends events to subscribed
+ * parties. The server is presentity specific, ie. a different server
+ * is created for every presentity.
+ *
+ * First, a server object is created. The object uses the NTA @e agent
+ * (#nta_agent_t) that handles incoming and outgoing SIP messages.
+ *
+ * The example below provides a way to create the NEA server. The
+ * function nea_server_create() creates the server. Parameters @e
+ * agent, @e root define the transaction engine. Third parameter is
+ * the address of the presentity. event_callback is a callback
+ * function pointer and is called every time a new user subscribes to
+ * an event that does not exist or requests for payload type that
+ * doesn't match.
+ *
+ * @code
+ * presence_t *presence_create(su_root_t *root,
+ * 			     nta_agent_t *agent,
+ * 			     sip_contact_t const *m)
+ * {
+ *   presentity_t *pr = su_home_clone(p->p_home, sizeof (*pr));
+ *   ...
+ *   pr->pr_nes =
+ *     nea_server_create(agent, root,
+ * 		       m->m_url,
+ * 		       MAX_SUBSCRIBERS,
+ * 		       event_callback, pr,
+ * 		       SIPTAG_CONTACT(m),
+ * 		       SIPTAG_SERVER_STR("Sofia-SIP NEA"),
+ * 		       TAG_NULL());
+ * ...
+ * }
+ * @endcode
+ *
+ * @section nea_event_create Creating Events
+ *
+ * Next, events are created. The function nea_event_create () defines
+ * an event, its package and content types (a comma separated
+ * list). The parameter presence_callback defines the callback
+ * function that is called when a someone subscribes to a defined
+ * event.
+ *
+ * @code
+ * #define PRESENCE_PACKAGE "presence"
+ * #define XPIDF_MIME_TYPE "application/xpidf+xml"
+ * #define PIDF_MIME_TYPE "application/cpim-pidf+xml"
+
+ * ne = nea_event_create(pr->pr_nes, presence_callback, ep,
+ * 		       PRESENCE_PACKAGE, NULL,
+ * 		       PIDF_MIME_TYPE,
+ * 		       PIDF_MIME_TYPE "," XPIDF_MIME_TYPE);
+ * @endcode
+ *
+ * @section nea_server_update Operating with event payloads
+ *
+ * A new payload can be inserted to a event with the function
+ * nea_server_update(). The 4th parameter describes if the updated
+ * content is a fake (for unauthorized subscribers). A real payload is
+ * inserted (updated) with the 4th parameter being 0. If the event is
+ * not updated with the content type @a ct before, a new content type
+ * format for the event is created. Otherwise the old payload is
+ * replaced with the new one.
+ *
+ * After the update, subscribers of the event are notified (with SIP
+ * NOTIFY) of the changed payload with nea_server_update ().
+ *
+ * @code
+ * nea_server_update(pr->pr_nes, home, event, 1,
+ *		   SIPTAG_CONTENT_TYPE(ct),
+ * 		   SIPTAG_PAYLOAD(pl),
+ * 		   TAG_END());
+
+ * nea_server_notify(pr->pr_nes, event);
+ * @endcode
+ *
+ * Obtaining the event's payload and removing it is presented in the
+ * example below. The event is defined as a part of the @a package_t
+ * structure. Function nea_payloads_get() is used to return a payload
+ * (in this case content type being predefined
+ * "application/cpim-pidf+xml"). The real and fake payloads are stored
+ * in the structure #nea_payloads_t. Finally, the payload is removed
+ * with nea_payload_remove().
+ *
+ * @code
+ * int remove_old_payload(package_t *ep)
+ * {
+ *   nea_payloads_t *np;
+ *   sip_content_type_t *ct;
+ *   sip_payload_t *real;
+ *   sip_payload_t *fake;
+
+ *   event = ep->ep_event;
+
+ *   np = nea_payloads_get(event, PIDF_MIME_TYPE);
+ *   ct = nea_content_type_get(np);
+ *   real = nea_payload_get(np);
+ *   fake = nea_fake_get(np);
+ *   nea_payload_remove(ep->ep_home, np);
+
+ *   return 0;
+ * }
+ * @endcode
+ */

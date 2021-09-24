@@ -1,0 +1,6 @@
+v=0
+s=Let's talk
+c=IN IP4 north.east.isi.edu
+b=CT:128
+m=audio 3456 RTP/AVP 5 0 7
+m=video 2232 RTP/AVP 31

@@ -1,0 +1,30 @@
+PROJECT_NAME         = "soa"
+OUTPUT_DIRECTORY     = ../docs/html/soa
+
+INPUT 		     = @srcdir@/soa.docs @srcdir@/sofia-sip/soa.h
+INPUT               += @srcdir@/sofia-sip/soa_add.h @srcdir@/soa.c
+INPUT		    += @srcdir@/sofia-sip/soa_tag.h @srcdir@/soa_tag.c
+
+@INCLUDE_PATH	     = . @srcdir@
+@INCLUDE             = ../docs/Doxyfile.conf
+
+TAGFILES            += ../docs/docs.doxytags=../docs
+TAGFILES            += ../docs/su.doxytags=../su
+TAGFILES            += ../docs/ipt.doxytags=../ipt
+TAGFILES            += ../docs/bnf.doxytags=../bnf
+TAGFILES            += ../docs/url.doxytags=../url
+TAGFILES            += ../docs/msg.doxytags=../msg
+TAGFILES            += ../docs/sip.doxytags=../sip
+TAGFILES            += ../docs/sresolv.doxytags=../sresolv
+TAGFILES            += ../docs/tport.doxytags=../tport
+TAGFILES            += ../docs/nta.doxytags=../nta
+TAGFILES            += ../docs/sdp.doxytags=../sdp
+TAGFILES            += ../docs/nua.doxytags=../nua
+
+GENERATE_TAGFILE     = ../docs/soa.doxytags
+
+ALIASES 	    += soa="@ref index \"soa\""
+# When GENERATE_TAGFILE=YES, we should use \ref main
+#ALIASES 	    += soa="@ref main \"soa\""
+
+@INCLUDE = ../sip/sip.doxyaliases

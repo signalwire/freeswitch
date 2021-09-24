@@ -1,0 +1,51 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// General properties
+TARGET          torture_su_root.exe
+TARGETTYPE      exe
+CAPABILITY        ALL -TCB
+UID             0x100039CE 0xA000017F
+VENDORID 			0
+OPTION CW      -dialect c99 -inline on
+
+START RESOURCE  torture_su_root_reg.rss
+#ifdef WINSCW
+TARGETPATH 	    \private\10003a3f\apps
+#else
+TARGETPATH 	    \private\10003a3f\import\apps
+#endif
+END //RESOURCE
+
+//EPOCHEAPSIZE 4 4194304 // min. 4KB ja max 4MB
+
+// Allow global writeable static data
+EPOCALLOWDLLDATA
+
+MACRO 			SYMBIAN
+MACRO       IN_LIBSOFIA_SIP_UA
+
+// Source files
+SOURCEPATH          ..\..\libsofia-sip-ua\su
+SOURCE              torture_su_root.c
+
+
+USERINCLUDE         ..
+USERINCLUDE         ..\..\libsofia-sip-ua\su
+SYSTEMINCLUDE       ..
+SYSTEMINCLUDE       ..\..\libsofia-sip-ua\su
+
+SYSTEMINCLUDE       \Epoc32\include
+SYSTEMINCLUDE       \Epoc32\include\osextensions\stdapis
+
+
+// Library dependencies
+STATICLIBRARY       libcrt0.lib
+LIBRARY             libc.lib
+LIBRARY             libsofia-sip-ua.lib
+LIBRARY             euser.lib
+LIBRARY             libpthread.lib
+

@@ -1,0 +1,44 @@
+2006-05-11  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  	* Now building libsofia_sip_ua.dll on win32.
+
+  	We define both IN_LIBSOFIA_SIP_UA and IN_LIBSOFIA_SRES in
+  	libsofia_sip_ua.dsp.
+
+  	Because of DLL linkage, we compile tags typedefs as C++
+  	(see win32/tests/test_nua/test_nat_tags.cpp).
+
+  	Removed LIBSOFIA_SIP_UA_STATIC from win32/sofia-sip/su_configure.h.
+
+  	Added libsofia_sip_ua_static.lib, too. If you want to compile against
+  	that, you need define LIBSOFIA_SIP_UA_STATIC by yourself.
+
+  	Added libsofia-sip-ua-static/libsofia_sip_ua_static.dsp.
+
+  	Using multithreaded DLL runtime for all projects.
+
+2006-05-03  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Added utils/sip_options example application to SofiaSIP.dsw.
+
+2006-04-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added test_tport.dsp to SofiaSIP.dsw
+
+  * Added source files:
+
+  sres.c sres_blocking.c sres_cache.c stun.c stun_common.c stun_dns.c
+  stun_internal.h stun_mini.c nua_params.c nua_params.h tport_internal.h
+  tport_logging.c tport_stub_sigcomp.c tport_stub_stun.c
+  tport_threadpool.c tport_type_connect.c tport_type_tcp.c
+  tport_type_udp.c
+
+  and
+
+  sofia-resolv/sres.h sofia-resolv/sres_async.h
+  sofia-resolv/sres_cache.h sofia-resolv/sres_record.h
+  sofia-sip/tport_plugins.h
+
+  to libsofia_sip_ua.dsp.
+
+  * Added stat() as well as struct stat to compatibity win32/unistd.h.

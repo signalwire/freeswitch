@@ -1,0 +1,11 @@
+PROJECT_NAME         = "stun"
+OUTPUT_DIRECTORY     = ../docs/html/stun
+
+INPUT 		     = @srcdir@/stun.docs @srcdir@/sofia-sip @srcdir@ .
+
+@INCLUDE_PATH        = . @srcdir@
+@INCLUDE 	     = ../docs/Doxyfile.conf
+
+TAGFILES            += ../docs/su.doxytags=../su
+
+GENERATE_TAGFILE     = ../docs/stun.doxytags

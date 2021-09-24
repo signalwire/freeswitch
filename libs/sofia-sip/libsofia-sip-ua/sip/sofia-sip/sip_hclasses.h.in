@@ -1,0 +1,78 @@
+/** -*- C -*-
+ *
+ * @file sofia-sip/sip_hclasses.h.in
+ *
+ * Template for <sip_hclasses.h>.
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+#ifndef SIP_HCLASSES_H
+/** Defined when <sofia-sip/sip_hclasses.h> has been included. */
+#define SIP_HCLASSES_H
+
+/**@file sofia-sip/sip_hclasses.h
+ * @brief Declarations of SIP header classes.
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @date Created: Thu Jan 23 19:26:31 2003 ppessi
+ */
+
+#ifndef MSG_TYPES_H
+#include <sofia-sip/msg_types.h>
+#endif
+
+SOFIA_BEGIN_DECLS
+
+
+enum {
+  /**@ingroup sip_#xxxxxx# @internal
+   *
+   * Hash of @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#".
+   *
+   * @since New in #version#.
+   */
+  sip_#xxxxxx#_hash = #hash#
+};
+
+/**Header class for @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#".
+ *
+ * The header class sip_#xxxxxx#_class defines how a SIP
+ * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" is parsed and printed.
+ * It also contains methods used by SIP parser and other functions to
+ * manipulate the #sip_#xxxxxx#_t header structure.
+ *
+ * @ingroup sip_#xxxxxx#
+ *
+ * @since New in #version#.
+ */
+SIP_DLL extern msg_hclass_t sip_#xxxxxx#_class[];
+
+
+SOFIA_END_DECLS
+#endif /* !defined SIP_HCLASSES_H */

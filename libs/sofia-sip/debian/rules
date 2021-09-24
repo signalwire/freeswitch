@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with autoreconf
+
+override_dh_auto_configure:
+	./configure \
+	  --prefix=/usr \
+	  --with-pic \
+	  --disable-stun
+
+override_dh_auto_test:

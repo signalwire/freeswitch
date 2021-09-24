@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+#
+# This script builds a snapshot RPM package of already existing Sofia-SIP
+# build tree
+#
+# Copyright (C) 2006 Nokia Corporation.
+#
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+# 02110-1301 USA
+#
+# Created: Fri May 23 17:16:54 EEST 2003 ppessi
+#
+
+function usage
+{
+  echo "usage: snapshot.sh [-bc|-bb] [-c|--configure] [rpmbuild options]"
+  exit $@
+}
+
+bb=-bb
+configure=0
+
+case "$1" in -b? ) bb=$1 ; shift ;; esac
+
+while true ; do
+  case "$1" in
+  -c | --configure | --co ) configure=1; shift; ;;
+  '-?' | --help | -h ) usage 0 ;;
+  *) break ;;
+  esac
+done
+
+test -z "$srcdir" && srcdir=.
+RPMROOT=${RPMROOT:-`rpmbuild --eval='%_topdir' --quiet 2> /dev/null`}
+
+c=$srcdir/configure.ac
+
+PACKAGE_NAME=$(sed -n '/^AC_INIT/ { s/[^[]*\[//; s/\].*//; p;}' $c)
+NAME=$(echo $PACKAGE_NAME | tr 'A-Z ' 'a-z-')
+VERSION=$(sed -n '/^AC_INIT/ { s/.*\], \[//; s/\].*//; p;}' $c)
+GLIB_SOVER=$(sed -n '/^AC_SUBST[(]LIBVER_SOFIA_SIP_UA_GLIB_SOVER/ { s/.*, \[//; s/\].*//; p;}' $c)
+
+# Find spec in
+if test -r $NAME.spec.in ; then
+    specin=$NAME.spec.in
+elif test -r packages/$NAME.spec.in ; then
+    specin=packages/$NAME.spec.in
+else
+    echo $NAME.spec.in: not found
+    exit 2
+fi
+
+specversion=$(sed -n -e '/^Version:/ { s/Version: //; p }' ${specin%.in})
+
+if [ "$VERSION" != "$specversion" ]; then
+  configure=1
+fi
+
+RELEASE=${RELEASE:-SNAP.$(date +"%Y%m%d.%H%M")}
+
+test -r config.status &&
+prefix=$(sed -n '/^s,@prefix@,/ { s/^s,[^,]*,//; s/,.*//; p;}' config.status)
+
+test -z "$prefix" && prefix=/usr
+
+wd=${TEMPDIR:=/tmp}/sofia-snapshot-$$
+spec=$wd/$NAME-${VERSION}-${RELEASE}.spec
+dummy=${NAME}-${VERSION}-${RELEASE}.tar.gz
+
+test -x ./configure || sh ./autogen.sh
+
+install -d ${RPMROOT}/{SOURCES/SNAP,SPECS,BUILD,RPMS,SRPMS} $wd &&
+echo Creating $spec &&
+awk '
+/@VERSION@/ { sub(/@VERSION@/, version); }
+/@PACKAGE@/ { sub(/@PACKAGE@/, package); }
+/@PACKAGE_NAME@/ { sub(/@PACKAGE_NAME@/, package_name); }
+/@LIBVER_SOFIA_SIP_UA_GLIB_SOVER@/ {
+  sub(/@LIBVER_SOFIA_SIP_UA_GLIB_SOVER@/, glib_sover);
+}
+/^Release:/ {
+  print "Release: " release "%{?dist}\n";
+  print "Prefix: " prefix "\n";
+  next;
+}
+/^Source0:/ { print "Source0:" dummy "\n"; next; }
+/disable-dependency-tracking/ {
+  sub(/--disable-dependency-tracking/, "");
+}
+/^%configure/ {
+ print "cd " "\"" pwd "\"";
+ if (!configure) { $1="echo skipping configure"; }
+ $1=$1 "-C --enable-maintainer-mode";
+ print $0;
+ next;
+}
+# Do not make documentation
+/^make doc/ { print "echo skipping " $0; next; }
+# Ignore CFLAGS set by RPM
+/^make/ { print "CFLAGS= " $0; next; }
+{ print; }' \
+pwd=$PWD \
+configure=$configure dummy=$dummy \
+package=$NAME package_name="$PACKAGE_NAME" \
+version=$VERSION release=$RELEASE glib_sover=$GLIB_SOVER prefix=$prefix \
+$specin > $spec &&
+ln -s `pwd` $wd/${NAME}-${VERSION} &&
+tar cfz ${RPMROOT}/SOURCES/SNAP/$dummy -C $wd ${NAME}-${VERSION} &&
+rpmbuild $bb $spec --define '__os_install_post /usr/lib/rpm/brp-compress' --without docs -D"_sourcedir ${RPMROOT}/SOURCES/SNAP" "$@"
+rc=$?
+
+rm -rf $wd
+rm ${RPMROOT}/SOURCES/SNAP/$dummy
+
+exit $rc

@@ -1,0 +1,72 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// sofiatest component properties
+
+// General properties
+TARGET          su_source_test.exe
+TARGETTYPE      exe
+CAPABILITY      All -Tcb //NetworkServices
+UID             0x100039CE 0x1F001AD4
+VENDORID        0
+OPTION CW       -warn nounusedarg,nounusedvar
+//CAPABILITY      NetworkServices NetworkControl CommDD UserEnvironment ReadDeviceData
+
+START RESOURCE  su_source_test_reg.rss
+#ifdef WINSCW
+TARGETPATH 	    \private\10003a3f\apps
+#else
+TARGETPATH 	    \private\10003a3f\import\apps
+#endif
+END //RESOURCE
+OPTION CW      -dialect c99 -inline on
+
+// Disable optimization for debug builds
+SRCDBG 
+
+EPOCHEAPSIZE 0x5000 0x400000
+EPOCSTACKSIZE 0x10000
+
+// Allow global writeable static data
+#ifndef WINSCW
+EPOCALLOWDLLDATA
+#endif
+
+MACRO       SYMBIAN
+MACRO       IN_LIBSOFIA_SIP_UA
+MACRO       IN_LIBSOFIA_SRES
+
+// Source files
+SOURCEPATH 			..\..\libsofia-sip-ua-glib\su-glib
+SOURCE          su_source_test.c
+
+USERINCLUDE		..
+USERINCLUDE		..\..\libsofia-sip-ua\su
+USERINCLUDE		..\..\libsofia-sip-ua-glib\su-glib
+
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\stdapis
+SYSTEMINCLUDE   \epoc32\include\osextensions
+SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
+SYSTEMINCLUDE   \epoc32\include\stdapis\glib-2.0
+
+// Library dependencies
+
+LIBRARY         commdb.lib
+STATICLIBRARY   libcrt0.lib
+LIBRARY         libc.lib
+LIBRARY         libm.lib
+LIBRARY         libpthread.lib
+LIBRARY         libcrypto.lib
+LIBRARY         libssl.lib
+LIBRARY         euser.lib
+LIBRARY         insock.lib
+LIBRARY         esock.lib
+LIBRARY         libgthread.lib
+LIBRARY         libglib.lib
+
+LIBRARY         libsofia-sip-ua.lib
+LIBRARY         libsofia-sip-ua-glib.lib

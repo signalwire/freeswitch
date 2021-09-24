@@ -1,0 +1,71 @@
+#! /bin/sh
+#
+# Generate coverage report
+#
+
+#
+# Copyright (C) 2007 Nokia Corporation
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+# Licensed under LGPL. See file COPYING.
+#
+
+usage()
+{
+  test X$1 = X0 || exec >&2
+  cat << EOF
+usage: coverage-report OPTIONS
+where OPTIONS are
+   --srcdir=DIR
+   --output-directory=DIR | -o DIR
+   --title=TITLE
+   --prefix=PREFIX
+   --show-details
+   --legend
+   --frames
+EOF
+  exit $1;
+}
+
+GENHTML_OPTIONS= o=
+
+while test $# -gt 0;
+do
+  case $1 in
+  --srcdir | -s )
+    test -z "$2" && usage 1; shift; srcdir=$1; shift; ;;
+  --srcdir=* )
+    srcdir=${1#--srcdir=}; shift ;;
+  --output-directory | --output_directory | -o )
+    test -z "$2" && usage 1; shift; o=$1; shift; ;;
+  --output-directory=* | --output_directory=* )
+    o=${1#--output?directory=}; shift ;;
+  --prefix=* | --title=* | --show-details | --legend | --frames )
+    GENHTML_OPTIONS="${GENHTML_OPTIONS} $1" ; shift ;;
+  --prefix | --title )
+    test -z "$2" && usage 1; GENHTML_OPTIONS="${GENHTML_OPTIONS} $1 $2" ; shift ; shift ;;
+  --help | '-?' | -h ) usage 0 ;;
+  - ) shift; break ;;
+  -* ) usage 1; ;;
+  * ) break ;;
+  esac
+done
+
+info=${o:=.}/lcov.info geninfo=${o}/genhtml.info
+rm -f ${info} ${info}
+
+case ${GENHTML_OPTIONS} in *--prefix* ) ;; *)
+  GENHTML_OPTIONS="${GENHTML_OPTIONS} --prefix=`cd ${srcdir:=.} && pwd`"
+esac
+
+lcov --compat-libtool --directory . --capture --output-file ${info} &&
+{
+    # remove system includes with with inlined functions
+    lcov -l ${info} | grep -v "`cd ${srcdir:-.} && pwd`"
+    # remove source files in builddir
+    test ${srcdir:-.} = . || lcov -l ${info} | grep "`pwd`"
+    # remove test programs
+    lcov -l ${info} | grep "/test\|/torture\|_test[.][ch][+xp]*$"
+} |
+cut -d: -f1 |
+xargs lcov -r ${info} > ${geninfo}
+genhtml ${GENHTML_OPTIONS} --output-directory $o ${geninfo}

@@ -1,0 +1,26 @@
+PROJECT_NAME         = "su"
+OUTPUT_DIRECTORY     = ../docs/html/su
+
+INPUT 		     = @srcdir@/su.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
+
+@INCLUDE_PATH        = . @srcdir@
+@INCLUDE 	     = ../docs/Doxyfile.conf
+
+TAGFILES           += ../docs/msg.doxytags=../msg
+TAGFILES           += ../docs/sip.doxytags=../sip
+TAGFILES           += ../docs/utils.doxytags=../utils
+TAGFILES           += ../docs/docs.doxytags=..
+
+GENERATE_TAGFILE     = ../docs/su.doxytags
+
+ALIASES +=  "SU_TAG=@ingroup su_tag\n"
+
+PREDEFINED += \
+ TSTFLAGS=1 \
+ SU_HAVE_BSDSOCK=0 \
+ su_root_s=su_root_t \
+ _su_task_r=su_task_r
+
+EXCLUDE_PATTERNS      += localinfo.c addrinfo.c
+
+@INCLUDE =		../sip/sip.doxyaliases

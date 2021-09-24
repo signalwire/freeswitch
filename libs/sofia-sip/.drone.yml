@@ -1,0 +1,51 @@
+---
+kind: pipeline
+name: scan-build
+
+steps:
+    - name: bootstrap
+      image: signalwire/freeswitch-public-base:stretch
+      pull: always
+      commands:
+      - ./autogen.sh
+
+    - name: configure
+      image: signalwire/freeswitch-public-base:stretch
+      pull: always
+      commands:
+      - ./configure --with-pic --without-doxygen --disable-stun
+
+    - name: scan-build
+      image: signalwire/freeswitch-public-base:stretch
+      pull: always
+      commands:
+      - mkdir -p scan-build
+      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - chmod +x scan.sh
+      - ./scan.sh
+      - exitstatus=`cat ./scan-build-status.txt`
+      - echo "*** Exit status is $exitstatus"
+
+    - name: notify
+      image: signalwire/drone-notify
+      pull: always
+      environment:
+        SLACK_WEBHOOK_URL:
+          from_secret: slack_webhook_url
+        ENV_FILE:
+          from_secret: notify_env
+      commands:
+      - /root/scan-build-notify.sh
+      
+trigger:
+  branch:
+  - master
+  event:
+  - pull_request
+  - push
+
+---
+kind: signature
+hmac: ac8a02442523f785e8d9eef2a667e664b3bd5ec12b858dcc6736518ea18ff266
+
+...
