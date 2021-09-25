@@ -1533,7 +1533,14 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	}
 #endif
 #ifdef ENABLE_SRTP
-	srtp_init();
+	{
+		srtp_err_status_t stat = srtp_init();
+		if (stat == srtp_err_status_ok) { 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SRTP (%s) initialized.\n", srtp_get_version_string());
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing SRTP (%d).\n", stat);
+		}
+	}
 #endif
 	switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
 	switch_rtp_dtls_init();
