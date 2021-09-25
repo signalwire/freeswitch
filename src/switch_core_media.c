@@ -1612,6 +1612,12 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *se
 	engine->type = type;
 }
 
+SWITCH_DECLARE(switch_rtp_t *) switch_core_media_get_rtp_session(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_assert(session);
+	if (!session->media_handle) return NULL;
+	return session->media_handle->engines[type].rtp_session;
+}
 
 static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *session, switch_media_type_t type)
 {
