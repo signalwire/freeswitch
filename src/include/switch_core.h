@@ -2842,6 +2842,8 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
+SWITCH_DECLARE(int) switch_spawn(const char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t shell, switch_bool_t wait, switch_stream_handle_t *stream);
 
 SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
 

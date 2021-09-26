@@ -1,0 +1,18 @@
+option('debug-logging', type : 'boolean', value : false,
+  description : 'Enable debug logging in all modules')
+option('log-stdout', type : 'boolean', value : false,
+  description : 'Redirect logging to stdout')
+option('log-file', type : 'string', value : '',
+  description : 'Write logging output into this file')
+option('crypto-library', type: 'combo', choices : ['none', 'openssl', 'nss'], value : 'none',
+  description : 'What external crypto library to leverage, if any (OpenSSL or NSS)')
+option('crypto-library-kdf', type : 'feature', value : 'auto',
+  description : 'Use the external crypto library for Key Derivation Function support')
+option('fuzzer', type : 'feature', value : 'disabled',
+  description : 'Build libsrtp2 fuzzer (requires build with clang)')
+option('tests', type : 'feature', value : 'auto', yield : true,
+  description : 'Build test applications')
+option('pcap-tests', type : 'feature', value : 'auto',
+  description : 'Build test application that require libpcap')
+option('doc', type : 'feature', value : 'auto', yield : true,
+  description : 'Generate API documentation with doxygen')

@@ -3539,6 +3539,42 @@ char *sofia_glue_get_profile_url(sofia_profile_t *profile, char *remote_ip, cons
 	return url;
 }
 
+/* gets the IP or HOST from a sip uri or from x.x.x.x:port format */
+char *sofia_glue_get_host_from_cfg(const char *uri, switch_memory_pool_t *pool)
+{
+	char *host = NULL;
+	const char *s;
+	char *p = NULL;
+
+	if (zstr(uri)) {
+		return NULL;
+	}
+
+	if ((s = switch_stristr("sip:", uri)) && s == uri) {
+		s += 4;
+	} else if ((s = switch_stristr("sips:", uri)) && s == uri) {
+		s += 5;
+	}
+
+	if (!s) {
+		s = uri;
+	}
+
+	host = switch_core_strdup(pool, s);
+
+	if ((p = strchr(host, ']'))) {
+		if (*(p + 1) == ':') {
+			*(p + 1) = '\0';
+		}
+	} else {
+		if ((p = strrchr(host, ':'))) {
+			*p = '\0';
+		}
+	}
+
+	return host;
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

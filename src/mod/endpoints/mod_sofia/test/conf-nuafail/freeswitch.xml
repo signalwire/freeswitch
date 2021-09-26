@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+  <X-PRE-PROCESS cmd="exec-set" data="test=echo 1234"/>
+  <X-PRE-PROCESS cmd="set" data="default_password=$${test}"/>
+  <X-PRE-PROCESS cmd="set" data="core_video_blank_image=$${conf_dir}/freeswitch-logo.png"/>
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+		<modules>
+			<load module="mod_sofia"/>
+			<load module="mod_console"/>
+			<load module="mod_loopback"/>
+			<load module="mod_commands"/>
+			<load module="mod_dptools"/>
+			<load module="mod_dialplan_xml"/>
+			<load module="mod_tone_stream"/>
+			<load module="mod_commands"/>
+			<load module="mod_sndfile"/>
+      </modules>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="loglevel" value="debug"/>
+      </settings>
+    </configuration>
+
+    <configuration name="timezones.conf" description="Timezones">
+      <timezones>
+          <zone name="GMT" value="GMT0" />
+      </timezones>
+    </configuration>
+
+    <configuration name="sofia.conf" description="SofiaSIP">
+        <profiles>
+    <profile name="internal">
+      <gateways>
+      </gateways>
+
+      <domains>
+        <domain name="all" alias="false" parse="true"/>
+      </domains>
+
+      <settings>
+        <param name="debug" value="1"/>
+        <param name="shutdown-on-fail" value="true"/>
+        <param name="p-asserted-id-parse" value="verbatim"/>
+        <param name="username" value="SignalWire-STACK"/>
+        <param name="user-agent-string" value="SignalWire STACK Unit Test"/>
+        <param name="sip-trace" value="yes"/>
+        <param name="sip-capture" value="no"/>
+        <param name="rfc2833-pt" value="101"/>
+        <param name="sip-port" value="61069"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="default"/>
+        <param name="dtmf-duration" value="2000"/>
+        <param name="inbound-codec-prefs" value="PCMU"/>
+        <param name="outbound-codec-prefs" value="PCMU"/>
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="local-network-acl" value="localnet.auto"/>
+        <param name="manage-presence" value="false"/>
+        <param name="inbound-codec-negotiation" value="generous"/>
+        <param name="nonce-ttl" value="60"/>
+        <param name="inbound-late-negotiation" value="true"/>
+        <param name="inbound-zrtp-passthru" value="false"/>
+        <param name="rtp-ip" value="170.0.0.1"/>
+        <param name="sip-ip" value="170.0.0.1"/>
+        <param name="ext-rtp-ip" value="170.0.0.1"/>
+        <param name="ext-sip-ip" value="170.0.0.1"/>
+        <param name="rtp-timeout-sec" value="300"/>
+        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="session-timeout" value="600"/>
+        <param name="minimum-session-expires" value="90"/>
+        <param name="tls" value="false"/>
+      </settings>
+  </profile>
+
+  </profiles>
+   </configuration>
+
+   <configuration name="switch.conf" description="Switch">
+     <param name="rtp-start-port" value="20000"/>
+     <param name="rtp-end-port" value="30000"/>
+     <param name="threaded-system-exec" value="true"/>
+   </configuration>
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <context name="default">
+		<extension name="one">
+			<condition field="destination_number" expression="^\+15553332900$">
+				<action application="set" data="absolute_codec_string=PCMU@20i"/>
+				<action application="info"/>
+				<action application="answer"/>
+				<action application="park""/>
+			</condition>
+		</extension>
+    </context>
+  </section>
+</document>

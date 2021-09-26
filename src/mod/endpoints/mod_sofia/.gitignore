@@ -2,6 +2,7 @@ test/Makefile
 test/Makefile.in
 test/freeswitch.xml.fsxml.tmp
 test/test_sofia_funcs
+test/test_nuafail
 
 # clion
 .idea

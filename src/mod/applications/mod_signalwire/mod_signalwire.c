@@ -46,6 +46,7 @@ int sslContextFunction(void* curl, void* sslctx, void* userdata);
 static int debug_level = 7;
 
 static int signalwire_gateway_exists(void);
+static switch_status_t mod_signalwire_load_or_generate_token(void);
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_signalwire_shutdown);
@@ -459,7 +460,7 @@ done:
 	return status;
 }
 
-#define SIGNALWIRE_SYNTAX "token | adoption | adopted | reload | update | debug <level> | kslog <on|off|logfile e.g. /tmp/ks.log>"
+#define SIGNALWIRE_SYNTAX "token | token-reset | adoption | adopted | reload | update | debug <level> | kslog <on|off|logfile e.g. /tmp/ks.log>"
 SWITCH_STANDARD_API(mod_signalwire_api_function)
 {
 	int argc = 0;
@@ -529,6 +530,42 @@ SWITCH_STANDARD_API(mod_signalwire_api_function)
 		} else if (!strcmp(argv[0], "update")) {
 			globals.profile_update = KS_TRUE;
 			stream->write_function(stream, "+OK\n");
+			goto done;
+        	} else if (!strcmp(argv[0], "token-reset")) {
+			char tmp[1024];
+			
+			switch_snprintf(tmp, sizeof(tmp), "%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, "adoption-token.dat");
+			if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				if (unlink(tmp)) {
+					stream->write_function(stream, "-ERR Could not delete the old adoption-token.dat file. Token was not re-generated.\n");
+					goto done;
+				}
+			}
+
+			switch_snprintf(tmp, sizeof(tmp), "%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, "adoption-auth.dat");
+			if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				if (unlink(tmp)) {
+					stream->write_function(stream, "-ERR Could not delete the old adoption-auth.dat file. Token was not re-generated.\n");
+					goto done;
+				}
+			}
+
+			switch_snprintf(tmp, sizeof(tmp), "%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, "signalwire-conf.dat");
+			if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				if (unlink(tmp)) {
+					stream->write_function(stream, "-ERR Could not delete the old signalwire-conf.dat file. Token was not re-generated.\n");
+					goto done;
+				}
+			}
+
+			if (mod_signalwire_load_or_generate_token() != SWITCH_STATUS_SUCCESS) {
+				stream->write_function(stream, "-ERR Could not generate a new token.\n");
+			} else {
+				globals.state = SW_STATE_ADOPTION;
+				globals.adoption_next = ks_time_now();
+				stream->write_function(stream, "+OK\n");
+			}
+			
 			goto done;
 		}
 	}
@@ -869,7 +906,7 @@ static void on_sofia_gateway_state(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SignalWire SIP Gateway registered to %s:%s\n", ip, port);
 			switch_set_string(globals.gateway_ip, ip);
 			switch_set_string(globals.gateway_port, port);
-		} else if (!strcmp(state, "NOREG")) {
+		} else if (!strcmp(state, "DOWN")) {
 			globals.gateway_ip[0] = '\0';
 			globals.gateway_port[0] = '\0';
 		}
@@ -909,6 +946,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_signalwire_load)
 	switch_console_set_complete("add signalwire kslog on");
 	switch_console_set_complete("add signalwire kslog off");
 	switch_console_set_complete("add signalwire token");
+	switch_console_set_complete("add signalwire token-reset");
 	switch_console_set_complete("add signalwire adoption");
 	switch_console_set_complete("add signalwire adopted");
 	switch_console_set_complete("add signalwire update");

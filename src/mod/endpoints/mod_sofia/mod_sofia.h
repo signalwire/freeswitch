@@ -91,6 +91,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REINVITE "sofia::reinvite"
 #define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
 #define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
+#define MY_EVENT_GATEWAY_INVALID_DIGEST_REQ "sofia::gateway_invalid_digest_req"
 #define MY_EVENT_RECOVERY "sofia::recovery_recv"
 #define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
 #define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
@@ -526,6 +527,9 @@ struct sofia_gateway {
 	char *register_proxy;
 	char *register_sticky_proxy;
 	char *outbound_sticky_proxy;
+	char *register_proxy_host_cfg; /* hold only the IP or the hostname, no port, no "sip:" or "sips:" prefix */
+	char *outbound_proxy_host_cfg;
+	char *proxy_host_cfg;
 	char *register_context;
 	char *expires_str;
 	char *register_url;
@@ -570,6 +574,7 @@ struct sofia_gateway {
 	sofia_cid_type_t cid_type;
 	char register_network_ip[80];
 	int register_network_port;
+	char *gw_auth_acl;
 };
 
 typedef enum {
@@ -1256,6 +1261,7 @@ void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
 void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
+char *sofia_glue_get_host_from_cfg(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
 void sofia_msg_thread_start(int idx);
 void crtp_init(switch_loadable_module_interface_t *module_interface);

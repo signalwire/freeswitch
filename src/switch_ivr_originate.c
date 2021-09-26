@@ -124,6 +124,7 @@ typedef struct {
 	uint8_t early_media;
 	uint8_t answered;
 	uint8_t tagged;
+	uint8_t array_pos;
 	uint32_t per_channel_timelimit_sec;
 	uint32_t per_channel_progress_timelimit_sec;
 	uint32_t per_channel_delay_start;
@@ -1862,7 +1863,8 @@ typedef struct early_state early_state_t;
 static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *obj)
 {
 	early_state_t *state = (early_state_t *) obj;
-	//originate_status_t originate_status[MAX_PEERS] = { {0} };
+	originate_status_t originate_status[MAX_PEERS] = { {0} };
+	uint8_t array_pos = 0;
 	int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 	int32_t sample;
 	switch_codec_t read_codecs[MAX_PEERS] = { {0} };
@@ -1873,9 +1875,8 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	switch_frame_t *read_frame = NULL;
 	switch_codec_implementation_t read_impl = { 0 };
 
-#if 0
 	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-		switch_core_session_t *session = state->originate_status[i].peer_session;
+		switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
 		switch_channel_t *channel = NULL;
 
 		if (session) channel = switch_core_session_get_channel(session);
@@ -1885,11 +1886,12 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		}
 
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			originate_status[i].peer_session = session;
-			originate_status[i].peer_channel = channel;
+			originate_status[array_pos].peer_session = session;
+			originate_status[array_pos].peer_channel = channel;
+			originate_status[array_pos].array_pos = (uint8_t) i;
+			array_pos++;
 		}
 	}
-#endif
 	
 	if (state->oglobals->session) {
 		switch_core_session_get_read_impl(state->oglobals->session, &read_impl);
@@ -1901,9 +1903,10 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		ready = 0;
 		answered = 0;
 
-		for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-			switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
-			switch_channel_t *channel = state->oglobals->originate_status[i].peer_channel;
+		for (array_pos = 0; array_pos < MAX_PEERS && originate_status[array_pos].peer_session; array_pos++) {
+			switch_core_session_t *session = originate_status[array_pos].peer_session;
+			switch_channel_t *channel = originate_status[array_pos].peer_channel;
+			i = originate_status[array_pos].array_pos;
 
 			if (!session || !channel || !switch_channel_up(channel)) {
 				continue;
@@ -1981,9 +1984,10 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	}
 
 
-	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-		switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
-		switch_channel_t *channel = state->oglobals->originate_status[i].peer_channel;
+	for (array_pos = 0; array_pos < MAX_PEERS && originate_status[array_pos].peer_session; array_pos++) {
+		switch_core_session_t *session = originate_status[array_pos].peer_session;
+		switch_channel_t *channel = originate_status[array_pos].peer_channel;
+		i = originate_status[array_pos].array_pos;
 
 		if (!session) continue;
 

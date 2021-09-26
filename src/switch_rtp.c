@@ -64,9 +64,9 @@
 
 #define JITTER_LEAD_FRAMES 10
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
-#define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
-#define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
-#define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
+#define READ_DEC(rtp_session) rtp_session->reading--; switch_mutex_unlock(rtp_session->read_mutex)
+#define WRITE_INC(rtp_session) switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
+#define WRITE_DEC(rtp_session) rtp_session->writing--; switch_mutex_unlock(rtp_session->write_mutex)
 
 #define RTP_STUN_FREQ 1000000
 #define rtp_header_len 12
@@ -2387,6 +2387,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 
 #ifdef ENABLE_SRTP
+		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 			int stat = 0;
 			int sbytes = (int) rtcp_bytes;
@@ -2399,12 +2400,13 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
+				switch_mutex_unlock(rtp_session->ice_mutex);
 				goto end;
 			} else {
 				rtcp_bytes = sbytes;
 			}
-
 		}
+		switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
 
 #ifdef ENABLE_ZRTP
@@ -7099,9 +7101,6 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 			*bytes = 0;
 		}
 	}
-	switch_mutex_unlock(rtp_session->ice_mutex);
-
-
 
 #ifdef ENABLE_SRTP
 	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->rtcp_recv_msg_p->header.version == 2) {
@@ -7128,6 +7127,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	}
 #endif
 
+	switch_mutex_unlock(rtp_session->ice_mutex);
 
 #ifdef ENABLE_ZRTP
 	if (zrtp_on && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && rtp_session->rtcp_recv_msg_p->header.version == 2) {
@@ -7606,6 +7606,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 									other_rtp_session->rtcp_send_msg = rtp_session->rtcp_recv_msg;
 
 #ifdef ENABLE_SRTP
+									switch_mutex_lock(other_rtp_session->ice_mutex);
 									if (switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 										int stat = 0;
 										int sbytes = (int) rtcp_bytes;
@@ -7620,8 +7621,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 											switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 										}
 										rtcp_bytes = sbytes;
-
 									}
+									switch_mutex_unlock(other_rtp_session->ice_mutex);
 #endif
 
 #ifdef ENABLE_ZRTP
@@ -9237,6 +9238,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 
 	if (process_encryption) {
 #ifdef ENABLE_SRTP
+		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 
 			int sbytes = (int) *bytes;
@@ -9251,6 +9253,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP SEND\n");
 					rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
 					status = SWITCH_STATUS_FALSE;
+					switch_mutex_unlock(rtp_session->ice_mutex);
 					goto end;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "RE-Activating Secure RTP SEND\n");
@@ -9268,6 +9271,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 			}
 			*bytes = sbytes;
 		}
+		switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
 #ifdef ENABLE_ZRTP
 		/* ZRTP Send */
