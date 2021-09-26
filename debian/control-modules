@@ -671,6 +671,11 @@ Description: mod_python
  Adds mod_python.
 Build-Depends: python-dev 
 
+Module: languages/mod_python3
+Description: mod_python3
+ Adds mod_python3.
+Build-Depends: python3-dev
+
 Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
