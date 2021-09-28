@@ -336,7 +336,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
 	FILE *fp = NULL;
 	EVP_PKEY *pkey = NULL;
 	int bits = 0;
-	int min_cert_size_bits = 0;
+	int min_cert_size_bits;
 
 	if (switch_is_file_path(file)) {
 		pem = strdup(file);
