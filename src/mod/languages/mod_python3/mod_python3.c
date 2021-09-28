@@ -306,7 +306,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
 	// invoke the handler
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
-	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
+	result = PyObject_CallObject(function, arg);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
 
 	// check the result and print out any errors
@@ -429,7 +429,7 @@ static void set_max_recursion_depth(void)
 	PyObject *sysModule = PyImport_ImportModule("sys");
 	PyObject *setRecursionLimit = PyObject_GetAttrString(sysModule, "setrecursionlimit");
 	PyObject *recLimit = Py_BuildValue("(i)", newMaxRecursionDepth);
-	PyObject *setrecursion_result = PyEval_CallObjectWithKeywords(setRecursionLimit, recLimit, (PyObject *) NULL);
+	PyObject *setrecursion_result = PyObject_CallObject(setRecursionLimit, recLimit);
 	if (setrecursion_result) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set python recursion limit to %d\n", newMaxRecursionDepth);
 	} else {
@@ -565,9 +565,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		// initialize python system
 		Py_Initialize();
 
-		// create GIL and a threadstate
-		PyEval_InitThreads();
-
 		// save threadstate since it's interp field will be needed
 		// to create new threadstates, and will be needed for shutdown
 		mainThreadState = PyThreadState_Get();
@@ -578,9 +575,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		// swap out threadstate since the call threads will create
 		// their own and swap in their threadstate
 		PyThreadState_Swap(NULL);
-
-		// release GIL
-		PyEval_ReleaseLock();
 	}
 
 	switch_mutex_init(&THREAD_POOL_LOCK, SWITCH_MUTEX_NESTED, pool);
@@ -625,7 +619,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 		pt = nextpt;
 	}
 	PyThreadState_Swap(mainThreadState);
-	PyEval_ReleaseLock();
 	switch_yield(1000000);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Had to kill %d threads\n", thread_cnt);
@@ -651,10 +644,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 	mainInterpreterState = mainThreadState->interp;
 	myThreadState = PyThreadState_New(mainInterpreterState);
 	PyThreadState_Swap(myThreadState);
-	PyEval_ReleaseLock();
 
 	Py_Finalize();
-	PyEval_ReleaseLock();
 
 	return SWITCH_STATUS_UNLOAD;
 
