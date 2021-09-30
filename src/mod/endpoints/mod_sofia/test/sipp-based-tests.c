@@ -96,6 +96,18 @@ static int start_sipp_uas(const char *ip, int listen_port, const char *scenario_
 
 	return sys_ret;
 }
+static int run_sipp(const char *ip, int remote_port, int listen_port, const char *dialed_number, const char *scenario_uac, const char *auth_password, const char *extra)
+{
+	char *cmd = switch_mprintf("sipp %s:%d -nr -p %d -m 1 -s %s -recv_timeout 10000 -timeout 10s -sf %s -au %s -ap %s -bg %s", ip, remote_port, listen_port, dialed_number, scenario_uac, dialed_number, auth_password, extra);
+	int sys_ret = switch_system(cmd, SWITCH_TRUE);
+
+	printf("%s\n", cmd);
+	switch_safe_free(cmd);
+	switch_sleep(1000 * 1000);
+
+	return sys_ret;
+}
+
 static void kill_sipp(void)
 {
 	switch_system("pkill -x sipp", SWITCH_TRUE);
@@ -382,7 +394,7 @@ skiptest:
 
 			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_reg_fail, NULL);
 
-			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uas_register_403.xml", "");
+			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uac_407_subscriber.xml", "-inf data.csv");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_requires(0); /* sipp not found */
 			}
@@ -398,6 +410,45 @@ skiptest:
 			kill_sipp();
 			fst_check(test_success);
 			test_success = 0;
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(subscribe_auth_check)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			const char *auth_password = switch_core_get_variable("default_password");
+			switch_cache_db_handle_t *dbh = NULL;
+			char *dsn = "sofia_reg_internal";
+			char count[20]="";
+			char count1[20]="";
+			int sipp_ret;
+
+			/* check without 407 Proxy Authentication. If count not 0 fail case. */
+			sipp_ret = run_sipp(local_ip_v4, 5060, 6091, "1001", "sipp-scenarios/uac_subscriber.xml", auth_password, "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+			switch_sleep(100 * 1000);
+
+			if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
+				switch_cache_db_execute_sql2str(dbh, "select count(*) from  sip_subscriptions where contact like \"%1001%6091%\";", (char *)&count1, 20, NULL);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Count : %s\n", count1);
+			}
+			fst_check_string_equals(count1, "0");
+
+			/* check with 407  Proxy Authentication Required. If count not 1 fail case. */
+			sipp_ret = run_sipp(local_ip_v4, 5060, 6090, "1001", "sipp-scenarios/uac_407_subscriber.xml", auth_password, "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+			switch_sleep(100 * 1000);
+
+			switch_cache_db_execute_sql2str(dbh, "select count(*) from  sip_subscriptions where contact like \"%1001%6090%\";", (char *)&count, 20, NULL);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Count : %s\n", count);
+			fst_check_string_equals(count, "1");
+
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
 		}
 		FST_TEST_END()
 

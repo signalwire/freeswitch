@@ -4591,7 +4591,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			} else {
 				switch_memory_pool_t *pool = NULL;
 				char *auth_messages_value = NULL;
-				uint8_t disable_auth_flag = 0;
+				char *auth_subscriptions_value = NULL;
+				uint8_t disable_message_auth_flag = 0;
+				uint8_t disable_subscription_auth_flag = 0;
 
 				if (!xprofilename) {
 					xprofilename = "unnamed";
@@ -5593,13 +5595,17 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 						}
 
-						disable_auth_flag = 1;
+						disable_message_auth_flag = 1;
 					} else if (!strcasecmp(var, "auth-subscriptions")) {
+						auth_subscriptions_value = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "disable-auth-subscriptions")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
-						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
+						} else {
+							sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
 						}
+
+						disable_subscription_auth_flag = 1;
 					} else if (!strcasecmp(var, "extended-info-parsing")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
@@ -6104,11 +6110,19 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 				}
 
-				if (!disable_auth_flag) {
+				if (!disable_message_auth_flag) {
 					if (!auth_messages_value || switch_true(auth_messages_value)) {
 						sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 					} else {
 						sofia_clear_pflag(profile, PFLAG_AUTH_MESSAGES);
+					}
+				}
+
+				if (!disable_subscription_auth_flag) {
+					if (!auth_subscriptions_value || switch_true(auth_subscriptions_value)) {
+						sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
+					} else {
+						sofia_clear_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
 					}
 				}
 

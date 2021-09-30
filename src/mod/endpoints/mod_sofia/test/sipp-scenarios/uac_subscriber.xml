@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<scenario name="UAC with subscribe only">
+
+  <send retrans="500">
+    <![CDATA[
+
+      SUBSCRIBE sip:[service]@[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/[transport] [local_ip]:[local_port];branch=[branch]
+      From: [service] <sip:[service]@[local_ip]:[local_port]>;tag=[pid]SIPpTag00[call_number]
+      To: sut <sip:[service]@[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 1 SUBSCRIBE
+      Contact: sip:[service]@[local_ip]:[local_port]
+      Max-Forwards: 70
+      Event: presence
+	  Allow: SUBSCRIBE
+	  Expires: 120
+      Accept: application/simple-message-summary
+      Allow-Events: presence, kpml
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv response="202" timeout="2000">
+  </recv>
+
+</scenario>

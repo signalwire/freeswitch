@@ -424,7 +424,7 @@
         <param name="outbound-codec-prefs" value="PCMU"/>
         <param name="rtp-timer-name" value="soft"/>
         <param name="local-network-acl" value="localnet.auto"/>
-        <param name="manage-presence" value="false"/>
+        <param name="manage-presence" value="true"/>
         <param name="inbound-codec-negotiation" value="generous"/>
         <param name="nonce-ttl" value="60"/>
         <param name="inbound-late-negotiation" value="true"/>
