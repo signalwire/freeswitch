@@ -66,7 +66,6 @@ VOLUME ["/tmp"]
 COPY    build/freeswitch.limits.conf /etc/security/limits.d/
 
 # Healthcheck to make sure the service is running
-SHELL       ["/bin/bash"]
 HEALTHCHECK --interval=15s --timeout=5s \
     CMD  fs_cli -x status | grep -q ^UP || exit 1
 
