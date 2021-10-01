@@ -2240,11 +2240,13 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
 	// switch_channel_t *channel = switch_core_session_get_channel(session);
+#ifndef NDEBUG
 	vlc_private_t *tech_pvt = switch_core_session_get_private(session);
 
 	// return SWITCH_STATUS_SUCCESS;
 
 	switch_assert(tech_pvt && tech_pvt->context);
+#endif
 
 	// // start play
 	// if (-1 == libvlc_media_player_play(tech_pvt->context->mp)) {
@@ -2511,12 +2513,16 @@ static switch_status_t vlc_write_frame(switch_core_session_t *session, switch_fr
 
 static switch_status_t vlc_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel;
+#endif
 	vlc_private_t *tech_pvt;
 	void *pop;
 
+#ifndef NDEBUG
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+#endif
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -2558,9 +2564,11 @@ static switch_status_t vlc_read_video_frame(switch_core_session_t *session, swit
 
 static switch_status_t vlc_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
+#ifndef NDEBUG
 	vlc_private_t *tech_pvt = switch_core_session_get_private(session);
 
 	assert(tech_pvt != NULL);
+#endif
 
 	switch (msg->message_id) {
 		case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:

@@ -35,6 +35,11 @@
  */
 #include <switch.h>
 #include <switch_version.h>
+#undef SWITCH_VERSION_REVISION
+#define SWITCH_VERSION_REVISION "telv48.0+git~1633101647~20211001T152047~75c4494e69"
+
+#undef SWITCH_VERSION_REVISION_HUMAN
+#define SWITCH_VERSION_REVISION_HUMAN "[Telnyx B2BUA Version 48 Build 0, git 1633101647 2021-10-01 15:20:47 +0000 75c4494e69, Built at Fri Oct  1 16:49:08 UTC 2021] "
 
 const char *switch_version_major_str = SWITCH_VERSION_MAJOR;
 const char *switch_version_minor_str = SWITCH_VERSION_MINOR;

@@ -493,6 +493,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 
@@ -501,20 +502,24 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_on_execute(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
+#ifndef NDEBUG
 	private_t *tech_pvt = NULL;
+#endif
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+#ifndef NDEBUG
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
@@ -595,6 +600,7 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 
@@ -603,6 +609,7 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL MODEM\n");
 
@@ -611,8 +618,10 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 
 static switch_status_t channel_on_reset(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	private_t *tech_pvt = (private_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s RESET\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
@@ -630,6 +639,7 @@ static switch_status_t channel_on_hibernate(switch_core_session_t *session)
 
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 
@@ -638,6 +648,7 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA\n");
 
@@ -646,24 +657,30 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
+#ifndef NDEBUG
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
+#endif
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int r, samples_wanted, samples_read = 0;
 	int16_t *data;
 
+#ifndef NDEBUG
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+#endif
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -700,12 +717,16 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
+#endif
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+#ifndef NDEBUG
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+#endif
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -721,11 +742,15 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel;
+#endif
 	private_t *tech_pvt;
 
+#ifndef NDEBUG
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+#endif
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);

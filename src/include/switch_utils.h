@@ -1346,12 +1346,12 @@ SWITCH_DECLARE(void *) switch_calloc(size_t nmemb, size_t size);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG
-#define switch_malloc(ptr, len) (void)( (!!(ptr = malloc(len))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__),abort(), 0), ptr )
-#define switch_zmalloc(ptr, len) (void)( (!!(ptr = calloc(1, (len)))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__),abort(), 0), ptr)
+#define switch_malloc(ptr, len) (void)( ((ptr = malloc(len))) != NULL ? ptr : (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__), abort(), ptr))
+#define switch_zmalloc(ptr, len) (void)( (ptr = calloc(1, (len))) != NULL ? ptr : (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__), abort(), ptr))
 #if (_MSC_VER >= 1500)			// VC9+
-#define switch_strdup(ptr, s) (void)( (!!(ptr = _strdup(s))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__),abort(), 0), ptr)
+#define switch_strdup(ptr, s) (void)( ( (ptr = _strdup(s))) != NULL ? ptr : (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__), abort(), ptr))
 #else
-#define switch_strdup(ptr, s) (void)( (!!(ptr = strdup(s))) || (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__),abort(), 0), ptr)
+#define switch_strdup(ptr, s) (void)( ( (ptr = strdup(s))) != NULL ? ptr : (fprintf(stderr,"ABORT! Malloc failure at: %s:%d", __FILE__, __LINE__), abort(), ptr))
 #endif
 #else
 #if (_MSC_VER >= 1500)            // VC9+

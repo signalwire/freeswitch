@@ -372,12 +372,13 @@ cng:
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
     crtp_private_t *tech_pvt;
+#ifndef NDEBUG
     switch_channel_t *channel;
     //int frames = 0, bytes = 0, samples = 0;
 
     channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
-
+#endif
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
