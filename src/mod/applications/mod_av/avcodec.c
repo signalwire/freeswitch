@@ -110,7 +110,7 @@ static void dump_encoder_ctx(AVCodecContext *ctx)
 #ifdef DUMP_ENCODER_CTX
 #define STRINGIFY(x) #x
 #define my_dump_int(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %d\n", ctx->x);
-#define my_dump_int64(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = % " SWITCH_INT64_T_FMT "\n", ctx->x);
+#define my_dump_int64(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %" SWITCH_INT64_T_FMT "\n", ctx->x);
 #define my_dump_float(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %f\n", ctx->x);
 #define my_dump_enum(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %d\n", ctx->x);
 #define my_dump_uint(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = 0x%x\n", ctx->x);

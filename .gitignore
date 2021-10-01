@@ -230,8 +230,6 @@ libs/libsndfile/src/version-metadata.rc
 libs/libsndfile/tests/pedantic-header-test.sh
 yum/RPMS
 yum/temp
-html5/verto/verto_communicator/bower_components/
-html5/verto/verto_communicator/node_modules/
 .vs/
 
 Freeswitch.2015.VC.db
@@ -263,6 +261,7 @@ libs/sofia-sip*/
 libs/sofia-sip*
 
 src/mod/applications/mod_test/test/test_asr
+src/mod/applications/mod_test/test/test_tts
 src/mod/event_handlers/mod_rayo/test/test_iks
 src/mod/event_handlers/mod_rayo/test/test_nlsml
 src/mod/event_handlers/mod_rayo/test/test_srgs

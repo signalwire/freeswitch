@@ -1450,6 +1450,24 @@ SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1fire(J
 }
 
 
+SWIGEXPORT jboolean JNICALL Java_org_freeswitch_swig_freeswitchJNI_Event_1merge(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+  jboolean jresult = 0 ;
+  Event *arg1 = (Event *) 0 ;
+  Event *arg2 = (Event *) 0 ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  (void)jarg2_;
+  arg1 = *(Event **)&jarg1; 
+  arg2 = *(Event **)&jarg2; 
+  result = (bool)(arg1)->merge(arg2);
+  jresult = (jboolean)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_EventConsumer_1events_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   switch_queue_t *arg2 = (switch_queue_t *) 0 ;

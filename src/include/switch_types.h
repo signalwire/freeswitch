@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -353,7 +353,8 @@ typedef enum {
 	ED_BRIDGE_READ = (1 << 4),
 	ED_BRIDGE_WRITE = (1 << 5),
 	ED_TAP_READ = (1 << 6),
-	ED_TAP_WRITE = (1 << 7)
+	ED_TAP_WRITE = (1 << 7),
+	ED_STEREO = (1 << 8)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
@@ -1415,6 +1416,7 @@ CF_HOLD_BLEG        - B leg is on hold
 CF_SERVICE			- Channel has a service thread
 CF_TAGGED			- Channel is tagged
 CF_WINNER			- Channel is the winner
+CF_REUSE_CALLER_PROFILE - Channel reuse caller profile 
 CF_CONTROLLED		- Channel is under control
 CF_PROXY_MODE		- Channel has no media
 CF_SUSPEND			- Suspend i/o
@@ -1467,6 +1469,7 @@ typedef enum {
 	CF_SERVICE,
 	CF_TAGGED,
 	CF_WINNER,
+	CF_REUSE_CALLER_PROFILE,
 	CF_CONTROLLED,
 	CF_PROXY_MODE,
 	CF_PROXY_OFF,
@@ -2865,6 +2868,8 @@ typedef struct switch_dial_leg_s switch_dial_leg_t;
 struct switch_dial_leg_list_s;
 typedef struct switch_dial_leg_list_s switch_dial_leg_list_t;
 
+struct switch_dial_handle_list_s;
+typedef struct switch_dial_handle_list_s switch_dial_handle_list_t;
 
 SWITCH_END_EXTERN_C
 #endif

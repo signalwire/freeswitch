@@ -1312,7 +1312,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 		break;
 
 	case SYNTHESIZER_HEADER_PROSODY_RATE:
-		if (switch_isdigit(*val) || *val == '.') {
+		if (switch_isdigit(*val) || *val == '.' || *val == '-') {
 			synth_hdr->prosody_param.rate.type = PROSODY_RATE_TYPE_RELATIVE_CHANGE;
 			synth_hdr->prosody_param.rate.value.relative = (float) atof(val);
 		} else if (!strcasecmp("x-slow", val)) {

@@ -16,6 +16,7 @@
 		<load module="mod_sndfile"/>
 		<load module="mod_dialplan_xml"/>
 		<load module="mod_sndfile"/>
+		<load module="mod_test"/>
       </modules>
     </configuration>
 

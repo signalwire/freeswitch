@@ -1,0 +1,14 @@
+<include/>
+    <gateway name="eavestest">
+      <param name="username" value="not-used"/>
+      <param name="password" value="not-used"/>
+      <param name="proxy" value="127.0.0.1"/>
+      <param name="register" value="false"/>
+      <param name="retry-seconds" value="30"/>
+      <param name="dtmf-type" value="rfc2833"/>
+      <variables>   
+        <variable name="rtp_secure_media"  value="false"  direction="outbound"/>  
+      </variables>
+    </gateway>
+</include>
+

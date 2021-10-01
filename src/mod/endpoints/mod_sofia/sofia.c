@@ -40,7 +40,7 @@
  *
  */
 #include "mod_sofia.h"
-
+#include <switch_ssl.h>
 
 extern su_log_t tport_log[];
 extern su_log_t iptsec_log[];
@@ -431,6 +431,7 @@ static void sofia_parse_all_invite_headers(sip_t const *sip, switch_core_session
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_to, "sip_i_to");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_call_id, "sip_i_call_id");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_cseq, "sip_i_cseq");
+	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_identity, "sip_i_identity");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_route, "sip_i_route");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_max_forwards, "sip_i_max_forwards");
 	sofia_add_invite_header_to_chanvars(channel, nh, sip->sip_proxy_require, "sip_i_proxy_require");
@@ -1749,6 +1750,10 @@ static void our_sofia_event_callback(nua_event_t event,
 					switch_channel_set_variable(channel, "sip_call_id", sip->sip_call_id->i_id);
 				}
 
+				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					switch_channel_set_variable(channel, "dlg_req_swap_direction", "true");
+				}
+
 				extract_header_vars(profile, sip, session, nh);
 				switch_core_recovery_track(session);
 				sofia_set_flag(tech_pvt, TFLAG_GOT_ACK);
@@ -2242,7 +2247,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 	if (de) {
 		pool = de->pool;
 		de->pool = NULL;
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_FALSE);
 	}
 
 	if (pool) {
@@ -2275,7 +2280,7 @@ void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 	switch_thread_pool_launch_thread(&td);
 }
 
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t stack_thread)
 {
 	sofia_dispatch_event_t *de = *dep;
 	nua_handle_t *nh = de->nh;
@@ -2294,8 +2299,15 @@ void sofia_process_dispatch_event(sofia_dispatch_event_t **dep)
 	profile->queued_events--;
 	switch_mutex_unlock(profile->flag_mutex);
 
-	nua_handle_unref(nh);
-	nua_unref(nua);
+	if (stack_thread) {
+		/* Safe to unref directly */
+		if (nh) nua_handle_unref(nh);
+		nua_unref(nua);
+	} else {
+		/* This is not a stack thread, need to call via stack (_user) using events */
+		if (nh) nua_handle_unref_user(nh);
+		nua_unref_user(nua);
+	}
 }
 
 
@@ -2332,7 +2344,7 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run(switch_thread_t *thread, void *obj
 
 		if (pop) {
 			sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) pop;
-			sofia_process_dispatch_event(&de);
+			sofia_process_dispatch_event(&de, SWITCH_FALSE);
 		} else {
 			break;
 		}
@@ -2386,7 +2398,8 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 	int launch = 0;
 
 	if (mod_sofia_globals.running == 0 || !mod_sofia_globals.msg_queue) {
-		sofia_process_dispatch_event(&de);
+		/* Calling with SWITCH_TRUE as we are sure this is the stack's thread */
+		sofia_process_dispatch_event(&de, SWITCH_TRUE);
 		return;
 	}
 
@@ -2451,11 +2464,16 @@ void sofia_event_callback(nua_event_t event,
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);
 
 						if (!zstr(tech_pvt->call_id)) {
+							char *uuid = strdup(switch_core_session_get_uuid(session));
 							tech_pvt->sofia_private = NULL;
 							tech_pvt->nh = NULL;
 							sofia_set_flag(tech_pvt, TFLAG_BYE);
 							switch_mutex_lock(profile->flag_mutex);
-							switch_core_hash_insert_auto_free(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
+
+							if (switch_core_hash_insert_auto_free(profile->chat_hash, tech_pvt->call_id, uuid) != SWITCH_STATUS_SUCCESS) {
+								switch_safe_free(uuid);
+							}
+
 							switch_mutex_unlock(profile->flag_mutex);
 							nua_handle_destroy(nh);
 						} else {
@@ -2523,7 +2541,7 @@ void sofia_event_callback(nua_event_t event,
 	de = su_alloc(nua_handle_get_home(nh), sizeof(*de));
 	memset(de, 0, sizeof(*de));
 	nua_save_event(nua, de->event);
-	de->nh = nua_handle_ref(nh);
+	de->nh = nh ? nua_handle_ref(nh) : NULL;
 	de->data = nua_event_data(de->event);
 	de->sip = sip_object(de->data->e_msg);
 	de->profile = profile;
@@ -3165,6 +3183,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_status_t st;
 	char qname [128] = "";
 
+#if defined(HAVE_OPENSSL)
+	char *key  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	char *cert  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	char *chain  = switch_core_sprintf(profile->pool, "%s/%s", profile->tls_cert_dir, "wss.pem");
+	SSL_CTX *ssl_ctx;
+	const SSL_METHOD *ssl_method = SSLv23_server_method();
+#endif
+
+	switch_bool_t ssl_error = SWITCH_FALSE;
+
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -3177,11 +3205,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (!sofia_glue_init_sql(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database [%s]!\n", profile->name);
 		sofia_profile_start_failure(profile, profile->name);
-		sofia_glue_del_profile(profile);
 		goto end;
 	}
 
-	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "precondition, 100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
+	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if ( (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) && switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -3200,6 +3227,42 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if ( (profile->tls_verify_policy & TPTLS_VERIFY_SUBJECTS_IN)  && profile->tls_verify_in_subjects_str && ! profile->tls_verify_in_subjects) {
 		profile->tls_verify_in_subjects = su_strlst_dup_split((su_home_t *)profile->nua, profile->tls_verify_in_subjects_str, "|");
 	}
+
+#if defined(HAVE_OPENSSL)
+	ssl_ctx = SSL_CTX_new((SSL_METHOD *)ssl_method);
+	switch_assert(ssl_ctx);
+
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_TLSv1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_COMPRESSION);
+
+	if (!SSL_CTX_use_certificate_chain_file(ssl_ctx, chain)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_use_certificate_file(ssl_ctx, cert, SSL_FILETYPE_PEM)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_use_PrivateKey_file(ssl_ctx, key, SSL_FILETYPE_PEM)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (!ssl_error && !SSL_CTX_check_private_key(ssl_ctx)) {
+		ssl_error = SWITCH_TRUE;
+	}
+
+	if (ssl_error) {
+		attempts = profile->bind_attempts;
+	}
+
+	SSL_CTX_free(ssl_ctx);
+#endif
 
 	do {
 		profile->nua = nua_create(profile->s_root,	/* Event loop */
@@ -3272,7 +3335,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 										 TPTAG_REUSE(0)),
 								  TAG_END());	/* Last tag should always finish the sequence */
 
-		if (!profile->nua) {
+		if (!ssl_error && !profile->nua) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s) ATTEMPT %d (RETRY IN %d SEC)\n",
 							  profile->name, profile->bindurl, attempts + 1, profile->bind_attempt_interval);
 			if (attempts < profile->bind_attempts) {
@@ -3283,11 +3346,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	} while (!profile->nua && attempts++ < profile->bind_attempts);
 
 	if (!profile->nua) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
-						  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
-						  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
+		if (!ssl_error) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
+							  "The likely causes for this are:\n" "1) Another application is already listening on the specified address.\n"
+							  "2) The IP the profile is attempting to bind to is not local to this system.\n", profile->name, profile->bindurl);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Error Creating SIP UA for profile: %s (%s). Bad WSS.PEM certificate.\n", profile->name, profile->bindurl);
+		}
+
 		sofia_profile_start_failure(profile, profile->name);
-		sofia_glue_del_profile(profile);
 		goto end;
 	}
 
@@ -3455,6 +3523,20 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
+	/* Do gateway cleanups */
+	sofia_glue_del_every_gateway(profile);
+	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+	sofia_glue_fire_events(profile);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
+
+	if (worker_thread) {
+		switch_thread_join(&st, worker_thread);
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Sofia worker thead failed to start\n");
+	}
 
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
@@ -3469,13 +3551,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 	sofia_clear_pflag_locked(profile, PFLAG_SHUTDOWN);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
-
-	if ( worker_thread ) {
-		switch_thread_join(&st, worker_thread);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Sofia worker thead failed to start\n");
-	}
 
 	sanity = 4;
 	while (profile->inuse) {
@@ -3524,6 +3599,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
+  end:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
 	switch_thread_rwlock_wrlock(profile->rwlock);
 
@@ -3545,7 +3621,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_profile_destroy(profile);
 
-  end:
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads--;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -6466,7 +6541,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		const char *uuid;
 		switch_core_session_t *other_session;
 		private_object_t *tech_pvt = switch_core_session_get_private(session);
-		char network_ip[80];
+		char network_ip[80] = "";
 		int network_port = 0;
 		switch_caller_profile_t *caller_profile = NULL;
 		int has_t38 = 0;
@@ -7070,8 +7145,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 			}
 
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+				 switch_channel_set_variable(channel, "dlg_req_swap_direction", "true");
+			}
+
 			extract_header_vars(profile, sip, session, nh);
 			extract_vars(profile, sip, session);
+			switch_core_recovery_track(session);
 			switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		}
 
@@ -7822,7 +7902,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 								}
-								nua_handle_unref(bnh);
+								nua_handle_unref_user(bnh);
 							}
 							su_home_unref(home);
 							home = NULL;
@@ -7875,7 +7955,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					//switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
 					sofia_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
 					//Moves into CS_INIT so call moves forward into the dialplan
-					switch_channel_set_state(channel, CS_INIT);
+					if (switch_channel_get_state(channel) == CS_NEW) {
+						switch_channel_set_state(channel, CS_INIT);
+					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "No SDP in INVITE and 3pcc not enabled, hanging up.\n");
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "3PCC DISABLED");
@@ -9254,7 +9336,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					}
 					switch_core_session_rwunlock(b_session);
 				}
-				nua_handle_unref(bnh);
+				nua_handle_unref_user(bnh);
 			} else {		/* the other channel is on a different box, we have to go find them */
 				if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 					switch_core_session_t *a_session;
@@ -10316,8 +10398,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s receiving invite from %s:%d version: %s\n",
-					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, switch_version_full_human());
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "%s receiving invite from %s:%d version: %s call-id: %s\n",
+					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, switch_version_full_human(), sip->sip_call_id ? switch_str_nil(sip->sip_call_id->i_id) : "");
 
 
 	if (sip->sip_via && sip->sip_via->v_protocol && switch_stristr("sip/2.0/ws", sip->sip_via->v_protocol)) {
@@ -10877,9 +10959,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (switch_channel_get_variable(channel, "sip_to_uri")) {
 			const char *ipv6;
 			const char *tmp, *at, *url = NULL;
-
+			const char *tmp_user = switch_channel_get_variable(channel, "sip_to_user");
+			
+			user = switch_core_session_url_encode(session, tmp_user);
 			host = switch_channel_get_variable(channel, "sip_to_host");
-			user = switch_channel_get_variable(channel, "sip_to_user");
 
 			switch_channel_set_variable(channel, "sip_to_comment", sip->sip_to->a_comment);
 
@@ -11308,7 +11391,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				switch_core_session_rwunlock(b_session);
 			}
 		}
-		nua_handle_unref(bnh);
+		nua_handle_unref_user(bnh);
 	} else if (sip->sip_replaces && sip->sip_replaces->rp_call_id) {
 		switch_core_session_t *b_session = NULL;
 		if ((b_session = switch_core_session_locate((char*) sip->sip_replaces->rp_call_id))) {
@@ -11351,6 +11434,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if (msg_params_find(privacy->priv_values, "id")) {
 				switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 			}
+		}
+
+		if (sip->sip_identity && sip->sip_identity->id_value) {
+			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
 		}
 
 		/* Loop thru unknown Headers Here so we can do something with them */

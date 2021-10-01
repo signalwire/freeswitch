@@ -940,6 +940,75 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool)
+{
+	switch_status_t status;
+	switch_file_handle_t *fh;
+	uint8_t destroy_pool = 0;
+
+	switch_assert(oldfh != NULL);
+	switch_assert(newfh != NULL);
+
+	if (!pool) {
+		if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+		destroy_pool = 1;
+	}
+
+	if (!(fh = switch_core_alloc(pool, sizeof(switch_file_handle_t)))) {
+		switch_goto_status(SWITCH_STATUS_MEMERR, err);
+	}
+
+	memcpy(fh, oldfh, sizeof(switch_file_handle_t));
+
+	if (!destroy_pool) {
+		switch_clear_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	} else {
+		fh->memory_pool = pool;
+		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	}
+
+	if ((status = switch_mutex_init(&fh->flag_mutex, SWITCH_MUTEX_NESTED, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_goto_status(status, err);
+	}
+
+#define DUP_CHECK(dup) if (oldfh->dup && !(fh->dup = switch_core_strdup(pool, oldfh->dup))) {switch_goto_status(SWITCH_STATUS_MEMERR, err);}
+
+	DUP_CHECK(prefix);
+	DUP_CHECK(modname);
+	DUP_CHECK(mm.auth_username);
+	DUP_CHECK(mm.auth_password);
+	DUP_CHECK(stream_name);
+	DUP_CHECK(file_path);
+	DUP_CHECK(handler);
+	DUP_CHECK(spool_path);
+	
+	fh->pre_buffer_data = NULL;
+	if (oldfh->pre_buffer_data) {
+		switch_size_t pre_buffer_data_size = oldfh->pre_buffer_datalen * oldfh->channels;
+		if (pre_buffer_data_size) {
+			if (!(fh->pre_buffer_data = switch_core_alloc(pool, pre_buffer_data_size))) {
+				switch_goto_status(SWITCH_STATUS_MEMERR, err);
+			}
+
+			memcpy(fh->pre_buffer_data, oldfh->pre_buffer_data, pre_buffer_data_size);
+		}
+	}
+
+	*newfh = fh;
+
+	return SWITCH_STATUS_SUCCESS;
+
+err:
+	if (destroy_pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;

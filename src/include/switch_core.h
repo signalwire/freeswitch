@@ -421,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
   \brief Read a frame from the bug
   \param bug the bug to read from
   \param frame the frame to write the data to
-  \return the amount of data
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame, switch_bool_t fill);
 
@@ -1360,6 +1360,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_
 SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
 
 /*!
+  \brief Reset the buffers and resampler on a session, fail if can not lock codec mutexes
+  \param session the session to reset
+  \param flush_dtmf flush all queued dtmf events too
+  \return SWITCH_STATUS_SUCCESS if the session was reset
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
+
+/*!
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
@@ -1974,6 +1982,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
   \return SWITCH_STATUS_SUCCESS if the file handle was pre closed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(_In_ switch_file_handle_t *fh);
+
+/*!
+  \brief Duplicates a file handle using another pool
+  \param oldfh the file handle to duplicate
+  \param newfh pointer to assign new file handle to
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the file handle was duplicated
+*/
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool);
 
 /*!
   \brief Close an open file handle
@@ -2812,6 +2830,7 @@ SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback_err(swi
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);

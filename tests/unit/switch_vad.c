@@ -148,6 +148,7 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(energy)
 		{
+			int res;
 			int16_t *buf = malloc(sizeof(int16_t) * 160);
 			int duration;
 			float pos = 0.0;
@@ -156,7 +157,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_vad_t *vad = switch_vad_init(8000, 1);
 			fst_requires(vad);
-			int res = switch_vad_set_mode(vad, -1);
+			res = switch_vad_set_mode(vad, -1);
 			fst_requires(res == 0);
 			switch_vad_set_param(vad, "silence_ms", 400);
 			switch_vad_set_param(vad, "voice_ms", 80);

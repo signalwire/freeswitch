@@ -82,6 +82,34 @@ FST_CORE_BEGIN("./conf")
 			switch_safe_free(var_default_password);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_sockaddr_new)
+		{
+			int type = SOCK_DGRAM;
+			switch_port_t port = 12044;
+			const char *ip = "127.0.0.1";
+
+			switch_memory_pool_t *pool = NULL;
+			switch_sockaddr_t *local_addr = NULL;
+			switch_socket_t *sock = NULL;
+			switch_bool_t r = SWITCH_FALSE;
+
+			if (switch_core_new_memory_pool(&pool) == SWITCH_STATUS_SUCCESS) {
+				if (switch_sockaddr_new(&local_addr, ip, port, pool) == SWITCH_STATUS_SUCCESS) {
+					if (switch_socket_create(&sock, switch_sockaddr_get_family(local_addr), type, 0, pool) == SWITCH_STATUS_SUCCESS) {
+						if (switch_socket_bind(sock, local_addr) == SWITCH_STATUS_SUCCESS) {
+							r = SWITCH_TRUE;
+						}
+						switch_socket_close(sock);
+					}
+				}
+
+				switch_core_destroy_memory_pool(&pool);
+			}
+
+			fst_check_int_equals(r, SWITCH_TRUE);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }

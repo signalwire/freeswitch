@@ -1011,7 +1011,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			rate = read_impl.actual_samples_per_second;
 			bpf = read_impl.decoded_bytes_per_packet;
 
-			if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+			if (rate && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
 				switch_core_session_get_read_impl(session, &imp);
 
 				if (switch_core_codec_init(&codec,
@@ -2192,7 +2192,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			extension = "service";
 		}
 
-		new_profile = switch_caller_profile_clone(session, profile);
+
+		if (switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
+			new_profile = switch_channel_get_caller_profile(channel);
+		} else {
+			new_profile = switch_caller_profile_clone(session, profile);
+		}
 
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, use_dialplan);
 		new_profile->context = switch_core_strdup(new_profile->pool, use_context);
@@ -2238,7 +2243,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			switch_core_session_rwunlock(other_session);
 		}
 
-		switch_channel_set_caller_profile(channel, new_profile);
+		if (!switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
+			switch_channel_set_caller_profile(channel, new_profile); 	
+		}
 
 		switch_channel_set_state(channel, CS_ROUTING);
 		switch_channel_audio_sync(channel);
@@ -2663,6 +2670,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 {
 	const char *name = (type == SWITCH_MEDIA_TYPE_VIDEO) ? "video" : "audio";
 	switch_xml_t x_stat, x_in, x_out, x_tmp = NULL;
+	int xoff = 0;
 	int loff = 0;
 	switch_rtp_stats_t *stats = switch_core_media_get_stats(session, type, NULL);
 	char var_val[35] = "";
@@ -2673,11 +2681,11 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 		abort();
 	}
 
-	if (!(x_in = switch_xml_add_child_d(x_stat, "inbound", off++))) {
+	if (!(x_in = switch_xml_add_child_d(x_stat, "inbound", xoff++))) {
 		abort();
 	}
 
-	if (!(x_out = switch_xml_add_child_d(x_stat, "outbound", off++))) {
+	if (!(x_out = switch_xml_add_child_d(x_stat, "outbound", xoff++))) {
 		abort();
 	}
 
@@ -2708,7 +2716,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 		switch_error_period_t *ep;
 		int eoff = 0;
 
-		if (!(x_err_log = switch_xml_add_child_d(x_stat, "error-log", off++))) {
+		if (!(x_err_log = switch_xml_add_child_d(x_stat, "error-log", xoff++))) {
 			abort();
 		}
 
@@ -2729,19 +2737,20 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 			switch_xml_set_txt_d(x_tmp, var_val);
 
 			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, ep->flaws);
-			x_tmp = switch_xml_add_child_d(x_err, "flaws", 1);
+			x_tmp = switch_xml_add_child_d(x_err, "flaws", 2);
 			switch_xml_set_txt_d(x_tmp, var_val);
 
 			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, ep->consecutive_flaws);
-			x_tmp = switch_xml_add_child_d(x_err, "consecutive-flaws", 1);
+			x_tmp = switch_xml_add_child_d(x_err, "consecutive-flaws", 3);
 			switch_xml_set_txt_d(x_tmp, var_val);
 
 			switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_TIME_T_FMT, (ep->stop - ep->start) / 1000);
-			x_tmp = switch_xml_add_child_d(x_err, "duration-msec", 2);
+			x_tmp = switch_xml_add_child_d(x_err, "duration-msec", 4);
 			switch_xml_set_txt_d(x_tmp, var_val);
 		}
 	}
 
+	loff=0;
 	add_stat(x_out, stats->outbound.raw_bytes, "raw_bytes");
 	add_stat(x_out, stats->outbound.media_bytes, "media_bytes");
 	add_stat(x_out, stats->outbound.packet_count, "packet_count");
@@ -2805,11 +2814,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile;
-	switch_xml_t variables, cdr, x_main_cp, x_caller_profile, x_caller_extension, x_times, time_tag,
+	switch_xml_t call_stats, variables, cdr, x_main_cp, x_caller_profile, x_caller_extension, x_times, time_tag,
 		x_application, x_callflow, x_inner_extension, x_apps, x_o, x_channel_data, x_field, xhr, x_hold;
 	switch_app_log_t *app_log;
 	char tmp[512], *f;
-	int cdr_off = 0, v_off = 0, cd_off = 0;
+	int cdr_off = 0, cd_off = 0;
 	switch_hold_record_t *hold_record = switch_channel_get_hold_record(channel), *hr;
 	const char *text_buffer = NULL;
 
@@ -2856,19 +2865,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		free(f);
 	}
 
-	if (!(variables = switch_xml_add_child_d(cdr, "call-stats", cdr_off++))) {
+	if (!(call_stats = switch_xml_add_child_d(cdr, "call-stats", cdr_off++))) {
 		goto error;
 	}
 
-	switch_ivr_set_xml_call_stats(variables, session, v_off, SWITCH_MEDIA_TYPE_AUDIO);
-	switch_ivr_set_xml_call_stats(variables, session, v_off, SWITCH_MEDIA_TYPE_VIDEO);
+	switch_ivr_set_xml_call_stats(call_stats, session, 0, SWITCH_MEDIA_TYPE_AUDIO);
+	switch_ivr_set_xml_call_stats(call_stats, session, 0, SWITCH_MEDIA_TYPE_VIDEO);
 
 
 	if (!(variables = switch_xml_add_child_d(cdr, "variables", cdr_off++))) {
 		goto error;
 	}
 
-	switch_ivr_set_xml_chan_vars(variables, channel, v_off);
+	switch_ivr_set_xml_chan_vars(variables, channel, 0);
 
 
 	if ((app_log = switch_core_session_get_app_log(session))) {
@@ -3513,8 +3522,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_set_state(channel, CS_PARK);
 	switch_channel_set_flag(channel, CF_TRANSFER);
+	switch_channel_set_state(channel, CS_PARK);
 
 }
 
@@ -3852,7 +3861,7 @@ static const char *get_prefixed_str(char *buffer, size_t buffer_size, const char
 
 	if (str_len + prefix_size + 1 > buffer_size) {
 		memcpy(buffer + prefix_size, str, buffer_size - prefix_size - 1);
-		buffer[buffer_size - prefix_size - 1] = '\0';
+		buffer[buffer_size - 1] = '\0';
 	} else {
 		memcpy(buffer + prefix_size, str, str_len + 1);
 	}

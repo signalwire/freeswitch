@@ -1534,6 +1534,7 @@ static switch_status_t httapi_sync(client_t *client)
 		char *q, *p = strstr(dynamic_url, "://");
 		use_url++;
 
+		switch_safe_free(dup_creds);
 		dup_creds = strdup(p+3);
 		*p = '\0';
 
@@ -1738,7 +1739,7 @@ static switch_status_t do_config(void)
 				if (tmp > -1) {
 					globals.abs_cache_ttl = tmp;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s]for file-cache-ttl\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s]for abs-file-cache-ttl\n", val);
 				}
 
 			} else if (!strcasecmp(var, "file-not-found-expires")) {

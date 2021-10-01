@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1026,8 +1026,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core
 		msg->message_id = indication;
 		msg->from = __FILE__;
 		switch_set_flag(msg, SCSMF_DYNAMIC);
-		switch_core_session_queue_message(session, msg);
-		return SWITCH_STATUS_SUCCESS;
+
+		if (switch_core_session_queue_message(session, msg) == SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		free(msg);
 	}
 
 	return SWITCH_STATUS_FALSE;
@@ -1360,6 +1364,23 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 	return x;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
+		if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_reset(session, flush_dtmf, reset_read_codec);
+			switch_mutex_unlock(session->codec_write_mutex);
+			status = SWITCH_STATUS_SUCCESS;
+		}
+
+		switch_mutex_unlock(session->codec_read_mutex);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1388,17 +1409,6 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_mutex_lock(session->codec_read_mutex);
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_mutex_unlock(session->codec_read_mutex);
-
-	switch_mutex_lock(session->video_codec_write_mutex);
-	switch_buffer_destroy(&session->video_raw_write_buffer);
-	switch_mutex_unlock(session->video_codec_write_mutex);
-
-	switch_mutex_lock(session->video_codec_read_mutex);
-	switch_buffer_destroy(&session->video_raw_read_buffer);
-	switch_mutex_unlock(session->video_codec_read_mutex);
-
-	//video_raw_read_frame.data is dynamically allocated if necessary, so wipe this also
-	switch_safe_free(session->video_raw_read_frame.data);
 
 	if (flush_dtmf) {
 		while ((has = switch_channel_has_dtmf(channel))) {
@@ -2417,10 +2427,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->stack_count_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->codec_init_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
-	switch_mutex_init(&session->video_codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
-	switch_mutex_init(&session->video_codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->frame_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);

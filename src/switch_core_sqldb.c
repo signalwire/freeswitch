@@ -3695,7 +3695,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery1 on recovery(technology)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery2 on recovery(profile_name)", NULL);
 	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery3 on recovery(uuid)", NULL);
-	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery3 on recovery(runtime_uuid)", NULL);
+	switch_cache_db_create_schema(sql_manager.dbh, "create index recovery4 on recovery(runtime_uuid)", NULL);
 
 
 

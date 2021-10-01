@@ -141,7 +141,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  */
 #define fst_session_park(session) \
 	switch_ivr_park_session(session); \
-	switch_channel_wait_for_state(switch_core_session_get_channel(session), NULL, CS_PARK);
+	switch_channel_wait_for_flag(switch_core_session_get_channel(session), CF_PARK, SWITCH_TRUE, 10000, NULL);
 
 /**
  * check for test requirement - execute teardown on failure
@@ -811,11 +811,12 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  */
 #define fst_sched_recv_dtmf(when, digits) \
 { \
+	switch_status_t api_result; \
 	switch_stream_handle_t stream = { 0 }; \
 	SWITCH_STANDARD_STREAM(stream); \
 	fst_requires(fst_core > 1); \
 	fst_requires_module("mod_commands"); \
-	switch_status_t api_result = switch_api_execute("sched_api", switch_core_session_sprintf(fst_session, "%s none uuid_recv_dtmf %s %s", when, switch_core_session_get_uuid(fst_session), digits), NULL, &stream); \
+	api_result = switch_api_execute("sched_api", switch_core_session_sprintf(fst_session, "%s none uuid_recv_dtmf %s %s", when, switch_core_session_get_uuid(fst_session), digits), NULL, &stream); \
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fst_session), SWITCH_LOG_INFO, "Injecting DTMF %s at %s\n", digits, when); \
 	fst_requires(api_result == SWITCH_STATUS_SUCCESS); \
 	switch_safe_free(stream.data); \

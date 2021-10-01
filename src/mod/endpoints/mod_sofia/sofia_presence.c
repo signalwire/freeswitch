@@ -4284,7 +4284,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 						}
 					}
 				}
+
+				switch_xml_free(xml);
 			}
+
+			switch_safe_free(pd_dup);
 		}
 		switch_event_fire(&event);
 	} else if (!strcasecmp(event, "message-summary")) {
