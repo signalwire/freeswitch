@@ -1233,6 +1233,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	sip_p_asserted_identity_t *passerted = NULL;
+	sip_p_preferred_identity_t* ppreferred = NULL;
 	char *name = NULL;
 	const char *number = "unknown", *tmp;
 	switch_caller_profile_t *caller_profile;
@@ -1307,6 +1308,22 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 			}
 			if (!zstr(rpid->rpid_display)) {
 				dup = strdup(rpid->rpid_display);
+				switch_assert(dup);
+				if (*dup == '"') {
+					name = dup + 1;
+				} else {
+					name = dup;
+				}
+				if (end_of(name) == '"') {
+					end_of(name) = '\0';
+				}
+			}
+		} else if ((ppreferred = sip_p_preferred_identity(sip))) {
+			if (ppreferred->ppid_url->url_user) {
+				number = ppreferred->ppid_url->url_user;
+			}
+			if (!zstr(ppreferred->ppid_display)) {
+				dup = strdup(ppreferred->ppid_display);
 				switch_assert(dup);
 				if (*dup == '"') {
 					name = dup + 1;
