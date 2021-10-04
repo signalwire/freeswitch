@@ -739,6 +739,11 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 		case PGRES_COPY_IN:
 		case PGRES_COMMAND_OK:
 			break;
+//#if POSTGRESQL_MAJOR_VERSION >= 14
+		case PGRES_PIPELINE_ABORTED:
+		case PGRES_PIPELINE_SYNC:
+			break;
+//#endif
 		case PGRES_EMPTY_QUERY:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Query (%s) returned PGRES_EMPTY_QUERY\n", handle->sql);
 		case PGRES_BAD_RESPONSE:
