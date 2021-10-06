@@ -10,3 +10,7 @@
 perf.data
 perf.data.old
 Makefile.in
+
+freeswitch.xml.fsxml.tmp
+test-argb.png
+test-rgb.png

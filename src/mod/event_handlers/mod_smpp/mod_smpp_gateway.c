@@ -112,15 +112,15 @@ switch_status_t mod_smpp_gateway_authenticate(mod_smpp_gateway_t *gateway) {
 	strncpy( (char *)req_b->address_range, gateway->host, sizeof(req_b->address_range));
 
 	if ( gateway->system_id ) {
-		strncpy((char *)req_b->system_id, gateway->system_id, sizeof(req_b->system_id));
+		snprintf((char *)req_b->system_id, sizeof(req_b->system_id), "%s",  gateway->system_id);
 	}
 
 	if ( gateway->password ) {
-		strncpy((char *)req_b->password, gateway->password, sizeof(req_b->password));
+		snprintf((char *)req_b->password, sizeof(req_b->password), "%s", gateway->password);
 	}
 
 	if ( gateway->system_type ) {
-		strncpy((char *)req_b->system_type, gateway->system_type, sizeof(req_b->system_type));
+		snprintf((char *)req_b->system_type, sizeof(req_b->system_type), "%s", gateway->system_type);
 	}
 
     req_b->interface_version = SMPP_VERSION;

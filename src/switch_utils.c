@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Juan Jose Comellas <juanjo@comellas.org>
  * Seven Du <dujinfang@gmail.com>
- *
+ * Windy Wang <xiaofengcanyuexp@163.com>
  *
  * switch_utils.c -- Compatibility and Helper Code
  *
@@ -39,6 +39,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
+#include <sys/types.h>
+#include <unistd.h>
+#else
+ /* process.h is required for _getpid() */
+#include <process.h>
 #endif
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
@@ -65,6 +70,11 @@ struct switch_network_list {
 	switch_memory_pool_t *pool;
 	char *name;
 };
+
+SWITCH_DECLARE(void *) switch_calloc(size_t nmemb, size_t size)
+{
+	return calloc(nmemb, size);
+}
 
 #ifndef WIN32
 SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst)
@@ -1071,7 +1081,7 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 
 		while (l >= 8) {
 			op[ol++] = (char) ((b >> (l -= 8)) % 256);
-			if (ol >= olen - 2) {
+			if (ol >= olen - 1) {
 				goto end;
 			}
 		}
@@ -4166,11 +4176,12 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 	char *q;
 	char *next;
 	char *name, *val;
+	char *dup = NULL;
 
 	if (qs) {
 		q = qs;
 	} else { /*parse our own qs, dup to avoid modify the original string */
-		q = strdup(request->qs);
+		dup = q = strdup(request->qs);
 	}
 
 	switch_assert(q);
@@ -4197,9 +4208,7 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 		q = next;
 	} while (q);
 
-	if (!qs) {
-		switch_safe_free(q);
-	}
+	switch_safe_free(dup);
 }
 
 /* clean the uri to protect us from vulnerability attack */
@@ -4529,6 +4538,16 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str)
 	return text;
 }
 
+SWITCH_DECLARE(unsigned long) switch_getpid(void)
+{
+#ifndef WIN32
+	pid_t pid = getpid();
+#else
+	int pid = _getpid();
+#endif
+
+	return (unsigned long)pid;
+}
 
 
 /* For Emacs:

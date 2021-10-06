@@ -385,7 +385,6 @@ static switch_status_t pl_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 	if (say_date) {
 		say_year = say_month = say_day = say_dow = 1;
-		say_today = say_yesterday = 0;
 	}
 
 	if (say_day) {

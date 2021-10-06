@@ -201,7 +201,6 @@ static switch_status_t v8_mod_load_file(const char *filename)
 	function_handle = (switch_loadable_module_function_table_t *)switch_dso_data_sym(dso, "v8_mod_init", &derr);
 
 	if (!function_handle || derr) {
-		status = SWITCH_STATUS_FALSE;
 		err = derr;
 		goto err;
 	}
@@ -1243,7 +1242,8 @@ inline static void stream_write_safe_d(switch_stream_handle_t *stream, const cha
 SWITCH_STANDARD_API(process_status_function)
 {
 	char *mydata = NULL, *argv[3] = { 0 };
-	char *as = NULL, *output_text = NULL, *delim = ",";	
+	const char *as = NULL, *delim = ",";
+	char *output_text = NULL;
 	cJSON *json = NULL, *row;
 	switch_xml_t xml = NULL, xml_row, xml_field;
 	int rows = 0, f_off = 0, count = 0;
@@ -1458,7 +1458,7 @@ SWITCH_STANDARD_API(process_status_function)
 
 	} else if (!strcasecmp(as, "xml")) {
 		switch_snprintf(tmp_str, sizeof(tmp_str), "%u", count);
-		switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup("row_count"), strdup(tmp_str));
+		switch_xml_set_attr_d(xml, "row_count", tmp_str);
 
 		output_text = switch_xml_toxml(xml, SWITCH_FALSE);
 

@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.1-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.6-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [1-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [6-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -699,7 +699,13 @@ AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Spe
 AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
 AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
 have_libpq=no
+save_LIBS="${LIBS}"
+save_CPPFLAGS="${CPPFLAGS}"
+LIBS="${POSTGRESQL_LDFLAGS}"
+CPPFLAGS="${POSTGRESQL_CFLAGS}"
 AC_CHECK_LIB([pq], [PQgetvalue], [have_libpq="yes"])
+LIBS="${save_LIBS}"
+CPPFLAGS="${save_CPPFLAGS}"
 AM_CONDITIONAL([HAVE_PGSQL],[test "${have_libpq}" = "yes"])
 AC_SUBST([POSTGRESQL_CFLAGS], [$POSTGRESQL_CFLAGS])
 AC_SUBST([POSTGRESQL_LDFLAGS], [$POSTGRESQL_LDFLAGS])
@@ -708,7 +714,21 @@ AC_SUBST([POSTGRESQL_LIBDIR], [$POSTGRESQL_LIBDIR])
 
 PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   AM_CONDITIONAL([HAVE_MARIADB],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])])
+  PKG_CHECK_MODULES([MARIADB], [mariadb >= 3.0.9],[
+    AM_CONDITIONAL([HAVE_MARIADB],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])
+  ])
+])
+
+PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
+  AM_CONDITIONAL([HAVE_SPANDSP],[true])],[
+    AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
+])
+
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.3],[
+  AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
+    AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
+])
 
 AC_ARG_ENABLE(deprecated-core-db-events,
 	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])
@@ -846,7 +866,7 @@ APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
 fi
 
 # Telnyx C++ Dependencies
-APR_ADDTO([PLATFORM_CORE_LIBS], [-lboost_thread -lboost_program_options -lboost_system -lboost_filesystem -lPocoFoundation -lPocoNetSSL -lPocoNet -lpcap -lzmq])
+APR_ADDTO([PLATFORM_CORE_LIBS], [-lboost_thread -lboost_program_options -lboost_system -lboost_filesystem -lPocoFoundation -lPocoNetSSL -lPocoNet -lpcap -lzmq -ldb -ldb_cxx])
 
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
@@ -1055,14 +1075,17 @@ fi
 CFLAGS="$saved_CFLAGS"
 
 if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
+     saved_CFLAGS="$CFLAGS"
      # Next check added for Xcode 5 and systems with clang 5 llvm 3.3 or above, extended offset must be off
      AC_CACHE_CHECK([whether compiler supports -Wextended-offsetof], [ac_cv_clang_extended_offsetof], [
+       CFLAGS="$CFLAGS -Wno-extended-offsetof"
        AC_TRY_COMPILE([],[return 0;],[ac_cv_clang_extended_offsetof=yes],[ac_cv_clang_extended_offsetof=no])
      ])
      AC_MSG_RESULT($ac_cv_clang_extended_offsetof)
      if test x"$ac_cv_clang_extended_offsetof" = xyes; then
          APR_ADDTO(CFLAGS, -Wno-extended-offsetof)
      fi
+     CFLAGS="$saved_CFLAGS"
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
@@ -1263,7 +1286,7 @@ if test "$cross_compiling" != "yes" && test -f /usr/lib/pkg-config/libldns.pc; t
 fi
 
 module_enabled() {
-  grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
+  grep -v -e "\#" -e "^\$" modules.conf | sed 's/|.*//' | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
 }
 
 AC_ARG_WITH(png,
@@ -1664,7 +1687,7 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
    PHP=php
    PHP_CONFIG=php-config
    PHP_LDFLAGS="`$PHP_CONFIG --ldflags`"
-   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto)//g'`"
+   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre2-8|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto|argon2|sodium)//g'`"
    PHP_EXT_DIR="`$PHP_CONFIG --extension-dir`"
    PHP_INC_DIR="`$PHP -r 'echo ini_get("include_path");' | cut -d: -f2`"
    PHP_INI_DIR="`$PHP_CONFIG --configure-options | tr " " "\n" | grep -- --with-config-file-scan-dir | cut -f2 -d=`"
@@ -1873,7 +1896,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
-		src/mod/applications/mod_http_cache/test/Makefile
 		src/mod/applications/mod_ladspa/Makefile
 		src/mod/applications/mod_lcr/Makefile
 		src/mod/applications/mod_limit/Makefile
@@ -1901,7 +1923,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_spy/Makefile
 		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_test/Makefile
-		src/mod/applications/mod_test/test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile
 		src/mod/applications/mod_vmd/Makefile
@@ -1970,7 +1991,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
-		src/mod/event_handlers/mod_rayo/test/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
@@ -1978,6 +1998,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
 		src/mod/formats/mod_opusfile/Makefile
+		src/mod/formats/mod_png/Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
@@ -1987,7 +2008,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_portaudio_stream/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
-		src/mod/languages/mod_lua/test/Makefile
 		src/mod/languages/mod_managed/Makefile
 		src/mod/languages/mod_perl/Makefile
 		src/mod/languages/mod_python/Makefile
@@ -2032,6 +2052,7 @@ AC_CONFIG_FILES([Makefile
 		build/getlib.sh
 		build/getg729.sh
 		build/freeswitch.pc
+		build/standalone_module/freeswitch.pc
 		build/modmake.rules
                 libs/esl/Makefile
                 libs/esl/perl/Makefile
@@ -2055,12 +2076,14 @@ AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])
 #LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
 LIBTOOL='$(SHELL) $(switch_builddir)/libtool'
 TOUCH_TARGET='if test -f "$@";then touch "$@";fi;'
-CONF_MODULES='$$(grep -v "\#" $(switch_builddir)/modules.conf | sed -e "s|^.*/||" | sort | uniq )'
-CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed -e "s|^.*/||" | sort | uniq )'
+CONF_MODULES='$$(grep -v "\#" $(switch_builddir)/modules.conf | sed "s/|.*//" | sed -e "s|^.*/||" | sort | uniq )'
+CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed "s/|.*//" | sed -e "s|^.*/||" | sort | uniq )'
 OUR_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-all ; done )"; echo $$mods )'
 OUR_CLEAN_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-clean ; done )"; echo $$mods )'
 OUR_INSTALL_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-install ; done)"; echo $$mods )'
 OUR_UNINSTALL_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-uninstall ; done)"; echo $$mods )'
+OUR_TEST_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-print_tests ; done )"; echo $$mods )'
+OUR_CHECK_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-check ; done )"; echo $$mods )'
 OUR_DISABLED_MODS='$$(tmp_mods="$(CONF_DISABLED_MODULES)"; mods="$$(for i in $$tmp_mods ; do echo $$i-all ; done )"; echo $$mods )'
 OUR_DISABLED_CLEAN_MODS='$$(tmp_mods="$(CONF_DISABLED_MODULES)";  mods="$$(for i in $$tmp_mods ; do echo $$i-clean ; done )"; echo $$mods )'
 OUR_DISABLED_INSTALL_MODS='$$(tmp_mods="$(CONF_DISABLED_MODULES)"; mods="$$(for i in $$tmp_mods ; do echo $$i-install ; done)"; echo $$mods )'
@@ -2075,6 +2098,8 @@ AC_SUBST(CONF_MODULES)
 
 AC_SUBST(OUR_MODS)
 AC_SUBST(OUR_CLEAN_MODS)
+AC_SUBST(OUR_TEST_MODS)
+AC_SUBST(OUR_CHECK_MODS)
 AC_SUBST(OUR_INSTALL_MODS)
 AC_SUBST(OUR_UNINSTALL_MODS)
 AC_SUBST(OUR_DISABLED_MODS)
@@ -2098,10 +2123,8 @@ if test "$use_system_aprutil" != "yes"; then
 fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/sofia-sip])
 AC_CONFIG_SUBDIRS([libs/freetdm])
 AC_CONFIG_SUBDIRS([libs/unimrcp])
-AC_CONFIG_SUBDIRS([libs/spandsp])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi

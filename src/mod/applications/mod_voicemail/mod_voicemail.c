@@ -3855,6 +3855,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 				total_new_messages = total_saved_messages = 0;
 				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
+				free(hi);
 			}
 			switch_mutex_unlock(globals.mutex);
 		}
@@ -5146,6 +5147,8 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 			switch_safe_free(sql);
 		} else {
 			stream->write_function(stream, "-ERR Recording doesn't exist [%s]\n", final_file_path);
+			profile_rwunlock(profile);
+			goto done;
 		}
 		profile_rwunlock(profile);
 	}
@@ -5979,7 +5982,6 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 
 	if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Can't locate user.\n");
-		switch_xml_free(x_user);
 		goto done;
 	}
 
@@ -6105,6 +6107,10 @@ SWITCH_STANDARD_API(vm_fsdb_msg_email_function)
 	stream->write_function(stream, "-OK\n");
 done:
 	switch_core_destroy_memory_pool(&pool);
+
+	if (x_user) {
+		switch_xml_free(x_user);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

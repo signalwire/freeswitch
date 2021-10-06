@@ -36,6 +36,8 @@ static switch_mutex_t **ssl_mutexes;
 static switch_memory_pool_t *ssl_pool = NULL;
 static int ssl_count = 0;
 
+#if OPENSSL_VERSION_NUMBER <= 0x10100000
+
 static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, int line)
 {
 	if (mode & CRYPTO_LOCK) {
@@ -46,10 +48,12 @@ static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, 
 	}
 }
 
-static inline unsigned long switch_ssl_ssl_thread_id(void)
+static inline void switch_ssl_ssl_thread_id(CRYPTO_THREADID *id)
 {
-	return (unsigned long) switch_thread_self();
+	CRYPTO_THREADID_set_numeric(id, (unsigned long)switch_thread_self());
 }
+
+#endif
 
 SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 {
@@ -69,8 +73,10 @@ SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 			switch_assert(ssl_mutexes[i] != NULL);
 		}
 
-		CRYPTO_set_id_callback(switch_ssl_ssl_thread_id);
+#if OPENSSL_VERSION_NUMBER <= 0x10100000
+		CRYPTO_THREADID_set_callback(switch_ssl_ssl_thread_id);
 		CRYPTO_set_locking_callback((void (*)(int, int, const char*, int))switch_ssl_ssl_lock_callback);
+#endif
 	}
 
 	ssl_count++;
@@ -90,6 +96,10 @@ SWITCH_DECLARE(void) switch_ssl_destroy_ssl_locks(void)
 
 		OPENSSL_free(ssl_mutexes);
 		ssl_count--;
+	}
+
+	if (ssl_pool) {
+		switch_core_destroy_memory_pool(&ssl_pool);
 	}
 }
 
@@ -320,6 +330,67 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	return(0);
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
+{
+	char *pem = NULL, *old_pem = NULL;
+	FILE *fp = NULL;
+	EVP_PKEY *pkey = NULL;
+	int bits = 0;
+
+	if (switch_is_file_path(file)) {
+		pem = strdup(file);
+	} else {
+		pem = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, file);
+	}
+
+	if (switch_file_exists(pem, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_safe_free(pem);
+
+		return SWITCH_FALSE;
+	}
+
+	fp = fopen(pem, "r");
+	if (!fp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open %s: %s\n", pem, strerror(errno));
+		goto rename_pem;
+	}
+
+	pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+	fclose(fp);
+
+	if (!pkey) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot read key %s: %s\n", pem, ERR_error_string(ERR_get_error(), NULL));
+		goto rename_pem;
+	}
+
+	bits = EVP_PKEY_bits(pkey);
+	EVP_PKEY_free(pkey);
+
+	if (bits < 4096) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s cryptographic length is too short (%d), it will be regenerated\n", pem, bits);
+		goto rename_pem;
+	}
+
+	switch_safe_free(pem);
+
+	return SWITCH_TRUE;
+
+rename_pem:
+
+	old_pem = switch_mprintf("%s.old", pem);
+
+	if (rename(pem, old_pem) != -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Renamed %s to %s\n", pem, old_pem);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rename %s: %s\n", pem, strerror(errno));
+	}
+
+	switch_safe_free(old_pem);
+	switch_safe_free(pem);
+
+	return SWITCH_FALSE;
+}
+
 #if 0
 static void callback(int p, int n, void *arg)
 {
@@ -382,7 +453,7 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 
 	rsa = NULL;
 
-	X509_set_version(x, 0);
+	X509_set_version(x, 2);
 	ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
 	X509_gmtime_adj(X509_get_notBefore(x), -(long)60*60*24*7);
 	X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);

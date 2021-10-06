@@ -129,6 +129,10 @@ switch_status_t kazoo_config_loglevels(switch_memory_pool_t *pool, switch_xml_t 
 	loglevels->warn_log_level = SWITCH_LOG_WARNING;
 	loglevels->success_log_level = SWITCH_LOG_DEBUG;
 	loglevels->time_log_level = SWITCH_LOG_DEBUG1;
+	loglevels->trace_log_level = SWITCH_LOG_DEBUG1;
+	loglevels->debug_log_level = SWITCH_LOG_DEBUG;
+	loglevels->error_log_level = SWITCH_LOG_ERROR;
+	loglevels->hashing_log_level = SWITCH_LOG_DEBUG1;
 
 	if ((xml_logging = switch_xml_child(cfg, "logging")) != NULL) {
 		for (xml_level = switch_xml_child(xml_logging, "log"); xml_level; xml_level = xml_level->next) {
@@ -159,6 +163,14 @@ switch_status_t kazoo_config_loglevels(switch_memory_pool_t *pool, switch_xml_t 
 				loglevels->filtered_event_log_level = log_str2level(val);
 			} else if (!strncmp(var, "filtered-field", 14)) {
 				loglevels->filtered_field_log_level = log_str2level(val);
+			} else if (!strncmp(var, "trace", 5)) {
+				loglevels->trace_log_level = log_str2level(val);
+			} else if (!strncmp(var, "debug", 5)) {
+				loglevels->debug_log_level = log_str2level(val);
+			} else if (!strncmp(var, "error", 5)) {
+				loglevels->error_log_level = log_str2level(val);
+			} else if (!strncmp(var, "hashing", 7)) {
+				loglevels->hashing_log_level = log_str2level(val);
 			}
 		} /* xml_level for loop */
 	}
@@ -247,6 +259,7 @@ switch_status_t kazoo_config_field(kazoo_config_ptr definitions, switch_memory_p
 	const char *type = switch_xml_attr(cfg, "type");
 	const char *exclude_prefix = switch_xml_attr(cfg, "exclude-prefix");
 	const char *serialize_as = switch_xml_attr(cfg, "serialize-as");
+	const char *as_array = switch_xml_attr(cfg, "as-array");
 	kazoo_field_ptr cur = (kazoo_field_ptr) switch_core_alloc(pool, sizeof(kazoo_field));
 	cur->in_type = FIELD_NONE;
 	cur->out_type = JSON_NONE;
@@ -290,6 +303,10 @@ switch_status_t kazoo_config_field(kazoo_config_ptr definitions, switch_memory_p
 		} else if (!strncmp(serialize_as, "raw", 6)) {
 			cur->out_type = JSON_RAW;
 		}
+	}
+
+	if(as_array) {
+		cur->out_type_as_array = switch_true(as_array);
 	}
 
 	if(exclude_prefix)

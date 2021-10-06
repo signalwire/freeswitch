@@ -44,6 +44,10 @@
 
       <!-- one or more of these imply you want to pick the exact variables that are transmitted -->
       <!--<param name="enable-post-var" value="Unique-ID"/>-->
+
+      <!-- optional: maximum response size for this binding in bytes. 
+           Defaults to XML_CURL_MAX_BYTES (1MB) if omitted -->
+      <!--<param name="response-max-bytes" value="10485760"/>-->
     </binding>
   </bindings>
 </configuration>

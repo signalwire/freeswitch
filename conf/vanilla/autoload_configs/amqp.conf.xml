@@ -57,6 +57,10 @@
 	<param name="exchange-name" value="TAP.Commands"/>
 	<param name="binding_key" value="commandBindingKey"/>
 	<param name="reconnect_interval_ms" value="1000"/>
+	<param name="queue-passive" value="false"/>
+	<param name="queue-durable" value="false"/>
+	<param name="queue-exclusive" value="false"/>
+	<param name="queue-auto-delete" value="true"/>
       </params>
     </profile>
   </commands>

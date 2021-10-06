@@ -285,6 +285,8 @@ SWITCH_DECLARE(switch_vid_spy_fmt_t) switch_media_bug_parse_spy_fmt(const char *
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
+  \param function user defined module/function/reason identifying this bug
+  \param target user defined identification of the target of the bug
   \param callback a callback for events
   \param user_data arbitrary user data
   \param stop_time absolute time at which the bug is automatically removed (or 0)
@@ -419,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
   \brief Read a frame from the bug
   \param bug the bug to read from
   \param frame the frame to write the data to
-  \return the amount of data
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame, switch_bool_t fill);
 
@@ -625,6 +627,8 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 ///\}
 
 SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, const char *tag);
+
+SWITCH_DECLARE(void) switch_core_pool_stats(switch_stream_handle_t *stream);
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(_Out_ switch_memory_pool_t **pool,
 																	_In_z_ const char *file, _In_z_ const char *func, _In_ int line);
@@ -1362,6 +1366,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_
 SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
 
 /*!
+  \brief Reset the buffers and resampler on a session, fail if can not lock codec mutexes
+  \param session the session to reset
+  \param flush_dtmf flush all queued dtmf events too
+  \return SWITCH_STATUS_SUCCESS if the session was reset
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
+
+/*!
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
@@ -1429,6 +1441,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t *
   \return SWITCH_STATUS_SUCCESS if the hash is destroyed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t **hash);
+
+/*!
+  \brief Insert data into a hash and set flags so the value is automatically freed on delete
+  \param hash the hash to add data to
+  \param key the name of the key to add the data to
+  \param data the data to add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data);
 
 /*!
   \brief Insert data into a hash
@@ -1849,6 +1871,13 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(_In_ 
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename);
 
 /*!
+  \brief Open a core db (SQLite) in-memory
+  \param uri to the db to open
+  \return the db handle
+*/
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_in_memory(const char *uri);
+
+/*!
   \brief Execute a sql stmt until it is accepted
   \param db the db handle
   \param sql the sql to execute
@@ -1959,6 +1988,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
   \return SWITCH_STATUS_SUCCESS if the file handle was pre closed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(_In_ switch_file_handle_t *fh);
+
+/*!
+  \brief Duplicates a file handle using another pool
+  \param oldfh the file handle to duplicate
+  \param newfh pointer to assign new file handle to
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the file handle was duplicated
+*/
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool);
 
 /*!
   \brief Close an open file handle
@@ -2484,7 +2523,8 @@ typedef int (*switch_core_db_event_callback_func_t) (void *pArg, switch_event_t 
 #define CACHE_DB_LEN 256
 typedef enum {
 	CDF_INUSE = (1 << 0),
-	CDF_PRUNE = (1 << 1)
+	CDF_PRUNE = (1 << 1),
+	CDF_NONEXPIRING = (1 << 2)
 } cache_db_flag_t;
 
 typedef enum {
@@ -2494,13 +2534,14 @@ typedef enum {
 } switch_cache_db_handle_type_t;
 
 typedef union {
-	switch_core_db_t *core_db_dbh;
+	switch_coredb_handle_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
 	switch_database_interface_handle_t *database_interface_dbh;
 } switch_cache_db_native_handle_t;
 
 typedef struct {
 	char *db_path;
+	switch_bool_t in_memory;
 } switch_cache_db_core_db_options_t;
 
 typedef struct {
@@ -2692,6 +2733,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 SWITCH_DECLARE(uint32_t) switch_default_rate(const char *name, uint32_t number);
+SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit);
 
 /*!
  \brief Add user registration
@@ -2804,6 +2846,7 @@ SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback_err(swi
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);

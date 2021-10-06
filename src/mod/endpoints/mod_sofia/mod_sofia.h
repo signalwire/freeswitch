@@ -146,7 +146,6 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/tport_tag.h>
 #include <sofia-sip/sip_extra.h>
-#include "nua_stack.h"
 #include "sofia-sip/msg_parser.h"
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/tport_tag.h"
@@ -413,6 +412,7 @@ struct mod_sofia_globals {
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
 	int presence_year;
+	int abort_on_empty_external_ip;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -440,6 +440,7 @@ typedef enum {
 	REG_STATE_FAIL_WAIT,
 	REG_STATE_EXPIRED,
 	REG_STATE_NOREG,
+	REG_STATE_DOWN,
 	REG_STATE_TIMEOUT,
 	REG_STATE_LAST
 } reg_state_t;
@@ -540,6 +541,7 @@ struct sofia_gateway {
 	int pinging;
 	sofia_gateway_status_t status;
 	switch_time_t uptime;
+	uint32_t contact_in_ping;
 	uint32_t ping_freq;
 	int ping_count;
 	int ping_max;
@@ -1253,7 +1255,7 @@ uint32_t sofia_presence_get_cseq(sofia_profile_t *profile);
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
-void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
+void sofia_process_dispatch_event(sofia_dispatch_event_t **dep, switch_bool_t stack_thread);
 void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);

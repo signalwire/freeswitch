@@ -86,6 +86,6 @@ SWITCH_STANDARD_JSON_API(kz_node_info_json_function)
 
 void add_kz_node(switch_loadable_module_interface_t **module_interface)
 {
-	switch_json_api_interface_t *json_api_interface  = NULL;
+	switch_json_api_interface_t *json_api_interface = NULL;
 	SWITCH_ADD_JSON_API(json_api_interface, "node.info", "JSON node API", kz_node_info_json_function, "");
 }

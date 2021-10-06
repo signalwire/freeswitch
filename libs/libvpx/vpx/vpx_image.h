@@ -12,8 +12,8 @@
  * \brief Describes the vpx image descriptor and associated operations
  *
  */
-#ifndef VPX_VPX_IMAGE_H_
-#define VPX_VPX_IMAGE_H_
+#ifndef VPX_VPX_VPX_IMAGE_H_
+#define VPX_VPX_VPX_IMAGE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,21 +167,21 @@ vpx_image_t *vpx_img_alloc(vpx_image_t *img, vpx_img_fmt_t fmt,
  * storage for descriptor has been allocated elsewhere, and a descriptor is
  * desired to "wrap" that storage.
  *
- * \param[in]    img       Pointer to storage for descriptor. If this parameter
- *                         is NULL, the storage for the descriptor will be
- *                         allocated on the heap.
- * \param[in]    fmt       Format for the image
- * \param[in]    d_w       Width of the image
- * \param[in]    d_h       Height of the image
- * \param[in]    align     Alignment, in bytes, of each row in the image.
- * \param[in]    img_data  Storage to use for the image
+ * \param[in]    img           Pointer to storage for descriptor. If this
+ *                             parameter is NULL, the storage for the descriptor
+ *                             will be allocated on the heap.
+ * \param[in]    fmt           Format for the image
+ * \param[in]    d_w           Width of the image
+ * \param[in]    d_h           Height of the image
+ * \param[in]    stride_align  Alignment, in bytes, of each row in the image.
+ * \param[in]    img_data      Storage to use for the image
  *
  * \return Returns a pointer to the initialized image descriptor. If the img
  *         parameter is non-null, the value of the img parameter will be
  *         returned.
  */
 vpx_image_t *vpx_img_wrap(vpx_image_t *img, vpx_img_fmt_t fmt, unsigned int d_w,
-                          unsigned int d_h, unsigned int align,
+                          unsigned int d_h, unsigned int stride_align,
                           unsigned char *img_data);
 
 /*!\brief Set the rectangle identifying the displayed portion of the image
@@ -221,4 +221,4 @@ void vpx_img_free(vpx_image_t *img);
 }  // extern "C"
 #endif
 
-#endif  // VPX_VPX_IMAGE_H_
+#endif  // VPX_VPX_VPX_IMAGE_H_

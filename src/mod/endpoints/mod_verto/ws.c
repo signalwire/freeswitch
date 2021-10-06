@@ -32,6 +32,8 @@ static struct ws_globals_s ws_globals;
 
 #ifndef WSS_STANDALONE
 
+#define snprintf_nowarn(...) (snprintf(__VA_ARGS__) < 0 ? printf("snprintf failure") : (void)0)
+
 void init_ssl(void)
 {
 	//	SSL_library_init();
@@ -42,7 +44,7 @@ void deinit_ssl(void)
 }
 
 #else
-static unsigned long pthreads_thread_id(void);
+static void pthreads_thread_id(CRYPTO_THREADID *id);
 static void pthreads_locking_callback(int mode, int type, const char *file, int line);
 
 static pthread_mutex_t *lock_cs;
@@ -62,7 +64,7 @@ static void thread_setup(void)
 		pthread_mutex_init(&(lock_cs[i]), NULL);
 	}
 
-	CRYPTO_set_id_callback(pthreads_thread_id);
+	CRYPTO_THREADID_set_callback(pthreads_thread_id);
 	CRYPTO_set_locking_callback(pthreads_locking_callback);
 }
 
@@ -93,9 +95,9 @@ static void pthreads_locking_callback(int mode, int type, const char *file, int 
 
 
 
-static unsigned long pthreads_thread_id(void)
+static void pthreads_thread_id(CRYPTO_THREADID *id)
 {
-	return (unsigned long) pthread_self();
+	CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
 
 
@@ -304,15 +306,15 @@ int ws_handshake(wsh_t *wsh)
 		goto err;
 	}
 
-	snprintf(input, sizeof(input), "%s%s", key, WEBSOCKET_GUID);
+	snprintf_nowarn(input, sizeof(input), "%s%s", key, WEBSOCKET_GUID);
 	sha1_digest(output, input);
 	b64encode((unsigned char *)output, SHA1_HASH_SIZE, (unsigned char *)b64, sizeof(b64));
 
 	if (*proto) {
-		snprintf(proto_buf, sizeof(proto_buf), "Sec-WebSocket-Protocol: %s\r\n", proto);
+		snprintf_nowarn(proto_buf, sizeof(proto_buf), "Sec-WebSocket-Protocol: %s\r\n", proto);
 	}
 
-	snprintf(respond, sizeof(respond),
+	snprintf_nowarn(respond, sizeof(respond),
 			 "HTTP/1.1 101 Switching Protocols\r\n"
 			 "Upgrade: websocket\r\n"
 			 "Connection: Upgrade\r\n"
@@ -335,7 +337,7 @@ int ws_handshake(wsh_t *wsh)
 	if (!wsh->stay_open) {
 
 		if (bytes > 0) {
-			snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
+			snprintf_nowarn(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
 					 "Sec-WebSocket-Version: 13\r\n\r\n");
 			respond[511] = 0;
 

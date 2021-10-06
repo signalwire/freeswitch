@@ -219,7 +219,7 @@ static void backup_cdr(cdr_data_t *data)
 					} while (!(x<0) && json_len > (wrote += x));
 					if (!(x<0)) do { x = write(fd, "\n", 1);
 						} while (!(x<0) && x<1);
-					close(fd); fd = -1;
+					close(fd);
 					if (x < 0) {
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 						if (0 > unlink(path))
@@ -285,7 +285,7 @@ static void process_cdr(cdr_data_t *data)
 				} while (!(x<0) && json_len > (wrote += x));
 				if (!(x<0)) do { x = write(fd, "\n", 1);
 					} while (!(x<0) && x<1);
-				close(fd); fd = -1;
+				close(fd);
 				if (x < 0) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 					if (0 > unlink(path))

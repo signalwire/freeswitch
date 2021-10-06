@@ -32,7 +32,7 @@ static ikschunk *
 find_space (ikstack *s, ikschunk *c, size_t size)
 {
 	/* FIXME: dont use *2 after over allocated chunks */
-	while (1) {
+	while (c) {
 		if (c->size - c->used >= size) return c;
 		if (!c->next) {
 			if ((c->size * 2) > size) size = c->size * 2;

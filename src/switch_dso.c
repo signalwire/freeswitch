@@ -39,7 +39,11 @@ SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, c
 	lib = LoadLibraryEx(path, NULL, 0);
 
 	if (!lib) {
-		LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+		lib = LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	}
+
+	if (!lib) {
+		lib = LoadLibraryEx(path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	}
 
 	if (!lib) {

@@ -38,7 +38,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 
-int SLICE_SIZE = SWITCH_DEFAULT_VIDEO_SIZE;
+int SLICE_SIZE = (SWITCH_DEFAULT_VIDEO_SIZE + 100);
 
 #define H264_NALU_BUFFER_SIZE 65536
 #define MAX_NALUS 256
@@ -110,7 +110,7 @@ static void dump_encoder_ctx(AVCodecContext *ctx)
 #ifdef DUMP_ENCODER_CTX
 #define STRINGIFY(x) #x
 #define my_dump_int(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %d\n", ctx->x);
-#define my_dump_int64(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = % " SWITCH_INT64_T_FMT "\n", ctx->x);
+#define my_dump_int64(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %" SWITCH_INT64_T_FMT "\n", ctx->x);
 #define my_dump_float(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %f\n", ctx->x);
 #define my_dump_enum(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = %d\n", ctx->x);
 #define my_dump_uint(x) switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, STRINGIFY(x) " = 0x%x\n", ctx->x);
@@ -1100,6 +1100,8 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 	int left = nalu->len - (nalu->eat - nalu->start);
 	uint8_t *p = frame->data;
 	uint8_t start = nalu->start == nalu->eat ? 0x80 : 0;
+	int n = nalu->len / SLICE_SIZE;
+	int slice_size = nalu->len / (n + 1) + 1 + 2;
 
 	if (nalu->len <= SLICE_SIZE) {
 		memcpy(frame->data, nalu->start, nalu->len);
@@ -1119,7 +1121,7 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (left <= (SLICE_SIZE - 2)) {
+	if (left <= (slice_size - 2)) {
 		p[0] = nri | 28; // FU-A
 		p[1] = 0x40 | nalu_type;
 		memcpy(p+2, nalu->eat, left);
@@ -1139,9 +1141,9 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 	p[0] = nri | 28; // FU-A
 	p[1] = start | nalu_type;
 	if (start) nalu->eat++;
-	memcpy(p+2, nalu->eat, SLICE_SIZE - 2);
-	nalu->eat += (SLICE_SIZE - 2);
-	frame->datalen = SLICE_SIZE;
+	memcpy(p+2, nalu->eat, slice_size - 2);
+	nalu->eat += (slice_size - 2);
+	frame->datalen = slice_size;
 	frame->m = 0;
 	return SWITCH_STATUS_MORE_DATA;
 }
@@ -1836,15 +1838,13 @@ static char get_media_type_char(enum AVMediaType type)
 	}
 }
 
-static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev,
+static const AVCodec *next_codec_for_id(enum AVCodecID id, const AVCodec *prev, void **index,
 										int encoder)
 {
 #if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58,10,100))
 	while ((prev = av_codec_next(prev))) {
 #else
-	void *i;
-
-	while ((prev = av_codec_iterate(&i))) {
+	while ((prev = av_codec_iterate(index))) {
 #endif
 		if (prev->id == id &&
 			(encoder ? av_codec_is_encoder(prev) : av_codec_is_decoder(prev)))
@@ -1887,10 +1887,11 @@ static unsigned get_codecs_sorted(const AVCodecDescriptor ***rcodecs)
 static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID id, int encoder)
 {
 	const AVCodec *codec = NULL;
+	void *index = 0;
 
 	stream->write_function(stream, " (%s: ", encoder ? "encoders" : "decoders");
 
-	while ((codec = next_codec_for_id(id, codec, encoder))) {
+	while ((codec = next_codec_for_id(id, codec, &index, encoder))) {
 		stream->write_function(stream, "%s ", codec->name);
 	}
 
@@ -1916,6 +1917,7 @@ void show_codecs(switch_stream_handle_t *stream)
 	for (i = 0; i < nb_codecs; i++) {
 		const AVCodecDescriptor *desc = codecs[i];
 		const AVCodec *codec = NULL;
+		void *index = 0;
 
 		stream->write_function(stream, " ");
 		stream->write_function(stream, avcodec_find_decoder(desc->id) ? "D" : ".");
@@ -1930,14 +1932,14 @@ void show_codecs(switch_stream_handle_t *stream)
 
 		/* print decoders/encoders when there's more than one or their
 		 * names are different from codec name */
-		while ((codec = next_codec_for_id(desc->id, codec, 0))) {
+		while ((codec = next_codec_for_id(desc->id, codec, &index, 0))) {
 			if (strcmp(codec->name, desc->name)) {
 				print_codecs_for_id(stream ,desc->id, 0);
 				break;
 			}
 		}
-		codec = NULL;
-		while ((codec = next_codec_for_id(desc->id, codec, 1))) {
+		codec = NULL; index = 0;
+		while ((codec = next_codec_for_id(desc->id, codec, &index, 1))) {
 			if (strcmp(codec->name, desc->name)) {
 				print_codecs_for_id(stream, desc->id, 1);
 				break;

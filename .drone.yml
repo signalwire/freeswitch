@@ -1,0 +1,150 @@
+---
+kind: pipeline
+name: unit-tests
+
+steps:
+    - name: bootstrap
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - cat /proc/sys/kernel/core_pattern
+      - ./bootstrap.sh -j
+
+    - name: configure
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - echo "applications/mod_test" >> modules.conf
+      - echo 'codecs/mod_openh264' >> modules.conf
+      - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
+      - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
+      - sed -i '/formats\\/mod_opusfile/s/^#//g' modules.conf
+      - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
+      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
+      - ./configure --enable-address-sanitizer
+
+    - name: build
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
+      - chmod +x build.sh
+      - ./build.sh
+
+    - name: run-tests
+      image: signalwire/freeswitch-public-base
+      pull: true
+      commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - make install || true
+      - cd tests/unit
+      - ./run-tests.sh
+      - ls -la /cores
+      - mkdir logs && (mv log_run-tests_*.html logs || true) && (mv backtrace_*.txt logs || true)
+      - echo 0 > run-tests-status.txt
+      - ./collect-test-logs.sh && exit 0 || echo 'Some tests failed'
+      - echo 1 > run-tests-status.txt
+      - cd logs && ls -la
+
+    - name: notify
+      image: signalwire/drone-notify
+      pull: true
+      environment:
+        SLACK_WEBHOOK_URL:
+          from_secret: slack_webhook_url
+        ENV_FILE:
+          from_secret: notify_env
+      commands:
+      - /root/unit-tests-notify.sh
+      
+trigger:
+  branch:
+  - master
+  event:
+  - pull_request
+  - push
+
+---
+kind: pipeline
+name: scan-build
+
+steps:
+    - name: bootstrap
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - ./bootstrap.sh -j
+
+    - name: configure
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - cp build/modules.conf.most modules.conf
+      #Enable/Uncomment mods
+      - echo 'codecs/mod_openh264' >> modules.conf
+      - sed -i "/mod_mariadb/s/^#//g" modules.conf
+      - sed -i "/mod_v8/s/^#//g" modules.conf
+      #Disable/Comment out mods
+      - sed -i '/mod_ilbc/s/^/#/g' modules.conf
+      - sed -i '/mod_isac/s/^/#/g' modules.conf
+      - sed -i '/mod_mp4/s/^/#/g' modules.conf
+      - sed -i '/mod_mongo/s/^/#/g' modules.conf
+      - sed -i '/mod_pocketsphinx/s/^/#/g' modules.conf
+      - sed -i '/mod_sangoma_codec/s/^/#/g' modules.conf
+      - sed -i '/mod_siren/s/^/#/g' modules.conf
+      #Comment out mods for a while
+      - sed -i '/mod_avmd/s/^/#/g' modules.conf
+      - sed -i '/mod_basic/s/^/#/g' modules.conf
+      - sed -i '/mod_cdr_mongodb/s/^/#/g' modules.conf
+      - sed -i '/mod_cv/s/^/#/g' modules.conf
+      - sed -i '/mod_erlang_event/s/^/#/g' modules.conf
+      - sed -i '/mod_perl/s/^/#/g' modules.conf
+      - sed -i '/mod_rtmp/s/^/#/g' modules.conf
+      - sed -i '/mod_unimrcp/s/^/#/g' modules.conf
+      - sed -i '/mod_xml_rpc/s/^/#/g' modules.conf
+      - ./configure
+
+    - name: scan-build
+      image: signalwire/freeswitch-public-base:stretch
+      pull: true
+      commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - mkdir -p scan-build
+      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - chmod +x scan.sh
+      - ./scan.sh
+      - exitstatus=`cat ./scan-build-status.txt`
+      - echo "*** Exit status is $exitstatus"
+
+    - name: notify
+      image: signalwire/drone-notify
+      pull: true
+      environment:
+        SLACK_WEBHOOK_URL:
+          from_secret: slack_webhook_url
+        ENV_FILE:
+          from_secret: notify_env
+      commands:
+      - /root/scan-build-notify.sh
+
+      
+trigger:
+  branch:
+  - master
+  event:
+  - pull_request
+  - push
+
+---
+kind: signature
+hmac: af77439b382612b49140cb95f04d6d695e0a188c411ae227abcba205bf96bab9
+
+...

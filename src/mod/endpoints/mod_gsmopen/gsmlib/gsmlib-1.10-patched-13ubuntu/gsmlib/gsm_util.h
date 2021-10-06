@@ -15,6 +15,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream> 
 #include <gsmlib/gsm_error.h>
 #ifndef WIN32
 #include <sys/time.h>

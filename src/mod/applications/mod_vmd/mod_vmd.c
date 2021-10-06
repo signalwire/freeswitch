@@ -518,6 +518,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Voicemail detection enabled\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_vmd deprecated.  Please migrate to mod_avmd\n");
 
 	SWITCH_ADD_APP(app_interface, "vmd", "Detect beeps", "Detect voicemail beeps", vmd_start_function, "[start] [stop]", SAF_NONE);
 
