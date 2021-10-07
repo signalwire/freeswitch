@@ -299,18 +299,18 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			}
 
 			if (direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
-				if (!switch_channel_get_variable(channel, "sip_invite_route_uri")) {
+				if (!switch_channel_get_variable(channel, "sip_invite_route_uri") || !switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)reverse_stream.data);
 				}
-				if (!switch_channel_get_variable(channel, "sip_invite_record_route")) {
+				if (!switch_channel_get_variable(channel, "sip_invite_record_route") || !switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_channel_set_variable(channel, "sip_invite_record_route", (char *)forward_stream.data);
 				}
 			} else {
 				if (!switch_channel_get_variable(channel, "sip_invite_route_uri")) {
 					switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)forward_stream.data);
 				}
-				if (!switch_channel_get_variable(channel, "sip_invite_route_uri")) {
-					switch_channel_set_variable(channel, "sip_invite_route_uri", (char *)reverse_stream.data);
+				if (!switch_channel_get_variable(channel, "sip_invite_record_route")) {
+					switch_channel_set_variable(channel, "sip_invite_record_route", (char *)reverse_stream.data);
 				}
 			}
 
