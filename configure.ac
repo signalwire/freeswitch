@@ -866,7 +866,7 @@ APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
 fi
 
 # Telnyx C++ Dependencies
-APR_ADDTO([PLATFORM_CORE_LIBS], [-lboost_thread -lboost_program_options -lboost_system -lboost_filesystem -lPocoFoundation -lPocoNetSSL -lPocoNet -lpcap -lzmq -ldb -ldb_cxx])
+APR_ADDTO([PLATFORM_CORE_LIBS], [-lboost_thread -lboost_program_options -lboost_system -lboost_filesystem -lPocoFoundation -lPocoUtil -lPocoNetSSL -lPocoNet -lpcap -lzmq -ldb -ldb_cxx])
 
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
