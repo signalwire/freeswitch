@@ -41,6 +41,7 @@
 #include "mod_sofia.h"
 #include "sofia-sip/sip_extra.h"
 #include "sofia-sip/nta.h"
+#include "sofia-sip/nua.h"
 #include "prometheus_metrics.h"
 #include "switch_telnyx.h"
 
@@ -367,7 +368,6 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
 
@@ -383,13 +383,7 @@ switch_status_t sofia_on_destroy(switch_core_session_t *session)
 		}
 
 		if (!zstr(tech_pvt->call_id)) {
-			switch_mutex_lock(tech_pvt->profile->flag_mutex);
-			if ((uuid = switch_core_hash_find(tech_pvt->profile->chat_hash, tech_pvt->call_id))) {
-				free(uuid);
-				uuid = NULL;
-				switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->call_id);
-			}
-			switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+			switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->call_id, tech_pvt->profile->flag_mutex);
 		}
 
 
@@ -479,7 +473,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	if (tech_pvt->hash_key && !sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
-		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
+		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
 	}
 
 	if (session && tech_pvt->profile->pres_type) {
@@ -532,7 +526,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			int skip_bye = 0;
 			if (switch_channel_test_flag(channel, CF_RECOVERED) && !zstr(invite_route_uri)) {
 				recover_route_set = invite_route_uri;
-				tech_pvt->nh->nh_no_strip_routes = 1;
+				nua_handle_set_no_strip_routes(tech_pvt->nh);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CF_RECOVERED forced route-set %s\n", recover_route_set);
 			}
 			if (!tech_pvt->got_bye) {
@@ -1443,7 +1437,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			de->session = session;
 		}
 
-		sofia_process_dispatch_event(&de);
+		sofia_process_dispatch_event(&de, SWITCH_FALSE);
 
 
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
@@ -2584,7 +2578,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				/* Set sip_to_tag to local tag for inbound channels. */
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					const char* to_tag = "";
-					to_tag = switch_str_nil(nta_leg_get_tag(tech_pvt->nh->nh_ds->ds_leg));
+					to_tag = switch_str_nil(nta_leg_get_tag(nua_get_dialog_state_leg(tech_pvt->nh)));
 					if(to_tag) {
 						switch_channel_set_variable(channel, "sip_to_tag", to_tag);
 					}
@@ -2869,6 +2863,7 @@ const char *sofia_state_names[] = {
 	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
+	"DOWN",
 	"TIMEOUT",
 	NULL
 };
@@ -3784,15 +3779,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGED;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGED;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+					stream->write_function(stream, "+OK\n");
+					sofia_reg_release_gateway(gateway_ptr);
+				} else {
+					stream->write_function(stream, "-ERR NOREG gateway [%s] can't be registered!\n", gname);
+				}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -3811,15 +3812,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGISTER;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGISTER;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGISTER;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+			if (gateway_ptr->state != REG_STATE_NOREG) {
+				gateway_ptr->retry = 0;
+				gateway_ptr->state = REG_STATE_UNREGISTER;
+				stream->write_function(stream, "+OK\n");
+				sofia_reg_release_gateway(gateway_ptr);
+			} else {
+				stream->write_function(stream, "-ERR NOREG gateway [%s] can't be unregistered!\n", gname);
+			}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -4917,6 +4924,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			goto error;
 		}
 
+		profile = gateway_ptr->profile;
+
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
 			cause = SWITCH_CAUSE_GATEWAY_DOWN;
@@ -4956,8 +4965,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto error;
 		}
-
-		profile = gateway_ptr->profile;
 
 		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
@@ -5212,7 +5219,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (gateway_ptr && gateway_ptr->ob_vars) {
 		switch_event_header_t *hp;
 		for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(nsession), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
 							  switch_channel_get_name(nchannel), hp->name, hp->value);
 			if (!strncmp(hp->name, "p:", 2)) {
 				switch_channel_set_profile_var(nchannel, hp->name + 2, hp->value);
@@ -5350,7 +5357,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
-	if (gateway_ptr) {
+	/* gateway pointer lock is really a readlock of the profile so we let the profile release below free that lock if we have a profile */
+	if (gateway_ptr && !profile) {
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
@@ -5420,7 +5428,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 
 	//nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(full_to), SIPTAG_TO_STR(full_from), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-	cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
+	cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
 
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
@@ -5554,6 +5562,9 @@ void general_event_handler(switch_event_t *event)
 
 					if (zstr(dst->contact)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
+						sofia_glue_free_destination(dst);
+						switch_safe_free(route_uri);
+						sofia_glue_release_profile(profile);
 						return;
 					}
 
@@ -5580,9 +5591,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			} else if (to_uri || from_uri) {
@@ -5635,9 +5646,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			}
@@ -5817,6 +5828,7 @@ void general_event_handler(switch_event_t *event)
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
+					sofia_glue_release_profile(profile);
 					return;
 				}
 
@@ -5943,12 +5955,14 @@ void general_event_handler(switch_event_t *event)
 					 TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
 
 			if (call_id && nh) {
-				nua_handle_unref(nh);
+				nua_handle_unref_user(nh);
 			}
 
-			sofia_glue_release_profile(profile);
-
 		  done:
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
 
 			switch_safe_free(local_dup);
 

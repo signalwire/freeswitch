@@ -1331,8 +1331,6 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 
 			fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
 
-			epoch_start = (long)switch_epoch_time_now(NULL);
-
 			ts = switch_micro_time_now();
 			switch_time_exp_lt(&tm, ts);
 			epoch_start = (long)switch_epoch_time_now(NULL);
@@ -1538,7 +1536,6 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 
 	if (!pop) {
 		for (x = 0; x < MAX_PRI; x++) {
-			q = node->fifo_list[x];
 			if (fifo_queue_pop(node->fifo_list[x], &pop_dup, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS && pop_dup) {
 				pop = pop_dup;
 				break;
@@ -2113,7 +2110,7 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 
 		while(node) {
 			int x = 0;
-			switch_event_t *pop;
+			switch_event_t *pop = NULL;
 
 			this_node = node;
 			node = node->next;
@@ -2182,7 +2179,6 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 
 		if (cur_priority == 1 || need_sleep) {
 			switch_yield(1000000);
-			need_sleep = 0;
 		}
 	}
 
@@ -2567,7 +2563,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_event_t *event = NULL;
 	char date[80] = "";
 	switch_time_exp_t tm;
-	switch_time_t ts = switch_micro_time_now();
+	switch_time_t ts;
 	switch_size_t retsize;
 	char *list_string;
 	int nlist_count;
@@ -3701,8 +3697,6 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 		}
 	}
 
-	arg = 0;
-
 	if (argv[7]) {
 		if ((etime = atol(argv[7]))) {
 			switch_size_t retsize;
@@ -4100,7 +4094,7 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	cc_off = xml_outbound(x_fifo, node, "outbound", "member", cc_off, verbose);
 	cc_off = xml_caller(x_fifo, node, "callers", "caller", cc_off, verbose);
 	cc_off = xml_hash(x_fifo, node->consumer_hash, "consumers", "consumer", cc_off, verbose);
-	cc_off = xml_bridges(x_fifo, node, "bridges", "bridge", cc_off, verbose);
+	xml_bridges(x_fifo, node, "bridges", "bridge", cc_off, verbose);
 }
 
 void dump_hash(switch_hash_t *hash, switch_stream_handle_t *stream)
@@ -4392,10 +4386,10 @@ static switch_status_t read_config_file(switch_xml_t *xml, switch_xml_t *cfg) {
 			if (!strcasecmp(var, "outbound-strategy") && !zstr(val)) {
 				globals.default_strategy = parse_strategy(val);
 			} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
-				if (switch_database_available(val)) {
+				if (switch_database_available(val) == SWITCH_STATUS_SUCCESS) {
 					switch_set_string(globals.odbc_dsn, val);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DATABASE IS NOT AVAILABLE!\n");
 				}
 			} else if (!strcasecmp(var, "dbname") && !zstr(val)) {
 				globals.dbname = switch_core_strdup(globals.pool, val);

@@ -680,7 +680,6 @@ static void roster_event_handler(switch_event_t *event)
 {
 	char *status = switch_event_get_header(event, "status");
 	char *from = switch_event_get_header(event, "from");
-	char *event_type = switch_event_get_header(event, "event_type");
 	mdl_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
 	void *val;
@@ -692,10 +691,6 @@ static void roster_event_handler(switch_event_t *event)
 
 	if (status && !strcasecmp(status, "n/a")) {
 		status = NULL;
-	}
-
-	if (zstr(event_type)) {
-		event_type = "presence";
 	}
 
 	if (from) {
@@ -4429,11 +4424,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_CANDIDATES:
 		if (dl_signal) {
-			status = LDL_STATUS_SUCCESS;
-
-			status = parse_candidates(dlsession, session, LDL_TPORT_RTP, subject);
-			status = parse_candidates(dlsession, session, LDL_TPORT_VIDEO_RTP, subject);
-			status = parse_candidates(dlsession, session, LDL_TPORT_RTCP, subject);
+			parse_candidates(dlsession, session, LDL_TPORT_RTP, subject);
+			parse_candidates(dlsession, session, LDL_TPORT_VIDEO_RTP, subject);
+			parse_candidates(dlsession, session, LDL_TPORT_RTCP, subject);
 			status = parse_candidates(dlsession, session, LDL_TPORT_VIDEO_RTCP, subject);
 		}
 

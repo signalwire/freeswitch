@@ -54,6 +54,8 @@ static char *my_dup(const char *s)
 #define FREE(ptr) esl_safe_free(ptr)
 #endif
 
+static void free_header(esl_event_header_t **header);
+
 /* make sure this is synced with the esl_event_types_t enum in esl_types.h
    also never put any new ones before EVENT_ALL
 */
@@ -148,6 +150,7 @@ static const char *EVENT_NAMES[] = {
 	"CALL_DETAIL",
 	"DEVICE_STATE",
 	"TEXT",
+	"SHUTDOWN_REQUESTED",
 	"ALL"
 };
 
@@ -318,27 +321,8 @@ ESL_DECLARE(esl_status_t) esl_event_del_header_val(esl_event_t *event, const cha
 			if (hp == event->last_header || !hp->next) {
 				event->last_header = lp;
 			}
-			FREE(hp->name);
 
-			if (hp->idx) {
-				int i = 0;
-
-				for (i = 0; i < hp->idx; i++) {
-					FREE(hp->array[i]);
-				}
-				FREE(hp->array);
-			}
-
-			FREE(hp->value);
-			
-			memset(hp, 0, sizeof(*hp));
-#ifdef ESL_EVENT_RECYCLE
-			if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != ESL_SUCCESS) {
-				FREE(hp);
-			}
-#else
-			FREE(hp);
-#endif
+			free_header(&hp);
 			status = ESL_SUCCESS;
 		} else {
 			lp = hp;
@@ -368,7 +352,34 @@ static esl_event_header_t *new_header(const char *header_name)
 		header->name = DUP(header_name);
 
 		return header;
+}
 
+static void free_header(esl_event_header_t **header)
+{
+	assert(header);
+
+	if (*header) {
+		FREE((*header)->name);
+
+		if ((*header)->idx) {
+			int i = 0;
+
+			for (i = 0; i < (*header)->idx; i++) {
+				FREE((*header)->array[i]);
+			}
+			FREE((*header)->array);
+		}
+
+		FREE((*header)->value);
+
+#ifdef ESL_EVENT_RECYCLE
+		if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, *header) != ESL_SUCCESS) {
+			FREE(*header);
+		}
+#else
+		FREE(*header);
+#endif
+	}
 }
 
 ESL_DECLARE(int) esl_event_add_array(esl_event_t *event, const char *var, const char *val)
@@ -436,10 +447,11 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 	}
 	
 	if (index_ptr || (stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {
+		esl_event_header_t *tmp_header = NULL;
 		
 		if (!(header = esl_event_get_header_ptr(event, header_name)) && index_ptr) {
 
-			header = new_header(header_name);
+			tmp_header = header = new_header(header_name);
 
 			if (esl_test_flag(event, ESL_EF_UNIQ_HEADERS)) {
 				esl_event_del_header(event, header_name);
@@ -473,6 +485,8 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 
 						goto redraw;
 					}
+				} else if (tmp_header) {
+					free_header(&tmp_header);
 				}
 				goto end;
 			} else {
@@ -674,29 +688,7 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 		for (hp = ep->headers; hp;) {
 			this = hp;
 			hp = hp->next;
-			FREE(this->name);
-
-			if (this->idx) {
-				int i = 0;
-
-				for (i = 0; i < this->idx; i++) {
-					FREE(this->array[i]);
-				}
-				FREE(this->array);
-			}
-
-			FREE(this->value);
-			
-
-#ifdef ESL_EVENT_RECYCLE
-			if (esl_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != ESL_SUCCESS) {
-				FREE(this);
-			}
-#else
-			FREE(this);
-#endif
-
-
+			free_header(&this);
 		}
 		FREE(ep->body);
 		FREE(ep->subclass_name);

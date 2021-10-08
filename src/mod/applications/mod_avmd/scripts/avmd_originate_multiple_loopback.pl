@@ -1,9 +1,8 @@
 #!/usr/bin/perl -w
 
 
-#brief  Call (possibly) multiple voicemails
-#       and print detection result to the console.
-#author Piotr Gregor <piotrgregor@rsyncme.org>
+#brief  Call (possibly) multiple voicemails and print detection result to the console.
+#author Piotr Gregor <piotr@dataandsignal.com>
 #date   15 Sept 2016 02:44 PM
 
 

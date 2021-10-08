@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -426,7 +426,7 @@ static struct {
 	int debug;
 	char *odbc_dsn;
 	char *dbname;
-	char *cc_instance_id;
+	const char *cc_instance_id;
 	switch_bool_t reserve_agents;
 	switch_bool_t truncate_tiers;
 	switch_bool_t truncate_agents;
@@ -998,7 +998,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 {
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
-	char res[256];
+	char res[256] = "";
 	switch_event_t *event;
 
 	/* Check to see if agent already exist */
@@ -1501,7 +1501,7 @@ static int sqlite_column_rename_callback(void *pArg, const char *errmsg)
 	return 0;
 }
 
-static switch_status_t load_config(void)
+static switch_status_t load_config(switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers;
@@ -1536,7 +1536,7 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "global-database-lock")) {
 				globals.global_database_lock = switch_true(val);
 			} else if (!strcasecmp(var, "cc-instance-id")) {
-				globals.cc_instance_id = strdup(val);
+				globals.cc_instance_id = switch_core_strdup(pool, val);
 			} else if (!strcasecmp(var, "agent-originate-timeout")) {
 				globals.agent_originate_timeout = atoi(val);
 			}
@@ -1546,7 +1546,7 @@ static switch_status_t load_config(void)
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
 	if (zstr(globals.cc_instance_id)) {
-		globals.cc_instance_id = strdup("single_box");
+		globals.cc_instance_id = switch_core_strdup(pool, "single_box");
 	}
 	if (!globals.reserve_agents) {
 		globals.reserve_agents = SWITCH_FALSE;
@@ -1656,7 +1656,7 @@ end:
 static switch_status_t playback_array(switch_core_session_t *session, const char *str) {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	if (str && !strncmp(str, "ARRAY::", 7)) {
-		char *i = (char*) str + 7, *j = i;
+		char *i = (char*) str + 7, *j;
 		while (1) {
 			if ((j = strstr(i, "::"))) {
 				*j = 0;
@@ -4010,7 +4010,7 @@ SWITCH_STANDARD_API(cc_break_api_function)
 	const char *uuid = NULL;
 	switch_core_session_t *break_session = NULL;
 	switch_channel_t *channel = NULL;
-	switch_bool_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!zstr(cmd)) {
 		mydata = strdup(cmd);
@@ -4208,10 +4208,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_json_api_interface_t *json_api_interface;
 	switch_status_t status;
 
-
+	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(CALLCENTER_EVENT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
 		return SWITCH_STATUS_TERM;
+	}
+
+	/* Subscribe to presence request events */
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
+									cc_presence_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to subscribe for presence events!\n");
+		return SWITCH_STATUS_GENERR;
 	}
 
 	memset(&globals, 0, sizeof(globals));
@@ -4220,14 +4227,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_core_hash_init(&globals.queue_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
-	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+	if ((status = load_config(pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_event_unbind(&globals.node);
+		switch_event_free_subclass(CALLCENTER_EVENT);
+		switch_core_hash_destroy(&globals.queue_hash);
 		return status;
-	}
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
-									cc_presence_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to subscribe for presence events!\n");
-		return SWITCH_STATUS_GENERR;
 	}
 
 	switch_mutex_lock(globals.mutex);
@@ -4242,7 +4246,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	}
 
 	SWITCH_ADD_APP(app_interface, "callcenter", "CallCenter", CC_DESC, callcenter_function, CC_USAGE, SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "callcenter_track", "CallCenter Track Call", "Track external mod_callcenter calls to avoid place new calls", callcenter_track, CC_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_API(api_interface, "callcenter_config", "Config of callcenter", cc_config_api_function, CC_CONFIG_API_SYNTAX);
 	SWITCH_ADD_API(api_interface, "callcenter_break", "Stop watching an uuid and release agent", cc_break_api_function, "callcenter_break agent <uuid>");
 
@@ -4337,7 +4341,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.dbname);
-	switch_safe_free(globals.cc_instance_id);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;

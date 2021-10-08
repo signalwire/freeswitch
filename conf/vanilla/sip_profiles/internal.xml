@@ -267,6 +267,8 @@
     <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
     <!--<param name="NDLB-received-in-nat-reg-contact" value="true"/>-->
     <param name="auth-calls" value="$${internal_auth_calls}"/>
+    <!-- Force subscription requests to require authentication -->
+    <param name="auth-subscriptions" value="true"/>
     <!-- Force the user and auth-user to match. -->
     <param name="inbound-reg-force-matching-username" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
@@ -282,7 +284,7 @@
          auto-nat              - Use ip learned from NAT-PMP or UPNP
     -->
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
-    <param name="ext-sip-ip" value="$${external_rtp_ip}"/>
+    <param name="ext-sip-ip" value="$${external_sip_ip}"/>
 
     <!-- rtp inactivity timeout -->
     <param name="rtp-timeout-sec" value="300"/>

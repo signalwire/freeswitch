@@ -60,7 +60,6 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 {
 	png_file_context_t *context;
 	char *ext;
-	unsigned int flags = 0;
 
 	if ((ext = strrchr((char *)path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -74,10 +73,6 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		return SWITCH_STATUS_GENERR;
-	}
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
-		flags |= SWITCH_FOPEN_READ;
 	}
 
 	memset(context, 0, sizeof(png_file_context_t));

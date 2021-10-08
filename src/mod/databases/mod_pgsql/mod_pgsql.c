@@ -113,6 +113,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 	int max_tries = DEFAULT_PGSQL_RETRIES;
 	int code = 0;
 	int recon = 0;
+	switch_byte_t sanity = 255;
 
 	if (handle) {
 		max_tries = handle->num_retries;
@@ -132,10 +133,24 @@ top:
 	}
 
 	/* Try a non-blocking read on the connection to gobble up any EOF from a closed connection and mark the connection BAD if it is closed. */
-	PQconsumeInput(handle->con);
+	while (--sanity > 0)
+	{
+		if (PQisBusy(handle->con)) {
+			PQconsumeInput(handle->con);
+			switch_yield(1);
+			continue;
+		}
+		break;
+	}
+
+	if (!sanity) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Can not check DB Connection status: sanity = 0. Reconnecting...\n");
+		goto reset;
+	}
 
 	if (PQstatus(handle->con) == CONNECTION_BAD) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PQstatus returned bad connection; reconnecting...\n");
+reset:
 		handle->state = SWITCH_PGSQL_STATE_ERROR;
 		PQreset(handle->con);
 		if (PQstatus(handle->con) == CONNECTION_BAD) {
@@ -358,6 +373,20 @@ switch_status_t pgsql_handle_connect(switch_pgsql_handle_t *handle)
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (PQsetnonblocking(handle->con, 1) == -1) {
+		char *err_str;
+
+		if ((err_str = pgsql_handle_get_error(handle))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err_str);
+			switch_safe_free(err_str);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to setup socket for the database [%s]\n", handle->dsn);
+			pgsql_handle_disconnect(handle);
+		}
+
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_PGSQL_STATE_CONNECTED;
 	handle->sock = PQsocket(handle->con);
@@ -486,15 +515,14 @@ error:
 	err_str = pgsql_handle_get_error(handle);
 
 	if (zstr(err_str)) {
-		if (zstr(er)) {
+		switch_safe_free(err_str);
+		if (!er) {
 			err_str = strdup((char *)"SQL ERROR!");
 		} else {
 			err_str = er;
 		}
 	} else {
-		if (!zstr(er)) {
-			free(er);
-		}
+		switch_safe_free(er);
 	}
 
 	if (err_str) {
@@ -565,7 +593,9 @@ switch_status_t database_handle_exec_string(switch_database_interface_handle_t *
 		goto error;
 	}
 
-	if (result) {
+	if (!result) {
+		goto done;
+	} else {
 		switch (result->status) {
 #if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
 		case PGRES_SINGLE_TUPLE:
@@ -603,6 +633,7 @@ error:
 
 switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pgsql_result_t **result_out, int msec)
 {
+	char *affected_rows = NULL;
 	switch_pgsql_result_t *res;
 	switch_time_t start;
 	switch_time_t ctime;
@@ -620,89 +651,91 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 		return SWITCH_STATUS_FALSE;
 	}
 
-	/* Try to consume input that might be waiting right away */
-	if (PQconsumeInput(handle->con)) {
-		/* And check to see if we have a full result ready for reading */
-		if (PQisBusy(handle->con)) {
+	if (PQisBusy(handle->con)) {
+		/* Try to consume input that might be waiting right away */
+		if (PQconsumeInput(handle->con)) {
+			/* And check to see if we have a full result ready for reading */
+			if (PQisBusy(handle->con)) {
 
-			/* Wait for a result to become available, up to msec milliseconds */
-			start = switch_micro_time_now();
-			while ((ctime = switch_micro_time_now()) - start <= usec) {
-				switch_time_t wait_time = (usec - (ctime - start)) / 1000;
-				/* Wait for the PostgreSQL socket to be ready for data reads. */
+				/* Wait for a result to become available, up to msec milliseconds */
+				start = switch_micro_time_now();
+				while ((ctime = switch_micro_time_now()) - start <= usec) {
+					switch_time_t wait_time = (usec - (ctime - start)) / 1000;
+					/* Wait for the PostgreSQL socket to be ready for data reads. */
 #ifndef _WIN32
-				fds[0].fd = handle->sock;
-				fds[0].events |= POLLIN;
-				fds[0].events |= POLLERR;
-				fds[0].events |= POLLNVAL;
-				fds[0].events |= POLLHUP;
-				fds[0].events |= POLLPRI;
-				fds[0].events |= POLLRDNORM;
-				fds[0].events |= POLLRDBAND;
+					fds[0].fd = handle->sock;
+					fds[0].events |= POLLIN;
+					fds[0].events |= POLLERR;
+					fds[0].events |= POLLNVAL;
+					fds[0].events |= POLLHUP;
+					fds[0].events |= POLLPRI;
+					fds[0].events |= POLLRDNORM;
+					fds[0].events |= POLLRDBAND;
 
-				poll_res = poll(&fds[0], 1, wait_time);
+					poll_res = poll(&fds[0], 1, wait_time);
 #else
-				struct timeval wait = { (long)wait_time * 1000, 0 };
-				FD_ZERO(&rs);
-				FD_SET(handle->sock, &rs);
-				FD_ZERO(&es);
-				FD_SET(handle->sock, &es);
-				poll_res = select(0, &rs, 0, &es, &wait);
+					struct timeval wait = { (long)wait_time * 1000, 0 };
+					FD_ZERO(&rs);
+					FD_SET(handle->sock, &rs);
+					FD_ZERO(&es);
+					FD_SET(handle->sock, &es);
+					poll_res = select(0, &rs, 0, &es, &wait);
 #endif
-				if (poll_res > 0) {
+					if (poll_res > 0) {
 #ifndef _WIN32
-					if (fds[0].revents & POLLHUP || fds[0].revents & POLLNVAL) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "PGSQL socket closed or invalid while waiting for result for query (%s)\n", handle->sql);
-						goto error;
-					} else if (fds[0].revents & POLLERR) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll error trying to read PGSQL socket for query (%s)\n", handle->sql);
-						goto error;
-					} else if (fds[0].revents & POLLIN || fds[0].revents & POLLPRI || fds[0].revents & POLLRDNORM || fds[0].revents & POLLRDBAND) {
+						if (fds[0].revents & POLLHUP || fds[0].revents & POLLNVAL) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "PGSQL socket closed or invalid while waiting for result for query (%s)\n", handle->sql);
+							goto error;
+						} else if (fds[0].revents & POLLERR) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll error trying to read PGSQL socket for query (%s)\n", handle->sql);
+							goto error;
+						} else if (fds[0].revents & POLLIN || fds[0].revents & POLLPRI || fds[0].revents & POLLRDNORM || fds[0].revents & POLLRDBAND) {
 #else
-					if (FD_ISSET(handle->sock, &rs)) {
+						if (FD_ISSET(handle->sock, &rs)) {
 #endif						
-						/* Then try to consume any input waiting. */
-						if (PQconsumeInput(handle->con)) {
-							if (PQstatus(handle->con) == CONNECTION_BAD) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection terminated while waiting for result.\n");
-								handle->state = SWITCH_PGSQL_STATE_ERROR;
+							/* Then try to consume any input waiting. */
+							if (PQconsumeInput(handle->con)) {
+								if (PQstatus(handle->con) == CONNECTION_BAD) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection terminated while waiting for result.\n");
+									handle->state = SWITCH_PGSQL_STATE_ERROR;
+									goto error;
+								}
+
+								/* And check to see if we have a full result ready for reading */
+								if (!PQisBusy(handle->con)) {
+									/* If we can pull a full result without blocking, then break this loop */
+									break;
+								}
+							} else {
+								/* If we had an error trying to consume input, report it and cancel the query. */
+								err_str = pgsql_handle_get_error(handle);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
+								switch_safe_free(err_str);
+								pgsql_cancel(handle);
 								goto error;
 							}
-
-							/* And check to see if we have a full result ready for reading */
-							if (!PQisBusy(handle->con)) {
-								/* If we can pull a full result without blocking, then break this loop */
-								break;
-							}
-						} else {
-							/* If we had an error trying to consume input, report it and cancel the query. */
-							err_str = pgsql_handle_get_error(handle);
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
-							switch_safe_free(err_str);
-							pgsql_cancel(handle);
-							goto error;
 						}
+					} else if (poll_res == -1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll failed trying to read PGSQL socket for query (%s)\n", handle->sql);
+						goto error;
 					}
-				} else if (poll_res == -1) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Poll failed trying to read PGSQL socket for query (%s)\n", handle->sql);
+				}
+
+				/* If we broke the loop above because of a timeout, report that and cancel the query. */
+				if (ctime - start > usec) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Query (%s) took too long to complete or database not responding.\n", handle->sql);
+					pgsql_cancel(handle);
 					goto error;
 				}
 			}
-
-			/* If we broke the loop above because of a timeout, report that and cancel the query. */
-			if (ctime - start > usec) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Query (%s) took too long to complete or database not responding.\n", handle->sql);
-				pgsql_cancel(handle);
-				goto error;
-			}
+		} else {
+			/* If we had an error trying to consume input, report it and cancel the query. */
+			err_str = pgsql_handle_get_error(handle);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
+			switch_safe_free(err_str);
+			/* pgsql_cancel(handle); */
+			goto error;
 		}
-	} else {
-		/* If we had an error trying to consume input, report it and cancel the query. */
-		err_str = pgsql_handle_get_error(handle);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to consume input for query (%s): %s\n", handle->sql, err_str);
-		switch_safe_free(err_str);
-		/* pgsql_cancel(handle); */
-		goto error;
 	}
 
 	/* At this point, we know we can read a full result without blocking. */
@@ -715,6 +748,11 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 
 	res->result = PQgetResult(handle->con);
 	if (res->result) {
+		affected_rows = PQcmdTuples(res->result);
+		if (!zstr(affected_rows)) {
+			handle->affected_rows = atoi(affected_rows);
+		}
+
 		*result_out = res;
 		res->status = PQresultStatus(res->result);
 		switch (res->status) {
@@ -725,7 +763,6 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 		case PGRES_TUPLES_OK:
 		{
 			res->rows = PQntuples(res->result);
-			handle->affected_rows = res->rows;
 			res->cols = PQnfields(res->result);
 		}
 		break;
@@ -853,8 +890,8 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 
 	result = pgsql_SQLEndTran(handle, SWITCH_TRUE);
-	result = result && pgsql_SQLSetAutoCommitAttr(dih, SWITCH_TRUE);
-	result = result && pgsql_finish_results(handle);
+	result = pgsql_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = pgsql_finish_results(handle) && result;
 
 	return result;
 }
@@ -862,6 +899,7 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 {
 	switch_pgsql_handle_t *handle;
+	switch_status_t result;
 
 	if (!dih) {
 		return SWITCH_STATUS_FALSE;
@@ -872,10 +910,11 @@ switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 	if (!handle)
 		return SWITCH_STATUS_FALSE;
 
-	pgsql_SQLEndTran(handle, SWITCH_FALSE);
-	// Is that enought?
+	result = pgsql_SQLEndTran(handle, SWITCH_FALSE);
+	result = pgsql_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = pgsql_finish_results(handle) && result;
 
-	return SWITCH_STATUS_SUCCESS;
+	return result;
 }
 
 switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char *func, int line,

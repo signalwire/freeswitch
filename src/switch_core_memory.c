@@ -88,7 +88,11 @@ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *
 						  (void *) session->pool, (void *) session, apr_pool_tag(session->pool, NULL), (int) memory);
 #endif
 
+#if APR_POOL_DEBUG
+	ptr = apr_palloc_debug(session->pool, memory, func);
+#else
 	ptr = apr_palloc(session->pool, memory);
+#endif
 	switch_assert(ptr != NULL);
 
 	memset(ptr, 0, memory);
@@ -349,7 +353,39 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 
 }
 
+#if APR_POOL_DEBUG
+static int switch_core_pool_stats_callback(apr_pool_t *pool, void *data) {
+	switch_stream_handle_t *stream = (switch_stream_handle_t *)data;
+	size_t size = (size_t)apr_pool_num_bytes(pool, 1);
+	unsigned int alloc = 0, total_alloc = 0, clear = 0;
+	char *line = NULL;
 
+	apr_pool_userdata_get((void**)&line, "line", pool);
+	apr_pool_get_stats(pool, &alloc, &total_alloc, &clear);
+
+	if (stream) {
+		stream->write_function(stream, "Pool '%s' size: %" SWITCH_SIZE_T_FMT ", alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : apr_pool_tag(pool, NULL)), size, alloc, total_alloc, clear);
+	} else {
+		printf("Pool '%s' size: %" SWITCH_SIZE_T_FMT ", alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : apr_pool_tag(pool, NULL)), size, alloc, total_alloc, clear);
+	}
+	return 0;
+}
+#endif
+
+SWITCH_DECLARE(void) switch_core_pool_stats(switch_stream_handle_t *stream)
+{
+#if APR_POOL_DEBUG
+	if (runtime.memory_pool) {
+		apr_pool_walk_tree_debug(runtime.memory_pool, switch_core_pool_stats_callback, (void *)stream);
+	}
+#else
+	if (stream) {
+		stream->write_function(stream, "Unable to get core pool statictics. Please rebuild FreeSWITCH with --enable-pool-debug");
+	} else {
+		printf("Unable to get core pool statictics. Please rebuild FreeSWITCH with --enable-pool-debug");
+	}
+#endif
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
@@ -382,7 +418,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 			abort();
 		}
 
+#if APR_POOL_DEBUG
+		if ((apr_pool_create_ex_debug(pool, memory_manager.memory_pool, NULL, my_allocator, func)) != APR_SUCCESS) {
+#else
 		if ((apr_pool_create_ex(pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+#endif
 			abort();
 		}
 
@@ -405,6 +445,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 	tmp = switch_core_sprintf(*pool, "%s:%d", file, line);
 	apr_pool_tag(*pool, tmp);
 
+#if APR_POOL_DEBUG
+	apr_pool_userdata_set(tmp, "line", NULL, *pool);
+#endif
+
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p New Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
 #endif
@@ -419,7 +463,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
+	char *tmp;
+	const char *tag;
 	switch_assert(pool != NULL);
+	
+	/* In tag we store who calls the pool creation.
+	   Now we append it with who calls the pool destroy.
+	*/
+	if (*pool) {
+		tag = apr_pool_tag(*pool, NULL);
+		tmp = switch_core_sprintf(*pool, "%s,%s:%d", (tag ? tag : ""), file, line);
+		apr_pool_tag(*pool, tmp);
+	}
 
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
@@ -438,7 +493,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 #ifdef USE_MEM_LOCK
 		switch_mutex_lock(memory_manager.mem_lock);
 #endif
+#if APR_POOL_DEBUG
+		apr_pool_destroy_debug(*pool, func);
+#else
 		apr_pool_destroy(*pool);
+#endif
 #ifdef USE_MEM_LOCK
 		switch_mutex_unlock(memory_manager.mem_lock);
 #endif
@@ -469,7 +528,11 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 	/*switch_assert(memory < 20000); */
 #endif
 
+#if APR_POOL_DEBUG
+	ptr = apr_palloc_debug(pool, memory, func);
+#else
 	ptr = apr_palloc(pool, memory);
+#endif
 	switch_assert(ptr != NULL);
 	memset(ptr, 0, memory);
 

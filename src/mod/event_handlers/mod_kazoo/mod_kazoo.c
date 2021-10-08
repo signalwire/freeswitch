@@ -32,23 +32,19 @@
  */
 #include "mod_kazoo.h"
 
-globals_t kazoo_globals = {0};
+kz_globals_t kazoo_globals = {0};
 
 
 
 SWITCH_MODULE_DEFINITION(mod_kazoo, mod_kazoo_load, mod_kazoo_shutdown, mod_kazoo_runtime);
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
-	switch_api_interface_t *api_interface = NULL;
-	switch_application_interface_t *app_interface = NULL;
+SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load)
+{
+	kz_erl_init();
 
 	memset(&kazoo_globals, 0, sizeof(kazoo_globals));
-
 	kazoo_globals.pool = pool;
-	kazoo_globals.ei_nodes = NULL;
-
-	// ensure epmd is running
-
+	kz_set_hostname();
 	if(kazoo_load_config() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here?
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Improper configuration!\n");
@@ -66,13 +62,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	bind_fetch_agents();
 
 	/* create an api for cli debug commands */
-	add_cli_api(module_interface, api_interface);
+	add_cli_api(module_interface);
 
 	/* add our modified commands */
-	add_kz_commands(module_interface, api_interface);
+	add_kz_commands(module_interface);
 
 	/* add our modified dptools */
-	add_kz_dptools(module_interface, app_interface);
+	add_kz_dptools(module_interface);
 
 	/* add our endpoints */
 	add_kz_endpoints(module_interface);
@@ -83,6 +79,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 	/* add tweaks */
 	kz_tweaks_start();
 
+	/* add our cdr */
+	kz_cdr_start();
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -90,8 +89,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_kazoo_load) {
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	int sanity = 0;
 
-
 	remove_cli_api();
+
+	kz_cdr_stop();
 
 	kz_tweaks_stop();
 
@@ -133,6 +133,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_kazoo_shutdown) {
 	switch_safe_free(kazoo_globals.ip);
 	switch_safe_free(kazoo_globals.ei_cookie);
 	switch_safe_free(kazoo_globals.ei_nodename);
+
+	kz_erl_shutdown();
 
 	return SWITCH_STATUS_SUCCESS;
 }

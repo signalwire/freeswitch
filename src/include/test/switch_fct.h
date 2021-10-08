@@ -743,6 +743,7 @@ fct_nlist__final(fct_nlist_t *list, fct_nlist_on_del_t on_del)
     FCT_ASSERT( list != NULL );
     fct_nlist__clear(list, on_del);
     free(list->itm_list);
+    list->itm_list = NULL;
 }
 
 
@@ -1715,6 +1716,12 @@ fct_clp__parse(fct_clp_t *clp, int argc, char const *argv[])
             arg =NULL;
         }
     }
+
+    if (arg != NULL)
+    {
+        free(arg);
+        arg = NULL;
+    }
 }
 
 
@@ -2193,12 +2200,14 @@ should be directly from the program's main. */
 static int
 fctkern__init(fctkern_t *nk, int argc, const char *argv[])
 {
+    int ok = 0;
     if ( argc == 0 && argv == NULL )
     {
         return 0;
     }
     memset(nk, 0, sizeof(fctkern_t));
-    fct_clp__init(&(nk->cl_parser), NULL);
+    ok = fct_clp__init(&(nk->cl_parser), NULL);
+    if (!ok) return ok;
     fct_nlist__init(&(nk->logger_list));
     nk->lt_usr = NULL;  /* Supplied via 'install' mechanics. */
     nk->lt_sys = FCT_LOGGER_TYPES;
@@ -3663,9 +3672,12 @@ with. If we fail a setup up, then we go directly to a teardown mode. */
            fct_ts__add_test(                                             \
                 fctkern_ptr__->ns.ts_curr, fctkern_ptr__->ns.curr_test   \
                 );                                                       \
+       } else {                                                          \
+         fct_test__del(fctkern_ptr__->ns.curr_test);                     \
+         fctkern_ptr__->ns.curr_test = NULL;                             \
        }                                                                 \
     } else {                                                             \
-       switch_assert("invalid condition for fct_req!");                         \
+       switch_assert("invalid condition for fct_req!");                  \
        _fct_req((_CNDTN_));                                              \
     }
 

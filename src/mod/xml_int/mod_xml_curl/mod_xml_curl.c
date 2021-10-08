@@ -59,6 +59,7 @@ struct xml_binding {
 	int use_dynamic_url;
 	long auth_scheme;
 	int timeout;
+	switch_size_t curl_max_bytes;
 };
 
 static int keep_files_around = 0;
@@ -218,7 +219,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	memset(&config_data, 0, sizeof(config_data));
 
 	config_data.name = filename;
-	config_data.max_bytes = XML_CURL_MAX_BYTES;
+	config_data.max_bytes = binding->curl_max_bytes;
 
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		if (!zstr(binding->cred)) {
@@ -364,6 +365,7 @@ static switch_status_t do_config(void)
 		char *method = NULL;
 		int disable100continue = 1;
 		int use_dynamic_url = 0, timeout = 0;
+		switch_size_t curl_max_bytes = XML_CURL_MAX_BYTES;
 		uint32_t enable_cacert_check = 0;
 		char *ssl_cert_file = NULL;
 		char *ssl_key_file = NULL;
@@ -452,6 +454,13 @@ static switch_status_t do_config(void)
 				}
 			} else if (!strcasecmp(var, "bind-local")) {
 				bind_local = val;
+			} else if (!strcasecmp(var, "response-max-bytes")) {
+				int tmp = atoi(val);
+				if (tmp >= 0) {
+					curl_max_bytes = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative maximum response bytes!\n");
+				}
 			}
 		}
 
@@ -539,6 +548,8 @@ static switch_status_t do_config(void)
 			}
 
 		}
+
+		binding->curl_max_bytes = curl_max_bytes;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  zstr(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");

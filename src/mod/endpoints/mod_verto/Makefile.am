@@ -24,11 +24,11 @@ MCAST_la_LDFLAGS   = -avoid-version -module -no-undefined -shared $(PERL_LDFLAGS
 #	install -m 755 mcast/MCAST.pm $(DESTDIR)$(PERL_SITEDIR)
 endif
 
-mcast/esl_wrap.cpp:
-	cd mcast && swig -module MCAST -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o mcast_wrap.cpp ../MCAST.i
+mcast/mcast_wrap.cpp:
+	cd mcast && swig -module MCAST -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o mcast_wrap.cpp MCAST.i
 
 mcast/perlxsi.c:
-	$(PERL) -MExtUtils::Embed -e xsinit -- -o perlxsi.c
+	$(PERL) -MExtUtils::Embed -e xsinit -- -o mcast/perlxsi.c
 
 clean-data-local:
 	rm -f *.o *.so *~

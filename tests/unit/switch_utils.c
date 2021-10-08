@@ -23,17 +23,16 @@
  *
  * Contributor(s):
  * Seven Du <seven@signalwire.com>
- *
+ * Windy Wang <xiaofengcanyuexp@163.com>
  *
  * switch_utils.c -- tests switch_utils
  *
  */
 
-#include <stdio.h>
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_MINCORE_BEGIN()
+FST_MINCORE_BEGIN("./conf")
 
 FST_SUITE_BEGIN(switch_hash)
 
@@ -62,6 +61,25 @@ FST_TEST_BEGIN(benchmark)
     fst_check_string_equals(encoded, "%26bry%C3%A4n%23!%E6%9D%9C%E9%87%91%E6%88%BF");
 }
 FST_TEST_END()
+
+FST_TEST_BEGIN(b64)
+{
+    switch_size_t size;
+    char *str = "ABC";
+    unsigned char b64_str[6];
+    char decoded_str[4];
+    switch_status_t status = switch_b64_encode((unsigned char *)str, strlen(str), b64_str, sizeof(b64_str));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "b64_str: %s\n", b64_str);
+    fst_check(status == SWITCH_STATUS_SUCCESS);
+    fst_check_string_equals((const char *)b64_str, "QUJD");
+
+    size = switch_b64_decode((const char *)b64_str, decoded_str, sizeof(decoded_str));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "decoded_str: %s\n", decoded_str);
+    fst_check_string_equals(decoded_str, str);
+    fst_check(size == 4);
+}
+FST_TEST_END()
+
 
 FST_SUITE_END()
 

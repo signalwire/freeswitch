@@ -42,11 +42,13 @@
 #define API_COMMAND_OPTION 4
 
 #define API_NODE_OPTION_FRAMING 0
-#define API_NODE_OPTION_LEGACY 1
+#define API_NODE_OPTION_KEEPALIVE 1
+#define API_NODE_OPTION_LEGACY 2
 #define API_NODE_OPTION_MAX 99
 
 static const char *node_runtime_options[] = {
 		"event-stream-framing",
+		"event-stream-keepalive",
 		"enable-legacy",
 		NULL
 };
@@ -67,6 +69,10 @@ static switch_status_t api_get_node_option(ei_node_t *ei_node, switch_stream_han
 	switch (option) {
 	case API_NODE_OPTION_FRAMING:
 		stream->write_function(stream, "+OK %i", ei_node->event_stream_framing);
+		break;
+
+	case API_NODE_OPTION_KEEPALIVE:
+		stream->write_function(stream, "+OK %i", ei_node->event_stream_keepalive);
 		break;
 
 	case API_NODE_OPTION_LEGACY:
@@ -96,6 +102,12 @@ static switch_status_t api_set_node_option(ei_node_t *ei_node, switch_stream_han
 			stream->write_function(stream, "+OK %i", val);
 			ei_node->event_stream_framing = val;
 		}
+		break;
+
+	case API_NODE_OPTION_KEEPALIVE:
+		val = switch_true(value);
+		stream->write_function(stream, "+OK %i", val);
+		ei_node->event_stream_keepalive = val;
 		break;
 
 	case API_NODE_OPTION_LEGACY:
@@ -175,7 +187,6 @@ static switch_status_t api_erlang_event_filter(switch_stream_handle_t *stream) {
 
 	if (++column > 2) {
 		stream->write_function(stream, "\n");
-		column = 0;
 	}
 
 	while(kazoo_globals.kazoo_var_prefixes[idx] != NULL) {
@@ -264,9 +275,19 @@ static switch_status_t handle_node_api_event_stream(ei_event_stream_t *event_str
 		stream->write_function(stream, "%s:%d -> disconnected\n"
 							   ,ip_addr, port);
 	} else {
-		stream->write_function(stream, "%s:%d -> %s:%d\n"
+		unsigned int year, day, hour, min, sec, delta;
+
+		delta = (switch_micro_time_now() - event_stream->connected_time) / 1000000;
+		sec = delta % 60;
+		min = delta / 60 % 60;
+		hour = delta / 3600 % 24;
+		day = delta / 86400 % 7;
+		year = delta / 31556926 % 12;
+
+		stream->write_function(stream, "%s:%d -> %s:%d for %d years, %d days, %d hours, %d minutes, %d seconds\n"
 							   ,event_stream->local_ip, event_stream->local_port
-							   ,event_stream->remote_ip, event_stream->remote_port);
+							   ,event_stream->remote_ip, event_stream->remote_port
+							   ,year, day, hour, min, sec);
 	}
 
 	binding = event_stream->bindings;
@@ -516,8 +537,9 @@ SWITCH_STANDARD_API(exec_api_cmd)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-void add_cli_api(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface)
+void add_cli_api(switch_loadable_module_interface_t **module_interface)
 {
+	switch_api_interface_t *api_interface = NULL;
 	SWITCH_ADD_API(api_interface, "erlang", KAZOO_DESC, exec_api_cmd, KAZOO_SYNTAX);
 	switch_console_set_complete("add erlang status");
 	switch_console_set_complete("add erlang event_filter");

@@ -190,7 +190,9 @@
 
     <!-- Allow multiple registrations to the same account in the central registration table -->
     <!-- <param name="multiple-registrations" value="true"/> -->
-
+    
+    <!-- <param name="max-audio-channels" value="2"/> -->
+   
   </settings>
 
 </configuration>

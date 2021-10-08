@@ -90,15 +90,11 @@ SWITCH_DECLARE(switch_status_t) kz_expand_api_execute(const char *cmd, const cha
 	switch_assert(stream->data != NULL);
 	switch_assert(stream->write_function != NULL);
 
-	if (strcasecmp(cmd, "console_complete")) {
-		cmd_used = switch_strip_whitespace(cmd);
-		arg_used = switch_strip_whitespace(arg);
-	} else {
-		cmd_used = (char *) cmd;
-		arg_used = (char *) arg;
-	}
+	cmd_used = switch_strip_whitespace(cmd);
+	arg_used = switch_strip_whitespace(arg);
 
 	if (cmd_used && (api = switch_loadable_module_get_api_interface(cmd_used)) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "executing [%s] => [%s]\n", cmd_used, arg_used);
 		if ((status = api->function(arg_used, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
@@ -148,6 +144,7 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 	nv = 0;
 	olen = strlen(in) + 1;
 	indup = strdup(in);
+	switch_assert(indup);
 	endof_indup = end_of_p(indup) + 1;
 
 	if ((data = malloc(olen))) {
@@ -342,46 +339,37 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 				} else {
 					switch_stream_handle_t stream = { 0 };
 					char *expanded = NULL;
+					char *expanded_vname = NULL;
 
 					SWITCH_STANDARD_STREAM(stream);
 
-					if (stream.data) {
-						char *expanded_vname = NULL;
-
-						if ((expanded_vname = kz_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
-							expanded_vname = NULL;
-						} else {
-							vname = expanded_vname;
-						}
-
-						if ((expanded = kz_event_expand_headers_check(event, vval, var_list, api_list, recur+1)) == vval) {
-							expanded = NULL;
-						} else {
-							vval = expanded;
-						}
-
-						if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
-							func_val = NULL;
-							sub_val = "<API execute Permission Denied>";
-						} else {
-							stream.param_event = event;
-							if (kz_expand_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-								func_val = stream.data;
-								sub_val = func_val;
-							} else {
-								free(stream.data);
-							}
-						}
-
-						switch_safe_free(expanded);
-						switch_safe_free(expanded_vname);
-
+					if ((expanded_vname = kz_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
+						expanded_vname = NULL;
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-						free(data);
-						free(indup);
-						return (char *) in;
+						vname = expanded_vname;
 					}
+
+					if ((expanded = kz_event_expand_headers_check(event, vval, var_list, api_list, recur+1)) == vval) {
+						expanded = NULL;
+					} else {
+						vval = expanded;
+					}
+
+					if (!switch_core_test_flag(SCF_API_EXPANSION) || (api_list && !switch_event_check_permission_list(api_list, vname))) {
+						func_val = NULL;
+						sub_val = "<API execute Permission Denied>";
+					} else {
+						stream.param_event = event;
+						if (kz_expand_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+							func_val = stream.data;
+							sub_val = func_val;
+						} else {
+							free(stream.data);
+						}
+					}
+
+					switch_safe_free(expanded);
+					switch_safe_free(expanded_vname);
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
 					if (len + nlen >= olen) {
@@ -398,7 +386,6 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 				switch_safe_free(expanded_sub_val);
 				sub_val = NULL;
 				vname = NULL;
-				vtype = 0;
 				br = 0;
 			}
 
@@ -435,21 +422,33 @@ SWITCH_DECLARE(char *) kz_event_expand_headers(switch_event_t *event, const char
 	return kz_event_expand_headers_check(event, in, NULL, NULL, 0);
 }
 
-SWITCH_DECLARE(char *) kz_event_expand(const char *in)
+SWITCH_DECLARE(char *) kz_event_expand_headers_pool(switch_memory_pool_t *pool, switch_event_t *event, char *val)
 {
-	switch_event_t *event = NULL;
-	char *ret = NULL;
-	kz_switch_core_base_headers_for_expand(&event);
-	ret = kz_event_expand_headers_check(event, in, NULL, NULL, 0);
-	switch_event_destroy(&event);
-	return ret;
+	char *expanded;
+	char *dup = NULL;
+
+	expanded = kz_event_expand_headers(event, val);
+	dup = switch_core_strdup(pool, expanded);
+
+	if (expanded != val) {
+		free(expanded);
+	}
+
+	return dup;
 }
 
-SWITCH_DECLARE(char *) kz_expand(const char *in)
+SWITCH_DECLARE(char *) kz_expand(const char *in, const char *uuid)
 {
 	switch_event_t *event = NULL;
 	char *ret = NULL;
 	kz_switch_core_base_headers_for_expand(&event);
+	if (uuid != NULL) {
+		switch_core_session_t *nsession = NULL;
+		if ((nsession = switch_core_session_locate(uuid))) {
+			switch_channel_event_set_data(switch_core_session_get_channel(nsession), event);
+			switch_core_session_rwunlock(nsession);
+		}
+	}
 	ret = kz_event_expand_headers_check(event, in, NULL, NULL, 0);
 	switch_event_destroy(&event);
 	return ret;
@@ -460,7 +459,7 @@ SWITCH_DECLARE(char *) kz_expand_pool(switch_memory_pool_t *pool, const char *in
 	char *expanded;
 	char *dup = NULL;
 
-	if(!(expanded = kz_expand(in))) {
+	if(!(expanded = kz_expand(in, NULL))) {
 		return NULL;
 	}
 	dup = switch_core_strdup(pool, expanded);
@@ -513,6 +512,32 @@ SWITCH_DECLARE(switch_status_t) kz_switch_event_add_variable_name_printf(switch_
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) kz_expand_json_to_event(cJSON *json, switch_event_t *event, char * prefix)
+{
+	char * fmt = switch_mprintf("%s%s%%s", prefix ? prefix : "", prefix ? "_" : "");
+	if (event) {
+		cJSON *item = NULL;
+		char *response = NULL;
+		cJSON_ArrayForEach(item, json) {
+			if (item->type == cJSON_String) {
+				response = strdup(item->valuestring);
+			} else if (item->type == cJSON_Object) {
+				char * fmt1 = switch_mprintf(fmt, item->string);
+				kz_expand_json_to_event(item, event, fmt1);
+				switch_safe_free(fmt1);
+				continue;
+			} else {
+				response = cJSON_PrintUnformatted(item);
+			}
+			kz_switch_event_add_variable_name_printf(event, SWITCH_STACK_BOTTOM, response, fmt, item->string);
+			switch_safe_free(response);
+		}
+	}
+
+	switch_safe_free(fmt);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_xml_t) kz_xml_child(switch_xml_t xml, const char *name)
 {
 	xml = (xml) ? xml->child : NULL;
@@ -555,14 +580,45 @@ void kz_event_decode(switch_event_t *event)
 	switch_event_header_t *hp;
 	int i;
 	for (hp = event->headers; hp; hp = hp->next) {
-		if (hp->idx) {
-			for(i = 0; i < hp->idx; i++) {
-				switch_url_decode(hp->array[i]);
+		if (strncmp(hp->name, "_json_", 6)) {
+			if (hp->idx) {
+				for(i = 0; i < hp->idx; i++) {
+					switch_url_decode(hp->array[i]);
+				}
+			} else {
+				switch_url_decode(hp->value);
 			}
-		} else {
-			switch_url_decode(hp->value);
 		}
 	}
+}
+
+void kz_expand_headers(switch_event_t *resolver, switch_event_t *event) {
+	switch_event_t *clone = NULL;
+	switch_event_header_t *header = NULL;
+	switch_event_create_plain(&clone, event->event_id);
+
+	for(header = event->headers; header; header = header->next) {
+		char *expanded = kz_event_expand_headers(resolver, header->value);
+		if (expanded != header->value) {
+			switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, header->name, expanded);
+			switch_safe_free(expanded);
+		}
+	}
+
+	/* we don't want to force unique headers
+	 * so we delete and then merge
+	 */
+	for(header = clone->headers; header; header = header->next) {
+		switch_event_del_header(event, header->name);
+	}
+
+	switch_event_merge(event, clone);
+
+	switch_event_destroy(&clone);
+}
+
+void kz_expand_headers_self(switch_event_t *event) {
+	kz_expand_headers(event, event);
 }
 
 char * kz_expand_vars(char *xml_str) {

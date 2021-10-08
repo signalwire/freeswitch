@@ -124,7 +124,7 @@ APR_DECLARE(void *) apr_pmemdup(apr_pool_t *a, const void *m, apr_size_t n)
 APR_DECLARE_NONSTD(char *) apr_pstrcat(apr_pool_t *a, ...)
 {
     char *cp, *argp, *res;
-    apr_size_t saved_lengths[MAX_SAVED_LENGTHS];
+    apr_size_t saved_lengths[MAX_SAVED_LENGTHS] = { 0 };
     int nargs = 0;
 
     /* Pass one --- find length of required string */

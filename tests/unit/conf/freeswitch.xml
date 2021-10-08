@@ -11,6 +11,12 @@
 		<load module="mod_spandsp"/>
 		<load module="mod_amr"/>
 		<load module="mod_amrwb"/>
+		<load module="mod_tone_stream"/>
+		<load module="mod_dptools"/>
+		<load module="mod_sndfile"/>
+		<load module="mod_dialplan_xml"/>
+		<load module="mod_sndfile"/>
+		<load module="mod_test"/>
       </modules>
     </configuration>
 
@@ -35,6 +41,12 @@
 
   <section name="dialplan" description="Regex/XML Dialplan">
     <context name="default">
+      <extension name="loopback">
+        <condition field="destination_number" expression="^loopback$">
+          <action application="bridge" data="null/+1234"/>
+        </condition>
+      </extension>
+
       <extension name="sample">
         <condition>
           <action application="info"/>

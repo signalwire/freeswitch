@@ -1150,6 +1150,13 @@ SWITCH_STANDARD_APP(break_function)
 	}
 }
 
+SWITCH_STANDARD_APP(reuse_caller_profile_function)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+	switch_channel_set_flag(channel, CF_REUSE_CALLER_PROFILE);
+}
+
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_queue_dtmf_string(switch_core_session_get_channel(session), (const char *) data);
@@ -1458,6 +1465,12 @@ SWITCH_STANDARD_APP(answer_function)
 	if (!zstr(arg)) {
 		if (switch_stristr("is_conference", arg)) {
 			switch_channel_set_flag(channel, CF_CONFERENCE);
+		}
+		if (switch_stristr("decode_video", arg)) {
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		}
+		if (switch_stristr("debug_video", arg)) {
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DEBUG_READ);
 		}
 	}
 
@@ -2802,7 +2815,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_detach_set(thd_attr, 1);
 
 	att = switch_core_session_alloc(session, sizeof(*att));
 	att->running = -1;
@@ -3957,7 +3969,7 @@ static void pickup_add_session(switch_core_session_t *session, const char *key)
 		key = dup_key;
 	}
 
-	node = malloc(sizeof(*node));
+	switch_zmalloc(node, sizeof(*node));
 	switch_assert(node);
 	node->key = strdup(key);
 	node->uuid = strdup(switch_core_session_get_uuid(session));
@@ -6635,6 +6647,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "recovery_refresh", "Send call recovery_refresh", "Send a call recovery_refresh.", recovery_refresh_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "reuse_caller_profile", "Reuse the caller profile", "Reuse the caller profile", reuse_caller_profile_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",

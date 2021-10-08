@@ -342,9 +342,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_easyroute", "src\mod\ap
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_lcr", "src\mod\applications\mod_lcr\mod_lcr.2017.vcxproj", "{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtiff", "libs\spandsp\src\libtiff.2017.vcxproj", "{401A40CD-5DB4-4E34-AC68-FA99E9FAC014}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtiff", "libs\win32\libtiff\libtiff.2017.vcxproj", "{401A40CD-5DB4-4E34-AC68-FA99E9FAC014}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspandsp", "libs\spandsp\src\libspandsp.2017.vcxproj", "{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspandsp", "libs\win32\spandsp\libspandsp.2017.vcxproj", "{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeex", "libs\win32\speex\libspeex.2017.vcxproj", "{E972C52F-9E85-4D65-B19C-031E511E9DB4}"
 EndProject
@@ -358,9 +358,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_skinny", "src\mod\endpo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_rtmp", "src\mod\endpoints\mod_rtmp\mod_rtmp.2017.vcxproj", "{48414740-C693-4968-9846-EE058020C64F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_at_dictionary", "libs\spandsp\src\msvc\make_at_dictionary.2017.vcxproj", "{DEE932AB-5911-4700-9EEB-8C7090A0A330}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_at_dictionary", "libs\win32\spandsp\make_at_dictionary.2017.vcxproj", "{DEE932AB-5911-4700-9EEB-8C7090A0A330}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_modem_filter", "libs\spandsp\src\msvc\make_modem_filter.2017.vcxproj", "{329A6FA0-0FCC-4435-A950-E670AEFA9838}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_modem_filter", "libs\win32\spandsp\make_modem_filter.2017.vcxproj", "{329A6FA0-0FCC-4435-A950-E670AEFA9838}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_skel", "src\mod\applications\mod_skel\mod_skel.2017.vcxproj", "{11C9BC3D-45E9-46E3-BE84-B8CEE4685E39}"
 EndProject
@@ -484,11 +484,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmltok", "libs\win32\xmlrpc
 EndProject
 Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Setup.2017", "w32\Setup\Setup.2017.wixproj", "{47213370-B933-487D-9F45-BCA26D7E2B6F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_math_fixed_tables", "libs\spandsp\src\msvc\make_math_fixed_tables.2017.vcxproj", "{2386B892-35F5-46CF-A0F0-10394D2FBF9B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_math_fixed_tables", "libs\win32\spandsp\make_math_fixed_tables.2017.vcxproj", "{2386B892-35F5-46CF-A0F0-10394D2FBF9B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libcbt", "libs\win32\libcbt\libcbt.2017.vcxproj", "{77BC1DD2-C9A1-44D7-BFFA-1320370CACB9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_cielab_luts", "libs\spandsp\src\msvc\make_cielab_luts.2017.vcxproj", "{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_cielab_luts", "libs\win32\spandsp\make_cielab_luts.2017.vcxproj", "{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "opus", "opus", "{ED2CA8B5-8E91-4296-A120-02BB0B674652}"
 EndProject
@@ -504,7 +504,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opus.silk_float", "libs\win
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_opus", "src\mod\codecs\mod_opus\mod_opus.2017.vcxproj", "{64E99CCA-3C6F-4AEB-9FA3-CFAC711257BB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_t43_gray_code_tables", "libs\spandsp\src\msvc\make_t43_gray_code_tables.2017.vcxproj", "{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_t43_gray_code_tables", "libs\win32\spandsp\make_t43_gray_code_tables.2017.vcxproj", "{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "winFailToBan", "src\mod\languages\mod_managed\managed\examples\winFailToBan\winFailToBan.csproj", "{5BA0D5BD-330D-4EE2-B959-CAFEA04E50E0}"
 EndProject
@@ -585,6 +585,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_pgsql", "src\mod\databases\mod_pgsql\mod_pgsql.2017.vcxproj", "{1BA65811-5453-46F6-8190-9ECEEFEB7DF2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_mariadb", "src\mod\databases\mod_mariadb\mod_mariadb.2017.vcxproj", "{0B612F84-7533-4DEC-AEDD-5C9CBCF15EAC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_switch_core_db", "tests\unit\test_switch_core_db.2017.vcxproj", "{580675D7-C1C9-4197-AAC5-00F64FAFDE78}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_switch_ivr_originate", "tests\unit\test_switch_ivr_originate.2017.vcxproj", "{69A7464A-9B0D-4804-A108-835229DACF58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2689,6 +2693,30 @@ Global
 		{0B612F84-7533-4DEC-AEDD-5C9CBCF15EAC}.Release|Win32.Build.0 = Release|Win32
 		{0B612F84-7533-4DEC-AEDD-5C9CBCF15EAC}.Release|x64.ActiveCfg = Release|x64
 		{0B612F84-7533-4DEC-AEDD-5C9CBCF15EAC}.Release|x64.Build.0 = Release|x64
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.All|Win32.ActiveCfg = Release|Win32
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.All|Win32.Build.0 = Release|Win32
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.All|x64.ActiveCfg = Release|x64
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.All|x64.Build.0 = Release|x64
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Debug|Win32.ActiveCfg = Debug|Win32
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Debug|Win32.Build.0 = Debug|Win32
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Debug|x64.ActiveCfg = Debug|x64
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Debug|x64.Build.0 = Debug|x64
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Release|Win32.ActiveCfg = Release|Win32
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Release|Win32.Build.0 = Release|Win32
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Release|x64.ActiveCfg = Release|x64
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78}.Release|x64.Build.0 = Release|x64
+		{69A7464A-9B0D-4804-A108-835229DACF58}.All|Win32.ActiveCfg = Release|Win32
+		{69A7464A-9B0D-4804-A108-835229DACF58}.All|Win32.Build.0 = Release|Win32
+		{69A7464A-9B0D-4804-A108-835229DACF58}.All|x64.ActiveCfg = Release|x64
+		{69A7464A-9B0D-4804-A108-835229DACF58}.All|x64.Build.0 = Release|x64
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Debug|Win32.ActiveCfg = Debug|Win32
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Debug|Win32.Build.0 = Debug|Win32
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Debug|x64.ActiveCfg = Debug|x64
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Debug|x64.Build.0 = Debug|x64
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|Win32.ActiveCfg = Release|Win32
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|Win32.Build.0 = Release|Win32
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|x64.ActiveCfg = Release|x64
+		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2901,6 +2929,8 @@ Global
 		{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{1BA65811-5453-46F6-8190-9ECEEFEB7DF2} = {31C2761D-20E0-4BF8-98B9-E32F0D8DD6E1}
 		{0B612F84-7533-4DEC-AEDD-5C9CBCF15EAC} = {31C2761D-20E0-4BF8-98B9-E32F0D8DD6E1}
+		{580675D7-C1C9-4197-AAC5-00F64FAFDE78} = {9388C266-C3FC-468A-92EF-0CBC35941412}
+		{69A7464A-9B0D-4804-A108-835229DACF58} = {9388C266-C3FC-468A-92EF-0CBC35941412}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09840DE7-9208-45AA-9667-1A71EE93BD1E}

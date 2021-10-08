@@ -47,7 +47,7 @@ package com.adobe.serialization.json {
 		/**
 		 * Constructs a new JSONParseError.
 		 *
-		 * @param message The error message that occured during parsing
+		 * @param message The error message that occurred during parsing
 		 * @langversion ActionScript 3.0
 		 * @playerversion Flash 9.0
 		 * @tiptext

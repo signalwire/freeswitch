@@ -1762,7 +1762,6 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		}
 
 		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
-			err = "Could not allocate memory\n";
 			abort();
 		}
 
@@ -2059,7 +2058,6 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 		}
 
 		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
-			err = "Could not allocate memory\n";
 			abort();
 		}
 
@@ -2229,7 +2227,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 	}
 	else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", precf);
 	}
 
 	if (switch_core_sqldb_init(&err) != SWITCH_STATUS_SUCCESS)
@@ -2679,7 +2677,13 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 #endif
 
 	for (i = 0; i < arraylen; i++) {
-		int this_ptime = array[i]->microseconds_per_packet / 1000;
+		int this_ptime;
+
+		if (!array[i]) {
+			continue;
+		}
+
+		this_ptime = array[i]->microseconds_per_packet / 1000;
 
 		if (!strcasecmp(array[i]->iananame, "ilbc")) {
 			this_ptime = 20;
@@ -2692,7 +2696,7 @@ static void switch_loadable_module_sort_codecs(const switch_codec_implementation
 #endif
 		}
 
-		if (i > 0 && strcasecmp(array[i]->iananame, array[i-1]->iananame) && this_ptime != sorted_ptime) {
+		if (i > 0 && array[i-1] && strcasecmp(array[i]->iananame, array[i-1]->iananame) && this_ptime != sorted_ptime) {
 			int j;
 			int swapped = 0;
 

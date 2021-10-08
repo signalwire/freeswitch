@@ -884,9 +884,6 @@ SWITCH_DECLARE(switch_status_t) switch_stun_ip_lookup(char **external_ip, const 
 				stun_port = (switch_port_t)iport;
 			}
 		}
-		else {
-			p = stun_ip;
-		}
 
 		switch_find_local_ip(ip_buf, sizeof(ip_buf), NULL, AF_INET);
 

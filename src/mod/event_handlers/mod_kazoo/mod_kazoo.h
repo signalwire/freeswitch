@@ -17,8 +17,11 @@
 extern const char kz_default_config[];
 extern const int kz_default_config_size;
 
+#include "kazoo_defs.h"
+#include "kazoo_tweaks.h"
 #include "kazoo_ei.h"
 #include "kazoo_message.h"
+#include "kazoo_utils.h"
 
 typedef enum {
 	LFLAG_RUNNING = (1 << 0)
@@ -26,16 +29,17 @@ typedef enum {
 
 
 /* kazoo_commands.c */
-void add_kz_commands(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface);
+void add_kz_commands(switch_loadable_module_interface_t **module_interface);
 
 /* kazoo_dptools.c */
-void add_kz_dptools(switch_loadable_module_interface_t **module_interface, switch_application_interface_t *app_interface);
+void add_kz_dptools(switch_loadable_module_interface_t **module_interface);
 
 /* kazoo_api.c */
-void add_cli_api(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface);
+void add_cli_api(switch_loadable_module_interface_t **module_interface);
 void remove_cli_api();
 
 /* kazoo_utils.c */
+/*
 SWITCH_DECLARE(switch_status_t) kz_switch_core_merge_variables(switch_event_t *event);
 SWITCH_DECLARE(switch_status_t) kz_switch_core_base_headers_for_expand(switch_event_t **event);
 void kz_check_set_profile_var(switch_channel_t *channel, char* var, char *val);
@@ -49,10 +53,14 @@ SWITCH_DECLARE(char *) kz_event_expand_headers(switch_event_t *event, const char
 SWITCH_DECLARE(char *) kz_expand(const char *in);
 SWITCH_DECLARE(char *) kz_expand_pool(switch_memory_pool_t *pool, const char *in);
 switch_status_t kz_json_api(const char * command, cJSON *args, cJSON **res);
+*/
 
 /* kazoo_endpoints.c */
 void add_kz_endpoints(switch_loadable_module_interface_t **module_interface);
 
+/* kazoo_cdr.c */
+void kz_cdr_start();
+void kz_cdr_stop();
 
 /* kazoo_tweaks.c */
 void kz_tweaks_start();

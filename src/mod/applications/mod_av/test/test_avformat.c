@@ -44,6 +44,7 @@ FST_CORE_BEGIN("conf")
 
 		FST_TEST_BEGIN(avformat_test_colorspace_RGB)
 		{
+			char path[1024];
 			switch_status_t status;
 			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1);
 			switch_file_handle_t fh = { 0 };
@@ -57,7 +58,8 @@ FST_CORE_BEGIN("conf")
 
 			fst_requires(img);
 
-			status = switch_core_file_open(&fh, "{colorspace=0}./test_RGB.mp4", 1, 8000, flags, fst_pool);
+			sprintf(path, "%s%s%s%s", "{colorspace=0}", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../test_RGB.mp4");
+			status = switch_core_file_open(&fh, path, 1, 8000, flags, fst_pool);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
 
@@ -70,7 +72,8 @@ FST_CORE_BEGIN("conf")
 			status = switch_core_file_write_video(&fh, &frame);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
-			ccimg = switch_img_read_png("./cluecon.png", SWITCH_IMG_FMT_ARGB);
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../cluecon.png");
+			ccimg = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
 			fst_requires(ccimg);
 
 			color.a = 255;
@@ -101,6 +104,7 @@ FST_CORE_BEGIN("conf")
 
 		FST_TEST_BEGIN(avformat_test_colorspace_BT7)
 		{
+			char path[1024];
 			switch_status_t status;
 			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1);
 			switch_file_handle_t fh = { 0 };
@@ -114,7 +118,8 @@ FST_CORE_BEGIN("conf")
 
 			fst_requires(img);
 
-			status = switch_core_file_open(&fh, "{colorspace=1}./test_BT7.mp4", 1, 8000, flags, fst_pool);
+			sprintf(path, "%s%s%s%s", "{colorspace=1}", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../test_BT7.mp4");
+			status = switch_core_file_open(&fh, path, 1, 8000, flags, fst_pool);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
 
@@ -127,7 +132,8 @@ FST_CORE_BEGIN("conf")
 			status = switch_core_file_write_video(&fh, &frame);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
-			ccimg = switch_img_read_png("./cluecon.png", SWITCH_IMG_FMT_ARGB);
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../cluecon.png");
+			ccimg = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
 			fst_requires(ccimg);
 
 			color.a = 255;

@@ -1322,7 +1322,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	   Setting the stack size on FreeBSD results in an instant crash.
 
 	   If anyone knows how to fix this,
-	   feel free to submit a patch to https://freeswitch.org/jira
+	   feel free to submit a patch to https://github.com/signalwire/freeswitch
 	 */
 
 #ifndef __FreeBSD__
@@ -1495,6 +1495,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
@@ -1514,6 +1515,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "::/0", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
@@ -1869,7 +1871,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_set_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 #endif
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
-	runtime.hard_log_level = SWITCH_LOG_DEBUG;
+	if (flags & SCF_LOG_DISABLE) {
+		runtime.hard_log_level = SWITCH_LOG_DISABLE;
+		flags &= ~SCF_LOG_DISABLE;
+	} else {
+		runtime.hard_log_level = SWITCH_LOG_DEBUG;
+	}
 	runtime.mailer_app = "sendmail";
 	runtime.mailer_app_args = "-t";
 	runtime.max_dtmf_duration = SWITCH_MAX_DTMF_DURATION;
@@ -2390,6 +2397,22 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY);
 					}
+				} else if (!strcasecmp(var, "event-channel-hierarchy-deliver-once") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE);
+					}
+				} else if (!strcasecmp(var, "event-channel-log-undeliverable-json") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_set_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
+					} else {
+						switch_clear_flag((&runtime), SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON);
+					}
+				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
+					switch_core_max_audio_channels(atoi(val));
 				}
 			}
 		}
@@ -2667,6 +2690,15 @@ SWITCH_DECLARE(int32_t) switch_core_sessions_peak_fivemin(void)
 	return runtime.sessions_peak_fivemin;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit)
+{
+	if (limit) {
+		runtime.max_audio_channels = limit;
+	}
+
+	return runtime.max_audio_channels;
+}
+
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *val)
 {
 	int *intval = (int *) val;
@@ -2838,7 +2870,11 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		{
 			int x = 19;
 			uint32_t count;
-
+			switch_event_t *shutdown_requested_event = NULL;
+			if (switch_event_create(&shutdown_requested_event, SWITCH_EVENT_SHUTDOWN_REQUESTED) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(shutdown_requested_event, SWITCH_STACK_BOTTOM, "Event-Info", "%s", cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "elegant");
+				switch_event_fire(&shutdown_requested_event);
+			}
 			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 			if (cmd == SCSC_SHUTDOWN_ASAP) {
 				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
@@ -2912,7 +2948,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		newintval = runtime.running;
 		break;
 	case SCSC_LOGLEVEL:
-		if (oldintval > -1) {
+		if (oldintval >= SWITCH_LOG_DISABLE) {
 			runtime.hard_log_level = oldintval;
 		}
 

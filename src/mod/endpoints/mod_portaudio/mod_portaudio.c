@@ -282,6 +282,14 @@ SWITCH_STANDARD_API(pa_cmd);
 */
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
+	switch_channel_t *channel;
+
+	if (session) {
+		if ((channel = switch_core_session_get_channel(session))) {
+			switch_channel_set_flag(channel, CF_AUDIO);
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -636,7 +644,9 @@ static void remove_stream(audio_stream_t * stream, int already_locked)
 		for (previous = globals.stream_list; previous && previous->next && previous->next != stream; previous = previous->next) {
 			;
 		}
-		previous->next = stream->next;
+		if (previous) {
+			previous->next = stream->next;
+		}
 	}
 	if (! already_locked) {
 		switch_mutex_unlock(globals.streams_lock);
@@ -1172,8 +1182,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (outbound_profile->destination_number && !strncasecmp(outbound_profile->destination_number, "endpoint", sizeof("endpoint")-1)) {
-		codec_ms = -1;
-		samples_per_packet = -1;
 		endpoint = NULL;
 		endpoint_name = switch_core_strdup(outbound_profile->pool, outbound_profile->destination_number);
 		endpoint_name = strchr(endpoint_name, '/');
@@ -1267,6 +1275,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_channel_set_state(channel, CS_INIT);
+	switch_channel_set_flag(channel, CF_AUDIO);
 	return SWITCH_CAUSE_SUCCESS;
 
 error:
@@ -2072,7 +2081,6 @@ static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *st
 					stream->write_function(stream, ",");
 				}
 				stream->write_function(stream, "o");
-				prev = 1;
 			}
 
 			stream->write_function(stream, "\n");
@@ -2853,7 +2861,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	char *action = argv[0];
-	char *flag_str = argv[1];
+	char *flag_str;
 	GFLAGS flags = GFLAG_NONE;
 	char *p;
 	int x = 0;
@@ -3239,7 +3247,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		}
 
 		switch_mutex_lock(globals.pa_mutex);
-		status = func(&argv[lead], argc - lead, stream);
+		func(&argv[lead], argc - lead, stream);
 		status = SWITCH_STATUS_SUCCESS; /*if func was defined we want to always return success as the command was found */
 		switch_mutex_unlock(globals.pa_mutex);
 

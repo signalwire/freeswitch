@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP8_COMMON_THREADING_H_
-#define VP8_COMMON_THREADING_H_
+#ifndef VPX_VP8_COMMON_THREADING_H_
+#define VPX_VP8_COMMON_THREADING_H_
 
 #include "./vpx_config.h"
 
@@ -171,11 +171,11 @@ static inline int sem_destroy(sem_t *sem) {
 #define sem_wait(sem) (semaphore_wait(*sem))
 #define sem_post(sem) semaphore_signal(*sem)
 #define sem_destroy(sem) semaphore_destroy(mach_task_self(), *sem)
-#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);} 
+#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();nanosleep(&ts, NULL);} 
 #else
 #include <unistd.h>
 #include <sched.h>
-#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);}
+#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);}
 #endif
 /* Not Windows. Assume pthreads */
 
@@ -205,4 +205,4 @@ static INLINE void vp8_atomic_spin_wait(
 }  // extern "C"
 #endif
 
-#endif  // VP8_COMMON_THREADING_H_
+#endif  // VPX_VP8_COMMON_THREADING_H_

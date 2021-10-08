@@ -54,91 +54,87 @@
 
 #ifdef EI_DEBUG
 static void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send) {
-    char *mbuf = NULL;
-    int i = 1;
+	char *mbuf = NULL;
+	int i = 1;
 
-    ei_s_print_term(&mbuf, buf->buff, &i);
+	ei_s_print_term(&mbuf, buf->buff, &i);
 
-    if (send) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoded term %s to '%s'\n", mbuf, dest);
-    } else {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoded term %s for '%s'\n", mbuf, dest);
-    }
+	if (send) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoded term %s to '%s'\n", mbuf, dest);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoded term %s for '%s'\n", mbuf, dest);
+	}
 
-    free(mbuf);
+	free(mbuf);
 }
 
 static void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send) {
-    char *pbuf = NULL;
-    int i = 0;
-    ei_x_buff pidbuf;
+	char *pbuf = NULL;
+	int i = 0;
+	ei_x_buff pidbuf;
 
-    ei_x_new(&pidbuf);
-    ei_x_encode_pid(&pidbuf, pid);
+	ei_x_new(&pidbuf);
+	ei_x_encode_pid(&pidbuf, pid);
 
-    ei_s_print_term(&pbuf, pidbuf.buff, &i);
+	ei_s_print_term(&pbuf, pidbuf.buff, &i);
 
-    ei_x_print_reg_msg(buf, pbuf, send);
-    free(pbuf);
+	ei_x_print_reg_msg(buf, pbuf, send);
+	free(pbuf);
 }
 #endif
 
-void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event) {
+void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event)
+{
 	ei_encode_switch_event_headers_2(ebuf, event, 1);
 }
 
-void ei_encode_switch_event_headers_2(ei_x_buff *ebuf, switch_event_t *event, int encode) {
-    switch_event_header_t *hp;
-    char *uuid = switch_event_get_header(event, "unique-id");
-    int i;
+void ei_encode_switch_event_headers_2(ei_x_buff *ebuf, switch_event_t *event, int encode)
+{
+	switch_event_header_t *hp;
+	char *uuid = switch_event_get_header(event, "unique-id");
+	int i;
 
-    for (i = 0, hp = event->headers; hp; hp = hp->next, i++);
+	for (i = 0, hp = event->headers; hp; hp = hp->next, i++)
+		;
 
-    if (event->body)
-        i++;
+	if (event->body)
+		i++;
 
-    ei_x_encode_list_header(ebuf, i + 1);
+	ei_x_encode_list_header(ebuf, i + 1);
 
-    if (uuid) {
+	if (uuid) {
 		char *unique_id = switch_event_get_header(event, "unique-id");
 		ei_x_encode_binary(ebuf, unique_id, strlen(unique_id));
-    } else {
-        ei_x_encode_atom(ebuf, "undefined");
-    }
+	} else {
+		ei_x_encode_atom(ebuf, "undefined");
+	}
 
-    for (hp = event->headers; hp; hp = hp->next) {
-        ei_x_encode_tuple_header(ebuf, 2);
-        ei_x_encode_binary(ebuf, hp->name, strlen(hp->name));
-	    if(encode) {
-	        switch_url_decode(hp->value);
-	    }
-        ei_x_encode_binary(ebuf, hp->value, strlen(hp->value));
-    }
+	for (hp = event->headers; hp; hp = hp->next) {
+		ei_x_encode_tuple_header(ebuf, 2);
+		ei_x_encode_binary(ebuf, hp->name, strlen(hp->name));
+		if (encode) {
+			switch_url_decode(hp->value);
+		}
+		ei_x_encode_binary(ebuf, hp->value, strlen(hp->value));
+	}
 
-    if (event->body) {
-        ei_x_encode_tuple_header(ebuf, 2);
-        ei_x_encode_binary(ebuf, "body", strlen("body"));
-        ei_x_encode_binary(ebuf, event->body, strlen(event->body));
-    }
+	if (event->body) {
+		ei_x_encode_tuple_header(ebuf, 2);
+		ei_x_encode_binary(ebuf, "body", strlen("body"));
+		ei_x_encode_binary(ebuf, event->body, strlen(event->body));
+	}
 
-    ei_x_encode_empty_list(ebuf);
+	ei_x_encode_empty_list(ebuf);
 }
 
 int ei_json_child_count(cJSON *JObj)
 {
-	int mask = cJSON_False
-			| cJSON_True
-			| cJSON_NULL
-			| cJSON_Number
-			| cJSON_String
-			| cJSON_Array
-			| cJSON_Object
-			| cJSON_Raw;
+	int mask = cJSON_False | cJSON_True | cJSON_NULL | cJSON_Number | cJSON_String | cJSON_Array | cJSON_Object | cJSON_Raw;
 
 	cJSON *item = JObj->child;
 	int i = 0;
-	while(item) {
-		if(item->type & mask)
+	while (item) {
+		if (item->type & mask)
 			i++;
 		item = item->next;
 	}
@@ -146,154 +142,165 @@ int ei_json_child_count(cJSON *JObj)
 
 }
 
-void ei_encode_json_array(ei_x_buff *ebuf, cJSON *JObj) {
+void ei_encode_json_array(ei_x_buff *ebuf, cJSON *JObj)
+{
 	cJSON *item;
 	int count = ei_json_child_count(JObj);
 
-    ei_x_encode_list_header(ebuf, count);
-    if(count == 0)
-    	return;
+	ei_x_encode_list_header(ebuf, count);
+	if (count == 0)
+		return;
 
-    item = JObj->child;
-    while(item) {
-    	switch(item->type) {
-    	case cJSON_String:
-    		ei_x_encode_binary(ebuf, item->valuestring, strlen(item->valuestring));
-    		break;
+	item = JObj->child;
+	while (item) {
+		switch (item->type){
+		case cJSON_String:
+			ei_x_encode_binary(ebuf, item->valuestring, strlen(item->valuestring));
+			break;
 
-    	case cJSON_Number:
-   			ei_x_encode_double(ebuf, item->valuedouble);
-    		break;
+		case cJSON_Number:
+			if ((fabs(((double) item->valueint) - item->valuedouble) <= DBL_EPSILON) && (item->valuedouble <= INT_MAX) && (item->valuedouble >= INT_MIN)) {
+				ei_x_encode_longlong(ebuf, item->valueint);
+			} else {
+				if (fmod(item->valuedouble, 1) == 0) {
+					ei_x_encode_ulonglong(ebuf, item->valuedouble);
+				} else {
+					ei_x_encode_double(ebuf, item->valuedouble);
+				}
+			}
+			break;
 
-    	case cJSON_True:
-    		ei_x_encode_boolean(ebuf, 1);
-    		break;
+		case cJSON_True:
+			ei_x_encode_boolean(ebuf, 1);
+			break;
 
-    	case cJSON_False:
-    		ei_x_encode_boolean(ebuf, 0);
-    		break;
+		case cJSON_False:
+			ei_x_encode_boolean(ebuf, 0);
+			break;
 
-    	case cJSON_Object:
-    		ei_encode_json(ebuf, item);
-    		break;
+		case cJSON_Object:
+			ei_encode_json(ebuf, item);
+			break;
 
-    	case cJSON_Array:
-    		ei_encode_json_array(ebuf, item);
-    		break;
+		case cJSON_Array:
+			ei_encode_json_array(ebuf, item);
+			break;
 
-    	case cJSON_Raw:
-    	{
-    		cJSON *Decoded = cJSON_Parse(item->valuestring);
-    		if(!Decoded) {
-    			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR DECODING RAW JSON %s\n", item->valuestring);
-    			ei_x_encode_tuple_header(ebuf, 0);
-    		} else {
-    			ei_encode_json(ebuf, Decoded);
-    			cJSON_Delete(Decoded);
-    		}
-    		break;
-    	}
+		case cJSON_Raw: {
+			cJSON *Decoded = cJSON_Parse(item->valuestring);
+			if (!Decoded) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR DECODING RAW JSON %s\n", item->valuestring);
+				ei_x_encode_tuple_header(ebuf, 0);
+			} else {
+				ei_encode_json(ebuf, Decoded);
+				cJSON_Delete(Decoded);
+			}
+			break;
+		}
 
-    	case cJSON_NULL:
-    		ei_x_encode_atom(ebuf, "null");
-    		break;
+		case cJSON_NULL:
+			ei_x_encode_atom(ebuf, "null");
+			break;
 
-    	default:
-    		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT ENCODED %i\n", item->type);
-    		break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT ENCODED %i\n", item->type);
+			break;
 
-    	}
-    	item = item->next;
-    }
+		}
+		item = item->next;
+	}
 
-    ei_x_encode_empty_list(ebuf);
+	ei_x_encode_empty_list(ebuf);
 
 }
 
-void ei_encode_json(ei_x_buff *ebuf, cJSON *JObj) {
+void ei_encode_json(ei_x_buff *ebuf, cJSON *JObj)
+{
 	cJSON *item;
 	int count = ei_json_child_count(JObj);
 
-	if(kazoo_globals.json_encoding == ERLANG_TUPLE) {
-	    ei_x_encode_tuple_header(ebuf, 1);
-	    ei_x_encode_list_header(ebuf, count);
+	if (kazoo_globals.json_encoding == ERLANG_TUPLE) {
+		ei_x_encode_tuple_header(ebuf, 1);
+		ei_x_encode_list_header(ebuf, count);
 	} else {
 		ei_x_encode_map_header(ebuf, count);
 	}
 
-    if(count == 0)
-    	return;
+	if (count == 0)
+		return;
 
-    item = JObj->child;
-    while(item) {
-    	if(kazoo_globals.json_encoding == ERLANG_TUPLE) {
-    		ei_x_encode_tuple_header(ebuf, 2);
-    	}
-    	ei_x_encode_binary(ebuf, item->string, strlen(item->string));
+	item = JObj->child;
+	while (item) {
+		if (kazoo_globals.json_encoding == ERLANG_TUPLE) {
+			ei_x_encode_tuple_header(ebuf, 2);
+		}
+		ei_x_encode_binary(ebuf, item->string, strlen(item->string));
 
-    	switch(item->type) {
-    	case cJSON_String:
-    		ei_x_encode_binary(ebuf, item->valuestring, strlen(item->valuestring));
-    		break;
+		switch (item->type){
+		case cJSON_String:
+			ei_x_encode_binary(ebuf, item->valuestring, strlen(item->valuestring));
+			break;
 
-    	case cJSON_Number:
-    		if ((fabs(((double)item->valueint) - item->valuedouble) <= DBL_EPSILON)
-    				&& (item->valuedouble <= INT_MAX)
-    				&& (item->valuedouble >= INT_MIN)) {
-    			ei_x_encode_longlong(ebuf, item->valueint);
-    		} else {
-    			ei_x_encode_double(ebuf, item->valuedouble);
-    		}
-    		break;
+		case cJSON_Number:
+			if ((fabs(((double) item->valueint) - item->valuedouble) <= DBL_EPSILON) && (item->valuedouble <= INT_MAX) && (item->valuedouble >= INT_MIN)) {
+				ei_x_encode_longlong(ebuf, item->valueint);
+			} else {
+				if (fmod(item->valuedouble, 1) == 0) {
+					ei_x_encode_ulonglong(ebuf, item->valuedouble);
+				} else {
+					ei_x_encode_double(ebuf, item->valuedouble);
+				}
+			}
+			break;
 
-    	case cJSON_True:
-    		ei_x_encode_boolean(ebuf, 1);
-    		break;
+		case cJSON_True:
+			ei_x_encode_boolean(ebuf, 1);
+			break;
 
-    	case cJSON_False:
-    		ei_x_encode_boolean(ebuf, 0);
-    		break;
+		case cJSON_False:
+			ei_x_encode_boolean(ebuf, 0);
+			break;
 
-    	case cJSON_Object:
-    		ei_encode_json(ebuf, item);
-    		break;
+		case cJSON_Object:
+			ei_encode_json(ebuf, item);
+			break;
 
-    	case cJSON_Array:
-    		ei_encode_json_array(ebuf, item);
-    		break;
+		case cJSON_Array:
+			ei_encode_json_array(ebuf, item);
+			break;
 
-    	case cJSON_Raw:
-    	{
-    		cJSON *Decoded = cJSON_Parse(item->valuestring);
-    		if(!Decoded) {
-    			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR DECODING RAW JSON %s\n", item->valuestring);
-    			ei_x_encode_tuple_header(ebuf, 0);
-    		} else {
-    			ei_encode_json(ebuf, Decoded);
-    			cJSON_Delete(Decoded);
-    		}
-    		break;
-    	}
+		case cJSON_Raw: {
+			cJSON *Decoded = cJSON_Parse(item->valuestring);
+			if (!Decoded) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR DECODING RAW JSON %s\n", item->valuestring);
+				ei_x_encode_tuple_header(ebuf, 0);
+			} else {
+				ei_encode_json(ebuf, Decoded);
+				cJSON_Delete(Decoded);
+			}
+			break;
+		}
 
-    	case cJSON_NULL:
-    		ei_x_encode_atom(ebuf, "null");
-    		break;
+		case cJSON_NULL:
+			ei_x_encode_atom(ebuf, "null");
+			break;
 
-    	default:
-    		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT ENCODED %i\n", item->type);
-    		break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NOT ENCODED %i\n", item->type);
+			break;
 
-    	}
-    	item = item->next;
-    }
+		}
+		item = item->next;
+	}
 
-	if(kazoo_globals.json_encoding == ERLANG_TUPLE) {
+	if (kazoo_globals.json_encoding == ERLANG_TUPLE) {
 		ei_x_encode_empty_list(ebuf);
 	}
 
 }
 
-void close_socket(switch_socket_t ** sock) {
+void close_socket(switch_socket_t ** sock)
+{
 	if (*sock) {
 		switch_socket_shutdown(*sock, SWITCH_SHUTDOWN_READWRITE);
 		switch_socket_close(*sock);
@@ -301,18 +308,20 @@ void close_socket(switch_socket_t ** sock) {
 	}
 }
 
-void close_socketfd(int *sockfd) {
+void close_socketfd(int *sockfd)
+{
 	if (*sockfd) {
 		shutdown(*sockfd, SHUT_RDWR);
 		close(*sockfd);
 	}
 }
 
-switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port_t port) {
+switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port_t port)
+{
 	switch_sockaddr_t *sa;
 	switch_socket_t *socket;
 
-	if(switch_sockaddr_info_get(&sa, kazoo_globals.ip, SWITCH_UNSPEC, port, 0, pool)) {
+	if (switch_sockaddr_info_get(&sa, kazoo_globals.ip, SWITCH_UNSPEC, port, 0, pool)) {
 		return NULL;
 	}
 
@@ -328,11 +337,9 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 		return NULL;
 	}
 
-	if (switch_socket_listen(socket, 5)){
+	if (switch_socket_listen(socket, 5)) {
 		return NULL;
 	}
-
-	switch_getnameinfo(&kazoo_globals.hostname, sa, 0);
 
 	if (kazoo_globals.nat_map && switch_nat_get_type()) {
 		switch_nat_add_mapping(port, SWITCH_NAT_TCP, NULL, SWITCH_FALSE);
@@ -341,35 +348,32 @@ switch_socket_t *create_socket_with_port(switch_memory_pool_t *pool, switch_port
 	return socket;
 }
 
-switch_socket_t *create_socket(switch_memory_pool_t *pool) {
+switch_socket_t *create_socket(switch_memory_pool_t *pool)
+{
 	return create_socket_with_port(pool, 0);
 
 }
 
-switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei_cnode_s *ei_cnode) {
-    char hostname[EI_MAXHOSTNAMELEN + 1] = "";
-    char nodename[MAXNODELEN + 1];
-    char cnodename[EI_MAXALIVELEN + 1];
-    //EI_MAX_COOKIE_SIZE+1
-    char *atsign;
+switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei_cnode_s *ei_cnode)
+{
+	char hostname[EI_MAXHOSTNAMELEN + 1];
+	char nodename[MAXNODELEN + 1];
+	char cnodename[EI_MAXALIVELEN + 1];
+	char *atsign;
 
-    /* copy the erlang interface nodename into something we can modify */
-    strncpy(cnodename, name, EI_MAXALIVELEN);
+	/* copy the erlang interface nodename into something we can modify */
+	strncpy(cnodename, name, EI_MAXALIVELEN);
 
-    if ((atsign = strchr(cnodename, '@'))) {
-        /* we got a qualified node name, don't guess the host/domain */
-        snprintf(nodename, MAXNODELEN + 1, "%s", kazoo_globals.ei_nodename);
-        /* truncate the alivename at the @ */
-        *atsign = '\0';
-    } else {
-        if (zstr(kazoo_globals.hostname) || !strncasecmp(kazoo_globals.ip, "0.0.0.0", 7) || !strncasecmp(kazoo_globals.ip, "::", 2)) {
-            memcpy(hostname, switch_core_get_hostname(), EI_MAXHOSTNAMELEN);
-        } else {
-            memcpy(hostname, kazoo_globals.hostname, EI_MAXHOSTNAMELEN);
-        }
-
-        snprintf(nodename, MAXNODELEN + 1, "%s@%s", kazoo_globals.ei_nodename, hostname);
-    }
+	if ((atsign = strchr(cnodename, '@'))) {
+		/* we got a qualified node name, don't guess the host/domain */
+		snprintf(nodename, MAXNODELEN + 1, "%s", name);
+		/* truncate the alivename at the @ */
+		*atsign++ = '\0';
+		strncpy(hostname, atsign, EI_MAXHOSTNAMELEN);
+	} else {
+		strncpy(hostname, kazoo_globals.hostname, EI_MAXHOSTNAMELEN);
+		snprintf(nodename, MAXNODELEN + 1, "%s@%s", name, hostname);
+	}
 
 	if (kazoo_globals.ei_shortname) {
 		char *off;
@@ -378,94 +382,99 @@ switch_status_t create_ei_cnode(const char *ip_addr, const char *name, struct ei
 		}
 	}
 
-    /* init the ec stuff */
-    if (ei_connect_xinit(ei_cnode, hostname, cnodename, nodename, (Erl_IpAddr) ip_addr, kazoo_globals.ei_cookie, 0) < 0) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the erlang interface connection structure\n");
-        return SWITCH_STATUS_FALSE;
-    }
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "creating nodename: %s\n", nodename);
 
-    return SWITCH_STATUS_SUCCESS;
+	/* init the ec stuff */
+	if (ei_connect_xinit(ei_cnode, hostname, cnodename, nodename, (Erl_IpAddr) ip_addr, kazoo_globals.ei_cookie, 0) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the erlang interface connection structure\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t ei_compare_pids(const erlang_pid *pid1, const erlang_pid *pid2) {
-    if ((!strcmp(pid1->node, pid2->node))
-		&& pid1->creation == pid2->creation
-		&& pid1->num == pid2->num
-		&& pid1->serial == pid2->serial) {
-        return SWITCH_STATUS_SUCCESS;
-    } else {
-        return SWITCH_STATUS_FALSE;
-    }
+switch_status_t ei_compare_pids(const erlang_pid *pid1, const erlang_pid *pid2)
+{
+	if ((!strcmp(pid1->node, pid2->node)) && pid1->creation == pid2->creation && pid1->num == pid2->num && pid1->serial == pid2->serial) {
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
 }
 
-void ei_link(ei_node_t *ei_node, erlang_pid * from, erlang_pid * to) {
-    char msgbuf[2048];
-    char *s;
-    int index = 0;
+void ei_link(ei_node_t *ei_node, erlang_pid * from, erlang_pid * to)
+{
+	char msgbuf[2048];
+	char *s;
+	int index = 0;
 
-    index = 5; /* max sizes: */
-    ei_encode_version(msgbuf, &index); /*   1 */
-    ei_encode_tuple_header(msgbuf, &index, 3);
-    ei_encode_long(msgbuf, &index, ERL_LINK);
-    ei_encode_pid(msgbuf, &index, from); /* 268 */
-    ei_encode_pid(msgbuf, &index, to); /* 268 */
+	index = 5; /* max sizes: */
+	ei_encode_version(msgbuf, &index); /*   1 */
+	ei_encode_tuple_header(msgbuf, &index, 3);
+	ei_encode_long(msgbuf, &index, ERL_LINK);
+	ei_encode_pid(msgbuf, &index, from); /* 268 */
+	ei_encode_pid(msgbuf, &index, to); /* 268 */
 
-    /* 5 byte header missing */
-    s = msgbuf;
-    put32be(s, index - 4); /*   4 */
-    put8(s, ERL_PASS_THROUGH); /*   1 */
-    /* sum:  542 */
+	/* 5 byte header missing */
+	s = msgbuf;
+	put32be(s, index - 4); /*   4 */
+	put8(s, ERL_PASS_THROUGH); /*   1 */
+	/* sum:  542 */
 
-    if (write(ei_node->nodefd, msgbuf, index) == -1) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to link to process on %s\n", ei_node->peer_nodename);
-    }
+	if (write(ei_node->nodefd, msgbuf, index) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to link to process on %s\n", ei_node->peer_nodename);
+	}
 }
 
-void ei_encode_switch_event(ei_x_buff *ebuf, switch_event_t *event) {
-    ei_x_encode_tuple_header(ebuf, 2);
-    ei_x_encode_atom(ebuf, "event");
-    ei_encode_switch_event_headers(ebuf, event);
+void ei_encode_switch_event(ei_x_buff *ebuf, switch_event_t *event)
+{
+	ei_x_encode_tuple_header(ebuf, 2);
+	ei_x_encode_atom(ebuf, "event");
+	ei_encode_switch_event_headers(ebuf, event);
 }
 
-int ei_helper_send(ei_node_t *ei_node, erlang_pid *to, ei_x_buff *buf) {
-    int ret = 0;
+int ei_helper_send(ei_node_t *ei_node, erlang_pid *to, ei_x_buff *buf)
+{
+	int ret = 0;
 
-    if (ei_node->nodefd) {
+	if (ei_node->nodefd) {
 #ifdef EI_DEBUG
 		ei_x_print_msg(buf, to, 1);
 #endif
-        ret = ei_send(ei_node->nodefd, to, buf->buff, buf->index);
-    }
+		ret = ei_send(ei_node->nodefd, to, buf->buff, buf->index);
+	}
 
-    return ret;
+	return ret;
 }
 
-int ei_decode_atom_safe(char *buf, int *index, char *dst) {
-    int type, size;
+int ei_decode_atom_safe(char *buf, int *index, char *dst)
+{
+	int type, size;
 
-    ei_get_type(buf, index, &type, &size);
+	ei_get_type(buf, index, &type, &size);
 
 	if (type != ERL_ATOM_EXT) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unexpected erlang term type %d (size %d), needed atom\n", type, size);
-        return -1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unexpected erlang term type %d (size %d), needed atom\n", type, size);
+		return -1;
 	} else if (size > MAXATOMLEN) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested decoding of atom with size %d into a buffer of size %d\n", size, MAXATOMLEN);
-        return -1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested decoding of atom with size %d into a buffer of size %d\n", size, MAXATOMLEN);
+		return -1;
 	} else {
 		return ei_decode_atom(buf, index, dst);
 	}
 }
 
-int ei_decode_string_or_binary(char *buf, int *index, char **dst) {
-    int type, size, res;
-    long len;
+int ei_decode_string_or_binary(char *buf, int *index, char **dst)
+{
+	int type, size, res;
+	long len;
 
-    ei_get_type(buf, index, &type, &size);
+	ei_get_type(buf, index, &type, &size);
 
-    if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT && type != ERL_LIST_EXT && type != ERL_NIL_EXT) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unexpected erlang term type %d (size %d), needed binary or string\n", type, size);
-        return -1;
-    }
+	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT && type != ERL_LIST_EXT && type != ERL_NIL_EXT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unexpected erlang term type %d (size %d), needed binary or string\n", type, size);
+		return -1;
+	}
 
 	*dst = malloc(size + 1);
 
@@ -473,29 +482,30 @@ int ei_decode_string_or_binary(char *buf, int *index, char **dst) {
 		res = 0;
 		**dst = '\0';
 	} else if (type == ERL_BINARY_EXT) {
-        res = ei_decode_binary(buf, index, *dst, &len);
-        (*dst)[len] = '\0';
-    } else {
-        res = ei_decode_string(buf, index, *dst);
-    }
+		res = ei_decode_binary(buf, index, *dst, &len);
+		(*dst)[len] = '\0';
+	} else {
+		res = ei_decode_string(buf, index, *dst);
+	}
 
-    return res;
+	return res;
 }
 
-int ei_decode_string_or_binary_limited(char *buf, int *index, int maxsize, char *dst) {
-    int type, size, res;
-    long len;
+int ei_decode_string_or_binary_limited(char *buf, int *index, int maxsize, char *dst)
+{
+	int type, size, res;
+	long len;
 
-    ei_get_type(buf, index, &type, &size);
+	ei_get_type(buf, index, &type, &size);
 
-    if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT && type != ERL_LIST_EXT && type != ERL_NIL_EXT) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unexpected erlang term type %d (size %d), needed binary or string\n", type, size);
-        return -1;
-    }
+	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT && type != ERL_LIST_EXT && type != ERL_NIL_EXT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unexpected erlang term type %d (size %d), needed binary or string\n", type, size);
+		return -1;
+	}
 
 	if (size > maxsize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested decoding of %s with size %d into a buffer of size %d\n",
-						  type == ERL_BINARY_EXT ? "binary" : "string", size, maxsize);
+		                  type == ERL_BINARY_EXT ? "binary" : "string", size, maxsize);
 		return -1;
 	}
 
@@ -503,25 +513,21 @@ int ei_decode_string_or_binary_limited(char *buf, int *index, int maxsize, char 
 		res = 0;
 		*dst = '\0';
 	} else if (type == ERL_BINARY_EXT) {
-        res = ei_decode_binary(buf, index, dst, &len);
-        dst[len] = '\0'; /* binaries aren't null terminated */
-    } else {
-        res = ei_decode_string(buf, index, dst);
-    }
+		res = ei_decode_binary(buf, index, dst, &len);
+		dst[len] = '\0'; /* binaries aren't null terminated */
+	} else {
+		res = ei_decode_string(buf, index, dst);
+	}
 
-    return res;
+	return res;
 }
 
-
-switch_status_t create_acceptor() {
+switch_status_t create_acceptor()
+{
 	switch_sockaddr_t *sa;
 	uint16_t port;
-    char ipbuf[48];
-    const char *ip_addr;
-
-#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
-	ei_init();
-#endif
+	char ipbuf[48];
+	const char *ip_addr;
 
 	/* if the config has specified an erlang release compatibility then pass that along to the erlang interface */
 	if (kazoo_globals.ei_compat_rel) {
@@ -536,7 +542,7 @@ switch_status_t create_acceptor() {
 	switch_socket_addr_get(&sa, SWITCH_FALSE, kazoo_globals.acceptor);
 
 	port = switch_sockaddr_get_port(sa);
-	ip_addr = switch_get_addr(ipbuf, sizeof (ipbuf), sa);
+	ip_addr = switch_get_addr(ipbuf, sizeof(ipbuf), sa);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Erlang connection acceptor listening on %s:%u\n", ip_addr, port);
 
@@ -550,7 +556,7 @@ switch_status_t create_acceptor() {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to publish port to epmd, trying to start epmd via system()\n");
 		if (system("fs_epmd -daemon")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				"Failed to start epmd manually! Is epmd in $PATH? If not, start it yourself or run an erl shell with -sname or -name\n");
+			                  "Failed to start epmd manually! Is epmd in $PATH? If not, start it yourself or run an erl shell with -sname or -name\n");
 			return SWITCH_STATUS_SOCKERR;
 		}
 		switch_yield(100000);
@@ -560,12 +566,14 @@ switch_status_t create_acceptor() {
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to epmd and published erlang cnode name %s at port %d\n", kazoo_globals.ei_cnode.thisnodename, port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to epmd and published erlang cnode name %s at port %d\n", kazoo_globals.ei_cnode.thisnodename,
+	                  port);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_hash_t *create_default_filter() {
+switch_hash_t *create_default_filter()
+{
 	switch_hash_t *filter;
 
 	switch_core_hash_init(&filter);
@@ -866,7 +874,8 @@ static void fetch_config_filters(switch_memory_pool_t *pool)
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
-	} else if ((child = switch_xml_child(cfg, "event-filter"))) {
+	} else {
+		if ((child = switch_xml_child(cfg, "event-filter"))) {
 			switch_hash_t *filter;
 			switch_hash_t *old_filter;
 
@@ -881,10 +890,12 @@ static void fetch_config_filters(switch_memory_pool_t *pool)
 			if (old_filter) {
 				switch_core_hash_destroy(&old_filter);
 			}
+		}
 
-			kazoo_globals.config_fetched = 1;
-			switch_xml_free(xml);
+		kazoo_globals.config_fetched = 1;
+		switch_xml_free(xml);
 	}
+	switch_event_destroy(&params);
 
 }
 
@@ -904,28 +915,50 @@ static void fetch_config_handlers(switch_memory_pool_t *pool)
 		kazoo_globals.config_fetched = 1;
 		switch_xml_free(xml);
 	}
+	switch_event_destroy(&params);
 
 }
 
 static void *SWITCH_THREAD_FUNC fetch_config_exec(switch_thread_t *thread, void *obj)
 {
-	switch_memory_pool_t *pool = (switch_memory_pool_t *)obj;
-	fetch_config_filters(pool);
-	fetch_config_handlers(pool);
+	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
+	ei_node_t *node;
+	int fetch_filters = 0, fetch_handlers = 0;
+
+	// give some time for node initialization
+	switch_sleep(kazoo_globals.delay_before_initial_fetch);
+
+	for (node = kazoo_globals.ei_nodes; node != NULL; node = node->next) {
+		if (node->legacy ) {
+			fetch_filters++;
+		} else {
+			fetch_handlers++;
+		}
+	}
+
+	if (fetch_filters) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "fetching filters for kazoo\n");
+		fetch_config_filters(pool);
+	}
+
+	if (fetch_handlers) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "fetching kazoo handlers\n");
+		fetch_config_handlers(pool);
+	}
 
 	kazoo_globals.config_fetched = 1;
 
 	return NULL;
 }
 
-void fetch_config() {
+void fetch_config()
+{
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_uuid_t uuid;
 
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "fetching kazoo config\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "scheduling fetch for kazoo config\n");
 
 	switch_core_new_memory_pool(&pool);
 
@@ -938,11 +971,66 @@ void fetch_config() {
 
 }
 
+#ifdef WITH_KAZOO_ERL_SHUTDOWN
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+typedef struct ei_mutex_s {
+#ifdef __WIN32__
+	HANDLE lock;
+#elif VXWORKS
+	SEM_ID lock;
+#else /* unix */
+#if defined(HAVE_MIT_PTHREAD_H) || defined(HAVE_PTHREAD_H)
+	pthread_mutex_t *lock;
+#else /* ! (HAVE_MIT_PTHREAD_H || HAVE_PTHREAD_H) */
+	void *dummy; /* Actually never used */
+#endif /* ! (HAVE_MIT_PTHREAD_H || HAVE_PTHREAD_H) */
+#endif /* unix */
+}ei_mutex_t;
 
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
+typedef struct ei_socket_info_s {
+	int socket;
+	ei_socket_callbacks *cbs;
+	void *ctx;
+	int dist_version;
+	ei_cnode cnode; /* A copy, not a pointer. We don't know when freed */
+	char cookie[EI_MAX_COOKIE_SIZE+1];
+}ei_socket_info;
+
+extern ei_socket_info *ei_sockets;
+extern ei_mutex_t* ei_sockets_lock;
+extern int ei_n_sockets;
+extern int ei_sz_sockets;
+
+int ei_mutex_free(ei_mutex_t *l, int nblock);
+
+#endif
+#endif
+
+void kz_erl_init()
+{
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	ei_init();
+#endif
+}
+
+void kz_erl_shutdown()
+{
+#ifdef WITH_KAZOO_ERL_SHUTDOWN
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	ei_mutex_free(ei_sockets_lock, 1);
+	ei_sockets_lock = NULL;
+	free(ei_sockets);
+	ei_sockets = NULL;
+	ei_n_sockets = ei_sz_sockets = 0;
+#endif
+#endif
+}
+
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime)
+{
 	switch_os_socket_t os_socket;
 
-	if(create_acceptor() != SWITCH_STATUS_SUCCESS) {
+	if (create_acceptor() != SWITCH_STATUS_SUCCESS) {
 		// TODO: what would we need to clean up here
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create erlang connection acceptor!\n");
 		close_socket(&kazoo_globals.acceptor);
@@ -969,7 +1057,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Erlang connection acceptor socket error %d %d\n", erl_errno, errno);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-								  "Erlang node connection failed - ensure your cookie matches '%s' and you are using a good nodename\n", kazoo_globals.ei_cookie);
+				                  "Erlang node connection failed - ensure your cookie matches '%s' and you are using a good nodename\n", kazoo_globals.ei_cookie);
 			}
 			continue;
 		}
@@ -989,6 +1077,14 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_kazoo_runtime) {
 	return SWITCH_STATUS_TERM;
 }
 
+SWITCH_DECLARE(switch_status_t) ei_queue_pop(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
+{
+	if (timeout == 0) {
+		return switch_queue_trypop(queue, data);
+	} else {
+		return switch_queue_pop_timeout(queue, data, timeout);
+	}
+}
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -1207,6 +1207,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file_detailed(switch_core_sessio
 	uint32_t buflen = 0;
 	int flags;
 	int cumulative = 0;
+	int last_speed = -1;
 
 	*error = NULL;
 
@@ -1488,11 +1489,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file_detailed(switch_core_sessio
 
 		interval = read_impl.microseconds_per_packet / 1000;
 
-		if (!fh->audio_buffer) {
-			switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
-			switch_assert(fh->audio_buffer);
-		}
-
 		codec_name = "L16";
 
 		if (!switch_core_codec_ready((&codec))) {
@@ -1609,9 +1605,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file_detailed(switch_core_sessio
 			switch_event_fire(&event);
 		}
 
+		if (!fh->audio_buffer) {
+			switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
+			switch_assert(fh->audio_buffer);
+		}
+
 		for (;;) {
 			int do_speed = 1;
-			int last_speed = -1;
 			int f;
 
 			if (!switch_channel_ready(channel)) {

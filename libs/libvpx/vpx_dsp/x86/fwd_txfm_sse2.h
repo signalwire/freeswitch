@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_DSP_X86_FWD_TXFM_SSE2_H_
-#define VPX_DSP_X86_FWD_TXFM_SSE2_H_
+#ifndef VPX_VPX_DSP_X86_FWD_TXFM_SSE2_H_
+#define VPX_VPX_DSP_X86_FWD_TXFM_SSE2_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -368,4 +368,4 @@ static INLINE void transpose_and_output8x8(
 }  // extern "C"
 #endif
 
-#endif  // VPX_DSP_X86_FWD_TXFM_SSE2_H_
+#endif  // VPX_VPX_DSP_X86_FWD_TXFM_SSE2_H_

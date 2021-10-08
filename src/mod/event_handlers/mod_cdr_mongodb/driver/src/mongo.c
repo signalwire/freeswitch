@@ -406,7 +406,7 @@ MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port ) {
     mongo_init( conn );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
-    strncpy( conn->primary->host, host, strlen( host ) + 1 );
+    strncpy( conn->primary->host, host, sizeof(conn->primary->host) - 1 );
     conn->primary->port = port;
     conn->primary->next = NULL;
 
@@ -438,7 +438,7 @@ static void mongo_replset_add_node( mongo_host_port **list, const char *host, in
     mongo_host_port *host_port = bson_malloc( sizeof( mongo_host_port ) );
     host_port->port = port;
     host_port->next = NULL;
-    strncpy( host_port->host, host, strlen( host ) + 1 );
+    strncpy( host_port->host, host, sizeof(host_port->host) - 1 );
 
     if( *list == NULL )
         *list = host_port;
@@ -618,7 +618,7 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
 
                 /* Primary found, so return. */
                 else if( conn->replset->primary_connected ) {
-                    strncpy( conn->primary->host, node->host, strlen( node->host ) + 1 );
+                    snprintf( conn->primary->host, sizeof(conn->primary->host), "%s", node->host );
                     conn->primary->port = node->port;
                     return MONGO_OK;
                 }
@@ -1246,10 +1246,13 @@ MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, const bson *query,
 }
 
 MONGO_EXPORT void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
+    size_t len = strlen(ns) + 1;
     memset( cursor, 0, sizeof( mongo_cursor ) );
     cursor->conn = conn;
-    cursor->ns = ( const char * )bson_malloc( strlen( ns ) + 1 );
-    strncpy( ( char * )cursor->ns, ns, strlen( ns ) + 1 );
+    cursor->ns = ( const char * )bson_malloc( len );
+    if (cursor->ns) {
+        strncpy((char *)cursor->ns, ns, len);
+    }
     cursor->current.data = NULL;
 }
 
