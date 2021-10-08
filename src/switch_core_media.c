@@ -10053,14 +10053,16 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 				}
 			}
 		} else {
+			uint8_t NDLB_line_flash_16 = switch_channel_var_true(session->channel, "NDLB_line_flash_16");
+
 			for (i = 0; i < smh->num_rates; i++) {
 				if (switch_channel_test_flag(session->channel, CF_AVPF)) {
 					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\n",
 						smh->dtmf_ianacodes[i], smh->rates[i]);
 				}
 				else {
-					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-15\r\n",
-						smh->dtmf_ianacodes[i], smh->rates[i], smh->dtmf_ianacodes[i]);
+					switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-%d\r\n",
+						smh->dtmf_ianacodes[i], smh->rates[i], smh->dtmf_ianacodes[i], (NDLB_line_flash_16 ? 16 : 15));
 				}
 			}
 		}
@@ -10777,8 +10779,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\n",
 								smh->mparams->te, smh->mparams->te_rate);
 			} else {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-15\r\n",
-								smh->mparams->te, smh->mparams->te_rate, smh->mparams->te);
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/%d\r\na=fmtp:%d 0-%d\r\n",
+								smh->mparams->te, smh->mparams->te_rate, smh->mparams->te, (switch_channel_var_true(session->channel, "NDLB_line_flash_16") ? 16 : 15));
 			}
 		}
 
