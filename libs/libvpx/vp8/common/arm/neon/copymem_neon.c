@@ -10,8 +10,6 @@
 
 #include <arm_neon.h>
 
-#include "./vp8_rtcd.h"
-
 void vp8_copy_mem8x4_neon(unsigned char *src, int src_stride,
                           unsigned char *dst, int dst_stride) {
   uint8x8_t vtmp;

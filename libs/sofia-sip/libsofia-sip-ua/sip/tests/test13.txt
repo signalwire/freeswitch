@@ -1,0 +1,15 @@
+INVITE sip:user@company.com SIP/2.0
+Via: SIP/2.0/UDP 135.180.130.133
+CSeq: 0 INVITE
+Call-ID: 98asdh@10.1.1.2
+Expires: Thu, 44 Dec 19999 16:00:00 EDT
+From: sip:caller@university.edu
+To: sip:user@company.com
+Content-Type: application/sdp
+
+v=0
+o=mhandley 29739 7272939 IN IP4 126.5.4.3
+c=IN IP4 135.180.130.88
+m=audio 492170 RTP/AVP 0 12
+m=video 3227 RTP/AVP 31
+a=rtpmap:31 LPC

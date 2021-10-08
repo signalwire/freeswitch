@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VPX_TEST_VIDEO_SOURCE_H_
-#define VPX_TEST_VIDEO_SOURCE_H_
+#ifndef TEST_VIDEO_SOURCE_H_
+#define TEST_VIDEO_SOURCE_H_
 
 #if defined(_WIN32)
 #undef NOMINMAX
@@ -255,4 +255,4 @@ class CompressedVideoSource {
 
 }  // namespace libvpx_test
 
-#endif  // VPX_TEST_VIDEO_SOURCE_H_
+#endif  // TEST_VIDEO_SOURCE_H_

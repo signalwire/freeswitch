@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_VPXSTATS_H_
-#define VPX_VPXSTATS_H_
+#ifndef VPXSTATS_H_
+#define VPXSTATS_H_
 
 #include <stdio.h>
 
@@ -40,4 +40,4 @@ vpx_fixed_buf_t stats_get(stats_io_t *stats);
 }  // extern "C"
 #endif
 
-#endif  // VPX_VPXSTATS_H_
+#endif  // VPXSTATS_H_

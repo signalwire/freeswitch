@@ -1,0 +1,326 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "libsofia_sip_ua"=".\libsofia-sip-ua\libsofia_sip_ua.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "libsofia_sip_ua_static"=".\libsofia-sip-ua-static\libsofia_sip_ua_static.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "localinfo"=".\utils\localinfo\localinfo.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sip_dig"=".\utils\sip_dig\sip_dig.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sip_options"=".\utils\sip_options\sip_options.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "sip_options_static"=".\utils\sip_options_static\sip_options_static.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua_static
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "stunc"=".\utils\stunc\stunc.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "test_htable"=".\tests\test_htable\test_htable.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "test_memmem"=".\tests\test_memmem\test_memmem.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua_static
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "test_nta"=".\tests\test_nta\test_nta.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "test_nua"=".\tests\test_nua\test_nua.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "test_su"=".\tests\test_su\test_su.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "test_tport"=".\tests\test_tport\test_tport.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_rbtree"=".\tests\torture_rbtree\torture_rbtree.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su"=".\tests\torture_su\torture_su.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su_alloc"=".\tests\torture_su_alloc\torture_su_alloc.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su_bm"=".\tests\torture_su_bm\torture_su_bm.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua_static
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su_root"=".\tests\torture_su_root\torture_su_root.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su_tag"=".\tests\torture_su_tag\torture_su_tag.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su_time"=".\tests\torture_su_time\torture_su_time.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua_static
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "torture_su_timer"=".\tests\torture_su_timer\torture_su_timer.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name libsofia_sip_ua
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

@@ -9,8 +9,6 @@
  */
 
 #include <arm_neon.h>
-
-#include "./vp8_rtcd.h"
 #include "vpx_ports/arm.h"
 
 #ifdef VPX_INCOMPATIBLE_GCC

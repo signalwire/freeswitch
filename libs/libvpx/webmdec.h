@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VPX_WEBMDEC_H_
-#define VPX_WEBMDEC_H_
+#ifndef WEBMDEC_H_
+#define WEBMDEC_H_
 
 #include "./tools_common.h"
 
@@ -66,4 +66,4 @@ void webm_free(struct WebmInputContext *webm_ctx);
 }  // extern "C"
 #endif
 
-#endif  // VPX_WEBMDEC_H_
+#endif  // WEBMDEC_H_

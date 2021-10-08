@@ -177,10 +177,8 @@ static int cr_morebulk(cr_multibulk *mb, int size)
 
   iptr = realloc(mb->idxs, total * sizeof(int));
 
-  if (iptr == NULL) {
-    free(cptr);
+  if (iptr == NULL)
     return CREDIS_ERR_NOMEM;
-   }
 
   mb->bulks = cptr;
   mb->idxs = iptr;
@@ -367,7 +365,7 @@ static int cr_readln(REDIS rhnd, int start, char **line, int *idx)
 
 static int cr_receivemultibulk(REDIS rhnd, char *line)
 {
-  int bnum, blen, i, rc=0, idx=0;
+  int bnum, blen, i, rc=0, idx;
 
   bnum = atoi(line);
 
@@ -480,7 +478,6 @@ static int cr_receivereply(REDIS rhnd, char recvtype)
 
 static void cr_delete(REDIS rhnd)
 {
-  if (!rhnd) return;
   if (rhnd->reply.multibulk.bulks != NULL)
     free(rhnd->reply.multibulk.bulks);
   if (rhnd->reply.multibulk.idxs != NULL)

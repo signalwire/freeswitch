@@ -133,6 +133,9 @@
 
 
 #include "switch.h"
+#ifndef WIN32
+#include "../../config.h"
+#endif
 
 #include "sofia-sip/su.h"
 

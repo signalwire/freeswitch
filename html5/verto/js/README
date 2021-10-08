@@ -1,0 +1,10 @@
+This file needs to say more.
+Documentation for the api needs to be developed with jsdoc-toolkit http://pulkitgoyal.in/documenting-jquery-plugins-jsdoc-toolkit/
+
+Dependancies for DEMO
+jquery-2.0.3.min.js
+jquery-2.0.3.min.map
+jquery.cookie.js
+jquery.dataTables.js
+jquery.json-2.4.min.js
+jquery.mobile-1.3.2.min.js

@@ -1,0 +1,14 @@
+$ORIGIN 188.2.194.in-addr.arpa.
+$TTL     60
+@ 	 IN SOA ns root (
+	     2002042901 ; SERIAL
+	     7200       ; REFRESH
+	     600        ; RETRY
+	     36000000   ; EXPIRE
+	     120        ; MINIMUM
+	     )
+
+	    NS	 ns.example.com.
+
+133	    PTR  sip00.example.com.
+

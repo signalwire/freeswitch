@@ -600,7 +600,7 @@ void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
     // Stack is now the same as it was on entry to this function
 }
 
-std::string JSON::encode(SWIGLUA_TABLE lua_table)
+char *JSON::encode(SWIGLUA_TABLE lua_table)
 {
 	lua_State *L = lua_table.L;
 	cJSON *json = NULL;
@@ -613,10 +613,8 @@ std::string JSON::encode(SWIGLUA_TABLE lua_table)
 	}
 
 	char *s = _return_unformatted_json ? cJSON_PrintUnformatted(json) : cJSON_Print(json);
-	std::string result = std::string(s);
-	free(s);
 	cJSON_Delete(json);
-	return result;
+	return s;
 }
 
 int JSON::cJSON2LuaTable(lua_State *L, cJSON *json) {
@@ -726,22 +724,16 @@ cJSON *JSON::execute(SWIGLUA_TABLE table)
 	return reply;
 }
 
-std::string JSON::execute2(const char *str)
+char *JSON::execute2(const char *str)
 {
-    cJSON *reply = execute(str);
-    char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
-    std::string result = std::string(s);
-    free(s);
-    cJSON_Delete(reply);
-    return result;
+	cJSON *reply = execute(str);
+
+	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
 }
 
-std::string JSON::execute2(SWIGLUA_TABLE table)
+char *JSON::execute2(SWIGLUA_TABLE table)
 {
-    cJSON *reply = execute(table);
-    char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
-    std::string result = std::string(s);
-    free(s);
-    cJSON_Delete(reply);
-    return result;
+	cJSON *reply = execute(table);
+
+	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
 }

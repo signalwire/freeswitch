@@ -40,9 +40,6 @@ AC_DEFUN([APR_CHECK_WORKING_GETADDRINFO],[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 
 int main(void) {
     struct addrinfo hints, *ai;
@@ -137,12 +134,6 @@ AC_DEFUN([APR_CHECK_WORKING_GETNAMEINFO],[
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 
 int main(void) {
     struct sockaddr_in sa;
@@ -185,9 +176,6 @@ AC_DEFUN([APR_CHECK_NEGATIVE_EAI],[
   AC_TRY_RUN( [
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
 #endif
 
 int main(void) {
@@ -293,9 +281,6 @@ AC_DEFUN([APR_CHECK_TCP_NODELAY_INHERITED],[
 #endif
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
 #endif
 int main(void) {
     int listen_s, connected_s, client_s;
@@ -467,9 +452,6 @@ typedef int socklen_t;
 #endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
 #endif
 int main(void) {
     int listen_s, connected_s, client_s;

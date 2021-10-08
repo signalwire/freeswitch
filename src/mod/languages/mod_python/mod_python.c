@@ -90,7 +90,6 @@ static void print_python_error(const char * script)
 
 	if (buffer == NULL ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough Memory to create the error buffer");
-		return;
 	}
 
 	/* just for security that we will always have a string terminater */
@@ -177,7 +176,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	char *argv[2] = { 0 };
 	int argc;
 	char *script = NULL;
-	PyObject *module_o = NULL, *module = NULL, *sp = NULL, *stp = NULL, *eve = NULL;
+	PyObject *module = NULL, *sp = NULL, *stp = NULL, *eve = NULL;
 	PyObject *function = NULL;
 	PyObject *arg = NULL;
 	PyObject *result = NULL;
@@ -248,15 +247,15 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	}
 
 	// import the module
-	module_o = PyImport_ImportModule((char *) script);
-	if (!module_o) {
+	module = PyImport_ImportModule((char *) script);
+	if (!module) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error importing module\n");
 		print_python_error(script);
 		PyErr_Clear();
 		goto done_swap_out;
 	}
 	// reload the module
-	module = PyImport_ReloadModule(module_o);
+	module = PyImport_ReloadModule(module);
 	if (!module) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error reloading module\n");
 		print_python_error(script);
@@ -285,7 +284,6 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	if (stream) {
 		stp = mod_python_conjure_stream(stream);
 		if (stream->param_event) {
-			Py_XDECREF(eve);
 			eve = mod_python_conjure_event(stream->param_event);
 		}
 	}
@@ -305,6 +303,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	// invoke the handler
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
 	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *) NULL);
+	Py_DECREF(function);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
 
 	// check the result and print out any errors
@@ -323,15 +322,13 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
   done_swap_out:
 
+	if (arg) {
+		Py_DECREF(arg);
+	}
 
-	Py_XDECREF(result);
-	Py_XDECREF(arg);
-	Py_XDECREF(function);
-	Py_XDECREF(module);
-	Py_XDECREF(module_o);
-	Py_XDECREF(stp);
-	Py_XDECREF(eve);
-	Py_XDECREF(sp);
+	if (sp) {
+		Py_DECREF(sp);
+	}
 
 	if (tstate) {
 		// thread state must be cleared explicitly or we'll get memory leaks
@@ -344,6 +341,8 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
 	switch_safe_free(dupargs);
 	switch_safe_free(script);
+
+
 }
 
 

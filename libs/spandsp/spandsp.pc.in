@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: spandsp
+Description: A DSP library for telephony.
+Requires:
+Version: @VERSION@
+Libs: -L${libdir} -lspandsp
+Libs.private: -ltiff -lm
+Cflags: -I${includedir}

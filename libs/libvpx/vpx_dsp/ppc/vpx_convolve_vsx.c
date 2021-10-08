@@ -9,16 +9,13 @@
  */
 #include <assert.h>
 #include <string.h>
-
 #include "./vpx_dsp_rtcd.h"
-#include "vpx/vpx_integer.h"
-#include "vpx_dsp/ppc/types_vsx.h"
 #include "vpx_dsp/vpx_filter.h"
+#include "vpx_dsp/ppc/types_vsx.h"
 
 // TODO(lu_zero): unroll
-static VPX_FORCE_INLINE void copy_w16(const uint8_t *src, ptrdiff_t src_stride,
-                                      uint8_t *dst, ptrdiff_t dst_stride,
-                                      int32_t h) {
+static inline void copy_w16(const uint8_t *src, ptrdiff_t src_stride,
+                            uint8_t *dst, ptrdiff_t dst_stride, int32_t h) {
   int i;
 
   for (i = h; i--;) {
@@ -28,9 +25,8 @@ static VPX_FORCE_INLINE void copy_w16(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
-static VPX_FORCE_INLINE void copy_w32(const uint8_t *src, ptrdiff_t src_stride,
-                                      uint8_t *dst, ptrdiff_t dst_stride,
-                                      int32_t h) {
+static inline void copy_w32(const uint8_t *src, ptrdiff_t src_stride,
+                            uint8_t *dst, ptrdiff_t dst_stride, int32_t h) {
   int i;
 
   for (i = h; i--;) {
@@ -41,9 +37,8 @@ static VPX_FORCE_INLINE void copy_w32(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
-static VPX_FORCE_INLINE void copy_w64(const uint8_t *src, ptrdiff_t src_stride,
-                                      uint8_t *dst, ptrdiff_t dst_stride,
-                                      int32_t h) {
+static inline void copy_w64(const uint8_t *src, ptrdiff_t src_stride,
+                            uint8_t *dst, ptrdiff_t dst_stride, int32_t h) {
   int i;
 
   for (i = h; i--;) {
@@ -91,9 +86,8 @@ void vpx_convolve_copy_vsx(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
-static VPX_FORCE_INLINE void avg_w16(const uint8_t *src, ptrdiff_t src_stride,
-                                     uint8_t *dst, ptrdiff_t dst_stride,
-                                     int32_t h) {
+static inline void avg_w16(const uint8_t *src, ptrdiff_t src_stride,
+                           uint8_t *dst, ptrdiff_t dst_stride, int32_t h) {
   int i;
 
   for (i = h; i--;) {
@@ -104,9 +98,8 @@ static VPX_FORCE_INLINE void avg_w16(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
-static VPX_FORCE_INLINE void avg_w32(const uint8_t *src, ptrdiff_t src_stride,
-                                     uint8_t *dst, ptrdiff_t dst_stride,
-                                     int32_t h) {
+static inline void avg_w32(const uint8_t *src, ptrdiff_t src_stride,
+                           uint8_t *dst, ptrdiff_t dst_stride, int32_t h) {
   int i;
 
   for (i = h; i--;) {
@@ -119,9 +112,8 @@ static VPX_FORCE_INLINE void avg_w32(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
-static VPX_FORCE_INLINE void avg_w64(const uint8_t *src, ptrdiff_t src_stride,
-                                     uint8_t *dst, ptrdiff_t dst_stride,
-                                     int32_t h) {
+static inline void avg_w64(const uint8_t *src, ptrdiff_t src_stride,
+                           uint8_t *dst, ptrdiff_t dst_stride, int32_t h) {
   int i;
 
   for (i = h; i--;) {
@@ -163,8 +155,8 @@ void vpx_convolve_avg_vsx(const uint8_t *src, ptrdiff_t src_stride,
   }
 }
 
-static VPX_FORCE_INLINE void convolve_line(uint8_t *dst, const int16x8_t s,
-                                           const int16x8_t f) {
+static inline void convolve_line(uint8_t *dst, const int16x8_t s,
+                                 const int16x8_t f) {
   const int32x4_t sum = vec_msum(s, f, vec_splat_s32(0));
   const int32x4_t bias =
       vec_sl(vec_splat_s32(1), vec_splat_u32(FILTER_BITS - 1));
@@ -174,9 +166,8 @@ static VPX_FORCE_INLINE void convolve_line(uint8_t *dst, const int16x8_t s,
   vec_ste(v, 0, dst);
 }
 
-static VPX_FORCE_INLINE void convolve_line_h(uint8_t *dst,
-                                             const uint8_t *const src_x,
-                                             const int16_t *const x_filter) {
+static inline void convolve_line_h(uint8_t *dst, const uint8_t *const src_x,
+                                   const int16_t *const x_filter) {
   const int16x8_t s = unpack_to_s16_h(vec_vsx_ld(0, src_x));
   const int16x8_t f = vec_vsx_ld(0, x_filter);
 
@@ -184,12 +175,10 @@ static VPX_FORCE_INLINE void convolve_line_h(uint8_t *dst,
 }
 
 // TODO(lu_zero): Implement 8x8 and bigger block special cases
-static VPX_FORCE_INLINE void convolve_horiz(const uint8_t *src,
-                                            ptrdiff_t src_stride, uint8_t *dst,
-                                            ptrdiff_t dst_stride,
-                                            const InterpKernel *x_filters,
-                                            int x0_q4, int x_step_q4, int w,
-                                            int h) {
+static inline void convolve_horiz(const uint8_t *src, ptrdiff_t src_stride,
+                                  uint8_t *dst, ptrdiff_t dst_stride,
+                                  const InterpKernel *x_filters, int x0_q4,
+                                  int x_step_q4, int w, int h) {
   int x, y;
   src -= SUBPEL_TAPS / 2 - 1;
 
@@ -205,10 +194,10 @@ static VPX_FORCE_INLINE void convolve_horiz(const uint8_t *src,
   }
 }
 
-static VPX_FORCE_INLINE void convolve_avg_horiz(
-    const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
-    ptrdiff_t dst_stride, const InterpKernel *x_filters, int x0_q4,
-    int x_step_q4, int w, int h) {
+static inline void convolve_avg_horiz(const uint8_t *src, ptrdiff_t src_stride,
+                                      uint8_t *dst, ptrdiff_t dst_stride,
+                                      const InterpKernel *x_filters, int x0_q4,
+                                      int x_step_q4, int w, int h) {
   int x, y;
   src -= SUBPEL_TAPS / 2 - 1;
 
@@ -241,10 +230,9 @@ static uint8x16_t transpose_line_u8_8x8(uint8x16_t a, uint8x16_t b,
   return (uint8x16_t)vec_mergeh(abcd, efgh);
 }
 
-static VPX_FORCE_INLINE void convolve_line_v(uint8_t *dst,
-                                             const uint8_t *const src_y,
-                                             ptrdiff_t src_stride,
-                                             const int16_t *const y_filter) {
+static inline void convolve_line_v(uint8_t *dst, const uint8_t *const src_y,
+                                   ptrdiff_t src_stride,
+                                   const int16_t *const y_filter) {
   uint8x16_t s0 = vec_vsx_ld(0, src_y + 0 * src_stride);
   uint8x16_t s1 = vec_vsx_ld(0, src_y + 1 * src_stride);
   uint8x16_t s2 = vec_vsx_ld(0, src_y + 2 * src_stride);
@@ -262,12 +250,10 @@ static VPX_FORCE_INLINE void convolve_line_v(uint8_t *dst,
   convolve_line(dst, unpack_to_s16_h(s), f);
 }
 
-static VPX_FORCE_INLINE void convolve_vert(const uint8_t *src,
-                                           ptrdiff_t src_stride, uint8_t *dst,
-                                           ptrdiff_t dst_stride,
-                                           const InterpKernel *y_filters,
-                                           int y0_q4, int y_step_q4, int w,
-                                           int h) {
+static inline void convolve_vert(const uint8_t *src, ptrdiff_t src_stride,
+                                 uint8_t *dst, ptrdiff_t dst_stride,
+                                 const InterpKernel *y_filters, int y0_q4,
+                                 int y_step_q4, int w, int h) {
   int x, y;
   src -= src_stride * (SUBPEL_TAPS / 2 - 1);
 
@@ -284,10 +270,10 @@ static VPX_FORCE_INLINE void convolve_vert(const uint8_t *src,
   }
 }
 
-static VPX_FORCE_INLINE void convolve_avg_vert(
-    const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
-    ptrdiff_t dst_stride, const InterpKernel *y_filters, int y0_q4,
-    int y_step_q4, int w, int h) {
+static inline void convolve_avg_vert(const uint8_t *src, ptrdiff_t src_stride,
+                                     uint8_t *dst, ptrdiff_t dst_stride,
+                                     const InterpKernel *y_filters, int y0_q4,
+                                     int y_step_q4, int w, int h) {
   int x, y;
   src -= src_stride * (SUBPEL_TAPS / 2 - 1);
 
@@ -305,11 +291,11 @@ static VPX_FORCE_INLINE void convolve_avg_vert(
   }
 }
 
-static VPX_FORCE_INLINE void convolve(const uint8_t *src, ptrdiff_t src_stride,
-                                      uint8_t *dst, ptrdiff_t dst_stride,
-                                      const InterpKernel *const filter,
-                                      int x0_q4, int x_step_q4, int y0_q4,
-                                      int y_step_q4, int w, int h) {
+static inline void convolve(const uint8_t *src, ptrdiff_t src_stride,
+                            uint8_t *dst, ptrdiff_t dst_stride,
+                            const InterpKernel *const filter, int x0_q4,
+                            int x_step_q4, int y0_q4, int y_step_q4, int w,
+                            int h) {
   // Note: Fixed size intermediate buffer, temp, places limits on parameters.
   // 2d filtering proceeds in 2 steps:
   //   (1) Interpolate horizontally into an intermediate buffer, temp.

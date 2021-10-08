@@ -1,0 +1,100 @@
+#! /bin/sh
+#
+# Generate agent.pem
+#
+# Copyright (C) 2007 Nokia Corporation
+#
+# Author: Pekka Pessi
+# Based on Mikko Haataja's perl script
+#
+
+CN='C=FI, L=Helsinki, O=sofia-sip, CN=tport test'
+ALTNAME=DNS:tport-test.sofia-sip.org
+#ALTNAME=URI:sips:tport-test.sofia-sip.org
+DAYS=730
+
+umask 077
+
+T=${TMPDIR:-/tmp}/sofia-sip-certs-${USER}-$$-`date +%N`
+CA=${T}/CA
+
+mkdir $T || exit 1
+mkdir $T/CA || exit 1
+
+cat > $CA/cakey.pem <<EOF
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: DES-EDE3-CBC,4B47A0A73ADE342E
+
+aHmlPa+ZrOV6v+Jk0SClxzpxoG3j0ZuyoVkF9rzq2bZkzVBKLU6xhWwjMDqwA8dH
+3fCRLhMGIUVnmymXYhTW9svI1gpFxMBQHJcKpV/SmgFn/fbYk98Smo2izHOniIiu
+NOu2zr+bMiaBphOAZ/OCtVUxUOoBDKN9lR39UCDOgkEQzp9Vbw7l736yu5H9GMHP
+JtGLJyx3RhS3TvLfLAJZhjm/wZ/9QM8GjyJEiDhMQRJVeIZGvv4Yr1u6yYHiHfjX
+tX2eds8Luc83HbSvjAyjnkLtJsAZ/8cFzrd7pjFzbogLdWuil+kpkkf5h1uzh7oa
+um0M1EXBE4tcDHsfg1iqEsDMIei/U+/rWfk1PrzYlklwZp8S03vulkDm1fT76W7d
+mRBg4+CrHA6qYn6EPWB37OBtfEqAfINnIcI1dWzso9A0bTPD4EJO0JA0PcZ/2JgT
+PaKySgooHQ8AHNQebelch6M5LFExpaOADJKrqauKcc2HeUxXaYIpac5/7drIl3io
+UloqUnMlGa3eLP7BZIMsZKCfHZ8oqwU4g6mmmJath2gODRDx3mfhH6yaimDL7v4i
+SAIIkrEHXfSyovrTJymfSfQtYxUraVZDqax6oj/eGllRxliGfMLYG9ceU+yU/8FN
+LE7P+Cs19H5tHHzx1LlieaK43u/XvbXHlB5mqL/fZdkUIBJsjbBVx0HR8eQl2CH9
+YJDMOPLADecwHoyKA0AY59oN9d41oF7yZtN9KwNdslROYH7mNJlqMMenhXCLN+Nz
+vVU5/7/ugZFhZqfS46c1WdmSvuqpDp7TBtMeaH/PXjysBr0iZffOxQ==
+-----END RSA PRIVATE KEY-----
+EOF
+
+cat > $CA/cacert.pem <<EOF
+-----BEGIN CERTIFICATE-----
+MIIDJDCCAo2gAwIBAgIBADANBgkqhkiG9w0BAQUFADBwMQswCQYDVQQGEwJVUzET
+MBEGA1UECBMKQ2FsaWZvcm5pYTERMA8GA1UEBxMIU2FuIEpvc2UxDjAMBgNVBAoT
+BXNpcGl0MSkwJwYDVQQLEyBTaXBpdCBUZXN0IENlcnRpZmljYXRlIEF1dGhvcml0
+eTAeFw0wMzA3MTgxMjIxNTJaFw0xMzA3MTUxMjIxNTJaMHAxCzAJBgNVBAYTAlVT
+MRMwEQYDVQQIEwpDYWxpZm9ybmlhMREwDwYDVQQHEwhTYW4gSm9zZTEOMAwGA1UE
+ChMFc2lwaXQxKTAnBgNVBAsTIFNpcGl0IFRlc3QgQ2VydGlmaWNhdGUgQXV0aG9y
+aXR5MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDDIh6DkcUDLDyK9BEUxkud
++nJ4xrCVGKfgjHm6XaSuHiEtnfELHM+9WymzkBNzZpJu30yzsxwfKoIKugdNUrD4
+N3viCicwcN35LgP/KnbN34cavXHr4ZlqxH+OdKB3hQTpQa38A7YXdaoz6goW2ft5
+Mi74z03GNKP/G9BoKOGd5QIDAQABo4HNMIHKMB0GA1UdDgQWBBRrRhcU6pR2JYBU
+bhNU2qHjVBShtjCBmgYDVR0jBIGSMIGPgBRrRhcU6pR2JYBUbhNU2qHjVBShtqF0
+pHIwcDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExETAPBgNVBAcT
+CFNhbiBKb3NlMQ4wDAYDVQQKEwVzaXBpdDEpMCcGA1UECxMgU2lwaXQgVGVzdCBD
+ZXJ0aWZpY2F0ZSBBdXRob3JpdHmCAQAwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0B
+AQUFAAOBgQCWbRvv1ZGTRXxbH8/EqkdSCzSoUPrs+rQqR0xdQac9wNY/nlZbkR3O
+qAezG6Sfmklvf+DOg5RxQq/+Y6I03LRepc7KeVDpaplMFGnpfKsibETMipwzayNQ
+QgUf4cKBiF+65Ue7hZuDJa2EMv8qW4twEhGDYclpFU9YozyS1OhvUg==
+-----END CERTIFICATE-----
+EOF
+
+cat > $T/a.cnf <<EOF
+[ req ]
+default_bits		= 1024
+prompt                  = no
+distinguished_name	= req_dn
+
+[ req_dn ]
+commonName		= $CN
+
+[ ext ]
+basicConstraints=CA:FALSE
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer:always
+subjectAltName=$ALTNAME
+#keyUsage=digitalSignature:TRUE,keyEncipherment:TRUE
+
+EOF
+
+cat $T/a.cnf
+
+openssl req -new -out $T/a_req.pem -newkey rsa:1024 -keyout $T/a_key.pem \
+    -sha1 -config $T/a.cnf -days $DAYS -nodes
+
+openssl x509 -req -in $T/a_req.pem -sha1 \
+    -extensions ext -extfile $T/a.cnf \
+    -CA $CA/cacert.pem -CAkey $CA/cakey.pem \
+    -passin pass:password \
+    -CAcreateserial \
+    -days $DAYS \
+    -out $T/a_cert.pem
+
+cat $T/a_cert.pem $T/a_key.pem
+
+rm $CA/* && rmdir $CA && rm $T/* && rmdir $T

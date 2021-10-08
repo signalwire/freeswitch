@@ -9,14 +9,12 @@
  */
 
 #include <string.h>
-#include <tuple>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
-#include "./vp8_rtcd.h"
 #include "./vpx_config.h"
+#include "./vp8_rtcd.h"
 #include "test/acm_random.h"
-#include "test/bench.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
@@ -35,10 +33,10 @@ const int kNumBlockEntries = 16;
 
 typedef void (*VP8Quantize)(BLOCK *b, BLOCKD *d);
 
-typedef std::tuple<VP8Quantize, VP8Quantize> VP8QuantizeParam;
+typedef std::tr1::tuple<VP8Quantize, VP8Quantize> VP8QuantizeParam;
 
 using libvpx_test::ACMRandom;
-using std::make_tuple;
+using std::tr1::make_tuple;
 
 // Create and populate a VP8_COMP instance which has a complete set of
 // quantization inputs as well as a second MACROBLOCKD for output.
@@ -118,17 +116,12 @@ class QuantizeTestBase {
 };
 
 class QuantizeTest : public QuantizeTestBase,
-                     public ::testing::TestWithParam<VP8QuantizeParam>,
-                     public AbstractBench {
+                     public ::testing::TestWithParam<VP8QuantizeParam> {
  protected:
   virtual void SetUp() {
     SetupCompressor();
     asm_quant_ = GET_PARAM(0);
     c_quant_ = GET_PARAM(1);
-  }
-
-  virtual void Run() {
-    asm_quant_(&vp8_comp_->mb.block[0], &macroblockd_dst_->block[0]);
   }
 
   void RunComparison() {
@@ -171,13 +164,6 @@ TEST_P(QuantizeTest, TestMultipleQ) {
     FillCoeffRandom();
     RunComparison();
   }
-}
-
-TEST_P(QuantizeTest, DISABLED_Speed) {
-  FillCoeffRandom();
-
-  RunNTimes(10000000);
-  PrintMedian("vp8 quantize");
 }
 
 #if HAVE_SSE2

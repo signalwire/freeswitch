@@ -1,0 +1,65 @@
+#
+# Generate lcov output
+#
+
+#
+# Copyright (C) 2007 Nokia Corporation
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+# Licensed under LGPL. See file COPYING.
+#
+
+# Scripts
+LCOV_UNCOVERED=${top_srcdir}/scripts/uncovered
+LCOV_REPORT=${top_srcdir}/scripts/lcov-report
+
+# Report directory
+lcovdir=${top_builddir}/lcov
+
+# Options
+GENHTML_OPTIONS = --show-details --legend
+if HAVE_GENPNG
+GENHTML_OPTIONS += --frames
+endif
+
+# Fancy shell command that expands to directory relative to top_builddir
+expand_subdir=`pwd|sed "s'\`cd ${top_builddir};pwd\`''"`
+
+#
+# Generate pretty coverage report (unless it has been already done)
+#
+lcov:
+	@-test -r ${lcovdir}${expand_subdir}/lcov.info \
+	|| make lcov-report
+
+# Generate pretty coverage report based on current coverage data
+lcov-report:
+	sub=${expand_subdir} odir=${lcovdir}$$sub ; \
+	rm -rf $$odir ; mkdir -p $$odir && \
+	${LCOV_REPORT} ${GENHTML_OPTIONS} \
+          --title "${PACKAGE_NAME}-${PACKAGE_VERSION}$$sub" \
+	  --srcdir=${srcdir} -o $$odir
+
+# Rerun checks before generating report
+lcov-rerun: clean-lcov
+	$(MAKE) $(AM_MAKEFLAGS) check
+	$(MAKE) $(AM_MAKEFLAGS) lcov-report
+
+# Show all uncovered lines as errors
+uncovered:
+	${LCOV_UNCOVERED} --lcov-dir=${lcovdir} --srcdir=${srcdir}
+
+# Run check in current dir and show all uncovered lines as errors
+covcheck:
+	-find . -name "*.gcda" | xargs rm -rf
+	$(MAKE) $(AM_MAKEFLAGS) check
+	${LCOV_UNCOVERED} --lcov-dir=${lcovdir} --srcdir=${srcdir}
+
+clean-local::
+	-rm -rf ${lcovdir}`pwd|sed "s'\`cd ${top_builddir};pwd\`''"`
+	find . -name "*.gcda" | xargs rm -f || true
+
+clean-lcov:
+	-rm -rf ${lcovdir}`pwd|sed "s'\`cd ${top_builddir};pwd\`''"`
+	find . -name "*.gcda" | xargs rm -f || true
+
+PHONY += lcov lcov-report lcov-rerun clean-lcov covcheck uncovered

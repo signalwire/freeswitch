@@ -63,7 +63,7 @@ SWITCH_STANDARD_API(api_abstraction_function)
 		const char *destination = switch_xml_attr_soft(x_api, "destination");
 		const char *arguments = switch_xml_attr_soft(x_api, "argument");
 
-		int proceed;
+		int proceed = 0;
 		switch_regex_t *re = NULL;
 		int ovector[30];
 
@@ -75,6 +75,7 @@ SWITCH_STANDARD_API(api_abstraction_function)
 				uint32_t len = (uint32_t) (strlen(cmd) + strlen(arguments) + 10) * proceed;
 				if (!(substituted = malloc(len))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+					proceed = 0;
 					goto end;
 				}
 				memset(substituted, 0, len);

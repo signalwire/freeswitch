@@ -1,0 +1,14 @@
+src/v17_v32bis_rx_rrc.h
+src/v17_v32bis_tx_rrc.h
+src/v22bis_rx_1200_rrc.h
+src/v22bis_rx_2400_rrc.h
+src/v22bis_tx_rrc.h
+src/v27ter_rx_2400_rrc.h
+src/v27ter_rx_4800_rrc.h
+src/v27ter_tx_2400_rrc.h
+src/v27ter_tx_4800_rrc.h
+src/v29rx_rrc.h
+src/v29tx_rrc.h
+INSTALL
+test-data/itu/tiff-fx/Makefile
+test-data/itu/tiff-fx/Makefile.in

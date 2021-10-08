@@ -1,0 +1,17 @@
+; Template for http.def
+
+LIBRARY      "http"
+
+DESCRIPTION  'HTTP Win32 Dynamic Link Library'
+
+EXPORTS
+    ; Explicit exports can go here
+
+	http_default_mclass
+
+	sip_#xxxxxx#_class
+	sip_#xxxxxx#_p
+	sip_#xxxxxx#_dup
+	sip_#xxxxxx#_copy
+	sip_#xxxxxx#_make
+

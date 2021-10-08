@@ -38,7 +38,6 @@ vpx_tsvc_encoder() {
   local output_file="${VPX_TEST_OUTPUT_DIR}/${output_file_base}"
   local timebase_num="1"
   local timebase_den="1000"
-  local timebase_den_y4m="30"
   local speed="6"
   local frame_drop_thresh="30"
   local max_threads="4"
@@ -57,12 +56,6 @@ vpx_tsvc_encoder() {
       eval "${VPX_TEST_PREFIX}" "${encoder}" "${YUV_RAW_INPUT}" \
         "${output_file}" "${codec}" "${YUV_RAW_INPUT_WIDTH}" \
         "${YUV_RAW_INPUT_HEIGHT}" "${timebase_num}" "${timebase_den}" \
-        "${speed}" "${frame_drop_thresh}" "${error_resilient}" "${threads}" \
-        "$@" ${devnull}
-      # Test for y4m input.
-      eval "${VPX_TEST_PREFIX}" "${encoder}" "${Y4M_720P_INPUT}" \
-        "${output_file}" "${codec}" "${Y4M_720P_INPUT_WIDTH}" \
-        "${Y4M_720P_INPUT_HEIGHT}" "${timebase_num}" "${timebase_den_y4m}" \
         "${speed}" "${frame_drop_thresh}" "${error_resilient}" "${threads}" \
         "$@" ${devnull}
     else
@@ -92,7 +85,7 @@ files_exist() {
 
 vpx_tsvc_encoder_vp8_mode_0() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_0"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_0"
     vpx_tsvc_encoder vp8 "${output_basename}" 0 200 || return 1
     # Mode 0 produces 1 stream
     files_exist "${output_basename}" 1 || return 1
@@ -101,7 +94,7 @@ vpx_tsvc_encoder_vp8_mode_0() {
 
 vpx_tsvc_encoder_vp8_mode_1() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_1"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_1"
     vpx_tsvc_encoder vp8 "${output_basename}" 1 200 400 || return 1
     # Mode 1 produces 2 streams
     files_exist "${output_basename}" 2 || return 1
@@ -110,7 +103,7 @@ vpx_tsvc_encoder_vp8_mode_1() {
 
 vpx_tsvc_encoder_vp8_mode_2() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_2"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_2"
     vpx_tsvc_encoder vp8 "${output_basename}" 2 200 400 || return 1
     # Mode 2 produces 2 streams
     files_exist "${output_basename}" 2 || return 1
@@ -119,7 +112,7 @@ vpx_tsvc_encoder_vp8_mode_2() {
 
 vpx_tsvc_encoder_vp8_mode_3() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_3"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_3"
     vpx_tsvc_encoder vp8 "${output_basename}" 3 200 400 600 || return 1
     # Mode 3 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -128,7 +121,7 @@ vpx_tsvc_encoder_vp8_mode_3() {
 
 vpx_tsvc_encoder_vp8_mode_4() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_4"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_4"
     vpx_tsvc_encoder vp8 "${output_basename}" 4 200 400 600 || return 1
     # Mode 4 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -137,7 +130,7 @@ vpx_tsvc_encoder_vp8_mode_4() {
 
 vpx_tsvc_encoder_vp8_mode_5() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_5"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_5"
     vpx_tsvc_encoder vp8 "${output_basename}" 5 200 400 600 || return 1
     # Mode 5 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -146,7 +139,7 @@ vpx_tsvc_encoder_vp8_mode_5() {
 
 vpx_tsvc_encoder_vp8_mode_6() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_6"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_6"
     vpx_tsvc_encoder vp8 "${output_basename}" 6 200 400 600 || return 1
     # Mode 6 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -155,7 +148,7 @@ vpx_tsvc_encoder_vp8_mode_6() {
 
 vpx_tsvc_encoder_vp8_mode_7() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_7"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_7"
     vpx_tsvc_encoder vp8 "${output_basename}" 7 200 400 600 800 1000 || return 1
     # Mode 7 produces 5 streams
     files_exist "${output_basename}" 5 || return 1
@@ -164,7 +157,7 @@ vpx_tsvc_encoder_vp8_mode_7() {
 
 vpx_tsvc_encoder_vp8_mode_8() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_8"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_8"
     vpx_tsvc_encoder vp8 "${output_basename}" 8 200 400 || return 1
     # Mode 8 produces 2 streams
     files_exist "${output_basename}" 2 || return 1
@@ -173,7 +166,7 @@ vpx_tsvc_encoder_vp8_mode_8() {
 
 vpx_tsvc_encoder_vp8_mode_9() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_9"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_9"
     vpx_tsvc_encoder vp8 "${output_basename}" 9 200 400 600 || return 1
     # Mode 9 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -182,7 +175,7 @@ vpx_tsvc_encoder_vp8_mode_9() {
 
 vpx_tsvc_encoder_vp8_mode_10() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_10"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_10"
     vpx_tsvc_encoder vp8 "${output_basename}" 10 200 400 600 || return 1
     # Mode 10 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -191,7 +184,7 @@ vpx_tsvc_encoder_vp8_mode_10() {
 
 vpx_tsvc_encoder_vp8_mode_11() {
   if [ "$(vp8_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp8_mode_11"
+    local readonly output_basename="vpx_tsvc_encoder_vp8_mode_11"
     vpx_tsvc_encoder vp8 "${output_basename}" 11 200 400 600 || return 1
     # Mode 11 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -200,7 +193,7 @@ vpx_tsvc_encoder_vp8_mode_11() {
 
 vpx_tsvc_encoder_vp9_mode_0() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_0"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_0"
     vpx_tsvc_encoder vp9 "${output_basename}" 0 200 || return 1
     # Mode 0 produces 1 stream
     files_exist "${output_basename}" 1 || return 1
@@ -209,7 +202,7 @@ vpx_tsvc_encoder_vp9_mode_0() {
 
 vpx_tsvc_encoder_vp9_mode_1() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_1"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_1"
     vpx_tsvc_encoder vp9 "${output_basename}" 1 200 400 || return 1
     # Mode 1 produces 2 streams
     files_exist "${output_basename}" 2 || return 1
@@ -218,7 +211,7 @@ vpx_tsvc_encoder_vp9_mode_1() {
 
 vpx_tsvc_encoder_vp9_mode_2() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_2"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_2"
     vpx_tsvc_encoder vp9 "${output_basename}" 2 200 400 || return 1
     # Mode 2 produces 2 streams
     files_exist "${output_basename}" 2 || return 1
@@ -227,7 +220,7 @@ vpx_tsvc_encoder_vp9_mode_2() {
 
 vpx_tsvc_encoder_vp9_mode_3() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_3"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_3"
     vpx_tsvc_encoder vp9 "${output_basename}" 3 200 400 600 || return 1
     # Mode 3 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -236,7 +229,7 @@ vpx_tsvc_encoder_vp9_mode_3() {
 
 vpx_tsvc_encoder_vp9_mode_4() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_4"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_4"
     vpx_tsvc_encoder vp9 "${output_basename}" 4 200 400 600 || return 1
     # Mode 4 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -245,7 +238,7 @@ vpx_tsvc_encoder_vp9_mode_4() {
 
 vpx_tsvc_encoder_vp9_mode_5() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_5"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_5"
     vpx_tsvc_encoder vp9 "${output_basename}" 5 200 400 600 || return 1
     # Mode 5 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -254,7 +247,7 @@ vpx_tsvc_encoder_vp9_mode_5() {
 
 vpx_tsvc_encoder_vp9_mode_6() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_6"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_6"
     vpx_tsvc_encoder vp9 "${output_basename}" 6 200 400 600 || return 1
     # Mode 6 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -263,7 +256,7 @@ vpx_tsvc_encoder_vp9_mode_6() {
 
 vpx_tsvc_encoder_vp9_mode_7() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_7"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_7"
     vpx_tsvc_encoder vp9 "${output_basename}" 7 200 400 600 800 1000 || return 1
     # Mode 7 produces 5 streams
     files_exist "${output_basename}" 5 || return 1
@@ -272,7 +265,7 @@ vpx_tsvc_encoder_vp9_mode_7() {
 
 vpx_tsvc_encoder_vp9_mode_8() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_8"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_8"
     vpx_tsvc_encoder vp9 "${output_basename}" 8 200 400 || return 1
     # Mode 8 produces 2 streams
     files_exist "${output_basename}" 2 || return 1
@@ -281,7 +274,7 @@ vpx_tsvc_encoder_vp9_mode_8() {
 
 vpx_tsvc_encoder_vp9_mode_9() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_9"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_9"
     vpx_tsvc_encoder vp9 "${output_basename}" 9 200 400 600 || return 1
     # Mode 9 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -290,7 +283,7 @@ vpx_tsvc_encoder_vp9_mode_9() {
 
 vpx_tsvc_encoder_vp9_mode_10() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_10"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_10"
     vpx_tsvc_encoder vp9 "${output_basename}" 10 200 400 600 || return 1
     # Mode 10 produces 3 streams
     files_exist "${output_basename}" 3 || return 1
@@ -299,7 +292,7 @@ vpx_tsvc_encoder_vp9_mode_10() {
 
 vpx_tsvc_encoder_vp9_mode_11() {
   if [ "$(vp9_encode_available)" = "yes" ]; then
-    local output_basename="vpx_tsvc_encoder_vp9_mode_11"
+    local readonly output_basename="vpx_tsvc_encoder_vp9_mode_11"
     vpx_tsvc_encoder vp9 "${output_basename}" 11 200 400 600 || return 1
     # Mode 11 produces 3 streams
     files_exist "${output_basename}" 3 || return 1

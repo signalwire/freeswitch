@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_VP8_COMMON_HEADER_H_
-#define VPX_VP8_COMMON_HEADER_H_
+#ifndef VP8_COMMON_HEADER_H_
+#define VP8_COMMON_HEADER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,4 +45,4 @@ typedef struct {
 }  // extern "C"
 #endif
 
-#endif  // VPX_VP8_COMMON_HEADER_H_
+#endif  // VP8_COMMON_HEADER_H_

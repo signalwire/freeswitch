@@ -298,9 +298,7 @@ build_debs () {
         for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
       fi
       custom_sources_file="/tmp/fs.sources.list"
-      apt-key exportall > "/tmp/fs.tmp.gpg"
-      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --import /tmp/fs.tmp.gpg
-      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --export > "/tmp/fs.gpg"
+      apt-key exportall > "/tmp/fs.gpg"
       custom_keyring="/tmp/fs.gpg"
     fi
     if [ "$custom_sources_file" == "" ]; then
@@ -311,7 +309,7 @@ build_debs () {
       echo "deb [trusted=yes] http://files.freeswitch.org/repo/deb/freeswitch-1.8/ stretch main" >> "/tmp/fs.sources.list"
     fi
     if [[ "$custom_keyring" == "/tmp/fs.gpg" && ! -r "/tmp/fs.gpg" ]]; then
-      cat << EOF > "/tmp/fs.tmp.gpg"
+      cat << EOF > "/tmp/fs.gpg"
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQINBFlVeA4BEADg3MkzUvnbuqG7S6ppt0BJIYx2WIlDzsj2EBPBBo7VpppWPGa/
@@ -365,8 +363,6 @@ Y4o4oqgePeTYzkxVYj8=
 =XPvO
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --import /tmp/fs.tmp.gpg
-      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --export > "/tmp/fs.gpg"
     fi
 
     local distro="$(find_distro $1)" dsc="$2" arch="$3"

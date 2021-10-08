@@ -14,8 +14,7 @@
 #include "./vpx_dsp_rtcd.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/x86/bitdepth_conversion_sse2.h"
-#include "vpx_dsp/x86/quantize_sse2.h"
-#include "vpx_dsp/x86/quantize_ssse3.h"
+#include "vpx_dsp/x86/quantize_x86.h"
 
 void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                           int skip_block, const int16_t *zbin_ptr,
@@ -23,7 +22,7 @@ void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                           const int16_t *quant_shift_ptr,
                           tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                           const int16_t *dequant_ptr, uint16_t *eob_ptr,
-                          const int16_t *scan, const int16_t *iscan) {
+                          const int16_t *scan_ptr, const int16_t *iscan_ptr) {
   const __m128i zero = _mm_setzero_si128();
   int index = 16;
 
@@ -33,7 +32,7 @@ void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   __m128i cmp_mask0, cmp_mask1;
   __m128i eob, eob0;
 
-  (void)scan;
+  (void)scan_ptr;
   (void)skip_block;
   assert(!skip_block);
 
@@ -68,11 +67,15 @@ void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   store_tran_low(qcoeff0, qcoeff_ptr);
   store_tran_low(qcoeff1, qcoeff_ptr + 8);
 
-  calculate_dqcoeff_and_store(qcoeff0, dequant, dqcoeff_ptr);
+  coeff0 = calculate_dqcoeff(qcoeff0, dequant);
   dequant = _mm_unpackhi_epi64(dequant, dequant);
-  calculate_dqcoeff_and_store(qcoeff1, dequant, dqcoeff_ptr + 8);
+  coeff1 = calculate_dqcoeff(qcoeff1, dequant);
 
-  eob = scan_for_eob(&qcoeff0, &qcoeff1, cmp_mask0, cmp_mask1, iscan, 0, zero);
+  store_tran_low(coeff0, dqcoeff_ptr);
+  store_tran_low(coeff1, dqcoeff_ptr + 8);
+
+  eob =
+      scan_for_eob(&coeff0, &coeff1, cmp_mask0, cmp_mask1, iscan_ptr, 0, zero);
 
   // AC only loop.
   while (index < n_coeffs) {
@@ -97,11 +100,14 @@ void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     store_tran_low(qcoeff0, qcoeff_ptr + index);
     store_tran_low(qcoeff1, qcoeff_ptr + index + 8);
 
-    calculate_dqcoeff_and_store(qcoeff0, dequant, dqcoeff_ptr + index);
-    calculate_dqcoeff_and_store(qcoeff1, dequant, dqcoeff_ptr + index + 8);
+    coeff0 = calculate_dqcoeff(qcoeff0, dequant);
+    coeff1 = calculate_dqcoeff(qcoeff1, dequant);
 
-    eob0 = scan_for_eob(&qcoeff0, &qcoeff1, cmp_mask0, cmp_mask1, iscan, index,
-                        zero);
+    store_tran_low(coeff0, dqcoeff_ptr + index);
+    store_tran_low(coeff1, dqcoeff_ptr + index + 8);
+
+    eob0 = scan_for_eob(&coeff0, &coeff1, cmp_mask0, cmp_mask1, iscan_ptr,
+                        index, zero);
     eob = _mm_max_epi16(eob, eob0);
 
     index += 16;
@@ -110,14 +116,12 @@ void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = accumulate_eob(eob);
 }
 
-void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                int skip_block, const int16_t *zbin_ptr,
-                                const int16_t *round_ptr,
-                                const int16_t *quant_ptr,
-                                const int16_t *quant_shift_ptr,
-                                tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
-                                const int16_t *dequant_ptr, uint16_t *eob_ptr,
-                                const int16_t *scan, const int16_t *iscan) {
+void vpx_quantize_b_32x32_ssse3(
+    const tran_low_t *coeff_ptr, intptr_t n_coeffs, int skip_block,
+    const int16_t *zbin_ptr, const int16_t *round_ptr, const int16_t *quant_ptr,
+    const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr,
+    tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr, uint16_t *eob_ptr,
+    const int16_t *scan_ptr, const int16_t *iscan_ptr) {
   const __m128i zero = _mm_setzero_si128();
   const __m128i one = _mm_set1_epi16(1);
   int index;
@@ -129,7 +133,7 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   __m128i all_zero;
   __m128i eob = zero, eob0;
 
-  (void)scan;
+  (void)scan_ptr;
   (void)n_coeffs;
   (void)skip_block;
   assert(!skip_block);
@@ -202,12 +206,28 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     store_tran_low(qcoeff0, qcoeff_ptr);
     store_tran_low(qcoeff1, qcoeff_ptr + 8);
 
-    calculate_dqcoeff_and_store_32x32(qcoeff0, dequant, zero, dqcoeff_ptr);
-    dequant = _mm_unpackhi_epi64(dequant, dequant);
-    calculate_dqcoeff_and_store_32x32(qcoeff1, dequant, zero, dqcoeff_ptr + 8);
+    // Un-sign to bias rounding like C.
+    // dequant is almost always negative, so this is probably the backwards way
+    // to handle the sign. However, it matches the previous assembly.
+    coeff0 = _mm_abs_epi16(qcoeff0);
+    coeff1 = _mm_abs_epi16(qcoeff1);
 
-    eob =
-        scan_for_eob(&qcoeff0, &qcoeff1, cmp_mask0, cmp_mask1, iscan, 0, zero);
+    coeff0 = calculate_dqcoeff(coeff0, dequant);
+    dequant = _mm_unpackhi_epi64(dequant, dequant);
+    coeff1 = calculate_dqcoeff(coeff1, dequant);
+
+    // "Divide" by 2.
+    coeff0 = _mm_srli_epi16(coeff0, 1);
+    coeff1 = _mm_srli_epi16(coeff1, 1);
+
+    coeff0 = _mm_sign_epi16(coeff0, qcoeff0);
+    coeff1 = _mm_sign_epi16(coeff1, qcoeff1);
+
+    store_tran_low(coeff0, dqcoeff_ptr);
+    store_tran_low(coeff1, dqcoeff_ptr + 8);
+
+    eob = scan_for_eob(&coeff0, &coeff1, cmp_mask0, cmp_mask1, iscan_ptr, 0,
+                       zero);
   }
 
   // AC only loop.
@@ -248,13 +268,23 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     store_tran_low(qcoeff0, qcoeff_ptr + index);
     store_tran_low(qcoeff1, qcoeff_ptr + index + 8);
 
-    calculate_dqcoeff_and_store_32x32(qcoeff0, dequant, zero,
-                                      dqcoeff_ptr + index);
-    calculate_dqcoeff_and_store_32x32(qcoeff1, dequant, zero,
-                                      dqcoeff_ptr + 8 + index);
+    coeff0 = _mm_abs_epi16(qcoeff0);
+    coeff1 = _mm_abs_epi16(qcoeff1);
 
-    eob0 = scan_for_eob(&qcoeff0, &qcoeff1, cmp_mask0, cmp_mask1, iscan, index,
-                        zero);
+    coeff0 = calculate_dqcoeff(coeff0, dequant);
+    coeff1 = calculate_dqcoeff(coeff1, dequant);
+
+    coeff0 = _mm_srli_epi16(coeff0, 1);
+    coeff1 = _mm_srli_epi16(coeff1, 1);
+
+    coeff0 = _mm_sign_epi16(coeff0, qcoeff0);
+    coeff1 = _mm_sign_epi16(coeff1, qcoeff1);
+
+    store_tran_low(coeff0, dqcoeff_ptr + index);
+    store_tran_low(coeff1, dqcoeff_ptr + index + 8);
+
+    eob0 = scan_for_eob(&coeff0, &coeff1, cmp_mask0, cmp_mask1, iscan_ptr,
+                        index, zero);
     eob = _mm_max_epi16(eob, eob0);
   }
 

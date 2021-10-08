@@ -1,0 +1,29 @@
+/**@MODULEPAGE "stun" - STUN Client and Server Module
+
+@section stun_meta Module Meta Information
+
+The Sofia @b stun module contains macros and functions for STUN server and
+client library.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@section stun_contents Contents of stun Module
+
+The stun module contains the public header files as follows:
+- <sofia-sip/stun.h>        the public API of the module
+- <sofia-sip/stun_common.h> low-level functions for parsing and encoding STUN messages
+- <sofia-sip/stun_tag.h>    defines the su tags used by stun
+
+@section stun_usage Using Sofia STUN Library
+
+To be written. See torture_stun.c and tport/tport.c.
+
+@section todo Todo
+
+- none at the moment
+
+*/

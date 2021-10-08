@@ -136,8 +136,9 @@ uint64 WriteBlock(IMkvWriter* writer, const Frame* const frame, int64 timecode,
     return false;
   }
 
-  if (!frame->is_key() && !WriteEbmlElement(writer, libwebm::kMkvReferenceBlock,
-                                            reference_block_timestamp)) {
+  if (!frame->is_key() &&
+      !WriteEbmlElement(writer, libwebm::kMkvReferenceBlock,
+                        reference_block_timestamp)) {
     return false;
   }
 
@@ -562,10 +563,10 @@ uint64 WriteFrame(IMkvWriter* writer, const Frame* const frame,
   if (relative_timecode < 0 || relative_timecode > kMaxBlockTimecode)
     return 0;
 
-  return frame->CanBeSimpleBlock()
-             ? WriteSimpleBlock(writer, frame, relative_timecode)
-             : WriteBlock(writer, frame, relative_timecode,
-                          cluster->timecode_scale());
+  return frame->CanBeSimpleBlock() ?
+             WriteSimpleBlock(writer, frame, relative_timecode) :
+             WriteBlock(writer, frame, relative_timecode,
+                        cluster->timecode_scale());
 }
 
 uint64 WriteVoidElement(IMkvWriter* writer, uint64 size) {

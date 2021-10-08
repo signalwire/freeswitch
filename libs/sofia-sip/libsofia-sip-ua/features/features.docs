@@ -1,0 +1,41 @@
+/* -*- text -*- */
+
+/**@MODULEPAGE "features" Module
+
+@section features_meta Module Meta Information
+
+The @b features module provides application information about the various
+features possibly available through the @ref subdirs "sofia-sip-ua" binary API.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP  Core library
+
+@LICENSE LGPL
+
+@par Contributor(s):
+- Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@section features_overview Overview
+
+The #sofia_sip_name_version contains the name and release of currently
+installed @a libsofia-sip-ua.so library. The macro #SOFIA_SIP_NAME_VERSION
+contains the name and release of currently available include files.
+
+The Sofia SIP binary API hides some protocols used under the SIP stack.
+While the binary API stays the same, the features are not necessarily there.
+These features are mainly related to encryption, compression and underlying
+transports.
+
+- #sofia_sip_has_smime
+- #sofia_sip_has_tls
+- #sofia_sip_has_dtls
+- #sofia_sip_has_tls_sctp
+- #sofia_sip_has_sigcomp
+- #sofia_sip_has_stun
+- #sofia_sip_has_turn
+- #sofia_sip_has_upnp
+- #sofia_sip_has_sctp
+- #sofia_sip_has_ipv6
+
+*/

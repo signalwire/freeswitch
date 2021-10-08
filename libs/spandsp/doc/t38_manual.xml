@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="iso8859-1"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+               "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<book>
+  <bookinfo>
+    <date>2007-11-14</date>
+    <title>T.38 protocol (FoIP) support</title>
+    <subtitle>User manual</subtitle>
+    <releaseinfo>documentation in progress</releaseinfo>
+    <authorgroup>
+      <author>
+        <firstname>Steve</firstname>
+        <surname>Underwood</surname>
+      </author>
+    </authorgroup>
+    <address>
+      <email>steveu@coppice.org</email>
+    </address>
+    <copyright>
+      <year>2007</year>
+      <holder>Steve Underwood</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+        This document can be freely redistributed according to the
+        terms of the GNU General Public License.
+      </para>
+    </legalnotice>
+  </bookinfo>
+
+  <toc></toc>
+
+<chapter id="what-is-t38">
+<title>The T.38 real-time FAX over IP (FoIP) protocol</title>
+
+<para>There are two ITU recommendations which address sending FAXes over IP networks. T.37 specifies a method of encapsulating FAX images in e-mails, and transporting them to the recipient (an e-mail box, or another FAX machine) in a store-and-forward manner. T.38 specifies a protocol for transmitting a FAX across an IP network in real time. This document discusses the implementation of the T.38, real time, FAX over IP (FoIP) protocol.</para>
+
+<para>FAXing between two PSTN FAX machines provides the illusion of real-time communication, with confirmed delivery. This is, of course, no more than an illusion. The sender has no idea what is receiving the FAX. It might be a FAX mailbox, where the FAX might only be retrieved much later, or might never be retrieved at all. It might be a FAX machine which is out of paper, and is storing the FAX in memory. If nobody adds paper before the FAX machine is switched off, the FAX might never be printed. With increasing amounts of FAX spam, many people don't ever bother to collect FAXes from the FAX machine in their office. Still, with all these reasons why the real-time confirmed delivery nature of FAXing is an illusion, large numbers of people still insist on using direct FAXing.</para>
+
+<para>The FAX protocols - in particular T.30 - were designed for the PSTN. The PSTN is very different from a packet network like the Internet. It offers very strict timing; latency is rock steady throughout a call; and latency is seldom very high. The lack of these features in packet networks tends to spoil the quality of voice over IP, compared to voice over the PSTN. However, it can totally destroy modem data, like that used for FAX. Jitter and packet loss can cause modem reception to fail, and excessive delays can cause timers designed for a low latency environment to expire. T.38 tries to mitigate these factors, and can greatly improve the reliability of FAXing across the internet. It can also send FAXes using less bandwidth than using VoIP protocols. There are limits to what can be achieved on a congested network, though, and T.38 can never offer the reliability of a store and forward protocol, like T.37. Sadly, the average office worker's love affair with real-time FAX ensures a bright future for the T.38 protocol, even though the T.37 protocol makes far more sense.</para>
+
+<para>The T.38 protocol primarily operates between:
+<itemizedlist>
+<listitem><para>Internet-aware FAX terminals, which connect directly to an IP network.</para></listitem>
+<listitem><para>FAX gateways, which allow traditional PSTN FAX terminals to communicate via the Internet.</para></listitem>
+<listitem><para>A combination of these.</para></listitem>
+</itemizedlist>
+T.38 is the only standardised protocol which exists for real-time FoIP. Reliably transporting a FAX between PSTN FAX terminals, through an IP network, requires use of the T.38 protocol at FAX gateways. VoIP connections are not robust for modem use, including FAX modem use. Most use low bit rate codecs, which cannot convey the modem signals accurately. Even when high bit rate codecs, such as G.711, are used, VoIP connections suffer dropouts and timing adjustments, which modems cannot tolerate. In a LAN environment the dropout rate may be very low, but the timing adjustments which occur in VoIP connections still make modem operation unreliable. T.38 FAX gateways deal with the delays, timing jitter, and packet loss experienced in packet networks, and isolate the PSTN FAX terminals from these as far as possible. In addition, by sending FAXes as image data, rather than digitised audio, the required bandwidth of the IP network might be reduced. However, the redundant transmission needed to make T.38 work acceptably over an unreliable network tends to offset much of the potential bandwidth gain.</para>
+
+<para>The original T.38 specification provides for operation up to 14,400bps, using a V.17 modem. The latest version of the T.38 specification adds features for FAXing at up to 33,600bps, using a V.34 modem. However, it appears most current T.38 implementations only support operation up to 14,400bps.</para>
+</chapter>
+
+<chapter id="the-basics-of-a-t38-entity">
+<title>The basics of a T.38 entity</title>
+
+<para>The T.38 protocol may be used to build an Internet-aware FAX terminal, for direct connection to the Internet. It may also be used to build gateways. A T.38 FAX gateway might be a gateway between the PSTN and the Internet. It might just be an a ATA box acting as a gateway between a directly connected traditional FAX machine and the Internet. The T.38 protocol merely defines what passes between two T.38 entities. Creating a robust entity, able to tolerate the widest possible variation in network delays, jitter and packet loss, requires considerably more than just implementing what is contained in the T.38 spec. Also, the protocol definition is somewhat loose, resulting is considerable variability in the way the protocol is implemented. Considerable flexibility is required in a T.38 entity's design, to tolerate these variations.</para>
+
+<para>T.38 currently works over one of the following transports:
+<itemizedlist>
+<listitem><para>TCP, with TPKT message framing - the use of TPKT was originally specified in a vague way, and implementations without TPKT framing apparently exist.</para></listitem>
+<listitem><para>UDPTL - A UDP based protocol used nowhere else. This is the most common transport for T.38.</para></listitem>
+<listitem><para>RTP - Added quite late to the T.38 specification, and still not widely supported.</para></listitem>
+</itemizedlist>
+TCP is the ideal way to communicate between two entities on an IP network, which do not have real-time constraints. The entities can talk as fast as they and the medium between them permit, with full error control. Internet-aware FAX devices would, therefore, usually use TCP as the transport for T.38. Gateways have only limited control of the timing of the FAX data passing through them. They have to operate in real-time, at a rate outside their control. Gateways, therefore, usually use UDPTL. The RTP option was only added to the T.38 specification in 2004, and is not yet widely supported. Over time it may become the preferred replacement for UDPTL, since most entities handle more than just FAX, and need to implement RTP anyway.</para>
+
+<para>A TCP stream is fully corrected by the TCP protocol itself. However, in the UDPTL or RTP modes of operation, T.38 is subject to possible packet loss. A high level of missing data would defeat the protocol, so some measure of FEC (forward error correction) must be used. The UDPTL specification defines two optional forms of FEC. Both consist of adding information from previous packets to new packets. In one form this repeated data is send as a direct copy of the original. In the other it is sent as parity information, which requires encoding and decoding. The specifications for RTP include definitions of suitable FEC and redundancy protocols (RFC2198 and RFC2733). The T.38 specification says these should be used for T.38 over RTP.</para>
+
+<para>Interestingly, even the latest revision of the T.38 specification does not provide properly for security in FAX transmission. SRTP is a standard way to achieve secure multi-media communication, and can be applied to T.38 over RTP without any specific wording on the subject in the T.38 specification. UDPTL might be seen as obsolete in the long term, and not worthy of enhancements to encrypt the data. However, no secure option for T.38 over TCP is defined. TPKT could be sent over TLS/TCP. TLS also has message framing features which would allow IFP packets to be sent directly over a TLS protected connection. However, there is no specified way to do this.</para>
+
+<para>Although redundant information in future packets is an important part of a solid T.38 implementation, it is not a complete solution to problem of lost packets. Sometimes the next packet occurs after a considerable delay (e.g. when allowing time for a fast modem to train). If a "start training" message is only received through the redundant information in a following packet, it usually arrives too late to be useful (at least for a gateway). Most T.38 implementations now follow a practice of sending several exact copies of key packets - generally the ones which start or end the stages of the T.30 protocol. Typically up to 4 identical copies of these packets are sent down the wire. The may be sent in a burst, as fast as possible, or they may be spaced in time by 10ms or 20ms. IP network congestion, and the resulting packet loss, can be very bursty. If all copies are sent together, they might all be lost. Even a small amount of spreading in time may significantly increase the likelihood of at least one copy reaching its destination. The price is some delay in delivery of the message, which might be problematic. Multiple copies of these packets add little to the overall volume of data transmitted, as only a small percentage of packets fall in this "key packet" category. Some T.38 implementations follow a less effective practice of sending multiple key packets, which have separate sequence numbers and are separately bundled with redundant information for transmission. They may also be spaced in time. Although this seems a less effective strategy, a T.38 entity must expect to receive packets streams of this kind, and tolerate them.</para>
+
+<para>Between the high priority key packets, and the low priority packets for the image data (the loss of which might just cause a streak on an image, or be corrected by ECM FAXing), lies the V.21 HDLC control messages. Some T.38 implementations dynamically adjust the amount of redundant information in packets, so these control messages are repeated through several packets, but the large image data packets are repeated less, or not at all. Used with care, this dynamic redundancy strategy can nicely balance data volume and reliability.</para>
+
+<para>A T.38 terminal has a lot more flexibility in how it can deal with problem data than a T.38 gateway. The terminal has no tight timing constraints governing how it behaves with regard to received data. It can wait a considerable period for delayed packets to arrive. The gateway is a man-in-the-middle, and must live with the timing constraints that imposes. This means a T.38 gateway has a rather more difficult design than a terminal.</para>
+</chapter>
+
+<chapter id="the-core-elements-of-a-t38-implementation">
+<title>The core elements of a T.38 implementation</title>
+
+<para>There are many differences between the behaviour of a T.38 terminal and a T.38 gateway. However, some functions are common to both types of T.38 entity, particular in the IP network interface.</para>
+
+<sect1>
+<title>The T.38 Internet Fascimile Protocol (IFP) packetiser</title>
+
+<para>The T.38 specification defines an ASN.1 schema for the messages which pass between T.38 entities. These messages are called IFP (Internet Fascimile Protocol) messages. Their format is independent of the transport used to carry them. However, there are currently two slightly different versions of the ASN.1 schema. This is due to a typo in the original version of the T.38 specification. The protocol negotiation which occurs just before T.38 communication resolves which version will be used. Although the typo was corrected several years ago, it is still very more common to find implementations which only support the original buggy version.</para>
+</sect1>
+
+<sect1>
+<title>The UDPTL, RTP, TPKT packetiser</title>
+
+<para>A second level packetiser bundles the IFP packets for transmission. This functions in different ways, depending on the type of transport in use. For the unreliable transports (UDPTL and RTP) the packetiser adds forward error correction (FEC) information to the packets. This can greatly inprove the reliability of the T.38 protocol, at the expense of higher bandwidth. The amount of error correction information added to the packets is implementation dependant.</para>
+
+<para>For UDPTL, two forms of FEC are defined. One simply repeats older T.38 packets as FEC information in the current UDPTL packet. The other generates parity packets over a series of T.38 packets, and includes that parity information in the current UDPTL packet. The type of FEC to be used is negotiated  just before T.38 communication begins.</para>
+
+<para>The RTP specifications (RFC3550, RFC3551, RFC2198, RFC2733) define common redundancy and FEC formats, to be used for any payload. Where T.38 packets are carried by RTP, the standard RTP FEC mechanisms are used.</para>
+
+<para>TPKT (RFC1006, RFC2126) encapsulation works over a TCP transport. TCP provides full error correction, though retries may slow it considerably. TPKT encapsulation merely provides the ability to delineate the start and end of the IFP packets in the structureless TCP stream.</para>
+</sect1>
+
+</chapter>
+
+<chapter id="the-elements-of-a-t38-terminal">
+<title>The elements of a T.38 terminal</title>
+
+<graphic fileref="t38-terminal.png"/>
+
+</chapter>
+
+<chapter id="the-elements-of-a-t38-gateway">
+<title>The elements of a T.38 gateway</title>
+
+<graphic fileref="t38-gateway.png"/>
+
+<sect1>
+<title>The HDLC decoder</title>
+<para>If the HDLC decoder in a T.38 gateway worked in whole frames, it would introduce unacceptable latency. Instead, the HDLC decoder must work progressively through the HDLC frames, outputing its results octet by octet. The T.38 message stream does not contain HDLC preamble, though it usually contains an indication that preamble is in progress. It does not contain the CRC octets, but simply an indication of whether the CRC is good or bad. The HDLC decoder provides an indication when preamble is being received, and checks the CRC octets at the end of frames to provide the good or bad indication. The decoder makes the frames available, octet by octet, to the T.38 engine for status tracking and possible modification. Tracking and modification imposes a few octets delay, but the goal is to keep this to the minimum possible. Whether the frames are modified or unmodified, good or bad they are always passed on, to maintain the appropriate timing flow for the T.30 protocol.</para>
+
+<para>An interesting aspect of the timing flow of V.21 HDLC messages on the T.38 path relates to the size of the CRC. The usual practice for sending these frames is to send one octet in each message, with the messages spaced by the duration of one octet. They will normally be sent with the minimum possible delay. The CRC at the end of each frame is two octets long, and only an indication of good or bad is sent in the T.38 messages. It takes two octet times to know if the CRC is OK or not, typically causing the flow of T.38 messages to stutter by the duration of an octet. Since flow control within a frame is not possible when frames are replayed by a remote T.38 gateway, that gateway must allow for this inevitable stutter as it prepares to begin playout of the frame.</para>
+</sect1>
+
+<sect1>
+<title>T.30 message analysis and manipulation</title>
+<para>The T.30 message analyser in a T.38 gateway performs the following functions:
+<itemizedlist>
+<listitem><para>It passes NSS, NSF and NSC frames, but modifies their contents. A receiving FAX machine must be prevented from acting upon these messages in a manufacturer specific manner. The T.38 protocol is incapable of handling such manufacturer specific things. However, simply dropping these packets would upset the timing of the T.30 protocol. Instead, most T.38 implementations modify the country and manufacturer codes nesr the start of these messages, so the messages will be ignored by any receiver. They are typically set to 0x00, 0x55, 0xAA or 0xFF. Some implementations set them to the country and manufacturer code of the T.38 implementor. As long as they are set to something the receiver will not recognise, problems are avoided. To avoid removing useful information, the original country and manufacturer code bytes might be reinserted in a different part of the modified NSF message, provided space permits.</para></listitem>
+<listitem><para>It tracks the contents of the DCS messages. During flow control of non-ECM data, the minimum row length must be preserved, so the current minimum must be found from the DCS messages. Similarly, the current encoding must be known to apply non-ECM flow control correctly. ECM data must be flow controlled in a completely different way than non-ECM data, so ECM mode information must be found from the DCS messages.</para></listitem>
+<listitem><para>It may optionally modify the minimum row length in the DIS messages. Because flow control will be applied to non-ECM data, it can make sense to tell the sending FAX machine it has no need to impose a minimum row length, and let the emitting T.38 entity impose the minimum as part of its flow control operation.</para></listitem>
+<listitem><para>It passes on the stripped and modified HDLC frames, with the minimum possible delay. This implies that is must analyse and modify the messages octet by octet.</para></listitem>
+</itemizedlist>
+</para>
+</sect1>
+
+<sect1>
+<title>The HDLC rate adapting encoder</title>
+<para>The HDLC data rate adapting encoder accepts a T.30 message stream as input. The V.21 HDLC messages generally arriving byte by byte, in separate T.38 messages. ECM HDLC messages usually arrive in larger chunks, but they are still generally fragmented. The rate adapter dynamically buffers the T.30 data, generates preamble, and adjusts its length if the incoming message data is falling behind. It may insert additional flag octets between frames, as a flow control mechanism. However, the HDLC protocol is synchronous, so the adapter cannot perform any flow control within a frame. It must, therefore, buffer enough octets of a frame to provide reasonable jitter tolerance, before it emits the first octet of that frame. If the arriving messages fall too far behind mid-frame, there will be corruption of the outgoing stream. In the case of ECM image data frames, the frames are fast enough, that buffering whole frames is quite proactical within the T.30 timing constraints. This ensures mid-frame underflow can never occur.</para>
+</sect1>
+
+<sect1>
+<title>TCF (training confirmation) and non-ECM image data rate adaption</title>
+<para>Non-ECM image data rate adaption deals with exchanging TCF data, and non-ECM image data using T.4 1-D or 2-D compression. Non-ECM image data is typically padded with zero bits at the end of each pixel row. This is used to avoid rows arriving at the receiving FAX machine faster than the mechanical paper handling can process them. It is also used by sending FAX machines for flow control, when their paper handling falls behind. The minimum duration of a row is negotiated between the FAX machines, before image transfer commences.</para>
+
+<para>TCF data is a continuous stream of zero bits. It may, optionally, be preceeded by a continuous block of one bits. So, when transferring TCF data between the T.38 entities, flow control is simply a matter of repeating the last received bit when the late arrival of TCF data packets causes underflow at an emitting gateway.</para>
+
+<para>T.38 entities may negotiate to generate and check TCF data locally, and not exchange it. Generally, this is only used when TCP/TPKT is used as the transport for the T.38 messages. A TCF checker and a TCF generator are needed by a T.38 gateway supporting this option.</para>
+
+<para>Some T.38 entities are capable of negotiating the removal of end of row padding bits in the data passing between the T.38 entities. This may reduce the amount of data significantly, for some types of image. If negotiated, most or all surplus zero bits are stripped from the image bit stream, at the sending T.38 entity. If a T.38 gateway is receiving such stripped data, it may need to reimpose a minimum row time, by inserting zeros, as part of its non-ECM rate adaption process. By checking the contents of the DCS messages, it can determine what this minimum should be.</para>
+
+<para>Only two types of image compression are used for non-ECM transmission - T.4 1-D and 2-D. The end of line (EOL) marker for both these is 11 zero bits, followed by a one bit. In 2-D mode, an additional one or zero bit follows, which defines the mode of the next row. It turns out that the maximum number of valid consecutive zeros which could preceed the 11 zeros of an EOL is 3. In a valid image there are no longer runs of zeros than at an EOL, and the maximum there is 14. Therefore, if the padding stripper reduces all runs of zeros longer than 14 to just 14, it will strip most of the padding with very simple logic. Simple logic is a good thing in this case. It not only avoids the need to fully analyse the image data, it also minimises problems when there are bit errors in the image data stream.</para>
+
+<para>For image data sent without error correction (T.4 1-D or 2-D) there may be underflow at the outgoing gateway, if image data packets arrive too late. To deal with slow mechanical paper handling in FAX machines, the T.30 specification includes an end of pixel row padding scheme for non-error corrected image data. The receiving machine may request a minimum row duration. The sending machine is required to impose that minimum, but can arbitrarily make it much longer to meet its own paper handling needs, sending padding bits as appropriate. This mechanism provides a robust basis for flow control in a T.38 gateway. If the outgoing gateway only starts sending a pixel row when it has the entire row in its buffer, it can safely idle, sending padding bits, at any row end it needs to. Only the 6 EOL markers, which terminate an image, must be protected from this kind of flow control. Those markers are defined as being consecutive, with no zero bit padding separating them.</para>
+
+<para>When ECM is used (usually with T.6 image data) the image is packetised in HDLC frames. In this case rate adaption is handled in a similar manner to the V.21 HDLC packets.</para>
+</sect1>
+
+</chapter>
+
+<chapter id="testing-an-implementation-of-t38">
+<title>Testing an implementation of T.38</title>
+<para>The T.38 specification does not define any specific compliance tests which an implementation must pass. It is not supplied with any test vectors. Commetrex is a supplier of T.38 implementations, who have taken it upon themselves to define a set of tests, and create a lab for T.38 interoperability testing. This seems the closest thing to an industry standard for T.38 testing which exists at this time, and is much to their credit.</para>
+
+<para>Commetrex have defined 16 tests which an implementation T.38 undergoes in their lab. These are described on the Commetrex web site as:
+
+<table frame="all">
+<title>Commetrex T.38 tests</title>
+<tgroup cols="3" align="center" colsep="1" rowsep="1">
+<colspec colname="Test #" />
+<colspec colname="Direction" />
+<colspec colname="Transport" />
+<colspec colname="Image file" />
+<colspec colname="Error correction" />
+<colspec colname="Data rate mgt" />
+<colspec colname="Image encoding" />
+<colspec colname="Polling" />
+<thead>
+<row>
+<entry align="centre">Test #</entry>
+<entry align="centre">Direction</entry>
+<entry align="centre">Transport</entry>
+<entry align="centre">Image file</entry>
+<entry align="centre">Error correction</entry>
+<entry align="centre">Data rate mgt</entry>
+<entry align="centre">Image encoding</entry>
+<entry align="centre">Polling</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry>1</entry><entry>originate</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 0</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>2</entry><entry>originate</entry><entry>UDP</entry><entry>100page.tif</entry><entry>redundancy 0</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>3</entry><entry>originate</entry><entry>TCP</entry><entry>ccitt2p.tif</entry><entry>redundancy 0</entry><entry>method 1</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>4</entry><entry>originate</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>5</entry><entry>originate</entry><entry>TCP</entry><entry>ccitt2p.tif</entry><entry>FEC 2 from 3 span</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>6</entry><entry>originate</entry><entry>UDP</entry><entry>dither1d.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>7</entry><entry>originate</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>ECM</entry><entry>no</entry>
+</row>
+<row>
+<entry>8</entry><entry>originate &amp; poll to rx</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>MR</entry><entry>polled rx</entry>
+</row>
+<row>
+<entry>9</entry><entry>answer</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 0</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>10</entry><entry>answer</entry><entry>UDP</entry><entry>100page.tif</entry><entry>redundancy 0</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>11</entry><entry>answer</entry><entry>TCP</entry><entry>ccitt2p.tif</entry><entry>redundancy 0</entry><entry>method 1</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>12</entry><entry>answer</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>13</entry><entry>answer</entry><entry>TCP</entry><entry>ccitt2p.tif</entry><entry>FEC 2 from 3 span</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>14</entry><entry>answer</entry><entry>UDP</entry><entry>dither1d.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>MR</entry><entry>no</entry>
+</row>
+<row>
+<entry>15</entry><entry>answer</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>ECM</entry><entry>no</entry>
+</row>
+<row>
+<entry>16</entry><entry>answer &amp; polled to tx</entry><entry>UDP</entry><entry>ccitt2p.tif</entry><entry>redundancy 3</entry><entry>method 2</entry><entry>MR</entry><entry>polled tx</entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+The file dither1d.tif is a whole page of dense checkerboard pattern, which does not compress, and produces a kind of torture test page. It is about 2M bytes. 100page.tif is exactly what it says - a file with 100 pages of FAX images. The content of the pages does not seem to be specified by Commetrex. The ITU T.30 test images, repeated sufficiently, seems a good basis for this test. ccitt2p.tif appears to be page 2 of the ITU test images. The tests are heavily biased towards non-ECM operation with MR coding. No other coding appears to be used, and only 2 tests use error corrected (ECM) FAXing.
+</para>
+
+<para>Some of the Commetrex tests seem strange. Why is TCP transmission tested with FEC or redundancy? These things are only needed to overcome to lack of reliability in a UDP path.</para>
+</chapter>
+
+<chapter id="living-with-real-world-t38-entities">
+<title>Living with real world T.38 entities.</title>
+<para> The T.38 specification leaves a number of grey areas, and many things can be implemented in several ways. It might, therefore, be expected that interoperability will not always run smoothly. Whilst some design decisions are reasonable subjects for discussion, it is quite common to find T.38 implementations doing things which are simply wrong.</para>
+
+<sect1>
+<title>Non-ECM data ending immediately after the six EOLs denoting the end of a page causes corruption</title>
+<para>From the T.38 specification, a T.38 entity sending non-ECM image data should be able to end the image data, with <emphasis>t4-non-ecm-sig-end</emphasis>, at the last bit of the six consecutive EOLs which denote the end of a page. However, this offers poor compatibility with some implementations of T.38. They will drop their carrier signal prematurely, and the last few rows of the image will be corrupted at the receiver.  This can happen regardless of whether the <emphasis>t4-non-ecm-sig-end</emphasis> is followed by a <emphasis>no-signal</emphasis> message, and regardless of the timing of that <emphasis>no-signal</emphasis> message. Padding with zero bytes for 40ms or more after the six EOLs seems to prevent this, and results in an image which exactly matches the one at the source.</para>
+</sect1>
+
+<sect1>
+<title>Expect mixups between non-ECM and ECM image modes.</title>
+<para>The TCF data should always be sent as non-ECM image data, whether the images which follow it are sent as non-ECM or ECM data. However, some broken implementations of T.38 (e.g. Mediatrix) may send an <emphasis>hdlc-sig-end</emphasis> message to terminate the TCF data. To be as tolerant as possible, it is probably wise to accept <emphasis>hdlc-sig-end</emphasis> or <emphasis>t4-non-ecm-sig-end</emphasis>, regardless of which kind of data it is really terminating.</para>
+</sect1>
+
+<sect1>
+<title>Expect some very poor timing decisions in various designs.</title>
+<para>The preamble for V.21 HDLC data is specified as being 1s+-15%. This should mean 850ms of preamble is within spec, and many modern FAX machines only send that much. A number of T.38 implementations choke on this. They require at least 1s between the <emphasis>v21-preamble</emphasis> message and the first HDLC data, for reliable operation. This is very poor design. Even if there is 1s between these events at the source, jitter on the network can make them arrive less than 1s apart. It appears the best a tolerant implementation can really do is impose a 1s minimum between sending these T.38 messages, and accept that things might still go wrong when there is some jitter.</para>
+
+<para>There is similar intolerance with the timing of the start of training messages for the fast image data modems. Most implementations do not impose a minimum which is above that permitted by the T.30 specification. Some do, however, make no allowance for network jitter reducing the interval at the receiver. You should expect the far end to be using TEP, when sizing the required delay between the start of training, and the first data. Also, for ECM data, make sure the delay allows for the specified minimum 200ms of preamble.</para>
+</sect1>
+
+<sect1>
+<title>Which kinds of error correction to use.</title>
+<para>T.38 defines two kinds of error correction for UDPTL streams. One inserts redundant copies of older IFP packets in each UDPTL packet. The other uses a more complex parity FEC scheme, based on XOR'ed data inserted in each UDPTL packet. Although each UDPTL packet identifies the type of error correction it contains, the original T.38 spec. did not offer any form of negotiation about the type to be used. The SIP and MGCP SDP for T.38 now includes preferred error correction type information, so some measure of negotiation is possible before the flow of UDPTL packets begins.</para>
+
+<para>It appears all T.38 implementations are happy to receive packets with redundant secondary content. However, it seems not all implementations will actually recover anything when there are missing UDPTL packets. It appears not all T.38 implementations are happy to receive packets with parity FEC data. Unless the SDP data from the far end explicitly says they support the parity FEC scheme, it is better to send only redundant information. A good implementation should be prepared to accept either kind of data, even intermixed, regardless of anything in the SDP negotiation. In the real world, whatever you ask for in your SDP data, you will probably receive secondary IFP packet redundancy from the far end. It is the only thing most implementations support, and with real world packet loss it may perform just as well as the more complex parity FEC scheme.</para>
+
+<para>When the first few UDPTL packets are sent, there will be no historical information to send as redundant secondary IFP packets, or parity FEC data. When using the redundant secondary packet scheme this is handled transparently. Each UDPTL packet says the number of redundant secondary IFP packets it contains. This can simply be set to zero for the first UDPTL packet, one for the second, up to the amount of redundancy which has been configured. All implementations seem to work in this way. When parity FEC is being used, the startup arrangement is less clear. While some implementations simply insert zeros for the non-existant packets before the start, others send a few packets with redundant secondary IFP packets, until they are able to insert the required amount of FEC data. Dealing with intermixed types of error correction makes a receiving implementation of UDPTL messier and slower, but is necessary for compatibility.</para>
+</sect1>
+
+<sect1>
+<title>What really ends the data?</title>
+<para>It should be correct to send some image data, and end with the image data signal end message. However, some T.38 implementations misbehave when this is all that is sent. Immediately following the signal end message with a <emphasis>no-signal</emphasis> indicator message seems to greatly improve compatibility with some T.38 implementations.</para>
+
+<para>T.38 defines <emphasis>hdlc-fcs-OK</emphasis>, <emphasis>hdlc-fcs-OK-sig-end</emphasis>, <emphasis>hdlc-sig-end</emphasis>, and <emphasis>no-signal</emphasis> messages. Always end periods of HDLC transmission with  either a <emphasis>hdlc-fcs-OK</emphasis>, <emphasis>hdlc-sig-end</emphasis>, <emphasis>no-signal</emphasis> sequence or a <emphasis>hdlc-fcs-OK-sig-end</emphasis>, <emphasis>no-signal</emphasis> sequence. Do not send <emphasis>hdlc-sig-end</emphasis> after <emphasis>hdlc-fcs-OK-sig-end</emphasis>. A number of T.38 implementations choke on this sequence, even though it looks fairly harmless.</para>
+
+</sect1>
+
+<sect1>
+<title>Normal use versus testing</title>
+<para>The design of some T.38 implementations precludes some reasonable tests from succeeding, due to design features which may have been implemented for sane reasons. This means each test failure needs to be investigated in detail, to see if it represents something genuinely bad in an implementation of T.38. For example, the 2M byte torture test page in the Commetrex test suite will not successfully pass through some T.38 implementations, because of a timeout they impose. For example, some ATAs based on Audiocodes silicon have been seen to stop any continuous period of modem transmission after about 90s. This appears to be a backstop timeout, to prevent troublesome implementations jamming the gateway. Legitimate pages just don't take that long, and the timeout is reasonable. However, the 2M byte test page takes up to 20 minutes to transmit, and will always fail on these boxes.</para>
+
+</sect1>
+
+</chapter>
+
+</book>

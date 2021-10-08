@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "test/codec_factory.h"
@@ -192,7 +190,7 @@ TEST_P(ArfFreqTest, MinArfFreqTest) {
   init_flags_ = VPX_CODEC_USE_PSNR;
   if (cfg_.g_bit_depth > 8) init_flags_ |= VPX_CODEC_USE_HIGHBITDEPTH;
 
-  std::unique_ptr<libvpx_test::VideoSource> video;
+  testing::internal::scoped_ptr<libvpx_test::VideoSource> video;
   if (is_extension_y4m(test_video_param_.filename)) {
     video.reset(new libvpx_test::Y4mVideoSource(test_video_param_.filename, 0,
                                                 kFrames));

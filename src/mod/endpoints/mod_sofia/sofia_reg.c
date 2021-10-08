@@ -380,7 +380,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		char *register_host = NULL;
 		char *custom_headers = NULL;
 
-		if (!now && ostate != REG_STATE_NOREG) {
+		if (!now) {
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
 			gateway_ptr->expires_str = "0";
 		}
@@ -413,7 +413,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 						TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 						TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 						SIPTAG_TO_STR(gateway_ptr->options_to_uri), SIPTAG_FROM_STR(gateway_ptr->options_from_uri),
-						TAG_IF(gateway_ptr->contact_in_ping, SIPTAG_CONTACT_STR(gateway_ptr->register_contact)),
 						TAG_IF(gateway_ptr->options_user_agent, SIPTAG_USER_AGENT_STR(gateway_ptr->options_user_agent)),
 						TAG_END());
 
@@ -422,7 +421,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		}
 
 		switch (ostate) {
-		case REG_STATE_DOWN:
 		case REG_STATE_NOREG:
 			if (!gateway_ptr->ping && !gateway_ptr->pinging && gateway_ptr->status != SOFIA_GATEWAY_UP) {
 				gateway_ptr->status = SOFIA_GATEWAY_UP;
@@ -457,7 +455,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_UNREGISTER:
 			sofia_reg_kill_reg(gateway_ptr);
-			gateway_ptr->state = REG_STATE_DOWN;
+			gateway_ptr->state = REG_STATE_NOREG;
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			break;
 		case REG_STATE_UNREGED:
@@ -725,7 +723,7 @@ void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const
 	switch_mutex_lock(profile->flag_mutex);
 	if ((hnh = switch_core_hash_find(profile->reg_nh_hash, key))) {
 		switch_core_hash_delete(profile->reg_nh_hash, key);
-		nua_handle_unref_user(hnh);
+		nua_handle_unref(hnh);
 		nua_handle_destroy(hnh);
 	}
 	switch_mutex_unlock(profile->flag_mutex);
@@ -1247,7 +1245,7 @@ void sofia_reg_close_handles(sofia_profile_t *profile)
 		for (hi = switch_core_hash_first_iter( profile->reg_nh_hash, hi); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((nh = (nua_handle_t *) val)) {
-				nua_handle_unref_user(nh);
+				nua_handle_unref(nh);
 				nua_handle_destroy(nh);
 				switch_core_hash_delete(profile->reg_nh_hash, (char *) var);
 				goto top;
@@ -1966,19 +1964,20 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 			switch_mutex_lock(profile->flag_mutex);
 			hnh = switch_core_hash_find(profile->reg_nh_hash, key);
+			switch_mutex_unlock(profile->flag_mutex);
 
 			if (!hnh) {
-				if (!(sofia_private = su_alloc(nua_handle_get_home(nh), sizeof(*sofia_private)))) {
+				if (!(sofia_private = su_alloc(nh->nh_home, sizeof(*sofia_private)))) {
 					abort();
 				}
 
 				memset(sofia_private, 0, sizeof(*sofia_private));
-				sofia_private->call_id = su_strdup(nua_handle_get_home(nh), call_id);
-				sofia_private->network_ip = su_strdup(nua_handle_get_home(nh), network_ip);
-				sofia_private->network_port = su_strdup(nua_handle_get_home(nh), network_port_c);
-				sofia_private->key = su_strdup(nua_handle_get_home(nh), key);
-				sofia_private->user = su_strdup(nua_handle_get_home(nh), to_user);
-				sofia_private->realm = su_strdup(nua_handle_get_home(nh), reg_host);
+				sofia_private->call_id = su_strdup(nh->nh_home, call_id);
+				sofia_private->network_ip = su_strdup(nh->nh_home, network_ip);
+				sofia_private->network_port = su_strdup(nh->nh_home, network_port_c);
+				sofia_private->key = su_strdup(nh->nh_home, key);
+				sofia_private->user = su_strdup(nh->nh_home, to_user);
+				sofia_private->realm = su_strdup(nh->nh_home, reg_host);
 
 				sofia_private->is_static++;
 				*sofia_private_p = sofia_private;
@@ -1986,8 +1985,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 				nua_handle_ref(nh);
 				switch_core_hash_insert(profile->reg_nh_hash, key, nh);
 			}
-
-			switch_mutex_unlock(profile->flag_mutex);
 		}
 
 
@@ -2461,12 +2458,12 @@ void sofia_reg_handle_sip_r_register(int status,
 					char *full;
 
 					for (; contact; contact = contact->m_next) {
-						if ((full = sip_header_as_string(nua_handle_get_home(nh), (void *) contact))) {
+						if ((full = sip_header_as_string(nh->nh_home, (void *) contact))) {
 							if (switch_stristr(gateway->register_contact, full)) {
 								break;
 							}
 
-							su_free(nua_handle_get_home(nh), full);
+							su_free(nh->nh_home, full);
 						}
 					}
 				}
@@ -2660,8 +2657,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 						sip_auth_password = dup_pass;
 					}
 				}
+
+				switch_xml_free(x_user);
 			}
-			switch_xml_free(x_user);
 		}
 
 		switch_event_destroy(&locate_params);
@@ -2672,7 +2670,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	} else if (gateway) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 						  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
 		goto cancel;
 	}
@@ -2964,7 +2962,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	if (switch_xml_locate_user_merged("id", zstr(username) ? "nobody" : username, domain_name, ip, &user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s] from %s\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
-						  "and you must configure your device to use the proper domain in its authentication credentials.\n", username, domain_name,
+						  "and you must configure your device to use the proper domain in it's authentication credentials.\n", username, domain_name,
 						  ip, domain_name, username);
 
 		ret = AUTH_FORBIDDEN;
@@ -2972,7 +2970,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	} else {
 		const char *type = switch_xml_attr(user, "type");
 		if (type && !strcasecmp(type, "pointer")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't register a pointer.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant register a pointer.\n");
 			ret = AUTH_FORBIDDEN;
 			goto end;
 		}

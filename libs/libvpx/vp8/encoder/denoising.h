@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_VP8_ENCODER_DENOISING_H_
-#define VPX_VP8_ENCODER_DENOISING_H_
+#ifndef VP8_ENCODER_DENOISING_H_
+#define VP8_ENCODER_DENOISING_H_
 
 #include "block.h"
 #include "vp8/common/loopfilter.h"
@@ -100,4 +100,4 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser, MACROBLOCK *x,
 }  // extern "C"
 #endif
 
-#endif  // VPX_VP8_ENCODER_DENOISING_H_
+#endif  // VP8_ENCODER_DENOISING_H_

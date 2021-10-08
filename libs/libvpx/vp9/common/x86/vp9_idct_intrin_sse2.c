@@ -10,6 +10,8 @@
 
 #include "./vp9_rtcd.h"
 #include "vpx_dsp/x86/inv_txfm_sse2.h"
+#include "vpx_dsp/x86/txfm_common_sse2.h"
+#include "vpx_ports/mem.h"
 
 void vp9_iht4x4_16_add_sse2(const tran_low_t *input, uint8_t *dest, int stride,
                             int tx_type) {
@@ -20,23 +22,23 @@ void vp9_iht4x4_16_add_sse2(const tran_low_t *input, uint8_t *dest, int stride,
   in[1] = load_input_data8(input + 8);
 
   switch (tx_type) {
-    case DCT_DCT:
+    case 0:  // DCT_DCT
       idct4_sse2(in);
       idct4_sse2(in);
       break;
-    case ADST_DCT:
+    case 1:  // ADST_DCT
       idct4_sse2(in);
       iadst4_sse2(in);
       break;
-    case DCT_ADST:
+    case 2:  // DCT_ADST
       iadst4_sse2(in);
       idct4_sse2(in);
       break;
-    default:
-      assert(tx_type == ADST_ADST);
+    case 3:  // ADST_ADST
       iadst4_sse2(in);
       iadst4_sse2(in);
       break;
+    default: assert(0); break;
   }
 
   // Final round and shift
@@ -65,23 +67,23 @@ void vp9_iht8x8_64_add_sse2(const tran_low_t *input, uint8_t *dest, int stride,
   in[7] = load_input_data8(input + 8 * 7);
 
   switch (tx_type) {
-    case DCT_DCT:
-      vpx_idct8_sse2(in);
-      vpx_idct8_sse2(in);
+    case 0:  // DCT_DCT
+      idct8_sse2(in);
+      idct8_sse2(in);
       break;
-    case ADST_DCT:
-      vpx_idct8_sse2(in);
+    case 1:  // ADST_DCT
+      idct8_sse2(in);
       iadst8_sse2(in);
       break;
-    case DCT_ADST:
+    case 2:  // DCT_ADST
       iadst8_sse2(in);
-      vpx_idct8_sse2(in);
+      idct8_sse2(in);
       break;
-    default:
-      assert(tx_type == ADST_ADST);
+    case 3:  // ADST_ADST
       iadst8_sse2(in);
       iadst8_sse2(in);
       break;
+    default: assert(0); break;
   }
 
   // Final rounding and shift
@@ -199,23 +201,23 @@ void vp9_iht16x16_256_add_sse2(const tran_low_t *input, uint8_t *dest,
   load_buffer_8x16(input, in1);
 
   switch (tx_type) {
-    case DCT_DCT:
+    case 0:  // DCT_DCT
       idct16_sse2(in0, in1);
       idct16_sse2(in0, in1);
       break;
-    case ADST_DCT:
+    case 1:  // ADST_DCT
       idct16_sse2(in0, in1);
       iadst16_sse2(in0, in1);
       break;
-    case DCT_ADST:
+    case 2:  // DCT_ADST
       iadst16_sse2(in0, in1);
       idct16_sse2(in0, in1);
       break;
-    default:
-      assert(tx_type == ADST_ADST);
+    case 3:  // ADST_ADST
       iadst16_sse2(in0, in1);
       iadst16_sse2(in0, in1);
       break;
+    default: assert(0); break;
   }
 
   write_buffer_8x16(dest, in0, stride);

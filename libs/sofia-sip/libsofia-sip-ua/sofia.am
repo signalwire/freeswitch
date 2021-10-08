@@ -1,0 +1,58 @@
+# common Makefile targets for libsofia-sip-ua modules
+# ---------------------------------------------------
+
+AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) $(SOFIA_COVERAGE) $(SOFIA_PLAT_CFLAGS)
+
+# Use with --enable-ndebug
+if NDEBUG
+AM_CFLAGS += -DNDEBUG
+endif
+
+built-sources: $(BUILT_SOURCES)
+
+DISTCLEANFILES = $(BUILT_SOURCES)
+
+clean-built-sources:
+	-rm -rf $(BUILT_SOURCES) $(BUILT_SOURCES:%=$(srcdir)/%)
+
+# rules for building tag files
+
+TAG_AWK=$(top_srcdir)/libsofia-sip-ua/su/tag_dll.awk
+
+*_tag_ref.c: $(TAG_AWK)
+
+%_tag_ref.c: %_tag.c
+	$(AWK) -f $(TAG_AWK) NODLL=1 $(TAG_DLL_FLAGS) $<
+
+if ENABLE_COVERAGE
+coverage:
+	@$(top_srcdir)/scripts/coverage $(COVERAGE_FLAGS) $(COVERAGE_INPUT)
+endif
+
+../bnf/libbnf.la ../http/libhttp.la ../ipt/libipt.la ../iptsec/libiptsec.la \
+ ../msg/libmsg.la ../nea/libnea.la ../nta/libnta.la ../nth/libnth.la \
+ ../nua/libnua.la ../sdp/libsdp.la ../sip/libsip.la ../soa/libsoa.la \
+ ../sresolv/libsresolv.la ../stun/libstun.la ../su/libsu.la \
+ ../tport/libtport.la ../url/liburl.la:
+	$(MAKE) -C $(@D) $(@F)
+
+INTERNAL_INCLUDES = \
+	-I$(srcdir)/../features -I../features \
+	-I$(srcdir)/../ipt -I../ipt \
+	-I$(srcdir)/../iptsec -I../iptsec \
+	-I$(srcdir)/../bnf -I../bnf \
+	-I$(srcdir)/../http -I../http \
+	-I$(srcdir)/../msg -I../msg \
+	-I$(srcdir)/../nth -I../nth \
+	-I$(srcdir)/../nta -I../nta \
+	-I$(srcdir)/../nea -I../nea \
+	-I$(srcdir)/../nua -I../nua \
+	-I$(srcdir)/../soa -I../soa \
+	-I$(srcdir)/../sdp -I../sdp \
+	-I$(srcdir)/../sip -I../sip \
+	-I$(srcdir)/../soa -I../soa \
+	-I$(srcdir)/../sresolv -I../sresolv \
+	-I$(srcdir)/../tport -I../tport \
+	-I$(srcdir)/../stun -I../stun \
+	-I$(srcdir)/../url -I../url \
+	-I$(srcdir)/../su -I../su

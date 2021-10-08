@@ -1,0 +1,249 @@
+/*!
+
+@page docguide Documentation Guidelines
+
+@section doxygen Using Doxygen
+
+Doxygen is a document generation program, used by many C/C++ projects. Its
+home page is at <a href="http://www.doxygen.org">http://www.doxygen.org</a>.
+The Sofia documentation is written using Doxygen.
+
+Doxygen works by extracting the documentation data both from the actual
+C/C++ source code and from the specially formatted comments.
+The comments can contain some Javadoc-like
+@ref doxycommands "special commands".
+
+In general the the style of the comments and documentation should follow the
+<a href="http://java.sun.com/j2se/javadoc/writingdoccomments/">
+javadoc style guide</a>.
+
+A Doxygen comment must either contain reference about the entity
+it is describing, e.g., command
+\@file when describing files:
+@verbatim
+/**
+ * @file foo.c
+ *
+ * Implementation of foo. The foo takes care of grokking xyzzy.
+ *
+ * @author Jaska Jokunen <jaska.jokunen@company.com> \n
+ *
+ * @date Created: Wed Oct 20 15:06:51 EEST 2004 jasjoku
+ */
+@endverbatim
+
+Usually the entity that is documented comes straight after the documentation
+comment. For example, documenting a function happens like this:
+@anchor orch
+@verbatim
+
+/**
+ * Orches a candometer. If orching candometer is not possible, it
+ * tries to schadule hearping.
+ *
+ * @param[in]  k        pointer to a candometer
+ * @param[in]  level    orching level
+ * @param[out] return_hearping return value for schaduled hearping
+ *
+ * @return
+ * The function orch() returns the candometer value, or #ERROR upon an error.
+ * If the returned value is 0, the newly schaduled hearping is returned in
+ * @a return_hearping.
+ */
+int orch(cando_t *k, int level, hearping_t *return_hearping)
+{
+  ...
+}
+@endverbatim
+
+@subsection doxyfile Doxyfile and Doxyfile.conf
+
+The doxygen options are specified through a configuration file,
+<i>Doxyfile</i>. As a convention, a module-specific Doxyfile includes
+a common file libsofia-sip-ua/docs/Doxyfile.conf. This makes it possible
+to keep the module-specific Doxyfiles as clean as possible:
+
+@code
+PROJECT_NAME         = "ipt"
+OUTPUT_DIRECTORY     = ../docs/ipt
+
+INPUT 		     = ipt.docs .
+
+@INCLUDE = ../Doxyfile.conf
+
+TAGFILES            += ../docs/docs/doxytags=../docs
+TAGFILES            += ../docs/su/doxytags=../su
+GENERATE_TAGFILE     = ../docs/ipt/doxytags
+@endcode
+
+From the file above, you can observe some conventions. The
+Doxygen-generated HTML documentation is collected in @b docs
+subdirectory at top level. A separate output directory is created for
+each submodule under it. Doxytags for the module are generated in the @e
+doxytags file in the output directory.
+
+@subsection module_docs Module documentation in \<module\>.docs
+
+Each module contains a documentation file containing at least the module
+mainpage called @e \<module\>.docs. There should be the module
+boilerplate information, for instance the following example is excerpt
+contents of file @e ipt.docs:
+
+@verbatim
+/**
+@MODULEPAGE "ipt" - Utility Module
+
+@section ipt_meta Module Meta Information
+
+Utility library for IP Telephony applications.
+
+@CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+
+@STATUS @SofiaSIP Core library
+
+@LICENSE LGPL
+
+@section ipt_overview Overview
+
+This module contain some routines useful for IPT applications, like
+- ...
+- ...
+*/
+@endverbatim
+
+@section doxycommands Common Doxygen Commands
+
+In this section we go through the most common Doxygen commands. All
+the commands are explained in the manual.
+The commands include
+- @ref doxystyle "style commands (@@a, @@b, @@c, @@e, @@em, @@p)"
+- @ref doxyfuncs "function parameters and return values (@@param, @@return, @@retval)"
+
+@subsection doxystyle Style Commands - @a, @b, @c, @e
+
+The text style can be changed with @@b @b (bold), @@c @c (code), or
+@@e @e (italic) commands. Function argument names use style command
+@@a.
+
+For example, a sentence "The @b Content-Type header @a ct specifies the @e
+media-type of the message body, e.g., @c audio/amr would be AMR-encoded
+audio." is produced with commands like
+@code
+The @b Content-Type header @a ct specifies the @e media-type of
+the message body, e.g., @c audio/amr would be AMR-encoded audio.
+@endcode
+
+The style commands have synonyms, e.g., @@em and @@e mean same, as
+well as @@c and @@p.
+
+@subsection doxyfuncs Function Parameters and Return Values - @param, @return, @retval
+
+Parameters to a function are documented with @@param commands. (See
+the @ref orch "orch()" function above.) As a convention, the data flow
+direction [in], [out] or [in,out] is indicated in the brackets after the
+@@param command keyword.
+
+Return values can be documented in two alternative manners, either
+using @@return command (see @ref orch "orch()") or @@retval command. The
+latter is used if the function returns a small number of possible
+values, e.g., enumeration or success/failure indication.
+
+@verbatim
+/**Schadule hearping.
+ *
+ * The function schadule() schadules a hearping.
+ *
+ * @param[in] h pointer to hearping
+ *
+ * @retval 0  hearping was successful
+ * @retval -1 an error occurred
+ */
+int schadule(hearping_t *h)
+{
+  ...
+}
+@endverbatim
+
+@subsection doxyexamples Example Blocks - @code, @endcode
+
+An example code fragment can be included using @@code and @@endcode
+commands.
+@verbatim
+/**Destroy a hearping.
+ *
+ * The function hearping_destroy() deinitializes a hearping and
+ * reclaims the memory allocated for it.
+ *
+ * @param[in,out] h pointer to pointer to hearping
+ *
+ * The function clears the pointer to hearping, so it must be called
+ * with a pointer to pointer:
+ * @code
+ *   hearping_destroy(&x->hearping);
+ * @endcode
+ */
+void hearping_destroy(hearping_t **h)
+{
+@endverbatim
+
+@subsection docpar Paragraphs
+
+The command @@par can be used to divide text into paragraphs. The text on
+the same line with @@par is used as a subtitle for the paragraph. The
+commands @@date, @@note, @@bug, @@todo, @@sa (See Also) and
+@@deprecated can be used to add common paragraphs to documentation entries.
+
+@subsection docfiles Documenting Files
+
+In most files there is documentation entry for the file itself. It is
+usually at top after the LGPL reference, containing @@file command or alias
+@@CFILE/@@IFILE. There are Emacs macros for creating the boilerplate entry.
+
+@subsection docgrouping Grouping Entries
+
+When the structure of the documentation does not follow directory or file
+structure, it is possible to use grouping commands @@defgroup and @@ingroup.
+The command @@defgroup creates a group, and @@ingroup adds an entry to an
+group.
+
+@subsection doclinking Creating Links
+
+Normally, Doxygen creates links to classes (and C structs) when it
+encounters the struct/class name.  It is also possible to add links to
+functions, type names and variables. If the function name is followed by
+pair of parenthesis (), Doxygen creates a link to it. If a type name or
+variable is prefixed with hash @#, Doxygen creates a link to it.
+
+It is also possible to create links with freely selected link to
+documentation entries with @@link and @@endlink commands.
+
+When the link target is a named page, section, or subsection, it is possible
+to use the @@ref command.
+
+@subsection doctext Writing Body Text
+
+The main body of the documentation is specified with @@mainpage command. The
+contents of the @@mainpage entry become the HTML home page of the
+documentation set. In each documentation set generated with Doxygen there
+can be only one @@mainpage command. Commands @@section, @@subsection, and
+@@subsubsection can be used to structure the body text.
+
+It is also possible to add individual HTML pages to the documentation. It
+happens with @@page command. These individual pages are like the home page
+added with @@mainpage, they can be accessed with the Related Pages link from
+the navigation bar.
+
+@subsection docimages Adding Images
+
+Images are added with @@image command. As the different documentation
+formats support different image formats, the @@image has list the image file
+name for each supported documentation format. The following example uses
+bitmap image for HTML documentation and Encapsulate PostScript for
+print documents:
+@code
+@image html sip-parser.gif
+
+@image latex sip-parser.eps
+@endcode
+
+*/

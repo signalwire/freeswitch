@@ -55,30 +55,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data)
-{
-	char *dkey = strdup(key);
-
-	if (switch_hashtable_insert_destructor(hash, dkey, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE | HASHTABLE_DUP_CHECK, NULL)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	switch_safe_free(dkey);
-
-	return SWITCH_STATUS_FALSE;
-}
-
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(switch_hash_t *hash, const char *key, const void *data, hashtable_destructor_t destructor)
 {
-	char *dkey = strdup(key);
+	int r = 0;
 
-	if (switch_hashtable_insert_destructor(hash, dkey, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
+	r = switch_hashtable_insert_destructor(hash, strdup(key), (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor);
 
-	switch_safe_free(dkey);
-
-	return SWITCH_STATUS_FALSE;
+	return r ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t *hash, const char *key, const void *data, switch_mutex_t *mutex)

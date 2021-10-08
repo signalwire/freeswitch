@@ -34,7 +34,6 @@
 #include "private/switch_core_pvt.h"
 
 static const char *LEVELS[] = {
-	"DISABLE",
 	"CONSOLE",
 	"ALERT",
 	"CRIT",
@@ -302,31 +301,7 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 	if (level > SWITCH_LOG_DEBUG) {
 		level = SWITCH_LOG_DEBUG;
 	}
-	return LEVELS[level + 1];
-}
-
-static int switch_log_to_mask(switch_log_level_t level)
-{
-	switch (level) {
-	case SWITCH_LOG_DEBUG:
-		return (1<<7);
-	case SWITCH_LOG_INFO:
-		return (1<<6);
-	case SWITCH_LOG_NOTICE:
-		return (1<<5);
-	case SWITCH_LOG_WARNING:
-		return (1<<4);
-	case SWITCH_LOG_ERROR:
-		return (1<<3);
-	case SWITCH_LOG_CRIT:
-		return (1<<2);
-	case SWITCH_LOG_ALERT:
-		return (1<<1);
-	case SWITCH_LOG_CONSOLE:
-		return (1<<0);
-	default:
-		return 0;
-	}
+	return LEVELS[level];
 }
 
 SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
@@ -335,7 +310,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 	char *argv[10] = { 0 };
 	uint32_t mask = 0;
 	char *p = strdup(str);
-	switch_log_level_t level = SWITCH_LOG_INVALID;
+	switch_log_level_t level;
 
 	switch_assert(p);
 
@@ -346,9 +321,8 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 				break;
 			} else {
 				level = switch_log_str2level(argv[x]);
-
 				if (level != SWITCH_LOG_INVALID) {
-					mask |= switch_log_to_mask(level);
+					mask |= (1 << level);
 				}
 			}
 		}
@@ -383,7 +357,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 		}
 
 		if (!strcasecmp(LEVELS[x], str)) {
-			level = (switch_log_level_t)(x - 1);
+			level = (switch_log_level_t) x;
 			break;
 		}
 	}
@@ -524,10 +498,6 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 #endif
 	switch_log_level_t limit_level = runtime.hard_log_level;
 	switch_log_level_t special_level = SWITCH_LOG_UNINIT;
-
-	if (limit_level == SWITCH_LOG_DISABLE) {
-		return;
-	}
 
 	if (channel == SWITCH_CHANNEL_ID_SESSION && userdata) {
 		switch_core_session_t *session = (switch_core_session_t *) userdata;

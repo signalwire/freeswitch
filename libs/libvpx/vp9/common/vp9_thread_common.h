@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_VP9_COMMON_VP9_THREAD_COMMON_H_
-#define VPX_VP9_COMMON_VP9_THREAD_COMMON_H_
+#ifndef VP9_COMMON_VP9_THREAD_COMMON_H_
+#define VP9_COMMON_VP9_THREAD_COMMON_H_
 #include "./vpx_config.h"
 #include "vp9/common/vp9_loopfilter.h"
 #include "vpx_util/vpx_thread.h"
@@ -24,8 +24,8 @@ struct FRAME_COUNTS;
 // Loopfilter row synchronization
 typedef struct VP9LfSyncData {
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t *mutex;
-  pthread_cond_t *cond;
+  pthread_mutex_t *mutex_;
+  pthread_cond_t *cond_;
 #endif
   // Allocate memory to store the loop-filtered superblock index in each row.
   int *cur_sb_col;
@@ -36,16 +36,7 @@ typedef struct VP9LfSyncData {
 
   // Row-based parallel loopfilter data
   LFWorkerData *lfdata;
-  int num_workers;         // number of allocated workers.
-  int num_active_workers;  // number of scheduled workers.
-
-#if CONFIG_MULTITHREAD
-  pthread_mutex_t lf_mutex;
-  pthread_mutex_t *recon_done_mutex;
-  pthread_cond_t *recon_done_cond;
-#endif
-  int *num_tiles_done;
-  int corrupted;
+  int num_workers;
 } VP9LfSync;
 
 // Allocate memory for loopfilter row synchronization.
@@ -62,17 +53,6 @@ void vp9_loop_filter_frame_mt(YV12_BUFFER_CONFIG *frame, struct VP9Common *cm,
                               int partial_frame, VPxWorker *workers,
                               int num_workers, VP9LfSync *lf_sync);
 
-// Multi-threaded loopfilter initialisations
-void vp9_lpf_mt_init(VP9LfSync *lf_sync, struct VP9Common *cm,
-                     int frame_filter_level, int num_workers);
-
-void vp9_loopfilter_rows(LFWorkerData *lf_data, VP9LfSync *lf_sync);
-
-void vp9_set_row(VP9LfSync *lf_sync, int num_tiles, int row, int is_last_row,
-                 int corrupted);
-
-void vp9_loopfilter_job(LFWorkerData *lf_data, VP9LfSync *lf_sync);
-
 void vp9_accumulate_frame_counts(struct FRAME_COUNTS *accum,
                                  const struct FRAME_COUNTS *counts, int is_dec);
 
@@ -80,4 +60,4 @@ void vp9_accumulate_frame_counts(struct FRAME_COUNTS *accum,
 }  // extern "C"
 #endif
 
-#endif  // VPX_VP9_COMMON_VP9_THREAD_COMMON_H_
+#endif  // VP9_COMMON_VP9_THREAD_COMMON_H_

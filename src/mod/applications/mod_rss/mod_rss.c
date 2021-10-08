@@ -575,6 +575,7 @@ SWITCH_STANDARD_APP(rss_function)
 
 						if (entries[dtb.index].title_txt) {
 							switch_snprintf(tmpbuf + tmplen, sizeof(tmpbuf) - tmplen, "%s", entries[dtb.index].title_txt);
+							tmplen = (uint32_t) strlen(tmpbuf);
 						}
 					}
 					switch_core_speech_flush_tts(&sh);
@@ -589,6 +590,7 @@ SWITCH_STANDARD_APP(rss_function)
 					}
 
 					if (cont) {
+						cont = 0;
 						continue;
 					}
 

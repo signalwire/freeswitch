@@ -1,0 +1,513 @@
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/**@file win32/config.h.in
+ * @brief <config.h> used by Windows.
+ *
+ * Use this on WIN32.
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @date Created: Tue Sep 12 19:22:54 2000 ppessi
+ */
+
+/* Define to as the random number source name. */
+#undef DEV_URANDOM
+
+/* Define to 1 if you have addrinfo structure. */
+#define HAVE_ADDRINFO 1
+
+/* Define to 1 if you have the `alarm' function. */
+#undef HAVE_ALARM
+
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
+/* Define to 1 if you have the `clock_getcpuclockid' function. */
+#undef HAVE_CLOCK_GETCPUCLOCKID
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have /dev/urandom. */
+#undef HAVE_DEV_URANDOM
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have epoll interface. */
+#undef HAVE_EPOLL
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define this as 1 if you have WIN32 FILETIME type and
+   GetSystemTimeAsFileTime(). */
+#define HAVE_FILETIME 1
+
+/* Define to 1 if you have the `flock' function. */
+#undef HAVE_FLOCK
+
+/* Define to 1 if you have the `freeaddrinfo' function. */
+#define HAVE_FREEADDRINFO 1
+
+/* Define to 1 if the C compiler supports __func__ */
+#undef HAVE_FUNC
+
+/* Define to 1 if the C compiler supports __FUNCTION__ */
+#undef HAVE_FUNCTION
+
+/* Define to 1 if you have the `gai_strerror' function. */
+#define HAVE_GAI_STRERROR 1
+
+/* Define to 1 if you have the `getaddrinfo' function. */
+#define HAVE_GETADDRINFO 1
+
+/* Define to 1 if you have the `getdelim' function. */
+#undef HAVE_GETDELIM
+
+/* Define to 1 if you have the `gethostbyname' function. */
+#define HAVE_GETHOSTBYNAME 1
+
+/* Define to 1 if you have the `gethostname' function. */
+#define HAVE_GETHOSTNAME 1
+
+/* Define to 1 if you have the `getifaddrs' function. */
+#undef HAVE_GETIFADDRS
+
+/* Define to 1 if you have the `getipnodebyname' function. */
+#undef HAVE_GETIPNODEBYNAME
+
+/* Define to 1 if you have the `getline' function. */
+#undef HAVE_GETLINE
+
+/* Define to 1 if you have the `getnameinfo' function. */
+#define HAVE_GETNAMEINFO 1
+
+/* Define to 1 if you have the `getpass' function. */
+#undef HAVE_GETPASS
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <ifaddr.h> header file. */
+#undef HAVE_IFADDR_H
+
+/* Define to 1 if you have SIOCGIFCONF */
+#undef HAVE_IFCONF
+
+/* Define to 1 if you have SIOCGIFNUM ioctl */
+#undef HAVE_IFNUM
+
+/* Define to 1 if you have ifr_ifindex in <net/if.h> */
+#undef HAVE_IFR_IFINDEX
+
+/* Define to 1 if you have ifr_index in <net/if.h> */
+#undef HAVE_IFR_INDEX
+
+/* Define to 1 if you have the `if_nameindex' function. */
+#undef HAVE_IF_NAMEINDEX
+
+/* Define to 1 if you have the `inet_ntop' function. */
+#undef HAVE_INET_NTOP
+
+/* Define to 1 if you have the `inet_pton' function. */
+#undef HAVE_INET_PTON
+
+/* Define to 1 if you have the `initstate' function. */
+#undef HAVE_INITSTATE
+
+/* Define to 1 if you have inlining compiler */
+#define HAVE_INLINE 1
+
+/* Define to 1 if you have WIN32 INTERFACE_INFO_EX type. */
+#undef HAVE_INTERFACE_INFO_EX
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <iphlpapi.h> header file. */
+#if _MSC_VER > 1200
+#define HAVE_IPHLPAPI_H 1
+#else
+// XXX: vehmanek-win32-fix for VC6
+#undef HAVE_IPHLPAPI_H
+#endif
+
+/* Define to 1 if you have IPV6_RECVERR in <netinet/in6.h> */
+#undef HAVE_IPV6_RECVERR
+
+/* Define to 1 if you have IP_RECVERR in <netinet/in.h> */
+#undef HAVE_IP_RECVERR
+
+/* Define to 1 if you have the `crypto' library (-lcrypto). */
+#undef HAVE_LIBCRYPTO
+
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#define HAVE_LIBPTHREAD 1
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `ssl' library (-lssl). */
+#undef HAVE_LIBSSL
+
+/* Define to 1 if you have the `memccpy' function. */
+#undef HAVE_MEMCCPY
+
+/* Define to 1 if you have the `memcspn' function. */
+#undef HAVE_MEMCSPN
+
+/* Define to 1 if you have the `memmem' function. */
+#undef HAVE_MEMMEM
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memspn' function. */
+#undef HAVE_MEMSPN
+
+/* Define to 1 if you are compiling in MinGW environment */
+#undef HAVE_MINGW
+
+/* Define to 1 if you have MSG_TRUNC flag */
+#undef HAVE_MSG_TRUNC
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the <netinet/sctp.h> header file. */
+#undef HAVE_NETINET_SCTP_H
+
+/* Define to 1 if you have the <netinet/tcp.h> header file. */
+#undef HAVE_NETINET_TCP_H
+
+/* Define to 1 if you have the <netpacket/packet.h> header file. */
+#undef HAVE_NETPACKET_PACKET_H
+
+/* Define to 1 if you have the <net/if.h> header file. */
+#undef HAVE_NET_IF_H
+
+/* Define to 1 if you have the <net/if_types.h> header file. */
+#undef HAVE_NET_IF_TYPES_H
+
+/* Define to 1 if you have OpenSSL */
+#define HAVE_OPENSSL 1
+
+/* Define to 1 if you have the <openssl/tls1.h> header file. */
+#define HAVE_OPENSSL_TLS1_H 1
+
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
+
+/* Define to 1 if you use poll in su_port. */
+#undef HAVE_POLL_PORT
+
+/* Define to 1 if you have /proc/net/if_inet6 control file */
+#undef HAVE_PROC_NET_IF_INET6
+
+/* Define to 1 if you have working pthread_rwlock_t implementation. A thread
+   may hold multiple concurrent read locks on rwlock - that is, successfully
+   call the pthread_rwlock_rdlock() function n times. If so, the application
+   shall ensure that the thread performs matching unlocks - that is, it calls
+   the pthread_rwlock_unlock() function n times. */
+#undef HAVE_PTHREAD_RWLOCK
+
+/* Define to 1 if you have the <pthread.h> header file. */
+#define HAVE_PTHREAD_H 1
+
+/* Define to 1 if you have the `random' function. */
+/* See later */
+#define HAVE_RANDOM 1
+
+/* Define to 1 if you have sa_len in struct sockaddr */
+#undef HAVE_SA_LEN
+
+/* Define to 1 if you have SCTP */
+#undef HAVE_SCTP
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Define to 1 if you have Sofia sigcomp >= 2.5 */
+#undef HAVE_SIGCOMP
+
+/* Define to 1 if you have the <sigcomp.h> header file. */
+#undef HAVE_SIGCOMP_H
+
+/* Define to 1 if you have the `signal' function. */
+#define HAVE_SIGNAL 1
+
+/* Define to 1 if you have SIGPIPE */
+#undef HAVE_SIGPIPE
+
+/* Define to 1 if you have IPv6 structures and constants */
+#define HAVE_SIN6 1
+
+/* Define to 1 if you have WIN32 WSAIoctl SIO_ADDRESS_LIST_QUERY. */
+#define HAVE_SIO_ADDRESS_LIST_QUERY 1
+
+/* Define to 1 if you have the `socketpair' function. */
+#undef HAVE_SOCKETPAIR
+
+/* Define to 1 if we use NTH library */
+#define HAVE_SOFIA_NTH 1
+
+/* Define to 1 if we use NTLM library */
+#undef HAVE_SOFIA_NTLM
+
+/* Define to 1 if you have Sofia sigcomp >= 2.5 */
+#undef HAVE_SOFIA_SIGCOMP
+
+/* Define to 1 always */
+#define HAVE_SOFIA_SIP 1
+
+/* Define to 1 if we use S/MIME library */
+#undef HAVE_SOFIA_SMIME
+
+/* Define to 1 if we use DNS library */
+#define HAVE_SOFIA_SRESOLV 1
+
+/* Define to 1 if we use STUN library */
+#undef HAVE_SOFIA_STUN
+
+/* Define to 1 always */
+#define HAVE_SOFIA_SU 1
+
+/* Define to 1 if we use SRTP */
+#undef HAVE_SRTP
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#define HAVE_STDLIB_H 1
+
+/* Define to 1 if you have the `strcasestr' function. */
+#undef HAVE_STRCASESTR
+
+/* Define to 1 if you have the `strerror' function. */
+#define HAVE_STRERROR 1
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#define HAVE_STRING_H 1
+
+/* Define to 1 if you have the `strtoull' function. */
+#undef HAVE_STRTOULL
+
+/* Define to 1 if your CC supports C99 struct initialization */
+#undef HAVE_STRUCT_KEYWORDS
+
+/* Define to 1 if you have the <sofia-sip/su_wait.h> header file. */
+#define HAVE_SU_WAIT_H 1
+
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+#undef HAVE_SYS_EPOLL_H
+
+/* Define to 1 if you have the <sys/filio.h> header file. */
+#undef HAVE_SYS_FILIO_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#define HAVE_SYS_STAT_H 1
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#define HAVE_SYS_TYPES_H 1
+
+/* Define to 1 if you have the `tcsetattr' function. */
+#undef HAVE_TCSETATTR
+
+/* Define to 1 if you have TLS */
+#define HAVE_TLS 1
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if we use UPnP */
+#undef HAVE_UPNP
+
+/* Define to 1 you have WIN32 */
+#define HAVE_WIN32 1
+
+/* Define to 1 if you have the <windef.h> header file. */
+#define HAVE_WINDEF_H 1
+
+/* Define to 1 if you have the <winsock2.h> header file. */
+#define HAVE_WINSOCK2_H 1
+
+/* Define to 1 if you have the <ws2tcpip.h> header file. */
+#define HAVE_WS2TCPIP_H 1
+
+/* Define to format (%lli) for long long */
+#define LLI "%I64i"
+
+/* Define to format (%llu) for unsigned long long */
+#define LLU "%I64u"
+
+/* Define to format (%llx) for long long hex */
+#define LLX "%I64x"
+
+/* Name of package */
+#define PACKAGE "@PACKAGE@"
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "@PACKAGE_BUGREPORT@"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "@PACKAGE_NAME@"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "@PACKAGE_STRING@"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "@PACKAGE_TARNAME@"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "@PACKAGE_VERSION@"
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#define RETSIGTYPE void
+
+/* Define to 1 if you have the ANSI C header files. */
+#define STDC_HEADERS 1
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Version number of package */
+#define VERSION "@PACKAGE_VERSION@"
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE 1
+#endif
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#define inline __inline
+#endif
+
+/* Define as at least 64-bit int type */
+#define longlong __int64
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+/* PPe: defined in stddef.h */
+#undef size_t
+
+#define HOSTTYPE "pc-xp-win32"
+/* #define HOSTTYPE "pc-98-win32" */
+/* #define HOSTTYPE "pc-nt-win32" */
+
+/* Define this as locale-independent strcmp().  */
+#define strcasecmp  _stricmp
+
+/* Define this as locale-independent strncmp().  */
+#define strncasecmp _strnicmp
+
+#if _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
+#ifndef _MSC_VER
+#define vsnprintf _vsnprintf
+#endif
+#if _MSC_VER < 1500
+#define vsnprintf _vsnprintf
+#endif
+
+#define srandom(x)    srand((x))
+#define random()      rand()
+
+/* This is GCC magic  */
+#define __attribute__(x)
+
+/* Define to 1 if you have TimeGetTime() */
+#define HAVE_TIMEGETTIME     1
+
+#define PATH_MAX _MAX_PATH
+
+#define HAVE_WINMM 1
+
+/* Define to 1 if you have FILETIME */
+#define HAVE_FILETIME 1
+
+/* Define to 1 if you have WinSock2 ioctl SIO_ADDRESS_LIST_QUERY */
+#define HAVE_SIO_ADDRESS_LIST_QUERY 1
+
+/* Define to 1 if you have INTERFACE_INFO ioctl */
+#define HAVE_INTERFACE_INFO 	   (1)
+
+/* Ignore certain warnings */
+#ifdef _MSC_VER
+#pragma warning( disable : 4090 4204 4244 4018 4514 4706 4761)
+/* VC does not grok const */
+#pragma warning( disable : 4022 4028 )
+/* Temporarily disable high frequency, low value warnings.
+   We may still want to re-enable and fix these */
+#pragma warning( disable : 4132 4100 4127 4152)
+#if (_MSC_VER >= 1400) // VC8+
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif // VC8+
+#endif
+
+/* size_t/ssize_t modifiers
+ * ref: http://msdn2.microsoft.com/en-us/library/tcxf1dw6.aspx */
+#define MOD_ZD "%ld"
+#define MOD_ZU "%lu"

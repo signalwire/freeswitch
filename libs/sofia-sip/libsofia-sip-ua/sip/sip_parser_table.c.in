@@ -1,0 +1,56 @@
+/**@IFILE sip_parser_table.c.in
+ *
+ * Template for <sip_parser_table.c>.
+ *
+ * @date Created: Wed Feb 21 11:01:45 2001 ppessi
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/**@CFILE sip_parser_table.c
+ * @brief SIP parser table
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ *
+ * @date Created: Tue Oct  1 20:28:59 2002 ppessi
+ */
+
+#include "config.h"
+
+#include <stddef.h>
+#include <string.h>
+
+/* Avoid casting sip_t to msg_pub_t and sip_header_t to msg_header_t */
+#define MSG_PUB_T       struct sip_s
+#define MSG_HDR_T       union sip_header_u
+
+#include <sofia-sip/sip_parser.h>
+#include <sofia-sip/sip_extra.h>
+#include <sofia-sip/msg_mclass.h>
+
+
+

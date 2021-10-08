@@ -7,17 +7,23 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VPX_TEST_CLEAR_SYSTEM_STATE_H_
-#define VPX_TEST_CLEAR_SYSTEM_STATE_H_
+#ifndef TEST_CLEAR_SYSTEM_STATE_H_
+#define TEST_CLEAR_SYSTEM_STATE_H_
 
 #include "./vpx_config.h"
-#include "vpx_ports/system_state.h"
+#if ARCH_X86 || ARCH_X86_64
+#include "vpx_ports/x86.h"
+#endif
 
 namespace libvpx_test {
 
 // Reset system to a known state. This function should be used for all non-API
 // test cases.
-inline void ClearSystemState() { vpx_clear_system_state(); }
+inline void ClearSystemState() {
+#if ARCH_X86 || ARCH_X86_64
+  vpx_reset_mmx_state();
+#endif
+}
 
 }  // namespace libvpx_test
-#endif  // VPX_TEST_CLEAR_SYSTEM_STATE_H_
+#endif  // TEST_CLEAR_SYSTEM_STATE_H_

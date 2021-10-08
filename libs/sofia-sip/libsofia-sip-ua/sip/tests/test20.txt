@@ -1,0 +1,9 @@
+INVITE sip:user;par=u%40h.com@company.com SIP/2.0 
+To: sip:j_user@company.com 
+From: sip:caller@university.edu;tag=33242 
+Max-Forwards: 3 
+Call-ID: 0ha0isndaksdj@10.1.1.1 
+CSeq: 8 INVITE 
+Via: SIP/2.0/UDP 135.180.130.133;branch=z9hG4bKkdjuw 
+Content-Length: 0
+

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_VP8_COMMON_SYSTEMDEPENDENT_H_
-#define VPX_VP8_COMMON_SYSTEMDEPENDENT_H_
+#ifndef VP8_COMMON_SYSTEMDEPENDENT_H_
+#define VP8_COMMON_SYSTEMDEPENDENT_H_
 
 #include "vpx_config.h"
 
@@ -24,4 +24,4 @@ void vp8_machine_specific_config(struct VP8Common *);
 }  // extern "C"
 #endif
 
-#endif  // VPX_VP8_COMMON_SYSTEMDEPENDENT_H_
+#endif  // VP8_COMMON_SYSTEMDEPENDENT_H_

@@ -1,0 +1,65 @@
+.nthChildTest > div:nth-child(odd) {
+	display: none;
+}
+
+.jsDataTable > thead > tr > th {
+
+    border-width:4px;
+    padding: 2px;
+    font-size:10pt;
+    text-align: left;
+
+}
+
+.jsDataTable > thead > tr > th.notSortable {
+	padding: 5px;
+}
+
+.jsDataTable > tbody > tr > td {
+	border-bottom: 1px solid #ccc;
+	padding: 2px;
+	vertical-align: middle;
+        height:25px;
+	font-size: 10px;
+}
+
+.jsDataTable {
+    font-family: verdana; 
+    font-size:10pt;
+}
+
+.jsDataTable > tbody > tr:nth-child(odd),
+.jsDataTable > tbody > tr.odd {
+	background-color: #ffffee;
+}
+.jsDataTable > tbody > tr:nth-child(even),
+.jsDataTable > tbody > tr.even {
+	background-color: #ffffff;
+}
+
+.jsDataTable > thead th.sortAsc,
+.jsDataTable > thead th.sortDesc {
+    color:ffffff;
+
+    background-color: #7777ff;
+    background-position: right center;
+    background-repeat: no-repeat;
+}
+
+.jsDataTable > thead th.sortAsc {
+	background-image: url(/images/table/asc.png);
+}
+
+.jsDataTable > thead th.sortDesc {
+	background-image: url(/images/table/desc.png);
+}
+
+.jsDataTable.clickable > tbody > tr,
+.clickable > .jsDataTable > tbody > tr {
+	cursor: pointer;
+}
+
+.jsDataTable.clickable > tbody > tr.nonDataRow,
+.clickable > .jsDataTable > tbody > tr.nonDataRow {
+    cursor: auto;
+}

@@ -126,9 +126,7 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 		}
 	}
 
-	if (active) {
-		*active = connection_attempt;
-	}
+	*active = connection_attempt;
 
 	if (!connection_attempt) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] could not connect to any AMQP brokers\n", profile_name);
@@ -150,26 +148,20 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 										connection_attempt->password);
 
 	if (mod_amqp_log_if_amqp_error(status, "Logging in")) {
-		if (active) {
-			mod_amqp_connection_close(*active);
-			*active = NULL;
-		}
+		mod_amqp_connection_close(*active);
+		*active = NULL;
 		goto err;
 	}
 
 	// Open a channel (1). This is fairly standard
 	amqp_channel_open(newConnection, 1);
 	if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(newConnection), "Opening channel")) {
-		if (active) {
-			mod_amqp_connection_close(*active);
-			*active = NULL;
-		}
+		mod_amqp_connection_close(*active);
+		*active = NULL;
 		goto err;
 	}
 
-	if (active) {
-		(*active)->state = newConnection;
-	}
+	(*active)->state = newConnection;
 
 	if (oldConnection) {
 		amqp_destroy_connection(oldConnection);
@@ -228,7 +220,7 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 			if (interval && interval > 0) {
 				port = interval;
 			}
-		} else if (!strncmp(var, "heartbeat", 9)) {
+		} else if (!strncmp(var, "heartbeat", 4)) {
 			int interval = atoi(val);
 			if (interval && interval > 0) {
 				heartbeat = interval;

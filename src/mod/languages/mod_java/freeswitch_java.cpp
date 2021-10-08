@@ -207,7 +207,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
     jstring digits = NULL;
     jint res;
     jstring callbackResult = NULL;
-    switch_status_t status = SWITCH_STATUS_FALSE;
+    switch_status_t status;
 
     if (cb_state.function == NULL)
     {
@@ -229,6 +229,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
     onDTMF = env->GetMethodID(klass, "onDTMF", "(Ljava/lang/Object;ILjava/lang/String;)Ljava/lang/String;");
     if (onDTMF == NULL)
     {
+        status = SWITCH_STATUS_FALSE;
         goto done;
     }
 
@@ -237,6 +238,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
         digits = env->NewStringUTF((char*)input);
         if (digits == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto done;
         }
         callbackResult = (jstring) env->CallObjectMethod((jobject)cb_state.function, onDTMF, digits, itype, (jstring)cb_state.funcargs);
@@ -246,6 +248,8 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
             status = process_callback_result((char*) callbackResultUTF);
             env->ReleaseStringUTFChars(callbackResult, callbackResultUTF);
         }
+        else
+            status = SWITCH_STATUS_FALSE;
     }
     else if (itype == SWITCH_INPUT_TYPE_EVENT)
     {
@@ -261,27 +265,32 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
         env->FindClass("org/freeswitch/Event");
         if (Event == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto cleanup;
         }
         constructor = env->GetMethodID(Event, "<init>", "()V");
         if (constructor == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto cleanup;
         }
         event = env->CallStaticObjectMethod(Event, constructor);
         if (event == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto cleanup;
         }
 
         setBody = env->GetMethodID(Event, "setBody", "(Ljava/lang/String;)V");
         if (setBody == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto cleanup;
         }
         body = env->NewStringUTF(switch_event->body);
         if (body == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto cleanup;
         }
         env->CallVoidMethod(event, setBody, body);
@@ -291,6 +300,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
         addHeader = env->GetMethodID(Event, "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V");
         if (addHeader == NULL)
         {
+            status = SWITCH_STATUS_FALSE;
             goto cleanup;
         }
         for (header = switch_event->headers; header; header = header->next)
@@ -314,6 +324,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
                 env->DeleteLocalRef(value);
             if (env->ExceptionOccurred())
             {
+                status = SWITCH_STATUS_FALSE;
                 goto cleanup;
             }
         }
@@ -325,6 +336,8 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
             status = process_callback_result((char*) callbackResultUTF);
             env->ReleaseStringUTFChars(callbackResult, callbackResultUTF);
         }
+        else
+            status = SWITCH_STATUS_FALSE;
 
     cleanup:
         if (Event != NULL)

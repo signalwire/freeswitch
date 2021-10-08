@@ -47,8 +47,7 @@ LIBYUV_BOOL ValidateJpeg(const uint8_t* src_mjpg, size_t src_size_mjpg) {
     // ERROR: Invalid jpeg size: src_size_mjpg
     return LIBYUV_FALSE;
   }
-  // SOI marker
-  if (src_mjpg[0] != 0xff || src_mjpg[1] != 0xd8 || src_mjpg[2] != 0xff) {
+  if (src_mjpg[0] != 0xff || src_mjpg[1] != 0xd8) {  // SOI marker
     // ERROR: Invalid jpeg initial start code
     return LIBYUV_FALSE;
   }

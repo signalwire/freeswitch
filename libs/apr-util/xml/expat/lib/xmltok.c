@@ -1225,7 +1225,7 @@ void unknown_toUtf8(const ENCODING *enc,
 		    const char **fromP, const char *fromLim,
 		    char **toP, const char *toLim)
 {
-  char buf[XML_UTF8_ENCODE_MAX] = {0};
+  char buf[XML_UTF8_ENCODE_MAX];
   for (;;) {
     const char *utf8;
     int n;

@@ -1,0 +1,20 @@
+2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added aliases for RFC links in libsofia-sip-ua/docs/Doxyfile.aliases.
+
+    M ./libsofia-sip-ua/docs/Doxyfile.aliases -7 +2208
+
+2005-10-12  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed aliases for Doxygen 1.4.
+
+    M ./libsofia-sip-ua/docs/Doxyfile.aliases -6 +6
+
+2005-09-08  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* hide_emails.sh: Fixed bug in hiding addresses of
+	form foo.bar-bar@something.org. Fixed sf.net
+	bug #1277167.
+
+
+

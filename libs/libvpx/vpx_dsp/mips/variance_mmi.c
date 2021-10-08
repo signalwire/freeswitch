@@ -87,10 +87,10 @@ static const uint8_t bilinear_filters[8][2] = {
   "paddh      %[ftmp12],  %[ftmp12],      %[ftmp6]            \n\t"
 
 #define VARIANCE_SSE_8                                              \
-  "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t" \
-  "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t" \
+  "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t" \
+  "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t" \
   "pasubub    %[ftmp3],   %[ftmp1],       %[ftmp2]            \n\t" \
   "punpcklbh  %[ftmp4],   %[ftmp3],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp5],   %[ftmp3],       %[ftmp0]            \n\t" \
@@ -101,10 +101,10 @@ static const uint8_t bilinear_filters[8][2] = {
 
 #define VARIANCE_SSE_16                                             \
   VARIANCE_SSE_8                                                    \
-  "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
-  "gsldlc1    %[ftmp2],   0x0f(%[ref_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp2],   0x08(%[ref_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t" \
+  "gsldlc1    %[ftmp2],   0x0f(%[b])                          \n\t" \
+  "gsldrc1    %[ftmp2],   0x08(%[b])                          \n\t" \
   "pasubub    %[ftmp3],   %[ftmp1],       %[ftmp2]            \n\t" \
   "punpcklbh  %[ftmp4],   %[ftmp3],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp5],   %[ftmp3],       %[ftmp0]            \n\t" \
@@ -115,11 +115,11 @@ static const uint8_t bilinear_filters[8][2] = {
 
 #define VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_A                       \
   /* calculate fdata3[0]~fdata3[3], store at ftmp2*/                \
-  "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t" \
   "punpcklbh  %[ftmp2],   %[ftmp1],       %[ftmp0]            \n\t" \
-  "gsldlc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x01(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x08(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x01(%[a])                          \n\t" \
   "punpcklbh  %[ftmp3],   %[ftmp1],       %[ftmp0]            \n\t" \
   "pmullh     %[ftmp2],   %[ftmp2],       %[filter_x0]        \n\t" \
   "paddh      %[ftmp2],   %[ftmp2],       %[ff_ph_40]         \n\t" \
@@ -129,11 +129,11 @@ static const uint8_t bilinear_filters[8][2] = {
 
 #define VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_B                       \
   /* calculate fdata3[0]~fdata3[3], store at ftmp4*/                \
-  "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t" \
   "punpcklbh  %[ftmp4],   %[ftmp1],       %[ftmp0]            \n\t" \
-  "gsldlc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x01(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x08(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x01(%[a])                          \n\t" \
   "punpcklbh  %[ftmp5],   %[ftmp1],       %[ftmp0]            \n\t" \
   "pmullh     %[ftmp4],   %[ftmp4],       %[filter_x0]        \n\t" \
   "paddh      %[ftmp4],   %[ftmp4],       %[ff_ph_40]         \n\t" \
@@ -169,12 +169,12 @@ static const uint8_t bilinear_filters[8][2] = {
 
 #define VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_A                       \
   /* calculate fdata3[0]~fdata3[7], store at ftmp2 and ftmp3*/      \
-  "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t" \
   "punpcklbh  %[ftmp2],   %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp3],   %[ftmp1],       %[ftmp0]            \n\t" \
-  "gsldlc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x01(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x08(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x01(%[a])                          \n\t" \
   "punpcklbh  %[ftmp4],   %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp5],   %[ftmp1],       %[ftmp0]            \n\t" \
   "pmullh     %[ftmp2],   %[ftmp2],       %[filter_x0]        \n\t" \
@@ -190,12 +190,12 @@ static const uint8_t bilinear_filters[8][2] = {
 
 #define VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_B                       \
   /* calculate fdata3[0]~fdata3[7], store at ftmp8 and ftmp9*/      \
-  "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t" \
   "punpcklbh  %[ftmp8],   %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp9],   %[ftmp1],       %[ftmp0]            \n\t" \
-  "gsldlc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x01(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x08(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x01(%[a])                          \n\t" \
   "punpcklbh  %[ftmp10],  %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp11],  %[ftmp1],       %[ftmp0]            \n\t" \
   "pmullh     %[ftmp8],   %[ftmp8],       %[filter_x0]        \n\t" \
@@ -258,12 +258,12 @@ static const uint8_t bilinear_filters[8][2] = {
   VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_A                             \
                                                                     \
   /* calculate fdata3[8]~fdata3[15], store at ftmp4 and ftmp5*/     \
-  "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t" \
   "punpcklbh  %[ftmp4],   %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp5],   %[ftmp1],       %[ftmp0]            \n\t" \
-  "gsldlc1    %[ftmp1],   0x10(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x09(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x10(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x09(%[a])                          \n\t" \
   "punpcklbh  %[ftmp6],   %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp7],   %[ftmp1],       %[ftmp0]            \n\t" \
   "pmullh     %[ftmp4],   %[ftmp4],       %[filter_x0]        \n\t" \
@@ -282,12 +282,12 @@ static const uint8_t bilinear_filters[8][2] = {
   VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_B                             \
                                                                     \
   /* calculate fdata3[8]~fdata3[15], store at ftmp10 and ftmp11*/   \
-  "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t" \
   "punpcklbh  %[ftmp10],  %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp11],  %[ftmp1],       %[ftmp0]            \n\t" \
-  "gsldlc1    %[ftmp1],   0x10(%[src_ptr])                    \n\t" \
-  "gsldrc1    %[ftmp1],   0x09(%[src_ptr])                    \n\t" \
+  "gsldlc1    %[ftmp1],   0x10(%[a])                          \n\t" \
+  "gsldrc1    %[ftmp1],   0x09(%[a])                          \n\t" \
   "punpcklbh  %[ftmp12],  %[ftmp1],       %[ftmp0]            \n\t" \
   "punpckhbh  %[ftmp13],  %[ftmp1],       %[ftmp0]            \n\t" \
   "pmullh     %[ftmp10],  %[ftmp10],      %[filter_x0]        \n\t" \
@@ -357,23 +357,24 @@ static const uint8_t bilinear_filters[8][2] = {
 // taps should sum to FILTER_WEIGHT. pixel_step defines whether the filter is
 // applied horizontally (pixel_step = 1) or vertically (pixel_step = stride).
 // It defines the offset required to move from one input to the next.
-static void var_filter_block2d_bil_first_pass(
-    const uint8_t *src_ptr, uint16_t *ref_ptr, unsigned int src_pixels_per_line,
-    int pixel_step, unsigned int output_height, unsigned int output_width,
-    const uint8_t *filter) {
+static void var_filter_block2d_bil_first_pass(const uint8_t *a, uint16_t *b,
+                                              unsigned int src_pixels_per_line,
+                                              int pixel_step,
+                                              unsigned int output_height,
+                                              unsigned int output_width,
+                                              const uint8_t *filter) {
   unsigned int i, j;
 
   for (i = 0; i < output_height; ++i) {
     for (j = 0; j < output_width; ++j) {
-      ref_ptr[j] = ROUND_POWER_OF_TWO(
-          (int)src_ptr[0] * filter[0] + (int)src_ptr[pixel_step] * filter[1],
-          FILTER_BITS);
+      b[j] = ROUND_POWER_OF_TWO(
+          (int)a[0] * filter[0] + (int)a[pixel_step] * filter[1], FILTER_BITS);
 
-      ++src_ptr;
+      ++a;
     }
 
-    src_ptr += src_pixels_per_line - output_width;
-    ref_ptr += output_width;
+    a += src_pixels_per_line - output_width;
+    b += output_width;
   }
 }
 
@@ -386,27 +387,28 @@ static void var_filter_block2d_bil_first_pass(
 // filter is applied horizontally (pixel_step = 1) or vertically
 // (pixel_step = stride). It defines the offset required to move from one input
 // to the next. Output is 8-bit.
-static void var_filter_block2d_bil_second_pass(
-    const uint16_t *src_ptr, uint8_t *ref_ptr, unsigned int src_pixels_per_line,
-    unsigned int pixel_step, unsigned int output_height,
-    unsigned int output_width, const uint8_t *filter) {
+static void var_filter_block2d_bil_second_pass(const uint16_t *a, uint8_t *b,
+                                               unsigned int src_pixels_per_line,
+                                               unsigned int pixel_step,
+                                               unsigned int output_height,
+                                               unsigned int output_width,
+                                               const uint8_t *filter) {
   unsigned int i, j;
 
   for (i = 0; i < output_height; ++i) {
     for (j = 0; j < output_width; ++j) {
-      ref_ptr[j] = ROUND_POWER_OF_TWO(
-          (int)src_ptr[0] * filter[0] + (int)src_ptr[pixel_step] * filter[1],
-          FILTER_BITS);
-      ++src_ptr;
+      b[j] = ROUND_POWER_OF_TWO(
+          (int)a[0] * filter[0] + (int)a[pixel_step] * filter[1], FILTER_BITS);
+      ++a;
     }
 
-    src_ptr += src_pixels_per_line - output_width;
-    ref_ptr += output_width;
+    a += src_pixels_per_line - output_width;
+    b += output_width;
   }
 }
 
-static inline uint32_t vpx_variance64x(const uint8_t *src_ptr, int src_stride,
-                                       const uint8_t *ref_ptr, int ref_stride,
+static inline uint32_t vpx_variance64x(const uint8_t *a, int a_stride,
+                                       const uint8_t *b, int b_stride,
                                        uint32_t *sse, int high) {
   int sum;
   double ftmp[12];
@@ -422,57 +424,57 @@ static inline uint32_t vpx_variance64x(const uint8_t *src_ptr, int src_stride,
     "xor        %[ftmp9],   %[ftmp9],       %[ftmp9]            \n\t"
     "xor        %[ftmp10],  %[ftmp10],      %[ftmp10]           \n\t"
     "1:                                                         \n\t"
-    "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x0f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x08(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x0f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x08(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x17(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x10(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x17(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x10(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x17(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x10(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x17(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x10(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x1f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x18(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x1f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x18(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x1f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x18(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x1f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x18(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x27(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x20(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x27(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x20(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x27(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x20(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x27(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x20(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x2f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x28(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x2f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x28(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x2f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x28(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x2f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x28(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x37(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x30(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x37(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x30(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x37(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x30(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x37(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x30(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x3f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x38(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x3f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x38(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x3f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x38(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x3f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x38(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "mfc1       %[tmp1],    %[ftmp9]                            \n\t"
@@ -489,10 +491,9 @@ static inline uint32_t vpx_variance64x(const uint8_t *src_ptr, int src_stride,
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [tmp0]"=&r"(tmp[0]),              [tmp1]"=&r"(tmp[1]),
       [tmp2]"=&r"(tmp[2]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr),
+      [a]"+&r"(a),                      [b]"+&r"(b),
       [sum]"=&r"(sum)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse)
     : "memory"
   );
@@ -500,19 +501,18 @@ static inline uint32_t vpx_variance64x(const uint8_t *src_ptr, int src_stride,
   return *sse - (((int64_t)sum * sum) / (64 * high));
 }
 
-#define VPX_VARIANCE64XN(n)                                                   \
-  uint32_t vpx_variance64x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                                    const uint8_t *ref_ptr, int ref_stride,   \
-                                    uint32_t *sse) {                          \
-    return vpx_variance64x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define VPX_VARIANCE64XN(n)                                         \
+  uint32_t vpx_variance64x##n##_mmi(const uint8_t *a, int a_stride, \
+                                    const uint8_t *b, int b_stride, \
+                                    uint32_t *sse) {                \
+    return vpx_variance64x(a, a_stride, b, b_stride, sse, n);       \
   }
 
 VPX_VARIANCE64XN(64)
 VPX_VARIANCE64XN(32)
 
-uint32_t vpx_variance32x64_mmi(const uint8_t *src_ptr, int src_stride,
-                               const uint8_t *ref_ptr, int ref_stride,
-                               uint32_t *sse) {
+uint32_t vpx_variance32x64_mmi(const uint8_t *a, int a_stride, const uint8_t *b,
+                               int b_stride, uint32_t *sse) {
   int sum;
   double ftmp[12];
   uint32_t tmp[3];
@@ -527,33 +527,33 @@ uint32_t vpx_variance32x64_mmi(const uint8_t *src_ptr, int src_stride,
     "xor        %[ftmp9],   %[ftmp9],       %[ftmp9]            \n\t"
     "xor        %[ftmp10],  %[ftmp10],      %[ftmp10]           \n\t"
     "1:                                                         \n\t"
-    "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x0f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x08(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x0f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x08(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x17(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x10(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x17(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x10(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x17(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x10(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x17(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x10(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
-    "gsldlc1    %[ftmp1],   0x1f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x18(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x1f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x18(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x1f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x18(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x1f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x18(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8_FOR_W64
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "mfc1       %[tmp1],    %[ftmp9]                            \n\t"
@@ -570,10 +570,9 @@ uint32_t vpx_variance32x64_mmi(const uint8_t *src_ptr, int src_stride,
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [tmp0]"=&r"(tmp[0]),              [tmp1]"=&r"(tmp[1]),
       [tmp2]"=&r"(tmp[2]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr),
+      [a]"+&r"(a),                      [b]"+&r"(b),
       [sum]"=&r"(sum)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [sse]"r"(sse)
     : "memory"
   );
@@ -581,8 +580,8 @@ uint32_t vpx_variance32x64_mmi(const uint8_t *src_ptr, int src_stride,
   return *sse - (((int64_t)sum * sum) / 2048);
 }
 
-static inline uint32_t vpx_variance32x(const uint8_t *src_ptr, int src_stride,
-                                       const uint8_t *ref_ptr, int ref_stride,
+static inline uint32_t vpx_variance32x(const uint8_t *a, int a_stride,
+                                       const uint8_t *b, int b_stride,
                                        uint32_t *sse, int high) {
   int sum;
   double ftmp[13];
@@ -599,30 +598,30 @@ static inline uint32_t vpx_variance32x(const uint8_t *src_ptr, int src_stride,
     "xor        %[ftmp10],  %[ftmp10],      %[ftmp10]           \n\t"
     "xor        %[ftmp12],  %[ftmp12],      %[ftmp12]           \n\t"
     "1:                                                         \n\t"
-    "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
-    "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x0f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x08(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x0f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x08(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
-    "gsldlc1    %[ftmp1],   0x17(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x10(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x17(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x10(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x17(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x10(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x17(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x10(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
-    "gsldlc1    %[ftmp1],   0x1f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x18(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x1f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x18(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x1f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x18(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x1f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x18(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "dsrl       %[ftmp9],   %[ftmp8],       %[ftmp11]           \n\t"
@@ -647,9 +646,8 @@ static inline uint32_t vpx_variance32x(const uint8_t *src_ptr, int src_stride,
       [ftmp8]"=&f"(ftmp[8]),            [ftmp9]"=&f"(ftmp[9]),
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [ftmp12]"=&f"(ftmp[12]),          [tmp0]"=&r"(tmp[0]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+      [a]"+&r"(a),                      [b]"+&r"(b)
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse), [sum]"r"(&sum)
     : "memory"
   );
@@ -657,18 +655,18 @@ static inline uint32_t vpx_variance32x(const uint8_t *src_ptr, int src_stride,
   return *sse - (((int64_t)sum * sum) / (32 * high));
 }
 
-#define VPX_VARIANCE32XN(n)                                                   \
-  uint32_t vpx_variance32x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                                    const uint8_t *ref_ptr, int ref_stride,   \
-                                    uint32_t *sse) {                          \
-    return vpx_variance32x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define VPX_VARIANCE32XN(n)                                         \
+  uint32_t vpx_variance32x##n##_mmi(const uint8_t *a, int a_stride, \
+                                    const uint8_t *b, int b_stride, \
+                                    uint32_t *sse) {                \
+    return vpx_variance32x(a, a_stride, b, b_stride, sse, n);       \
   }
 
 VPX_VARIANCE32XN(32)
 VPX_VARIANCE32XN(16)
 
-static inline uint32_t vpx_variance16x(const uint8_t *src_ptr, int src_stride,
-                                       const uint8_t *ref_ptr, int ref_stride,
+static inline uint32_t vpx_variance16x(const uint8_t *a, int a_stride,
+                                       const uint8_t *b, int b_stride,
                                        uint32_t *sse, int high) {
   int sum;
   double ftmp[13];
@@ -685,20 +683,20 @@ static inline uint32_t vpx_variance16x(const uint8_t *src_ptr, int src_stride,
     "xor        %[ftmp10],  %[ftmp10],      %[ftmp10]           \n\t"
     "xor        %[ftmp12],  %[ftmp12],      %[ftmp12]           \n\t"
     "1:                                                         \n\t"
-    "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
-    "gsldlc1    %[ftmp1],   0x0f(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x08(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x0f(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x08(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x0f(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x08(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x0f(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x08(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "dsrl       %[ftmp9],   %[ftmp8],       %[ftmp11]           \n\t"
@@ -723,9 +721,8 @@ static inline uint32_t vpx_variance16x(const uint8_t *src_ptr, int src_stride,
       [ftmp8]"=&f"(ftmp[8]),            [ftmp9]"=&f"(ftmp[9]),
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [ftmp12]"=&f"(ftmp[12]),          [tmp0]"=&r"(tmp[0]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+      [a]"+&r"(a),                      [b]"+&r"(b)
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse), [sum]"r"(&sum)
     : "memory"
   );
@@ -733,19 +730,19 @@ static inline uint32_t vpx_variance16x(const uint8_t *src_ptr, int src_stride,
   return *sse - (((int64_t)sum * sum) / (16 * high));
 }
 
-#define VPX_VARIANCE16XN(n)                                                   \
-  uint32_t vpx_variance16x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                                    const uint8_t *ref_ptr, int ref_stride,   \
-                                    uint32_t *sse) {                          \
-    return vpx_variance16x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define VPX_VARIANCE16XN(n)                                         \
+  uint32_t vpx_variance16x##n##_mmi(const uint8_t *a, int a_stride, \
+                                    const uint8_t *b, int b_stride, \
+                                    uint32_t *sse) {                \
+    return vpx_variance16x(a, a_stride, b, b_stride, sse, n);       \
   }
 
 VPX_VARIANCE16XN(32)
 VPX_VARIANCE16XN(16)
 VPX_VARIANCE16XN(8)
 
-static inline uint32_t vpx_variance8x(const uint8_t *src_ptr, int src_stride,
-                                      const uint8_t *ref_ptr, int ref_stride,
+static inline uint32_t vpx_variance8x(const uint8_t *a, int a_stride,
+                                      const uint8_t *b, int b_stride,
                                       uint32_t *sse, int high) {
   int sum;
   double ftmp[13];
@@ -762,15 +759,15 @@ static inline uint32_t vpx_variance8x(const uint8_t *src_ptr, int src_stride,
     "xor        %[ftmp10],  %[ftmp10],      %[ftmp10]           \n\t"
     "xor        %[ftmp12],  %[ftmp12],      %[ftmp12]           \n\t"
     "1:                                                         \n\t"
-    "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t"
     VARIANCE_SSE_SUM_8
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "dsrl       %[ftmp9],   %[ftmp8],       %[ftmp11]           \n\t"
@@ -795,9 +792,8 @@ static inline uint32_t vpx_variance8x(const uint8_t *src_ptr, int src_stride,
       [ftmp8]"=&f"(ftmp[8]),            [ftmp9]"=&f"(ftmp[9]),
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [ftmp12]"=&f"(ftmp[12]),          [tmp0]"=&r"(tmp[0]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+      [a]"+&r"(a),                      [b]"+&r"(b)
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse), [sum]"r"(&sum)
     : "memory"
   );
@@ -805,19 +801,19 @@ static inline uint32_t vpx_variance8x(const uint8_t *src_ptr, int src_stride,
   return *sse - (((int64_t)sum * sum) / (8 * high));
 }
 
-#define VPX_VARIANCE8XN(n)                                                   \
-  uint32_t vpx_variance8x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                                   const uint8_t *ref_ptr, int ref_stride,   \
-                                   uint32_t *sse) {                          \
-    return vpx_variance8x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define VPX_VARIANCE8XN(n)                                         \
+  uint32_t vpx_variance8x##n##_mmi(const uint8_t *a, int a_stride, \
+                                   const uint8_t *b, int b_stride, \
+                                   uint32_t *sse) {                \
+    return vpx_variance8x(a, a_stride, b, b_stride, sse, n);       \
   }
 
 VPX_VARIANCE8XN(16)
 VPX_VARIANCE8XN(8)
 VPX_VARIANCE8XN(4)
 
-static inline uint32_t vpx_variance4x(const uint8_t *src_ptr, int src_stride,
-                                      const uint8_t *ref_ptr, int ref_stride,
+static inline uint32_t vpx_variance4x(const uint8_t *a, int a_stride,
+                                      const uint8_t *b, int b_stride,
                                       uint32_t *sse, int high) {
   int sum;
   double ftmp[12];
@@ -834,15 +830,15 @@ static inline uint32_t vpx_variance4x(const uint8_t *src_ptr, int src_stride,
     "xor        %[ftmp7],   %[ftmp7],       %[ftmp7]            \n\t"
     "xor        %[ftmp8],   %[ftmp8],       %[ftmp8]            \n\t"
     "1:                                                         \n\t"
-    "gsldlc1    %[ftmp1],   0x07(%[src_ptr])                    \n\t"
-    "gsldrc1    %[ftmp1],   0x00(%[src_ptr])                    \n\t"
-    "gsldlc1    %[ftmp2],   0x07(%[ref_ptr])                    \n\t"
-    "gsldrc1    %[ftmp2],   0x00(%[ref_ptr])                    \n\t"
+    "gsldlc1    %[ftmp1],   0x07(%[a])                          \n\t"
+    "gsldrc1    %[ftmp1],   0x00(%[a])                          \n\t"
+    "gsldlc1    %[ftmp2],   0x07(%[b])                          \n\t"
+    "gsldrc1    %[ftmp2],   0x00(%[b])                          \n\t"
     VARIANCE_SSE_SUM_4
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "dsrl       %[ftmp9],   %[ftmp6],       %[ftmp10]           \n\t"
@@ -866,9 +862,8 @@ static inline uint32_t vpx_variance4x(const uint8_t *src_ptr, int src_stride,
       [ftmp8]"=&f"(ftmp[8]),            [ftmp9]"=&f"(ftmp[9]),
       [ftmp10]"=&f"(ftmp[10]),
       [tmp0]"=&r"(tmp[0]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+      [a]"+&r"(a),                      [b]"+&r"(b)
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse), [sum]"r"(&sum)
     : "memory"
   );
@@ -876,19 +871,19 @@ static inline uint32_t vpx_variance4x(const uint8_t *src_ptr, int src_stride,
   return *sse - (((int64_t)sum * sum) / (4 * high));
 }
 
-#define VPX_VARIANCE4XN(n)                                                   \
-  uint32_t vpx_variance4x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                                   const uint8_t *ref_ptr, int ref_stride,   \
-                                   uint32_t *sse) {                          \
-    return vpx_variance4x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define VPX_VARIANCE4XN(n)                                         \
+  uint32_t vpx_variance4x##n##_mmi(const uint8_t *a, int a_stride, \
+                                   const uint8_t *b, int b_stride, \
+                                   uint32_t *sse) {                \
+    return vpx_variance4x(a, a_stride, b, b_stride, sse, n);       \
   }
 
 VPX_VARIANCE4XN(8)
 VPX_VARIANCE4XN(4)
 
-static inline uint32_t vpx_mse16x(const uint8_t *src_ptr, int src_stride,
-                                  const uint8_t *ref_ptr, int ref_stride,
-                                  uint32_t *sse, uint64_t high) {
+static inline uint32_t vpx_mse16x(const uint8_t *a, int a_stride,
+                                  const uint8_t *b, int b_stride, uint32_t *sse,
+                                  uint64_t high) {
   double ftmp[12];
   uint32_t tmp[1];
 
@@ -905,8 +900,8 @@ static inline uint32_t vpx_mse16x(const uint8_t *src_ptr, int src_stride,
     VARIANCE_SSE_16
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "dsrl       %[ftmp9],   %[ftmp8],       %[ftmp11]           \n\t"
@@ -919,9 +914,8 @@ static inline uint32_t vpx_mse16x(const uint8_t *src_ptr, int src_stride,
       [ftmp8]"=&f"(ftmp[8]),            [ftmp9]"=&f"(ftmp[9]),
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [tmp0]"=&r"(tmp[0]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+      [a]"+&r"(a),                      [b]"+&r"(b)
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse)
     : "memory"
   );
@@ -929,19 +923,19 @@ static inline uint32_t vpx_mse16x(const uint8_t *src_ptr, int src_stride,
   return *sse;
 }
 
-#define vpx_mse16xN(n)                                                   \
-  uint32_t vpx_mse16x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                               const uint8_t *ref_ptr, int ref_stride,   \
-                               uint32_t *sse) {                          \
-    return vpx_mse16x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define vpx_mse16xN(n)                                         \
+  uint32_t vpx_mse16x##n##_mmi(const uint8_t *a, int a_stride, \
+                               const uint8_t *b, int b_stride, \
+                               uint32_t *sse) {                \
+    return vpx_mse16x(a, a_stride, b, b_stride, sse, n);       \
   }
 
 vpx_mse16xN(16);
 vpx_mse16xN(8);
 
-static inline uint32_t vpx_mse8x(const uint8_t *src_ptr, int src_stride,
-                                 const uint8_t *ref_ptr, int ref_stride,
-                                 uint32_t *sse, uint64_t high) {
+static inline uint32_t vpx_mse8x(const uint8_t *a, int a_stride,
+                                 const uint8_t *b, int b_stride, uint32_t *sse,
+                                 uint64_t high) {
   double ftmp[12];
   uint32_t tmp[1];
 
@@ -958,8 +952,8 @@ static inline uint32_t vpx_mse8x(const uint8_t *src_ptr, int src_stride,
     VARIANCE_SSE_8
 
     "addiu      %[tmp0],    %[tmp0],        -0x01               \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
-    MMI_ADDU(%[ref_ptr], %[ref_ptr], %[ref_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
+    MMI_ADDU(%[b], %[b], %[b_stride])
     "bnez       %[tmp0],    1b                                  \n\t"
 
     "dsrl       %[ftmp9],   %[ftmp8],       %[ftmp11]           \n\t"
@@ -972,9 +966,8 @@ static inline uint32_t vpx_mse8x(const uint8_t *src_ptr, int src_stride,
       [ftmp8]"=&f"(ftmp[8]),            [ftmp9]"=&f"(ftmp[9]),
       [ftmp10]"=&f"(ftmp[10]),          [ftmp11]"=&f"(ftmp[11]),
       [tmp0]"=&r"(tmp[0]),
-      [src_ptr]"+&r"(src_ptr),          [ref_ptr]"+&r"(ref_ptr)
-    : [src_stride]"r"((mips_reg)src_stride),
-      [ref_stride]"r"((mips_reg)ref_stride),
+      [a]"+&r"(a),                      [b]"+&r"(b)
+    : [a_stride]"r"((mips_reg)a_stride),[b_stride]"r"((mips_reg)b_stride),
       [high]"r"(&high), [sse]"r"(sse)
     : "memory"
   );
@@ -982,29 +975,28 @@ static inline uint32_t vpx_mse8x(const uint8_t *src_ptr, int src_stride,
   return *sse;
 }
 
-#define vpx_mse8xN(n)                                                   \
-  uint32_t vpx_mse8x##n##_mmi(const uint8_t *src_ptr, int src_stride,   \
-                              const uint8_t *ref_ptr, int ref_stride,   \
-                              uint32_t *sse) {                          \
-    return vpx_mse8x(src_ptr, src_stride, ref_ptr, ref_stride, sse, n); \
+#define vpx_mse8xN(n)                                                          \
+  uint32_t vpx_mse8x##n##_mmi(const uint8_t *a, int a_stride,                  \
+                              const uint8_t *b, int b_stride, uint32_t *sse) { \
+    return vpx_mse8x(a, a_stride, b, b_stride, sse, n);                        \
   }
 
 vpx_mse8xN(16);
 vpx_mse8xN(8);
 
-#define SUBPIX_VAR(W, H)                                                       \
-  uint32_t vpx_sub_pixel_variance##W##x##H##_mmi(                              \
-      const uint8_t *src_ptr, int src_stride, int x_offset, int y_offset,      \
-      const uint8_t *ref_ptr, int ref_stride, uint32_t *sse) {                 \
-    uint16_t fdata3[((H) + 1) * (W)];                                          \
-    uint8_t temp2[(H) * (W)];                                                  \
-                                                                               \
-    var_filter_block2d_bil_first_pass(src_ptr, fdata3, src_stride, 1, (H) + 1, \
-                                      W, bilinear_filters[x_offset]);          \
-    var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,              \
-                                       bilinear_filters[y_offset]);            \
-                                                                               \
-    return vpx_variance##W##x##H##_mmi(temp2, W, ref_ptr, ref_stride, sse);    \
+#define SUBPIX_VAR(W, H)                                                \
+  uint32_t vpx_sub_pixel_variance##W##x##H##_mmi(                       \
+      const uint8_t *a, int a_stride, int xoffset, int yoffset,         \
+      const uint8_t *b, int b_stride, uint32_t *sse) {                  \
+    uint16_t fdata3[(H + 1) * W];                                       \
+    uint8_t temp2[H * W];                                               \
+                                                                        \
+    var_filter_block2d_bil_first_pass(a, fdata3, a_stride, 1, H + 1, W, \
+                                      bilinear_filters[xoffset]);       \
+    var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,       \
+                                       bilinear_filters[yoffset]);      \
+                                                                        \
+    return vpx_variance##W##x##H##_mmi(temp2, W, b, b_stride, sse);     \
   }
 
 SUBPIX_VAR(64, 64)
@@ -1014,10 +1006,9 @@ SUBPIX_VAR(32, 32)
 SUBPIX_VAR(32, 16)
 SUBPIX_VAR(16, 32)
 
-static inline void var_filter_block2d_bil_16x(const uint8_t *src_ptr,
-                                              int src_stride, int x_offset,
-                                              int y_offset, uint8_t *temp2,
-                                              int counter) {
+static inline void var_filter_block2d_bil_16x(const uint8_t *a, int a_stride,
+                                              int xoffset, int yoffset,
+                                              uint8_t *temp2, int counter) {
   uint8_t *temp2_ptr = temp2;
   mips_reg l_counter = counter;
   double ftmp[15];
@@ -1025,8 +1016,8 @@ static inline void var_filter_block2d_bil_16x(const uint8_t *src_ptr,
   DECLARE_ALIGNED(8, const uint64_t, ff_ph_40) = { 0x0040004000400040ULL };
   DECLARE_ALIGNED(8, const uint64_t, mask) = { 0x00ff00ff00ff00ffULL };
 
-  const uint8_t *filter_x = bilinear_filters[x_offset];
-  const uint8_t *filter_y = bilinear_filters[y_offset];
+  const uint8_t *filter_x = bilinear_filters[xoffset];
+  const uint8_t *filter_y = bilinear_filters[yoffset];
 
   __asm__ volatile (
     "xor        %[ftmp0],   %[ftmp0],       %[ftmp0]            \n\t"
@@ -1040,26 +1031,26 @@ static inline void var_filter_block2d_bil_16x(const uint8_t *src_ptr,
     // fdata3: fdata3[0] ~ fdata3[15]
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_16_A
 
-    // fdata3 +src_stride*1: fdata3[0] ~ fdata3[15]
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    // fdata3 +a_stride*1: fdata3[0] ~ fdata3[15]
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_16_B
     // temp2: temp2[0] ~ temp2[15]
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_16_A
 
-    // fdata3 +src_stride*2: fdata3[0] ~ fdata3[15]
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    // fdata3 +a_stride*2: fdata3[0] ~ fdata3[15]
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_16_A
     // temp2+16*1: temp2[0] ~ temp2[15]
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x10)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_16_B
 
     "1:                                                         \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_16_B
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x10)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_16_A
 
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_16_A
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x10)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_16_B
@@ -1071,44 +1062,43 @@ static inline void var_filter_block2d_bil_16x(const uint8_t *src_ptr,
       [ftmp9] "=&f"(ftmp[9]), [ftmp10] "=&f"(ftmp[10]),
       [ftmp11] "=&f"(ftmp[11]), [ftmp12] "=&f"(ftmp[12]),
       [ftmp13] "=&f"(ftmp[13]), [ftmp14] "=&f"(ftmp[14]),
-      [tmp0] "=&r"(tmp[0]), [src_ptr] "+&r"(src_ptr), [temp2_ptr] "+&r"(temp2_ptr),
+      [tmp0] "=&r"(tmp[0]), [a] "+&r"(a), [temp2_ptr] "+&r"(temp2_ptr),
       [counter]"+&r"(l_counter)
     : [filter_x0] "f"((uint64_t)filter_x[0]),
       [filter_x1] "f"((uint64_t)filter_x[1]),
       [filter_y0] "f"((uint64_t)filter_y[0]),
       [filter_y1] "f"((uint64_t)filter_y[1]),
-      [src_stride] "r"((mips_reg)src_stride), [ff_ph_40] "f"(ff_ph_40),
+      [a_stride] "r"((mips_reg)a_stride), [ff_ph_40] "f"(ff_ph_40),
       [mask] "f"(mask)
     : "memory"
   );
 }
 
-#define SUBPIX_VAR16XN(H)                                                      \
-  uint32_t vpx_sub_pixel_variance16x##H##_mmi(                                 \
-      const uint8_t *src_ptr, int src_stride, int x_offset, int y_offset,      \
-      const uint8_t *ref_ptr, int ref_stride, uint32_t *sse) {                 \
-    uint8_t temp2[16 * (H)];                                                   \
-    var_filter_block2d_bil_16x(src_ptr, src_stride, x_offset, y_offset, temp2, \
-                               ((H)-2) / 2);                                   \
-                                                                               \
-    return vpx_variance16x##H##_mmi(temp2, 16, ref_ptr, ref_stride, sse);      \
+#define SUBPIX_VAR16XN(H)                                            \
+  uint32_t vpx_sub_pixel_variance16x##H##_mmi(                       \
+      const uint8_t *a, int a_stride, int xoffset, int yoffset,      \
+      const uint8_t *b, int b_stride, uint32_t *sse) {               \
+    uint8_t temp2[16 * H];                                           \
+    var_filter_block2d_bil_16x(a, a_stride, xoffset, yoffset, temp2, \
+                               (H - 2) / 2);                         \
+                                                                     \
+    return vpx_variance16x##H##_mmi(temp2, 16, b, b_stride, sse);    \
   }
 
 SUBPIX_VAR16XN(16)
 SUBPIX_VAR16XN(8)
 
-static inline void var_filter_block2d_bil_8x(const uint8_t *src_ptr,
-                                             int src_stride, int x_offset,
-                                             int y_offset, uint8_t *temp2,
-                                             int counter) {
+static inline void var_filter_block2d_bil_8x(const uint8_t *a, int a_stride,
+                                             int xoffset, int yoffset,
+                                             uint8_t *temp2, int counter) {
   uint8_t *temp2_ptr = temp2;
   mips_reg l_counter = counter;
   double ftmp[15];
   mips_reg tmp[2];
   DECLARE_ALIGNED(8, const uint64_t, ff_ph_40) = { 0x0040004000400040ULL };
   DECLARE_ALIGNED(8, const uint64_t, mask) = { 0x00ff00ff00ff00ffULL };
-  const uint8_t *filter_x = bilinear_filters[x_offset];
-  const uint8_t *filter_y = bilinear_filters[y_offset];
+  const uint8_t *filter_x = bilinear_filters[xoffset];
+  const uint8_t *filter_y = bilinear_filters[yoffset];
 
   __asm__ volatile (
     "xor        %[ftmp0],   %[ftmp0],       %[ftmp0]            \n\t"
@@ -1122,26 +1112,26 @@ static inline void var_filter_block2d_bil_8x(const uint8_t *src_ptr,
     // fdata3: fdata3[0] ~ fdata3[7]
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_A
 
-    // fdata3 +src_stride*1: fdata3[0] ~ fdata3[7]
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    // fdata3 +a_stride*1: fdata3[0] ~ fdata3[7]
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_B
     // temp2: temp2[0] ~ temp2[7]
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_8_A
 
-    // fdata3 +src_stride*2: fdata3[0] ~ fdata3[7]
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    // fdata3 +a_stride*2: fdata3[0] ~ fdata3[7]
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_A
     // temp2+8*1: temp2[0] ~ temp2[7]
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x08)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_8_B
 
     "1:                                                         \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_B
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x08)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_8_A
 
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_8_A
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x08)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_8_B
@@ -1153,45 +1143,44 @@ static inline void var_filter_block2d_bil_8x(const uint8_t *src_ptr,
       [ftmp9] "=&f"(ftmp[9]), [ftmp10] "=&f"(ftmp[10]),
       [ftmp11] "=&f"(ftmp[11]), [ftmp12] "=&f"(ftmp[12]),
       [ftmp13] "=&f"(ftmp[13]), [ftmp14] "=&f"(ftmp[14]),
-      [tmp0] "=&r"(tmp[0]), [src_ptr] "+&r"(src_ptr), [temp2_ptr] "+&r"(temp2_ptr),
+      [tmp0] "=&r"(tmp[0]), [a] "+&r"(a), [temp2_ptr] "+&r"(temp2_ptr),
       [counter]"+&r"(l_counter)
     : [filter_x0] "f"((uint64_t)filter_x[0]),
       [filter_x1] "f"((uint64_t)filter_x[1]),
       [filter_y0] "f"((uint64_t)filter_y[0]),
       [filter_y1] "f"((uint64_t)filter_y[1]),
-      [src_stride] "r"((mips_reg)src_stride), [ff_ph_40] "f"(ff_ph_40),
+      [a_stride] "r"((mips_reg)a_stride), [ff_ph_40] "f"(ff_ph_40),
       [mask] "f"(mask)
     : "memory"
   );
 }
 
-#define SUBPIX_VAR8XN(H)                                                      \
-  uint32_t vpx_sub_pixel_variance8x##H##_mmi(                                 \
-      const uint8_t *src_ptr, int src_stride, int x_offset, int y_offset,     \
-      const uint8_t *ref_ptr, int ref_stride, uint32_t *sse) {                \
-    uint8_t temp2[8 * (H)];                                                   \
-    var_filter_block2d_bil_8x(src_ptr, src_stride, x_offset, y_offset, temp2, \
-                              ((H)-2) / 2);                                   \
-                                                                              \
-    return vpx_variance8x##H##_mmi(temp2, 8, ref_ptr, ref_stride, sse);       \
+#define SUBPIX_VAR8XN(H)                                            \
+  uint32_t vpx_sub_pixel_variance8x##H##_mmi(                       \
+      const uint8_t *a, int a_stride, int xoffset, int yoffset,     \
+      const uint8_t *b, int b_stride, uint32_t *sse) {              \
+    uint8_t temp2[8 * H];                                           \
+    var_filter_block2d_bil_8x(a, a_stride, xoffset, yoffset, temp2, \
+                              (H - 2) / 2);                         \
+                                                                    \
+    return vpx_variance8x##H##_mmi(temp2, 8, b, b_stride, sse);     \
   }
 
 SUBPIX_VAR8XN(16)
 SUBPIX_VAR8XN(8)
 SUBPIX_VAR8XN(4)
 
-static inline void var_filter_block2d_bil_4x(const uint8_t *src_ptr,
-                                             int src_stride, int x_offset,
-                                             int y_offset, uint8_t *temp2,
-                                             int counter) {
+static inline void var_filter_block2d_bil_4x(const uint8_t *a, int a_stride,
+                                             int xoffset, int yoffset,
+                                             uint8_t *temp2, int counter) {
   uint8_t *temp2_ptr = temp2;
   mips_reg l_counter = counter;
   double ftmp[7];
   mips_reg tmp[2];
   DECLARE_ALIGNED(8, const uint64_t, ff_ph_40) = { 0x0040004000400040ULL };
   DECLARE_ALIGNED(8, const uint64_t, mask) = { 0x00ff00ff00ff00ffULL };
-  const uint8_t *filter_x = bilinear_filters[x_offset];
-  const uint8_t *filter_y = bilinear_filters[y_offset];
+  const uint8_t *filter_x = bilinear_filters[xoffset];
+  const uint8_t *filter_y = bilinear_filters[yoffset];
 
   __asm__ volatile (
     "xor        %[ftmp0],   %[ftmp0],       %[ftmp0]            \n\t"
@@ -1204,26 +1193,26 @@ static inline void var_filter_block2d_bil_4x(const uint8_t *src_ptr,
     // fdata3: fdata3[0] ~ fdata3[3]
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_A
 
-    // fdata3 +src_stride*1: fdata3[0] ~ fdata3[3]
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    // fdata3 +a_stride*1: fdata3[0] ~ fdata3[3]
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_B
     // temp2: temp2[0] ~ temp2[7]
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_4_A
 
-    // fdata3 +src_stride*2: fdata3[0] ~ fdata3[3]
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    // fdata3 +a_stride*2: fdata3[0] ~ fdata3[3]
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_A
     // temp2+4*1: temp2[0] ~ temp2[7]
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x04)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_4_B
 
     "1:                                                         \n\t"
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_B
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x04)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_4_A
 
-    MMI_ADDU(%[src_ptr], %[src_ptr], %[src_stride])
+    MMI_ADDU(%[a], %[a], %[a_stride])
     VAR_FILTER_BLOCK2D_BIL_FIRST_PASS_4_A
     MMI_ADDIU(%[temp2_ptr], %[temp2_ptr], 0x04)
     VAR_FILTER_BLOCK2D_BIL_SECOND_PASS_4_B
@@ -1231,49 +1220,49 @@ static inline void var_filter_block2d_bil_4x(const uint8_t *src_ptr,
     "bnez       %[counter], 1b                                  \n\t"
     : [ftmp0] "=&f"(ftmp[0]), [ftmp1] "=&f"(ftmp[1]), [ftmp2] "=&f"(ftmp[2]),
       [ftmp3] "=&f"(ftmp[3]), [ftmp4] "=&f"(ftmp[4]), [ftmp5] "=&f"(ftmp[5]),
-      [ftmp6] "=&f"(ftmp[6]), [tmp0] "=&r"(tmp[0]), [src_ptr] "+&r"(src_ptr),
+      [ftmp6] "=&f"(ftmp[6]), [tmp0] "=&r"(tmp[0]), [a] "+&r"(a),
       [temp2_ptr] "+&r"(temp2_ptr), [counter]"+&r"(l_counter)
     : [filter_x0] "f"((uint64_t)filter_x[0]),
       [filter_x1] "f"((uint64_t)filter_x[1]),
       [filter_y0] "f"((uint64_t)filter_y[0]),
       [filter_y1] "f"((uint64_t)filter_y[1]),
-      [src_stride] "r"((mips_reg)src_stride), [ff_ph_40] "f"(ff_ph_40),
+      [a_stride] "r"((mips_reg)a_stride), [ff_ph_40] "f"(ff_ph_40),
       [mask] "f"(mask)
     : "memory"
   );
 }
 
-#define SUBPIX_VAR4XN(H)                                                      \
-  uint32_t vpx_sub_pixel_variance4x##H##_mmi(                                 \
-      const uint8_t *src_ptr, int src_stride, int x_offset, int y_offset,     \
-      const uint8_t *ref_ptr, int ref_stride, uint32_t *sse) {                \
-    uint8_t temp2[4 * (H)];                                                   \
-    var_filter_block2d_bil_4x(src_ptr, src_stride, x_offset, y_offset, temp2, \
-                              ((H)-2) / 2);                                   \
-                                                                              \
-    return vpx_variance4x##H##_mmi(temp2, 4, ref_ptr, ref_stride, sse);       \
+#define SUBPIX_VAR4XN(H)                                            \
+  uint32_t vpx_sub_pixel_variance4x##H##_mmi(                       \
+      const uint8_t *a, int a_stride, int xoffset, int yoffset,     \
+      const uint8_t *b, int b_stride, uint32_t *sse) {              \
+    uint8_t temp2[4 * H];                                           \
+    var_filter_block2d_bil_4x(a, a_stride, xoffset, yoffset, temp2, \
+                              (H - 2) / 2);                         \
+                                                                    \
+    return vpx_variance4x##H##_mmi(temp2, 4, b, b_stride, sse);     \
   }
 
 SUBPIX_VAR4XN(8)
 SUBPIX_VAR4XN(4)
 
-#define SUBPIX_AVG_VAR(W, H)                                                   \
-  uint32_t vpx_sub_pixel_avg_variance##W##x##H##_mmi(                          \
-      const uint8_t *src_ptr, int src_stride, int x_offset, int y_offset,      \
-      const uint8_t *ref_ptr, int ref_stride, uint32_t *sse,                   \
-      const uint8_t *second_pred) {                                            \
-    uint16_t fdata3[((H) + 1) * (W)];                                          \
-    uint8_t temp2[(H) * (W)];                                                  \
-    DECLARE_ALIGNED(16, uint8_t, temp3[(H) * (W)]);                            \
-                                                                               \
-    var_filter_block2d_bil_first_pass(src_ptr, fdata3, src_stride, 1, (H) + 1, \
-                                      W, bilinear_filters[x_offset]);          \
-    var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,              \
-                                       bilinear_filters[y_offset]);            \
-                                                                               \
-    vpx_comp_avg_pred_c(temp3, second_pred, W, H, temp2, W);                   \
-                                                                               \
-    return vpx_variance##W##x##H##_mmi(temp3, W, ref_ptr, ref_stride, sse);    \
+#define SUBPIX_AVG_VAR(W, H)                                            \
+  uint32_t vpx_sub_pixel_avg_variance##W##x##H##_mmi(                   \
+      const uint8_t *a, int a_stride, int xoffset, int yoffset,         \
+      const uint8_t *b, int b_stride, uint32_t *sse,                    \
+      const uint8_t *second_pred) {                                     \
+    uint16_t fdata3[(H + 1) * W];                                       \
+    uint8_t temp2[H * W];                                               \
+    DECLARE_ALIGNED(16, uint8_t, temp3[H * W]);                         \
+                                                                        \
+    var_filter_block2d_bil_first_pass(a, fdata3, a_stride, 1, H + 1, W, \
+                                      bilinear_filters[xoffset]);       \
+    var_filter_block2d_bil_second_pass(fdata3, temp2, W, W, H, W,       \
+                                       bilinear_filters[yoffset]);      \
+                                                                        \
+    vpx_comp_avg_pred_c(temp3, second_pred, W, H, temp2, W);            \
+                                                                        \
+    return vpx_variance##W##x##H##_mmi(temp3, W, b, b_stride, sse);     \
   }
 
 SUBPIX_AVG_VAR(64, 64)

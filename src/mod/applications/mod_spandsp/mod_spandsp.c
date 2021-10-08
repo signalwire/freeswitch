@@ -486,7 +486,7 @@ static void destroy_descriptor(void *ptr)
 {
     tone_descriptor_t *d = (tone_descriptor_t *) ptr;
 
-	tone_descriptor_destroy(d);
+    super_tone_rx_free_descriptor(d->spandsp_tone_descriptor);
 }
 
 switch_status_t load_configuration(switch_bool_t reload)

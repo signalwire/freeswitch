@@ -301,6 +301,7 @@ JS_COREDB_FUNCTION_IMPL(Prepare)
 JS_COREDB_FUNCTION_IMPL(BindText)
 {
 	HandleScope handle_scope(info.GetIsolate());
+	bool status;
 	int32_t param_index = -1;
 	string param_value;
 
@@ -323,6 +324,7 @@ JS_COREDB_FUNCTION_IMPL(BindText)
 	}
 
 	/* convert args */
+	status = !info[0].IsEmpty() && info[0]->IsInt32() ? true : false;
 	param_index = info[0]->Int32Value();
 	String::Utf8Value str(info[1]);
 	param_value = js_safe_str(*str);
@@ -345,6 +347,7 @@ JS_COREDB_FUNCTION_IMPL(BindText)
 JS_COREDB_FUNCTION_IMPL(BindInt)
 {
 	HandleScope handle_scope(info.GetIsolate());
+	bool status;
 	int32_t param_index = -1;
 	int32_t param_value = -1;
 
@@ -367,7 +370,10 @@ JS_COREDB_FUNCTION_IMPL(BindInt)
 	}
 
 	/* convert args */
+	status = !info[0].IsEmpty() && info[0]->IsInt32() ? true : false;
 	param_index = info[0]->Int32Value();
+
+	status = !info[1].IsEmpty() && info[1]->IsInt32() ? true : false;
 	param_value = info[1]->Int32Value();
 
 	if (param_index < 1) {

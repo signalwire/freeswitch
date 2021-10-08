@@ -1,0 +1,34 @@
+#
+# This file specifies extra SIP headers not included in sip_t structure
+#
+# The parsed headers are accessed with function (or macro) like sip_refer_sub()
+# e.g., sip_refer_sub_t *rsub = sip_refer_sub(sip);
+#
+# The line format is:
+# C-name @SINCE sip_t-like-comment
+#
+# Put all experimental things after EXPERIMENTAL HEADER LIST STARTS HERE...
+#
+#### EXTRA HEADER LIST STARTS HERE ####
+
+refer_sub @NEW_1_12_5 /**< Refer-Sub header */
+
+#### DEFAULT HEADER LIST ENDS HERE ####
+
+#
+# These headers are added to the extended parser, installed
+# as default with sip_update_default_mclass(NULL)
+#
+
+alert_info @NEW_1_12_7 /**< Alert-Info header */
+reply_to @NEW_1_12_7 /**< Reply-To header */
+remote_party_id @NEW_1_12_7 /**< Remote-Party-ID header */
+p_asserted_identity @NEW_1_12_7  /**<P-Asserted-Identity*/
+p_preferred_identity @NEW_1_12_7 /**<P-Preferred-Identity*/
+
+#### EXPERIMENTAL HEADER LIST STARTS HERE ####
+
+suppress_body_if_match @EXP_1_12_5 /**< Suppress-Body-If-Match header */
+suppress_notify_if_match @EXP_1_12_5 /**< Suppress-Notify-If-Match header */
+
+#### EXTRA HEADER LIST ENDS HERE ####

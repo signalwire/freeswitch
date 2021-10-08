@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
 #include <string>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
@@ -129,8 +128,6 @@ static bool compare_img(const vpx_image_t *img1, const vpx_image_t *img2) {
   bool match = (img1->fmt == img2->fmt) && (img1->cs == img2->cs) &&
                (img1->d_w == img2->d_w) && (img1->d_h == img2->d_h);
 
-  if (!match) return false;
-
   const unsigned int width_y = img1->d_w;
   const unsigned int height_y = img1->d_h;
   unsigned int i;
@@ -180,7 +177,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
     }
 
     BeginPassHook(pass);
-    std::unique_ptr<Encoder> encoder(
+    testing::internal::scoped_ptr<Encoder> encoder(
         codec_->CreateEncoder(cfg_, deadline_, init_flags_, &stats_));
     ASSERT_TRUE(encoder.get() != NULL);
 
@@ -194,7 +191,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
     if (init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION) {
       dec_init_flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
     }
-    std::unique_ptr<Decoder> decoder(
+    testing::internal::scoped_ptr<Decoder> decoder(
         codec_->CreateDecoder(dec_cfg, dec_init_flags));
     bool again;
     for (again = true; again; video->Next()) {
@@ -217,7 +214,6 @@ void EncoderTest::RunLoop(VideoSource *video) {
           case VPX_CODEC_CX_FRAME_PKT:
             has_cxdata = true;
             if (decoder.get() != NULL && DoDecode()) {
-              PreDecodeFrameHook(video, decoder.get());
               vpx_codec_err_t res_dec = decoder->DecodeFrame(
                   (const uint8_t *)pkt->data.frame.buf, pkt->data.frame.sz);
 

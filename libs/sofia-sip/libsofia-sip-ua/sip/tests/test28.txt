@@ -1,0 +1,6 @@
+OPTIONS sip:user@company.com SIP/2.0
+To: sip:user@company.com
+From: "caller"    <sip:caller@example.com>
+Call-ID: 1234abcd@10.0.0.1
+CSeq: 2 OPTIONS
+Via: SIP/2.0/UDP 135.180.130.133

@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_VPX_DSP_VPX_FILTER_H_
-#define VPX_VPX_DSP_VPX_FILTER_H_
+#ifndef VPX_DSP_VPX_FILTER_H_
+#define VPX_DSP_VPX_FILTER_H_
 
-#include <assert.h>
 #include "vpx/vpx_integer.h"
 
 #ifdef __cplusplus
@@ -27,16 +26,8 @@ extern "C" {
 
 typedef int16_t InterpKernel[SUBPEL_TAPS];
 
-static INLINE int vpx_get_filter_taps(const int16_t *const filter) {
-  assert(filter[3] != 128);
-  if (!filter[0] && !filter[1] && !filter[2])
-    return 2;
-  else
-    return 8;
-}
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VPX_VPX_DSP_VPX_FILTER_H_
+#endif  // VPX_DSP_VPX_FILTER_H_

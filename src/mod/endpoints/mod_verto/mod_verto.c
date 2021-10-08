@@ -807,6 +807,7 @@ static void set_perm(const char *str, switch_event_t **event)
 	if (!zstr(str)) {
 		edup = strdup(str);
 		switch_assert(edup);
+		cur = edup;
 
 		if (strchr(edup, ' ')) {
 			delim = ' ';
@@ -1636,7 +1637,7 @@ new_req:
 		goto done;
 	}
 
-	if (!strncmp(request.method, "POST", 4) && request.content_length && request.content_type &&
+	if (!strncmp(request.method, "POST", 4) && request.content_length &&
 		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
 
 		char *buffer = NULL;
@@ -1721,7 +1722,7 @@ new_req:
 			*auth_pass++ = '\0';
 		}
 
-		if (vhost->auth_user && vhost->auth_pass && auth_pass &&
+		if (vhost->auth_user && vhost->auth_pass &&
 			!strcmp(vhost->auth_user, auth_user) &&
 			!strcmp(vhost->auth_pass, auth_pass)) {
 			goto authed;
@@ -1921,7 +1922,7 @@ static void client_run(jsock_t *jsock)
 							int rem = 0;
 							int dur = 0, j = 0;
 
-							if ((size = atoi(p)) <= 0) {
+							if (!(size = atoi(p))) {
 								continue;
 							}
 
@@ -2994,7 +2995,6 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 
 	if (tech_pvt && b_tech_pvt) {
 		switch_channel_set_variable(tech_pvt->channel, "refer_uuid", switch_core_session_get_uuid(b_tech_pvt->session));
-		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
 		switch_channel_set_variable(b_tech_pvt->channel, "transfer_disposition", "replaced");
 
 		br_a = switch_channel_get_partner_uuid(tech_pvt->channel);
@@ -3206,7 +3206,6 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_ivr_session_transfer(other_session, destination, NULL, NULL);
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL TRANSFERRED"));
-				switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
 				switch_core_session_rwunlock(other_session);
 			} else {
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("call is not bridged"));
@@ -3223,7 +3222,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			}
 
 			if ((b_session = switch_core_session_locate(replace_call_id))) {
-				err = (int) !attended_transfer(session, b_session);
+				err = (int) attended_transfer(session, b_session);
 				if (err) {
 					cJSON_AddItemToObject(obj, "message", cJSON_CreateString("transfer failed"));
 				}
@@ -3589,8 +3588,6 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	*response = obj;
 
-	PROTECT_INTERFACE(verto_endpoint_interface);
-
 	if (!params) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Params data missing"));
 		err = 1; goto cleanup;
@@ -3617,6 +3614,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", call_id);
 
+	PROTECT_INTERFACE(verto_endpoint_interface);
 	if ((reason = switch_core_session_outgoing_channel(NULL, var_event, "rtc",
 													   NULL, &session, NULL, SOF_NONE, &cancel_cause)) != SWITCH_CAUSE_SUCCESS) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot create channel"));
@@ -5297,7 +5295,7 @@ static switch_status_t verto_read_text_frame(switch_core_session_t *session, swi
 
 	switch_mutex_lock(tech_pvt->text_cond_mutex);
 
-	switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
+	status = switch_thread_cond_timedwait(tech_pvt->text_cond, tech_pvt->text_cond_mutex, 100000);
 	switch_mutex_unlock(tech_pvt->text_cond_mutex);
 
 	*frame = &tech_pvt->text_read_frame;

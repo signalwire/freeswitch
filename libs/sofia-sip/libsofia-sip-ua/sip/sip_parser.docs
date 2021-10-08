@@ -1,0 +1,91 @@
+/* -*- c -*- */
+
+/**@page sip_parser SIP Parser
+ *
+ * This part of the Sofia documentation describes the internal working of
+ * SIP parser. It documents the internal functions and macros used when a
+ * new parser is added.
+ *
+ * The @b sip module contains interface to the SIP headers and message
+ * objects. The interface is abstracted using objects known as
+ * @ref msg_hclass_s "header classes" and @ref msg_mclass_s "message classes".
+ *
+ * The @ref msg_mclass_s "message class" defines how a message is handled:
+ * parsed and encoded. It contains a parser table with references to header
+ * classes. It also contains function pointers used by the parser to handle
+ * message body and other details that vary between protocols.
+ *
+ * A @ref msg_hclass_s "header class" defines how a single header is parsed.
+ * Each header has its own header class. There are also header classes for
+ * message elements that are not really headers, like @ref sip_request
+ * "request" and @ref sip_status "status line",
+ * @ref sip_separator "separator between headers" and
+ * @ref sip_payload "message body"
+ * (which is also known as payload). There is also a header classes
+ * for @ref sip_unknown "unknown headers" and
+ * @ref sip_error "headers that contained parsing errors".
+ *
+ *
+ * @section sip_add_headers Adding Headers to Parser
+ *
+ * Sofia SIP Parser can be extended easily, either by application or by
+ * internally extending the sofia-sip library itself.
+ *
+ * Create a header template for your header just like sip_rfc2543.h.in,
+ * e.g, sip_example.h.in:
+ *
+ *@code
+/**@file sip_example.h.in
+ *
+ * Template for <sofia-sip/sip_example.h>.
+ */
+
+#ifndef SIP_EXAMPLE_H
+/** Defined when <sofia-sip/sip_example.h> has been included. */
+#define SIP_EXAMPLE_H
+
+/**@file sofia-sip/sip_example.h
+*
+ * @brief Example header.
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ *
+ * @date Created: Fri May 27 18:40:38 EEST 2005 ppessi
+ */
+
+#ifndef SIP_H
+#include <sofia-sip/sip.h>
+#endif
+
+/**@ingroup sip_also
+ * @brief Structure for @b Also header.
+ */
+struct sip_also_s
+{
+  sip_common_t   also_common[1];    /**< Common fragment info */
+  sip_also_t    *also_next;	    /**< Link to next Also header */
+  char const    *also_display;	    /**< Display name */
+  url_t          also_url[1];	    /**< URL */
+};
+
+typedef struct sip_also_s           sip_also_t;
+typedef sip_generic_t	     	    sip_hide_t;
+typedef sip_auth_t	     	    sip_encryption_t;
+typedef sip_auth_t	     	    sip_response_key_t;
+
+struct sip_example_dummy_structure {
+  /* === Headers start here */
+  sip_also_t *sip_also;                                  /**< Also */
+  sip_hide_t *sip_hide;                                  /**< Hide */
+  sip_encryption_t *sip_encryption;                /**< Encryption */
+  sip_response_key_t *sip_response_key;          /**< Response-Key */
+  /* === Headers end here */
+};
+
+
+#endif /** !defined(SIP_EXAMPLE_H) */
+--->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---
+ * @endcode
+ */

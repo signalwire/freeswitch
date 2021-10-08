@@ -119,12 +119,6 @@
  */
 #define ZRTP_BYTE_ORDER ZBO_LITTLE_ENDIAN
 
-#elif defined(__e2k__)
-/*
- * Elbrus, little endian
- */
-#define ZRTP_BYTE_ORDER ZBO_LITTLE_ENDIAN
-
 #endif /* Automatic byte order detection */
 
 #endif

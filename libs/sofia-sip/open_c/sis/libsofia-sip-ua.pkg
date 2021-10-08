@@ -1,0 +1,34 @@
+; libsofia-sip-ua.pkg for sofia-sip package
+;
+; Copyright (C) 2005,2006,2007 Nokia Corporation
+; Contact: Pekka Pessi <pekka.pessi@nokia.com>
+; Licensed under LGPL. See file COPYING.
+
+;File: libsofia-sip-ua.pkg;
+;
+
+;*Languages
+&EN
+;
+;*Standard SIS file header. This section specifies the package name,
+;application UID, and version/build numbers. Add the package TYPE here if needed.
+#{"libsofia-sip-ua"},(0xA000017E),1,0,1;
+;
+
+;*Unique (Non-Localised) Vendor name
+;This is used in combination with signing to prevent the unauthroized
+;upgrade of a package by someone other than the rightful vendor.
+:""
+
+;*Localized Vendor Name
+;This specifies the localised vendor name(s) correspodning to language(s).
+%{""}
+
+;*Files To Copy...<src> <destination>
+;The destination files should be a full path. If you use a '!' character
+;instead of a drive letter, ther user should be given the choice of the drive
+;to install the file to (on supported Symbian devices).
+
+
+;Sofia-SIP dll
+"\epoc32\release\ARMV5\UREL\LIBSOFIA-SIP-UA.DLL"      - "!:\Sys\Bin\LIBSOFIA-SIP-UA.DLL"

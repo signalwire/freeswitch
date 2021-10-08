@@ -55,7 +55,7 @@ static struct {
 	switch_queue_t *event_queue;
 	switch_memory_pool_t *memory_pool;
 	uint32_t total_tasks;
-} globals = { 0 };
+} globals;
 
 static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
 {
@@ -219,21 +219,9 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task()
 }
 
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
-	switch_scheduler_func_t func,
-	const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
-{
-	uint32_t task_id;
-
-	switch_scheduler_add_task_ex(task_runtime, func, desc, group, cmd_id, cmd_arg, flags, &task_id);
-
-	return task_id;
-}
-
-SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
 												   switch_scheduler_func_t func,
-												   const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags, uint32_t *task_id)
+												   const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
 {
-	uint32_t result;
 	switch_scheduler_task_container_t *container, *tp;
 	switch_event_t *event;
 	switch_time_t now = switch_epoch_time_now(NULL);
@@ -242,7 +230,6 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
 	switch_mutex_lock(globals.task_mutex);
 	switch_zmalloc(container, sizeof(*container));
 	switch_assert(func);
-	switch_assert(task_id);
 
 	if (task_runtime < now) {
 		container->task.repeat = (uint32_t)task_runtime;
@@ -270,6 +257,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
 	for (container->task.task_id = 0; !container->task.task_id; container->task.task_id = ++globals.task_id);
 
 	globals.total_tasks++;
+	switch_mutex_unlock(globals.task_mutex);
 
 	tp = container;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added task %u %s (%s) to run at %" SWITCH_INT64_T_FMT "\n",
@@ -283,12 +271,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
 		switch_queue_push(globals.event_queue, event);
 		event = NULL;
 	}
-
-	result = *task_id = container->task.task_id;
-
-	switch_mutex_unlock(globals.task_mutex);
-
-	return result;
+	return container->task.task_id;
 }
 
 SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id)

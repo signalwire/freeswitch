@@ -119,7 +119,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		}
 	}
 
-	if (c || ((ftdNumber == 1 && (a || b || c)) && (a && (b || c))) || (a == 0 && b == 1 && c == 0) ) {
+	if (c || ((ftdNumber == 1 && (a || b || c)) && (a && (b || c)))) {
 		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "a=%d  b=[%d]  c=%d\n",a, b,c);*/
 		int fVal = c;
 		if (ftdNumber == 1)

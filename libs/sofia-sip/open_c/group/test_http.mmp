@@ -1,0 +1,58 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// General properties
+TARGET          test_http.exe
+TARGETTYPE      exe
+CAPABILITY        ALL -TCB
+UID             0x100039CE 0x1F001BA2
+VENDORID 			0
+OPTION CW      -dialect c99 -inline on
+
+START RESOURCE  test_http_reg.rss
+#ifdef WINSCW
+TARGETPATH 	    \private\10003a3f\apps
+#else
+TARGETPATH 	    \private\10003a3f\import\apps
+#endif
+END //RESOURCE
+
+//EPOCHEAPSIZE 4 4194304 // min. 4KB ja max 4MB
+
+// Allow global writeable static data
+EPOCALLOWDLLDATA
+
+MACRO           SYMBIAN
+MACRO           IN_LIBSOFIA_SIP_UA
+
+// Source files
+SOURCEPATH          ..\..\libsofia-sip-ua\http
+SOURCE              test_http.c
+
+
+USERINCLUDE         ..
+USERINCLUDE         ..\..\libsofia-sip-ua\su
+USERINCLUDE         ..\..\libsofia-sip-ua\bnf
+USERINCLUDE         ..\..\libsofia-sip-ua\msg
+USERINCLUDE         ..\..\libsofia-sip-ua\url
+USERINCLUDE         ..\..\libsofia-sip-ua\http
+SYSTEMINCLUDE       ..
+SYSTEMINCLUDE       ..\..\libsofia-sip-ua\su
+SYSTEMINCLUDE       ..\..\libsofia-sip-ua\bnf
+SYSTEMINCLUDE       ..\..\libsofia-sip-ua\msg
+SYSTEMINCLUDE       ..\..\libsofia-sip-ua\url
+SYSTEMINCLUDE       ..\..\libsofia-sip-ua\http
+
+SYSTEMINCLUDE       \Epoc32\include
+SYSTEMINCLUDE       \Epoc32\include\osextensions\stdapis
+
+
+// Library dependencies
+STATICLIBRARY       libcrt0.lib
+LIBRARY             libc.lib
+LIBRARY             euser.lib
+LIBRARY             libpthread.lib
+LIBRARY             libsofia-sip-ua.lib

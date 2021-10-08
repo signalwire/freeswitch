@@ -1,0 +1,26 @@
+2005-11-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sofia-sip.spec.in: Removed the --includedir parameter.
+	The public headers are now installed under
+	includedir/sofia-sip-MAJOR.MINOR/
+
+2005-10-06  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Added debian example directory from M Mela.
+
+    A ./packages/debian/
+    A ./packages/debian/README.Debian
+    A ./packages/debian/changelog
+    A ./packages/debian/compat
+    A ./packages/debian/control
+    A ./packages/debian/copyright
+    A ./packages/debian/docs
+    A ./packages/debian/files
+    A ./packages/debian/postinst.ex
+    A ./packages/debian/postrm.ex
+    A ./packages/debian/preinst.ex
+    A ./packages/debian/prerm.ex
+    A ./packages/debian/rules
+    A ./packages/debian/sofia-sip-default.ex
+    A ./packages/debian/sofia-sip.postinst.debhelper
+    A ./packages/debian/sofia-sip.postrm.debhelper

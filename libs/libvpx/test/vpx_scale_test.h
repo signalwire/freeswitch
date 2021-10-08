@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_TEST_VPX_SCALE_TEST_H_
-#define VPX_TEST_VPX_SCALE_TEST_H_
+#ifndef TEST_VPX_SCALE_TEST_H_
+#define TEST_VPX_SCALE_TEST_H_
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
@@ -33,8 +33,7 @@ class VpxScaleBase {
                   const int height) {
     memset(img, 0, sizeof(*img));
     ASSERT_EQ(
-        0, vp8_yv12_alloc_frame_buffer(img, width, height, VP8BORDERINPIXELS))
-        << "for width: " << width << " height: " << height;
+        0, vp8_yv12_alloc_frame_buffer(img, width, height, VP8BORDERINPIXELS));
     memset(img->buffer_alloc, kBufFiller, img->frame_size);
   }
 
@@ -198,4 +197,4 @@ class VpxScaleBase {
 
 }  // namespace libvpx_test
 
-#endif  // VPX_TEST_VPX_SCALE_TEST_H_
+#endif  // TEST_VPX_SCALE_TEST_H_

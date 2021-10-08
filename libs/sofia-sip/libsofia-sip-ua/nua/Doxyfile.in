@@ -1,0 +1,39 @@
+PROJECT_NAME         = "nua"
+OUTPUT_DIRECTORY     = ../docs/html/nua
+
+INPUT 		     = @srcdir@/nua.docs @srcdir@/sofia-sip @srcdir@ .
+
+@INCLUDE_PATH 	     = . @srcdir@
+@INCLUDE             = ../docs/Doxyfile.conf
+
+TAGFILES            += ../docs/docs.doxytags=../docs
+TAGFILES            += ../docs/su.doxytags=../su
+TAGFILES            += ../docs/ipt.doxytags=../ipt
+TAGFILES            += ../docs/bnf.doxytags=../bnf
+TAGFILES            += ../docs/url.doxytags=../url
+TAGFILES            += ../docs/msg.doxytags=../msg
+TAGFILES            += ../docs/sip.doxytags=../sip
+TAGFILES            += ../docs/sresolv.doxytags=../sresolv
+TAGFILES            += ../docs/tport.doxytags=../tport
+TAGFILES            += ../docs/nta.doxytags=../nta
+TAGFILES            += ../docs/soa.doxytags=../soa
+TAGFILES            += ../docs/nea.doxytags=../nea
+TAGFILES            += ../docs/sdp.doxytags=../sdp
+
+GENERATE_TAGFILE     = ../docs/nua.doxytags
+
+ALIASES             += CFILE="@internal @file" IFILE="@internal @file"
+
+ALIASES 	    += nua="@ref index \"nua\""
+# When GENERATE_TAGFILE=YES, we should use \ref main
+#ALIASES 	    += nua="@ref main \"nua\""
+
+ALIASES		    += NUA_EVENT="@var nua_event_e::"
+ALIASES		    += END_NUA_EVENT="@par &nbsp;"
+
+ALIASES             += \
+  NUA_HPARAM_CALLS="nua_method(), nua_respond(), nua_invite(), nua_ack(), nua_cancel(), nua_prack(), nua_update(), nua_info(), nua_bye(), nua_options(), nua_message(), nua_register(), nua_unregister(), nua_publish(), nua_refer(), nua_subscribe(), nua_unsubscribe(), nua_notify(), nua_notifier()"
+
+VERBATIM_HEADERS     = NO
+
+@INCLUDE             = ../sip/sip.doxyaliases

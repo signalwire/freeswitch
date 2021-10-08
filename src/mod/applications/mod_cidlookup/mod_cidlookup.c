@@ -545,6 +545,9 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	cid_data_t *cidtmp = NULL;
 	switch_bool_t save_cache = SWITCH_FALSE;
 
+	cid = switch_core_alloc(pool, sizeof(cid_data_t));
+	switch_assert(cid);
+
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
@@ -552,8 +555,6 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	if (globals.odbc_dsn && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
 		if (name) {
-			cid = switch_core_alloc(pool, sizeof(cid_data_t));
-			switch_assert(cid);
 			cid->name = name;
 			cid->src = "phone_database";
 			goto done;
@@ -577,11 +578,6 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 		}
 	}
 
-	if (!cid) {
-		cid = switch_core_alloc(pool, sizeof(cid_data_t));
-		switch_assert(cid);
-	}
-
 	if (!skipurl && globals.url) {
 		url_query = switch_event_expand_headers(event, globals.url);
 		do_lookup_url(pool, event, &name, url_query, NULL, NULL, 0);
@@ -597,6 +593,10 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	}
 
   done:
+	if (!cid) {
+		cid = switch_core_alloc(pool, sizeof(cid_data_t));
+		switch_assert(cid);
+	}
 	/* append area if we can */
 	if (!cid->area && !skipcitystate && strlen(number) == 11 && number[0] == '1' && globals.odbc_dsn && globals.citystate_sql) {
 

@@ -1,0 +1,16 @@
+INVITE sip:user@company.com SIP/2.0
+To: sip:j_user@company.com
+From: sip:caller@university.edu
+Call-ID: 0ha0isndaksdj@10.0.0.1
+Accept: text/newformat
+CSeq: 8 INVITE
+Via: SIP/2.0/UDP 135.180.130.133
+Content-Type: application/sdp
+
+v=0
+o=mhandley 29739 7272939 IN IP4 126.5.4.3
+c=IN IP4 135.180.130.88/127
+m=audio 492170 RTP/AVP 0 12
+m=video 3227 RTP/AVP 31
+b=CT:3455
+a=rtpmap:31 LPC

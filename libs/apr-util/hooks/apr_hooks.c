@@ -180,9 +180,7 @@ static TSort *tsort(TSort *pData,int nItems)
 		    break;
 		}
     }
-	if (pTail) {
-		pTail->pNext = NULL;  /* unfudge the tail */
-	}
+    pTail->pNext=NULL;  /* unfudge the tail */
     return pHead;
 }
 

@@ -1,0 +1,21 @@
+/* -*- c -*- */
+
+/**@MODULEPAGE "nth" - HTTP Transactions Module
+ *
+ * @section nth_meta Module Meta Information
+ *
+ * NTH provides interface to simple HTTP transaction engines for both HTTP
+ * servers and clients. The transaction interface for both client and server
+ * is available through <sofia-sip/nth.h>, tags controlling the options in
+ * <sofia-sip/nth_tag.h>.
+ *
+ * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
+ *
+ * @STATUS @SofiaSIP Core library
+ *
+ * @LICENSE LGPL
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ *
+ */
+

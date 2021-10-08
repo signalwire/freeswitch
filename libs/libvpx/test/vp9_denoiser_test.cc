@@ -11,7 +11,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <tuple>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/acm_random.h"
@@ -36,7 +35,7 @@ typedef int (*Vp9DenoiserFilterFunc)(const uint8_t *sig, int sig_stride,
                                      uint8_t *avg, int avg_stride,
                                      int increase_denoising, BLOCK_SIZE bs,
                                      int motion_magnitude);
-typedef std::tuple<Vp9DenoiserFilterFunc, BLOCK_SIZE> VP9DenoiserTestParam;
+typedef std::tr1::tuple<Vp9DenoiserFilterFunc, BLOCK_SIZE> VP9DenoiserTestParam;
 
 class VP9DenoiserTest
     : public ::testing::Test,
@@ -100,7 +99,7 @@ TEST_P(VP9DenoiserTest, BitexactCheck) {
   }
 }
 
-using std::make_tuple;
+using std::tr1::make_tuple;
 
 // Test for all block size.
 #if HAVE_SSE2

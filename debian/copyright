@@ -1310,6 +1310,45 @@ Files: libs/js/nsprpub/pr/tests/tmocon.c
 Copyright: 1998-2004 Netscape Communications Corporation
 License: MPL-1.1 or GPL-2+
 
+Files: libs/spandsp/*
+Copyright: 2001-2012, Steve Underwood
+ 2006 Michael Jerris
+ 1991-1997 Silicon Graphics, Inc.
+ 1990-1997 Sam Leffler
+ 1993 CMU
+ 2004, Horizon Wimba, Inc.
+ 1990, 1995  Frank D. Cringle.
+License: LGPL-2.1
+
+Files: libs/spandsp/tests/*
+ libs/spandsp/spandsp-sim/g1050.c
+ libs/spandsp/spandsp-sim/line_model.c
+ libs/spandsp/spandsp-sim/make_line_models.c
+ libs/spandsp/spandsp-sim/spandsp-sim.h
+ libs/spandsp/spandsp-sim/test_utils.c
+ libs/spandsp/src/image_translate.c
+ libs/spandsp/src/make_at_dictionary.c
+ libs/spandsp/src/make_cielab_luts.c
+ libs/spandsp/src/make_math_fixed_tables.c
+ libs/spandsp/src/make_modem_filter.c
+ libs/spandsp/test-data/etsi/fax/generate_etsi_300_242_pages.c
+ libs/spandsp/test-data/itu/fax/generate_dithered_tif.c
+ libs/spandsp/test-data/itu/fax/generate_sized_pages.c
+ libs/spandsp/test-data/itu/fax/generate_striped_pages.c
+Copyright: 2001-2012, Steve Underwood
+License: GPL-2
+
+Files: libs/spandsp/tests/ademco_contactid_tests.c
+ libs/spandsp/tests/regression_tests.sh
+ libs/spandsp/tests/timezone_tests.c
+ libs/spandsp/tests/tsb85_extra_tests.sh
+ libs/spandsp/tests/tsb85_tests.c
+ libs/spandsp/tests/tsb85_tests.sh
+ libs/spandsp/tests/v42bis_tests.sh
+ libs/spandsp/tests/fax_tests.sh
+Copyright: 2001-2012, Steve Underwood
+License: LGPL-2.1
+
 Files: src/mod/applications/mod_cluechoo/sl.h
 Copyright: 1993 Toyoda Masashi
 License: FIXME
@@ -1401,6 +1440,11 @@ License: public-domain
 Files: libs/libsndfile/src/G72x/*
 Copyright: Abandoned, Sun Microsystems, Inc.
 License: public-domain
+
+Files: libs/spandsp/src/spandsp/fast_convert.h
+Copyright: 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+ 2009 Steve Underwood
+License: LGPL-2.1
 
 Files: libs/libsndfile/*
  libs/win32/libsndfile/*

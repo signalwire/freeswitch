@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 
 
-#brief  Make multiple calls. This script can be used to check CPU usage on calls running avmd (see test.txt).
-#author Piotr Gregor <piotr@dataandsignal.com>
+#brief  Call (possibly) multiple voicemails
+#       and print detection result to the console.
+#author Piotr Gregor <piotrgregor@rsyncme.org>
 #date   15 Sept 2016 02:44 PM
-#changed 27th Dec 2019
 
 
 use strict;
@@ -22,8 +22,7 @@ my $playback = 'local_stream://moh';
 my $context = 'default'; 
 #Example:
 #my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/box_b/840534002  \&park()";
-#my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/%s/%s  \&park()";
-my $endpoint;
+my $endpoint = "originate {originator_codec=PCMA,origination_uuid=%s}sofia/gateway/%s/%s  \&park()";
 my $gateway;
 my $dest;
 my $callerid;
@@ -31,13 +30,14 @@ my $thread_n;
 my $idx = 0;
 
 
-if ($#ARGV + 1 eq 3) {
-    $dest = $ARGV[0];
-    $callerid = $ARGV[1];
-    $thread_n = $ARGV[2];
-    print "Dialing [" .$thread_n ."] calls simultaneously to[" .$dest ."] as [" .$callerid ."]\n";
+if ($#ARGV + 1 eq 4) {
+    $gateway = $ARGV[0];
+    $dest = $ARGV[1];
+    $callerid = $ARGV[2];
+    $thread_n = $ARGV[3];
+    print "Dialing [" .$thread_n ."] calls simultaneously to [" .$gateway ."][" .$dest ."] as [" .$callerid ."]\n";
 } else {
-    die "Please specify destination number, caller id and number of calls to make\n\nExample:\n./avmd_originate_multiple.pl EXTENSION CALLER NUMBER_OF_CALLS";
+    die "Please specify gateway, destination number, caller id and number of calls to make\n";
 }
 
 my $con  = new ESL::ESLconnection($host, $port, $pass);
@@ -60,6 +60,7 @@ print "Disconnected.\n\n";
 
 sub call_once {
     my ($dest, $callerid, $idx) = @_;
+    my $uuid = 
     my $originate_string =
     'originate ' .
     '{ignore_early_media=true,' .
@@ -81,6 +82,6 @@ sub call_once {
     my ($time_epoch, $time_hires) = Time::HiRes::gettimeofday();
     printf("[%s]\tCalling with uuid [%s] [%s]... [%s]\n", $idx + 1, $uuid, POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime($time_epoch)), $originate_string);
 
-    $con->bgapi(sprintf($originate_string, $uuid));
+    $con->bgapi(sprintf($originate_string, $uuid, $gateway, $dest));
     $con->api('uuid_setvar ' . $uuid .' execute_on_answer avmd_start');
 }

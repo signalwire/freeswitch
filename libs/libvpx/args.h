@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_ARGS_H_
-#define VPX_ARGS_H_
+#ifndef ARGS_H_
+#define ARGS_H_
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -60,4 +60,4 @@ int arg_parse_enum_or_int(const struct arg *arg);
 }  // extern "C"
 #endif
 
-#endif  // VPX_ARGS_H_
+#endif  // ARGS_H_

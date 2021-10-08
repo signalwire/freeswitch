@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -354,8 +354,7 @@ typedef enum {
 	ED_BRIDGE_READ = (1 << 4),
 	ED_BRIDGE_WRITE = (1 << 5),
 	ED_TAP_READ = (1 << 6),
-	ED_TAP_WRITE = (1 << 7),
-	ED_STEREO = (1 << 8)
+	ED_TAP_WRITE = (1 << 7)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
@@ -389,10 +388,7 @@ typedef enum {
 	SCF_DIALPLAN_TIMESTAMPS = (1 << 24),
 	SCF_CPF_SOFT_PREFIX = (1 << 25),
 	SCF_CPF_SOFT_LOOKUP = (1 << 26),
-	SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27),
-	SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE = (1 << 28),
-	SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29),
-	SCF_LOG_DISABLE = (1 << 30)
+	SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -1297,9 +1293,8 @@ typedef enum {
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
 	SWITCH_LOG_CONSOLE = 0,
-	SWITCH_LOG_DISABLE = -1,
 	SWITCH_LOG_INVALID = 64,
-	SWITCH_LOG_UNINIT = 1000
+	SWITCH_LOG_UNINIT = 1000,
 } switch_log_level_t;
 
 
@@ -1418,7 +1413,6 @@ CF_HOLD_BLEG        - B leg is on hold
 CF_SERVICE			- Channel has a service thread
 CF_TAGGED			- Channel is tagged
 CF_WINNER			- Channel is the winner
-CF_REUSE_CALLER_PROFILE - Channel reuse caller profile 
 CF_CONTROLLED		- Channel is under control
 CF_PROXY_MODE		- Channel has no media
 CF_SUSPEND			- Suspend i/o
@@ -1471,7 +1465,6 @@ typedef enum {
 	CF_SERVICE,
 	CF_TAGGED,
 	CF_WINNER,
-	CF_REUSE_CALLER_PROFILE,
 	CF_CONTROLLED,
 	CF_PROXY_MODE,
 	CF_PROXY_OFF,
@@ -1906,8 +1899,7 @@ typedef enum {
 	SMBF_SPY_VIDEO_STREAM = (1 << 22),
 	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
 	SMBF_READ_VIDEO_PATCH = (1 << 24),
-	SMBF_READ_TEXT_STREAM = (1 << 25),
-	SMBF_FIRST = (1 << 26)
+	SMBF_READ_TEXT_STREAM = (1 << 25)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -1950,8 +1942,7 @@ typedef enum {
 	SWITCH_FILE_NOMUX = (1 << 17),
 	SWITCH_FILE_BREAK_ON_CHANGE = (1 << 18),
 	SWITCH_FILE_FLAG_VIDEO = (1 << 19),
-	SWITCH_FILE_FLAG_VIDEO_EOF = (1 << 20),
-	SWITCH_FILE_PRE_CLOSED = (1 << 21)
+	SWITCH_FILE_FLAG_VIDEO_EOF = (1 << 20)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 
@@ -2061,7 +2052,6 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CALL_SETUP_RESULT
     SWITCH_EVENT_CALL_DETAIL
     SWITCH_EVENT_DEVICE_STATE
-    SWITCH_EVENT_SHUTDOWN_REQUESTED		- Shutdown of the system has been requested
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -2158,7 +2148,6 @@ typedef enum {
 	SWITCH_EVENT_CALL_DETAIL,
 	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_TEXT,
-	SWITCH_EVENT_SHUTDOWN_REQUESTED,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -2334,7 +2323,6 @@ typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef union  switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
-typedef struct switch_coredb_handle switch_coredb_handle_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_database_interface_handle switch_database_interface_handle_t;
 
@@ -2653,9 +2641,7 @@ typedef enum {
 
 typedef enum {
 	AEAD_AES_256_GCM_8,
-	AEAD_AES_256_GCM,
 	AEAD_AES_128_GCM_8,
-	AEAD_AES_128_GCM,
 	AES_CM_256_HMAC_SHA1_80,
 	AES_CM_192_HMAC_SHA1_80,
 	AES_CM_128_HMAC_SHA1_80,
@@ -2877,8 +2863,6 @@ typedef struct switch_dial_leg_s switch_dial_leg_t;
 struct switch_dial_leg_list_s;
 typedef struct switch_dial_leg_list_s switch_dial_leg_list_t;
 
-struct switch_dial_handle_list_s;
-typedef struct switch_dial_handle_list_s switch_dial_handle_list_t;
 
 SWITCH_END_EXTERN_C
 #endif

@@ -44,6 +44,7 @@ avoid_mods=(
   applications/mod_cluechoo
   asr_tts/mod_cepstral
   codecs/mod_com_g729
+  codecs/mod_ilbc
   codecs/mod_openh264
   codecs/mod_siren
   codecs/mod_sangoma_codec
@@ -305,7 +306,7 @@ print_source_control () {
 Source: freeswitch
 Section: comm
 Priority: optional
-Maintainer: SignalWire, Inc <support@signalwire.com>
+Maintainer: FreeSWITCH Solutions, LLC <support@freeswitch.com>
 Build-Depends:
 # for debian
  ${debhelper_dep},
@@ -332,16 +333,13 @@ Build-Depends:
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.3),
- libspandsp3-dev,
-# used to format the private freeswitch apt-repo key properly
- gnupg,
+ bison, zlib1g-dev,
 # module build-depends
  $(debian_wrap "${mod_build_depends}")
 Standards-Version: 3.9.3
 Homepage: https://freeswitch.org/
-Vcs-Git: https://github.com/signalwire/freeswitch.git
-Vcs-Browser: https://github.com/signalwire/freeswitch
+Vcs-Git: https://freeswitch.org/stash/scm/fs/freeswitch.git
+Vcs-Browser: https://freeswitch.org/stash/projects/FS/repos/freeswitch/browse
 
 EOF
 }
@@ -945,7 +943,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: freeswitch-all-dbg
 Section: debug
-Priority: optional
+Priority: extra
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, freeswitch-meta-all (= \${binary:Version}), freeswitch-meta-all-dbg (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -955,7 +953,7 @@ Description: debugging symbols for FreeSWITCH
 
 Package: freeswitch-dbg
 Section: debug
-Priority: optional
+Priority: extra
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -965,7 +963,7 @@ Description: debugging symbols for FreeSWITCH
 
 Package: libfreeswitch1-dbg
 Section: debug
-Priority: optional
+Priority: extra
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, libfreeswitch1 (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -1068,7 +1066,7 @@ Description: ${description} for FreeSWITCH
 
 Package: freeswitch-${module_name//_/-}-dbg
 Section: debug
-Priority: optional
+Priority: extra
 Architecture: amd64 armhf
 Depends: \${misc:Depends},
  freeswitch-${module_name//_/-} (= \${binary:Version})

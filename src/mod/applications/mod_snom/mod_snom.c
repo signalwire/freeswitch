@@ -143,7 +143,7 @@ SWITCH_STANDARD_API(snom_command_api_function)
 	}
 
 	if (switch_inet_pton(AF_INET, argv[0], &ip)) {
-		snprintf(host, sizeof(host), "%s", argv[0]);
+		strncpy(host, argv[0], sizeof(host));
 	} else {
 		char *sql = NULL;
 		char *ret = NULL;

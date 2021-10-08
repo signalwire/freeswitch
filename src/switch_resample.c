@@ -522,9 +522,7 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 			energy += abs(data[i]);
 		}
 
-		if (samples) { 
-			agc->score = energy / samples * channels;
-		}
+		agc->score = energy / samples * channels;
 		agc->score_sum += agc->score;
 		agc->score_count++;
 								

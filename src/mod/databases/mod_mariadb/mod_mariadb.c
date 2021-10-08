@@ -53,8 +53,6 @@ int mariadb_db_set_connection(MYSQL *mysql, enum enum_server_command command, co
 	size_t length, my_bool skipp_check, void *opt_arg);
 my_bool mariadb_db_dsn_reconnect(MYSQL *mysql);
 
-my_bool reconnect = 1;
-
 #define DEFAULT_MARIADB_RETRIES 120
 
 #ifndef MIN
@@ -476,12 +474,9 @@ switch_status_t mariadb_handle_connect(mariadb_handle_t *handle)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connecting %s\n", handle->dsn);
 	mysql_init(&handle->con);
 
-	/* Enable non-blocking operation */
-	/* https://mariadb.com/kb/en/library/using-the-non-blocking-library */
+	// Enable non-blocking operation
+	// https://mariadb.com/kb/en/library/using-the-non-blocking-library/
 	mysql_options(&handle->con, MYSQL_OPT_NONBLOCK, 0);
-
-	/* Enable automatic reconnect with the mariadb_reconnect function, without this that function does not work */
-	mysql_options(&handle->con, MYSQL_OPT_RECONNECT, &reconnect);
 
 	/* set timeouts to 300 microseconds */
 	/*int default_timeout = 3;
@@ -690,10 +685,15 @@ error:
 	err_str = mariadb_handle_get_error(handle);
 
 	if (zstr(err_str)) {
-		switch_safe_free(err_str);
-		err_str = (er) ? er : strdup((char *)"SQL ERROR!");
+		if (zstr(er)) {
+			err_str = strdup((char *)"SQL ERROR!");
+		} else {
+			err_str = er;
+		}
 	} else {
-		switch_safe_free(er);
+		if (!zstr(er)) {
+			free(er);
+		}
 	}
 
 	if (err_str) {
@@ -854,15 +854,14 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 
 	result = mariadb_SQLEndTran(handle, SWITCH_TRUE);
-	result = database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
-	result = mariadb_finish_results(handle) && result;
+	result = result && database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE);
+	result = result && mariadb_finish_results(handle);
 
 	return result;
 }
 
 switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 {
-	switch_status_t result;
 	mariadb_handle_t *handle;
 
 	if (!dih) {
@@ -875,11 +874,9 @@ switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	result = mariadb_SQLEndTran(handle, SWITCH_FALSE);
-	result = database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
-	result = mariadb_finish_results(handle) && result;
+	mariadb_SQLEndTran(handle, SWITCH_FALSE);
 
-	return result;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t mariadb_handle_callback_exec_detailed(const char *file, const char *func, int line,

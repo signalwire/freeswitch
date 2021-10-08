@@ -8,18 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_TEST_UTIL_H_
-#define VPX_TEST_UTIL_H_
+#ifndef TEST_UTIL_H_
+#define TEST_UTIL_H_
 
 #include <stdio.h>
 #include <math.h>
-#include <tuple>
-
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_image.h"
 
 // Macros
-#define GET_PARAM(k) std::get<k>(GetParam())
+#define GET_PARAM(k) std::tr1::get<k>(GetParam())
 
 inline double compute_psnr(const vpx_image_t *img1, const vpx_image_t *img2) {
   assert((img1->fmt == img2->fmt) && (img1->d_w == img2->d_w) &&
@@ -45,4 +43,4 @@ inline double compute_psnr(const vpx_image_t *img1, const vpx_image_t *img2) {
   return psnr;
 }
 
-#endif  // VPX_TEST_UTIL_H_
+#endif  // TEST_UTIL_H_

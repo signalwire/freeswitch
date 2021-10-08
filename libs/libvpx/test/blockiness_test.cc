@@ -11,7 +11,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <tuple>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
@@ -26,7 +25,10 @@
 #include "test/util.h"
 
 #include "vpx_mem/vpx_mem.h"
-#include "vp9/encoder/vp9_blockiness.h"
+
+extern "C" double vp9_get_blockiness(const unsigned char *img1, int img1_pitch,
+                                     const unsigned char *img2, int img2_pitch,
+                                     int width, int height);
 
 using libvpx_test::ACMRandom;
 
@@ -139,7 +141,7 @@ class BlockinessTestBase : public ::testing::Test {
 };
 
 #if CONFIG_VP9_ENCODER
-typedef std::tuple<int, int> BlockinessParam;
+typedef std::tr1::tuple<int, int> BlockinessParam;
 class BlockinessVP9Test
     : public BlockinessTestBase,
       public ::testing::WithParamInterface<BlockinessParam> {
@@ -206,15 +208,15 @@ TEST_P(BlockinessVP9Test, WorstCaseBlockiness) {
 }
 #endif  // CONFIG_VP9_ENCODER
 
-using std::make_tuple;
+using std::tr1::make_tuple;
 
 //------------------------------------------------------------------------------
 // C functions
 
 #if CONFIG_VP9_ENCODER
-const BlockinessParam c_vp9_tests[] = { make_tuple(320, 240),
-                                        make_tuple(318, 242),
-                                        make_tuple(318, 238) };
+const BlockinessParam c_vp9_tests[] = {
+  make_tuple(320, 240), make_tuple(318, 242), make_tuple(318, 238),
+};
 INSTANTIATE_TEST_CASE_P(C, BlockinessVP9Test, ::testing::ValuesIn(c_vp9_tests));
 #endif
 

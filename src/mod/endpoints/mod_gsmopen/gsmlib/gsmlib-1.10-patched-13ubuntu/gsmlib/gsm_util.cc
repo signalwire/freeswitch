@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <assert.h>
 #include <string.h>
+#include <iostream>
 #include <strstream>
 #include <ctype.h>
 #include <errno.h>

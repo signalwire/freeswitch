@@ -1,0 +1,88 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// General properties
+TARGET          test_nua.exe
+TARGETTYPE      exe
+CAPABILITY      All -Tcb //NetworkServices
+UID             0x100039CE 0x1F001AD1
+VENDORID        0
+OPTION CW       -warn nounusedarg,nounusedvar
+
+//CAPABILITY      NetworkServices NetworkControl CommDD UserEnvironment ReadDeviceData
+
+START RESOURCE  test_nua_reg.rss
+#ifdef WINSCW
+TARGETPATH 	    \private\10003a3f\apps
+#else
+TARGETPATH 	    \private\10003a3f\import\apps
+#endif
+END //RESOURCE
+OPTION CW      -dialect c99 -inline on
+
+// Disable optimization for debug builds
+SRCDBG 
+
+EPOCHEAPSIZE 0x5000 0x400000
+EPOCSTACKSIZE 0x10000
+
+// Allow global writeable static data
+#ifndef WINSCW
+EPOCALLOWDLLDATA
+#endif
+
+MACRO       SYMBIAN
+//MACRO       IN_LIBSOFIA_SIP_UA
+//MACRO       IN_LIBSOFIA_SRES
+
+// Source files
+SOURCEPATH 			..\..\libsofia-sip-ua\su
+SOURCE              memmem.c
+
+SOURCEPATH 			..\..\tests
+SOURCE              test_nua.c
+SOURCE          test_ops.c
+SOURCE          test_init.c
+SOURCE          test_nua_api.c
+SOURCE          test_nua_params.c
+SOURCE          test_register.c
+SOURCE          test_basic_call.c
+SOURCE          test_call_reject.c
+SOURCE          test_cancel_bye.c
+SOURCE          test_call_hold.c
+SOURCE          test_session_timer.c
+SOURCE          test_refer.c
+SOURCE          test_100rel.c
+SOURCE          test_simple.c
+SOURCE          test_sip_events.c
+SOURCE          test_extension.c
+SOURCE          test_proxy.c
+SOURCE          test_nat.c
+SOURCE          test_nat_tags.c
+SOURCE          test_offer_answer.c
+
+USERINCLUDE		..
+USERINCLUDE		..\..\libsofia-sip-ua\nua
+
+SYSTEMINCLUDE   \epoc32\include\osextensions
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\stdapis
+SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
+
+// Library dependencies
+LIBRARY         commdb.lib
+STATICLIBRARY   libcrt0.lib
+LIBRARY         libc.lib
+LIBRARY         libm.lib
+LIBRARY         libpthread.lib
+LIBRARY         libcrypto.lib
+LIBRARY         libssl.lib
+LIBRARY         euser.lib
+LIBRARY         insock.lib
+LIBRARY         esock.lib
+
+// Sofia-SIP libs
+LIBRARY         libsofia-sip-ua.lib

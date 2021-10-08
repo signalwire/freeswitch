@@ -256,7 +256,7 @@ cglobal highbd_v_predictor_32x32, 3, 4, 4, dst, stride, above
   REP_RET
 
 INIT_XMM sse2
-cglobal highbd_tm_predictor_4x4, 5, 5, 6, dst, stride, above, left, bd
+cglobal highbd_tm_predictor_4x4, 5, 5, 6, dst, stride, above, left, bps
   movd                  m1, [aboveq-2]
   movq                  m0, [aboveq]
   pshuflw               m1, m1, 0x0
@@ -264,7 +264,7 @@ cglobal highbd_tm_predictor_4x4, 5, 5, 6, dst, stride, above, left, bd
   movlhps               m1, m1         ; tl tl tl tl tl tl tl tl
   ; Get the values to compute the maximum value at this bit depth
   pcmpeqw               m3, m3
-  movd                  m4, bdd
+  movd                  m4, bpsd
   psubw                 m0, m1         ; t1-tl t2-tl t3-tl t4-tl
   psllw                 m3, m4
   pcmpeqw               m2, m2
@@ -295,7 +295,7 @@ cglobal highbd_tm_predictor_4x4, 5, 5, 6, dst, stride, above, left, bd
   RET
 
 INIT_XMM sse2
-cglobal highbd_tm_predictor_8x8, 5, 6, 5, dst, stride, above, left, bd, one
+cglobal highbd_tm_predictor_8x8, 5, 6, 5, dst, stride, above, left, bps, one
   movd                  m1, [aboveq-2]
   mova                  m0, [aboveq]
   pshuflw               m1, m1, 0x0
@@ -304,7 +304,7 @@ cglobal highbd_tm_predictor_8x8, 5, 6, 5, dst, stride, above, left, bd, one
   pxor                  m3, m3
   pxor                  m4, m4
   pinsrw                m3, oned, 0
-  pinsrw                m4, bdd, 0
+  pinsrw                m4, bpsd, 0
   pshuflw               m3, m3, 0x0
   DEFINE_ARGS dst, stride, line, left
   punpcklqdq            m3, m3
@@ -339,14 +339,14 @@ cglobal highbd_tm_predictor_8x8, 5, 6, 5, dst, stride, above, left, bd, one
   REP_RET
 
 INIT_XMM sse2
-cglobal highbd_tm_predictor_16x16, 5, 5, 8, dst, stride, above, left, bd
+cglobal highbd_tm_predictor_16x16, 5, 5, 8, dst, stride, above, left, bps
   movd                  m2, [aboveq-2]
   mova                  m0, [aboveq]
   mova                  m1, [aboveq+16]
   pshuflw               m2, m2, 0x0
   ; Get the values to compute the maximum value at this bit depth
   pcmpeqw               m3, m3
-  movd                  m4, bdd
+  movd                  m4, bpsd
   punpcklqdq            m2, m2
   psllw                 m3, m4
   pcmpeqw               m5, m5
@@ -386,7 +386,7 @@ cglobal highbd_tm_predictor_16x16, 5, 5, 8, dst, stride, above, left, bd
   REP_RET
 
 INIT_XMM sse2
-cglobal highbd_tm_predictor_32x32, 5, 5, 8, dst, stride, above, left, bd
+cglobal highbd_tm_predictor_32x32, 5, 5, 8, dst, stride, above, left, bps
   movd                  m0, [aboveq-2]
   mova                  m1, [aboveq]
   mova                  m2, [aboveq+16]
@@ -395,7 +395,7 @@ cglobal highbd_tm_predictor_32x32, 5, 5, 8, dst, stride, above, left, bd
   pshuflw               m0, m0, 0x0
   ; Get the values to compute the maximum value at this bit depth
   pcmpeqw               m5, m5
-  movd                  m6, bdd
+  movd                  m6, bpsd
   psllw                 m5, m6
   pcmpeqw               m7, m7
   pxor                  m6, m6         ; min possible value

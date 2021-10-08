@@ -1,0 +1,53 @@
+2006-01-17  Martti Mela  <martti.mela@nokia.com>
+
+	* msg_mime.c: defines for Mac OS X (which are lacking EBADMSG).
+
+2005-11-08  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Renamed msg_test.c as test_msg.c.
+
+	* Renamed msg_test_class.[hc] as test_class.[hc],
+	  msg_test_protos.h(.in) as test_protos.h(.in),
+	  msg_test_table.c(.in) as test_table.c(.in).
+
+2005-10-12  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Fixed msg_home() macro.
+
+    M ./libsofia-sip-ua/msg/msg.h -1 +1
+
+2005-10-10  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Dox fix to msg_header_replace().
+
+    M ./libsofia-sip-ua/msg/msg_parser.c -2 +3
+
+2005-08-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Makefile.am: Do not include msg_test_class.o in libmsg.
+
+2005-08-01  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* msg_mime.c: Returning -2 from msg_accept_any_d() if the list is
+	empty.
+
+	* msg_internal.h, msg_mclass.h, msg_mclass.c, msg_parser.awk:
+
+	Added header-specific flags in parser table for
+	msg_extract_errors().
+
+	* msg.h, msg.c: Added msg_extract_errors().
+
+	* msg_parser.c: Using header-specific flags to classify parsing
+	errors with msg_extract_errors().
+
+	Added support for apndlist headers.
+
+	* msg_header.h: Added support for apndlist headers.
+
+	* msg_mime.c: Various Accept* headers are now apndlist meaning
+	that they are printed on single line by default.
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

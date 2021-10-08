@@ -25,14 +25,15 @@
  * Konstantin Molchanov <molchanov.kv@gmail.com>
  *
  *
- * switch_console.c -- tests switch_console
+ * switch_utils.c -- tests switch_utils
  *
  */
 
+#include <stdio.h>
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_MINCORE_BEGIN("./conf")
+FST_MINCORE_BEGIN()
 
 FST_SUITE_BEGIN(SWITCH_STANDARD_STREAM)
 
@@ -48,10 +49,11 @@ FST_TEARDOWN_END()
 
 FST_TEST_BEGIN(benchmark)
 {
-	char expected_result[] = {'A', 0x00, 0x01, 0x02, 'B'};
-	char raw_data[] = {0x00, 0x01, 0x02};
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
+
+	char expected_result[] = {'A', 0x00, 0x01, 0x02, 'B'};
+	char raw_data[] = {0x00, 0x01, 0x02};
 
 	stream.write_function(&stream, "%s", "A");
 	stream.raw_write_function(&stream, (uint8_t *) raw_data, sizeof(raw_data));

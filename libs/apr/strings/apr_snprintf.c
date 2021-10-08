@@ -110,6 +110,7 @@ static char *apr_cvt(double arg, int ndigits, int *decpt, int *sign,
         arg = -arg;
     }
     arg = modf(arg, &fi);
+    p1 = &buf[NDIG];
     /*
      * Do integer part
      */

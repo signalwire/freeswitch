@@ -1,0 +1,4 @@
+debian/tmp/usr/include
+debian/tmp/usr/lib/libspandsp.so
+debian/tmp/usr/lib/libspandsp.la
+debian/tmp/usr/lib/libspandsp.a

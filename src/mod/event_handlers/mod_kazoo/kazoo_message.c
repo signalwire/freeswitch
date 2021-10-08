@@ -45,7 +45,7 @@ void kazoo_cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
 	cJSON_AddItemToObject(object, string, item);
 }
 
-static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter, kazoo_logging_ptr logging)
+static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter)
 {
 	switch_event_header_t *header;
 	int hasValue = 0, n;
@@ -55,7 +55,6 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter, k
 
 	case FILTER_COMPARE_EXISTS:
 		hasValue = switch_event_get_header(evt, filter->name) != NULL ? 1 : 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->trace_log_level, "profile[%s] event %s checking if %s exists => %s\n", logging->profile_name, logging->event_name, filter->name, hasValue ? "true" : "false");
 		break;
 
 	case FILTER_COMPARE_VALUE:
@@ -65,7 +64,6 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter, k
 			value = switch_event_get_header(evt, filter->name);
 		}
 		hasValue = value ? !strcmp(value, filter->value) : 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->trace_log_level, "profile[%s] event %s compare value %s to %s => %s == %s => %s\n", logging->profile_name, logging->event_name, filter->name, filter->value, value, filter->value, hasValue ? "true" : "false");
 		break;
 
 	case FILTER_COMPARE_FIELD:
@@ -75,7 +73,6 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter, k
 			value = switch_event_get_header(evt, filter->name);
 		}
 		hasValue = value ? !strcmp(value, switch_event_get_header_nil(evt, filter->value)) : 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->trace_log_level, "profile[%s] event %s compare field %s to %s => %s == %s => %s\n", logging->profile_name, logging->event_name, filter->name, filter->value, value, switch_event_get_header_nil(evt, filter->value), hasValue ? "true" : "false");
 		break;
 
 	case FILTER_COMPARE_PREFIX:
@@ -115,10 +112,10 @@ static int inline filter_compare(switch_event_t* evt, kazoo_filter_ptr filter, k
 	return hasValue;
 }
 
-static kazoo_filter_ptr inline filter_event(switch_event_t* evt, kazoo_filter_ptr filter, kazoo_logging_ptr logging)
+static kazoo_filter_ptr inline filter_event(switch_event_t* evt, kazoo_filter_ptr filter)
 {
 	while(filter) {
-		int hasValue = filter_compare(evt, filter, logging);
+		int hasValue = filter_compare(evt, filter);
 		if(filter->type == FILTER_EXCLUDE) {
 			if(hasValue)
 				break;
@@ -135,37 +132,31 @@ static void kazoo_event_init_json_fields(switch_event_t *event, cJSON *json)
 {
 	switch_event_header_t *hp;
 	for (hp = event->headers; hp; hp = hp->next) {
-		if (strncmp(hp->name, "_json_", 6)) {
-			if (hp->idx) {
-				cJSON *a = cJSON_CreateArray();
-				int i;
+		if (hp->idx) {
+			cJSON *a = cJSON_CreateArray();
+			int i;
 
-				for(i = 0; i < hp->idx; i++) {
-					cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
-				}
-
-				cJSON_AddItemToObject(json, hp->name, a);
-
-			} else {
-				cJSON_AddItemToObject(json, hp->name, cJSON_CreateString(hp->value));
+			for(i = 0; i < hp->idx; i++) {
+				cJSON_AddItemToArray(a, cJSON_CreateString(hp->array[i]));
 			}
+
+			cJSON_AddItemToObject(json, hp->name, a);
+
+		} else {
+			cJSON_AddItemToObject(json, hp->name, cJSON_CreateString(hp->value));
 		}
 	}
 }
 
 static switch_status_t kazoo_event_init_json(kazoo_fields_ptr fields1, kazoo_fields_ptr fields2, switch_event_t* evt, cJSON** clone)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status;
 	if( (fields2 && fields2->verbose)
 			|| (fields1 && fields1->verbose)
 			|| ( (!fields2) &&  (!fields1)) ) {
-		*clone = cJSON_CreateObject();
-		if((*clone) == NULL) {
-			status = SWITCH_STATUS_GENERR;
-		} else {
-			kazoo_event_init_json_fields(evt, *clone);
-		}
+		status = switch_event_serialize_json_obj(evt, clone);
 	} else {
+		status = SWITCH_STATUS_SUCCESS;
 		*clone = cJSON_CreateObject();
 		if((*clone) == NULL) {
 			status = SWITCH_STATUS_GENERR;
@@ -194,11 +185,7 @@ static cJSON * kazoo_event_json_value(kazoo_json_field_type type, const char *va
 		break;
 
 	case JSON_RAW:
-		item = cJSON_Parse(value);
-		if (!item) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "parse from raw error!\n");
-			item = cJSON_CreateRaw(value);
-		}
+		item = cJSON_CreateRaw(value);
 		break;
 
 	default:
@@ -223,23 +210,17 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 {
 	switch_event_header_t *header;
 	char *expanded;
-	int i, n;
+	uint i, n;
 	cJSON *item = NULL;
 
 	switch(field->in_type) {
 		case FIELD_COPY:
-			if (!strcmp(field->name, "_body")) {
-				item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, src->body);
-			} else if((header = switch_event_get_header_ptr(src, field->name)) != NULL) {
+			if((header = switch_event_get_header_ptr(src, field->name)) != NULL) {
 				if (header->idx) {
 					item = cJSON_CreateArray();
 					for(i = 0; i < header->idx; i++) {
 						cJSON_AddItemToArray(item, kazoo_event_json_value(field->out_type, header->array[i]));
 					}
-					kazoo_cJSON_AddItemToObject(dst, field->as ? field->as : field->name, item);
-				} else if (field->out_type_as_array) {
-					item = cJSON_CreateArray();
-					cJSON_AddItemToArray(item, kazoo_event_json_value(field->out_type, header->value));
 					kazoo_cJSON_AddItemToObject(dst, field->as ? field->as : field->name, item);
 				} else {
 					item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, header->value);
@@ -251,9 +232,7 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 			expanded = kz_event_expand_headers(src, field->value);
 			if(expanded != NULL && !zstr(expanded)) {
 				item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, expanded);
-				if(expanded != field->value) {
-					free(expanded);
-				}
+				free(expanded);
 			}
 			break;
 
@@ -318,7 +297,7 @@ static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging,
 	while(field) {
 		if(field->in_type == FIELD_REFERENCE) {
 			if(field->ref) {
-				if((filter = filter_event(src, field->ref->filter, logging)) != NULL) {
+				if((filter = filter_event(src, field->ref->filter)) != NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->filtered_field_log_level, "profile[%s] event %s, referenced field %s filtered by settings %s : %s\n", logging->profile_name, logging->event_name, field->ref->name, filter->name, filter->value);
 				} else {
 					kazoo_event_add_fields_to_json(logging, dst, src, field->ref->head);
@@ -327,7 +306,7 @@ static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "profile[%s] event %s, referenced field %s not found\n", logging->profile_name, logging->event_name, field->name);
 			}
 		} else {
-			if((filter = filter_event(src, field->filter, logging)) != NULL) {
+			if((filter = filter_event(src, field->filter)) != NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, logging->levels->filtered_field_log_level, "profile[%s] event %s, field %s filtered by settings %s : %s\n", logging->profile_name, logging->event_name, field->name, filter->name, filter->value);
 			} else {
 				item = kazoo_event_add_field_to_json(dst, src, field);
@@ -346,21 +325,6 @@ static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging,
     return SWITCH_STATUS_SUCCESS;
 }
 
-#define EVENT_TIMESTAMP_FIELD "Event-Date-Timestamp"
-#define JSON_TIMESTAMP_FIELD "Event-Timestamp"
-
-static switch_status_t kazoo_event_add_timestamp(switch_event_t* evt, cJSON* JObj)
-{
-	switch_event_header_t *header;
-	cJSON *item = NULL;
-	if((header = switch_event_get_header_ptr(evt, EVENT_TIMESTAMP_FIELD)) != NULL) {
-		if ((item = kazoo_event_json_value(JSON_NUMBER, header->value)) != NULL) {
-			kazoo_cJSON_AddItemToObject(JObj, JSON_TIMESTAMP_FIELD, item);
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-	return SWITCH_STATUS_NOTFOUND;
-}
 
 kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_ptr event, kazoo_event_profile_ptr profile)
 {
@@ -370,8 +334,11 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 	kazoo_logging_t logging;
 
 	logging.levels = profile->logging;
-	logging.event_name = evt->subclass_name ? evt->subclass_name : switch_event_get_header_nil(evt, "Event-Name");
+	logging.event_name = switch_event_get_header_nil(evt, "Event-Name");
 	logging.profile_name = profile->name;
+
+	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
+
 
 	message = malloc(sizeof(kazoo_message_t));
 	if(message == NULL) {
@@ -382,19 +349,15 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 
 	if(profile->filter) {
 		// filtering
-		if((filtered = filter_event(evt, profile->filter, &logging)) != NULL) {
+		if((filtered = filter_event(evt, profile->filter)) != NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, logging.levels->filtered_event_log_level, "profile[%s] event %s filtered by profile settings %s : %s\n", logging.profile_name, logging.event_name, filtered->name, filtered->value);
 			kazoo_message_destroy(&message);
 			return NULL;
 		}
 	}
 
-	if (event->logging) {
-		logging.levels = event->logging;
-	}
-
-	if (event && event->filter) {
-		if((filtered = filter_event(evt, event->filter, &logging)) != NULL) {
+	if(event && event->filter) {
+		if((filtered = filter_event(evt, event->filter)) != NULL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, logging.levels->filtered_event_log_level, "profile[%s] event %s filtered by event settings %s : %s\n", logging.profile_name, logging.event_name, filtered->name, filtered->value);
 			kazoo_message_destroy(&message);
 			return NULL;
@@ -402,8 +365,6 @@ kazoo_message_ptr kazoo_message_create_event(switch_event_t* evt, kazoo_event_pt
 	}
 
 	kazoo_event_init_json(profile->fields, event ? event->fields : NULL, evt, &JObj);
-
-	kazoo_event_add_timestamp(evt, JObj);
 
 	if(profile->fields)
 		kazoo_event_add_fields_to_json(&logging, JObj, evt, profile->fields->head);
@@ -429,6 +390,8 @@ kazoo_message_ptr kazoo_message_create_fetch(switch_event_t* evt, kazoo_fetch_pr
 	logging.event_name = switch_event_get_header_nil(evt, "Event-Name");
 	logging.profile_name = profile->name;
 
+	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
+
 	message = malloc(sizeof(kazoo_message_t));
 	if(message == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error allocating memory for serializing event to json\n");
@@ -438,8 +401,6 @@ kazoo_message_ptr kazoo_message_create_fetch(switch_event_t* evt, kazoo_fetch_pr
 
 
 	kazoo_event_init_json(profile->fields, NULL, evt, &JObj);
-
-	kazoo_event_add_timestamp(evt, JObj);
 
 	if(profile->fields)
 		kazoo_event_add_fields_to_json(&logging, JObj, evt, profile->fields->head);

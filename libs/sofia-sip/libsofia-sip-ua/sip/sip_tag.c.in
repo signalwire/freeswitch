@@ -1,0 +1,94 @@
+/**@IFILE sip_tag.c.in
+ *
+ * Template for <sip_tag.c>.
+ *
+ * @date Created: Wed Feb 21 11:01:45 2001 ppessi
+ */
+
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/**@CFILE sip_tag.c  SIP Tags.
+ *
+ * #AUTO#
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ *
+ * @date Created: Fri Feb 23 12:46:42 2001 ppessi
+ */
+
+#include "config.h"
+
+#include <assert.h>
+#include <stddef.h>
+#include <string.h>
+
+#include <sofia-sip/su.h>
+
+#define TAG_NAMESPACE "sip"
+
+#include "sofia-sip/sip_parser.h"
+#include <sofia-sip/sip_tag.h>
+
+#include <sofia-sip/su_tag_class.h>
+#include <sofia-sip/su_tag_inline.h>
+#include <sofia-sip/sip_tag_class.h>
+
+#include <sofia-sip/su_tagarg.h>
+
+tag_typedef_t siptag_any = NSTAG_TYPEDEF(*);
+
+tag_typedef_t siptag_sip = SIPMSGTAG_TYPEDEF(sip);
+
+tag_typedef_t siptag_header = {{ "sip", "header", siphdrtag_class, 0 }};
+
+tag_typedef_t siptag_header_str = STRTAG_TYPEDEF(header_str);
+
+tag_typedef_t siptag_end = TAG_TYPEDEF(tag_end, end);
+
+
+extern msg_hclass_t sip_#xxxxxx#_class[];
+
+/**@ingroup sip_#xxxxxx#
+ * Tag for @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" object.
+ */
+tag_typedef_t siptag_#xxxxxx# = SIPHDRTAG_TYPEDEF(#xxxxxx#);
+/**@ingroup sip_#xxxxxx#
+ * Tag for string with @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" value.
+ */
+tag_typedef_t siptag_#xxxxxx#_str = SIPSTRTAG_TYPEDEF(#xxxxxx#);
+
+/** List of all tags for SIP headers */
+tag_type_t sip_tag_list[] =
+{
+  siptag_#xxxxxx#,
+  NULL
+};
+
+/** List of all string tags for SIP headers  */
+tag_type_t sip_tag_str_list[] =
+{
+  siptag_#xxxxxx#_str,
+  NULL
+};

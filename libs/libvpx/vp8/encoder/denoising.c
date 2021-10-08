@@ -213,12 +213,13 @@ int vp8_denoiser_filter_c(unsigned char *mc_running_avg_y, int mc_avg_y_stride,
   return FILTER_BLOCK;
 }
 
-int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
-                             unsigned char *running_avg, int avg_stride,
+int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg_uv,
+                             int mc_avg_uv_stride,
+                             unsigned char *running_avg_uv, int avg_uv_stride,
                              unsigned char *sig, int sig_stride,
                              unsigned int motion_magnitude,
                              int increase_denoising) {
-  unsigned char *running_avg_start = running_avg;
+  unsigned char *running_avg_uv_start = running_avg_uv;
   unsigned char *sig_start = sig;
   int sum_diff_thresh;
   int r, c;
@@ -258,13 +259,13 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
       int adjustment = 0;
       int absdiff = 0;
 
-      diff = mc_running_avg[c] - sig[c];
+      diff = mc_running_avg_uv[c] - sig[c];
       absdiff = abs(diff);
 
       // When |diff| <= |3 + shift_inc1|, use pixel value from
       // last denoised raw.
       if (absdiff <= 3 + shift_inc1) {
-        running_avg[c] = mc_running_avg[c];
+        running_avg_uv[c] = mc_running_avg_uv[c];
         sum_diff += diff;
       } else {
         if (absdiff >= 4 && absdiff <= 7) {
@@ -276,16 +277,16 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
         }
         if (diff > 0) {
           if ((sig[c] + adjustment) > 255) {
-            running_avg[c] = 255;
+            running_avg_uv[c] = 255;
           } else {
-            running_avg[c] = sig[c] + adjustment;
+            running_avg_uv[c] = sig[c] + adjustment;
           }
           sum_diff += adjustment;
         } else {
           if ((sig[c] - adjustment) < 0) {
-            running_avg[c] = 0;
+            running_avg_uv[c] = 0;
           } else {
-            running_avg[c] = sig[c] - adjustment;
+            running_avg_uv[c] = sig[c] - adjustment;
           }
           sum_diff -= adjustment;
         }
@@ -293,8 +294,8 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
     }
     /* Update pointers for next iteration. */
     sig += sig_stride;
-    mc_running_avg += mc_avg_stride;
-    running_avg += avg_stride;
+    mc_running_avg_uv += mc_avg_uv_stride;
+    running_avg_uv += avg_uv_stride;
   }
 
   sum_diff_thresh = SUM_DIFF_THRESHOLD_UV;
@@ -313,27 +314,27 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
     // Only apply the adjustment for max delta up to 3.
     if (delta < 4) {
       sig -= sig_stride * 8;
-      mc_running_avg -= mc_avg_stride * 8;
-      running_avg -= avg_stride * 8;
+      mc_running_avg_uv -= mc_avg_uv_stride * 8;
+      running_avg_uv -= avg_uv_stride * 8;
       for (r = 0; r < 8; ++r) {
         for (c = 0; c < 8; ++c) {
-          int diff = mc_running_avg[c] - sig[c];
+          int diff = mc_running_avg_uv[c] - sig[c];
           int adjustment = abs(diff);
           if (adjustment > delta) adjustment = delta;
           if (diff > 0) {
             // Bring denoised signal down.
-            if (running_avg[c] - adjustment < 0) {
-              running_avg[c] = 0;
+            if (running_avg_uv[c] - adjustment < 0) {
+              running_avg_uv[c] = 0;
             } else {
-              running_avg[c] = running_avg[c] - adjustment;
+              running_avg_uv[c] = running_avg_uv[c] - adjustment;
             }
             sum_diff -= adjustment;
           } else if (diff < 0) {
             // Bring denoised signal up.
-            if (running_avg[c] + adjustment > 255) {
-              running_avg[c] = 255;
+            if (running_avg_uv[c] + adjustment > 255) {
+              running_avg_uv[c] = 255;
             } else {
-              running_avg[c] = running_avg[c] + adjustment;
+              running_avg_uv[c] = running_avg_uv[c] + adjustment;
             }
             sum_diff += adjustment;
           }
@@ -341,8 +342,8 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
         // TODO(marpan): Check here if abs(sum_diff) has gone below the
         // threshold sum_diff_thresh, and if so, we can exit the row loop.
         sig += sig_stride;
-        mc_running_avg += mc_avg_stride;
-        running_avg += avg_stride;
+        mc_running_avg_uv += mc_avg_uv_stride;
+        running_avg_uv += avg_uv_stride;
       }
       if (abs(sum_diff) > sum_diff_thresh) return COPY_BLOCK;
     } else {
@@ -350,7 +351,7 @@ int vp8_denoiser_filter_uv_c(unsigned char *mc_running_avg, int mc_avg_stride,
     }
   }
 
-  vp8_copy_mem8x8(running_avg_start, avg_stride, sig_start, sig_stride);
+  vp8_copy_mem8x8(running_avg_uv_start, avg_uv_stride, sig_start, sig_stride);
   return FILTER_BLOCK;
 }
 
