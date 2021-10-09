@@ -1612,6 +1612,12 @@ SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *se
 	engine->type = type;
 }
 
+SWITCH_DECLARE(switch_rtp_t *) switch_core_media_get_rtp_session(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_assert(session);
+	if (!session->media_handle) return NULL;
+	return session->media_handle->engines[type].rtp_session;
+}
 
 static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *session, switch_media_type_t type)
 {
@@ -8590,6 +8596,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		goto end;
 	}
 
+	if (switch_channel_var_true(session->channel, "fire_rtcp_events")) {
+		flags[SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT] = 1;
+		if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && 
+				switch_channel_var_true(session->channel, "rtp_video_send_rtcp_message_event")) { 
+			flags[SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT] = 1;
+		}
+	}
+
 	if (!is_reinvite) {
 		if (switch_rtp_ready(a_engine->rtp_session)) {
 			if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && !switch_rtp_ready(t_engine->rtp_session)) {
@@ -8767,8 +8781,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	if (switch_channel_up(session->channel)) {
 		switch_channel_set_variable(session->channel, "rtp_use_timer_name", timer_name);
-
-
 
 		a_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 											   a_engine->local_sdp_port,

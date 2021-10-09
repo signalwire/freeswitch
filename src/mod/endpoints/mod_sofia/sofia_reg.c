@@ -2508,18 +2508,47 @@ switch_bool_t sip_resolve_compare(const char *domainname, const char *ip, sofia_
 	if (strchr(ip, ':')) {
 		ipv6 = SWITCH_TRUE;
 	}
+
 	ret = dig_all_srvs_simple(dig, domainname, ip, ipv6);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "verify 1\n");
 
 	if (!ret) {
 		answers = dig_addr_simple(dig, host, ipv6?sres_type_aaaa:sres_type_a);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "verify 2\n");
 		ret = verify_ip(answers, ip, ipv6);
 	}
 
 out:
 	su_home_unref(home);
 	sres_resolver_unref(dig->sres);
+
+	return ret;
+}
+
+static switch_bool_t is_host_from_gateway(const char *remote_ip, sofia_gateway_t *gateway) 
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	char *hosts[3]; /* check the 3 places where we keep IP/hostname */
+	int i;
+
+	hosts[0] = gateway->proxy_host_cfg;
+	hosts[1] = gateway->register_proxy_host_cfg;
+	hosts[2] = gateway->outbound_proxy_host_cfg;
+
+	for (i = 0; i < 3; i++) {
+		if (zstr(hosts[i])) {
+			continue;
+		}
+
+		if (host_is_ip_address(hosts[i])) {
+			if (!strcmp(hosts[i], remote_ip)) {
+				ret = SWITCH_TRUE;
+			}
+
+			if (ret) break;
+		} else {
+			ret = sip_resolve_compare(hosts[i], remote_ip, gateway->register_transport);
+			if (ret) break;
+		}
+	}
 
 	return ret;
 }
@@ -2531,27 +2560,16 @@ static switch_bool_t is_legitimate_gateway(sofia_dispatch_event_t *de, sofia_gat
 
 	sofia_glue_get_addr(de->data->e_msg, remote_ip, sizeof(remote_ip), NULL);
 
+	/* setting param "gw-auth-acl" supersedes everything */
 	if (gateway->gw_auth_acl) {
 		ret = switch_check_network_list_ip(remote_ip, gateway->gw_auth_acl);
 		if (!ret) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challange from [%s] denied by gw-auth-acl.\n", remote_ip);
 		}
+
 		return ret;
 	} else {
-		char *register_host = sofia_glue_get_register_host(gateway->register_proxy);
-		const char *host = sofia_glue_strip_proto(register_host);
-
-		if (host_is_ip_address(host)) {
-			if (host && !strcmp(host, remote_ip)) {
-				ret = SWITCH_TRUE;
-			}
-			switch_safe_free(register_host);
-			return ret;
-		} else {
-			ret = sip_resolve_compare(host, remote_ip, gateway->register_transport);
-			switch_safe_free(register_host); 
-			return ret;
-		}
+		return is_host_from_gateway(remote_ip, gateway);
 	}
 }
 

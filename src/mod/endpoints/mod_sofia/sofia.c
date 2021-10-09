@@ -3500,10 +3500,24 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 
-	/* Do gateway cleanups */
+	/* Gateway cleanup start */
+	/* Mark all gateways as deleted and set REG_STATE_UNREGISTER state on REG gateways */
 	sofia_glue_del_every_gateway(profile);
+	/* First call will unregister and set state to DOWN so a gateway is ready for deletion */
 	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
 	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+	/*
+	 * The gateway life cycle requires a gateway to go though different states before it's destroyed.
+	 * Normally sofia_reg_check_gateway() is called periodically
+	 * but it's not the case on profile shutdown.
+	 *
+	 * All REG gateways should be DOWN now and can be finally deleted.
+	 * Calling sofia_reg_check_gateway() second time.
+	 */
+	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
+	/* Gateway cleanup end */
+
 	sofia_glue_fire_events(profile);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
@@ -3950,8 +3964,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					contact_host = val;
 				} else if (!strcmp(var, "register-proxy")) {
 					register_proxy = val;
+					gateway->register_proxy_host_cfg = sofia_glue_get_host_from_cfg(register_proxy, gateway->pool); 
 				} else if (!strcmp(var, "outbound-proxy")) {
 					outbound_proxy = val;
+					gateway->outbound_proxy_host_cfg = sofia_glue_get_host_from_cfg(outbound_proxy, gateway->pool); 
 				} else if (!strcmp(var, "distinct-to")) {
 					distinct_to = switch_true(val);
 				} else if (!strcmp(var, "destination-prefix")) {
@@ -4024,6 +4040,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			if (zstr(proxy)) {
 				proxy = realm;
 			}
+
+			gateway->proxy_host_cfg = sofia_glue_get_host_from_cfg(proxy, gateway->pool);
 
 			if (!switch_true(register_str)) {
 				gateway->state = REG_STATE_NOREG;
@@ -4573,7 +4591,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			} else {
 				switch_memory_pool_t *pool = NULL;
 				char *auth_messages_value = NULL;
-				uint8_t disable_auth_flag = 0;
+				char *auth_subscriptions_value = NULL;
+				uint8_t disable_message_auth_flag = 0;
+				uint8_t disable_subscription_auth_flag = 0;
 
 				if (!xprofilename) {
 					xprofilename = "unnamed";
@@ -5575,13 +5595,17 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 						}
 
-						disable_auth_flag = 1;
+						disable_message_auth_flag = 1;
 					} else if (!strcasecmp(var, "auth-subscriptions")) {
+						auth_subscriptions_value = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "disable-auth-subscriptions")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
-						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
+						} else {
+							sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
 						}
+
+						disable_subscription_auth_flag = 1;
 					} else if (!strcasecmp(var, "extended-info-parsing")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
@@ -6086,11 +6110,19 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 				}
 
-				if (!disable_auth_flag) {
+				if (!disable_message_auth_flag) {
 					if (!auth_messages_value || switch_true(auth_messages_value)) {
 						sofia_set_pflag(profile, PFLAG_AUTH_MESSAGES);
 					} else {
 						sofia_clear_pflag(profile, PFLAG_AUTH_MESSAGES);
+					}
+				}
+
+				if (!disable_subscription_auth_flag) {
+					if (!auth_subscriptions_value || switch_true(auth_subscriptions_value)) {
+						sofia_set_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
+					} else {
+						sofia_clear_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS);
 					}
 				}
 
