@@ -308,6 +308,11 @@ typedef enum {
 } switch_call_direction_t;
 
 typedef enum {
+	FORK_DIRECTION_RX,
+	FORK_DIRECTION_TX
+} switch_fork_direction_t;
+
+typedef enum {
 	SBF_DIAL_ALEG = (1 << 0),
 	SBF_EXEC_ALEG = (1 << 1),
 	SBF_DIAL_BLEG = (1 << 2),

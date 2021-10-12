@@ -8972,7 +8972,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_sessi
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_set_fork_write(switch_core_session_t *session, const char *ip, switch_port_t port)
+SWITCH_DECLARE(switch_status_t) switch_core_media_set_fork(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port)
 {
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_media_handle_t *smh = NULL;
@@ -8981,115 +8981,88 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_fork_write(switch_core_ses
 	switch_assert(session);
 
 	if (!ip) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s No Fork IP!\n", 
-			switch_channel_get_name(session->channel));
-		return status;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no ip!\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!port) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s No Fork Port!\n", 
-			switch_channel_get_name(session->channel));
-		return status;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no port!\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!(smh = session->media_handle)) {
-		return status;
-	}
-
-	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	if (a_engine->rtp_session && (status = switch_rtp_set_fork_write_address(a_engine->rtp_session, ip, port, &err)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork write media to %s:%d\n",
-						  switch_channel_get_name(session->channel), ip, port);
-		switch_rtp_activate_fork_write(a_engine->rtp_session);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Failed to fork media to %s:%d (%s)\n",
-						  switch_channel_get_name(session->channel), ip, port, err);
-	}
-
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_media_fork_write(switch_core_session_t *session, const char *ip, switch_port_t port)
-{
-	switch_rtp_engine_t *a_engine = NULL;
-	switch_media_handle_t *smh = NULL;
-	const char *err = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_assert(session);
-
-	if (!ip) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s No Fork IP!\n", 
-			switch_channel_get_name(session->channel));
-		return status;
-	}
-
-	if (!port) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s No Fork Port!\n", 
-			switch_channel_get_name(session->channel));
-		return status;
-	}
-
-	if (!(smh = session->media_handle)) {
-		return status;
-	}
-
-	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	if (a_engine->rtp_session && (status = switch_rtp_set_fork_write_address(a_engine->rtp_session, ip, port, &err)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Set fork write media to %s:%d\n",
-						  switch_channel_get_name(session->channel), ip, port);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Failed to set fork media to %s:%d (%s)\n",
-						  switch_channel_get_name(session->channel), ip, port, err);
-	}
-
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_media_activate_fork_write(switch_core_session_t *session)
-{
-	switch_rtp_engine_t *a_engine = NULL;
-	switch_media_handle_t *smh = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_assert(session);
-
-	if (!(smh = session->media_handle)) {
-		return status;
-	}
-
-	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	if (a_engine->rtp_session && (status = switch_rtp_activate_fork_write(a_engine->rtp_session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Start fork write media\n",
-						  switch_channel_get_name(session->channel));
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Failed to start fork media\n",
-						  switch_channel_get_name(session->channel));
-	}
-
-	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_media_deactivate_fork_write(switch_core_session_t *session)
-{
-	switch_rtp_engine_t *a_engine = NULL;
-	switch_media_handle_t *smh = NULL;
-	switch_assert(session);
-
-	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no media\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	if (a_engine->rtp_session) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Stop fork write media\n",
-						  switch_channel_get_name(session->channel));
-		switch_rtp_deactivate_fork_write(a_engine->rtp_session);
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Failed to stop fork media: No RTP session\n",
-						  switch_channel_get_name(session->channel));
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to setup forking media to %s:%d (no RTP session)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
+		return SWITCH_STATUS_FALSE;
 	}
 
-	return SWITCH_STATUS_FALSE;
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): setting up forking of media to %s:%d\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
+
+	status = switch_rtp_set_fork(a_engine->rtp_session, direction, ip, port, &err);
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to setup forking media to %s:%d (%s)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port, err);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): ready (to %s:%d)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_activate_fork(switch_core_session_t *session, switch_fork_direction_t direction)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no media\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to activate (no RTP session)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	status = switch_rtp_activate_fork(a_engine->rtp_session, direction);
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to activate fork\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): active\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_deactivate_fork(switch_core_session_t *session, switch_fork_direction_t direction)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no media\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to deactivate (no RTP session)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_rtp_deactivate_fork(a_engine->rtp_session, direction);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): deactivated\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+	return SWITCH_STATUS_SUCCESS;
 }
 
 //?
