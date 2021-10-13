@@ -36,6 +36,8 @@
     <!-- <param name="bitpacking" value="aal2"/> -->
     <!--max number of open dialogs in proceeding -->
     <!--<param name="max-proceeding" value="1000"/>-->
+    <!--max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
+    <!--<param name="max-recv-requests-per-second" value="0"/>-->
     <!--session timers for all call to expire after the specified seconds -->
     <!--<param name="session-timeout" value="1800"/>-->
     <!--<param name="multiple-registrations" value="true"/>-->
