@@ -3345,6 +3345,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->session_timeout && profile->minimum_session_expires, NUTAG_MIN_SE(profile->minimum_session_expires)),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
+				   NTATAG_MAX_RECV_REQUESTS_PER_SECOND(profile->max_recv_requests_per_second),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("SUBSCRIBE")),
 				   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
@@ -4571,6 +4572,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				char *auth_subscriptions_value = NULL;
 				uint8_t disable_message_auth_flag = 0;
 				uint8_t disable_subscription_auth_flag = 0;
+				uint8_t max_recv_requests_per_second_initialized = 0;
 
 				if (!xprofilename) {
 					xprofilename = "unnamed";
@@ -5306,6 +5308,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						int v_max_proceeding = atoi(val);
 						if (v_max_proceeding >= 0) {
 							profile->max_proceeding = v_max_proceeding;
+						}
+					} else if (!strcasecmp(var, "max-recv-requests-per-second") && !zstr(val)) {
+						int v_max_recv_requests_per_second = atoi(val);
+						if (v_max_recv_requests_per_second >= 0) {
+							profile->max_recv_requests_per_second = v_max_recv_requests_per_second;
+							max_recv_requests_per_second_initialized = 1;
 						}
 					} else if (!strcasecmp(var, "rtp-timeout-sec") && !zstr(val)) {
 						int v = atoi(val);
@@ -6095,6 +6103,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							}
 						}
 					}
+				}
+
+				if (!max_recv_requests_per_second_initialized) {
+					profile->max_recv_requests_per_second = 1000;
 				}
 
 				if (!disable_message_auth_flag) {

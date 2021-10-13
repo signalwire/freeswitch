@@ -3061,6 +3061,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "CNG              \t%d\n", profile->cng_pt);
 					stream->write_function(stream, "SESSION-TO       \t%d\n", profile->session_timeout);
 					stream->write_function(stream, "MAX-DIALOG       \t%d\n", profile->max_proceeding);
+					stream->write_function(stream, "MAX-RECV-RPS     \t%d\n", profile->max_recv_requests_per_second);
 					stream->write_function(stream, "NOMEDIA          \t%s\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "LATE-NEG         \t%s\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "PROXY-MEDIA      \t%s\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
@@ -3363,6 +3364,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <cng>%d</cng>\n", profile->cng_pt);
 					stream->write_function(stream, "    <session-to>%d</session-to>\n", profile->session_timeout);
 					stream->write_function(stream, "    <max-dialog>%d</max-dialog>\n", profile->max_proceeding);
+					stream->write_function(stream, "    <max-recv-rps>%d</max-recv-rps>\n", profile->max_recv_requests_per_second);
 					stream->write_function(stream, "    <nomedia>%s</nomedia>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "    <late-neg>%s</late-neg>\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "    <proxy-media>%s</proxy-media>\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
