@@ -260,11 +260,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managedcore_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 
-	SWITCH_ADD_API(api_interface, "managedcorerun", "Run a module (ExecuteBackground)", managedcorerun_api_function, "<module> [<args>]");
-	SWITCH_ADD_API(api_interface, "managedcore", "Run a module as an API function (Execute)", managedcore_api_function, "<module> [<args>]");
-	SWITCH_ADD_APP(app_interface, "managedcore", "Run CLI App", "Run an App on a channel", managedcore_app_function, "<modulename> [<args>]", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_API(api_interface, "managedcorereload", "Force [re]load of a file", managedcorereload_api_function, "<filename>");
-	SWITCH_ADD_API(api_interface, "managedcorelist", "Log the list of available APIs and Apps", managedcorelist_api_function, "");
+	SWITCH_ADD_API(api_interface, "managedrun", "Run a module (ExecuteBackground)", managedcorerun_api_function, "<module> [<args>]");
+	SWITCH_ADD_API(api_interface, "managed", "Run a module as an API function (Execute)", managedcore_api_function, "<module> [<args>]");
+	SWITCH_ADD_APP(app_interface, "managed", "Run CLI App", "Run an App on a channel", managedcore_app_function, "<modulename> [<args>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_API(api_interface, "managedreload", "Force [re]load of a file", managedcorereload_api_function, "<filename>");
+	SWITCH_ADD_API(api_interface, "managedlist", "Log the list of available APIs and Apps", managedcorelist_api_function, "");
 	return SWITCH_STATUS_NOUNLOAD;
 }
 
