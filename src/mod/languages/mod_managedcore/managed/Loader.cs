@@ -213,6 +213,23 @@ namespace FreeSWITCH {
             }
             if (pm == null) return;
 
+            try
+            {
+
+                if (!pm.Load(fileName))
+                {
+                    unloadFile(fileName);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                // On an exception, we will unload the current file so an old copy doesnt stay active
+                Log.WriteLine(LogLevel.Alert, "Exception loading {0}: {1}", fileName, ex.ToString());
+                unloadFile(fileName);
+                return;
+            }
+
             addPlugin(fileName, pm);
         }
 

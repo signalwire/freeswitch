@@ -177,7 +177,6 @@ namespace FreeSWITCH {
             Console.WriteLine("Loading {0} from domain {1}", file, AppDomain.CurrentDomain.FriendlyName);
             if (isLoaded) throw new InvalidOperationException("PluginManager has already been loaded.");
             if (string.IsNullOrEmpty(file)) throw new ArgumentNullException("file cannot be null or empty.");
-            if (AppDomain.CurrentDomain.IsDefaultAppDomain()) throw new InvalidOperationException("PluginManager must load in its own AppDomain.");
             var res = LoadInternal(file);
             isLoaded = true;
 
