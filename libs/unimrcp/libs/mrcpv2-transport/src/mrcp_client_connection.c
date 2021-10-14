@@ -366,6 +366,10 @@ static mrcp_connection_t* mrcp_client_agent_connection_find(mrcp_connection_agen
 	for(connection = APR_RING_FIRST(&agent->connection_list);
 			connection != APR_RING_SENTINEL(&agent->connection_list, mrcp_connection_t, link);
 				connection = APR_RING_NEXT(connection, link)) {
+		/* do not observe connections with closed socket */
+        	if(!connection->sock)
+        		continue;
+
 		if(apr_sockaddr_info_get(&sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool) == APR_SUCCESS) {
 			if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0 && 
 				descriptor->port == connection->r_sockaddr->port) {
