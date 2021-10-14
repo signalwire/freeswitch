@@ -8972,15 +8972,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_sessi
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_set_fork(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port)
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd)
 {
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_media_handle_t *smh = NULL;
-	const char *err = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_assert(session);
 
-	if (!ip) {
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(ip)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no ip!\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -9001,25 +9004,100 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_fork(switch_core_session_t
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): setting up forking of media to %s:%d\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (%s): setting up forking of media to %s:%d\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
 
-	status = switch_rtp_set_fork(a_engine->rtp_session, direction, ip, port, &err);
+	status = switch_rtp_fork_set(a_engine->rtp_session, direction, ip, port, cmd);
 	if (status != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to setup forking media to %s:%d (%s)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port, err);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to setup forking media to %s:%d\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): ready (to %s:%d)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (%s): ready (to %s:%d)\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_activate_fork(switch_core_session_t *session, switch_fork_direction_t direction)
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_session_t *session, const char *id)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+
+	if (!session || !id || !strlen(id)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: no media\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: failed to setup fork id (no RTP session)\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork: setting up fork id to %s\n", switch_channel_get_name(session->channel), id);
+	switch_rtp_fork_set_id(a_engine->rtp_session, id);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+	const char *ip = NULL;
+	uint16_t port = 0;
+	switch_core_media_params_t *mp = NULL;
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: no media\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: failed to setup fork ip (no RTP session)\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	mp = switch_core_media_get_mparams(smh);
+	if (mp) {
+		if (!zstr(mp->extrtpip)) {
+			ip = mp->extrtpip;
+		}
+	} else {
+		ip = switch_rtp_get_local_host(a_engine->rtp_session);
+	}
+
+	port = switch_rtp_get_local_port(a_engine->rtp_session);
+
+	if (zstr(ip)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: failed to setup fork ip (empty)\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: setting up fork ip to %s\n", switch_channel_get_name(session->channel), ip);
+	switch_rtp_fork_set_local_address(a_engine->rtp_session, ip, port);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction)
 {
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_media_handle_t *smh = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_assert(session);
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!(smh = session->media_handle)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no media\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
@@ -9032,21 +9110,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_fork(switch_core_sess
 		return SWITCH_STATUS_FALSE;
 	}
 
-	status = switch_rtp_activate_fork(a_engine->rtp_session, direction);
+	status = switch_rtp_fork_activate(a_engine->rtp_session, direction);
 	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to activate fork\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): active\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (%s): active\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_deactivate_fork(switch_core_session_t *session, switch_fork_direction_t direction)
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_deactivate(switch_core_session_t *session, switch_fork_direction_t direction)
 {
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_media_handle_t *smh = NULL;
 	switch_assert(session);
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!(smh = session->media_handle)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): no media\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
@@ -9059,10 +9141,305 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_deactivate_fork(switch_core_se
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_rtp_deactivate_fork(a_engine->rtp_session, direction);
+	switch_rtp_fork_deactivate(a_engine->rtp_session, direction);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork (%s): deactivated\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (%s): deactivated\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx");
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static void switch_core_media_fork_do_fire_start_event(switch_core_session_t *session, switch_fork_state_t *fork, const char *fmr)
+{
+	switch_event_t *event;
+
+	if (!session || !fork) {
+		return;
+	}
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "media_stream::start") == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "telnyx_media_streaming_start_time", "%ld", switch_micro_time_now() / 1000);
+		if (!zstr(fork->fork_rx.cmd)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_media_streaming_rx", fork->fork_rx.cmd);
+		}
+		if (!zstr(fork->fork_tx.cmd)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_media_streaming_tx", fork->fork_tx.cmd);
+		}
+		if (!zstr(fmr)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variable_media_fork_request", fmr);
+		}
+		switch_event_fire(&event);
+	}
+}
+
+static void switch_core_media_fork_fire_start_event(switch_core_session_t *session, switch_fork_state_t *fork)
+{
+	switch_fork_t *fork_rx = NULL, *fork_tx = NULL;
+	char *s = NULL;
+	cJSON *f = cJSON_CreateObject();
+
+	if (!session || !fork || fork->start_event_fired) {
+		goto end;
+	}
+
+	fork_rx = &fork->fork_rx;
+	fork_tx = &fork->fork_tx;
+
+	// fire event
+
+	if (fork_rx->active && fork_tx->active) {
+
+		if (!fork_rx->ssrc || !fork_tx->ssrc) {
+			goto end;
+		}
+
+		// Fire for rx and tx
+	
+		{
+			cJSON *forkInfo = cJSON_CreateObject();
+			cJSON *tx = cJSON_CreateObject();
+			cJSON *rx = cJSON_CreateObject();
+
+			{
+				// fill in 'tx' content
+
+				if (cJSON_AddNumberToObject(tx, "ssrc", fork_tx->ssrc) == NULL) {
+					goto end;
+				}
+
+				if (cJSON_AddStringToObject(tx, "ip", fork_tx->host_str) == NULL) {
+					goto end;
+				}
+
+				if (cJSON_AddNumberToObject(tx, "port", fork_tx->port) == NULL) {
+					goto end;
+				}
+
+				cJSON_AddItemToObject(f, "tx", tx);
+			}
+
+			{
+				// fill in 'rx' content
+
+				if (cJSON_AddNumberToObject(rx, "ssrc", fork_rx->ssrc) == NULL) {
+					goto end;
+				}
+
+				if (cJSON_AddStringToObject(rx, "ip", fork_rx->host_str) == NULL) {
+					goto end;
+				}
+
+				if (cJSON_AddNumberToObject(rx, "port", fork_rx->port) == NULL) {
+					goto end;
+				}
+
+				cJSON_AddItemToObject(f, "rx", rx);
+			}
+
+			{
+				// fill in 'fork' content
+
+				if (strlen(fork->id)) {
+					if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
+						goto end;
+					}
+				}
+
+				if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
+					goto end;
+				}
+
+				if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
+					goto end;
+				}
+
+				if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
+					goto end;
+				}
+
+				cJSON_AddItemToObject(f, "fork", forkInfo);
+			}
+
+			s = cJSON_Print(f);
+			if (s == NULL) {
+				goto end;
+			}
+		}
+
+		switch_core_media_fork_do_fire_start_event(session, fork, s);
+		fork->start_event_fired = 1;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: fired event for rx and tx (rx ssrc: %u, tx ssrc: %u) with variable_media_fork_request:\n%s\n", switch_channel_get_name(session->channel), fork_rx->ssrc, fork_tx->ssrc, s);
+
+	} else {
+
+		if (fork_rx->active) {
+
+			if (!fork_rx->ssrc) {
+				return;
+			}
+
+			//  Fire for rx only
+			{
+				cJSON *forkInfo = cJSON_CreateObject();
+				cJSON *rx = cJSON_CreateObject();
+
+				{
+					// fill in 'rx' content
+
+					if (cJSON_AddNumberToObject(rx, "ssrc", fork_rx->ssrc) == NULL) {
+						goto end;
+					}
+
+					if (cJSON_AddStringToObject(rx, "ip", fork_rx->host_str) == NULL) {
+						goto end;
+					}
+
+					if (cJSON_AddNumberToObject(rx, "port", fork_rx->port) == NULL) {
+						goto end;
+					}
+
+					cJSON_AddItemToObject(f, "rx", rx);
+				}
+
+				{
+					// fill in 'fork' content
+
+					if (strlen(fork->id)) {
+						if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
+							goto end;
+						}
+					}
+
+					if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
+						goto end;
+					}
+
+					if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
+						goto end;
+					}
+
+					if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
+						goto end;
+					}
+
+					cJSON_AddItemToObject(f, "fork", forkInfo);
+				}
+
+				s = cJSON_Print(f);
+				if (s == NULL) {
+					goto end;
+				}
+			}
+
+			switch_core_media_fork_do_fire_start_event(session, fork, s);
+			fork->start_event_fired = 1;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: fired event for rx only (rx ssrc: %u) with variable_media_fork_request:\n%s\n", switch_channel_get_name(session->channel), fork_rx->ssrc, s);
+
+		} else {
+
+			if (fork_tx->active) {
+
+				if (!fork_tx->ssrc) {
+					return;
+				}
+
+				//  Fire for tx only
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork: fire event for tx only (tx ssrc: %u)\n", switch_channel_get_name(session->channel), fork_tx->ssrc);
+
+				{
+					cJSON *forkInfo = cJSON_CreateObject();
+					cJSON *tx = cJSON_CreateObject();
+
+					{
+						// fill in 'tx' content
+
+						if (cJSON_AddNumberToObject(tx, "ssrc", fork_tx->ssrc) == NULL) {
+							goto end;
+						}
+
+						if (cJSON_AddStringToObject(tx, "ip", fork_tx->host_str) == NULL) {
+							goto end;
+						}
+
+						if (cJSON_AddNumberToObject(tx, "port", fork_tx->port) == NULL) {
+							goto end;
+						}
+
+						cJSON_AddItemToObject(f, "tx", tx);
+					}
+
+					{
+						// fill in 'fork' content
+
+						if (strlen(fork->id)) {
+							if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
+								goto end;
+							}
+						}
+
+						if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
+							goto end;
+						}
+
+						if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
+							goto end;
+						}
+
+						if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
+							goto end;
+						}
+
+						cJSON_AddItemToObject(f, "fork", forkInfo);
+					}
+
+					s = cJSON_Print(f);
+					if (s == NULL) {
+						goto end;
+					}
+				}
+
+				switch_core_media_fork_do_fire_start_event(session, fork, s);
+				fork->start_event_fired = 1;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: fired event for tx only (tx ssrc: %u) with variable_media_fork_request:\n%s\n", switch_channel_get_name(session->channel), fork_tx->ssrc, s);
+			}
+		}
+	}
+
+end:
+    if (f) cJSON_Delete(f);
+	if (s) free(s);
+}
+
+SWITCH_DECLARE(void) switch_core_media_fork_update(switch_core_session_t *session, switch_fork_state_t *fork, uint32_t ssrc, switch_fork_direction_t direction)
+{
+	switch_fork_t *fork_rx = NULL, *fork_tx = NULL;
+
+	if (!session || !fork || fork->start_event_fired) {
+		return;
+	}
+
+	fork_rx = &fork->fork_rx;
+	fork_tx = &fork->fork_tx;
+
+	if (direction == FORK_DIRECTION_RX) {
+
+		if (fork_rx->ssrc) {
+			return;
+		}
+
+		fork_rx->ssrc = ssrc;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (rx): got ssrc: %u\n", switch_channel_get_name(session->channel), ssrc);
+
+	} else {
+
+		if (fork_tx->ssrc) {
+			return;
+		}
+
+		fork_tx->ssrc = ssrc;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (tx): got ssrc: %u\n", switch_channel_get_name(session->channel), ssrc);
+	}
+
+	switch_core_media_fork_fire_start_event(session, fork);
 }
 
 //?

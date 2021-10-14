@@ -327,13 +327,6 @@ typedef struct ts_normalize_s {
 	int last_external;
 } ts_normalize_t;
 
-typedef struct switch_fork_s {
-	switch_sockaddr_t	*addr;
-	char				*host_str;
-	switch_port_t		port;
-	uint8_t				active;
-} switch_fork_t;
-
 struct switch_rtp {
 	/*
 	 * Two sockets are needed because we might be transcoding protocol families
@@ -381,12 +374,10 @@ struct switch_rtp {
 	uint32_t srtp_errs[2];
 	uint32_t srctp_errs[2];
 
-	int fork_write;
 	int srtp_idx_rtp;
 	int srtp_idx_rtcp;
 
-	switch_fork_t fork_rx;
-	switch_fork_t fork_tx;
+	switch_fork_state_t fork;
 
 	switch_dtls_t *dtls;
 	switch_dtls_t *rtcp_dtls;
@@ -3236,22 +3227,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_fork(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, const char *cmd)
 {
 	switch_sockaddr_t *addr = NULL;
 	switch_fork_t *fork = NULL;
-	*err = "Success";
 
 	if (!rtp_session) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: No RTP session\n");
-		*err = "No RTP session";
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork_rx : &rtp_session->fork_tx);
+	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork.fork_rx : &rtp_session->fork.fork_tx);
 
 	if (switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !addr) {
-		*err = "Remote Address Error!";
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: cannot reslove IP address\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -3260,23 +3249,64 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_fork(switch_rtp_t *rtp_session, s
 	fork->addr = addr;
 	fork->host_str = switch_core_strdup(rtp_session->pool, host);
 	fork->port = port;
+	if (!zstr(cmd)) {
+		strncpy(fork->cmd, cmd, 500);
+		fork->cmd[499] = '\0';
+	}
 
 	switch_mutex_unlock(direction == FORK_DIRECTION_RX ? rtp_session->read_mutex : rtp_session->write_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_activate_fork(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_id(switch_rtp_t *rtp_session, const char *id)
+{
+	if (!rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(id)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: empty id\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	strncpy(rtp_session->fork.id, id, 40);
+	rtp_session->fork.id[39] = '\0';
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_local_address(switch_rtp_t *rtp_session, const char *ip, uint16_t port)
+{
+	if (!rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!ip || !strlen(ip)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: empty ip\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	strncpy(rtp_session->fork.local_ip, ip, 100);
+	rtp_session->fork.local_ip[99] = '\0';
+	rtp_session->fork.local_port = port;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_activate(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
 {
 	switch_fork_t *fork = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!rtp_session) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: No RTP session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork_rx : &rtp_session->fork_tx);
+	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork.fork_rx : &rtp_session->fork.fork_tx);
 
 	switch_mutex_lock(direction == FORK_DIRECTION_RX ? rtp_session->read_mutex : rtp_session->write_mutex);
 	fork->active = 1;
@@ -3285,16 +3315,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_fork(switch_rtp_t *rtp_sessi
 	return status;
 }
 
-SWITCH_DECLARE(void) switch_rtp_deactivate_fork(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
+SWITCH_DECLARE(void) switch_rtp_fork_deactivate(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
 {
 	switch_fork_t *fork = NULL;
 
 	if (!rtp_session) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: No RTP session\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
 		return;
 	}
 
-	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork_rx : &rtp_session->fork_tx);
+	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork.fork_rx : &rtp_session->fork.fork_tx);
 
 	switch_mutex_lock(direction == FORK_DIRECTION_RX ? rtp_session->read_mutex : rtp_session->write_mutex);
 	fork->active = 0;
@@ -4775,6 +4805,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	memset(rtp_session->stats.inbound.loss, 0, sizeof(rtp_session->stats.inbound.loss));
 	rtp_session->stats.inbound.last_loss = 0;
 	rtp_session->stats.inbound.last_processed_seq = -1;
+
+	memset(&rtp_session->fork, 0, sizeof(rtp_session->fork));
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
@@ -6530,10 +6562,19 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 #endif
 		}
 
-		if (rtp_session->fork_rx.active) {
+		if (rtp_session->fork.fork_rx.active) {
 			if (rtp_session->sock_output && (*bytes > 0)) {
+
 				size_t lbytes = *bytes;
-				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork_rx.addr, 0, (void *) &rtp_session->recv_msg.header, &lbytes) != SWITCH_STATUS_SUCCESS) {
+
+
+				if (rtp_session->remote_ssrc) {
+					uint32_t ssrc = rtp_session->remote_ssrc;
+					//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Update fork rx with ssrc %u\n", ssrc);
+					switch_core_media_fork_update(rtp_session->session, &rtp_session->fork, ssrc, FORK_DIRECTION_RX);
+				}
+
+				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork.fork_rx.addr, 0, (void *) &rtp_session->recv_msg.header, &lbytes) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (rx): failed to transmit %zu bytes\n", lbytes);
 				}
 			}
@@ -8875,10 +8916,19 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			switch_swap_linear((int16_t *)send_msg->body, (int) datalen);
 		}
 
-		if (rtp_session->fork_tx.active) {
+		if (rtp_session->fork.fork_tx.active) {
+
 			if (rtp_session->sock_output && (bytes > 0)) {
 				size_t lbytes = bytes;
-				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork_tx.addr, 0, (void *) send_msg, &lbytes) != SWITCH_STATUS_SUCCESS) {
+
+					
+					if (rtp_session->ssrc) {
+						uint32_t ssrc = rtp_session->ssrc;
+						//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Update fork tx with ssrc %u\n", ssrc);
+						switch_core_media_fork_update(rtp_session->session, &rtp_session->fork, ssrc, FORK_DIRECTION_TX);
+					}
+
+				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork.fork_tx.addr, 0, (void *) send_msg, &lbytes) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (tx): failed to transmit %zu bytes\n", lbytes);
 				}
 			}
