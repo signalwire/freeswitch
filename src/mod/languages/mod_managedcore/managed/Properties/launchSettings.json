@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FreeSWITCH.ManagedCore.2019": {
+      "commandName": "Executable",
+      "executablePath": "D:\\git\\freeswitch\\x64\\Debug\\FreeSwitchConsole.exe"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>FreeSWITCH.ManagedCore</AssemblyName>
+    <RootNamespace>FreeSWITCH.ManagedCore</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Company />
+    <Product />
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutDir>..\..\..\..\..\x64\Debug\mod\</OutDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutDir>..\..\..\..\..\x64\Release\mod\</OutDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="examples\**" />
+    <EmbeddedResource Remove="examples\**" />
+    <None Remove="examples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Demo.csx" />
+    <None Remove="Makefile" />
+  </ItemGroup>
+
+</Project>

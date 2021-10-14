@@ -660,6 +660,11 @@ Description: mod_managed
  Adds mod_managed.
 Build-Depends: libmono-2.0-dev, mono-mcs
 
+Module: languages/mod_managedcore
+Description: mod_managedcore
+ Adds mod_managedcore.
+Build-Depends: libmono-2.0-dev, mono-mcs
+
 Module: languages/mod_perl
 Description: mod_perl
  Adds mod_perl.

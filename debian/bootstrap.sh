@@ -75,6 +75,7 @@ avoid_mods_wheezy=(
   event_handlers/mod_amqp
   languages/mod_java
   languages/mod_managed
+  languages/mod_managedcore
   applications/mod_av
   applications/mod_cv
   applications/mod_hiredis
