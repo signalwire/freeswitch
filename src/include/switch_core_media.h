@@ -258,7 +258,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_sessio
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_deactivate(switch_core_session_t *session, switch_fork_direction_t direction);
-SWITCH_DECLARE(void) switch_core_media_fork_update(switch_core_session_t *session, switch_fork_state_t *fork, uint32_t ssrc, switch_fork_direction_t direction);
+SWITCH_DECLARE(void) switch_core_media_fork_fire_start_event(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_fork_do_fire_start_event(switch_core_session_t *session, switch_fork_state_t *fork, const char *fmr);
 SWITCH_DECLARE(void) switch_core_media_check_dtmf_type(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_session_t *session, const char *sdp_str);
