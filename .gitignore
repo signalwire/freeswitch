@@ -156,6 +156,7 @@ Release/
 /src/mod/languages/mod_lua/mod_lua_wrap.cpp.orig
 /src/mod/languages/mod_perl/mod_perl_wrap.cpp.orig
 /src/mod/languages/mod_python/mod_python_wrap.cpp.orig
+/src/mod/languages/mod_python3/mod_python_wrap.cpp.orig
 /src/mod/say/mod_say_de/Makefile
 /src/mod/say/mod_say_es/Makefile
 /src/mod/say/mod_say_fr/Makefile

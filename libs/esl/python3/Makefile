@@ -1,6 +1,6 @@
-LOCAL_CFLAGS=`$(PYTHON) ./python-config --includes`
-LOCAL_LDFLAGS=`$(PYTHON) ./python-config --ldflags`
-SITE_DIR=$(DESTDIR)/`$(PYTHON) -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)"`
+LOCAL_CFLAGS=`$(PYTHON3) ./python-config --includes`
+LOCAL_LDFLAGS=`$(PYTHON3) ./python-config --ldflags`
+SITE_DIR=$(DESTDIR)/`$(PYTHON3) -c "from distutils.sysconfig import get_python_lib; print (get_python_lib(1))"`
 
 all: _ESL.so
 
