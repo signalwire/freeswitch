@@ -1408,7 +1408,9 @@ PKG_CHECK_MODULES([VLC], [libvlc >= 2.1.0],[
 
 PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
+  PKG_CHECK_MODULES([OPENCV], [opencv4 >= 2.4.5],[
+    AM_CONDITIONAL([HAVE_OPENCV],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])])
 
 PKG_CHECK_MODULES([OPUSFILE_DECODE], [opusfile >= 0.5],[
    AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[true])],[
@@ -1702,7 +1704,7 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
 fi
 
 #
-# Python checks for mod_python
+# Python checks for mod_python (scroll down to see python3 checks for mod_python3)
 #
 AC_ARG_WITH(
 	[python],
@@ -1820,6 +1822,127 @@ then
 	fi
 else
 	AC_MSG_WARN([python support disabled, building mod_python will fail!])
+fi
+
+#
+# Python3 checks for mod_python3
+#
+AC_ARG_WITH(
+	[python3],
+	[AS_HELP_STRING([--with-python3], [Use system provided version of python3 (default: try)])],
+	[with_python3="$withval"],
+	[with_python3="try"]
+)
+
+if test "$with_python3" != "no"
+then
+	save_CFLAGS="$CFLAGS"
+	save_LIBS="$LIBS"
+
+	if test "$with_python3" != "yes" -a "$with_python3" != "try" ; then
+		AC_MSG_CHECKING([for python3])
+		if test ! -x "$with_python3" ; then
+			AC_MSG_ERROR([Specified python3 does not exist or is not executable: $with_python3])
+		fi
+		AC_MSG_RESULT([$with_python3])
+		AC_SUBST([PYTHON3], ["$with_python3"])
+	else
+		AC_PATH_PROG([PYTHON3], ["python3"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+	fi
+
+	if test "$PYTHON3" != "no" ; then
+		AC_MSG_CHECKING([python3 version])
+		PYTHON3_VER="`$PYTHON3 -V 2>&1 | cut -d' ' -f2`"
+
+		if test -z "$PYTHON3_VER" ; then
+			AC_MSG_ERROR([Unable to detect python3 version])
+		fi
+		AC_MSG_RESULT([$PYTHON3_VER])
+
+		AC_MSG_CHECKING([for python3 distutils])
+		python3_result="`$PYTHON3 -c 'import distutils;' 2>&1`"
+		if test -z "$python3_result" ; then
+			python3_has_distutils="yes"
+		else
+			python3_has_distutils="no"
+		fi
+		AC_MSG_RESULT([$python3_has_distutils])
+
+		if test "$python3_has_distutils" != "no" ; then
+			AC_MSG_CHECKING([location of python3 site-packages])
+
+			PYTHON3_SITE_DIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
+
+			if test -z "$PYTHON3_SITE_DIR" ; then
+				AC_MSG_ERROR([Unable to detect python3 site-packages path])
+			elif test ! -d "$PYTHON3_SITE_DIR" ; then
+				AC_MSG_ERROR([Path $PYTHON3_SITE_DIR returned by python3 does not exist!])
+			fi
+			AC_MSG_RESULT([$PYTHON3_SITE_DIR])
+			AC_SUBST([PYTHON3_SITE_DIR], [$PYTHON3_SITE_DIR])
+
+			#
+			# python3 distutils found, get settings from python3 directly
+			#
+			PYTHON3_CFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
+			PYTHON3_LDFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]); print(\" \".join(libs));'`"
+			PYTHON3_LIB="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); print(\"python\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]);'`"
+			PYTHON3_LIBDIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
+
+			# handle python3 being installed into /usr/local
+			AC_MSG_CHECKING([python3 libdir])
+			if test -z "`echo $PYTHON3_LIBDIR | grep "/usr/lib"`" ; then
+				PYTHON3_LDFLAGS="-L$PYTHON3_LIBDIR $PYTHON3_LDFLAGS"
+				LIBS="-L$PYTHON3_LIBDIR $LIBS"
+			fi
+			AC_MSG_RESULT([$PYTHON3_LIBDIR])
+
+			# check libpython3
+			AC_CHECK_LIB([$PYTHON3_LIB], [main], [has_libpython3="yes"], [has_libpython3="no"])
+
+			if test "$has_libpython3" = "no" ; then
+				AS_IF([test "$with_python3" = "try"],
+				 	[AC_MSG_WARN([$PYTHON3_LIB is unusable])],
+					[AC_MSG_ERROR([$PYTHON3_LIB is unusable])]
+				)
+			fi
+
+			# check whether system libpython3 is usable and has threads support
+			CFLAGS="$PYTHON3_CFLAGS"
+			LIBS="$PYTHON3_LDFLAGS"
+			AC_CHECK_FUNC([PyThread_init_thread], [python3_has_threads="yes"], [python3_has_threads="no"])
+
+			if test "$python3_has_threads" = "no"; then
+				AS_IF([test "$with_python3" = "try"],
+					[AC_MSG_WARN([Your python3 lacks threads support, can not build mod_python3])],
+					[AC_MSG_ERROR([Your python3 lacks threads support, can not build mod_python3])]
+				)
+			else
+				AC_MSG_NOTICE([Your python3 seems OK, do not forget to enable mod_python3 in modules.conf])
+				AC_SUBST([PYTHON3_CFLAGS],  [$PYTHON3_CFLAGS])
+				AC_SUBST([PYTHON3_LDFLAGS], [$PYTHON3_LDFLAGS])
+			fi
+		else
+			AS_IF([test "$with_python3" = "try"],
+				[AC_MSG_WARN([Could not find or use python3 distutils module: $python3_result])],
+				[AC_MSG_ERROR([Could not find or use python3 distutils module: $python3_result])]
+			)
+		fi
+
+		LIBS="$save_LIBS"
+		CFLAGS="$save_CFLAGS"
+
+		unset python3_has_threads
+		unset python3_has_distutils
+		unset python3_result
+	else
+		AS_IF([test "$with_python3" = "try"],
+			[AC_MSG_WARN([Could not find python3, mod_python3 will not build, use --with-python3 to specify the location])],
+			[AC_MSG_ERROR([Could not find python3, use --with-python3 to specify the location])]
+		)
+	fi
+else
+	AC_MSG_WARN([python3 support disabled, building mod_python3 will fail!])
 fi
 
 #
@@ -2012,6 +2135,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_managed/Makefile
 		src/mod/languages/mod_perl/Makefile
 		src/mod/languages/mod_python/Makefile
+		src/mod/languages/mod_python3/Makefile
 		src/mod/languages/mod_v8/Makefile
 		src/mod/languages/mod_yaml/Makefile
 		src/mod/languages/mod_basic/Makefile
