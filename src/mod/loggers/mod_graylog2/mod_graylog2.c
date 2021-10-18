@@ -65,6 +65,9 @@ static struct {
 	switch_log_json_format_t gelf_format;
 } globals;
 
+extern switch_mutex_t *BINDLOCK;
+extern uint8_t mod_graylog_loaded;
+
 /**
  * Convert log level to graylog2 log level
  */
@@ -378,6 +381,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_graylog2_load)
 	start_deliver_graylog2_thread(globals.pool);
 	switch_log_bind_logger(mod_graylog2_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
+	switch_mutex_lock(BINDLOCK);
+	mod_graylog_loaded = 1;
+	switch_mutex_unlock(BINDLOCK);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -391,6 +398,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_graylog2_shutdown)
 	if (globals.static_fields) {
 		switch_core_hash_destroy(&globals.static_fields);
 	}
+	switch_mutex_lock(BINDLOCK);
+	mod_graylog_loaded = 0;
+	switch_mutex_unlock(BINDLOCK);
 	return SWITCH_STATUS_SUCCESS;
 }
 
