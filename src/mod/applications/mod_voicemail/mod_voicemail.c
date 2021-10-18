@@ -3402,13 +3402,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
 	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
 	switch_bool_t skip_record_urgent_check = switch_true(switch_channel_get_variable(channel, "skip_record_urgent_check"));
-	switch_bool_t skip_goodbye = switch_true(switch_channel_get_variable(channel, "skip_goodbye"));
+	switch_bool_t voicemail_skip_goodbye = switch_true(switch_channel_get_variable(channel, "voicemail_skip_goodbye"));
 	switch_bool_t vm_enabled = SWITCH_TRUE;
 
 	switch_channel_set_variable(channel, "skip_greeting", NULL);
 	switch_channel_set_variable(channel, "skip_instructions", NULL);
 	switch_channel_set_variable(channel, "skip_record_urgent_check", NULL);
-	switch_channel_set_variable(channel, "skip_goodbye", NULL);
+	switch_channel_set_variable(channel, "voicemail_skip_goodbye", NULL);
 
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -3702,7 +3702,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_safe_free(file_path);
 
 	if (switch_channel_ready(channel) && vm_enabled) {
-		if (!skip_goodbye) {
+		if (!voicemail_skip_goodbye) {
 			status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 		}
 	}
