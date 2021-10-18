@@ -3232,7 +3232,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, uint32_t ssrc, const char *cmd)
 {
 	switch_sockaddr_t *addr = NULL;
-	switch_fork_t *fork = NULL;
+	switch_fork_session_t *fork = NULL;
 
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
@@ -3280,6 +3280,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_id(switch_rtp_t *rtp_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_wait_ssrc(switch_rtp_t *rtp_session)
+{
+	if (!rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	rtp_session->fork.wait_ssrc = 1;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_local_address(switch_rtp_t *rtp_session, const char *ip, uint16_t port)
 {
 	if (!rtp_session) {
@@ -3301,7 +3313,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_local_address(switch_rtp_t *
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_activate(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
 {
-	switch_fork_t *fork = NULL;
+	switch_fork_session_t *fork = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!rtp_session) {
@@ -3320,7 +3332,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_activate(switch_rtp_t *rtp_sessi
 
 SWITCH_DECLARE(void) switch_rtp_fork_deactivate(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
 {
-	switch_fork_t *fork = NULL;
+	switch_fork_session_t *fork = NULL;
 
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
@@ -6569,7 +6581,18 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			if (rtp_session->sock_output && (*bytes > 0)) {
 
 				size_t lbytes = *bytes;
+				switch_fork_state_t *fork = &rtp_session->fork;
 
+				if (!rtp_session->remote_ssrc) {
+				   goto fork_done;
+				}
+
+				if (!fork->fork_rx.ssrc) {
+					fork->fork_rx.ssrc = rtp_session->remote_ssrc;
+					if (fork->wait_ssrc) {
+						switch_rtp_fork_fire_start_event(rtp_session);
+					}
+				}
 
 				// IF Send only SSRC that was fired in event ?
 				if (FORK_SSRC_CHECK && (rtp_session->remote_ssrc != rtp_session->fork.fork_rx.ssrc)) {
@@ -9632,9 +9655,9 @@ SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_core_session(switch_rtp_t 
 SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 {
 	switch_fork_state_t *fork = NULL;
-	switch_fork_t *fork_rx = NULL, *fork_tx = NULL;
+	switch_fork_session_t *fork_rx = NULL, *fork_tx = NULL;
 	char *s = NULL;
-	cJSON *f = cJSON_CreateObject();
+	cJSON *f = NULL;
 
 	if (!rtp_session) {
 		goto end;
@@ -9646,8 +9669,19 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 		goto end;
 	}
 
+	f = cJSON_CreateObject();
+	if (!f) {
+		goto end;
+	}
+
 	fork_rx = &fork->fork_rx;
 	fork_tx = &fork->fork_tx;
+
+	if (fork_rx->active) {
+		if (fork->wait_ssrc && !fork->fork_rx.ssrc) {
+			goto end;
+		}
+	}
 
 	if (fork_rx->active && fork_tx->active) {
 

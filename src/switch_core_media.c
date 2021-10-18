@@ -9041,9 +9041,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_sessio
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork: setting up fork id to %s\n", switch_channel_get_name(session->channel), id);
-	switch_rtp_fork_set_id(a_engine->rtp_session, id);
+	return switch_rtp_fork_set_id(a_engine->rtp_session, id);
+}
 
-	return SWITCH_STATUS_SUCCESS;
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: no media\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: failed to set wait_ssrc (no RTP session)\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork: setting up wait_ssrc\n", switch_channel_get_name(session->channel));
+	return switch_rtp_fork_set_wait_ssrc(a_engine->rtp_session);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session)
@@ -9087,9 +9109,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: setting up fork ip to %s\n", switch_channel_get_name(session->channel), ip);
-	switch_rtp_fork_set_local_address(a_engine->rtp_session, ip, port);
-
-	return SWITCH_STATUS_SUCCESS;
+	return switch_rtp_fork_set_local_address(a_engine->rtp_session, ip, port);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction)

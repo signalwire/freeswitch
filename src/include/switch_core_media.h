@@ -195,16 +195,17 @@ typedef struct switch_fork_s {
 	char				*host_str;
 	switch_port_t		port;
 	uint32_t			ssrc;
-	char cmd[500];
+	char				cmd[500];
 	uint8_t				active;
-} switch_fork_t;
+} switch_fork_session_t;
 
 typedef struct switch_fork_state_s {
-	switch_fork_t	fork_rx;
-	switch_fork_t	fork_tx;
+	switch_fork_session_t	fork_rx;
+	switch_fork_session_t	fork_tx;
 	char			id[40];
 	char			local_ip[100];
 	uint16_t		local_port;
+	uint8_t			wait_ssrc;
 	uint8_t			start_event_fired;
 } switch_fork_state_t;
 
@@ -255,6 +256,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_session_t *session, const char *id);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_deactivate(switch_core_session_t *session, switch_fork_direction_t direction);
