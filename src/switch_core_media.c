@@ -9178,7 +9178,7 @@ SWITCH_DECLARE(void) switch_core_media_fork_do_fire_start_event(switch_core_sess
 		return;
 	}
 
-	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "media_stream::start") == SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "telnyx_media_stream::start") == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "telnyx_media_streaming_start_time", "%ld", switch_micro_time_now() / 1000);
 		if (!zstr(fork->fork_rx.cmd)) {
