@@ -555,7 +555,7 @@ skiptest:
 
 			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_reg_fail, NULL);
 
-			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uac_407_subscriber.xml", "-inf data.csv");
+			sipp_ret = start_sipp_uas(local_ip_v4, 6080, "sipp-scenarios/uas_register_403.xml", "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_requires(0); /* sipp not found */
 			}
