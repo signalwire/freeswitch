@@ -58,9 +58,9 @@ static void set_max_recursion_depth(void);
 static switch_api_interface_t python_run_interface;
 static void print_python_error(const char * script);
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
-SWITCH_MODULE_DEFINITION_EX(mod_python, mod_python_load, mod_python_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
+SWITCH_MODULE_LOAD_FUNCTION(mod_python3_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python3_shutdown);
+SWITCH_MODULE_DEFINITION_EX(mod_python3, mod_python3_load, mod_python3_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -535,7 +535,7 @@ SWITCH_STANDARD_CHAT_APP(python_chat_function)
 
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_python3_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
@@ -595,7 +595,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 
 /*
   Called when the system shuts down*/
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python3_shutdown)
 {
 	PyInterpreterState *mainInterpreterState;
 	PyThreadState *myThreadState;
