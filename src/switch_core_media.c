@@ -9187,11 +9187,11 @@ SWITCH_DECLARE(void) switch_core_media_fork_do_fire_start_event(switch_core_sess
 		if (!zstr(fork->fork_tx.cmd)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_media_streaming_tx", fork->fork_tx.cmd);
 		}
-		if (!zstr(fmr)) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variable_media_fork_request", fmr);
-		}
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variable_media_fork_request", fmr);
 		switch_event_fire(&event);
 	}
+
+	switch_channel_set_variable(session->channel, "variable_media_fork_request", fmr);
 }
 
 SWITCH_DECLARE(void) switch_core_media_fork_fire_start_event(switch_core_session_t *session)

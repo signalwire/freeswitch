@@ -9658,6 +9658,7 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 	switch_fork_session_t *fork_rx = NULL, *fork_tx = NULL;
 	char *s = NULL;
 	cJSON *f = NULL;
+	cJSON *forkInfo = NULL;
 
 	if (!rtp_session) {
 		goto end;
@@ -9670,7 +9671,8 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 	}
 
 	f = cJSON_CreateObject();
-	if (!f) {
+	forkInfo = cJSON_CreateObject();
+	if (!f || !forkInfo) {
 		goto end;
 	}
 
@@ -9682,211 +9684,83 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 			goto end;
 		}
 	}
-
-	if (fork_rx->active && fork_tx->active) {
-
-		// Fire for rx and tx
 	
-		{
-			cJSON *forkInfo = cJSON_CreateObject();
-			cJSON *tx = cJSON_CreateObject();
-			cJSON *rx = cJSON_CreateObject();
+	{
+		// fill in 'fork' content
 
-			{
-				// fill in 'tx' content
-
-				if (cJSON_AddNumberToObject(tx, "ssrc", fork_tx->ssrc) == NULL) {
-					goto end;
-				}
-
-				if (cJSON_AddStringToObject(tx, "ip", fork_tx->host_str) == NULL) {
-					goto end;
-				}
-
-				if (cJSON_AddNumberToObject(tx, "port", fork_tx->port) == NULL) {
-					goto end;
-				}
-
-				cJSON_AddItemToObject(f, "tx", tx);
-			}
-
-			{
-				// fill in 'rx' content
-
-				if (cJSON_AddNumberToObject(rx, "ssrc", fork_rx->ssrc) == NULL) {
-					goto end;
-				}
-
-				if (cJSON_AddStringToObject(rx, "ip", fork_rx->host_str) == NULL) {
-					goto end;
-				}
-
-				if (cJSON_AddNumberToObject(rx, "port", fork_rx->port) == NULL) {
-					goto end;
-				}
-
-				cJSON_AddItemToObject(f, "rx", rx);
-			}
-
-			{
-				// fill in 'fork' content
-
-				if (strlen(fork->id)) {
-					if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
-						goto end;
-					}
-				}
-
-				if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
-					goto end;
-				}
-
-				if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
-					goto end;
-				}
-
-				if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
-					goto end;
-				}
-
-				cJSON_AddItemToObject(f, "fork", forkInfo);
-			}
-
-			s = cJSON_Print(f);
-			if (s == NULL) {
+		if (strlen(fork->id)) {
+			if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
 				goto end;
 			}
 		}
 
+		if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
+			goto end;
+		}
+
+		if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
+			goto end;
+		}
+
+		if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
+			goto end;
+		}
+
+		cJSON_AddItemToObject(f, "fork", forkInfo);
+	}
+
+
+	if (fork_rx->active) {
+
+		cJSON *rx = cJSON_CreateObject();
+
+		// fill in 'rx' content
+
+		if (cJSON_AddNumberToObject(rx, "ssrc", fork_rx->ssrc) == NULL) {
+			goto end;
+		}
+
+		if (cJSON_AddStringToObject(rx, "ip", fork_rx->host_str) == NULL) {
+			goto end;
+		}
+
+		if (cJSON_AddNumberToObject(rx, "port", fork_rx->port) == NULL) {
+			goto end;
+		}
+
+		cJSON_AddItemToObject(f, "rx", rx);
+	}
+
+
+	if (fork_tx->active) {
+
+		cJSON *tx = cJSON_CreateObject();
+		// fill in 'tx' content
+
+		if (cJSON_AddNumberToObject(tx, "ssrc", fork_tx->ssrc) == NULL) {
+			goto end;
+		}
+
+		if (cJSON_AddStringToObject(tx, "ip", fork_tx->host_str) == NULL) {
+			goto end;
+		}
+
+		if (cJSON_AddNumberToObject(tx, "port", fork_tx->port) == NULL) {
+			goto end;
+		}
+
+		cJSON_AddItemToObject(f, "tx", tx);
+	}
+
+	if (f) {
+		s = cJSON_Print(f);
+		if (s == NULL) {
+			goto end;
+		}
+
 		switch_core_media_fork_do_fire_start_event(rtp_session->session, fork, s);
 		fork->start_event_fired = 1;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "%s Fork: fired event for rx and tx (rx ssrc: %u, tx ssrc: %u) with variable_media_fork_request:\n%s\n", rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName", fork_rx->ssrc, fork_tx->ssrc, s);
-
-	} else {
-
-		if (fork_rx->active) {
-
-			//  Fire for rx only
-			{
-				cJSON *forkInfo = cJSON_CreateObject();
-				cJSON *rx = cJSON_CreateObject();
-
-				{
-					// fill in 'rx' content
-
-					if (cJSON_AddNumberToObject(rx, "ssrc", fork_rx->ssrc) == NULL) {
-						goto end;
-					}
-
-					if (cJSON_AddStringToObject(rx, "ip", fork_rx->host_str) == NULL) {
-						goto end;
-					}
-
-					if (cJSON_AddNumberToObject(rx, "port", fork_rx->port) == NULL) {
-						goto end;
-					}
-
-					cJSON_AddItemToObject(f, "rx", rx);
-				}
-
-				{
-					// fill in 'fork' content
-
-					if (strlen(fork->id)) {
-						if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
-							goto end;
-						}
-					}
-
-					if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
-						goto end;
-					}
-
-					if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
-						goto end;
-					}
-
-					if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
-						goto end;
-					}
-
-					cJSON_AddItemToObject(f, "fork", forkInfo);
-				}
-
-				s = cJSON_Print(f);
-				if (s == NULL) {
-					goto end;
-				}
-			}
-
-			switch_core_media_fork_do_fire_start_event(rtp_session->session, fork, s);
-			fork->start_event_fired = 1;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "%s Fork: fired event for rx only (rx ssrc: %u) with variable_media_fork_request:\n%s\n", rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName", fork_rx->ssrc, s);
-
-		} else {
-
-			if (fork_tx->active) {
-
-				//  Fire for tx only
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "%s Fork: fire event for tx only (tx ssrc: %u)\n", rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName", fork_tx->ssrc);
-
-				{
-					cJSON *forkInfo = cJSON_CreateObject();
-					cJSON *tx = cJSON_CreateObject();
-
-					{
-						// fill in 'tx' content
-
-						if (cJSON_AddNumberToObject(tx, "ssrc", fork_tx->ssrc) == NULL) {
-							goto end;
-						}
-
-						if (cJSON_AddStringToObject(tx, "ip", fork_tx->host_str) == NULL) {
-							goto end;
-						}
-
-						if (cJSON_AddNumberToObject(tx, "port", fork_tx->port) == NULL) {
-							goto end;
-						}
-
-						cJSON_AddItemToObject(f, "tx", tx);
-					}
-
-					{
-						// fill in 'fork' content
-
-						if (strlen(fork->id)) {
-							if (cJSON_AddStringToObject(forkInfo, "id", fork->id) == NULL) {
-								goto end;
-							}
-						}
-
-						if (cJSON_AddStringToObject(forkInfo, "ip_address", fork->local_ip) == NULL) {
-							goto end;
-						}
-
-						if (cJSON_AddNumberToObject(forkInfo, "tx_port", fork->local_port) == NULL) {
-							goto end;
-						}
-
-						if (cJSON_AddNumberToObject(forkInfo, "rx_port", fork->local_port) == NULL) {
-							goto end;
-						}
-
-						cJSON_AddItemToObject(f, "fork", forkInfo);
-					}
-
-					s = cJSON_Print(f);
-					if (s == NULL) {
-						goto end;
-					}
-				}
-
-				switch_core_media_fork_do_fire_start_event(rtp_session->session, fork, s);
-				fork->start_event_fired = 1;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "%s Fork: fired event for tx only (tx ssrc: %u) with variable_media_fork_request:\n%s\n", (rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName"), fork_tx->ssrc, s);
-			}
-		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "%s Fork: fired event with variable_media_fork_request:\n%s\n", (rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName"), s);
 	}
 
 end:
