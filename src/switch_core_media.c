@@ -9044,7 +9044,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_sessio
 	return switch_rtp_fork_set_id(a_engine->rtp_session, id);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session, int timeout_ms)
 {
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_media_handle_t *smh = NULL;
@@ -9064,8 +9064,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork: setting up wait_ssrc\n", switch_channel_get_name(session->channel));
-	return switch_rtp_fork_set_wait_ssrc(a_engine->rtp_session);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s Fork: setting up wait_ssrc with timeout of %d ms\n", switch_channel_get_name(session->channel), timeout_ms);
+	return switch_rtp_fork_set_wait_ssrc(a_engine->rtp_session, timeout_ms);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session)

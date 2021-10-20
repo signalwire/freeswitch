@@ -3280,7 +3280,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_id(switch_rtp_t *rtp_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_wait_ssrc(switch_rtp_t *rtp_session)
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_wait_ssrc(switch_rtp_t *rtp_session, int timeout_ms)
 {
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
@@ -3288,6 +3288,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_wait_ssrc(switch_rtp_t *rtp_
 	}
 
 	rtp_session->fork.wait_ssrc = 1;
+	rtp_session->fork.wait_ssrc_timeout_ms = timeout_ms;
+	rtp_session->fork.wait_ssrc_time_start_us = switch_micro_time_now();
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -6467,6 +6469,33 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (rtp_session->fork.fork_rx.active) {
+
+		switch_fork_state_t *fork = &rtp_session->fork;
+
+		if (!rtp_session->fork.start_event_fired) {
+
+			if (!rtp_session->remote_ssrc) {
+				switch_time_t now = switch_micro_time_now();
+				uint8_t timeout = ((now - rtp_session->fork.wait_ssrc_time_start_us) / 1000 > rtp_session->fork.wait_ssrc_timeout_ms ? 1 : 0);
+				if (timeout) {
+					switch_rtp_fork_fire_start_event(rtp_session);
+				}
+
+				goto fork_done;
+			}
+
+			if (!fork->fork_rx.ssrc) {
+				fork->fork_rx.ssrc = rtp_session->remote_ssrc;
+				if (fork->wait_ssrc) {
+					switch_rtp_fork_fire_start_event(rtp_session);
+				}
+			}
+		}
+	}
+
+fork_done:
+
 	if (*bytes) {
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 #ifdef ENABLE_ZRTP
@@ -6583,31 +6612,20 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				size_t lbytes = *bytes;
 				switch_fork_state_t *fork = &rtp_session->fork;
 
-				if (!rtp_session->remote_ssrc) {
-				   goto fork_done;
-				}
-
-				if (!fork->fork_rx.ssrc) {
-					fork->fork_rx.ssrc = rtp_session->remote_ssrc;
-					if (fork->wait_ssrc) {
-						switch_rtp_fork_fire_start_event(rtp_session);
-					}
-				}
-
 				// IF Send only SSRC that was fired in event ?
-				if (FORK_SSRC_CHECK && (rtp_session->remote_ssrc != rtp_session->fork.fork_rx.ssrc)) {
+				if (FORK_SSRC_CHECK && (rtp_session->remote_ssrc != fork->fork_rx.ssrc)) {
 					uint32_t ssrc = rtp_session->remote_ssrc;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Fork (rx): skip transmit %zu bytes as ssrc %u does not match fork ssrc %u\n", lbytes, ssrc, rtp_session->fork.fork_rx.ssrc);
-					goto fork_done;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Fork (rx): skip transmit %zu bytes as ssrc %u does not match fork ssrc %u\n", lbytes, ssrc, fork->fork_rx.ssrc);
+					goto fork_end;
 				}
 
-				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork.fork_rx.addr, 0, (void *) &rtp_session->recv_msg.header, &lbytes) != SWITCH_STATUS_SUCCESS) {
+				if (switch_socket_sendto(rtp_session->sock_output, fork->fork_rx.addr, 0, (void *) &rtp_session->recv_msg.header, &lbytes) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (rx): failed to transmit %zu bytes\n", lbytes);
 				}
 			}
 		}
 
-fork_done:
+fork_end:
 
 		if (rtp_session->has_rtp) {
 			if (rtp_session->recv_msg.header.cc > 0) { /* Contributing Source Identifiers (4 bytes = sizeof CSRC header)*/
@@ -9679,12 +9697,6 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 	fork_rx = &fork->fork_rx;
 	fork_tx = &fork->fork_tx;
 
-	if (fork_rx->active) {
-		if (fork->wait_ssrc && !fork->fork_rx.ssrc) {
-			goto end;
-		}
-	}
-	
 	{
 		// fill in 'fork' content
 
