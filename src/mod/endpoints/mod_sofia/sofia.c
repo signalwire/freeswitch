@@ -10661,7 +10661,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-	if (sip->sip_from && sip->sip_from->a_url) {
+	if (sip->sip_from) {
 		tech_pvt->from_user = switch_core_session_strdup(session, sip->sip_from->a_url->url_user);
 	}
 	tech_pvt->mparams.remote_ip = switch_core_session_strdup(session, network_ip);
@@ -11236,7 +11236,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (profile->pres_type) {
 		const char *presence_id = switch_channel_get_variable(channel, "presence_id");
-		if (zstr(presence_id) && sip->sip_from && sip->sip_from->a_url) {
+		if (zstr(presence_id) && sip->sip_from) {
 			const char *user = switch_str_nil(sip->sip_from->a_url->url_user);
 			const char *host = switch_str_nil(sip->sip_from->a_url->url_host);
 			char *tmp = switch_mprintf("%s@%s", user, host);
