@@ -646,6 +646,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python3_shutdown)
 
 	mainInterpreterState = mainThreadState->interp;
 	myThreadState = PyThreadState_New(mainInterpreterState);
+	PyThreadState_Swap(myThreadState);
 	PyEval_ReleaseThread(myThreadState);
 
 	Py_Finalize();
