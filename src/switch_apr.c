@@ -1346,6 +1346,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_exit(switch_thread_t *thd, switch_
 	return apr_thread_exit((apr_thread_t *) thd, retval);
 }
 
+
 /**
  * block until the desired thread stops executing.
  * @param retval The return value from the dead thread.
@@ -1354,7 +1355,9 @@ SWITCH_DECLARE(switch_status_t) switch_thread_exit(switch_thread_t *thd, switch_
 SWITCH_DECLARE(switch_status_t) switch_thread_join(switch_status_t *retval, switch_thread_t *thd)
 {
 	if ( !thd ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Attempting to join thread that does not exist\n");
+		char *bt = switch_print_backtrace();
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Attempting to join thread that does not exist, backtrace is:%s\n", bt);
+		if (bt) free(bt);
 		return SWITCH_STATUS_FALSE;
 	}
 
