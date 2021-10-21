@@ -2344,6 +2344,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						runtime.timer_affinity = atoi(val);
 					}
+				} else if (!strcasecmp(var, "ice-resolve-candidate") && switch_true(val)) {
+					switch_rtp_set_resolve_ice();
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {

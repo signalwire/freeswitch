@@ -91,6 +91,7 @@ static const switch_payload_t INVALID_PT = 255;
 								 * characters when receiving." */
 
 static switch_port_t START_PORT = RTP_START_PORT;
+static int ice_resolve_candidate = 0;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
 static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
@@ -2648,6 +2649,15 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
 		}
 	}
 	return END_PORT;
+}
+
+SWITCH_DECLARE(void) switch_rtp_set_resolve_ice()
+{
+	ice_resolve_candidate = 1;
+}
+
+SWITCH_DECLARE(int) switch_rtp_has_resolve_ice(void) {
+	return ice_resolve_candidate;
 }
 
 SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
