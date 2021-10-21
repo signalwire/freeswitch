@@ -3254,7 +3254,7 @@ static switch_status_t switch_collect_input_callback(switch_core_session_t *sess
 		state->last_digit_time = switch_micro_time_now();
 		state->is_speech = SWITCH_FALSE;
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = false; SWITCH_INPUT_TYPE_DTMF; last_digit_time=%lu\n", state->last_digit_time);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = false; SWITCH_INPUT_TYPE_DTMF; last_digit_time=%" SWITCH_INT64_T_FMT "\n", state->last_digit_time);
 
 		if (!zstr(state->terminators) && strchr(state->terminators, dtmf->digit)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) ACCEPT TERMINATOR %c\n",
@@ -3438,10 +3438,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 				if (sleep_time >= digit_timeout) {
 					// too much time since last digit
 					if (!switch_test_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE)) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, " (%s) INTER-DIGIT TIMEOUT is_speech = false; sleep_time >= digit_timeout; sleep_time=%i; last_digit_time=%lu; digit_timeout=%lu \n", switch_channel_get_name(channel), sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, " (%s) INTER-DIGIT TIMEOUT is_speech = false; sleep_time >= digit_timeout; sleep_time=%i; last_digit_time=%" SWITCH_INT64_T_FMT "; digit_timeout=%lu \n", switch_channel_get_name(channel), sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
 						switch_set_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE);
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = false; sleep_time >= digit_timeout; sleep_time=%i; last_digit_time=%lu; digit_timeout=%lu \n", sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = false; sleep_time >= digit_timeout; sleep_time=%i; last_digit_time=%" SWITCH_INT64_T_FMT "; digit_timeout=%lu \n", sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
 					}
 					status = SWITCH_STATUS_SUCCESS;
 					sleep_time = digit_timeout;
@@ -3450,7 +3450,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 					sleep_time = digit_timeout - sleep_time;
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = true; sleep_time < digit_timeout; sleep_time=%i; last_digit_time=%lu; digit_timeout=%lu \n", sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = true; sleep_time < digit_timeout; sleep_time=%i; last_digit_time=%" SWITCH_INT64_T_FMT "; digit_timeout=%lu \n", sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
 			}
 
 			if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
