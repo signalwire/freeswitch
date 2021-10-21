@@ -679,11 +679,24 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 					status_val = atoi(p);
 				}
 				if (!status_val || status_val >= 200) {
+					const char *hangup_uuid = switch_channel_get_variable(channel, SOFIA_REFER_3PCC_HANGUP_VARIABLE);
 					switch_channel_set_variable(channel, "sip_refer_reply", sip->sip_payload->pl_data);
+
 					if (status_val == 200) {
-						switch_channel_hangup(channel, SWITCH_CAUSE_BLIND_TRANSFER);
+						if (!zstr(hangup_uuid)) {
+							switch_core_session_t *hangup_session;
+							switch_channel_t *hangup_channel;
+
+							if ((hangup_session = switch_core_session_locate(hangup_uuid))) {
+								hangup_channel = switch_core_session_get_channel(hangup_session);
+								switch_channel_hangup(hangup_channel, SWITCH_CAUSE_BLIND_TRANSFER);
+								switch_core_session_rwunlock(hangup_session);
+							}
+						} else {
+							switch_channel_hangup(channel, SWITCH_CAUSE_BLIND_TRANSFER);
+						}
 					}
-					if ((int)tech_pvt->want_event == 9999) {
+					if ((int)tech_pvt->want_event == SOFIA_CUSTOM_NUA_EVENT_REFER) {
 						tech_pvt->want_event = 0;
 					}
 				}

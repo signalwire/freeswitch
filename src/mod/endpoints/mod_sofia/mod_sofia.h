@@ -108,6 +108,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_BYE_RESPONSE "sofia::bye_response"
 
 #define MULTICAST_EVENT "multicast::event"
+#define SOFIA_CUSTOM_NUA_EVENT_REFER 9999
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_MULTIPART_PREFIX "sip_mp_"
@@ -125,6 +126,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_DEFAULT_PORT "5060"
 #define SOFIA_DEFAULT_TLS_PORT "5061"
 #define SOFIA_REFER_TO_VARIABLE "sip_refer_to"
+#define SOFIA_REFER_3PCC_HANGUP_VARIABLE "sip_refer_3pcc_hangup_uuid"
 //#define SOFIA_HAS_CRYPTO_VARIABLE "rtp_has_crypto"
 //#define SOFIA_HAS_VIDEO_CRYPTO_VARIABLE "sip_has_video_crypto"
 //#define SOFIA_CRYPTO_MANDATORY_VARIABLE "sip_crypto_mandatory"
