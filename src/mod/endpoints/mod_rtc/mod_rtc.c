@@ -161,9 +161,10 @@ static switch_status_t rtc_read_video_frame(switch_core_session_t *session, swit
 
 static switch_status_t rtc_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
+#ifndef NDEBUG
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
-
+#endif
 
 	if (SWITCH_STATUS_SUCCESS == switch_core_media_write_frame(session, frame, flags, stream_id, SWITCH_MEDIA_TYPE_VIDEO)) {
 		return SWITCH_STATUS_SUCCESS;

@@ -630,6 +630,7 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
 	loopback_private_t *tech_pvt = NULL;
 
@@ -638,7 +639,7 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
+#endif
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -668,6 +669,7 @@ static switch_status_t channel_on_hibernate(switch_core_session_t *session)
 
 static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
 	loopback_private_t *tech_pvt = NULL;
 
@@ -676,6 +678,7 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA\n");
 
@@ -1383,10 +1386,12 @@ static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_sess
 static switch_status_t null_channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
+#ifndef NDEBUG
 	null_private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+#endif
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -1401,11 +1406,15 @@ static switch_status_t null_channel_on_init(switch_core_session_t *session)
 
 static switch_status_t null_channel_on_destroy(switch_core_session_t *session)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
+#endif
 	null_private_t *tech_pvt = NULL;
 
+#ifndef NDEBUG
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+#endif
 
 	tech_pvt = switch_core_session_get_private(session);
 
@@ -1428,13 +1437,17 @@ static switch_status_t null_channel_on_destroy(switch_core_session_t *session)
 static switch_status_t null_channel_kill_channel(switch_core_session_t *session, int sig)
 {
 	switch_channel_t *channel = NULL;
+#ifndef NDEBUG
 	null_private_t *tech_pvt = NULL;
+#endif
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
+#ifndef NDEBUG
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+#endif
 
 	switch (sig) {
 	case SWITCH_SIG_BREAK:
@@ -1486,12 +1499,16 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 
 static switch_status_t null_channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
+#ifndef NDEBUG
 	null_private_t *tech_pvt = NULL;
+#endif
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *dtmf_str = switch_channel_get_variable(channel, "null_channel_dtmf_queued");
 
+#ifndef NDEBUG
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+#endif
 
 	if (!dtmf_str) dtmf_str = "";
 
@@ -1544,11 +1561,15 @@ static switch_status_t null_channel_read_frame(switch_core_session_t *session, s
 
 static switch_status_t null_channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
 {
+#ifndef NDEBUG
 	switch_channel_t *channel = NULL;
+#endif
 	null_private_t *tech_pvt = NULL;
 
+#ifndef NDEBUG
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
+#endif
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
