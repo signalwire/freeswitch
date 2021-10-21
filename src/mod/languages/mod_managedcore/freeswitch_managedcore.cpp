@@ -92,7 +92,7 @@ switch_status_t ManagedSession::run_dtmf_callback(void *input, switch_input_type
 	char *result = dtmfDelegate(input, itype);
 	switch_status_t status = process_callback_result(result);
 
-	//RESULT_FREE(result);
+	RESULT_FREE(result);
 
 	return status;
 }

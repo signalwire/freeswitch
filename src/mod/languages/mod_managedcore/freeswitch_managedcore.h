@@ -36,6 +36,13 @@
 
 #include "coreclr_delegates.h"
 
+#ifdef _WIN32
+#define RESULT_FREE(x) CoTaskMemFree(x)
+#else
+#define RESULT_FREE(x) free(x)
+#endif
+
+
 
 SWITCH_BEGIN_EXTERN_C
 #include <switch.h>
