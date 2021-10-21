@@ -500,9 +500,9 @@ GCC_DIAG_ON(deprecated-declarations)
 		c->width    = mst->width;
 		c->height   = mst->height;
 		c->bit_rate = mm->vb * 1024;
-		mst->st->time_base.den = 90000;
+		mst->st->time_base.den = 1000;
 		mst->st->time_base.num = 1;
-		c->time_base.den = 90000;
+		c->time_base.den = 1000;
 		c->time_base.num = 1;
 		c->gop_size      = fps * 10; /* emit one intra frame every 10 frames at most */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
@@ -647,7 +647,7 @@ GCC_DIAG_ON(deprecated-declarations)
 	ret = avcodec_open2(c, codec, NULL);
 	if (ret < 0) {
 		char ebuf[255] = "";
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open video codec: %s\n", get_error_text(ret, ebuf, sizeof(ebuf)));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open video codec: %s, ret:%d\n", get_error_text(ret, ebuf, sizeof(ebuf)), ret);
 		return status;
 	}
 
@@ -876,12 +876,12 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 				delta = 33;
 			}
 
-			context->eh.video_st->frame->pts += delta * 90;
+			context->eh.video_st->frame->pts += delta;
 		} else {
 			uint64_t delta_tmp;
 
 			switch_core_timer_sync(context->eh.video_timer);
-			delta_tmp = (context->eh.video_timer->samplecount * 90) - context->eh.last_ts;
+			delta_tmp = (context->eh.video_timer->samplecount) - context->eh.last_ts;
 
 			if (delta_tmp != 0) {
 				delta_sum += delta_tmp;
@@ -896,9 +896,9 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 					delta_avg = (int)(double)(delta_sum / delta_i);
 				}
 				
-				context->eh.video_st->frame->pts = context->eh.video_timer->samplecount * 90;
+				context->eh.video_st->frame->pts = context->eh.video_timer->samplecount;
 			} else {
-				context->eh.video_st->frame->pts = ((context->eh.video_timer->samplecount) * 90) + 1;
+				context->eh.video_st->frame->pts = ((context->eh.video_timer->samplecount)) + 1;
 			}
 		}
 
