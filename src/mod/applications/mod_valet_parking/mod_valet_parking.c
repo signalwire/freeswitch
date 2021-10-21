@@ -96,7 +96,7 @@ static switch_status_t valet_on_dtmf(switch_core_session_t *session, void *input
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "valet_on_dtmf() - digit pressed '%d' matched valet_parking_orbit_exit_key '%d'\n", dtmf->digit, exit_key_pvt->digit);
 
-				dp = switch_channel_get_variable(channel, "valet_parking_orbin_dialplan");
+				dp = switch_channel_get_variable(channel, "valet_parking_orbit_dialplan");
 				if (zstr(dp)) {
 					dp = switch_channel_get_variable(channel, "XML");
 				}
