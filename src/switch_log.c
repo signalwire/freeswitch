@@ -58,6 +58,8 @@ typedef struct switch_log_binding switch_log_binding_t;
 static switch_memory_pool_t *LOG_POOL = NULL;
 static switch_log_binding_t *BINDINGS = NULL;
 static switch_mutex_t *BINDLOCK = NULL;
+time_t counter = 0;
+static switch_mutex_t *COUNTERLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
 #ifdef SWITCH_LOG_RECYCLE
 static switch_queue_t *LOG_RECYCLE_QUEUE = NULL;
@@ -652,6 +654,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	}
 
 	if (do_mods && level <= MAX_LEVEL) {
+		struct timespec tv = { 0 };
 		switch_log_node_t *node = switch_log_node_alloc();
 
 		node->data = data;
@@ -663,6 +666,19 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->slevel = special_level;
 		node->content = content;
 		node->timestamp = now;
+
+		if (!clock_gettime(CLOCK_REALTIME, &tv)) {
+			node->timestamp_nano = tv.tv_sec * 1000000000 + tv.tv_nsec;
+		} else {
+			fprintf(stderr, "Error clock_gettime\n");
+			node->timestamp_nano = 0;
+		}
+
+		switch_mutex_lock(COUNTERLOCK);
+		node->counter = counter;
+		counter += 1;
+		switch_mutex_unlock(COUNTERLOCK);
+
 		node->channel = channel;
 		node->tags = NULL;
 		if (channel == SWITCH_CHANNEL_ID_SESSION) {
@@ -702,6 +718,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 	switch_queue_create(&LOG_RECYCLE_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
 #endif
 	switch_mutex_init(&BINDLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
+	switch_mutex_init(&COUNTERLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
 
@@ -754,6 +771,8 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 	switch_thread_join(&st, thread);
 
 	switch_core_memory_reclaim_logger();
+	switch_mutex_destroy(BINDLOCK);
+	switch_mutex_destroy(COUNTERLOCK);
 
 	return SWITCH_STATUS_SUCCESS;
 }

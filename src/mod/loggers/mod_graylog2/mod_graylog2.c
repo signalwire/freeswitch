@@ -92,9 +92,14 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 	const void *key = NULL;
 	void *value = NULL;
 	char buf[64] = "";
+	char buf2[64] = { 0 };
 
 	cJSON *gelf = switch_log_node_to_json(node, to_graylog2_level(log_level), &globals.gelf_format, globals.session_fields);
 	cJSON_AddItemToObject(gelf, "_microtimestamp", cJSON_CreateNumber(node->timestamp));
+	switch_snprintf(buf2, sizeof(buf2), "%"PRId64"", node->timestamp_nano);
+	cJSON_AddItemToObject(gelf, "_nanotimestamp", cJSON_CreateString(buf2));
+	switch_snprintf(buf2, sizeof(buf2), "%"PRId64"", node->counter);
+	cJSON_AddItemToObject(gelf, "_counter", cJSON_CreateString(buf2));
 
 	for (hi = switch_core_hash_first(globals.static_fields); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &key, NULL, &value);
