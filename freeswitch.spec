@@ -645,6 +645,16 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_unimrcp, allows communication with Media Resource 
 Control Protocol (MRCP) servers
 
+%package asrtts-vosk
+Summary:        FreeSWITCH mod_vosk
+Group:          System/Libraries
+BuildRequires:  libks
+Requires:       %{name} = %{version}-%{release}
+
+%description asrtts-vosk
+Provides FreeSWITCH mod_vosk, interface to Vosk speech recognition server
+over websocket
+
 ######################################################################################################################
 #				FreeSWITCH Codec Modules
 ######################################################################################################################
@@ -1444,7 +1454,7 @@ APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATI
 #				Automatic Speech Recognition and Text To Speech Modules
 #
 ######################################################################################################################
-ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline asr_tts/mod_unimrcp"
+ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline asr_tts/mod_unimrcp asr_tts/mod_vosk"
 
 ######################################################################################################################
 #
@@ -1976,6 +1986,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/vosk.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/vpx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_cdr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_curl.conf.xml
@@ -2175,6 +2186,9 @@ fi
 
 %files asrtts-unimrcp
 %{MODINSTDIR}/mod_unimrcp.so*
+
+%files asrtts-vosk
+%{MODINSTDIR}/mod_vosk.so*
 
 ######################################################################################################################
 #

@@ -4720,6 +4720,9 @@ static switch_status_t play_and_detect_input_callback(switch_core_session_t *ses
 						}
 						state->done = PLAY_AND_DETECT_DONE_RECOGNIZING;
 						return SWITCH_STATUS_BREAK;
+					} else if (!strcasecmp(speech_type, "detected-partial-speech")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) DETECTED PARTIAL SPEECH\n", switch_channel_get_name(channel));
+						return SWITCH_STATUS_BREAK;
 					} else if (!strcasecmp(speech_type, "begin-speaking")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
 						return SWITCH_STATUS_BREAK;
