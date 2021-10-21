@@ -190,6 +190,27 @@ static inline const char *switch_media_type2str(switch_media_type_t type)
 	}
 }
 
+typedef struct switch_fork_s {
+	switch_sockaddr_t	*addr;
+	char				*host_str;
+	switch_port_t		port;
+	uint32_t			ssrc;
+	char				cmd[500];
+	uint8_t				active;
+} switch_fork_session_t;
+
+typedef struct switch_fork_state_s {
+	switch_fork_session_t	fork_rx;
+	switch_fork_session_t	fork_tx;
+	char			id[40];
+	char			local_ip[100];
+	uint16_t		local_port;
+	uint8_t			wait_ssrc;
+	switch_time_t	wait_ssrc_time_start_us;
+	int				wait_ssrc_timeout_ms;
+	uint8_t			start_event_fired;
+} switch_fork_state_t;
+
 
 SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t **smhp, switch_core_session_t *session, switch_core_media_params_t *params);
 SWITCH_DECLARE(void) switch_media_handle_destroy(switch_core_session_t *session);
@@ -235,9 +256,14 @@ SWITCH_DECLARE(int) switch_core_media_check_nat(switch_media_handle_t *smh, cons
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_session_t *session, switch_media_type_t type, int force);
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video);
-SWITCH_DECLARE(switch_status_t) switch_core_media_set_fork_write(switch_core_session_t *session, const char *ip, switch_port_t port);
-SWITCH_DECLARE(switch_status_t) switch_core_media_activate_fork_write(switch_core_session_t *session);
-SWITCH_DECLARE(switch_status_t) switch_core_media_deactivate_fork_write(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_session_t *session, const char *id);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session, int timeout_ms);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_deactivate(switch_core_session_t *session, switch_fork_direction_t direction);
+SWITCH_DECLARE(void) switch_core_media_fork_fire_start_event(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_fork_do_fire_start_event(switch_core_session_t *session, switch_fork_state_t *fork, const char *fmr);
 SWITCH_DECLARE(void) switch_core_media_check_dtmf_type(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_session_t *session, const char *sdp_str);
