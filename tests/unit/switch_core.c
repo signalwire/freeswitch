@@ -30,8 +30,6 @@
  *
  */
 #include <switch.h>
-#include <stdlib.h>
-
 #include <test/switch_test.h>
 
 #if defined(HAVE_OPENSSL)
