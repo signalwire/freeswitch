@@ -90,12 +90,12 @@ static char *wait_for_log(switch_interval_time_t timeout_ms)
 
 FST_CORE_BEGIN("./conf")
 {
-	switch_core_new_memory_pool(&pool);
-	switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_thread_cond_create(&cond, pool);
-
 	FST_SUITE_BEGIN(switch_log)
 	{
+		switch_core_new_memory_pool(&pool);
+		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, pool);
+		switch_thread_cond_create(&cond, pool);
+
 		FST_SETUP_BEGIN()
 		{
 			json_format.custom_field_prefix = NULL;
