@@ -1157,6 +1157,8 @@ struct record_helper {
 	const char *completion_cause;
 	int start_event_sent;
 	switch_event_t *variables;
+	switch_mutex_t *cond_mutex;
+	switch_thread_cond_t *cond;
 };
 
 static switch_status_t record_helper_destroy(struct record_helper **rh, switch_core_session_t *session);
@@ -1261,17 +1263,21 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 	}
 
 	rh = switch_core_media_bug_get_user_data(bug);
-	switch_buffer_create_dynamic(&rh->thread_buffer, 1024 * 512, 1024 * 64, 0);
+	switch_buffer_create_dynamic(&rh->thread_buffer, SWITCH_RECOMMENDED_BUFFER_SIZE, SWITCH_RECOMMENDED_BUFFER_SIZE, 0);
 	rh->thread_ready = 1;
 
 	channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : rh->read_impl.number_of_channels;
 	data = switch_core_alloc(rh->helper_pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
+
+	switch_mutex_lock(rh->cond_mutex);
 
 	while(switch_test_flag(rh->fh, SWITCH_FILE_OPEN)) {
 		if (rh->thread_needs_transfer) {
 			assert(session != rh->recording_session);
 
 			if (switch_core_session_read_lock(rh->recording_session) != SWITCH_STATUS_SUCCESS) {
+				/* Wait until recording is reverted to the original session */
+				switch_thread_cond_wait(rh->cond, rh->cond_mutex);
 				continue;
 			}
 
@@ -1298,13 +1304,17 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 		switch_mutex_lock(rh->buffer_mutex);
 		inuse = switch_buffer_inuse(rh->thread_buffer);
 
-		if (rh->thread_ready && switch_channel_up_nosig(channel) && inuse < bsize) {
-			switch_mutex_unlock(rh->buffer_mutex);
-			switch_yield(20000);
-			continue;
-		} else if ((!rh->thread_ready || switch_channel_down_nosig(channel)) && !inuse) {
+		if ((!rh->thread_ready || switch_channel_down_nosig(channel)) && !inuse) {
 			switch_mutex_unlock(rh->buffer_mutex);
 			break;
+		}
+
+		if (!inuse) {
+			switch_mutex_unlock(rh->buffer_mutex);
+			if (rh->thread_ready) {
+				switch_thread_cond_wait(rh->cond, rh->cond_mutex);
+			}
+			continue;
 		}
 
 		samples = switch_buffer_read(rh->thread_buffer, data, bsize) / 2 / channels;
@@ -1320,6 +1330,8 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 			}
 		}
 	}
+
+	switch_mutex_unlock(rh->cond_mutex);
 
 	switch_core_session_rwunlock(session);
 
@@ -1362,6 +1374,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					rh->bug = bug;
 					rh->thread_needs_transfer = 1;
 
+					switch_mutex_lock(rh->cond_mutex);
+					switch_thread_cond_signal(rh->cond);
+					switch_mutex_unlock(rh->cond_mutex);
+
 					while (--sanity > 0 && rh->thread_needs_transfer) {
 						switch_yield(10000);
 					}
@@ -1399,8 +1415,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				int sanity = 200;
 
 				switch_mutex_init(&rh->buffer_mutex, SWITCH_MUTEX_NESTED, rh->helper_pool);
+				switch_mutex_init(&rh->cond_mutex, SWITCH_MUTEX_NESTED, rh->helper_pool);
+				switch_thread_cond_create(&rh->cond, rh->helper_pool);
 				switch_threadattr_create(&thd_attr, rh->helper_pool);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+				switch_threadattr_priority_set(thd_attr, SWITCH_PRI_LOW);
 				switch_thread_create(&rh->thread, thd_attr, recording_thread, bug, rh->helper_pool);
 
 				while(--sanity > 0 && !rh->thread_ready) {
@@ -1535,13 +1554,17 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_status_t st;
 
 					rh->thread_ready = 0;
+
+					switch_mutex_lock(rh->cond_mutex);
+					switch_thread_cond_signal(rh->cond);
+					switch_mutex_unlock(rh->cond_mutex);
+
 					switch_thread_join(&st, rh->thread);
 				}
 
 				if (rh->thread_buffer) {
 					switch_buffer_destroy(&rh->thread_buffer);
 				}
-
 
 				frame.data = data;
 				frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
@@ -1663,6 +1686,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 						switch_mutex_lock(rh->buffer_mutex);
 						switch_buffer_write(rh->thread_buffer, mask ? null_data : data, frame.datalen);
 						switch_mutex_unlock(rh->buffer_mutex);
+						if (switch_mutex_trylock(rh->cond_mutex) == SWITCH_STATUS_SUCCESS) {
+							switch_thread_cond_signal(rh->cond);
+							switch_mutex_unlock(rh->cond_mutex);
+						}
 					} else if (switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
 						/* File write failed */
