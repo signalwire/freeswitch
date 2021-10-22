@@ -36,10 +36,10 @@
 static void on_record_start(switch_event_t *event)
 {
 	char *str = NULL;
+	const char *uuid = switch_event_get_header(event, "Unique-ID");
 	switch_event_serialize(event, &str, SWITCH_FALSE);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", str);
 	switch_safe_free(str);
-	const char *uuid = switch_event_get_header(event, "Unique-ID");
 	if (uuid) {
 		switch_core_session_t *session = switch_core_session_locate(uuid);
 		if (session) {
@@ -56,10 +56,10 @@ static void on_record_start(switch_event_t *event)
 static void on_record_stop(switch_event_t *event)
 {
 	char *str = NULL;
+	const char *uuid = switch_event_get_header(event, "Unique-ID");
 	switch_event_serialize(event, &str, SWITCH_FALSE);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s", str);
 	switch_safe_free(str);
-	const char *uuid = switch_event_get_header(event, "Unique-ID");
 	if (uuid) {
 		switch_core_session_t *session = switch_core_session_locate(uuid);
 		if (session) {
@@ -83,6 +83,7 @@ static switch_status_t partial_play_and_collect_input_callback(switch_core_sessi
 
 		if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH) {
 			const char *speech_type = switch_event_get_header(event, "Speech-Type");
+			char *body = switch_event_get_body(event);
 
 			if (zstr(speech_type) || strcmp(speech_type, "detected-partial-speech")) {
 				return status;
@@ -90,8 +91,6 @@ static switch_status_t partial_play_and_collect_input_callback(switch_core_sessi
 
 			(*count)++;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "partial events count: %d\n", *count);
-
-			char *body = switch_event_get_body(event);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "body=[%s]\n", body);
 		}
 	} else if (input_type == SWITCH_INPUT_TYPE_DTMF) {
@@ -354,6 +353,9 @@ FST_CORE_BEGIN("./conf_playsay")
 			char *speech_grammar_args = switch_core_session_sprintf(fst_session, "{start-input-timers=false,no-input-timeout=%d,vad-silence-ms=%d,speech-timeout=%d,language=en-US,partial=true}default",
 											no_input_timeout, speech_complete_timeout, speech_recognition_timeout);
 			switch_status_t status;
+			switch_input_args_t collect_input_args = { 0 };
+			switch_input_args_t *args = NULL;
+			int count = 0;
 
 			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
 			terminator_collected = 0;
@@ -376,10 +378,6 @@ FST_CORE_BEGIN("./conf_playsay")
 			digits_collected = NULL;
 			if (recognition_result) cJSON_Delete(recognition_result);
 			recognition_result = NULL;
-
-			switch_input_args_t collect_input_args = { 0 };
-			switch_input_args_t *args = NULL;
-			int count = 0;
 
 			args = &collect_input_args;
 			args->input_callback = partial_play_and_collect_input_callback;

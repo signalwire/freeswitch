@@ -43,6 +43,7 @@ static switch_status_t partial_play_and_collect_input_callback(switch_core_sessi
 
 		if (event->event_id == SWITCH_EVENT_DETECTED_SPEECH) {
 			const char *speech_type = switch_event_get_header(event, "Speech-Type");
+                        char *body;
 
 			if (zstr(speech_type) || strcmp(speech_type, "detected-partial-speech")) {
 				return status;
@@ -51,7 +52,7 @@ static switch_status_t partial_play_and_collect_input_callback(switch_core_sessi
 			(*count)++;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "partial events count: %d\n", *count);
 
-			char *body = switch_event_get_body(event);
+			body = switch_event_get_body(event);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "body=[%s]\n", body);
 		}
 	} else if (input_type == SWITCH_INPUT_TYPE_DTMF) {
@@ -67,6 +68,9 @@ FST_CORE_BEGIN("./conf_async")
 	{
 		FST_SETUP_BEGIN()
 		{
+			if (0) {
+				partial_play_and_collect_input_callback(NULL, NULL, 0, NULL, 0);
+			}
 			fst_requires_module("mod_tone_stream");
 			fst_requires_module("mod_sndfile");
 			fst_requires_module("mod_dptools");
@@ -82,7 +86,8 @@ FST_CORE_BEGIN("./conf_async")
 		FST_SESSION_BEGIN(session_record_pause)
 		{
 			const char *record_filename = switch_core_session_sprintf(fst_session, "%s%s%s.wav", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(fst_session));
-
+                        const char *duration_ms_str;
+                        int duration_ms;
 			switch_status_t status;
 			status = switch_ivr_record_session_event(fst_session, record_filename, 0, NULL, NULL);
 			fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Expect switch_ivr_record_session() to return SWITCH_STATUS_SUCCESS");
@@ -110,9 +115,9 @@ FST_CORE_BEGIN("./conf_async")
 
 			unlink(record_filename);
 
-			const char *duration_ms_str = switch_channel_get_variable(fst_channel, "record_ms");
+			duration_ms_str = switch_channel_get_variable(fst_channel, "record_ms");
 			fst_requires(duration_ms_str != NULL);
-			int duration_ms = atoi(duration_ms_str);
+			duration_ms = atoi(duration_ms_str);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fst_session), SWITCH_LOG_NOTICE, "Recording duration is %s ms\n", duration_ms_str);
 			fst_xcheck(duration_ms > 3500 && duration_ms < 3700, "Expect recording to be between 3500 and 3700 ms");
 		}
