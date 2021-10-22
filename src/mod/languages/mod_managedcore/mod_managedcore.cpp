@@ -63,7 +63,6 @@
 #endif
 
 
-
 SWITCH_BEGIN_EXTERN_C
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_managedcore_load);
@@ -125,31 +124,75 @@ SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inpu
 }
 
 
-void ConvertToChar_t(const char* inStr, size_t inStrLen, char_t* outStr, size_t outStrLen)
+void ConvertUnmangedToManagedString(const char* inStr, size_t inStrLen, char_t* outStr, size_t outStrLen)
 {
-	if (sizeof(char_t) == sizeof(char))
-	{
-		strncpy((char*)outStr, inStr, min(inStrLen, outStrLen));
-		return;
-	}
-
+#ifdef _WIN32
 	mbstowcs((wchar_t*)outStr, inStr, min(inStrLen, outStrLen));
+#else
+	strncpy((char*)outStr, inStr, min(inStrLen, outStrLen));
+#endif
 }
 
-void ConvertToChar(const char_t* inStr, size_t inStrLen, char* outStr, size_t outStrLen)
+void ConverManagedToUnmanagedString(const char_t* inStr, size_t inStrLen, char* outStr, size_t outStrLen)
 {
-	if (sizeof(char_t) == sizeof(char))
-	{
-		strncpy(outStr, (char*)inStr, min(inStrLen, outStrLen));
-		return;
-	}
-
+#ifdef _WIN32
 	wcstombs(outStr, (const wchar_t*)inStr, min(inStrLen, outStrLen));
+#else
+	strncpy(outStr, (char*)inStr, min(inStrLen, outStrLen));
+#endif
 }
+
+
+char FourBitsToChar(char fourbits)
+{
+	switch(fourbits)
+	{
+	case 0x00: return '0';
+	case 0x01: return '1';
+	case 0x02: return '2';
+	case 0x03: return '3';
+	case 0x04: return '4';
+	case 0x05: return '5';
+	case 0x06: return '6';
+	case 0x07: return '7';
+	case 0x08: return '8';
+	case 0x09: return '9';
+	case 0x0A: return 'A';
+	case 0x0B: return 'B';
+	case 0x0C: return 'C';
+	case 0x0D: return 'D';
+	case 0x0E: return 'E';
+	case 0x0F: return 'F';
+	}
+	return 'x';
+}
+
+void DumpString(const char * message, const char* str)
+{
+	char toAdd[] = "   ";
+
+	char output[MAX_PATH * 2] = "";
+	for( int i = 0; i < strlen(str); i++)
+	{
+		toAdd[1] = FourBitsToChar(str[i] & 0x0F);
+		toAdd[0] = FourBitsToChar((str[i] & 0xF0) >> 4);
+
+		strcat(output, toAdd);
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "DumpString %s: %s\n", message, output);
+}
+
 
 
 switch_status_t loadRuntime()
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod_mangedcore ***********************\n");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod-path %s\n", SWITCH_GLOBAL_dirs.mod_dir);
+	DumpString("mod-path", SWITCH_GLOBAL_dirs.mod_dir);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod_mangedcore ***********************\n");
+
 	char_t hostfxr_path_t[MAX_PATH];
 	size_t hostfxr_path_size = sizeof(hostfxr_path_t) / sizeof(char_t);
 
@@ -160,7 +203,7 @@ switch_status_t loadRuntime()
 
 	char *derr = NULL;
 	char hostfxr_path[MAX_PATH];
-	ConvertToChar(hostfxr_path_t, MAX_PATH, hostfxr_path, MAX_PATH);
+	ConverManagedToUnmanagedString(hostfxr_path_t, MAX_PATH, hostfxr_path, MAX_PATH);
 	switch_dso_lib_t lib_t = switch_dso_open(hostfxr_path, 0, &derr);
 
 	hostfxr_initialize_for_runtime_config_fn hostfxr_initialize_for_runtime_config_fptr = (hostfxr_initialize_for_runtime_config_fn)switch_dso_func_sym(lib_t, "hostfxr_initialize_for_runtime_config", &derr);
@@ -177,7 +220,7 @@ switch_status_t loadRuntime()
 	char runtimeconfigpath[MAX_PATH];
 	switch_snprintf(runtimeconfigpath, MAX_PATH, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_RUNTIMECONFIG);
 	char_t runtimeconfigpath_t[MAX_PATH];
-	ConvertToChar_t(runtimeconfigpath, MAX_PATH, runtimeconfigpath_t, MAX_PATH);
+	ConvertUnmangedToManagedString(runtimeconfigpath, MAX_PATH, runtimeconfigpath_t, MAX_PATH);
 
 
 	hostfxr_handle handle = NULL;
@@ -210,13 +253,13 @@ switch_status_t findLoader()
 	char loaderpath[MAX_PATH];
 	switch_snprintf(loaderpath, MAX_PATH, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 	char_t loaderpath_t[MAX_PATH];
-	ConvertToChar_t(loaderpath, MAX_PATH, loaderpath_t, MAX_PATH);
+	ConvertUnmangedToManagedString(loaderpath, MAX_PATH, loaderpath_t, MAX_PATH);
 	char_t typeName_t[MAX_PATH];
-	ConvertToChar_t("FreeSWITCH.Loader, FreeSWITCH.ManagedCore", MAX_PATH, typeName_t, MAX_PATH);
+	ConvertUnmangedToManagedString("FreeSWITCH.Loader, FreeSWITCH.ManagedCore", MAX_PATH, typeName_t, MAX_PATH);
 	char_t methodName_t[MAX_PATH];
-	ConvertToChar_t("Load", MAX_PATH, methodName_t, MAX_PATH);
+	ConvertUnmangedToManagedString("Load", MAX_PATH, methodName_t, MAX_PATH);
 	char_t delegateTypeName_t[MAX_PATH];
-	ConvertToChar_t("FreeSWITCH.Loader+LoadDelegate, FreeSWITCH.ManagedCore", MAX_PATH, delegateTypeName_t, MAX_PATH);
+	ConvertUnmangedToManagedString("FreeSWITCH.Loader+LoadDelegate, FreeSWITCH.ManagedCore", MAX_PATH, delegateTypeName_t, MAX_PATH);
 
 	loaderFunction load = NULL;
 	if (managed_globals.load_assembly_and_get_function_pointer(loaderpath_t, typeName_t, methodName_t, delegateTypeName_t, NULL, (void**)&load) ||
