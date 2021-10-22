@@ -129,31 +129,7 @@ SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inpu
 	session->hangupDelegate = hangupDelegate;
 }
 
-int convert_strings(const char* from_enc, const char* to_enc, char *string_in, size_t inbytesleft, char *string_out, size_t outbytesleft);
-
-void ConvertUnmangedToManagedString(const char* inStr, char_t* outStr, size_t outStrLen)
-{
-#ifdef _WIN32
-//	mbstowcs((wchar_t*)outStr, inStr, min(inStrLen, outStrLen));
-	convert_strings("", "CP1200", (char*)inStr, strlen(inStr) * sizeof(char), (char*)outStr, outStrLen);
-#else
-//	strncpy((char*)outStr, inStr, min(inStrLen, outStrLen));
-	convert_strings("", "CP65001", (char*)inStr, strlen(inStr), (char*)outStr, outStrLen);
-#endif
-}
-
-void ConvertManagedToUnmanagedString(const char_t* inStr, char* outStr, size_t outStrLen)
-{
-#ifdef _WIN32
-//	wcstombs(outStr, (const wchar_t*)inStr, min(inStrLen, outStrLen));
-	convert_strings( "CP1200", "", (char*)inStr, wcslen((wchar_t const*)inStr) * sizeof(wchar_t), (char*)outStr, outStrLen);
-#else
-//	strncpy(outStr, (char*)inStr, min(inStrLen, outStrLen));
-	convert_strings("CP65001", "", (char*)inStr, strlen((char const*)inStr) * sizeof(char), (char*)outStr, outStrLen);
-#endif
-}
-
-int convert_strings(const char* from_enc, const char* to_enc, char *string_in, size_t inbytesleft, char *string_out, size_t outbytesleft)
+int convert_strings(const char* from_enc, const char* to_enc, const char *string_in, size_t inbytesleft, char *string_out, size_t outbytesleft)
 {
 	iconv_t iconv_format;
 	int iconv_res;
@@ -162,18 +138,16 @@ int convert_strings(const char* from_enc, const char* to_enc, char *string_in, s
 	errno = 0;
 	iconv_format = iconv_open(to_enc, from_enc);
 	if (iconv_format == (iconv_t)-1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "iconv_open error: %s\n", strerror(errno));
 		return -1;
 	}
 
 #ifdef _WIN32
-	iconv_res = iconv(iconv_format, (const char **)&string_in, &inbytesleft, &string_out, &outbytesleft);
-#else // WIN32
 	iconv_res = iconv(iconv_format, &string_in, &inbytesleft, &string_out, &outbytesleft);
-#endif // WIN32
+#else // _WIN32
+	iconv_res = iconv(iconv_format, (char **)&string_in, &inbytesleft, &string_out, &outbytesleft);
+#endif // _WIN32
 
 	if (iconv_res == (size_t)-1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "iconv error: %s\n", strerror(errno));
 		iconv_close(iconv_format);
 		return -1;
 	}
@@ -182,62 +156,35 @@ int convert_strings(const char* from_enc, const char* to_enc, char *string_in, s
 	return 0;
 }
 
-
-
-
-
-
-
-char FourBitsToChar(char fourbits)
+void ConvertUnmangedToManagedString(const char* inStr, char_t* outStr, size_t outStrLen)
 {
-	switch(fourbits)
-	{
-	case 0x00: return '0';
-	case 0x01: return '1';
-	case 0x02: return '2';
-	case 0x03: return '3';
-	case 0x04: return '4';
-	case 0x05: return '5';
-	case 0x06: return '6';
-	case 0x07: return '7';
-	case 0x08: return '8';
-	case 0x09: return '9';
-	case 0x0A: return 'A';
-	case 0x0B: return 'B';
-	case 0x0C: return 'C';
-	case 0x0D: return 'D';
-	case 0x0E: return 'E';
-	case 0x0F: return 'F';
-	}
-	return 'x';
+	int error = 0;
+#ifdef _WIN32
+	error = convert_strings("", "CP1200", (char*)inStr, strlen(inStr) * sizeof(char), (char*)outStr, outStrLen);
+#else
+	if (-1 == (error = convert_strings("", "UTF-8", (char*)inStr, strlen(inStr), (char*)outStr, outStrLen) ) )
+		error = convert_strings("UTF-8", "UTF-8", (char*)inStr, strlen(inStr), (char*)outStr, outStrLen);
+#endif
+	if (-1 == error)
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ConvertUnmangedToManagedString: %s\n", strerror(errno));
 }
 
-void DumpString(const char * message, const char* str)
+void ConvertManagedToUnmanagedString(const char_t* inStr, char* outStr, size_t outStrLen, bool unmangedAsUtf8)
 {
-	char toAdd[] = "   ";
-
-	char output[MAX_PATH * 2] = "";
-	for( int i = 0; i < strlen(str); i++)
-	{
-		toAdd[1] = FourBitsToChar(str[i] & 0x0F);
-		toAdd[0] = FourBitsToChar((str[i] & 0xF0) >> 4);
-
-		strcat(output, toAdd);
-	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "DumpString %s: %s\n", message, output);
+	int error = 0;
+#ifdef _WIN32
+	error = convert_strings( "CP1200", "", (char*)inStr, wcslen((wchar_t const*)inStr) * sizeof(wchar_t), (char*)outStr, outStrLen);
+#else
+	error = convert_strings("UTF-8", unmangedAsUtf8 ? "UTF-8" : "", (char*)inStr, strlen((char const*)inStr) * sizeof(char), (char*)outStr, outStrLen);
+#endif
+	if (-1 == error)
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ConvertManagedToUnmanagedString: %s\n", strerror(errno));
 }
 
 
 
 switch_status_t loadRuntime()
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod_mangedcore ***********************\n");
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod-path %s\n", SWITCH_GLOBAL_dirs.mod_dir);
-	DumpString("mod-path", SWITCH_GLOBAL_dirs.mod_dir);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "mod_mangedcore ***********************\n");
-
 	char_t hostfxr_path_t[MAX_PATH];
 	size_t hostfxr_path_size = sizeof(hostfxr_path_t) / sizeof(char_t);
 
@@ -249,7 +196,12 @@ switch_status_t loadRuntime()
 	char *derr = NULL;
 	char hostfxr_path[MAX_PATH];
 	
-	ConvertManagedToUnmanagedString(hostfxr_path_t, hostfxr_path, MAX_PATH);
+#ifdef _WIN32
+	ConvertManagedToUnmanagedString(hostfxr_path_t, hostfxr_path, MAX_PATH, false);
+#else
+	ConvertManagedToUnmanagedString(hostfxr_path_t, hostfxr_path, MAX_PATH, true);
+#endif
+
 	switch_dso_lib_t lib_t = switch_dso_open(hostfxr_path, 0, &derr);
 
 	hostfxr_initialize_for_runtime_config_fn hostfxr_initialize_for_runtime_config_fptr = (hostfxr_initialize_for_runtime_config_fn)switch_dso_func_sym(lib_t, "hostfxr_initialize_for_runtime_config", &derr);
@@ -267,7 +219,6 @@ switch_status_t loadRuntime()
 	switch_snprintf(runtimeconfigpath, MAX_PATH, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_RUNTIMECONFIG);
 	char_t runtimeconfigpath_t[MAX_PATH];
 	ConvertUnmangedToManagedString(runtimeconfigpath, runtimeconfigpath_t, MAX_PATH);
-
 
 	hostfxr_handle handle = NULL;
 	if (hostfxr_initialize_for_runtime_config_fptr(runtimeconfigpath_t, NULL, &handle) || !handle)
