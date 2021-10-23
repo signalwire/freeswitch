@@ -1,7 +1,7 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_CORE_DB_BEGIN("./conf_test")
+FST_CORE_DB_BEGIN("./conf_sip")
 {
 FST_SUITE_BEGIN(switch_sip)
 {
