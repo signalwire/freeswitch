@@ -43,7 +43,7 @@
            <gateway name="test_gateway">
                 <param name="username" value="not-used"/>
                 <param name="password" value="not-used"/>
-                <param name="proxy" value="$${local_ip_v4}:62068"/>
+                <param name="proxy" value="$${local_ip_v4}:63068"/>
                 <param name="register" value="false"/>
                 <param name="retry-seconds" value="30"/>
                 <param name="dtmf-type" value="rfc2833"/>
@@ -66,7 +66,7 @@
         <param name="sip-trace" value="no"/>
         <param name="sip-capture" value="no"/>
         <param name="rfc2833-pt" value="101"/>
-        <param name="sip-port" value="62068"/>
+        <param name="sip-port" value="63068"/>
         <param name="dialplan" value="XML"/>
         <param name="context" value="default"/>
         <param name="dtmf-duration" value="2000"/>
