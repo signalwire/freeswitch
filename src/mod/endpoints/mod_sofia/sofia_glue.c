@@ -3454,17 +3454,15 @@ char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool)
 {
 	char *s, *p;
 
+	switch_assert(pool != NULL);
+
 	if ((p = strchr(str, '@'))) {
 		p++;
 	} else {
 		return NULL;
 	}
 
-	if (pool) {
-		s = switch_core_strdup(pool, p);
-	} else {
-		s = strdup(p);
-	}
+	s = switch_core_strdup(pool, p);
 
 	for (p = s; p && *p; p++) {
 		if ((*p == ';') || (*p == '>')) {

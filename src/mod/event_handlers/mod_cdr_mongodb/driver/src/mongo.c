@@ -438,7 +438,7 @@ static void mongo_replset_add_node( mongo_host_port **list, const char *host, in
     mongo_host_port *host_port = bson_malloc( sizeof( mongo_host_port ) );
     host_port->port = port;
     host_port->next = NULL;
-    strncpy( host_port->host, host, sizeof(host_port->host) - 1 );
+    snprintf(host_port->host, sizeof(host_port->host), "%s", host);
 
     if( *list == NULL )
         *list = host_port;

@@ -278,6 +278,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_log_tags(switch_channel_t *ch
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_strip_quotes_var_check(switch_channel_t *channel,
+	const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
@@ -295,6 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_transfer_variable_prefix(switch_c
 
 #define switch_channel_set_variable_safe(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_FALSE)
 #define switch_channel_set_variable(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_TRUE)
+#define switch_channel_set_variable_strip_quotes(_channel, _var, _val) switch_channel_set_variable_strip_quotes_var_check(_channel, _var, _val, SWITCH_TRUE)
 #define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 
 

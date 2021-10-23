@@ -3191,6 +3191,7 @@ typedef struct {
 	const char *terminators;
 	char terminator;
 	switch_time_t last_digit_time;
+	switch_bool_t is_speech;
 } switch_collect_input_state_t;
 
 static switch_status_t switch_collect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t input_type, void *data, unsigned int len)
@@ -3239,18 +3240,21 @@ static switch_status_t switch_collect_input_callback(switch_core_session_t *sess
 
 		if (!strcasecmp(speech_type, "begin-speaking")) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "(%s) START OF SPEECH\n", switch_channel_get_name(channel));
+			state->is_speech = SWITCH_TRUE;
 
 			if (switch_test_flag(state, SWITCH_COLLECT_INPUT_PROMPT)) {
 				/* barge in on prompt */
 				return SWITCH_STATUS_BREAK;
 			}
 		}
-
 	}
 
 	if (switch_test_flag(state, SWITCH_COLLECT_INPUT_DIGITS) && input_type == SWITCH_INPUT_TYPE_DTMF) {
 		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 		state->last_digit_time = switch_micro_time_now();
+		state->is_speech = SWITCH_FALSE;
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = false; SWITCH_INPUT_TYPE_DTMF; last_digit_time=%" SWITCH_INT64_T_FMT "\n", state->last_digit_time);
 
 		if (!zstr(state->terminators) && strchr(state->terminators, dtmf->digit)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) ACCEPT TERMINATOR %c\n",
@@ -3426,18 +3430,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_collect_input(switch_core_se
 				continue;
 			}
 
-			sleep_time = (switch_micro_time_now() - state.last_digit_time) / 1000;
-			if (sleep_time >= digit_timeout) {
-				// too much time since last digit
-				if (!switch_test_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "(%s) INTER-DIGIT TIMEOUT\n", switch_channel_get_name(channel));
-					switch_set_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE);
+			if (state.is_speech == SWITCH_FALSE) {
+
+				// calculating how much time has elapsed since the last digit was collected
+				sleep_time = (switch_micro_time_now() - state.last_digit_time) / 1000;
+
+				if (sleep_time >= digit_timeout) {
+					// too much time since last digit
+					if (!switch_test_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, " (%s) INTER-DIGIT TIMEOUT is_speech = false; sleep_time >= digit_timeout; sleep_time=%i; last_digit_time=%" SWITCH_INT64_T_FMT "; digit_timeout=%lu \n", switch_channel_get_name(channel), sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
+						switch_set_flag(&state, SWITCH_COLLECT_INPUT_DIGITS_DONE);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = false; sleep_time >= digit_timeout; sleep_time=%i; last_digit_time=%" SWITCH_INT64_T_FMT "; digit_timeout=%lu \n", sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
+					}
+					status = SWITCH_STATUS_SUCCESS;
+					sleep_time = digit_timeout;
+				} else {		
+					// woke up early, sleep for remaining digit timeout
+					sleep_time = digit_timeout - sleep_time;
 				}
-				status = SWITCH_STATUS_SUCCESS;
-				sleep_time = digit_timeout;
 			} else {
-				// woke up early, sleep for remaining digit timeout
-				sleep_time = digit_timeout - sleep_time;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "\nis_speech = true; sleep_time < digit_timeout; sleep_time=%i; last_digit_time=%" SWITCH_INT64_T_FMT "; digit_timeout=%lu \n", sleep_time, state.last_digit_time, (unsigned long)digit_timeout);
 			}
 
 			if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {

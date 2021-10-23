@@ -839,6 +839,8 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 		if (!*s)
 			break;
 		else if (!strncmp(s, "<!ENTITY", 8)) {	/* parse entity definitions */
+			int use_pe;
+
 			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	/* skip white space separator */
 			n = s + strspn(s, SWITCH_XML_WS "%");	/* find name */
 			*(s = n + strcspn(n, SWITCH_XML_WS)) = ';';	/* append ; to name */
@@ -849,10 +851,11 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				continue;
 			}
 
-			for (i = 0, ent = (*c == '%') ? pe : root->ent; ent[i]; i++);
+			use_pe = (*c == '%');
+			for (i = 0, ent = (use_pe) ? pe : root->ent; ent[i]; i++);
 			sstmp = (char **) switch_must_realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
 			ent = sstmp;
-			if (*c == '%')
+			if (use_pe)
 				pe = ent;
 			else
 				root->ent = ent;
@@ -879,7 +882,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				continue;
 			else
 				*s = '\0';		/* null terminate tag name */
-			for (i = 0; root->attr[i] && strcmp(n, root->attr[i][0]); i++);
+			for (i = 0; root->attr[i] && n && strcmp(n, root->attr[i][0]); i++);
 
 			//while (*(n = ++s + strspn(s, SWITCH_XML_WS)) && *n != '>') {
 			// gcc 4.4 you are a creep
@@ -965,6 +968,9 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 	if (be == -1)
 		return NULL;			/* not UTF-16 */
 
+	if (*len <= 3)
+		return NULL;
+
 	u = (char *) switch_must_malloc(max);
 	for (sl = 2; sl < *len - 1; sl += 2) {
 		c = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)	/* UTF-16BE */
@@ -997,15 +1003,15 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 /* frees a tag attribute list */
 static void switch_xml_free_attr(char **attr)
 {
-	int i = 0;
+	int i, c = 0;
 	char *m;
 
 	if (!attr || attr == SWITCH_XML_NIL)
 		return;					/* nothing to free */
-	while (attr[i])
-		i += 2;					/* find end of attribute list */
-	m = attr[i + 1];			/* list of which names and values are malloced */
-	for (i = 0; m[i]; i++) {
+	while (attr[c])
+		c += 2;					/* find end of attribute list */
+	m = attr[c + 1];			/* list of which names and values are malloced */
+	for (i = c / 2 - 1; i >= 0 ; i--) {
 		if (m[i] & SWITCH_XML_NAMEM)
 			free(attr[i * 2]);
 		if (m[i] & SWITCH_XML_TXTM)
@@ -2092,10 +2098,9 @@ static void switch_xml_user_cache(const char *key, const char *user_name, const 
 		switch_safe_free(expires_lookup);
 	}
 	if (expires) {
-		char *expires_val = switch_must_malloc(1024);
-		if (sprintf(expires_val, "%ld", (long)expires)) {
-			switch_core_hash_insert(CACHE_EXPIRES_HASH, mega_key, expires_val);
-		} else {
+		char *expires_val = (char *)switch_core_hash_insert_alloc(CACHE_EXPIRES_HASH, mega_key, 22);
+		if (!snprintf(expires_val, 22, "%ld", (long)expires)) {
+			switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
 			switch_safe_free(expires_val);
 		}
 	}
@@ -2995,12 +3000,16 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		strcpy(xml->attr[l + 3] + c, " ");	/* set name/value as not malloced */
 		if (xml->flags & SWITCH_XML_DUP)
 			xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
-	} else if (xml->flags & SWITCH_XML_DUP)
-		free((char *) name);	/* name was strduped */
+		c = l + 2; /* end of attribute list */
+	} else {
+		for (c = l; xml->attr[c]; c += 2);	/* find end of attribute list */
 
-	for (c = l; xml->attr[c]; c += 2);	/* find end of attribute list */
-	if (xml->attr[c + 1][l / 2] & SWITCH_XML_TXTM)
-		free(xml->attr[l + 1]);	/* old val */
+		if (xml->flags & SWITCH_XML_DUP)
+			free((char*)name);	/* name was strduped */
+		if (xml->attr[c + 1][l / 2] & SWITCH_XML_TXTM)
+			free(xml->attr[l + 1]);	/* old val */
+	}
+
 	if (xml->flags & SWITCH_XML_DUP)
 		xml->attr[c + 1][l / 2] |= SWITCH_XML_TXTM;
 	else
@@ -3011,9 +3020,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 	else {						/* remove attribute */
 		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
 			free(xml->attr[l]);
-		memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char *));
-		xml->attr = (char **) switch_must_realloc(xml->attr, (c + 2) * sizeof(char *));
-		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
+		c -= 2;
+		if (c > 0) {
+			memmove(xml->attr + l, xml->attr + l + 2, (c - l + 2) * sizeof(char*));
+			xml->attr = (char**)switch_must_realloc(xml->attr, (c + 2) * sizeof(char*));
+			memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
+			xml->attr[c + 1][c / 2] = '\0';
+		} else {
+			/* last attribute removed, reset attribute list */
+			free(xml->attr[3]);
+			free(xml->attr);
+			xml->attr = SWITCH_XML_NIL;
+		}
 	}
 	xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
 
@@ -3025,7 +3043,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d(switch_xml_t xml, const char *name, const char *value)
 {
 	if (!xml) return NULL;
-	return switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(switch_str_nil(value)));
+	return switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), switch_must_strdup(name), switch_must_strdup(switch_str_nil(value)));
 }
 
 /* Sets the given tag attribute or adds a new attribute if not found. A value
@@ -3033,7 +3051,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d(switch_xml_t xml, const char 
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr_d_buf(switch_xml_t xml, const char *name, const char *value)
 {
 	if (!xml) return NULL;
-	return switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), strdup(name), strdup(value));
+	return switch_xml_set_attr(switch_xml_set_flag(xml, SWITCH_XML_DUP), switch_must_strdup(name), switch_must_strdup(value));
 }
 
 /* sets a flag for the given tag and returns the tag */

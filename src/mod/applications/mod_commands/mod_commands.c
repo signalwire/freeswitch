@@ -7485,6 +7485,18 @@ SWITCH_STANDARD_API(json_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(memory_function)
+{
+	const char *err;
+	if (!(err = switch_memory_usage_stream(stream))) {
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR %s\n", err);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -7652,6 +7664,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "file_exists", "Check if a file exists on server", file_exists_function, "<file>");
 	SWITCH_ADD_API(commands_api_interface, "getcputime", "Gets CPU time in milliseconds (user,kernel)", getcputime_function, GETCPUTIME_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "json", "JSON API", json_function, "JSON");
+	SWITCH_ADD_API(commands_api_interface, "memory", "Memory usage statistics", memory_function, "memory");
 
 	SWITCH_ADD_JSON_API(json_api_interface, "mediaStats", "JSON Media Stats", json_stats_function, "");
 

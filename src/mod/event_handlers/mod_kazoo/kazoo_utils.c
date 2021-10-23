@@ -337,11 +337,8 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 
 					switch_safe_free(expanded);
 				} else {
-					switch_stream_handle_t stream = { 0 };
 					char *expanded = NULL;
 					char *expanded_vname = NULL;
-
-					SWITCH_STANDARD_STREAM(stream);
 
 					if ((expanded_vname = kz_event_expand_headers_check(event, (char *) vname, var_list, api_list, recur+1)) == vname) {
 						expanded_vname = NULL;
@@ -359,6 +356,9 @@ SWITCH_DECLARE(char *) kz_event_expand_headers_check(switch_event_t *event, cons
 						func_val = NULL;
 						sub_val = "<API execute Permission Denied>";
 					} else {
+						switch_stream_handle_t stream = { 0 };
+
+						SWITCH_STANDARD_STREAM(stream);
 						stream.param_event = event;
 						if (kz_expand_api_execute(vname, vval, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 							func_val = stream.data;

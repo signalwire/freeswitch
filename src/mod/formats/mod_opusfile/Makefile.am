@@ -22,6 +22,12 @@ noinst_PROGRAMS = test/test_opusfile
 test_test_opusfile_SOURCES = test/test_opusfile.c
 test_test_opusfile_CFLAGS = $(AM_CFLAGS) -I./ -I../ -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\" $(OPUSFILE_DECODE_CFLAGS)
 test_test_opusfile_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(OPUSFILE_DECODE_LIBS)
+
+if HAVE_OPUSFILE_ENCODE
+test_test_opusfile_CFLAGS += $(OPUSFILE_ENCODE_CFLAGS) -DHAVE_OPUSFILE_ENCODE
+test_test_opusfile_LDFLAGS += $(OPUSFILE_ENCODE_LIBS)
+endif 
+
 test_test_opusfile_LDADD = libopusfilemod.la $(switch_builddir)/libfreeswitch.la
 
 TESTS = $(noinst_PROGRAMS)

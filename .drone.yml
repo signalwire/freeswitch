@@ -79,13 +79,13 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: always
       commands:
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
@@ -116,13 +116,13 @@ steps:
       - ./configure
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: always
       commands:
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-7 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -148,6 +148,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 5d5cfb225053294d7cf1a4fed88eaf9a3a53c99a7bad4dc7164eece336c8861a
+hmac: 500b43fb74a889e2a75e115a4d64c579a6bc48b9521e260908859d7359f2d46b
 
 ...

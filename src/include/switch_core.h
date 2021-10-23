@@ -243,14 +243,6 @@ static inline void *switch_must_realloc(void *_b, size_t _z)
 	return m;
 }
 
-static inline char *switch_must_strdup(const char *_s)
-{
-	char *s = strdup(_s);
-	switch_assert(s);
-	return s;
-}
-
-
 /*!
   \defgroup core1 Core Library
   \ingroup FREESWITCH
@@ -1437,6 +1429,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t *
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t **hash);
 
 /*!
+  \brief Insert data into a hash with an auto-generated key based on the data pointer
+  \param hash the hash to add data to
+  \param data unique pointer to add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_pointer(switch_hash_t *hash, const void *data);
+
+/*!
   \brief Insert data into a hash and set flags so the value is automatically freed on delete
   \param hash the hash to add data to
   \param key the name of the key to add the data to
@@ -1445,6 +1445,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t *
   \note the string key must be a constant or a dynamic string
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data);
+
+/*!
+  \brief Insert strdup(str) into a hash and set flags so the value is automatically freed on delete
+  \param hash the hash to add str to
+  \param key the name of the key to add the str to
+  \param str string to strdup and add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_auto_free(switch_hash_t *hash, const char *key, const char *str);
 
 /*!
   \brief Insert data into a hash
@@ -1456,6 +1466,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t 
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const void *data, hashtable_destructor_t destructor);
 #define switch_core_hash_insert(_h, _k, _d) switch_core_hash_insert_destructor(_h, _k, _d, NULL)
+
+/*!
+  \brief Allocate memory and insert into a hash
+  \param hash the hash to add data to
+  \param key the name of the key to add the data to
+  \param size the size in bytes to allocate
+  \return pointer to the allocated memory
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(void *) switch_core_hash_insert_alloc_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ size_t size, hashtable_destructor_t destructor);
+#define switch_core_hash_insert_alloc(_h, _k, _s) switch_core_hash_insert_alloc_destructor(_h, _k, _s, NULL)
+
+/*!
+  \brief Insert strdup(str) into a hash
+  \param hash the hash to add str to
+  \param key the name of the key to add the str to
+  \param str string to strdup and add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const char *str, hashtable_destructor_t destructor);
+#define switch_core_hash_insert_dup(_h, _k, _d) switch_core_hash_insert_dup_destructor(_h, _k, _d, NULL)
 
 
 /*!

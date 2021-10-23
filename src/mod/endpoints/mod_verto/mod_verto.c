@@ -1050,7 +1050,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			}
 
 
-			if (zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
+			if (!use_passwd || zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
 				r = SWITCH_FALSE;
 				*code = CODE_AUTH_FAILED;
 				switch_snprintf(message, mlen, "Authentication Failure");
@@ -5496,7 +5496,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 			free(dial_str);
 		}
 
-		return cause;
+		goto end;
 	} else {
 		const char *dialed_user = switch_event_get_header(var_event, "dialed_user");
 		const char *dialed_domain = switch_event_get_header(var_event, "dialed_domain");

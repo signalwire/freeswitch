@@ -1965,6 +1965,7 @@ XS(_wrap_McastHandle_send) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "McastHandle_send" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
+    if (!arg1) SWIG_exception_fail(SWIG_ValueError, "in method '" "McastHandle_send" "', argument " "1"" is NULL"); 
     result = (int)(arg1)->send((char const *)arg2);
     ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
     
@@ -2005,6 +2006,7 @@ XS(_wrap_McastHandle_recv) {
       } 
       arg2 = static_cast< int >(val2);
     }
+    if (!arg1) SWIG_exception_fail(SWIG_ValueError, "in method '" "McastHandle_recv" "', argument " "1"" is NULL");
     result = (char *)(arg1)->recv(arg2);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
@@ -2035,6 +2037,7 @@ XS(_wrap_McastHandle_filenum) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "McastHandle_filenum" "', argument " "1"" of type '" "McastHandle *""'"); 
     }
     arg1 = reinterpret_cast< McastHandle * >(argp1);
+    if (!arg1) SWIG_exception_fail(SWIG_ValueError, "in method '" "McastHandle_filenum" "', argument " "1"" is NULL");
     result = (arg1)->filenum();
     ST(argvi) = SWIG_NewPointerObj((new mcast_socket_t(static_cast< const mcast_socket_t& >(result))), SWIGTYPE_p_mcast_socket_t, SWIG_POINTER_OWN | 0); argvi++ ;
     

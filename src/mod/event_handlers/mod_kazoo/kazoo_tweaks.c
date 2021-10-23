@@ -226,7 +226,6 @@ static void kz_tweaks_channel_transferor_event_handler(switch_event_t *event)
 					switch_event_fire(&evt);
 				}
 				switch_core_session_rwunlock(session);
-				switch_safe_strdup(prv_interaction_id);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR NO UUID SESSION: %s , %s , %s \n", uuid, dest_call_id, dest_peer_uuid);
 			}
@@ -240,7 +239,6 @@ static void kz_tweaks_channel_transferor_event_handler(switch_event_t *event)
 					switch_event_fire(&evt);
 				}
 				switch_core_session_rwunlock(session);
-				switch_safe_strdup(prv_interaction_id);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR NO PEER SESSION: %s , %s , %s \n", uuid, dest_call_id, dest_peer_uuid);
 			}
@@ -254,11 +252,9 @@ static void kz_tweaks_channel_transferor_event_handler(switch_event_t *event)
 					switch_event_fire(&evt);
 				}
 				switch_core_session_rwunlock(session);
-				switch_safe_strdup(prv_interaction_id);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR NO PEER SESSION: %s , %s , %s \n", uuid, dest_call_id, dest_peer_uuid);
 			}
-			switch_safe_strdup(interaction_id);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TRANSFEROR ID = NULL : %s , %s , %s \n", uuid, dest_call_id, dest_peer_uuid);
 		}
@@ -441,7 +437,6 @@ static switch_status_t kz_tweaks_handle_replaces_call_id(switch_core_session_t *
 				for(i = 0; bridge_variables[i] != NULL; i++) {
 					const char *val = switch_channel_get_variable_dup(replaced_call_channel, bridge_variables[i], SWITCH_TRUE, -1);
 					switch_channel_set_variable(channel, bridge_variables[i], val);
-					switch_safe_strdup(val);
 				}
 				if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
