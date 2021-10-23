@@ -69,6 +69,7 @@ steps:
 trigger:
   branch:
   - master
+  - pick
   event:
   - pull_request
   - push
@@ -142,12 +143,13 @@ steps:
 trigger:
   branch:
   - master
+  - pick
   event:
   - pull_request
   - push
 
 ---
 kind: signature
-hmac: 500b43fb74a889e2a75e115a4d64c579a6bc48b9521e260908859d7359f2d46b
+hmac: ba6963d1e1bc534f4d7aa9861e488e1e4c57ee8d5c2dc087bd062b304e2896b7
 
 ...
