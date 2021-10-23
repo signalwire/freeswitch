@@ -38,7 +38,6 @@
 #define MAX_MISSED 500
 
 #define set_string(x,y) strncpy(x, y, sizeof(x)-1)
-#define SSL_WANT_READ_WRITE(err) (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
@@ -146,7 +145,6 @@ static struct {
 	int stop_on_bind_error;
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
-	int ssl_ready;
 } prefs;
 
 
@@ -2693,7 +2691,6 @@ static int init_ssl()
 
 	prefs.ssl_method = SSLv23_server_method();
 	prefs.ssl_ctx = SSL_CTX_new(prefs.ssl_method);
-	prefs.ssl_ready = 1;
 	assert(prefs.ssl_ctx);
 
 	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_SSLv2);
@@ -2744,8 +2741,6 @@ static int init_ssl()
 
  fail:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
-
-	prefs.ssl_ready = 0;
 
 	if (prefs.ssl_ctx) {
 		SSL_CTX_free(prefs.ssl_ctx);
