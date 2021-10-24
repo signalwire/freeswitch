@@ -214,6 +214,10 @@ switch_status_t loadRuntime()
 		}
 	}
 
+	char managedDir[256];
+	switch_snprintf(managedDir, 256, "%s%smanaged", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR);
+	mono_domain_set_config(managed_globals.domain, managedDir, "dummy.config");
+	
 	/* Already loaded? */
 	MonoAssemblyName *name = mono_assembly_name_new (MOD_MANAGED_ASM_NAME);
 	//Note also that it can't be allocated on the stack anymore and you'll need to create and destroy it with the following API:
