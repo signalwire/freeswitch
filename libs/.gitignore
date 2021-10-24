@@ -85,12 +85,6 @@ opal
 /esl/Release/
 /flite-*/
 /freeradius-client-*/
-/freetdm/build/compile
-/freetdm/COPYING
-/freetdm/INSTALL
-/freetdm/Makefile.in
-/freetdm/msvc/Debug/
-/freetdm/msvc/Release/
 /iksemel/build/compile
 /iksemel/doc/Makefile
 /iksemel/doc/Makefile.in

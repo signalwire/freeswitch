@@ -189,6 +189,7 @@ struct switch_core_session {
 	switch_buffer_t *text_buffer;
 	switch_buffer_t *text_line_buffer;
 	switch_mutex_t *text_mutex;
+	const char *external_id;
 };
 
 struct switch_media_bug {
@@ -305,6 +306,7 @@ struct switch_runtime {
 	uint32_t port_alloc_flags;
 	char *event_channel_key_separator;
 	uint32_t max_audio_channels;
+	switch_call_cause_t shutdown_cause;
 };
 
 extern struct switch_runtime runtime;

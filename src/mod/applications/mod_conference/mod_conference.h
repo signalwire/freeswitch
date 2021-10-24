@@ -214,6 +214,7 @@ typedef enum {
 	MFLAG_VIDEO_JOIN,
 	MFLAG_DED_VID_LAYER,
 	MFLAG_HOLD,
+	MFLAG_SKIP_DTMF,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -255,6 +256,7 @@ typedef enum {
 	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	CFLAG_NO_MOH,
 	CFLAG_DED_VID_LAYER_AUDIO_FLOOR,
+	CFLAG_BREAKABLE,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -760,6 +762,7 @@ typedef struct conference_obj {
 	char *default_layout_name;
 	int mux_paused;
 	char *video_codec_config_profile_name;
+	int heartbeat_period_sec;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -1097,6 +1100,7 @@ void conference_member_set_score_iir(conference_member_t *member, uint32_t score
 
 conference_relationship_t *conference_member_add_relationship(conference_member_t *member, uint32_t id);
 conference_member_t *conference_member_get(conference_obj_t *conference, uint32_t id);
+conference_member_t *conference_member_get_by_str(conference_obj_t *conference, const char *id_str);
 conference_member_t *conference_member_get_by_var(conference_obj_t *conference, const char *var, const char *val);
 conference_member_t *conference_member_get_by_role(conference_obj_t *conference, const char *role_id);
 switch_status_t conference_member_del_relationship(conference_member_t *member, uint32_t id);

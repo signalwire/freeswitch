@@ -203,13 +203,13 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  * Check a test /w error message
  */
 #define fst_xcheck(expr, error_msg) \
-	fct_xchk(expr, "%s", error_msg);
+	(fct_xchk(expr, "%s", error_msg))
 
 /**
  * Fail a test
  */
 #define fst_fail(error_msg) \
-	fct_xchk(0, "%s", error_msg);
+	(fct_xchk(0, "%s", error_msg))
 
 /**
  * Check duration relative to test start, last marked time, or last check.
@@ -236,7 +236,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		(actual), \
 		(expected), \
 		(precision) \
-	);
+	)
 
 /**
  * Check if double-precision number is in range
@@ -248,7 +248,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		(actual), \
 		(expected), \
 		(precision) \
-	);
+	)
 
 /**
  * Run test without loading FS core
@@ -484,9 +484,10 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  *
  * @param name the name of this test
  * @param rate the rate of the channel
+ * @param video_codec the rate of the channel
  */
 
-#define FST_SESSION_BEGIN_RATE(name, rate) \
+#define FST_SESSION_BEGIN_RATE_VIDEO(name, rate, video_codec) \
 	FCT_TEST_BGN(name) \
 	{ \
 		if (fst_core) { \
@@ -513,7 +514,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		fst_requires(switch_event_create_plain(&fst_originate_vars, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS); \
 		switch_event_add_header_string(fst_originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", "+15551112222"); \
 		switch_event_add_header(fst_originate_vars, SWITCH_STACK_BOTTOM, "rate", "%d", rate); \
-		if (switch_ivr_originate(NULL, &fst_session, &fst_cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, fst_originate_vars, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS && fst_session) { \
+		if (switch_ivr_originate(NULL, &fst_session, &fst_cause, "{null_video_codec=" video_codec "}null/+15553334444", 2, NULL, NULL, NULL, NULL, fst_originate_vars, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS && fst_session) { \
 			switch_memory_pool_t *fst_session_pool = switch_core_session_get_pool(fst_session); \
 			switch_channel_t *fst_channel = switch_core_session_get_channel(fst_session); \
 			switch_channel_set_state(fst_channel, CS_SOFT_EXECUTE); \
@@ -521,14 +522,16 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 			switch_channel_set_variable(fst_channel, "send_silence_when_idle", "-1"); \
 			switch_channel_set_variable(fst_channel, "RECORD_STEREO", "true"); \
 			switch_ivr_record_session(fst_session, (char *)"/tmp/"#name".wav", 0, NULL); \
+			switch_channel_set_variable(fst_channel, "RECORD_STEREO", NULL); \
 			for(;;) {
 
 /**
  * Define a session test in a test suite.  This can be used to test IVR functions.
- * See FST_SESSION_BEGIN_RATE
+ * See FST_SESSION_BEGIN_RATE_VIDEO
  */
 
 #define FST_SESSION_BEGIN(name) FST_SESSION_BEGIN_RATE(name, 8000)
+#define FST_SESSION_BEGIN_RATE(name, rate) FST_SESSION_BEGIN_RATE_VIDEO(name, rate, "")
 
 /* BODY OF TEST CASE HERE */
 

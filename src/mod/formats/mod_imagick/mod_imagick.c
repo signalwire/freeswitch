@@ -176,7 +176,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 		context->autoplay = 1;
 	}
 
-	context->max = 10000;
+	context->max = 86400000;
 
 	context->exception = AcquireExceptionInfo();
 	context->image_info = AcquireImageInfo();
@@ -273,9 +273,9 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	if (context->lazy) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s, read the first %d page(s)", path, context->lazy);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s, read the first %d page(s)\n", path, context->lazy);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s", path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s\n", path);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

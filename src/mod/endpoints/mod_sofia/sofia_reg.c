@@ -38,6 +38,8 @@
  *
  */
 #include "mod_sofia.h"
+#include "sofia-sip/hostdomain.h"
+#include "sip-dig.h"
 
 static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 {
@@ -201,12 +203,14 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 		if (gateway_ptr->state == REG_STATE_REGED) {
 			sofia_reg_kill_reg(gateway_ptr);
 		}
+		sofia_private_free(gateway_ptr->sofia_private);
 
 		for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
 
 			if (gw_sub_ptr->state == SUB_STATE_SUBED) {
 				sofia_reg_kill_sub(gw_sub_ptr);
 			}
+			sofia_private_free(gw_sub_ptr->sofia_private);
 		}
 
 		gateway_ptr->subscriptions = NULL;
@@ -1123,13 +1127,24 @@ switch_console_callback_match_t *sofia_reg_find_reg_url_with_positive_expires_mu
 	return cbt.list;
 }
 
+static char * sofia_alg_to_str(sofia_auth_algs_t alg) 
+{
+	if (alg == ALG_SHA256) 
+		return "SHA-256";
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	if (alg == ALG_SHA512) 
+		return "SHA-512-256";
+#endif 
+	return "MD5";
+}
 
 void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_dispatch_event_t *de,
 							  sofia_regtype_t regtype, const char *realm, int stale, long exptime)
 {
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	char *sql, *auth_str;
+	char *sql, *auth_str = NULL; 
+	char *auth_str_rfc8760[SOFIA_MAX_REG_ALGS] = {0};
 	msg_t *msg = NULL;
 
 
@@ -1137,24 +1152,75 @@ void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_
 		msg = de->data->e_msg;
 	}
 
-	switch_uuid_get(&uuid);
-	switch_uuid_format(uuid_str, &uuid);
+	if (!profile->rfc8760_algs_count) {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(uuid_str, &uuid);
 
-	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
-						 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
-						 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + exptime,
-						 profile->name, mod_sofia_globals.hostname);
-	switch_assert(sql != NULL);
-	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+		sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
+							 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
+							 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + profile->timer_t1x64 / 1000,
+							 profile->name, mod_sofia_globals.hostname);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-	auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
+		auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
+	} else {
+		int i;
+		char *sql_build;
+		switch_stream_handle_t stream = { 0 };
+
+		SWITCH_STANDARD_STREAM(stream);
+		for (i = 0; i < profile->rfc8760_algs_count; i++) {
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
+			sql_build = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc, algorithm) "
+								 "values('%s', %ld, '%q', '%q', 0, %d)", uuid_str,
+								 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + profile->timer_t1x64 / 1000,
+								 profile->name, mod_sofia_globals.hostname, profile->auth_algs[i]);
+
+			auth_str_rfc8760[i] = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=%s, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "", sofia_alg_to_str(profile->auth_algs[i]));
+			stream.write_function(&stream, "%s%s", i ? ";" : "", sql_build);
+			switch_safe_free(sql_build);
+		}
+		sofia_glue_execute_sql_now(profile, (char **)&stream.data, SWITCH_TRUE);
+	}
 
 	if (regtype == REG_REGISTER) {
-		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
+		if (!profile->rfc8760_algs_count) {
+			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
+		} else {
+			int i;
+			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)), 
+					TAG_IF(auth_str_rfc8760[0], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[0])), TAG_IF(auth_str_rfc8760[1], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[1])),
+					TAG_IF(auth_str_rfc8760[2], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[2])), TAG_IF(auth_str_rfc8760[3], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[3])),
+					TAG_IF(auth_str_rfc8760[4], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[4])), TAG_IF(auth_str_rfc8760[5], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[5])),
+					TAG_IF(auth_str_rfc8760[6], SIPTAG_WWW_AUTHENTICATE_STR(auth_str_rfc8760[6])), TAG_END());
+			for (i = 0 ; i < profile->rfc8760_algs_count; i++) {
+				switch_safe_free(auth_str_rfc8760[i]);
+			}
+		}
 	} else if (regtype == REG_INVITE) {
-		nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED,
+		if (!profile->rfc8760_algs_count) {
+			nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED,
+						TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)),
+						SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
+		} else {
+			int i;
+			nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED,
 					TAG_IF(msg, NUTAG_WITH_THIS_MSG(msg)),
-					SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
+					TAG_IF(auth_str_rfc8760[0], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[0])), 
+					TAG_IF(auth_str_rfc8760[1], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[1])), 
+					TAG_IF(auth_str_rfc8760[2], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[2])), 
+					TAG_IF(auth_str_rfc8760[3], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[3])), 
+					TAG_IF(auth_str_rfc8760[4], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[4])), 
+					TAG_IF(auth_str_rfc8760[5], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[5])), 
+					TAG_IF(auth_str_rfc8760[6], SIPTAG_PROXY_AUTHENTICATE_STR(auth_str_rfc8760[6])), 
+					TAG_END());
+			for (i = 0 ; i < profile->rfc8760_algs_count; i++) {
+				switch_safe_free(auth_str_rfc8760[i]);
+			}
+		}
+
 	}
 
 	switch_safe_free(auth_str);
@@ -2384,6 +2450,144 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 
 }
 
+switch_bool_t sip_resolve_prepare_transport(struct dig *dig, sofia_transport_t tport)
+{
+	struct transport *tports = dig->tports;
+
+	if (tport == SOFIA_TRANSPORT_UDP) {
+		tports[0].name = "udp";
+		tports[0].service = "SIP+D2U";
+		tports[0].srv = "_sip._udp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_TCP) {
+		tports[0].name = "tcp";
+		tports[0].service = "SIP+D2T";
+		tports[0].srv = "_sip._tcp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_TCP_TLS) {
+		tports[0].name = "tls";
+		tports[0].service = "SIPS+D2T";
+		tports[0].srv = "_sips._tcp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_SCTP) {
+		tports[0].name = "sctp";
+		tports[0].service = "SIP+D2S";
+		tports[0].srv = "_sip._sctp.";
+	} else {
+		return SWITCH_FALSE;
+	}
+	return SWITCH_TRUE;
+}
+
+/* resolve domain name (SRV + A + AAAA) and compare result with passed IP address */
+switch_bool_t sip_resolve_compare(const char *domainname, const char *ip, sofia_transport_t transport)
+{
+	url_t *uri = NULL;
+	char const *host;
+	char const *port;
+	struct dig dig[1] = {{ NULL }};
+	su_home_t *home = NULL;
+	sres_record_t **answers = NULL;
+	switch_bool_t ret = SWITCH_FALSE, ipv6 = SWITCH_FALSE;
+	
+	if (!host_is_domain(domainname)) {
+		return ret;
+	}
+
+	if (!sip_resolve_prepare_transport(dig, transport)) {
+		return ret;
+	}
+
+	home = su_home_new(sizeof(*home));
+
+	dig->sres = sres_resolver_new(getenv("SRESOLV_CONF"));
+
+	uri = url_hdup(home, (void *)domainname);
+
+	if (uri && uri->url_type == url_unknown)
+		url_sanitize(uri);
+
+	if (uri && uri->url_type == url_any) {
+		goto out;
+	}
+
+	if (!uri || (uri->url_type != url_sip && uri->url_type != url_sips)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid uri\n");
+		goto out;
+	}
+
+	port = url_port(uri);
+	if (port && !port[0]) port = NULL;
+
+	host = uri->url_host;
+
+	if (strchr(ip, ':')) {
+		ipv6 = SWITCH_TRUE;
+	}
+
+	ret = dig_all_srvs_simple(dig, domainname, ip, ipv6);
+
+	if (!ret) {
+		answers = dig_addr_simple(dig, host, ipv6?sres_type_aaaa:sres_type_a);
+		ret = verify_ip(answers, ip, ipv6);
+	}
+
+out:
+	su_home_unref(home);
+	sres_resolver_unref(dig->sres);
+
+	return ret;
+}
+
+static switch_bool_t is_host_from_gateway(const char *remote_ip, sofia_gateway_t *gateway) 
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	char *hosts[3]; /* check the 3 places where we keep IP/hostname */
+	int i;
+
+	hosts[0] = gateway->proxy_host_cfg;
+	hosts[1] = gateway->register_proxy_host_cfg;
+	hosts[2] = gateway->outbound_proxy_host_cfg;
+
+	for (i = 0; i < 3; i++) {
+		if (zstr(hosts[i])) {
+			continue;
+		}
+
+		if (host_is_ip_address(hosts[i])) {
+			if (!strcmp(hosts[i], remote_ip)) {
+				ret = SWITCH_TRUE;
+			}
+
+			if (ret) break;
+		} else {
+			ret = sip_resolve_compare(hosts[i], remote_ip, gateway->register_transport);
+			if (ret) break;
+		}
+	}
+
+	return ret;
+}
+
+static switch_bool_t is_legitimate_gateway(sofia_dispatch_event_t *de, sofia_gateway_t *gateway) 
+{
+	char remote_ip[80] = { 0 };
+	switch_bool_t ret = SWITCH_FALSE;
+
+	sofia_glue_get_addr(de->data->e_msg, remote_ip, sizeof(remote_ip), NULL);
+
+	/* setting param "gw-auth-acl" supersedes everything */
+	if (gateway->gw_auth_acl) {
+		ret = switch_check_network_list_ip(remote_ip, gateway->gw_auth_acl);
+		if (!ret) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challange from [%s] denied by gw-auth-acl.\n", remote_ip);
+		}
+
+		return ret;
+	} else {
+		return is_host_from_gateway(remote_ip, gateway);
+	}
+}
 
 void sofia_reg_handle_sip_r_register(int status,
 									 char const *phrase,
@@ -2415,6 +2619,7 @@ void sofia_reg_handle_sip_r_register(int status,
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
 			if (!zstr_buf(network_ip)) {
 				snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+
 			}
 		}
 
@@ -2636,11 +2841,22 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (sip_auth_username && sip_auth_password) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, sip_auth_username, sip_auth_password);
-	} else if (gateway) {
+	} else if (gateway && is_legitimate_gateway(de, gateway)) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
+		if (gateway) {
+			switch_event_t *s_event;
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_INVALID_DIGEST_REQ) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", gateway->profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+				switch_event_fire(&s_event);
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-						  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+							  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+
 		goto cancel;
 	}
 
@@ -2710,6 +2926,57 @@ static int sofia_reg_regcount_callback(void *pArg, int argc, char **argv, char *
 	return 0;
 }
 
+static switch_bool_t sofia_alg_is_allowed(sofia_profile_t *profile, sofia_auth_algs_t alg) 
+{
+	int i;
+
+	for (i = 0 ; i < SOFIA_MAX_REG_ALGS; i++) {
+		if (profile->auth_algs[i] == alg) { 
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
+/*we are more permissive with the alg names that come from cfg */
+sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive)
+{
+	if (!strcasecmp(algorithm, "MD5") || (permissive && !strcasecmp(algorithm, "MD-5"))) {
+		return ALG_MD5;
+	}
+	if (!strcasecmp(algorithm, "SHA-256") || (permissive && !strcasecmp(algorithm, "SHA256"))) {
+		return ALG_SHA256;
+	}
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+	if (!strcasecmp(algorithm, "SHA-512-256") || (permissive && !strcasecmp(algorithm, "SHA512")) 
+			|| (permissive && !strcasecmp(algorithm, "SHA512-256")) || (permissive && !strcasecmp(algorithm, "SHA-512"))) {
+		return ALG_SHA512;
+	}
+#endif
+	return ALG_NONE;
+}
+
+switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen) 
+{
+	switch (use_alg) 
+	{
+		case ALG_MD5:
+			switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
+			break;
+		case ALG_SHA256:
+			switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
+			break;
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+		case ALG_SHA512:
+			switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
+			break;
+#endif
+		default:
+			return SWITCH_STATUS_FALSE;
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 								sip_authorization_t const *authorization,
 								sip_t const *sip,
@@ -2724,9 +2991,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 {
 	int indexnum;
 	const char *cur;
-	char uridigest[SWITCH_MD5_DIGEST_STRING_SIZE];
-	char bigdigest[SWITCH_MD5_DIGEST_STRING_SIZE];
-	char *username, *realm, *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
+	char *uridigest = NULL, *bigdigest = NULL, *hexdigest = NULL;
+	char *username, *realm, *nonce, *uri, *qop, *cnonce, *nc, *response, *algorithm, *input = NULL, *input2 = NULL;
 	auth_res_t ret = AUTH_FORBIDDEN;
 	int first = 0;
 	const char *passwd = NULL;
@@ -2737,7 +3003,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	char *sql;
 	char *number_alias = NULL;
 	switch_xml_t user = NULL, param, uparams;
-	char hexdigest[SWITCH_MD5_DIGEST_STRING_SIZE] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
 	const char *auth_acl = NULL;
@@ -2747,9 +3012,12 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *user_agent_filter = profile->user_agent_filter;
 	uint32_t max_registrations_perext = profile->max_registrations_perext;
 	char client_port[16];
+	uint8_t use_alg;
+	unsigned int digest_outputlen;
+
 	snprintf(client_port, 15, "%d", network_port);
 
-	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
+	username = realm = nonce = uri = qop = cnonce = nc = response = algorithm = NULL;
 
 	if (authorization->au_params) {
 		for (indexnum = 0; (cur = authorization->au_params[indexnum]); indexnum++) {
@@ -2782,7 +3050,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 						response = strdup(val);
 					} else if (!strcasecmp(var, "nc") && !nc) {
 						nc = strdup(val);
+					} else if (!strcasecmp(var, "algorithm") && !algorithm) {
+						algorithm = strdup(val);
 					}
+
 				}
 
 				free(work);
@@ -2805,6 +3076,26 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			}
 			goto end;
 		}
+	}
+
+	if (algorithm) {
+		if (profile->rfc8760_algs_count) {
+			switch_bool_t not_allowed = SWITCH_FALSE;
+			sofia_auth_algs_t alg_id = sofia_alg_str2id(algorithm, SWITCH_FALSE);
+			if ((alg_id == ALG_NONE) || !sofia_alg_is_allowed(profile, alg_id)) {
+				not_allowed = SWITCH_TRUE;
+			} else {
+				use_alg = alg_id;
+			}
+			if (not_allowed) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SIP auth hash algorithm explicitly not allowed. [%s]\n", algorithm);
+				goto end;
+			}
+		} else {
+			use_alg = ALG_MD5;
+		}
+	} else {
+		use_alg = ALG_MD5;
 	}
 
 	user_agent = (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown";
@@ -3059,10 +3350,14 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	if (!a1_hash) {
 		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
-		switch_md5_string(hexdigest, (void *) input, strlen(input));
+
+		if (sofia_make_digest(use_alg, &hexdigest, (void *)input, &digest_outputlen) != SWITCH_STATUS_SUCCESS) {
+			switch_safe_free(input);
+			goto end;
+		}
+
 		switch_safe_free(input);
 		a1_hash = hexdigest;
-
 	}
 
 	if (user_agent_filter) {
@@ -3110,7 +3405,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
   for_the_sake_of_interop:
 
 	if ((input = switch_mprintf("%s:%q", regstr, uri))) {
-		switch_md5_string(uridigest, (void *) input, strlen(input));
+		if (sofia_make_digest(use_alg, &uridigest, (void *)input, &digest_outputlen) != SWITCH_STATUS_SUCCESS) {
+			switch_safe_free(input);
+			goto end;
+		}
 	}
 
 	if (nc && cnonce && qop) {
@@ -3120,7 +3418,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	}
 
 	if (input2) {
-		switch_md5_string(bigdigest, (void *) input2, strlen(input2));
+		if (sofia_make_digest(use_alg, &bigdigest, (void *)input2, &digest_outputlen) != SWITCH_STATUS_SUCCESS) {
+			switch_safe_free(input2);
+			goto end;
+		}
 	}
 
 	if (input2 && !strcasecmp(bigdigest, response)) {
@@ -3254,7 +3555,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
   end:
 
 
-	if (nc && cnonce && qop) {
+	if (nc && cnonce && qop && ret == AUTH_OK) {
+		ret = AUTH_RENEWED;
+	}
+
+	if (((ret == AUTH_OK) || (ret == AUTH_RENEWED)) && nc) {
 		ncl = strtoul(nc, 0, 16);
 
 		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%q'",
@@ -3263,8 +3568,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-		if (ret == AUTH_OK)
-			ret = AUTH_RENEWED;
 	}
 
 	switch_event_destroy(&params);
@@ -3286,6 +3589,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_safe_free(cnonce);
 	switch_safe_free(nc);
 	switch_safe_free(response);
+	switch_safe_free(algorithm);
+	switch_safe_free(uridigest);
+	switch_safe_free(bigdigest);
+	switch_safe_free(hexdigest);
 
 	if (reg_count && !*reg_count) {
 		if ((ret == AUTH_OK || ret == AUTH_RENEWED)) {

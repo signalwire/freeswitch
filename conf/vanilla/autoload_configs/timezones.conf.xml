@@ -197,7 +197,7 @@
 	<zone name="America/Santarem" value="BRT3" />
 	<zone name="America/Santiago" value="CLT3" />
 	<zone name="America/Santo_Domingo" value="AST4" />
-	<zone name="America/Sao_Paulo" value="BRT3BRST,M10.3.0/0,M2.3.0/0" />
+	<zone name="America/Sao_Paulo" value="BRT3" />
 	<zone name="America/Scoresbysund" value="EGT1EGST,M3.5.0/0,M10.5.0/1" />
 	<zone name="America/Shiprock" value="MST7MDT,M3.2.0,M11.1.0" />
 	<zone name="America/Sitka" value="AKST9AKDT,M3.2.0,M11.1.0" />
