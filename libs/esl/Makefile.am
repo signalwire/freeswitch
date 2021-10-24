@@ -1,13 +1,13 @@
 AUTOMAKE_OPTIONS = foreign subdir-objects
 SUBDIRS = . perl
 MYLIB=./.libs/libesl.a
-LIBS=-lncurses -lpthread -lm
+LIBS=-lncurses -lpthread -lm -lssl
 LDFLAGS=-L. $(SYSTEM_LDFLAGS)
 SOLINK=-shared -Xlinker -x
 
 lib_LTLIBRARIES = libesl.la
-libesl_la_CFLAGS    = $(SWITCH_AM_CFLAGS) $(PICKY) $(SYSTEM_CFLAGS) 
-libesl_la_CXXFLAGS  = $(SWITCH_AM_CXXFLAGS) 
+libesl_la_CFLAGS    = $(SWITCH_AM_CFLAGS) $(PICKY) $(SYSTEM_CFLAGS)
+libesl_la_CXXFLAGS  = $(SWITCH_AM_CXXFLAGS)
 libesl_la_CPPFLAGS  = -I$(switch_srcdir)/libs/esl/src/include
 libesl_la_LDFLAGS   = -version-info 1:0:0 $(AM_LDFLAGS) -static -no-undefined -L. $(SYSTEM_LDFLAGS)
 libesl_la_SOURCES   = src/esl.c src/esl_event.c src/esl_threadmutex.c src/esl_config.c src/esl_json.c src/esl_buffer.c src/cJSON.c src/cJSON_Utils.c
@@ -32,22 +32,22 @@ endif
 testclient_SOURCES = testclient.c
 testclient_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 testclient_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
-testclient_LDADD   = libesl.la 
+testclient_LDADD   = libesl.la
 
 testserver_SOURCES = testserver.c
 testserver_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 testserver_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
-testserver_LDADD   = libesl.la 
+testserver_LDADD   = libesl.la
 
 testserver_fork_SOURCES = testserver_fork.c
 testserver_fork_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 testserver_fork_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
-testserver_fork_LDADD   = libesl.la 
+testserver_fork_LDADD   = libesl.la
 
 fs_ivrd_SOURCES = ivrd.c
 fs_ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 fs_ivrd_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
-fs_ivrd_LDADD   = libesl.la 
+fs_ivrd_LDADD   = libesl.la
 
 reswig:	swigclean
 	$(MAKE) -C perl reswig
@@ -73,7 +73,7 @@ perlmod:
 	$(MAKE)	-C perl
 
 phpmod: $(MYLIB)
-	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php 
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php
 
 luamod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" LUA_CFLAGS="$(LUA_CFLAGS)" LUA_LIBS="$(LUA_LIBS)" -C lua
