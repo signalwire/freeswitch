@@ -229,7 +229,7 @@ FST_CORE_BEGIN("conf")
 			while (1) {
 				status = switch_core_file_read(&fh, data, &len);
 				if (status != SWITCH_STATUS_SUCCESS) break;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d\n", len);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "read: %" SWITCH_SIZE_T_FMT "\n", len);
 				// fst_check(len == SAMPLES);
 				status = switch_core_file_read_video(&fh, &frame, SVR_FLUSH);
 

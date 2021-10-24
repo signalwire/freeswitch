@@ -2,6 +2,10 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+#ifndef MSG_CONFIRM
+#define MSG_CONFIRM 0
+#endif
+
 static const char *rx_host = "127.0.0.1";
 static switch_port_t rx_port = 1234;
 static const char *tx_host = "127.0.0.1";
