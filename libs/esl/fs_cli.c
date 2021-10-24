@@ -701,7 +701,7 @@ static void redisplay(void)
 		{
 			int pos = (int)(lf->cursor - lf->buffer);
 			char s1[12], s2[12] = "";
-
+			
 			putchar('\r');
 			snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);
 			if (pos) snprintf(s2, sizeof(s2), "\033[%dC", pos);
@@ -744,7 +744,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		esl_mutex_lock(MUTEX);
 		status = esl_recv_event_timed(handle, 10, 1, NULL);
 		esl_mutex_unlock(MUTEX);
-
+		
 		if (status == ESL_BREAK) {
 			sleep_ms(1);
 		} else if (status == ESL_FAIL) {
@@ -858,9 +858,9 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		//sleep_ms(1);
 	}
 
-	esl_mutex_lock(MUTEX);
+	esl_mutex_lock(MUTEX);  
 	thread_up = 0;
-	esl_mutex_unlock(MUTEX);
+	esl_mutex_unlock(MUTEX);  
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
 	return NULL;
@@ -882,7 +882,7 @@ static const char *cli_usage =
 static int process_command(esl_handle_t *handle, const char *cmd)
 {
 	int r = 0;
-
+	
 	while (*cmd == ' ') cmd++;
 
 	esl_mutex_lock(MUTEX);
@@ -946,7 +946,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		char cmd_str[1024] = "";
 		const char *err = NULL;
 
-		if (!strncasecmp(cmd, "console loglevel ", 17)) {
+		if (!strncasecmp(cmd, "console loglevel ", 17)) { 
 			snprintf(cmd_str, sizeof(cmd_str), "log %s", cmd + 17);
 			esl_send_recv(handle, cmd_str);
 			printf("%s\n", handle->last_sr_reply);
@@ -965,11 +965,11 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			}
 		}
 	}
-
+	
  end:
 
 	esl_mutex_unlock(MUTEX);
-
+		
 	return r;
 }
 
@@ -1005,7 +1005,7 @@ static const char *basic_gets(int *cnt)
 			size_t command_buf_len;
 			if (fgets(command_buf, sizeof(command_buf) - 1, stdin) != command_buf) {
 				break;
-			}
+			}			
 			if ((command_buf_len = strlen(command_buf)) > 0) {
 				command_buf[command_buf_len - 1] = '\0'; /* remove endline */
 			}
@@ -1193,7 +1193,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 	esl_mutex_lock(MUTEX);
 	esl_send_recv(global_handle, cmd_str);
 	esl_mutex_unlock(MUTEX);
-
+	
 	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
 		char *r = global_handle->last_sr_event->body;
 		char *w, *p1;
@@ -1381,7 +1381,7 @@ static void expand_prompt(char *s, size_t len, cli_profile_t *profile)
 	for (p = s; p && *p; p++) {
 		if (*p == '%') {
 			p++;
-
+			
 			switch(*p) {
 			case 's':
 				esl_copy_string(q, switchname, len - (q - &tmp[0]));
@@ -1468,7 +1468,6 @@ int main(int argc, char *argv[])
 		{"reconnect", 0, 0, 'R'},
 		{"timeout", 1, 0, 't'},
 		{"connect-timeout", 1, 0, 'T'},
-		{"secure", 1, 0, 's'},
 		{0, 0, 0, 0}
 	};
 	char temp_host[128];
@@ -1488,13 +1487,13 @@ int main(int argc, char *argv[])
 	int argv_log_uuid_short = 0;
 	int argv_quiet = 0;
 	int argv_batch = 0;
-	int loops = 2, reconnect = 0, secure = 0;
+	int loops = 2, reconnect = 0;
 	char *ccheck;
 
 	gethostname(hostname, sizeof(hostname));
 
 	esl_mutex_create(&MUTEX);
-
+			
 #if HAVE_DECL_EL_PROMPT_ESC
 	feature_level = 1;
 #else
@@ -1540,7 +1539,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qQrRhib?ns", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qQrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1595,9 +1594,6 @@ int main(int argc, char *argv[])
 			case 'b':
 				argv_batch = 1;
 				break;
-			case 's':
-				secure = 1;
-				break;
 			case 'Q':
 #ifdef HAVE_LIBEDIT
 				argv_use_history_file = 0;
@@ -1640,7 +1636,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-
+	
 	if (!profile) {
 		esl_log(ESL_LOG_DEBUG, "no profiles found, using builtin profile\n");
 		profile = &internal_profile;
@@ -1690,7 +1686,7 @@ int main(int argc, char *argv[])
 	connected = 0;
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
-		if (esl_connect_timeout_s(&handle, profile->host, profile->port, profile->user, profile->pass, connect_timeout, secure)) {
+		if (esl_connect_timeout(&handle, profile->host, profile->port, profile->user, profile->pass, connect_timeout)) {
 			esl_global_set_default_logger(7);
 			esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 			if (loops == 1) {
@@ -1912,7 +1908,7 @@ int main(int argc, char *argv[])
 		esl_mutex_unlock(MUTEX);
 		sleep_ms(10);
 	} while (check_up > 0);
-
+	
 	esl_mutex_destroy(&MUTEX);
 
 	return 0;

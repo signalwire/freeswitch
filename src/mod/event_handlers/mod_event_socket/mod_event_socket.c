@@ -39,12 +39,6 @@
 
 #define set_string(x,y) strncpy(x, y, sizeof(x)-1)
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
-#define SSL_METHOD_FUNC TLS_server_method();
-#else
-#define SSL_METHOD_FUNC SSLv23_server_method();
-#endif
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -2695,13 +2689,9 @@ static int init_ssl()
 {
 	const char *err = "";
 
-	prefs.ssl_method = SSL_METHOD_FUNC;
+	prefs.ssl_method = SSLv23_server_method();
 	prefs.ssl_ctx = SSL_CTX_new(prefs.ssl_method);
-
-	if (!prefs.ssl_ctx) {
-		err = "CAN'T INIT SSL CTX\n";
-		goto fail;
-	}
+	assert(prefs.ssl_ctx);
 
 	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_SSLv2);
 	SSL_CTX_set_options(prefs.ssl_ctx, SSL_OP_NO_SSLv3);

@@ -9,36 +9,36 @@ void eslSetLogLevel(int level)
 	esl_global_set_default_logger(level);
 }
 
-ESLconnection::ESLconnection(const char *host, const int port, const char *password, const int secure)
+ESLconnection::ESLconnection(const char *host, const int port, const char *password)
 {
 	connection_construct_common();
 
-	esl_connect(&handle, host, port, NULL, password, secure);
+	esl_connect(&handle, host, port, NULL, password);
 }
 
-ESLconnection::ESLconnection(const char *host, const int port, const char *user, const char *password, const int secure)
+ESLconnection::ESLconnection(const char *host, const int port, const char *user, const char *password)
 {
 	connection_construct_common();
 
-	esl_connect(&handle, host, port, user, password, secure);
+	esl_connect(&handle, host, port, user, password);
 }
 
-ESLconnection::ESLconnection(const char *host, const char *port, const char *password, const int secure)
+ESLconnection::ESLconnection(const char *host, const char *port, const char *password)
 {
 	connection_construct_common();
 	if (port == NULL) return;
 	int x_port = atoi(port);
 
-	esl_connect(&handle, host, x_port, NULL, password, secure);
+	esl_connect(&handle, host, x_port, NULL, password);
 }
 
-ESLconnection::ESLconnection(const char *host, const char *port, const char *user, const char *password, const int secure)
+ESLconnection::ESLconnection(const char *host, const char *port, const char *user, const char *password)
 {
 	connection_construct_common();
 	if (port == NULL) return;
 	int x_port = atoi(port);
 
-	esl_connect(&handle, host, x_port, user, password, secure);
+	esl_connect(&handle, host, x_port, user, password);
 }
 
 

@@ -190,7 +190,6 @@ typedef enum {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <openssl/ssl.h>
 #ifndef WIN32
 #include <sys/types.h>
 #include <sys/select.h>
@@ -430,20 +429,7 @@ ESL_DECLARE(esl_status_t) esl_sendmsg(esl_handle_t *handle, esl_event_t *event, 
 	\param timeout Connection timeout, in miliseconds
 */
 ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, uint32_t timeout);
-#define esl_connect(_handle, _host, _port, _user, _password, secure) esl_connect_timeout(_handle, _host, _port, _user, _password, 0)
-
-/*!
-    \brief Connect a handle to a host/port with a specific password. This will also authenticate against the server. SSL support.
-    \param handle Handle to connect
-    \param host Host to be connected
-    \param port Port to be connected
-    \param password FreeSWITCH server username (optional)
-    \param password FreeSWITCH server password
-	\param timeout Connection timeout, in miliseconds
-	\param secure Enable SSL support
-*/
-ESL_DECLARE(esl_status_t) esl_connect_timeout_s(esl_handle_t *handle, const char *host, esl_port_t port, const char *user, const char *password, uint32_t timeout, int secure);
-#define esl_connect_s(_handle, _host, _port, _user, _password) esl_connect_timeout_s(_handle, _host, _port, _user, _password, 0, 1)
+#define esl_connect(_handle, _host, _port, _user, _password) esl_connect_timeout(_handle, _host, _port, _user, _password, 0)
 
 /*!
     \brief Disconnect a handle
