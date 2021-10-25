@@ -993,85 +993,85 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
 
 	if (bad_debug) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'debug' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'debug' missing or invalid - using default\n");
 		avmd_globals.settings.debug = 0;
 	}
 
 	if (bad_report) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'report_status' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'report_status' missing or invalid - using default\n");
 		avmd_globals.settings.report_status = 1;
 	}
 
 	if (bad_fast) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'fast_math' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'fast_math' missing or invalid - using default\n");
 		avmd_globals.settings.fast_math = 0;
 	}
 
 	if (bad_req_cont) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'require_continuous_streak' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'require_continuous_streak' missing or invalid - using default\n");
 		avmd_globals.settings.require_continuous_streak = 1;
 	}
 
 	if (bad_sample_n_cont) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'sample_n_continuous_streak' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_continuous_streak' missing or invalid - using default\n");
 		avmd_globals.settings.sample_n_continuous_streak = 3;
 	}
 
 	if (bad_sample_n_to_skip) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'sample_n_to_skip' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_to_skip' missing or invalid - using default\n");
 		avmd_globals.settings.sample_n_to_skip = 0;
 	}
 
 	if (bad_req_cont_amp) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'require_continuous_streak_amp' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'require_continuous_streak_amp' missing or invalid - using default\n");
 		avmd_globals.settings.require_continuous_streak_amp = 1;
 	}
 
 	if (bad_sample_n_cont_amp) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'sample_n_continuous_streak_amp' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_continuous_streak_amp' missing or invalid - using default\n");
 		avmd_globals.settings.sample_n_continuous_streak_amp = 3;
 	}
 
 	if (bad_simpl) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'simplified_estimation' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'simplified_estimation' missing or invalid - using default\n");
 		avmd_globals.settings.simplified_estimation = 1;
 	}
 
 	if (bad_inbound) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'inbound_channel' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'inbound_channel' missing or invalid - using default\n");
 		avmd_globals.settings.inbound_channnel = 0;
 	}
 
 	if (bad_outbound) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'outbound_channel' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'outbound_channel' missing or invalid - using default\n");
 		avmd_globals.settings.outbound_channnel = 1;
 	}
 
 	if (bad_mode) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'detection_mode' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detection_mode' missing or invalid - using default\n");
 		avmd_globals.settings.mode = AVMD_DETECT_BOTH;
 	}
 
 	if (bad_detectors) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'detectors_n' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_n' missing or invalid - using default\n");
 		avmd_globals.settings.detectors_n = 36;
 	}
 
 	if (bad_lagged) {
 		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'detectors_lagged_n' missing or invalid - using default\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_lagged_n' missing or invalid - using default\n");
 		avmd_globals.settings.detectors_lagged_n = 1;
 	}
 
@@ -1079,7 +1079,7 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
 	 * Hint.
 	 */
 	if (bad) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Type 'avmd show' to display default settings. Type 'avmd ' + TAB for autocompletion.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Type 'avmd show' to display default settings. Type 'avmd ' + TAB for autocompletion.\n");
 	}
 
 	if (mutex != NULL) {
