@@ -222,20 +222,20 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 		}
 
 		if (!call_fwd_is_valid) {
-			dest = strdup(endpoint_dial);
+			dest = endpoint_dial ? strdup(endpoint_dial) : strdup("");
 		} else if (call_fwd_is_failover) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "setting failover => %s\n", callforward_dial);
-			dest = strdup(endpoint_dial);
+			dest = endpoint_dial ? strdup(endpoint_dial) : strdup("");
 			failover_dial = callforward_dial;
 		} else if (call_fwd_is_substitute) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "setting call fwd substitute => %s\n", callforward_dial);
-			dest = strdup(callforward_dial);
+			dest = callforward_dial ? strdup(callforward_dial) : strdup("");
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "setting call fwd substitute => %s\n", dest);
 		} else {
 			dest = switch_mprintf("%s%s%s", endpoint_dial ? endpoint_dial : "", (endpoint_dial ? endpoint_separator ? endpoint_separator : "," : ""), callforward_dial);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "setting call fwd append => %s => %s\n", callforward_dial, dest);
 		}
 	} else {
-		dest = strdup(endpoint_dial);
+		dest = endpoint_dial ? strdup(endpoint_dial) : strdup("");
 	}
 
 	dialed_user = (char *)switch_xml_attr(x_user, "id");

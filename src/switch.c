@@ -390,13 +390,13 @@ static void reincarnate_protect(char **argv) {
 			sigaction(SIGTERM, &sa15_prev, NULL);
 			sigaction(SIGCHLD, &sa17_prev, NULL);
 			if (argv) {
-				if (execv(argv[0], argv) == -1) {
+				if (argv[0] && execv(argv[0], argv) == -1) {
 					char buf[256];
 					fprintf(stderr, "Reincarnate execv() failed: %d %s\n", errno,
 							switch_strerror_r(errno, buf, sizeof(buf)));
 				}
 				fprintf(stderr, "Trying reincarnate-reexec plan B...\n");
-				if (execvp(argv[0], argv) == -1) {
+				if (argv[0] && execvp(argv[0], argv) == -1) {
 					char buf[256];
 					fprintf(stderr, "Reincarnate execvp() failed: %d %s\n", errno,
 							switch_strerror_r(errno, buf, sizeof(buf)));
@@ -686,11 +686,6 @@ int main(int argc, char *argv[])
 			reincarnate = SWITCH_TRUE;
 			reincarnate_reexec = SWITCH_TRUE;
 		}
-
-		else if (!strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
-			exit(EXIT_SUCCESS);
-		}
 #endif
 #ifdef HAVE_SETRLIMIT
 		else if (!strcmp(local_argv[x], "-core")) {
@@ -715,6 +710,11 @@ int main(int argc, char *argv[])
 #endif
 		}
 #endif
+		else if (!strcmp(local_argv[x], "-version")) {
+			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
+			exit(EXIT_SUCCESS);
+		}
+
 		else if (!strcmp(local_argv[x], "-hp") || !strcmp(local_argv[x], "-rp")) {
 			priority = 2;
 		}

@@ -274,6 +274,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		goto fail;
 	}
 
+	if (!strncasecmp(file_path, "https://", 8) && (switch_stristr("youtube", file_path) || switch_stristr("youtu.be", file_path))) {
+		char *youtube_root = NULL;
+
+		if ((youtube_root = switch_core_get_variable_pdup("youtube_resolver", fh->memory_pool))) {
+			char *resolve_url, *encoded, *url_buf;
+			switch_size_t url_buflen = 0;
+			switch_stream_handle_t stream = { 0 };
+			const char *video = NULL, *format = "best";
+			
+			url_buflen = strlen(file_path) * 4;
+			url_buf = switch_core_alloc(fh->memory_pool, url_buflen);
+			encoded = switch_url_encode(file_path, url_buf, url_buflen);
+
+			if (fh->params && (video = switch_event_get_header(fh->params, "video")) && switch_false(video)) {
+				format = "bestaudio";
+			}
+			
+			resolve_url = switch_core_sprintf(fh->memory_pool, "%s?url=%s&format=%s", youtube_root, encoded, format);
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			//Depends on mod_curl *shrug*
+			switch_api_execute("curl", resolve_url, NULL, &stream);
+
+			if (stream.data && !strncasecmp("https://", (char *)stream.data, 8)) {
+				char *url = (char *) stream.data;
+				while (end_of_p(url) > url && (end_of(url) == '\n' || end_of(url) == '\r')) {
+					end_of(url) = '\0';
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "resolved url to: %s\n", url);
+				file_path = switch_core_sprintf(fh->memory_pool, "av://%s", url);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "YOUTUBE RESOLVER FAIL: %s\n", (char *) stream.data);
+			}
+
+			switch_safe_free(stream.data);
+		}
+	}
+
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;
@@ -935,6 +974,75 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 
 	if (fh->file_interface->file_pre_close) {
 		status = fh->file_interface->file_pre_close(fh);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool)
+{
+	switch_status_t status;
+	switch_file_handle_t *fh;
+	uint8_t destroy_pool = 0;
+
+	switch_assert(oldfh != NULL);
+	switch_assert(newfh != NULL);
+
+	if (!pool) {
+		if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+		destroy_pool = 1;
+	}
+
+	if (!(fh = switch_core_alloc(pool, sizeof(switch_file_handle_t)))) {
+		switch_goto_status(SWITCH_STATUS_MEMERR, err);
+	}
+
+	memcpy(fh, oldfh, sizeof(switch_file_handle_t));
+
+	if (!destroy_pool) {
+		switch_clear_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	} else {
+		fh->memory_pool = pool;
+		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	}
+
+	if ((status = switch_mutex_init(&fh->flag_mutex, SWITCH_MUTEX_NESTED, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_goto_status(status, err);
+	}
+
+#define DUP_CHECK(dup) if (oldfh->dup && !(fh->dup = switch_core_strdup(pool, oldfh->dup))) {switch_goto_status(SWITCH_STATUS_MEMERR, err);}
+
+	DUP_CHECK(prefix);
+	DUP_CHECK(modname);
+	DUP_CHECK(mm.auth_username);
+	DUP_CHECK(mm.auth_password);
+	DUP_CHECK(stream_name);
+	DUP_CHECK(file_path);
+	DUP_CHECK(handler);
+	DUP_CHECK(spool_path);
+	
+	fh->pre_buffer_data = NULL;
+	if (oldfh->pre_buffer_data) {
+		switch_size_t pre_buffer_data_size = oldfh->pre_buffer_datalen * oldfh->channels;
+		if (pre_buffer_data_size) {
+			if (!(fh->pre_buffer_data = switch_core_alloc(pool, pre_buffer_data_size))) {
+				switch_goto_status(SWITCH_STATUS_MEMERR, err);
+			}
+
+			memcpy(fh->pre_buffer_data, oldfh->pre_buffer_data, pre_buffer_data_size);
+		}
+	}
+
+	*newfh = fh;
+
+	return SWITCH_STATUS_SUCCESS;
+
+err:
+	if (destroy_pool) {
+		switch_core_destroy_memory_pool(&pool);
 	}
 
 	return status;

@@ -53,7 +53,7 @@ package com.adobe.air.filesystem
 			}
 			else if(os.indexOf("Linux") > -1)
 			{
-				//todo: need to impliment Linux
+				//todo: need to implement Linux
 			}
 			
 			return v;

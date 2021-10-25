@@ -352,7 +352,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 			frame.buflen = sizeof(buf);
 
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
-				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, (uint16_t)i, &frame)) {
+				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, (uint16_t)i, &frame) == SWITCH_STATUS_SUCCESS) {
 					SKP_Silk_SDK_search_for_LBRR(frame.data, (const int)frame.datalen, i, (SKP_uint8*) &context->recbuff, &context->reclen);
 
 					if (context->reclen) {

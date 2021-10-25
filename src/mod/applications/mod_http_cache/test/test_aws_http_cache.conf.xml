@@ -1,0 +1,66 @@
+<configuration name="http_cache.conf" description="HTTP GET cache">
+    <settings>
+        <!-- set to true if you want to enable http:// and https:// formats.  Do not use if mod_httapi is also loaded -->
+        <param name="enable-file-formats" value="false"/>
+        <param name="max-urls" value="10000"/>
+        <param name="location" value="$${cache_dir}"/>
+        <param name="default-max-age" value="86400"/>
+        <param name="prefetch-thread-count" value="8"/>
+        <param name="prefetch-queue-size" value="100"/>
+        <!-- absolute path to CA bundle file -->
+        <param name="ssl-cacert" value="$${certs_dir}/cacert.pem"/>
+        <!-- verify certificates -->
+        <param name="ssl-verifypeer" value="true"/>
+        <!-- verify host name matches certificate -->
+        <param name="ssl-verifyhost" value="true"/>
+        <!-- default is 300 seconds, override here -->
+        <!--param name="connect-timeout" value="300"/-->
+        <!-- default is 300 seconds, override here -->
+        <!--param name="download-timeout" value="300"/-->
+    </settings>
+
+    <profiles>
+        <profile name="s3">
+            <!-- Credentials for AWS account -->
+            <aws-s3>
+                <!-- Required: Key identifier -->
+                <access-key-id><![CDATA[AKIAIOSFODNN7EXAMPLE]]></access-key-id>
+                <!-- Required: Key secret -->
+                <secret-access-key><![CDATA[wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY]]></secret-access-key>
+                <!-- Required: Storage region -->
+                <region><![CDATA[ap-southeast-1]]></region>
+                <!-- Optional: Expiration time in seconds for URL signature. Default is 604800s (a week) -->
+                <expires>604800</expires>
+            </aws-s3>
+            <!-- Optional: List of domains that this profile will automatically be applied to -->
+            <!-- Domains in this list must have the same base domain with base-domain (if base-domain is set)  -->
+            <!-- If you wish to apply the s3 credentials to a domain not listed here, then use {profile=s3}http://foo.s3... -->
+            <domains>
+                <domain name="bucket1.s3-ap-southeast-1.amazonaws.com"/>
+            </domains>
+        </profile>
+
+        <profile name="s3-compatible">
+            <!-- Credentials for account on s3-like service -->
+            <aws-s3>
+                <!-- Required: Key identifier -->
+                <access-key-id><![CDATA[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]]></access-key-id>
+                <!-- Required: Key secret -->
+                <secret-access-key><![CDATA[XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]]></secret-access-key>
+                <!-- Optional: Base domain for the service -->
+                <!-- If you want to use your own s3-compatible service, base domain MUST be set -->
+                <base-domain><![CDATA[stg.example.com]]></base-domain>
+                <!-- Required: Storage region -->
+                <region><![CDATA[ap-southeast-1]]></region>
+                <!-- Optional: Expiration time in seconds for URL signature. Default is 604800s (a week) -->
+                <expires>604800</expires>
+            </aws-s3>
+            <!-- Optional: List of domains that this profile will automatically be applied to -->
+            <!-- Domains in this list must have the same base domain with base-domain (if base-domain is set)  -->
+            <!-- If you wish to apply the s3 credentials to a domain not listed here, then use {profile=s3}http://foo.s3... -->
+            <domains>
+                <domain name="bucket2.stg.example.com"/>
+            </domains>
+        </profile>
+    </profiles>
+</configuration>

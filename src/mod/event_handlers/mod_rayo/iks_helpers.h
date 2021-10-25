@@ -51,8 +51,7 @@ struct xmpp_error {
 
 #undef XMPP_ERROR
 #define XMPP_ERROR(def_name, name, type) \
-	SWITCH_DECLARE(const struct xmpp_error) def_name##_val; \
-	SWITCH_DECLARE(const struct xmpp_error *) def_name;
+	extern const struct xmpp_error *def_name;
 #include "xmpp_errors.def"
 
 /* See RFC-3920 XMPP core for error definitions */

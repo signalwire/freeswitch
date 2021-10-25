@@ -519,6 +519,58 @@ SWITCH_STANDARD_API(kz_eval_api)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define KZ_CONTACT_DESC "returns kazoo contact"
+#define KZ_CONTACT_SYNTAX "endpoint@account"
+
+SWITCH_STANDARD_API(kz_contact_fun)
+{
+	switch_event_t *params = NULL;
+	const char *var = NULL;
+	switch_xml_t xml_node = NULL;
+	switch_xml_t xml_root = NULL;
+
+	const char *reply = "error/subscriber_absent";
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", reply);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "call");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Exclude-Cache", "true");
+
+	/*
+	if (stream->param_event) {
+		switch_event_merge(params, stream->param_event);
+	}
+	*/
+
+	/*
+	if (session) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
+	} else if (stream->param_event && (var = switch_event_get_header(stream->param_event, "ent_originate_aleg_uuid")) != NULL) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", var);
+	}
+	*/
+
+	if (switch_xml_locate("directory", "location", "id", cmd, &xml_root, &xml_node, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "%s", reply);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	var = switch_xml_attr(xml_node, "value");
+	if (!zstr(var)) {
+		reply = var;
+	}
+
+	stream->write_function(stream, "%s", reply);
+
+	switch_xml_free(xml_root);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
 	switch_api_interface_t *api_interface = NULL;
 	SWITCH_ADD_API(api_interface, "kz_uuid_setvar_multi", UUID_SET_DESC, uuid_setvar_multi_function, UUID_MULTISET_SYNTAX);
@@ -533,5 +585,6 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
 	SWITCH_ADD_API(api_interface, "first-of", KZ_FIRST_OF_DESC, kz_first_of, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_expand", KZ_FIRST_OF_DESC, kz_expand_api, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_eval", KZ_FIRST_OF_DESC, kz_eval_api, KZ_FIRST_OF_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_contact", KZ_CONTACT_DESC, kz_contact_fun, KZ_CONTACT_SYNTAX);
 }
 

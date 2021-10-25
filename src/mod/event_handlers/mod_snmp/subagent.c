@@ -79,22 +79,22 @@ static int channelList_callback(void *pArg, int argc, char **argv, char **column
 	row->data = entry;
 
 	entry->idx = idx++;
-	strncpy(entry->uuid, switch_str_nil(argv[0]), sizeof(entry->uuid));
-	strncpy(entry->direction, switch_str_nil(argv[1]), sizeof(entry->direction));
+	snprintf(entry->uuid, sizeof(entry->uuid), "%s", switch_str_nil(argv[0]));
+	snprintf(entry->direction, sizeof(entry->direction), "%s", switch_str_nil(argv[1]));
 	entry->created_epoch = atoi(argv[3]);
-	strncpy(entry->name, switch_str_nil(argv[4]), sizeof(entry->name));
-	strncpy(entry->state, switch_str_nil(argv[5]), sizeof(entry->state));
-	strncpy(entry->cid_name, switch_str_nil(argv[6]), sizeof(entry->cid_name));
-	strncpy(entry->cid_num, switch_str_nil(argv[7]), sizeof(entry->cid_num));
-	strncpy(entry->dest, switch_str_nil(argv[9]), sizeof(entry->dest));
-	strncpy(entry->application, switch_str_nil(argv[10]), sizeof(entry->application));
-	strncpy(entry->application_data, switch_str_nil(argv[11]), sizeof(entry->application_data));
-	strncpy(entry->dialplan, switch_str_nil(argv[12]), sizeof(entry->dialplan));
-	strncpy(entry->context, switch_str_nil(argv[13]), sizeof(entry->context));
-	strncpy(entry->read_codec, switch_str_nil(argv[14]), sizeof(entry->read_codec));
+	snprintf(entry->name, sizeof(entry->name), "%s", switch_str_nil(argv[4]));
+	snprintf(entry->state, sizeof(entry->state), "%s", switch_str_nil(argv[5]));
+	snprintf(entry->cid_name, sizeof(entry->cid_name), "%s", switch_str_nil(argv[6]));
+	snprintf(entry->cid_num, sizeof(entry->cid_num), "%s", switch_str_nil(argv[7]));
+	snprintf(entry->dest, sizeof(entry->dest), "%s", switch_str_nil(argv[9]));
+	snprintf(entry->application, sizeof(entry->application), "%s", switch_str_nil(argv[10]));
+	snprintf(entry->application_data, sizeof(entry->application_data), "%s", switch_str_nil(argv[11]));
+	snprintf(entry->dialplan, sizeof(entry->dialplan), "%s", switch_str_nil(argv[12]));
+	snprintf(entry->context, sizeof(entry->context), "%s", switch_str_nil(argv[13]));
+	snprintf(entry->read_codec, sizeof(entry->read_codec), "%s", switch_str_nil(argv[14]));
 	entry->read_rate = atoi(switch_str_nil(argv[15]));
 	entry->read_bitrate = atoi(switch_str_nil(argv[16]));
-	strncpy(entry->write_codec, switch_str_nil(argv[17]), sizeof(entry->write_codec));
+	snprintf(entry->write_codec, sizeof(entry->write_codec), "%s", switch_str_nil(argv[17]));
 	entry->write_rate = atoi(switch_str_nil(argv[18]));
 	entry->write_bitrate = atoi(switch_str_nil(argv[19]));
 
@@ -186,7 +186,7 @@ int handle_identity(netsnmp_mib_handler *handler, netsnmp_handler_registration *
 			snmp_set_var_typed_value(requests->requestvb, ASN_OCTET_STR, (u_char *) &version, strlen(version));
 			break;
 		case ID_UUID:
-			strncpy(uuid, switch_core_get_uuid(), sizeof(uuid));
+			snprintf(uuid, sizeof(uuid), "%s", switch_core_get_uuid());
 			snmp_set_var_typed_value(requests->requestvb, ASN_OCTET_STR, (u_char *) &uuid, strlen(uuid));
 			break;
 		default:

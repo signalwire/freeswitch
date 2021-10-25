@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <SofiaSipVersion>master</SofiaSipVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SofiaSipVersionImported>true</SofiaSipVersionImported>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="SofiaSipVersion">
+      <Value>$(SofiaSipVersion)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

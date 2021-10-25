@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  * Chris Rienzo <chris.rienzo@grasshopper.com>
+ * Quoc-Bao Nguyen <baonq5@vng.com.vn>
  *
  * common.c - Functions common to the store provider
  *
@@ -75,6 +76,7 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	*object = NULL;
 
 	if (zstr(url)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "url is empty\n");
 		return;
 	}
 
@@ -86,6 +88,7 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	}
 
 	if (zstr(bucket_start)) { /* invalid URL */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
 		return;
 	}
 
@@ -96,6 +99,7 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	bucket_end = my_strrstr(bucket_start, base_domain_match);
 
 	if (!bucket_end) { /* invalid URL */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
 		return;
 	}
 
@@ -104,12 +108,14 @@ SWITCH_MOD_DECLARE(void) parse_url(char *url, const char *base_domain, const cha
 	object_start = strchr(bucket_end + 1, '/');
 
 	if (!object_start) { /* invalid URL */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
 		return;
 	}
 
 	object_start++;
 
 	if (zstr(bucket_start) || zstr(object_start)) { /* invalid URL */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid url\n");
 		return;
 	}
 

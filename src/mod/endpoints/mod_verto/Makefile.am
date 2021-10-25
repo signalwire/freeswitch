@@ -2,10 +2,10 @@ include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_verto
 
 mod_LTLIBRARIES       = mod_verto.la
-mod_verto_la_SOURCES  = mod_verto.c ws.c mcast/mcast.c
-mod_verto_la_CFLAGS   = -D__EXTENSIONS__ -D_GNU_SOURCE $(AM_CFLAGS)
+mod_verto_la_SOURCES  = mod_verto.c mcast/mcast.c
+mod_verto_la_CFLAGS   = -D__EXTENSIONS__ -D_GNU_SOURCE $(AM_CFLAGS) $(KS_CFLAGS)
 mod_verto_la_CPPFLAGS = -I. -I$(switch_srcdir)/src/mod/endpoints/mod_verto/mcast
-mod_verto_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
+mod_verto_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(KS_LIBS)
 mod_verto_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 if HAVE_PERL
@@ -25,7 +25,7 @@ MCAST_la_LDFLAGS   = -avoid-version -module -no-undefined -shared $(PERL_LDFLAGS
 endif
 
 mcast/mcast_wrap.cpp:
-	cd mcast && swig -module MCAST -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o mcast_wrap.cpp MCAST.i
+	cd mcast && swig -module MCAST -shadow -perl5 -c++ -DMULTIPLICITY -I../src/include -o mcast_wrap.cpp MCAST.i && patch -s -p0 -i hack.diff
 
 mcast/perlxsi.c:
 	$(PERL) -MExtUtils::Embed -e xsinit -- -o mcast/perlxsi.c

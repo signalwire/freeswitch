@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -132,10 +132,9 @@ struct switch_core_session {
 	switch_mutex_t *mutex;
 	switch_mutex_t *stack_count_mutex;
 	switch_mutex_t *resample_mutex;
+	switch_mutex_t *codec_init_mutex;
 	switch_mutex_t *codec_read_mutex;
 	switch_mutex_t *codec_write_mutex;
-	switch_mutex_t *video_codec_read_mutex;
-	switch_mutex_t *video_codec_write_mutex;
 	switch_thread_cond_t *cond;
 	switch_mutex_t *frame_read_mutex;
 
@@ -169,15 +168,6 @@ struct switch_core_session {
 	uint8_t raw_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	uint8_t enc_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
-	/* video frame.data being trated differently than audio, allocate a dynamic data buffer if necessary*/
-	switch_buffer_t *video_raw_write_buffer;
-	switch_frame_t video_raw_write_frame;
-	// switch_frame_t video_enc_write_frame;
-
-	switch_buffer_t *video_raw_read_buffer;
-	switch_frame_t video_raw_read_frame;
-	// switch_frame_t video_enc_read_frame;
-
 	switch_codec_t bug_codec;
 	uint32_t read_frame_count;
 	uint32_t track_duration;
@@ -199,6 +189,7 @@ struct switch_core_session {
 	switch_buffer_t *text_buffer;
 	switch_buffer_t *text_line_buffer;
 	switch_mutex_t *text_mutex;
+	const char *external_id;
 };
 
 struct switch_media_bug {
@@ -315,6 +306,7 @@ struct switch_runtime {
 	uint32_t port_alloc_flags;
 	char *event_channel_key_separator;
 	uint32_t max_audio_channels;
+	switch_call_cause_t shutdown_cause;
 };
 
 extern struct switch_runtime runtime;

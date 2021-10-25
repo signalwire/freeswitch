@@ -133,6 +133,7 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 	switch_status_t ret=SWITCH_STATUS_SUCCESS;
 	char *message, *tmp, *mtmp, *rate;
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
+	int sys_ret;
 
 	assert(info != NULL);
 
@@ -159,7 +160,8 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
 
-	if (switch_system(message, SWITCH_TRUE) < 0) {
+	sys_ret = switch_system(message, SWITCH_TRUE);
+	if (sys_ret < 0 || sys_ret == 127) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
 		ret = SWITCH_STATUS_FALSE; goto done;
 	}

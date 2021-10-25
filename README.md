@@ -6,7 +6,7 @@ Visit  [https://signalwire.com](https://signalwire.com/)  or https://github.com/
 
 ## Getting Started
 
-FreeSWITCH is available on [Github](https://github.com/signalwire/freeswitch) in source code format.  You can checkout the development branch and build for many poplular platforms including Linux, Windows, MacOSX and BSD.  There is an issue tracker and pull request system available as part of the repo online.
+FreeSWITCH is available on [Github](https://github.com/signalwire/freeswitch) in source code format.  You can checkout the development branch and build for many popular platforms including Linux, Windows, MacOSX and BSD.  There is an issue tracker and pull request system available as part of the repo online.
 
 See [https://freeswitch.com/#getting-started](https://freeswitch.com/#getting-started) for more detailed instructions.
 
@@ -24,9 +24,9 @@ The main index for documentation is available at:
 
   * https://freeswitch.org/confluence/
 
-### Release notes: 
+### Release notes:
 
-  * https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes 
+  * https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes
 
 ### Installation
 

@@ -519,6 +519,9 @@ AC_TRY_RUN([
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 int main(void)
 {
   char buf[1024];

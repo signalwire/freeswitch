@@ -5,16 +5,19 @@ name: unit-tests
 steps:
     - name: bootstrap
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
 
     - name: configure
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
-      - echo "applications/mod_test" >> modules.conf
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - git clone https://github.com/freeswitch/sofia-sip.git
+      - cd sofia-sip && ./autogen.sh && ./configure.gnu && make -j`nproc` && make install && cd ..
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
       - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
@@ -25,16 +28,22 @@ steps:
 
     - name: build
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - cd sofia-sip && make install && cd ..
       - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
       - ./build.sh
 
     - name: run-tests
       image: signalwire/freeswitch-public-base
-      pull: true
+      pull: always
       commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - cd sofia-sip && make install && cd ..
       - make install || true
       - cd tests/unit
       - ./run-tests.sh
@@ -46,18 +55,16 @@ steps:
       - cd logs && ls -la
 
     - name: notify
-      image: signalwire/public-unit-tests-notify
-      pull: true
+      image: signalwire/drone-notify
+      pull: always
       environment:
-        GITHUB_CI_APP_PEM:
-          from_secret: github_ci_app_pem
-        SSH_KEY:
-          from_secret: public_artifacts_ssh_key
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
+        ENV_FILE:
+          from_secret: notify_env
       commands:
-      - /root/notify.sh
-      
+      - /root/unit-tests-notify.sh
+
 trigger:
   branch:
   - master
@@ -71,15 +78,17 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      image: signalwire/freeswitch-public-base
+      pull: always
       commands:
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      image: signalwire/freeswitch-public-base
+      pull: always
       commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -106,30 +115,29 @@ steps:
       - ./configure
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base:stretch
-      pull: true
+      image: signalwire/freeswitch-public-base
+      pull: always
       commands:
+      - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
+      - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-7 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
       - echo "*** Exit status is $exitstatus"
 
     - name: notify
-      image: signalwire/public-scan-build-notify
-      pull: true
+      image: signalwire/drone-notify
+      pull: always
       environment:
-        GITHUB_CI_APP_PEM:
-          from_secret: github_ci_app_pem
-        SSH_KEY:
-          from_secret: public_artifacts_ssh_key
         SLACK_WEBHOOK_URL:
           from_secret: slack_webhook_url
+        ENV_FILE:
+          from_secret: notify_env
       commands:
-      - /root/notify.sh
+      - /root/scan-build-notify.sh
 
-      
 trigger:
   branch:
   - master
@@ -139,6 +147,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 430f5a243e6029b985fa0219e9fb44c71a59931af44a3230751e238f8b64dd32
+hmac: a85b0db203d2c9a71c3e4a63a46b5513fbdb3b8f5135e21d0fe0992f33626824
 
 ...

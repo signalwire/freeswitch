@@ -64,7 +64,7 @@
       <!-- Override the default path here, after which you use relative paths in the other sound params -->
       <!-- Note: The default path is the conference's first caller's sound_prefix -->
       <!--<param name="sound-prefix" value="$${sound_prefix}"/>-->
-      <!-- File to play to acknowledge succees -->
+      <!-- File to play to acknowledge success -->
       <!--<param name="ack-sound" value="beep.wav"/>-->
       <!-- File to play to acknowledge failure -->
       <!--<param name="nack-sound" value="beeperr.wav"/>-->

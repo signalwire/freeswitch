@@ -2971,7 +2971,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 #ifdef WIN32
 		/* Enable dual-stack listening on Windows (if the listening address is IPv6), it's default on Linux */
 		if (switch_sockaddr_get_family(sa) == AF_INET6) {
-			rv = switch_socket_opt_set(listen_list.sock, 16384, 0);
+			rv = switch_socket_opt_set(listen_list.sock, SWITCH_SO_IPV6_V6ONLY, 0);
 			if (rv) goto sock_fail;
 		}
 #endif

@@ -1,0 +1,5 @@
+.dirstamp
+.libs/
+.deps/
+test_mod_commands*.o
+test_mod_commands

@@ -57,7 +57,7 @@
 	<PropertyGroup>
 		<!-- GitVersionFile allows overriding tags/branch names as a source for base version information -->
 		<GitVersionFile Condition="'$(GitVersionFile)' == ''">GitInfo.txt</GitVersionFile>
-		<!-- Default the lookup directory to the project directory unless overriden -->
+		<!-- Default the lookup directory to the project directory unless overridden -->
 		<GitInfoBaseDir Condition="'$(GitInfoBaseDir)' == ''">$(MSBuildProjectDirectory)</GitInfoBaseDir>
 		<!-- Look it upwards and grab the first one we find. -->
 		<GitVersionFile Condition="'$([MSBuild]::GetDirectoryNameOfFileAbove($(GitInfoBaseDir), $(GitVersionFile)))' != ''">$([MSBuild]::GetDirectoryNameOfFileAbove($(GitInfoBaseDir), $(GitVersionFile)))\$(GitVersionFile)</GitVersionFile>
