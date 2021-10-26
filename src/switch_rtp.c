@@ -2155,7 +2155,7 @@ static void switch_send_rtcp_event(switch_rtp_t *rtp_session ,struct switch_rtcp
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
 				snprintf(header, sizeof(header), "Source-Lost");
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-				tmpLost = report->lost; /* signed 24bit will extended signess to int32_t automatically */
+				tmpLost = rtcp_report_block->lost; /* signed 24bit will extended signess to int32_t automatically */
 #else
 				tmpLost = ntohl(rtcp_report_block->lost)>>8;
 				tmpLost = tmpLost | ((tmpLost & 0x00800000) ? 0xff000000 : 0x00000000); /* ...and signess compensation */
