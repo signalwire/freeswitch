@@ -40,7 +40,7 @@ public:
     if (_isOpen || _pDb || _pCursor)
       return false;
 
-    _pDb = new Db(0, 0);
+    _pDb = new Db(0, DB_CXX_NO_EXCEPTIONS);
     int ret = _pDb->open(0, path.c_str(), 0, DB_BTREE, DB_CREATE | DB_THREAD,0);
     if (ret != 0)
     {
