@@ -2673,6 +2673,12 @@ SWITCH_STANDARD_API(ctl_function)
 			} else {
 				stream->write_function(stream, "+OK clock will synchronize when there are no more calls\n");
 			}
+		} else if (!strcasecmp(argv[0], "log_truncate")) {
+			if (argc > -1) {
+				arg = atoi(argv[1]);
+			}
+			switch_core_session_ctl(SCSC_LOG_TRUNCATE, &arg);
+			stream->write_function(stream, "+OK log truncate: %d\n", arg);
 		} else {
 			stream->write_function(stream, "-ERR Invalid command\nUSAGE: fsctl %s\n", CTL_SYNTAX);
 			goto end;
@@ -7712,6 +7718,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");
+	switch_console_set_complete("add fsctl log_truncate");
 	switch_console_set_complete("add interface_ip auto ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv4 ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv6 ::console::list_interfaces");

@@ -2413,6 +2413,9 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
 					switch_core_max_audio_channels(atoi(val));
+				} else if (!strcasecmp(var, "log-truncate")) {
+					int truncate = atoi(val);
+					switch_core_session_ctl(SCSC_LOG_TRUNCATE, &truncate);
 				}
 			}
 		}
@@ -2688,6 +2691,11 @@ SWITCH_DECLARE(int32_t) switch_core_sessions_peak(void)
 SWITCH_DECLARE(int32_t) switch_core_sessions_peak_fivemin(void)
 {
 	return runtime.sessions_peak_fivemin;
+}
+
+SWITCH_DECLARE(uint32_t) switch_core_log_truncate(void)
+{
+	return runtime.log_truncate;
 }
 
 SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit)
@@ -3016,6 +3024,13 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_RECLAIM:
 		switch_core_memory_reclaim_all();
 		newintval = 0;
+		break;
+
+	case SCSC_LOG_TRUNCATE:
+		if (oldintval > -1) {
+			runtime.log_truncate = oldintval;
+		}
+		newintval = runtime.log_truncate;
 		break;
 	}
 

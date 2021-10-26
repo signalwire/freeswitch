@@ -2734,6 +2734,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 SWITCH_DECLARE(uint32_t) switch_default_rate(const char *name, uint32_t number);
 SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit);
+SWITCH_DECLARE(uint32_t) switch_core_log_truncate(void);
 
 /*!
  \brief Add user registration

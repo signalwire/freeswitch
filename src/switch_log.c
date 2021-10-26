@@ -510,7 +510,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const char *file, const char *func, int line,
 										const char *userdata, switch_log_level_t level, const char *fmt, va_list ap)
 {
-	char *data = NULL;
+	char *data, *new_data = NULL;
 	char *new_fmt = NULL;
 	int ret = 0;
 	FILE *handle;
@@ -587,6 +587,18 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");
 		goto end;
+	}
+
+	// Truncate Large Log
+	if (runtime.log_truncate > 0 && ret > runtime.log_truncate) {
+		new_data = switch_mprintf("%.*s...%s", runtime.log_truncate, data, data[ret-1] == '\n' ? "\n" : "");
+		if (new_data) {
+			switch_safe_free(data);
+			data = new_data;
+		} else {
+			fprintf(stderr, "Memory Error\n");
+			goto end;
+		}
 	}
 
 	if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
