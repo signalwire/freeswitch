@@ -57,7 +57,8 @@ typedef struct switch_log_binding switch_log_binding_t;
 
 static switch_memory_pool_t *LOG_POOL = NULL;
 static switch_log_binding_t *BINDINGS = NULL;
-static switch_mutex_t *BINDLOCK = NULL;
+switch_mutex_t *BINDLOCK = NULL;
+uint8_t mod_graylog_loaded = 0;
 time_t counter = 0;
 static switch_mutex_t *COUNTERLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
@@ -481,7 +482,14 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 		node = (switch_log_node_t *) pop;
 		switch_mutex_lock(BINDLOCK);
 		for (binding = BINDINGS; binding; binding = binding->next) {
+
 			if (binding->level >= node->level) {
+
+				// If module graylog is loaded, then do not output to console
+				if (mod_graylog_loaded && binding->is_console) {
+					continue;
+				}
+
 				binding->function(node, node->level);
 			}
 		}
