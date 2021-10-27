@@ -2936,9 +2936,9 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
 							free(pkey);
 
-							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 								time_t now = switch_epoch_time_now(NULL);
-								if (gp->reg_timeout > now) {
+								if (gp->reg_timeout >= now) {
 									stream->write_function(stream, " (retry: %ds)", gp->reg_timeout - now);
 								} else {
 									stream->write_function(stream, " (retry: NEVER)");
@@ -3186,9 +3186,9 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "%25s\t%s\t  %40s\t%s", pkey, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					free(pkey);
 
-					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 						time_t now = switch_epoch_time_now(NULL);
-						if (gp->retry > now) {
+						if (gp->retry >= now) {
 							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
 						} else {
 							stream->write_function(stream, " (retry: NEVER)");
@@ -3240,9 +3240,9 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
 	stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", gp->ob_failed_calls);
 
-	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 		time_t now = switch_epoch_time_now(NULL);
-		if (gp->retry > now) {
+		if (gp->retry >= now) {
 			stream->write_function(stream, "    <retry>%ds</retry>\n", gp->retry - now);
 		} else {
 			stream->write_function(stream, "    <retry>NEVER</retry>\n");
@@ -3503,9 +3503,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					switch_assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "<gateway>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</gateway>\n",
 										   gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
-					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 						time_t now = switch_epoch_time_now(NULL);
-						if (gp->retry > now) {
+						if (gp->retry >= now) {
 							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
 						} else {
 							stream->write_function(stream, " (retry: NEVER)");
