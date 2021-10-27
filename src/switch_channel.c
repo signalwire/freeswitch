@@ -4700,39 +4700,39 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 		tt_created = (time_t) (caller_profile->times->created / 1000000);
 		mtt_created = (time_t) (caller_profile->times->created / 1000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_created);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_created));
 		switch_channel_set_variable(channel, "start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
 		switch_channel_set_variable(channel, "start_uepoch", tmp);
 
 		tt_prof_created = (time_t) (caller_profile->times->profile_created / 1000000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_prof_created);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_prof_created));
 		switch_channel_set_variable(channel, "profile_start_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->profile_created);
 		switch_channel_set_variable(channel, "profile_start_uepoch", tmp);
 
 		tt_answered = (time_t) (caller_profile->times->answered / 1000000);
 		mtt_answered = (time_t) (caller_profile->times->answered / 1000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_answered);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_answered));
 		switch_channel_set_variable(channel, "answer_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 		switch_channel_set_variable(channel, "answer_uepoch", tmp);
 
 		tt_bridged = (time_t) (caller_profile->times->bridged / 1000000);
 		mtt_bridged = (time_t) (caller_profile->times->bridged / 1000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_bridged);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_bridged));
 		switch_channel_set_variable(channel, "bridge_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->bridged);
 		switch_channel_set_variable(channel, "bridge_uepoch", tmp);
 
 		tt_last_hold = (time_t) (caller_profile->times->last_hold / 1000000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_last_hold);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_last_hold));
 		switch_channel_set_variable(channel, "last_hold_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->last_hold);
 		switch_channel_set_variable(channel, "last_hold_uepoch", tmp);
 
 		tt_hold_accum = (time_t) (caller_profile->times->hold_accum / 1000000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hold_accum);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_hold_accum));
 		switch_channel_set_variable(channel, "hold_accum_seconds", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hold_accum);
 		switch_channel_set_variable(channel, "hold_accum_usec", tmp);
@@ -4740,28 +4740,28 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_channel_set_variable(channel, "hold_accum_ms", tmp);
 
 		tt_resurrected = (time_t) (caller_profile->times->resurrected / 1000000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_resurrected);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_resurrected));
 		switch_channel_set_variable(channel, "resurrect_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->resurrected);
 		switch_channel_set_variable(channel, "resurrect_uepoch", tmp);
 
 		tt_progress = (time_t) (caller_profile->times->progress / 1000000);
 		mtt_progress = (time_t) (caller_profile->times->progress / 1000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_progress));
 		switch_channel_set_variable(channel, "progress_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
 		switch_channel_set_variable(channel, "progress_uepoch", tmp);
 
 		tt_progress_media = (time_t) (caller_profile->times->progress_media / 1000000);
 		mtt_progress_media = (time_t) (caller_profile->times->progress_media / 1000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress_media);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_progress_media));
 		switch_channel_set_variable(channel, "progress_media_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 		switch_channel_set_variable(channel, "progress_media_uepoch", tmp);
 
 		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
 		mtt_hungup = (time_t) (caller_profile->times->hungup / 1000);
-		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, TIME_T_CAST(tt_hungup));
 		switch_channel_set_variable(channel, "end_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 		switch_channel_set_variable(channel, "end_uepoch", tmp);
