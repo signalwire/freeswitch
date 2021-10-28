@@ -347,6 +347,7 @@ void set_log_path(const char *path);
 
 static void kill_profiles(void);
 static void run_profiles(void);
+static int init(void);
 
 /** @} */
 #endif
