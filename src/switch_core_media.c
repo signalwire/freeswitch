@@ -9703,6 +9703,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											   a_engine->cur_payload_map->codec_ms * 1000,
 											   flags, timer_name, &err, switch_core_session_get_pool(session),
 											   0, 0);
+		{
+			const char *val = NULL;
+			if (((val = switch_channel_get_variable(session->channel, "telnyx_voicemail")) && switch_true(val))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Turning SWITCH_RTP_FLAG_AUTOADJ on, as required by telnyx_voicemail\n");
+				switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			}
+		}
 
 		if (switch_rtp_ready(a_engine->rtp_session)) {
 			switch_rtp_set_payload_map(a_engine->rtp_session, &a_engine->payload_map);

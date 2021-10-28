@@ -4825,6 +4825,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	memset(&rtp_session->fork, 0, sizeof(rtp_session->fork));
 
+	{
+		const char *v = switch_channel_get_variable(channel, "debug_rtp");
+		if (!zstr(v) && switch_true(v)) {
+			rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
+			rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]++;
+		}
+	}
+
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
 	
@@ -7580,7 +7588,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	READ_INC(rtp_session);
 
-
+	//io_flags = io_flags | SWITCH_IO_FLAG_NOBLOCK;
+	//rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] = 1;
+	{
+		const char *val = NULL;
+		if ((channel && (val = switch_channel_get_variable(channel, "telnyx_voicemail")) && switch_true(val))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG7, "Turning SWITCH_RTP_FLAG_AUTOADJ on, as required by telnyx_voicemail\n");
+			rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] = 1;
+		}
+	}
 
 	while (switch_rtp_ready(rtp_session)) {
 		int do_cng = 0;
@@ -7749,6 +7765,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 0;
 			}
 
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "POLL\n");
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && poll_status != SWITCH_STATUS_SUCCESS && rtp_session->media_timeout && rtp_session->last_media) {
@@ -8055,6 +8072,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 #else
 		if (!using_ice(rtp_session) && bytes) {
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "HAHA\n");
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
 				goto recvfrom;
 			}
@@ -8118,7 +8136,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct %s ip/port confirmed.\n", rtp_type(rtp_session));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Correct %s ip/port confirmed.\n", rtp_type(rtp_session));
 					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 				rtp_session->auto_adj_used = 0;
