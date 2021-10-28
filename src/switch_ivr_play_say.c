@@ -369,6 +369,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	const char *vval;
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
+	uint8_t check_silence = 1;
 	int asis = 0;
 	int32_t sample_start = 0;
 	int waste_resources = 1400, fill_cng = 0;
@@ -554,6 +555,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
+	if ((p = switch_channel_get_variable(channel, "record_check_silence"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Got check silence set to %s\n", p);
+		check_silence = switch_true(p);
+	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Recording with check silence %u\n", check_silence);
+
 	if (fill_cng || waste_resources) {
 		if (switch_core_codec_init(&write_codec,
 								   "L16",
@@ -705,7 +712,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		start = switch_epoch_time_now(NULL);
 	}
 
-	if (fh->thresh) {
+	if (fh->thresh && check_silence) {
 		if (asis) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't detect silence on a native recording.\n");
 		} else {
@@ -845,7 +852,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		}
 
-		if (!asis && fh->thresh) {
+		if (!asis && fh->thresh && check_silence) {
 			int16_t *fdata = (int16_t *) read_frame->data;
 			uint32_t samples = read_frame->datalen / sizeof(*fdata);
 			uint32_t score, count = 0, j = 0;
@@ -861,6 +868,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			if (score < fh->thresh) {
 				if (!--fh->silence_hits) {
 					switch_channel_set_variable(channel, "silence_hits_exhausted", "true");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Silence exhausted\n");
 					break;
 				}
 			} else {
