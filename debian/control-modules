@@ -664,6 +664,7 @@ Module: languages/mod_managedcore
 Description: mod_managedcore
  Adds mod_managedcore.
 Build-Depends: apt-transport-https, dotnet-sdk-5.0
+Depends: dotnet-runtime-5.0
 
 Module: languages/mod_perl
 Description: mod_perl
