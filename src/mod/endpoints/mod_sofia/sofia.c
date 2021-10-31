@@ -2949,6 +2949,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
 
+	/* Seed PRNG for functions within worker thread */
+	srand((unsigned)((intptr_t) switch_thread_self() + switch_micro_time_now()));
+
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING))) {
 
 		if (tick) {

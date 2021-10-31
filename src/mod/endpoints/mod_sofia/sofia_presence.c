@@ -3755,7 +3755,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	if ((sub_max_deviation_var = profile->sip_subscription_max_deviation)) {
 		int sub_deviation;
-		srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
 		/* random negative number between 0 and negative sub_max_deviation_var: */
 		sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
 		if ( (exp_delta + sub_deviation) > 45 ) {
