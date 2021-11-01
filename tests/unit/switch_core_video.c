@@ -48,6 +48,7 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+#ifdef SWITCH_HAVE_YUV
 		FST_TEST_BEGIN(data_url_test)
 		{
 			char *data_url = NULL;
@@ -88,6 +89,7 @@ FST_CORE_BEGIN("./conf")
 			unlink(argb_filename);
 		}
 		FST_TEST_END()
+#endif /* SWITCH_HAVE_YUV */
 
 		FST_TEST_BEGIN(img_patch)
 		{
@@ -239,6 +241,7 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
+#ifdef SWITCH_HAVE_YUV
 		FST_TEST_BEGIN(stb_data_url)
 		{
 			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 120, 60, 1);
@@ -321,6 +324,7 @@ FST_CORE_BEGIN("./conf")
 			unlink(jpg_write_filename);
 		}
 		FST_TEST_END()
+#endif /* SWITCH_HAVE_YUV */
 	}
 	FST_SUITE_END()
 }
