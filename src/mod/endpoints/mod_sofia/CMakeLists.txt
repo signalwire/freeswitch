@@ -66,6 +66,12 @@ target_compile_definitions(test_sofia_funcs PRIVATE "-DSWITCH_TEST_BASE_DIR_FOR_
 target_compile_definitions(test_sofia_funcs PRIVATE "-DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${CMAKE_BINARY_DIR}/test\"")
 target_link_libraries(test_sofia_funcs mod_sofia ${libraries})
 
+add_executable(sipp_based_tests test/sipp-based-tests.c)
+file(INSTALL ${CMAKE_CURRENT_SOURCE_DIR}/test/sipp-scenarios DESTINATION ${CMAKE_BINARY_DIR})
+target_compile_definitions(sipp_based_tests PRIVATE "-DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${CMAKE_SOURCE_DIR}/test\"")
+target_compile_definitions(sipp_based_tests PRIVATE "-DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${CMAKE_BINARY_DIR}/test\"")
+target_link_libraries(sipp_based_tests mod_sofia ${libraries})
+
 if (FS_MODULES_DIRS)
     install(
         TARGETS mod_sofia
