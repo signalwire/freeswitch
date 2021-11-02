@@ -6508,7 +6508,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
 
-	SWITCH_ADD_APP(app_interface, "blind_transfer_ack", "", "", blind_transfer_ack_function, "[true|false]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "blind_transfer_ack", "", "", blind_transfer_ack_function, "[true|false]", SAF_ZOMBIE_EXEC);
 
 	SWITCH_ADD_APP(app_interface, "bind_digit_action", "bind a key sequence or regex to an action",
 				   "bind a key sequence or regex to an action", bind_digit_action_function, BIND_DIGIT_ACTION_USAGE, SAF_SUPPORT_NOMEDIA);
