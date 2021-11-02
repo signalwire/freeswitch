@@ -424,7 +424,7 @@
         <param name="outbound-codec-prefs" value="PCMU"/>
         <param name="rtp-timer-name" value="soft"/>
         <param name="local-network-acl" value="localnet.auto"/>
-        <param name="manage-presence" value="false"/>
+        <param name="manage-presence" value="true"/>
         <param name="inbound-codec-negotiation" value="generous"/>
         <param name="nonce-ttl" value="60"/>
         <param name="inbound-late-negotiation" value="true"/>
@@ -584,6 +584,13 @@
 		</condition>
     </extension>
 
+    <extension name="sipp_telephone_check">
+      <condition field="destination_number" expression="^1212121212$">
+        <action application="answer"/>
+        <action application="set" data="park_after_bridge=true"/>
+        <action application="park"/>
+      </condition>
+    </extension>
 
 	<extension name="sipp">
 		<condition>

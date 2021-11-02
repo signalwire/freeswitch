@@ -37,6 +37,56 @@
 int test_success = 0;
 int test_sofia_debug = 1;
 
+static void test_wait_for_uuid(char *uuid)
+{
+	switch_stream_handle_t stream = { 0 };
+	int loop_count = 50;
+	char *channel_data=NULL;
+
+	do {
+		SWITCH_STANDARD_STREAM(stream);
+		switch_api_execute("show", "channels", NULL, &stream);
+
+		if (!strncmp((char *)stream.data, "uuid,", 5)) {
+			channel_data = switch_mprintf("%s", (char *)stream.data);
+			switch_safe_free(stream.data);
+			break;
+		}
+		switch_safe_free(stream.data);
+		switch_sleep(100 * 1000);
+	} while (loop_count--);
+
+	if (channel_data) {
+		char *temp = NULL;
+		int i;
+
+		if ((temp = strchr(channel_data, '\n'))) {
+			temp++;
+			for (i = 0; temp[i] != ',' && i < 99; i++) {
+				uuid[i] = temp[i];
+			}
+		}
+		free(channel_data);
+	}
+}
+
+static const char *test_wait_for_chan_var(switch_channel_t *channel, const char *seq) 
+{
+	int loop_count = 50;
+	const char *var=NULL;
+	do {
+		if (!strcmp(switch_channel_get_variable(channel, "sip_cseq"),seq)){
+			switch_sleep(100 * 1000);
+			var = switch_channel_get_variable(channel, "rtp_local_sdp_str");
+			break;
+		}
+
+		switch_sleep(100 * 1000);
+	} while(loop_count--);
+
+	return var;
+}
+
 static switch_bool_t has_ipv6() 
 {
 	switch_stream_handle_t stream = { 0 };
@@ -73,9 +123,9 @@ static void unregister_gw()
 	switch_safe_free(stream.data);
 }
 
-static int start_sipp_uac(const char *ip, int remote_port,const char *scenario_uac, const char *extra)
+static int start_sipp_uac(const char *ip, int remote_port, const char *dialed_number, const char *scenario_uac, const char *extra)
 {
-	char *cmd = switch_mprintf("sipp %s:%d -nr -p 5062 -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, remote_port, scenario_uac, extra);
+	char *cmd = switch_mprintf("sipp %s:%d -nr -p 5062 -m 1 -s %s -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, remote_port, dialed_number, scenario_uac, extra);
 	int sys_ret = switch_system(cmd, SWITCH_TRUE);
 
 	printf("%s\n", cmd);
@@ -96,6 +146,18 @@ static int start_sipp_uas(const char *ip, int listen_port, const char *scenario_
 
 	return sys_ret;
 }
+static int run_sipp(const char *ip, int remote_port, int listen_port, const char *dialed_number, const char *scenario_uac, const char *auth_password, const char *extra)
+{
+	char *cmd = switch_mprintf("sipp %s:%d -nr -p %d -m 1 -s %s -recv_timeout 10000 -timeout 10s -sf %s -au %s -ap %s -bg %s", ip, remote_port, listen_port, dialed_number, scenario_uac, dialed_number, auth_password, extra);
+	int sys_ret = switch_system(cmd, SWITCH_TRUE);
+
+	printf("%s\n", cmd);
+	switch_safe_free(cmd);
+	switch_sleep(1000 * 1000);
+
+	return sys_ret;
+}
+
 static void kill_sipp(void)
 {
 	switch_system("pkill -x sipp", SWITCH_TRUE);
@@ -187,9 +249,120 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(uac_telephone_event_check)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			char uuid[100] = "";
+			int sipp_ret;
+			int sdp_count = 0;
+
+			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1212121212", "sipp-scenarios/uac_telephone_event.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+
+			test_wait_for_uuid(uuid);
+			if (!zstr(uuid)) {
+				const char *sdp_str1 = NULL, *sdp_str2 = NULL;
+				switch_core_session_t *session = switch_core_session_locate(uuid);
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				fst_requires(channel);
+
+				sdp_str1 = test_wait_for_chan_var(channel,"1");
+				sdp_str2 = test_wait_for_chan_var(channel,"2");
+
+				if (sdp_str1 && sdp_str2 && (strstr(sdp_str1,"telephone-event")) && (strstr(sdp_str2,"telephone-event"))){
+					char *temp = NULL;
+					sdp_count = 1;
+
+					if ((temp = strstr(sdp_str2,"RTP/AVP"))) {
+						int count = 0, i;
+
+						for (i = 7; temp[i] != '\n' && i < 99; i++) {
+							/* checking for payload-type 101.*/
+							if(temp[i++] == '1' && temp[i++] == '0' && temp[i++] == '1')
+								count++;
+						}
+						if (count > 1) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Duplicate entry of payload in SDP.\n");
+							sdp_count = 0;
+						}
+					}
+
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Telephone-event missing in SDP.\n");
+				}
+				switch_core_session_rwunlock(session);
+
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Uuid not found in Channel Data.\n");
+			}
+
+			fst_check(sdp_count == 1);
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
+		}
+		FST_TEST_END()
+
+        FST_TEST_BEGIN(uac_savp_check)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			char uuid[100] = "";
+			int sipp_ret;
+			int sdp_count = 0;
+
+			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1212121212", "sipp-scenarios/uac_savp_check.xml", "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+
+			test_wait_for_uuid(uuid);
+			if (!zstr(uuid)) {
+				const char *sdp_str1 = NULL, *sdp_str2 = NULL;
+				const char *temp = NULL, *temp1 = NULL;
+				switch_core_session_t *session = switch_core_session_locate(uuid);
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				fst_requires(channel);
+
+				sdp_str1 = test_wait_for_chan_var(channel,"1");
+				sdp_str2 = test_wait_for_chan_var(channel,"2");
+
+				if (sdp_str1 && sdp_str2 && (temp = strstr(sdp_str2,"RTP/SAVP")) && (temp1 = strstr(temp,"crypto"))) {
+					int i = 0;
+
+					sdp_count = 1;
+					for (i = 0; temp1[i]; i++) {
+
+						if ((temp = strstr(temp1,"RTP/SAVP"))) {
+							if ((temp1 = strstr(temp,"crypto"))) {
+								i = 0;
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fail due to no crypto found with SAVP.\n");
+								sdp_count = 0;
+								break;
+							}
+						}
+
+					}
+
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SAVP not found in SDP.\n");
+				}
+				switch_core_session_rwunlock(session);
+
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Uuid not found in Channel Data.\n");
+			}
+
+			fst_check(sdp_count == 1); 
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(uac_digest_leak_udp)
 		{
-			switch_core_session_t *session; 
+			switch_core_session_t *session;
 			switch_call_cause_t cause;
 			switch_status_t status;
 			switch_channel_t *channel;
@@ -199,7 +372,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "sipp-scenarios/uac_digest_leak.xml", "");
+			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak.xml", "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_requires(0); /* sipp not found */
 			}
@@ -238,7 +411,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 
 		FST_TEST_BEGIN(uac_digest_leak_tcp)
 		{
-			switch_core_session_t *session; 
+			switch_core_session_t *session;
 			switch_call_cause_t cause;
 			switch_status_t status;
 			switch_channel_t *channel;
@@ -248,7 +421,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "sipp-scenarios/uac_digest_leak-tcp.xml", "-t t1");
+			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak-tcp.xml", "-t t1");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_requires(0); /* sipp not found */
 			}
@@ -287,7 +460,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 
 		FST_TEST_BEGIN(uac_digest_leak_udp_ipv6)
 		{
-			switch_core_session_t *session; 
+			switch_core_session_t *session;
 			switch_call_cause_t cause;
 			switch_status_t status;
 			switch_channel_t *channel;
@@ -306,9 +479,9 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 
 			if (!ipv6) {
-				sipp_ret = start_sipp_uac(local_ip_v6, 6060, "sipp-scenarios/uac_digest_leak-ipv6.xml", "-i [::1]");
+				sipp_ret = start_sipp_uac(local_ip_v6, 6060, "1001", "sipp-scenarios/uac_digest_leak-ipv6.xml", "-i [::1]");
 			} else {
-				sipp_ret = start_sipp_uac(ipv6, 6060, "sipp-scenarios/uac_digest_leak-ipv6.xml", "-i [::1] -mi [::1]");
+				sipp_ret = start_sipp_uac(ipv6, 6060, "1001", "sipp-scenarios/uac_digest_leak-ipv6.xml", "-i [::1] -mi [::1]");
 			}
 
 			if (sipp_ret < 0 || sipp_ret == 127) {
@@ -398,6 +571,45 @@ skiptest:
 			kill_sipp();
 			fst_check(test_success);
 			test_success = 0;
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(subscribe_auth_check)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			const char *auth_password = switch_core_get_variable("default_password");
+			switch_cache_db_handle_t *dbh = NULL;
+			char *dsn = "sofia_reg_internal";
+			char count[20]="";
+			char count1[20]="";
+			int sipp_ret;
+
+			/* check without 407 Proxy Authentication. If count not 0 fail case. */
+			sipp_ret = run_sipp(local_ip_v4, 5060, 6091, "1001", "sipp-scenarios/uac_subscriber.xml", auth_password, "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+			switch_sleep(100 * 1000);
+
+			if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
+				switch_cache_db_execute_sql2str(dbh, "select count(*) from  sip_subscriptions where contact like \"%1001%6091%\";", (char *)&count1, 20, NULL);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Count : %s\n", count1);
+			}
+			fst_check_string_equals(count1, "0");
+
+			/* check with 407  Proxy Authentication Required. If count not 1 fail case. */
+			sipp_ret = run_sipp(local_ip_v4, 5060, 6090, "1001", "sipp-scenarios/uac_407_subscriber.xml", auth_password, "");
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_requires(0); /* sipp not found */
+			}
+			switch_sleep(100 * 1000);
+
+			switch_cache_db_execute_sql2str(dbh, "select count(*) from  sip_subscriptions where contact like \"%1001%6090%\";", (char *)&count, 20, NULL);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Count : %s\n", count);
+			fst_check_string_equals(count, "1");
+
+			/* sipp should timeout, attempt kill, just in case.*/
+			kill_sipp();
 		}
 		FST_TEST_END()
 

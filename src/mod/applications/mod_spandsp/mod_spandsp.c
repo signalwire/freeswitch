@@ -516,6 +516,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 	spandsp_globals.enable_tep = 0;
 	spandsp_globals.total_sessions = 0;
 	spandsp_globals.verbose = 0;
+	spandsp_globals.verbose_log_level = SWITCH_LOG_DEBUG;
 	spandsp_globals.use_ecm = 1;
 	spandsp_globals.disable_v17 = 0;
 	spandsp_globals.prepend_string = switch_core_strdup(spandsp_globals.config_pool, "fax");
@@ -591,6 +592,11 @@ switch_status_t load_configuration(switch_bool_t reload)
 						spandsp_globals.verbose = 1;
 					else
 						spandsp_globals.verbose = 0;
+				} else if (!strcmp(name, "verbose-log-level")) {
+					switch_log_level_t verbose_log_level = switch_log_str2level(value);
+					if (verbose_log_level != SWITCH_LOG_INVALID) {
+						spandsp_globals.verbose_log_level = verbose_log_level;
+					}
 				} else if (!strcmp(name, "disable-v17")) {
 					if (switch_true(value))
 						spandsp_globals.disable_v17 = 1;

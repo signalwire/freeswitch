@@ -482,7 +482,7 @@ struct mwi_helper {
 
 static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 {
-	char *account, *dup_account, *yn, *host, *user;
+	char *account, *dup_account, *yn, *host = NULL, *user;
 	char *sql;
 	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -514,8 +514,8 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 
 	dup_account = strdup(account);
-	switch_assert(dup_account != NULL);
 	switch_split_user_domain(dup_account, &user, &host);
+	switch_assert(host != NULL);
 
 
 	if ((pname = switch_event_get_header(event, "sofia-profile"))) {
@@ -523,7 +523,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	}
 
 	if (!profile) {
-		if (!host || !(profile = sofia_glue_find_profile(host))) {
+		if (!(profile = sofia_glue_find_profile(host))) {
 			char *sql;
 			char buf[512] = "";
 			switch_console_callback_match_t *matches;
@@ -1414,6 +1414,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
+					switch_console_free_matches(&matches);
 					sofia_glue_release_profile(profile);
 					goto done;
 				}
@@ -4024,7 +4025,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (np.is_nat) {
 			char params[128] = "";
-			if (contact->m_url->url_params) {
+			if (contact && contact->m_url->url_params) {
 				switch_snprintf(params, sizeof(params), ";%s", contact->m_url->url_params);
 			}
 			ipv6 = strchr(np.network_ip, ':');
@@ -4039,8 +4040,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (sip->sip_via) {
 			transport = sofia_glue_via2transport(sip->sip_via);
-		} else {
+		} else if (contact){
 			transport = sofia_glue_url2transport(contact->m_url);
+		} else {
+			transport = SOFIA_TRANSPORT_UNKNOWN;
 		}
 
 		if (transport == SOFIA_TRANSPORT_TCP) {
@@ -4739,7 +4742,7 @@ void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip)
 {
 	url_t *to = sip->sip_to->a_url;
 	url_t *from = sip->sip_from->a_url;
-	switch_snprintf(hash_key, len, "%s%s%s", from->url_user, from->url_host, to->url_user);
+	switch_snprintf(hash_key, len, "%s%s%s", (from && from->url_user) ? from->url_user : "", (from && from->url_host) ? from->url_host : "", (to && to->url_user) ? to->url_user : "");
 }
 
 void sofia_presence_handle_sip_i_message(int status,

@@ -168,7 +168,7 @@ void octet_string_set_to_zero(void *s, size_t len);
 #define be64_to_cpu(x) bswap_64((x))
 #else /* WORDS_BIGENDIAN */
 
-#if defined(__GNUC__) && (defined(HAVE_X86) || defined(__x86_64__))
+#if defined(__GNUC__) && defined(HAVE_X86)
 /* Fall back. */
 static inline uint32_t be32_to_cpu(uint32_t v)
 {

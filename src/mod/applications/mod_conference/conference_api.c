@@ -138,17 +138,17 @@ switch_status_t conference_api_sub_pause_play(conference_obj_t *conference, swit
 	}
 
 	if (argc == 3) {
-		uint32_t id = atoi(argv[2]);
+		const char * id = argv[2];
 		conference_member_t *member;
 
-		if ((member = conference_member_get(conference, id))) {
+		if ((member = conference_member_get_by_str(conference, id))) {
 			switch_mutex_lock(member->fnode_mutex);
 			conference_fnode_toggle_pause(member->fnode, stream);
 			switch_mutex_unlock(member->fnode_mutex);
 			switch_thread_rwlock_unlock(member->rwlock);
 			return SWITCH_STATUS_SUCCESS;
 		} else {
-			stream->write_function(stream, "-ERR Member: %u not found.\n", id);
+			stream->write_function(stream, "-ERR Member: %s not found.\n", id);
 		}
 	}
 
@@ -166,17 +166,17 @@ switch_status_t conference_api_sub_play_status(conference_obj_t *conference, swi
 	}
 
 	if (argc == 3) {
-		uint32_t id = atoi(argv[2]);
+		const char *id = argv[2];
 		conference_member_t *member;
 
-		if ((member = conference_member_get(conference, id))) {
+		if ((member = conference_member_get_by_str(conference, id))) {
 			switch_mutex_lock(member->fnode_mutex);
 			conference_fnode_check_status(member->fnode, stream);
 			switch_mutex_unlock(member->fnode_mutex);
 			switch_thread_rwlock_unlock(member->rwlock);
 			return SWITCH_STATUS_SUCCESS;
 		} else {
-			stream->write_function(stream, "-ERR Member: %u not found.\n", id);
+			stream->write_function(stream, "-ERR Member: %s not found.\n", id);
 		}
 	}
 
@@ -2518,7 +2518,6 @@ static void clear_role_id(conference_obj_t *conference, conference_member_t *mem
 switch_status_t conference_api_sub_vid_res_id(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	uint8_t all = 0, clear = 0, force = 0;
-	uint32_t member_id;
 	char *res_id = NULL;
 	conference_member_t *member;
 
@@ -2538,7 +2537,7 @@ switch_status_t conference_api_sub_vid_res_id(conference_obj_t *conference, swit
 	if (argc > 4)
 		force = strcasecmp(argv[4], "force") ? 0 : 1;
 
-	if (!(member_id = atoi(argv[2]))) {
+	if (!atoi(argv[2])) {
 		all = strcasecmp(argv[2], "all") ? 0 : 1;
 	}
 
@@ -2550,13 +2549,11 @@ switch_status_t conference_api_sub_vid_res_id(conference_obj_t *conference, swit
 			}
 		}
 		switch_mutex_unlock(conference->member_mutex);
-	} else if (member_id) {
-		if (!(member = conference_member_get(conference, member_id)))
+	} else {
+		if (!(member = conference_member_get_by_str(conference, argv[2])))
 			return SWITCH_STATUS_GENERR;
 		conference_api_sub_vid_res_id_member(member, stream, res_id, clear, force);
 		switch_thread_rwlock_unlock(member->rwlock);
-	} else {
-		return SWITCH_STATUS_GENERR;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2735,10 +2732,10 @@ switch_status_t conference_api_sub_file_seek(conference_obj_t *conference, switc
 	}
 
 	if (argc == 4) {
-		uint32_t id = atoi(argv[3]);
-		conference_member_t *member = conference_member_get(conference, id);
+		const char *id = argv[3];
+		conference_member_t *member = conference_member_get_by_str(conference, id);
 		if (member == NULL) {
-			stream->write_function(stream, "-ERR Member: %u not found.\n", id);
+			stream->write_function(stream, "-ERR Member: %s not found.\n", id);
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -2833,7 +2830,7 @@ switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_str
 		}
 		ret_status = SWITCH_STATUS_SUCCESS;
 	} else if (argc >= 4) {
-		uint32_t id = atoi(argv[3]);
+		const char *id = argv[3];
 		conference_member_t *member;
 		switch_bool_t mux = SWITCH_TRUE;
 
@@ -2841,9 +2838,9 @@ switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_str
 			mux = SWITCH_FALSE;
 		}
 
-		if ((member = conference_member_get(conference, id))) {
+		if ((member = conference_member_get_by_str(conference, id))) {
 			if (conference_member_play_file(member, argv[2], 0, mux) == SWITCH_STATUS_SUCCESS) {
-				stream->write_function(stream, "+OK (play) Playing file %s to member %u\n", argv[2], id);
+				stream->write_function(stream, "+OK (play) Playing file %s to member %u\n", argv[2], member->id);
 				if (test_eflag(conference, EFLAG_PLAY_FILE_MEMBER) &&
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 					conference_member_add_event_data(member, event);
@@ -2899,7 +2896,7 @@ switch_status_t conference_api_sub_saymember(conference_obj_t *conference, switc
 	char *expanded = NULL;
 	char *start_text = NULL;
 	char *workspace = NULL;
-	uint32_t id = 0;
+	const char *id = NULL;
 	conference_member_t *member = NULL;
 	switch_event_t *event;
 
@@ -2918,15 +2915,15 @@ switch_status_t conference_api_sub_saymember(conference_obj_t *conference, switc
 		text = start_text;
 	}
 
-	id = atoi(workspace);
+	id = workspace;
 
 	if (!id || zstr(text)) {
 		stream->write_function(stream, "-ERR (saymember) No Text!\n");
 		goto done;
 	}
 
-	if (!(member = conference_member_get(conference, id))) {
-		stream->write_function(stream, "-ERR (saymember) Unknown Member %u!\n", id);
+	if (!(member = conference_member_get_by_str(conference, id))) {
+		stream->write_function(stream, "-ERR (saymember) Unknown Member %s!\n", id);
 		goto done;
 	}
 
@@ -3236,15 +3233,15 @@ switch_status_t conference_api_sub_stop(conference_obj_t *conference, switch_str
 		return SWITCH_STATUS_GENERR;
 
 	if (argc == 4) {
-		uint32_t id = atoi(argv[3]);
+		const char *id = argv[3];
 		conference_member_t *member;
 
-		if ((member = conference_member_get(conference, id))) {
+		if ((member = conference_member_get_by_str(conference, id))) {
 			uint32_t stopped = conference_member_stop_file(member, async ? FILE_STOP_ASYNC : current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
 			stream->write_function(stream, "+OK Stopped %u files.\n", stopped);
 			switch_thread_rwlock_unlock(member->rwlock);
 		} else {
-			stream->write_function(stream, "-ERR Member: %u not found.\n", id);
+			stream->write_function(stream, "-ERR Member: %s not found.\n", id);
 		}
 	} else {
 		uint32_t stopped = conference_file_stop(conference, async ? FILE_STOP_ASYNC : current ? FILE_STOP_CURRENT : FILE_STOP_ALL);
@@ -3659,13 +3656,13 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 
 		for (x = 3; x < argc; x++) {
 			conference_member_t *member = NULL;
-			uint32_t id = atoi(argv[x]);
+			const char *id = argv[x];
 			switch_channel_t *channel;
 			switch_event_t *event;
 			char *xdest = NULL;
 
-			if (!id || !(member = conference_member_get(conference, id))) {
-				stream->write_function(stream, "-ERR No Member %u in conference %s.\n", id, conference->name);
+			if (!id || !(member = conference_member_get_by_str(conference, id))) {
+				stream->write_function(stream, "-ERR No Member %s in conference %s.\n", id, conference->name);
 				continue;
 			}
 

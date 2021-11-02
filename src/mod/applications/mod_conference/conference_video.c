@@ -3344,7 +3344,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			if (imember->watching_canvas_id == canvas->canvas_id && switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 				switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
-				send_keyframe = SWITCH_TRUE;
+				canvas->send_keyframe = 30;
+				send_keyframe = 1;
 			}
 
 			if (conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) &&

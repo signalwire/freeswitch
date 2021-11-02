@@ -374,6 +374,6 @@ main (int argc, char *argv[])
 #ifdef _WIN32
 	WSACleanup ();
 #endif
-
+	if (file) free(file);
 	return 0;
 }
