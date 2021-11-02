@@ -668,7 +668,7 @@ skiptest:
 			switch_sleep(1000 * 1000);
 			to = switch_mprintf("sofia/gateway/testgw-noreg/sipp@%s:%d", local_ip_v4, inv_sipp_port);
 			/*originate will fail if the 407 we get from sipp is dropped due to wrong IP.*/
-			status = switch_ivr_originate(NULL, &session, &cause, to, 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			status = switch_ivr_originate(NULL, &session, &cause, to, 5, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
 			/*test is considered PASSED if we get a session*/
