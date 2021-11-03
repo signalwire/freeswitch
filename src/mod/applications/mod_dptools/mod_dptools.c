@@ -6427,6 +6427,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_dialplan_interface_t *dp_interface;
 	switch_chat_interface_t *chat_interface;
 	switch_file_interface_t *file_interface;
+	int use_system_commands = 1;
+
+	if (switch_true(switch_core_get_variable("disable_system_app_commands"))) {
+		use_system_commands = 0;
+	}
 
 	if (switch_event_reserve_subclass(FILE_STRING_CLOSE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", FILE_STRING_CLOSE);
@@ -6704,10 +6709,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bridge", "Bridge Audio", "Bridge the audio between two sessions", audio_bridge_function, "<channel_url>",
 				   SAF_SUPPORT_NOMEDIA|SAF_SUPPORT_TEXT_ONLY);
-	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
-	SWITCH_ADD_APP(app_interface, "bgsystem", "Execute a system command in the background", "Execute a background system command", bgsystem_session_function, "<command>",
-				   SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+	if (use_system_commands) {
+		SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>",
+				SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+		SWITCH_ADD_APP(app_interface, "bgsystem", "Execute a system command in the background", "Execute a background system command", bgsystem_session_function, "<command>",
+				SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
+	}
 	SWITCH_ADD_APP(app_interface, "say", "say", "say", say_function, SAY_SYNTAX, SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "detect_audio", "detect_audio", "detect_audio", detect_audio_function, DETECT_AUDIO_SYNTAX,
