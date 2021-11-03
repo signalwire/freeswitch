@@ -8815,6 +8815,17 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		bytes = datalen;
 
 		m = (uint8_t) send_msg->header.m;
+		{
+			uint32_t ts_delta;
+			this_ts = ntohl(send_msg->header.ts);
+			ts_delta = abs((int32_t)(this_ts - rtp_session->last_write_ts));
+
+			if (ts_delta > rtp_session->samples_per_second * 2) {
+				rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+				send_msg->header.ts = htonl(rtp_session->ts);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "RTP: common_write [NO RESET] sticking to linear timestamp (last: %u this: %u) %p/%p\n", rtp_session->last_write_ts, rtp_session->ts, (void*)rtp_session->session, (void*) rtp_session);
+			}
+		}
 		rtp_session->ts = ntohl(send_msg->header.ts);
 
 		if (flags && *flags & SFF_RFC2833) {
@@ -9100,9 +9111,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		ts_delta = abs((int32_t)(this_ts - rtp_session->last_write_ts));
 
 		if (ts_delta > rtp_session->samples_per_second * 2) {
-			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
+			//rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
+			rtp_session->ts = rtp_session->last_write_ts + rtp_session->samples_per_interval;
+			send_msg->header.ts = htonl(rtp_session->ts);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "RTP: common_write [NO RESET] sticking to linear timestamp (last: %u this: %u) %p/%p\n", rtp_session->last_write_ts, rtp_session->ts, (void*)rtp_session->session, (void*) rtp_session);
 		}
-
 #ifdef DEBUG_TS_ROLLOVER
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WRITE TS LAST:%u THIS:%u DELTA:%u\n", rtp_session->last_write_ts, this_ts, ts_delta);
 #endif
