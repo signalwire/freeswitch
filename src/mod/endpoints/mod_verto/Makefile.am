@@ -1,6 +1,7 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_verto
 
+if HAVE_KS
 mod_LTLIBRARIES       = mod_verto.la
 mod_verto_la_SOURCES  = mod_verto.c mcast/mcast.c
 mod_verto_la_CFLAGS   = -D__EXTENSIONS__ -D_GNU_SOURCE $(AM_CFLAGS) $(KS_CFLAGS)
@@ -37,3 +38,10 @@ swigclean:
 	rm -f mcast/mcast_wrap.* mcast/MCAST.so mcast/MCAST.pm mcast/perlxsi.*
 
 reswig:	swigclean mcast/mcast_wrap.cpp mcast/perlxsi.c
+else
+install: error
+all: error
+error:
+	$(error You must install libks to build mod_verto)
+endif
+
