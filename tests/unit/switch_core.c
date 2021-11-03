@@ -51,6 +51,22 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_switch_event_add_header_leak)
+		{
+			switch_event_t* event;
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[0]", "1");
+				switch_event_fire(&event);
+			}
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[5000]", "12");
+				switch_event_fire(&event);
+			}
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(test_xml_free_attr)
 		{
 			switch_xml_t parent_xml = switch_xml_new("xml");

@@ -1062,11 +1062,14 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 							exists = 1;
 						}
 
+						FREE(data);
 						goto redraw;
 					}
 				} else if (tmp_header) {
 					free_header(&tmp_header);
 				}
+
+				FREE(data);
 				goto end;
 			} else {
 				if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
