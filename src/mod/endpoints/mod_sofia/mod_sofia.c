@@ -49,6 +49,8 @@
 #include <stir_shaken.h>
 #endif
 
+#define DEBUG_RTP 0
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
@@ -1274,6 +1276,10 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t now = switch_micro_time_now();
 	switch_assert(tech_pvt != NULL);
+
+#if DEBUG_RTP
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sofia: write frame %p\n", (void*)session);
+#endif
 
 	if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 		if (switch_channel_up_nosig(channel)) {
