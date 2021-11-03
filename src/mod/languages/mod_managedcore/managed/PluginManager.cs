@@ -32,11 +32,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Loader;
 
-namespace FreeSWITCH {
+namespace FreeSWITCH
+{
 
     internal abstract class PluginExecutor { 
 
@@ -274,8 +277,11 @@ namespace FreeSWITCH {
 
         protected override bool LoadInternal(string fileName) {
             Assembly asm;
-            try {
-                asm = Assembly.Load(System.IO.File.ReadAllBytes(fileName));
+            try
+            {
+                var loadContext = new PluginLoadContext(fileName);
+                asm = loadContext.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(fileName)));
+                //asm = Assembly.Load(System.IO.File.ReadAllBytes(fileName));
             } catch (Exception ex) {
                 Log.WriteLine(LogLevel.Info, "Couldn't load {0}: {1}", fileName, ex.Message);
                 return false;
@@ -300,6 +306,39 @@ namespace FreeSWITCH {
             return true;
         }
 
+    }
+
+    //https://docs.microsoft.com/en-us/dotnet/core/tutorials/creating-app-with-plugin-support
+    internal class PluginLoadContext : AssemblyLoadContext
+    {
+        private AssemblyDependencyResolver _resolver;
+
+        public PluginLoadContext(string pluginPath)
+        {
+            _resolver = new AssemblyDependencyResolver(pluginPath);
+        }
+
+        protected override Assembly Load(AssemblyName assemblyName)
+        {
+            string assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
+            if (assemblyPath != null)
+            {
+                return LoadFromAssemblyPath(assemblyPath);
+            }
+
+            return null;
+        }
+
+        protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
+        {
+            string libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+            if (libraryPath != null)
+            {
+                return LoadUnmanagedDllFromPath(libraryPath);
+            }
+
+            return IntPtr.Zero;
+        }
     }
 
     internal class EmbeddedPluginManager : PluginManager {
