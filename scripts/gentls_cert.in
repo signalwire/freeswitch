@@ -89,7 +89,7 @@ setup_ca() {
 
 	openssl req -out "${CONFDIR}/CA/cacert.pem" \
 		-new -x509 -keyout "${CONFDIR}/CA/cakey.pem" \
-		-config "${TMPFILE}.cfg" -nodes -days ${DAYS} -sha1 >/dev/null || exit 1
+		-config "${TMPFILE}.cfg" -nodes -days ${DAYS} -sha256 >/dev/null || exit 1
 	cat "${CONFDIR}/CA/cacert.pem" > "${CONFDIR}/cafile.pem"
 	cp $TMPFILE.cfg /tmp/ssl.cfg
 	rm "${TMPFILE}.cfg"
@@ -131,11 +131,11 @@ generate_cert() {
 
 	openssl req -new -out "${TMPFILE}.req" \
 		-newkey rsa:${KEY_SIZE} -keyout "${TMPFILE}.key" \
-		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
+		-config "${TMPFILE}.cfg" -nodes -sha256 >/dev/null || exit 1
 
 	openssl x509 -req -CAkey "${CONFDIR}/CA/cakey.pem" -CA "${CONFDIR}/CA/cacert.pem" -CAcreateserial \
 		-in "${TMPFILE}.req" -out "${TMPFILE}.crt" -extfile "${TMPFILE}.cfg" \
-		-extensions "${EXTENSIONS}" -days ${DAYS} -sha1 >/dev/null || exit 1
+		-extensions "${EXTENSIONS}" -days ${DAYS} -sha256 >/dev/null || exit 1
 
 	cat "${TMPFILE}.crt" "${TMPFILE}.key" > "${CONFDIR}/${OUTFILE}"
 

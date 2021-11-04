@@ -112,4 +112,8 @@ public class Event {
     return freeswitchJNI.Event_fire(swigCPtr, this);
   }
 
+  public boolean merge(Event to_merge) {
+    return freeswitchJNI.Event_merge(swigCPtr, this, Event.getCPtr(to_merge), to_merge);
+  }
+
 }

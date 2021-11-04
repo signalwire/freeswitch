@@ -854,8 +854,8 @@ struct switch_json_api_interface {
 	struct switch_json_api_interface *next;
 };
 
-#define PROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
-#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define PROTECT_INTERFACE(_it) if (_it) {switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); switch_mutex_lock(_it->reflock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
 
 #include "switch_frame.h"
 

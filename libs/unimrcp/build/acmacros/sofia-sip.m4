@@ -29,6 +29,12 @@ AC_DEFUN([UNIMRCP_CHECK_SOFIA],
             fi
         done
 
+	dnl Check for installed Sofia-SIP in PKG_CONFIG_PATH
+	if test "$found_sofia" != "yes" && $PKG_CONFIG sofia-sip-ua > /dev/null 2>&1 ; then
+	   found_sofia="yes"
+	   sofia_config_path="sofia-sip-ua"
+	fi
+
         dnl Check for full path to Sofia-SIP pkg-config file
         if test "$found_sofia" != "yes" && test -f "$sofia_path" && $PKG_CONFIG $sofia_path > /dev/null 2>&1 ; then
             found_sofia="yes"

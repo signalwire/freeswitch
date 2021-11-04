@@ -163,15 +163,6 @@ Rules:
    Matches: GNU\sGeneral\sPublic\sLicense\sVersion\s2\sor\slater
    License: MPL-1.1 or GPL-2+
   -
-   Glob: libs/spandsp/tests/g726_tests.c
-   Matches: Copyright\s(C)\s2006\sSteve\sUnderwood
-   Matches: specification.\sThese\sare\scopyright\smaterial,\sand\sso\scannot\sbe\sdistributed\swith\sthis\stest\ssoftware.
-   Copyright: 2006 Steve Underwood
-  -
-   Glob: libs/spandsp/*/g722.[ch]
-   Matches: Copyright\s\(c\)\sCMU\s+1993
-   Copyright: 1993 CMU
-  -
    Glob: libs/libwebsockets/win32port/zlib/inftrees.c
    Matches: Copyright\s1995-2010\sMark\sAdler\s.;
    Copyright: 1995-2010 Mark Adler

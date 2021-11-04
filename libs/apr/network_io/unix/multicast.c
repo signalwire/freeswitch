@@ -57,11 +57,10 @@ static void fill_mip_v4(struct ip_mreq *mip, apr_sockaddr_t *mcast,
     }
 }
 
-#if APR_HAVE_IPV6
 static unsigned int find_if_index(const apr_sockaddr_t *iface)
 {
     unsigned int index = 0;
-#ifdef HAVE_GETIFADDRS
+#if defined(HAVE_GETIFADDRS) && APR_HAVE_IPV6
     struct ifaddrs *ifp, *ifs;
 
     /**
@@ -92,6 +91,7 @@ static unsigned int find_if_index(const apr_sockaddr_t *iface)
     return index;
 }
 
+#if APR_HAVE_IPV6
 static void fill_mip_v6(struct ipv6_mreq *mip, const apr_sockaddr_t *mcast,
                         const apr_sockaddr_t *iface)
 {
@@ -105,7 +105,6 @@ static void fill_mip_v6(struct ipv6_mreq *mip, const apr_sockaddr_t *mcast,
         mip->ipv6mr_interface = find_if_index(iface);
     }
 }
-
 #endif
 
 static int sock_is_ipv4(apr_socket_t *sock)

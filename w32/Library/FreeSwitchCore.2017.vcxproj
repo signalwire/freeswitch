@@ -400,6 +400,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClCompile Include="..\..\src\switch_odbc.c" />
     <ClCompile Include="..\..\src\switch_pcm.c" />
     <ClCompile Include="..\..\src\switch_speex.c" />
+    <ClCompile Include="..\..\src\switch_packetizer.c" />
     <ClCompile Include="..\..\src\switch_profile.c" />
     <ClCompile Include="..\..\src\switch_regex.c" />
     <ClCompile Include="..\..\src\switch_resample.c" />
@@ -735,6 +736,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClInclude Include="..\..\src\include\switch_module_interfaces.h" />
     <ClInclude Include="..\..\src\include\switch_mprintf.h" />
     <ClInclude Include="..\..\src\include\switch_odbc.h" />
+    <ClInclude Include="..\..\src\include\switch_packetizer.h" />
     <ClInclude Include="..\..\src\include\switch_platform.h" />
     <ClInclude Include="..\..\src\include\switch_regex.h" />
     <ClInclude Include="..\..\src\include\switch_resample.h" />
@@ -766,7 +768,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ProjectReference Include="..\..\libs\libzrtp\projects\win\libzrtp.2017.vcxproj">
       <Project>{c13cc324-0032-4492-9a30-310a6bd64ff5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2017.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\spandsp\libspandsp.2017.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\freetype\freetype.2017.vcxproj">
@@ -780,6 +782,9 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\libyuv\libyuv.2017.vcxproj">
       <Project>{b6e22500-3db6-4e6e-8cd5-591b781d7d99}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\sofia\libsofia_sip_ua_static.2017.vcxproj">
+      <Project>{70a49bc2-7500-41d0-b75d-edcc5be987a0}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\speex\libspeexdsp.2017.vcxproj">
       <Project>{03207781-0d1c-4db3-a71d-45c608f28dbd}</Project>

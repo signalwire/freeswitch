@@ -1092,7 +1092,7 @@
              <item row="10" column="0" colspan="2">
               <widget class="QLabel" name="label_47">
                <property name="text">
-                <string>Noise Supressor</string>
+                <string>Noise Suppressor</string>
                </property>
               </widget>
              </item>

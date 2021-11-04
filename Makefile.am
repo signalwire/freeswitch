@@ -30,8 +30,7 @@ endif
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
 AM_CPPFLAGS =
 AM_CPPFLAGS += -I$(switch_srcdir)/libs/libvpx
-AM_CPPFLAGS += $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/sdp
-AM_CPPFLAGS += -I$(switch_srcdir)/libs/sofia-sip/libsofia-sip-ua/su -I$(switch_builddir)/libs/sofia-sip/libsofia-sip-ua/su
+AM_CPPFLAGS += $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
@@ -131,7 +130,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/libyuv/include
 CORE_CFLAGS += -DSWITCH_HAVE_YUV
 endif
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
-CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
+CORE_CFLAGS += $(SPANDSP_CFLAGS)
 if ENABLE_LIBVPX
 CORE_CFLAGS += -DSWITCH_HAVE_VPX
 endif
@@ -185,13 +184,10 @@ endif
 ##
 ## libfreeswitch
 ##
-noinst_LTLIBRARIES        = libfreeswitch_spandsp.la
+noinst_LTLIBRARIES        =
 if ENABLE_LIBYUV
 noinst_LTLIBRARIES += libfreeswitch_libyuv.la
 endif
-libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc.c libs/spandsp/src/bit_operations.c
-libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
-CORE_LIBS+=libfreeswitch_spandsp.la
 
 if ENABLE_LIBYUV
 libfreeswitch_libyuv_la_SOURCES = \
@@ -250,9 +246,9 @@ CORE_LIBS+=libfreeswitch_libyuv.la
 endif
 
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS)  $(AM_CFLAGS) $(TPL_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(SOFIA_SIP_CFLAGS) $(AM_CFLAGS) $(TPL_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(SYSTEMD_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -304,6 +300,7 @@ library_include_HEADERS = \
 	src/include/switch_dso.h \
 	src/include/switch_loadable_module.h \
 	src/include/switch_module_interfaces.h \
+	src/include/switch_packetizer.h \
 	src/include/switch_platform.h \
 	src/include/switch_resample.h \
 	src/include/switch_regex.h \
@@ -368,6 +365,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_version.c \
 	src/switch_core_media.c \
 	src/switch_core_video.c \
+	src/switch_packetizer.c \
 	src/switch_sdp.c \
 	src/switch_scheduler.c \
 	src/switch_core_db.c \
@@ -593,14 +591,6 @@ libs/libvpx/Makefile: libs/libvpx/.update
 libs/libvpx/libvpx.a: libs/libvpx/Makefile libs/libvpx/.update
 	@cd libs/libvpx && $(MAKE)
 
-libs/sofia-sip/Makefile:
-	cd libs/sofia-sip && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-
-libs/sofia-sip/libsofia-sip-ua/sdp/.libs/libsdp.a libs/sofia-sip/libsofia-sip-ua/su/.libs/libsu.a: libs/sofia-sip/.update libs/sofia-sip/Makefile
-	@cd libs/sofia-sip && $(MAKE) noop
-	@cd libs/sofia-sip && $(MAKE) SOFIA_CFLAGS="$(SWITCH_AM_CFLAGS)"
-	@$(TOUCH_TARGET)
-
 libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr/.update
 	@cd libs/apr && ./config.status
 	@$(TOUCH_TARGET)
@@ -611,14 +601,15 @@ libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
 
-SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/srtp/ekt.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
+SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
 		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
 		libs/srtp/crypto/hash/null_auth.c libs/srtp/crypto/hash/sha1.c \
 		libs/srtp/crypto/hash/hmac.c libs/srtp/crypto/hash/auth.c \
-		libs/srtp/crypto/math/datatypes.c libs/srtp/crypto/math/stat.c \
+		libs/srtp/crypto/math/datatypes.c \
 		libs/srtp/crypto/kernel/crypto_kernel.c libs/srtp/crypto/kernel/alloc.c \
 		libs/srtp/crypto/kernel/key.c libs/srtp/crypto/kernel/err.c \
-		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c libs/srtp/crypto/replay/ut_sim.c 
+		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c \
+		libs/srtp/crypto/cipher/cipher_test_cases.c libs/srtp/crypto/hash/auth_test_cases.c
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 	touch $(switch_srcdir)/src/include/switch.h
@@ -722,9 +713,7 @@ core-install: core_install
 
 clean_core: clean-libLTLIBRARIES
 	rm -f $(libfreeswitch_la_OBJECTS)
-	rm -f $(libfreeswitch_spandsp_la_OBJECTS)
 	rm -f `echo $(libfreeswitch_la_OBJECTS) | sed -e's|.lo|.o|g'`
-	rm -f `echo $(libfreeswitch_spandsp_la_OBJECTS) | sed -e's|.lo|.o|g'`
 
 install_core: install-libLTLIBRARIES
 
@@ -755,12 +744,11 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean python-reconf
-	cd libs/sofia-sip && $(MAKE) clean
+update-clean: clean python-reconf python3-reconf
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
-swigall:
+swigall: src/include/switch_swigable_cpp.h
 	@echo reswigging all
 	sh $(switch_srcdir)/build/swigall.sh
 
@@ -771,6 +759,10 @@ sndfile-reconf:
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
+	./config.status
+
+python3-reconf:
+	rm -f src/mod/languages/mod_python3/Makefile
 	./config.status
 
 reconf:
@@ -789,17 +781,6 @@ iks-reconf:
 	cd libs/iksemel && autoreconf -fi
 	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	$(MAKE) mod_dingaling-clean
-
-spandsp-reconf:
-	cd libs/spandsp && $(MAKE) clean || echo
-	cd libs/spandsp && autoreconf -fi
-	cd libs/spandsp && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	cd libs/spandsp && $(MAKE)
-
-sofia-reconf:
-	cd libs/sofia-sip && sh ./autogen.sh
-	cd libs/sofia-sip && $(MAKE) clean
-	cd libs/sofia-sip && ./configure $(MY_DEFAULT_ARGS) --with-pic --with-glib=no --disable-shared
 
 cluecon:
 	@clear

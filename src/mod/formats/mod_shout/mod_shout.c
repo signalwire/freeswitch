@@ -1333,8 +1333,6 @@ void do_telecast(switch_stream_handle_t *stream)
 
 	  end:
 
-		switch_safe_free(uuid);
-
 		if (gfp) {
 			lame_close(gfp);
 			gfp = NULL;
@@ -1350,6 +1348,8 @@ void do_telecast(switch_stream_handle_t *stream)
 
 		switch_core_session_rwunlock(tsession);
 	}
+
+	switch_safe_free(uuid);
 }
 
 void do_broadcast(switch_stream_handle_t *stream)

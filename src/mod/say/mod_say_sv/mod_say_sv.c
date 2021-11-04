@@ -67,7 +67,21 @@ SWITCH_MODULE_DEFINITION(mod_say_sv, mod_say_sv_load, NULL, NULL);
 			return tstatus;								\
 		}										\
 		say_args->method = smeth; say_args->type = stype;				\
-	}											\
+	}																	\
+
+#define say_num_goto_status(_sh, num, meth, tag) {						\
+		char tmp[80];													\
+		switch_status_t tstatus;										\
+		switch_say_args_t tsay_args = *say_args;						\
+		tsay_args.type = SST_ITEMS;										\
+		tsay_args.method = meth;										\
+		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
+		if ((tstatus = sv_say_general_count(_sh, tmp, &tsay_args)) !=	\
+			SWITCH_STATUS_SUCCESS) {									\
+			switch_goto_status(tstatus, tag);							\
+		}																\
+	}
+
 
 static switch_status_t play_group(switch_say_method_t method, switch_say_gender_t gender, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
 {
@@ -532,13 +546,13 @@ static switch_status_t say_ip(switch_say_file_handle_t *sh, char *tosay, switch_
 
         *d++ = '\0';
 
-        say_num(sh, atoi(a), say_args->method);
+        say_num_goto_status(sh, atoi(a), say_args->method, end);
         switch_say_file(sh, "digits/punkt");
-        say_num(sh, atoi(b), say_args->method);
+        say_num_goto_status(sh, atoi(b), say_args->method, end);
         switch_say_file(sh, "digits/punkt");
-        say_num(sh, atoi(c), say_args->method);
+        say_num_goto_status(sh, atoi(c), say_args->method, end);
         switch_say_file(sh, "digits/punkt");
-        say_num(sh, atoi(d), say_args->method);
+        say_num_goto_status(sh, atoi(d), say_args->method, end);
 
  end:
 

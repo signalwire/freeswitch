@@ -70,10 +70,10 @@ FST_CORE_DB_BEGIN("./conf")
 			if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) == SWITCH_STATUS_SUCCESS) {
 
 				switch_cache_db_execute_sql2str(dbh, "SELECT 1", (char *)&res1, 20, NULL);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SELECT 1: %s\n", switch_str_nil(res1));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SELECT 1: %s\n", res1);
 
 				switch_cache_db_execute_sql2str(dbh, "SELECT NULL", (char *)&res2, 20, NULL);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SELECT NULL: %s\n", switch_str_nil(res2));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SELECT NULL: %s\n", res2);
 
 			}
 

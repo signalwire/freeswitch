@@ -387,7 +387,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 			amqp_rpc_reply_t res;
 			amqp_envelope_t envelope;
 			struct timeval timeout = {0};
-			char command[1024];
+			char command[10240];
 			enum ECommandFormat {
 				COMMAND_FORMAT_UNKNOWN,
 				COMMAND_FORMAT_PLAINTEXT

@@ -30,9 +30,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="srtp\ekt.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="srtp\srtp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,14 +75,14 @@
     <ClCompile Include="crypto\replay\rdbx.c">
       <Filter>Source Files\Replay</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\replay\ut_sim.c">
-      <Filter>Source Files\Replay</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\math\datatypes.c">
       <Filter>Source Files\Math</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\math\stat.c">
-      <Filter>Source Files\Math</Filter>
+    <ClCompile Include="crypto\cipher\cipher_test_cases.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\hash\auth_test_cases.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -171,12 +168,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\srtp_priv.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="crypto\include\stat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ut_sim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

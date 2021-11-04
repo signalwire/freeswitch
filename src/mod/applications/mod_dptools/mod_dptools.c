@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1150,6 +1150,13 @@ SWITCH_STANDARD_APP(break_function)
 	}
 }
 
+SWITCH_STANDARD_APP(reuse_caller_profile_function)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+	switch_channel_set_flag(channel, CF_REUSE_CALLER_PROFILE);
+}
+
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_queue_dtmf_string(switch_core_session_get_channel(session), (const char *) data);
@@ -1400,6 +1407,12 @@ SWITCH_STANDARD_APP(answer_function)
 	if (!zstr(arg)) {
 		if (switch_stristr("is_conference", arg)) {
 			switch_channel_set_flag(channel, CF_CONFERENCE);
+		}
+		if (switch_stristr("decode_video", arg)) {
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+		}
+		if (switch_stristr("debug_video", arg)) {
+			switch_channel_set_flag_recursive(channel, CF_VIDEO_DEBUG_READ);
 		}
 	}
 
@@ -2744,7 +2757,6 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_detach_set(thd_attr, 1);
 
 	att = switch_core_session_alloc(session, sizeof(*att));
 	att->running = -1;
@@ -3303,6 +3315,16 @@ SWITCH_STANDARD_APP(record_session_mask_function)
 SWITCH_STANDARD_APP(record_session_unmask_function)
 {
 	switch_ivr_record_session_mask(session, (char *) data, SWITCH_FALSE);
+}
+
+SWITCH_STANDARD_APP(record_session_pause_function)
+{
+	switch_ivr_record_session_pause(session, (char *) data, SWITCH_TRUE);
+}
+
+SWITCH_STANDARD_APP(record_session_resume_function)
+{
+	switch_ivr_record_session_pause(session, (char *) data, SWITCH_FALSE);
 }
 
 SWITCH_STANDARD_APP(record_session_function)
@@ -4579,7 +4601,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 			timeout_ms = switch_atoui(argv[3]);
 		}
 
-		if (thresh > 0 && silence_hits > 0 && listen_hits > 0) {
+		if (thresh > 0 && silence_hits > 0 && listen_hits >= 0) {
 			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, timeout_ms, argv[4]);
 			return;
 		}
@@ -6273,7 +6295,7 @@ SWITCH_STANDARD_APP(vad_test_function)
 	if ((var = switch_channel_get_variable(channel, "vad_silence_ms"))) {
 		tmp = atoi(var);
 
-		if (tmp > 0) switch_vad_set_param(vad, "sicence_ms", tmp);
+		if (tmp > 0) switch_vad_set_param(vad, "silence_ms", tmp);
 	}
 
 	if ((var = switch_channel_get_variable(channel, "vad_thresh"))) {
@@ -6314,6 +6336,52 @@ SWITCH_STANDARD_APP(vad_test_function)
 
 	switch_vad_destroy(&vad);
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+}
+
+#define DEBUG_MEDIA_SYNTAX "<read|write|both|vread|vwrite|vboth|all> <on|off>"
+SWITCH_STANDARD_APP(debug_media_function)
+{
+	char *mycmd = NULL, *argv[2] = { 0 };
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!zstr(data) && (mycmd = strdup(data))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (zstr(data) || argc < 2 || zstr(argv[0]) || zstr(argv[1])) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "USAGE: %s\n", DEBUG_MEDIA_SYNTAX);
+		goto done;
+	} else {
+		switch_core_session_message_t msg = { 0 };
+
+		msg.message_id = SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA;
+		msg.string_array_arg[0] = argv[0];
+		msg.string_array_arg[1] = argv[1];
+		msg.from = __FILE__;
+
+		if (!strcasecmp(argv[0], "all")) {
+			msg.string_array_arg[0] = "both";
+		}
+
+        again:
+		status = switch_core_session_receive_message(session, &msg);
+
+		if (status == SWITCH_STATUS_SUCCESS && !strcasecmp(argv[0], "all") && !strcmp(msg.string_array_arg[0], "both")) {
+			msg.string_array_arg[0] = "vboth";
+			goto again;
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "media debug on\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "error to turn on media debug status=%d\n", status);
+	}
+
+  done:
+
+	switch_safe_free(mycmd);
 }
 
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
@@ -6546,6 +6614,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "deflect", "Send call deflect", "Send a call deflect.", deflect_function, "<deflect_data>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "recovery_refresh", "Send call recovery_refresh", "Send a call recovery_refresh.", recovery_refresh_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "reuse_caller_profile", "Reuse the caller profile", "Reuse the caller profile", reuse_caller_profile_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>",
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "send_dtmf", "Send dtmf to be sent", "Send dtmf to be sent from a session", send_dtmf_function, "<dtmf_data>",
@@ -6620,7 +6689,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path> [+<timeout>]", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record_session_mask", "Mask audio in recording", SESS_REC_MASK_DESC, record_session_mask_function, "<path>", SAF_MEDIA_TAP);
-	SWITCH_ADD_APP(app_interface, "record_session_unmask", "Resume recording", SESS_REC_UNMASK_DESC, record_session_unmask_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_unmask", "Stop masking audio in recording", SESS_REC_UNMASK_DESC, record_session_unmask_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_pause", "Pause recording", "Temporarily pause writing call recording audio to file", record_session_pause_function, "<path>", SAF_MEDIA_TAP);
+	SWITCH_ADD_APP(app_interface, "record_session_resume", "Resume paused recording", "Resume writing call recording audio to file", record_session_resume_function, "<path>", SAF_MEDIA_TAP);
 	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function,
 				   "<path> [<time_limit_secs>] [<silence_thresh>] [<silence_hits>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "preprocess", "pre-process", "pre-process", preprocess_session_function, "", SAF_NONE);
@@ -6656,6 +6727,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "deduplicate_dtmf", "Prevent duplicate inband + 2833 dtmf", "", deduplicate_dtmf_app_function, "[only_rtp]", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_APP(app_interface, "vad_test", "VAD test", "VAD test, mode = -1(default), 0, 1, 2, 3", vad_test_function, "[mode]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "debug_media", "Debug Media", "Debug Media", debug_media_function, DEBUG_MEDIA_SYNTAX, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_DIALPLAN(dp_interface, "inline", inline_dialplan_hunt);
 

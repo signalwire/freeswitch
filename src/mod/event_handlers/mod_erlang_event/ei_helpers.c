@@ -202,7 +202,7 @@ int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref * ref, char *module, 
 void ei_init_ref(ei_cnode * ec, erlang_ref * ref)
 {
 	memset(ref, 0, sizeof(*ref));	/* zero out the struct */
-	snprintf(ref->node, MAXATOMLEN, "%s", ec->thisnodename);
+	snprintf(ref->node, MAXATOMLEN + 1, "%s", ec->thisnodename);
 
 	switch_mutex_lock(mod_erlang_event_globals.ref_mutex);
 	mod_erlang_event_globals.reference0++;
