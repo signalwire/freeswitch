@@ -40,7 +40,7 @@
 #include <sofia-sip/sdp.h>
 #include <sofia-sip/su.h>
 
-#define DEBUG_RTP 0
+#define DEBUG_RTP 1
 
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
 static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);

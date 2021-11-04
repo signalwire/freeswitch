@@ -31,7 +31,7 @@
 
 #include <switch.h>
 #define DEFAULT_LEAD_FRAMES 10
-#define DEBUG_RTP 0
+#define DEBUG_RTP 1
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 static void cleanup_proxy_mode_a(switch_core_session_t *session);

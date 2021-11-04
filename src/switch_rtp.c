@@ -51,16 +51,16 @@
 #include <switch_jitterbuffer.h>
 #include <switch_estimators.h>
 
-#define DEBUG_RTP 0
-//#define DEBUG_TS_ROLLOVER
+#define DEBUG_RTP 1
+#define DEBUG_TS_ROLLOVER
 #ifdef DEBUG_TS_ROLLOVER
 #define TS_ROLLOVER_START 4294951295
 #endif
 
-//#define DEBUG_2833
-//#define RTP_DEBUG_WRITE_DELTA
-//#define DEBUG_MISSED_SEQ
-//#define DEBUG_EXTRA
+#define DEBUG_2833
+#define RTP_DEBUG_WRITE_DELTA
+#define DEBUG_MISSED_SEQ
+#define DEBUG_EXTRA
 //#define DEBUG_RTCP
 #define DEBUG_ESTIMATORS_
 #define DEBUG_HOMER 0
