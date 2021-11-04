@@ -2986,13 +2986,27 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			}
 
 			if (!strcasecmp(astate, "early") || !strcasecmp(astate, "confirmed")) {
+				char *cmd;
+				char *callee_id_name = NULL;
+				switch_stream_handle_t user_data_stream = { 0 };
 
 				clean_to_user = switch_mprintf("%s", sub_to_user ? sub_to_user : to_user);
 				clean_from_user = switch_mprintf("%s", from_id ? from_id : from_user);
 
+				SWITCH_STANDARD_STREAM(user_data_stream);
+				cmd = switch_mprintf("%s@%s var effective_caller_id_name", clean_to_user, host);
+				if (switch_api_execute("user_data", cmd, NULL, &user_data_stream) == SWITCH_STATUS_SUCCESS) {
+					if (strncmp("-ERR", user_data_stream.data, 4)) {
+						callee_id_name = (char *)user_data_stream.data;
+					}
+				}
+
+				switch_safe_free(cmd);
+
 				if (is_dialog) {
 					if (!zstr(clean_to_user) && !zstr(clean_from_user)) {
-						stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n", clean_to_user, clean_to_user, host);
+						stream.write_function(&stream, "<local>\n<identity display=\"%s\">sip:%s@%s</identity>\n",
+							zstr(callee_id_name) ? clean_to_user : callee_id_name, clean_to_user, host);
 						stream.write_function(&stream, "<target uri=\"sip:%s@%s\">\n", clean_to_user, host);
 						stream.write_function(&stream, "<param pname=\"+sip.rendering\" pvalue=\"%s\"/>\n", holding ? "no" : "yes");
 
@@ -3062,6 +3076,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 				switch_safe_free(clean_to_user);
 				switch_safe_free(clean_from_user);
+				switch_safe_free(user_data_stream.data);
 			}
 			if (is_dialog) {
 				stream.write_function(&stream, "</dialog>\n");
