@@ -40,6 +40,8 @@
 #include <sofia-sip/sdp.h>
 #include <sofia-sip/su.h>
 
+#include <stdbool.h>
+
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
 static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp, switch_sdp_type_t sdp_type);

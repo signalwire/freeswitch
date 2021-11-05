@@ -33,6 +33,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 //#define DEBUG_ALLOC

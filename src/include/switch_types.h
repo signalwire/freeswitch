@@ -2324,6 +2324,7 @@ typedef int switch_os_socket_t;
 #endif
 
 typedef struct apr_pool_t switch_memory_pool_t;
+typedef void* switch_plc_state_t;
 typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
 typedef struct switch_app_log switch_app_log_t;

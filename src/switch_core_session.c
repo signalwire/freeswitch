@@ -1585,7 +1585,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	if ((*session)->plc) {
-		plc_free((*session)->plc);
+		switch_plc_free((*session)->plc);
 		(*session)->plc = NULL;
 	}
 

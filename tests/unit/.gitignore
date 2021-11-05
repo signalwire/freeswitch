@@ -48,3 +48,6 @@ Makefile
 conf/*/
 conf_playsay/*/
 conf_async/*/
+x64
+win32
+*.vcxproj.user

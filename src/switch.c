@@ -49,6 +49,7 @@
 #endif
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */

@@ -33,6 +33,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #ifndef WIN32
 #include <arpa/inet.h>
 #if defined(HAVE_SYS_TIME_H) && defined(HAVE_SYS_RESOURCE_H)
