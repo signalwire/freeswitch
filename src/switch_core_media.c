@@ -17610,6 +17610,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_core_media_do_2833(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+
+	if (!session) {
+		return;
+	}
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Core media do 2833 (%p): no media\n", (void*) session);
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Core media do 2833 (%p): no RTP session\n", (void*) session);
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Core media do 2833 (%p)\n", (void*) session);
+	do_2833(a_engine->rtp_session);
+}
+
 
 
 /* For Emacs:

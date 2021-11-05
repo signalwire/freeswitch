@@ -563,7 +563,7 @@ typedef enum {
 	RESULT_GOTO_TIMERCHECK
 } handle_rfc2833_result_t;
 
-static void do_2833(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(void) do_2833(switch_rtp_t *rtp_session);
 
 
 #define rtp_type(rtp_session) rtp_session->flags[SWITCH_RTP_FLAG_TEXT] ?  "text" : (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio")
@@ -5847,7 +5847,7 @@ static void set_dtmf_delay(switch_rtp_t *rtp_session, uint32_t ms)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Queue digit delay of %dms\n", ms);
 }
 
-static void do_2833(switch_rtp_t *rtp_session)
+SWITCH_DECLARE(void) do_2833(switch_rtp_t *rtp_session)
 {
 	switch_frame_flag_t flags = 0;
 	uint32_t samples = rtp_session->samples_per_interval;
@@ -7677,7 +7677,7 @@ static void check_timeout(switch_rtp_t *rtp_session)
 		elapsed = (now - rtp_session->last_media) / 1000;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10,
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 					  "%s MEDIA TIMEOUT %s %d/%d", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session),
 					  elapsed, rtp_session->media_timeout);
 
@@ -7687,6 +7687,7 @@ static void check_timeout(switch_rtp_t *rtp_session)
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 
 			if (switch_telnyx_sip_on_media_timeout(channel, rtp_session)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s Execute on media timeout\n", rtp_session_name(rtp_session));
 				switch_channel_execute_on(channel, "execute_on_media_timeout");
 				switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 			} else {
