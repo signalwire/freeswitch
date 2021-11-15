@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,6 +40,7 @@
 #include "mod_sofia.h"
 #include "sofia-sip/hostdomain.h"
 #include "sip-dig.h"
+#include "switch_ssl.h"
 
 static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 {
