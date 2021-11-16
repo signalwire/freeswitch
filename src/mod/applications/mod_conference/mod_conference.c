@@ -2656,24 +2656,28 @@ conference_obj_t *conference_find(char *name, char *domain)
 
 void conference_set_variable(conference_obj_t *conference, const char *var, const char *val)
 {
+	switch_assert(var);
 	switch_mutex_lock(conference->flag_mutex);
-	switch_event_add_header_string(conference->variables, SWITCH_STACK_BOTTOM, var, val);
+
+	if (!val) {
+		switch_event_del_header(conference->variables, var);
+	} else {
+		switch_event_add_header_string(conference->variables, SWITCH_STACK_BOTTOM, var, val);
+	}
 	switch_mutex_unlock(conference->flag_mutex);
 }
 
 const char *conference_get_variable(conference_obj_t *conference, const char *var)
 {
-	const char *val;
+	const char *val = NULL, *rval = NULL;
 
 	switch_mutex_lock(conference->flag_mutex);
-	val = switch_event_get_header(conference->variables, var);
+	if ((val = switch_event_get_header(conference->variables, var))) {
+		rval = switch_core_strdup(conference->pool, val);
+	}
 	switch_mutex_unlock(conference->flag_mutex);
 
-	if (val) {
-		return switch_core_strdup(conference->pool, val);
-	}
-
-	return NULL;
+	return rval;
 }
 
 /* create a new conferene with a specific profile */

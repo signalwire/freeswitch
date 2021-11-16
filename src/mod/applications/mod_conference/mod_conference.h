@@ -1218,6 +1218,8 @@ switch_status_t conference_api_sub_hold(conference_member_t *member, switch_stre
 switch_status_t conference_api_sub_unhold(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_pauserec(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_volume_out(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_getvar(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_setvar(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_lock(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_unlock(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
@@ -1311,8 +1313,8 @@ const char *conference_get_variable(conference_obj_t *conference, const char *va
 /* Entries in this list should be kept in sync with the enum above */
 extern api_command_t conference_api_sub_commands[];
 extern struct _mapping control_mappings[];
-
-
+#define stream_write(__stream, __fmt, ...) if (__stream)__stream->write_function(__stream, __fmt, __VA_ARGS__)
+#define VA_NONE "%s", ""
 #endif /* MOD_CONFERENCE_H */
 
 /* For Emacs:
