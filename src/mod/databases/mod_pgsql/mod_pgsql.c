@@ -790,9 +790,9 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 			res->err = PQresultErrorMessage(res->result);
 			goto error;
 			break;
-		}
 		default:
 			break;
+		}
 	} else {
 		free(res);
 		res = NULL;
