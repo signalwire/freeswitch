@@ -40,6 +40,9 @@
 #include "mod_sofia.h"
 #include "sofia-sip/hostdomain.h"
 #include "sip-dig.h"
+/* This include defines OPENSSL_VERSION_NUMBER required for SHA-512-256 (RFC-8760)
+   Do NOT remove this line even if mod_sofia builds without it. 
+*/
 #include "switch_ssl.h"
 
 static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
