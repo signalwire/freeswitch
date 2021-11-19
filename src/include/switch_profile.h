@@ -57,3 +57,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
  */
 SWITCH_DECLARE(void) switch_delete_profile_timer(switch_profile_timer_t **p);
 
+//added by yy for mem usage UC
+SWITCH_DECLARE(switch_bool_t) switch_get_mem_info(switch_profile_timer_t *p, unsigned long long *mem_total, unsigned long long *mem_free);
+SWITCH_DECLARE(switch_bool_t) switch_get_df_info(switch_profile_timer_t *p, unsigned long long *flashsize, unsigned long long *flashuse);
+

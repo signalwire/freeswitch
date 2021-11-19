@@ -1062,6 +1062,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load)
 
 	SWITCH_ADD_APP(app_interface, "valet_park", "valet_park", "valet_park", valet_parking_function, VALET_APP_SYNTAX, SAF_NONE);
 	SWITCH_ADD_API(api_interface, "valet_info", "Valet Parking Info", valet_info_function, "[<lot name>]");
+	SWITCH_ADD_API(api_interface, "valet_list", "Valet Parking list", valet_list_function, NULL);//UC
 
 	return SWITCH_STATUS_NOUNLOAD;
 }

@@ -147,6 +147,7 @@
 #include "switch_jitterbuffer.h"
 #include "switch_estimators.h"
 #include "switch_vad.h"
+#include "switch_uc.h"
 #include <libteletone.h>
 
 

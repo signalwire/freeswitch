@@ -32,9 +32,10 @@
 
 #include <switch.h>
 #include <switch_uc.h>
+#include "private/switch_core_pvt.h"
 #ifdef ENABLE_SSOFT
 #include "switch_usbkey.h"
-else
+#else
 #include <d3des.h>
 typedef struct {
 	unsigned int  serial;
@@ -878,100 +879,6 @@ SWITCH_DECLARE(void) switch_close_auth()
 	return switch_CloseAuthManager();//UC
 }
 #endif
-
-
-//UC
-SWITCH_DECLARE(switch_bool_t) switch_get_mem_info(switch_profile_timer_t *p, unsigned long long *mem_total, unsigned long long *mem_free)
-{
-#define MEM_INFO_FORMAT_1 "Cached: %llu %*s\n"
-#define MEM_ELEMENTS_1 1
-	static const char procfile[] = "/proc/meminfo";
-	int rc = 0;
-	int myerrno = 0;
-	int elements = 0;
-	const char *memstr = NULL;
-	char statbuff[1024];
-
-	struct sysinfo info;
-
-	*mem_total = 0;
-	*mem_free = 0;
-	
-	if (!p->initd_mem) {
-		p->procfd_mem = open(procfile, O_RDONLY, 0);
-		if(p->procfd_mem == -1) {
-			myerrno = errno;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to open MEM statistics file %s: %s\n", procfile, strerror(myerrno));
-			return SWITCH_FALSE;
-		}
-		p->initd_mem = 1;
-	} else {
-		lseek(p->procfd_mem, 0L, SEEK_SET);
-	}
-
-	rc = read(p->procfd_mem, statbuff, sizeof(statbuff) - 1);
-	if (rc <= 0) {
-		myerrno = errno;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to read MEM statistics file %s: %s\n", procfile, strerror(myerrno));
-		return SWITCH_FALSE;
-	} else {
-	  statbuff[rc] = '\0';
-	}
-
-	memstr = strstr(statbuff, "Cached: ");
-	if (!memstr) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "wrong format for Linux proc cpu statistics: missing cpu string\n");
-		return SWITCH_FALSE;
-	}
-
-	elements = sscanf(memstr, MEM_INFO_FORMAT_1, mem_free);
-	if (elements == MEM_ELEMENTS_1) {
-
-		sysinfo(&info);
-		
-		*mem_free += info.freeram/1024;
-		*mem_free += info.bufferram/1024;
-		*mem_total = info.totalram/1024;
-
-		return SWITCH_TRUE;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unexpected format for Linux proc cpu statistics: %s\n", memstr);
-
-	return SWITCH_FALSE;
-		
-}
-//UC
-SWITCH_DECLARE(switch_bool_t) switch_get_df_info(switch_profile_timer_t *p, unsigned long long *flashsize, unsigned long long *flashuse)
-{
-	FILE *fp;
-	int myerrno = 0;
-	unsigned long long fstotal = 0;
-	
-	char dfbuff[1024];
-	char devbuff[128];
-	*flashsize = 0;
-	*flashuse = 0;
-
-	system("df /shdisk > /tmp/df");
-	fp = fopen("/tmp/df","r");
-	if(fp == NULL){
-		myerrno = errno;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to open df statistics file %s: %s\n", "/tmp/df", strerror(myerrno));
-		return SWITCH_FALSE;
-	}
-	while (fgets(dfbuff, sizeof(dfbuff), fp) != NULL) {
-		
-		if (sscanf(dfbuff, "%s %llu %llu %llu %*s\n", devbuff,&fstotal, flashuse, flashsize) == 3){
-			*flashsize += *flashuse;
-				break;
-		}
-	}
-	fclose(fp);
-	return SWITCH_TRUE;
-
-}
-
 //++end++ added by fky for IPPBX-43,2018-8-8
 
 /* For Emacs:

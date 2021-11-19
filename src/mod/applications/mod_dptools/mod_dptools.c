@@ -2516,7 +2516,6 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 	case SWITCH_INPUT_TYPE_DTMF:
 	case SWITCH_INPUT_TYPE_EVENT:
 		{
-			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 			struct att_keys *keys = switch_channel_get_private(channel, "__keys");

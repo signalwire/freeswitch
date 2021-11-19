@@ -102,9 +102,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err);
 
 SWITCH_DECLARE(void) switch_close_auth();
 
-//added by yy for mem usage
-SWITCH_DECLARE(switch_bool_t) switch_get_mem_info(switch_profile_timer_t *p, unsigned long long *mem_total, unsigned long long *mem_free);
-SWITCH_DECLARE(switch_bool_t) switch_get_df_info(switch_profile_timer_t *p, unsigned long long *flashsize, unsigned long long *flashuse);
 
 SWITCH_END_EXTERN_C
 /** @} */
