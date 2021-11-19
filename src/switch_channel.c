@@ -75,6 +75,8 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{"RESPONSE_TO_STATUS_ENQUIRY", SWITCH_CAUSE_RESPONSE_TO_STATUS_ENQUIRY},
 	{"NORMAL_UNSPECIFIED", SWITCH_CAUSE_NORMAL_UNSPECIFIED},
 	{"NORMAL_CIRCUIT_CONGESTION", SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION},
+	{"NO_DAIL_TONE", SWITCH_CAUSE_NO_DAIL_TONE},//UC
+	{"NO_TONE_AFTERDIAL", SWITCH_CAUSE_NO_TONE_AFTERDIAL},//UC
 	{"NETWORK_OUT_OF_ORDER", SWITCH_CAUSE_NETWORK_OUT_OF_ORDER},
 	{"NORMAL_TEMPORARY_FAILURE", SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE},
 	{"SWITCH_CONGESTION", SWITCH_CAUSE_SWITCH_CONGESTION},
@@ -2640,13 +2642,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	switch_caller_profile_t *caller_profile, *originator_caller_profile = NULL, *originatee_caller_profile = NULL;
 	switch_codec_implementation_t impl = { 0 };
 	char state_num[25];
-	const char *v;
+	const char *v,*caller_id_name=NULL,*caller_id_number=NULL;//UC
 
 	switch_mutex_lock(channel->profile_mutex);
 
 	if ((caller_profile = channel->caller_profile)) {
 		originator_caller_profile = caller_profile->originator_caller_profile;
 		originatee_caller_profile = caller_profile->originatee_caller_profile;
+		caller_id_name = caller_profile->caller_id_name;    //added by dsq for IPPBX45	,UC
+		caller_id_number = caller_profile->caller_id_number; //added by dsq for IPPBX45	,UC
 	}
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(channel->running_state));
@@ -2699,6 +2703,12 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 
 	if (channel->hangup_cause) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
+		if (!zstr(caller_id_name)) {	
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Caller-Name-ID", caller_id_name); //added by dsq IPPBX-45
+		}
+		if (!zstr(caller_id_number)) {	
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Caller-Number-ID", caller_id_number); //added by dsq for IPPBX-45
+		}
 	}
 
 
@@ -2749,6 +2759,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) ||
 		switch_event_get_header(event, "presence-data-cols") ||
 		event->event_id == SWITCH_EVENT_CHANNEL_CREATE ||
+		event->event_id == SWITCH_EVENT_CHANNEL_ROUTING ||//UC
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||
@@ -2777,6 +2788,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_HOLD || 
 		event->event_id == SWITCH_EVENT_CHANNEL_UNHOLD || 
 		event->event_id == SWITCH_EVENT_TEXT || 
+		event->event_id == SWITCH_EVENT_DTMF ||//UC
 		event->event_id == SWITCH_EVENT_CUSTOM) {
 
 		/* Index Variables */

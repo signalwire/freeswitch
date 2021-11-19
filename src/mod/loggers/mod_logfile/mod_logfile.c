@@ -145,13 +145,25 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 	if (profile->max_rot) {
 		char *from_filename = NULL;
 		char *to_filename = NULL;
+		//added by dsq for  log  name 
+		char *log_name_id =NULL;//UC
+		char *filename_tmp =NULL;//UC
 
 		from_filename = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
 		to_filename = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
+		//added by dsq for log name ,UC
+		filename_tmp = switch_core_alloc(pool, strlen(profile->logfile) + WARM_FUZZY_OFFSET);
+		if ((log_name_id = strstr(profile->logfile, "."))){
+				strncpy(filename_tmp,profile->logfile,(log_name_id-profile->logfile));
+		}else{
+				strcpy(filename_tmp,profile->logfile);			
+		}
 
 		for (i=profile->suffix; i>1; i--) {
-			sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
-			sprintf((char *) from_filename, "%s.%i", profile->logfile, i-1);
+			//sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
+			//sprintf((char *) from_filename, "%s.%i", profile->logfile, i-1);
+			sprintf((char *) to_filename, "%s%i%s", filename_tmp, i,log_name_id);//UC
+			sprintf((char *) from_filename, "%s%i%s", filename_tmp, i-1,log_name_id);//UC
 
 			if (switch_file_exists(to_filename, pool) == SWITCH_STATUS_SUCCESS) {
 				if ((status = switch_file_remove(to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
@@ -167,8 +179,8 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 			}
 		}
 
-		sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
-
+		//sprintf((char *) to_filename, "%s.%i", profile->logfile, i);
+		sprintf((char *) to_filename, "%s%i%s", filename_tmp, i,log_name_id);//UC
 		if (switch_file_exists(to_filename, pool) == SWITCH_STATUS_SUCCESS) {
 			if ((status = switch_file_remove(to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error removing log %s [%s]\n", to_filename, strerror(errno));
@@ -375,7 +387,7 @@ static switch_status_t load_profile(switch_xml_t xml)
 
 	if (zstr(new_profile->logfile)) {
 		char logfile[512];
-		switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
+		switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "synswitch.log");
 		new_profile->logfile = strdup(logfile);
 	}
 

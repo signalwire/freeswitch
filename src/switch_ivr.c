@@ -1399,7 +1399,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 	if (!zstr(terminators)) {
 		for (i = 0; i < x; i++) {
-			if (strchr(terminators, buf[i]) && terminator != NULL) {
+			if (i>0 && strchr(terminators, buf[i]) && terminator != NULL) {//UC
 				*terminator = buf[i];
 				buf[i] = '\0';
 				switch_safe_free(abuf);
@@ -1464,7 +1464,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 					break;
 				}
 
-				if (!zstr(terminators) && strchr(terminators, dtmf.digit) && terminator != NULL) {
+				if (x>0 && !zstr(terminators) && strchr(terminators, dtmf.digit) && terminator != NULL) {//UC
 					*terminator = dtmf.digit;
 					switch_safe_free(abuf);
 					return SWITCH_STATUS_SUCCESS;

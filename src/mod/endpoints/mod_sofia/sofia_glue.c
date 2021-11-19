@@ -1257,7 +1257,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (zstr(rpid_domain)) {
-			rpid_domain = "cluecon.com";
+			rpid_domain = "synway.com";//UC
 		}
 
 		if (!zstr(tech_pvt->dest)) {

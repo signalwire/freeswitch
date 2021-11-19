@@ -286,6 +286,33 @@ struct switch_runtime {
 	uint32_t port_alloc_flags;
 	char *event_channel_key_separator;
 	uint32_t max_audio_channels;
+	unsigned long long mem_free;
+	unsigned long long mem_total;
+	unsigned long long flashuse;
+	unsigned long long flashsize;
+	char device_id[256];
+	char device_type[256];
+	char device_sn[256];
+	char soft_ver[256];
+	char uboot_ver[256];
+	char kernel_ver[256];
+	unsigned long long device_modules_auth_sn;
+	unsigned long long device_features_auth_sn;
+	unsigned int serial_num;
+	unsigned int max_concurrency;
+	unsigned int max_extension;
+	unsigned int max_api_num;
+	switch_bool_t has_rcs_key;
+	switch_bool_t check_rcs_key;
+	switch_bool_t can_rcs_work;
+	unsigned int used_period;
+	unsigned int valid_period;
+	unsigned int exp_alive_time;
+	switch_bool_t auth_expired;
+	switch_bool_t write_used_period;
+	switch_bool_t switch_soft;	
+	char  lic_sn[32];//added by yy for softUC
+	char  lic_pw[32];//added by yy for softUC
 	switch_call_cause_t shutdown_cause;
 };
 

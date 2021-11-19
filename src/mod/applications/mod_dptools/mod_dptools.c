@@ -1286,7 +1286,7 @@ SWITCH_STANDARD_APP(sched_hangup_function)
 			}
 
 			if (sec == 0) {
-				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+				//switch_channel_hangup(switch_core_session_get_channel(session), cause);//modified by yy for IPPBX-7,0 to limit//UC
 			} else {
 				switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
 			}
@@ -2503,6 +2503,10 @@ struct att_keys {
 
 static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
+	switch_dtmf_t *dtmf = NULL;//UC
+	switch_event_t *event  = NULL;//UC
+	char *digit = NULL;//UC
+
 	switch_core_session_t *peer_session = (switch_core_session_t *) buf;
 	if (!buf || !peer_session) {
 		return SWITCH_STATUS_SUCCESS;
@@ -2510,23 +2514,38 @@ static switch_status_t xfer_on_dtmf(switch_core_session_t *session, void *input,
 
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:
+	case SWITCH_INPUT_TYPE_EVENT:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 			struct att_keys *keys = switch_channel_get_private(channel, "__keys");
 
-			if (dtmf->digit == *keys->attxfer_hangup_key) {
+			if(itype == SWITCH_INPUT_TYPE_DTMF) {//UC
+				dtmf = (switch_dtmf_t *) input;
+				digit = &dtmf->digit;
+
+			} else {
+
+				event = (switch_event_t *) input;
+				if(event->event_id == SWITCH_EVENT_SEND_EVENT) {
+				 	digit = switch_event_get_header(event, "Event-DTMF-Digit");
+				} else {
+					return SWITCH_STATUS_FALSE;
+				}
+			}
+
+			if (*digit == *keys->attxfer_hangup_key) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (dtmf->digit == *keys->attxfer_cancel_key) {
+			if (*digit == *keys->attxfer_cancel_key) {
 				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				return SWITCH_STATUS_FALSE;
 			}
 
-			if (dtmf->digit == *keys->attxfer_conf_key) {
+			if (*digit == *keys->attxfer_conf_key) {
 				switch_caller_extension_t *extension = NULL;
 				const char *app = "three_way";
 				const char *app_arg = switch_core_session_get_uuid(session);
@@ -2636,6 +2655,7 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 	switch_core_session_t *b_session = NULL;
 	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
 	const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
+	switch_caller_profile_t *originator_cp = NULL;//added by lsq for DS-72056,2019.5.20,UC
 
 	att->running = 1;
 
@@ -2706,10 +2726,45 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 			if (!switch_channel_ready(channel)) {
 				switch_status_t status;
 
+				//added by lsq for DS-72056,2019.5.20,UC
+				switch_channel_t *b_channel = NULL;
+				//end by lsq for DS-72056,2019.5.20,UC
+				switch_channel_set_variable(channel, "transfer_name", "att_xfer");
+
 				if (follow_recording) {
 					switch_ivr_transfer_recordings(session, peer_session);
 				}
-				status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+				//added by lsq for DS-72056,2019.5.20 UC
+				if ((b_session = switch_core_session_locate(bond))){
+					b_channel = switch_core_session_get_channel(b_session);
+					switch_channel_set_variable(b_channel, "transfer_name", "att_xfer_bond");
+					originator_cp = switch_channel_get_caller_profile(b_channel);
+					if (!zstr(switch_channel_get_variable(peer_channel, "origination_caller_id_name"))){
+						originator_cp->caller_id_name = switch_channel_get_variable(peer_channel, "origination_caller_id_name");
+						originator_cp->callee_id_name = switch_channel_get_variable(peer_channel, "origination_caller_id_name");
+					}
+					if (!zstr(switch_channel_get_variable(peer_channel, "origination_caller_id_number"))){
+						originator_cp->caller_id_number = switch_channel_get_variable(peer_channel, "origination_caller_id_number");
+						originator_cp->callee_id_number = switch_channel_get_variable(peer_channel, "origination_caller_id_number");
+					}
+					if (!zstr(switch_channel_get_variable(peer_channel, "transfercid"))&& !zstr(switch_channel_get_variable(peer_channel, "ax_transferee_name")) && !strcasecmp(switch_channel_get_variable(peer_channel, "transfercid"),"auto")){
+						originator_cp->caller_id_name = switch_channel_get_variable(peer_channel, "ax_transferee_name");
+						originator_cp->callee_id_name = switch_channel_get_variable(peer_channel, "ax_transferee_name");
+					}
+					if (!zstr(switch_channel_get_variable(peer_channel, "transfercid"))&& !zstr(switch_channel_get_variable(peer_channel, "ax_transferee_number")) && !strcasecmp(switch_channel_get_variable(peer_channel, "transfercid"),"auto")){
+						originator_cp->caller_id_number = switch_channel_get_variable(peer_channel, "ax_transferee_number");
+						originator_cp->callee_id_number = switch_channel_get_variable(peer_channel, "ax_transferee_number");
+					}
+					switch_core_session_rwunlock(b_session);
+				}
+				//end by lsq for DS-72056,2019.5.20, UC
+				if(switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND){
+                    status = switch_ivr_uuid_bridge(bond, switch_core_session_get_uuid(peer_session));
+                }
+                else{
+                    status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(peer_session), bond);
+                }
+
 				att_xfer_set_result(peer_channel, status);
 				br++;
 			} else if ((b_session = switch_core_session_locate(bond))) {
@@ -3756,7 +3811,7 @@ static void pickup_send_presence(const char *key_name)
 	}
 
 	if (zstr(domain_name)) {
-		domain_name = "cluecon.com";
+		domain_name = "synway.com";
 	}
 
 	dup_id = switch_mprintf("%s@%s", key_name, domain_name);
@@ -4269,7 +4324,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		dest = switch_channel_expand_variables(channel, template);
-		if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE)) || (var = switch_event_get_header(var_event, "leg_timeout"))) {
+		if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE)) || (var_event && (var = switch_event_get_header(var_event, "leg_timeout")))) {
 			timelimit = atoi(var);
 		}
 	} else if (var_event) {
@@ -4358,7 +4413,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	switch_channel_t *new_channel = NULL;
 	switch_event_t *params = NULL, *var_event_orig = var_event;
 	char stupid[128] = "";
-	const char *skip = NULL, *var = NULL;
+	const char *skip = NULL, *var = NULL, *call_type = NULL;//UC
+	char param_name[20] = "dial-string";
 
 	if (zstr(outbound_profile->destination_number)) {
 		goto done;
@@ -4404,11 +4460,17 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
 	if ((x_params = switch_xml_child(x_user, "params"))) {
+		if (var_event) {// UC
+			call_type = switch_event_get_header(var_event, "call_type");
+			if (call_type && !strcasecmp(call_type, "emergency")) {
+				switch_snprintf(param_name, sizeof(param_name), "dial-string-ex");
+			}
+		}
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 			const char *pvar = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 
-			if (!strcasecmp(pvar, "dial-string")) {
+			if (!strcasecmp(pvar, param_name)) {
 				dest = val;
 			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
 				if (!var_event) {
@@ -4770,6 +4832,8 @@ SWITCH_STANDARD_APP(limit_function)
 	char *xfer_exten = NULL;
 	int max = -1;
 	int interval = 0;
+	switch_event_t *event = NULL;//UC
+	const char *call_status;//UC
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
@@ -4830,6 +4894,17 @@ SWITCH_STANDARD_APP(limit_function)
 	}
 
 	if (switch_limit_incr(backend, session, realm, id, max, interval) != SWITCH_STATUS_SUCCESS) {
+		/*begin, added by fky for OS-13755*/ //UC
+		call_status = switch_channel_get_variable(channel, "call_status");
+		if (call_status && !strcmp(call_status,"callcenter"))
+		{
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "queue_limit") == SWITCH_STATUS_SUCCESS)
+			{
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
+		}
+		/*end, added by fky for OS-13755*/ //UC
 		/* Limit exceeded */
 		if (*xfer_exten == '!') {
 			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten + 1));
@@ -4860,13 +4935,14 @@ SWITCH_STANDARD_APP(limit_hash_function)
 SWITCH_STANDARD_APP(limit_execute_function)
 {
 	int argc = 0;
-	char *argv[6] = { 0 };
+	char *argv[9] = { 0 };//UC
 	char *mydata = NULL;
 	char *backend = NULL;
 	char *realm = NULL;
 	char *id = NULL;
 	char *app = NULL;
 	char *app_arg = NULL;
+	char *xfer_exten = NULL;//added by yy for IPPBX-7 limit trunk,2017.11.21,UC
 	int max = -1;
 	int interval = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -4927,6 +5003,24 @@ SWITCH_STANDARD_APP(limit_execute_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "immediately releasing\n");
 			switch_limit_release(backend, session, realm, id);
 		}
+	} else{
+		//added by yy for IPPBX-7 limit trunk,2017.11.21,UC
+
+		if (argc > 6) {
+			xfer_exten = argv[6];
+		} else {
+			xfer_exten = LIMIT_DEF_XFER_EXTEN;
+		}
+
+		/* Limit exceeded */
+		if (*xfer_exten == '!') {
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten + 1));
+		} else if(!strcmp(xfer_exten,"none")){
+			//do nothing
+		}else {
+			switch_ivr_session_transfer(session, xfer_exten, argv[7], argv[8]);
+		}
+		//end by yy for IPPBX-7 limit trunk,2017.11.21,UC
 	}
 }
 

@@ -2133,7 +2133,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 	*smhp = NULL;
 
 	if (zstr(params->sdp_username)) {
-		params->sdp_username = "FreeSWITCH";
+		params->sdp_username = "SynSWITCH";
 	}
 
 
@@ -5978,15 +5978,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			} else {
 				/* by default, use SIP INFO if 2833 is not in the SDP */
-				if (!switch_false(switch_channel_get_variable(channel, "rtp_info_when_no_2833"))) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
-					switch_channel_set_variable(session->channel, "dtmf_type", "info");
-					smh->mparams->dtmf_type = DTMF_INFO;
-					smh->mparams->recv_te = smh->mparams->te = 0;
-				} else {
-					switch_channel_set_variable(session->channel, "dtmf_type", "none");
-					smh->mparams->dtmf_type = DTMF_NONE;
-					smh->mparams->recv_te = smh->mparams->te = 0;
+				if(smh->mparams->dtmf_type == DTMF_AUTO){
+					if (!switch_false(switch_channel_get_variable(channel, "rtp_info_when_no_2833"))) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No 2833 in SDP.  Disable 2833 dtmf and switch to INFO\n");
+						switch_channel_set_variable(session->channel, "dtmf_type", "info");
+						smh->mparams->dtmf_type = DTMF_INFO;
+						smh->mparams->recv_te = smh->mparams->te = 0;
+					} else {
+						switch_channel_set_variable(session->channel, "dtmf_type", "none");
+						smh->mparams->dtmf_type = DTMF_NONE;
+						smh->mparams->recv_te = smh->mparams->te = 0;
+					}
 				}
 			}
 

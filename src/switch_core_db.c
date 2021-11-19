@@ -89,7 +89,8 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 	while (--sane > 0) {
 		ret = sqlite3_exec(db, sql, callback, data, &err);
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SQLite is %s, sane=%d [%s]\n", (ret == SQLITE_BUSY ? "BUSY" : "LOCKED"), sane, sql);
+			//UC
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SQLite is %s, sane=%d [%s]\n", (ret == SQLITE_BUSY ? "BUSY" : "LOCKED"), sane, sql);
 			if (sane > 1) {
 				switch_core_db_free(err);
 				switch_yield(100000);

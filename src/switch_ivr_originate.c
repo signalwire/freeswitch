@@ -340,6 +340,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 					}
 				}
 				oglobals->originate_status[i].per_channel_delay_start -= delayed_min;
+				active_channels++;//added by yy for leg_delay_start ","	OS-14782 ,2019.09.05,UC
 			} else {
 				oglobals->originate_status[i].per_channel_delay_start = 0;
 			}
@@ -2821,6 +2822,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			
 			for (i = 0; i < and_argc; i++) {
 				const char *current_variable;
+				const char *org_context = NULL;//UC
 				switch_event_t *local_var_event = NULL, *originate_var_event = NULL;
 
 				end = NULL;
@@ -2891,6 +2893,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					chan_data++;
 				}
 
+				if (var_event) {//UC
+					org_context = switch_event_get_header(var_event, "context");
+				}
+
 				if (oglobals.session) {
 					if (!switch_channel_ready(caller_channel)) {
 						status = SWITCH_STATUS_FALSE;
@@ -2904,7 +2910,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile = switch_caller_profile_new(oglobals.pool,
 																NULL,
 																NULL,
-																cid_name_override, cid_num_override, NULL, ani_override, aniii_override, NULL, __FILE__, NULL, chan_data);
+																cid_name_override, cid_num_override, NULL, ani_override, aniii_override, NULL, __FILE__, org_context, chan_data);
 					}
 
 					new_profile->uuid = SWITCH_BLANK_STRING;
@@ -2940,7 +2946,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile = switch_caller_profile_new(oglobals.pool,
 																NULL,
 																NULL,
-																cid_name_override, cid_num_override, NULL, ani_override, aniii_override, NULL, __FILE__, NULL, chan_data);
+																cid_name_override, cid_num_override, NULL, ani_override, aniii_override, NULL, __FILE__, org_context, chan_data);
 					}
 				}
 
@@ -3027,7 +3033,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					char *new_name = switch_core_session_sprintf(session, "%s__B", switch_channel_get_name(caller_channel));
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_channel_name", new_name);
 					new_name = switch_core_session_sprintf(session, "_%s", switch_channel_get_name(caller_channel));
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Channel-Name", new_name);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-SH-Channel-Name", new_name);
 				}
 
 

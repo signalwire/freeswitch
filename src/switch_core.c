@@ -78,6 +78,10 @@
 #include <systemd/sd-daemon.h>
 #endif
 
+#include "switch_uc.h"//UC
+
+#define DISABLE_CC//UC
+
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 SWITCH_DECLARE_DATA switch_filenames SWITCH_GLOBAL_filenames = { 0 };
 
@@ -109,7 +113,7 @@ static void send_heartbeat(void)
 								duration.sec, duration.sec == 1 ? "" : "s",
 								duration.ms, duration.ms == 1 ? "" : "s", duration.mms, duration.mms == 1 ? "" : "s");
 
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Version", "%s", switch_version_full());
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SynSWITCH-Version", "%s", switch_version_full());//UC
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Uptime-msec", "%"SWITCH_TIME_T_FMT, switch_core_uptime() / 1000);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Count", "%u", switch_core_session_count());
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Sessions", "%u", switch_core_session_limit(0));
@@ -121,6 +125,10 @@ static void send_heartbeat(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Peak-Max", "%u", runtime.sessions_peak);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Peak-FiveMin", "%u", runtime.sessions_peak_fivemin);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Idle-CPU", "%f", switch_core_idle_cpu());
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mem-Free", "%llu", switch_core_mem_free());//UC
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Mem-Total", "%llu", switch_core_mem_total());//UC
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Flash-Use", "%llu", switch_core_flash_use());//UC
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Flash-Size", "%llu", switch_core_flash_size());//UC
 		switch_event_fire(&event);
 	}
 }
@@ -875,7 +883,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	}
 
 	if (!SWITCH_GLOBAL_filenames.conf_name && (SWITCH_GLOBAL_filenames.conf_name = (char *) malloc(BUFSIZE))) {
-		switch_snprintf(SWITCH_GLOBAL_filenames.conf_name, BUFSIZE, "%s", "freeswitch.xml");
+		switch_snprintf(SWITCH_GLOBAL_filenames.conf_name, BUFSIZE, "%s", "synswitch.xml");//UC
 	}
 
 	/* Do this last because it being empty is part of the above logic */
@@ -1850,12 +1858,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	struct in_addr in;
 
 
-	if (runtime.runlevel > 0) {
+	//if (runtime.runlevel > 0) {//masked by yy for UC
 		/* one per customer */
-		return SWITCH_STATUS_SUCCESS;
-	}
+	//	return SWITCH_STATUS_SUCCESS;//masked by yy for UC
+	//}
 
-	memset(&runtime, 0, sizeof(runtime));
+	//memset(&runtime, 0, sizeof(runtime));//masked by yy for UC
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
 	runtime.shutdown_cause = SWITCH_CAUSE_SYSTEM_SHUTDOWN;
@@ -2280,7 +2288,7 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "enable-timer-matrix")) {
 					switch_time_set_matrix(switch_true(val));
 				} else if (!strcasecmp(var, "max-sessions") && !zstr(val)) {
-					switch_core_session_limit(atoi(val));
+					//switch_core_session_limit(atoi(val));//masked by yy for UC
 				} else if (!strcasecmp(var, "verbose-channel-events") && !zstr(val)) {
 					int v = switch_true(val);
 					if (v) {
@@ -2429,6 +2437,10 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
 					switch_core_max_audio_channels(atoi(val));
+				} else if  (!strcasecmp(var, "lic-sn") && !zstr(val)) {//added by yy for UC
+					strncpy(runtime.lic_sn,val,sizeof(runtime.lic_sn));
+				} else if  (!strcasecmp(var, "lic-pw") && !zstr(val)) {//added by yy for UC
+					strncpy(runtime.lic_pw,val,sizeof(runtime.lic_pw));
 				}
 			}
 		}
@@ -2458,19 +2470,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void)
 
 	return ("\n"
 			".=============================================================.\n"
-			"|   _____              ______        _____ _____ ____ _   _   |\n"
-			"|  |  ___| __ ___  ___/ ___\\ \\      / /_ _|_   _/ ___| | | |  |\n"
-			"|  | |_ | '__/ _ \\/ _ \\___ \\\\ \\ /\\ / / | |  | || |   | |_| |  |\n"
-			"|  |  _|| | |  __/  __/___) |\\ V  V /  | |  | || |___|  _  |  |\n"
-			"|  |_|  |_|  \\___|\\___|____/  \\_/\\_/  |___| |_| \\____|_| |_|  |\n"
-			"|                                                             |\n"
-			".=============================================================."
-			"\n"
-
-			"|   Anthony Minessale II, Michael Jerris, Brian West, Others  |\n"
-			"|   FreeSWITCH (http://www.freeswitch.org)                    |\n"
-			"|   Paypal Donations Appreciated: paypal@freeswitch.org       |\n"
-			"|   Brought to you by ClueCon http://www.cluecon.com/         |\n"
+			"|   SynSWITCH								                   |\n"
 			".=============================================================.\n"
 			"\n");
 }
@@ -2498,10 +2498,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	const char *use = NULL;
 #include "cc.h"
 
-
+	memset(&runtime, 0, sizeof(runtime)); //modified by dsq for DS-89926 2020-12-02,UC
+#ifdef ENABLE_SSOFT
+	runtime.switch_soft = SWITCH_TRUE;
+#else 
+	runtime.switch_soft = SWITCH_FALSE;
+#endif
 	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
+
+#ifdef ENABLE_SSOFT
+	//added by yy for Soft UC,2020.07.07
+	if(switch_core_check_usb_key(err) != SWITCH_STATUS_SUCCESS) {
+		*err = "Cannot check usb key";
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
+		return SWITCH_STATUS_GENERR;
+	}
+#else
+	//added by yy for encrypt UC,2018.06.28
+	if(switch_core_encrypt(flags, console, err) != SWITCH_STATUS_SUCCESS){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
+		return SWITCH_STATUS_GENERR;
+	}
+#endif
 
 	if (runtime.runlevel > 1) {
 		/* one per customer */
@@ -2541,18 +2561,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 #ifdef WIN32
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s\n\n", switch_core_banner(), use);
-#else
+#ifndef DISABLE_CC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s%s\n\n",
 					  SWITCH_SEQ_DEFAULT_COLOR,
 					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
 					  switch_core_banner(),
 					  use, SWITCH_SEQ_DEFAULT_COLOR);
-
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s%s%s%s%s\n\n", 
+					  SWITCH_SEQ_DEFAULT_COLOR,
+					  SWITCH_SEQ_FYELLOW, SWITCH_SEQ_BBLUE,
+					  switch_core_banner(), 
+					  SWITCH_SEQ_DEFAULT_COLOR);
+#endif
 #endif
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-					  "\nFreeSWITCH Version %s (%s)\n\nFreeSWITCH Started\nMax Sessions [%u]\nSession Rate [%d]\nSQL [%s]\n",
+					  "\nSynSWITCH Version %s (%s)\n\nSynSWITCH Started\nMax Sessions [%u]\nSession Rate [%d]\nSQL [%s]\n",
 					  switch_version_full(), switch_version_revision_human(),
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
@@ -2976,8 +3002,15 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 			intval = NULL;
 		}
 		break;
+	case SCSC_RTP_START_PORT://added by yy for DS-65516,2018.09.19,UC
+		newintval = switch_rtp_set_start_port((switch_port_t) oldintval);
+		break;
+	case SCSC_RTP_END_PORT://added by yy for DS-65516,2018.09.19,UC
+		newintval = switch_rtp_set_end_port((switch_port_t) oldintval);
+		switch_rtp_reload();//added by yy for DS-65516,2018.09.19
+		break;
 	case SCSC_MAX_SESSIONS:
-		newintval = switch_core_session_limit(oldintval);
+		//newintval = switch_core_session_limit(oldintval);//UC
 		break;
 	case SCSC_LAST_SPS:
 		newintval = runtime.sps_last;
@@ -3084,6 +3117,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
+
+#ifdef ENABLE_SSOFT
+	switch_close_auth();//UC
+#endif
 
 	switch_curl_destroy();
 

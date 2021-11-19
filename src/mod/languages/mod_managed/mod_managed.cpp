@@ -58,13 +58,13 @@ SWITCH_STANDARD_APP(managed_app_function);	/* Run */
 SWITCH_STANDARD_API(managedreload_api_function);	/* Reload */
 SWITCH_STANDARD_API(managedlist_api_function); /* List modules */
 
-#define MOD_MANAGED_ASM_NAME "FreeSWITCH.Managed"
+#define MOD_MANAGED_ASM_NAME "SynSWITCH.Managed"
 #define MOD_MANAGED_ASM_V1 1
 #define MOD_MANAGED_ASM_V2 0
 #define MOD_MANAGED_ASM_V3 2
 #define MOD_MANAGED_ASM_V4 0
 #define MOD_MANAGED_DLL MOD_MANAGED_ASM_NAME ".dll"
-#define MOD_MANAGED_IMAGE_NAME "FreeSWITCH"
+#define MOD_MANAGED_IMAGE_NAME "SynSWITCH"
 #define MOD_MANAGED_CLASS_NAME "Loader"
 
 mod_managed_globals managed_globals = { 0 };

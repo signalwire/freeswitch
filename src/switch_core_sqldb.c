@@ -804,7 +804,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 	switch (dbh->type) {
 	default:
 		{
-			status = switch_cache_db_execute_sql_chunked(dbh, (char *) sql, 32768, err);
+			status = switch_cache_db_execute_sql_chunked(dbh, (char *) sql, 65536, err);//UC
 		}
 		break;
 	}
@@ -2512,12 +2512,13 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_EXECUTE: {
 
 		new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
-								   "presence_id='%q',presence_data='%q',accountcode='%q' where uuid='%q'",
+								   "presence_id='%q',presence_data='%q',accountcode='%q',dtmf='%q' where uuid='%q'",//UC
 								   switch_event_get_header_nil(event, "application"),
 								   switch_event_get_header_nil(event, "application-data"),
 								   switch_event_get_header_nil(event, "channel-presence-id"),
 								   switch_event_get_header_nil(event, "channel-presence-data"),
 								   switch_event_get_header_nil(event, "variable_accountcode"),
+								   switch_event_get_header_nil(event, "variable_channel-dtmf"), //added by dsq for OS-15341 2019-12.18,UC
 								   switch_event_get_header_nil(event, "unique-id")
 								   );
 
@@ -2889,6 +2890,7 @@ static char create_channels_sql[] =
 	"   initial_ip_addr  VARCHAR(256),\n"
 	"   initial_dest  VARCHAR(1024),\n"
 	"   initial_dialplan  VARCHAR(128),\n"
+	"   dtmf  VARCHAR(256),\n"	  //added by dsq for OS-15341 2019-12-18,UC
 	"   initial_context  VARCHAR(128)\n"
 	");\n";
 
@@ -3026,6 +3028,7 @@ static char detailed_calls_sql[] =
 	"a.call_uuid as call_uuid,"
 	"a.sent_callee_name as sent_callee_name,"
 	"a.sent_callee_num as sent_callee_num,"
+	"a.dtmf as dtmf," //added by dsq for OS-15341 2019-12-19,UC
 	"b.uuid as b_uuid,"
 	"b.direction as b_direction,"
 	"b.created as b_created,"
@@ -3058,6 +3061,7 @@ static char detailed_calls_sql[] =
 	"b.call_uuid as b_call_uuid,"
 	"b.sent_callee_name as b_sent_callee_name,"
 	"b.sent_callee_num as b_sent_callee_num,"
+	"b.dtmf as b_dtmf,"//added by dsq for OS-15341 2019-12-19,UC
 	"c.call_created_epoch as call_created_epoch "
 	"from channels a "
 	"left join calls c on a.uuid = c.caller_uuid and a.hostname = c.hostname "

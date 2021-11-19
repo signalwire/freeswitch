@@ -63,7 +63,7 @@ SWITCH_MODULE_DEFINITION(mod_say_zh, mod_say_zh_load, NULL, NULL);
 		switch_status_t tstatus;										\
 		switch_say_method_t smeth = say_args->method;					\
 		switch_say_type_t stype = say_args->type;						\
-		say_args->type = SST_ITEMS; say_args->method = meth;			\
+		say_args->type = stype; say_args->method = meth;			\
 		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
 		if ((tstatus =													\
 			 zh_say_general_count(session, tmp, say_args, args))		\
@@ -97,7 +97,14 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session, char
 		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1))) {
 			char *p;
 			for (p = tosay; p && *p; p++) {
-				say_file("digits/%c.wav", *p);
+				if (*p == '1' && say_args->type == SST_IP_ADDRESS)
+				{
+					say_file("digits/%cs.wav", *p);
+				}
+				else
+				{
+					say_file("digits/%c.wav", *p);
+				}
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -263,8 +270,8 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("time/minute.wav");
 		} else {
 			if (hours) {
-				say_file("digits/0.wav");
-				say_file("time/minute.wav");
+				//say_file("digits/0.wav");
+				//say_file("time/minute.wav");
 			}
 		}
 
@@ -277,8 +284,8 @@ static switch_status_t zh_say_time(switch_core_session_t *session, char *tosay, 
 			say_file("time/seconds.wav");
 		} else {
 			if (hours || minutes) {
-				say_file("digits/0.wav");
-				say_file("time/second.wav");
+				//say_file("digits/0.wav");
+				//say_file("time/second.wav");
 			}
 		}
 
@@ -519,7 +526,7 @@ static switch_status_t zh_say(switch_core_session_t *session, char *tosay, switc
 		return switch_ivr_say_spell(session, tosay, say_args, args);
 		break;
 	case SST_CURRENCY:
-		say_cb = zh_say_money;
+		say_cb = zh_CN_say_money;
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
@@ -558,7 +565,7 @@ static switch_status_t zh_CN_say(switch_core_session_t *session, char *tosay, sw
 		return switch_ivr_say_spell(session, tosay, say_args, args);
 		break;
 	case SST_CURRENCY:
-		say_cb = zh_CN_say_money;
+		say_cb = zh_say_money;
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);

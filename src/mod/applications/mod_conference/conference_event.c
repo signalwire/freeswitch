@@ -513,7 +513,7 @@ void conference_event_channel_handler(const char *event_channel, cJSON *json, co
 			conference_desc = conference_cdr_json_render(conference, json);
 		} else {
 			conference_desc = cJSON_CreateObject();
-			json_add_child_string(conference_desc, "conferenceDescription", "FreeSWITCH Conference");
+			json_add_child_string(conference_desc, "conferenceDescription", "SynSWITCH Conference");
 			json_add_child_string(conference_desc, "conferenceState", "inactive");
 			json_add_child_array(conference_desc, "users");
 			json_add_child_array(conference_desc, "oldUsers");
@@ -551,7 +551,7 @@ void conference_event_send_json(conference_obj_t *conference)
 	if (!(domain = conference->domain)) {
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		if (!(domain = dup_domain)) {
-			domain = "cluecon.com";
+			domain = "synway.com";
 		}
 	}
 
@@ -716,7 +716,7 @@ void conference_event_send_rfc(conference_obj_t *conference)
 	if (!(domain = conference->domain)) {
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		if (!(domain = dup_domain)) {
-			domain = "cluecon.com";
+			domain = "synway.com";
 		}
 	}
 
@@ -744,6 +744,8 @@ switch_status_t conference_event_add_data(conference_obj_t *conference, switch_e
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Alias-Name", conference->alias_name);//UC
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Number", conference->number);//UC
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Ghosts", "%u", conference->count_ghosts);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);

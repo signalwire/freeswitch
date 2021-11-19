@@ -726,6 +726,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 	switch_channel_t *channel;
 	const char *controls = NULL, *position = NULL, *var = NULL;
 	switch_bool_t has_video = switch_core_has_video();
+	const char * conference_alone = NULL;//added for DS-76893 by lsq,2019.8.21//UC
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
@@ -936,7 +937,11 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				} else if (conference->count == 1 && !conference->perpetual_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
 					/* as long as its not a bridge_to conference, announce if person is alone */
 					if (!conference_utils_test_flag(conference, CFLAG_BRIDGE_TO)) {
-						if (conference->alone_sound  && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
+						//modified for DS-76893 by lsq,2019.8.21//UC
+						conference_alone = switch_channel_get_variable(channel, "conference_alone");
+						if (!zstr(conference_alone)){
+							//do nothing	
+						}else if (conference->alone_sound  && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
 							conference_file_stop(conference, FILE_STOP_ASYNC);
 							conference_file_play(conference, conference->alone_sound, CONF_DEFAULT_LEADIN,
 												 switch_core_session_get_channel(member->session), 0);
@@ -957,6 +962,10 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
+			//added for DS-76893 by lsq,2019.8.21//UC
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Count", "%d", conference->count);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-UUID", "%s", switch_core_session_get_uuid(member->session));
+			//added for DS-76893 by lsq,2019.8.21//UC
 			switch_event_fire(&event);
 		}
 
@@ -1345,6 +1354,10 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
+			//added for DS-76893 by lsq,2019.8.21//UC
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Count", "%d", conference->count);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-UUID", "%s", switch_core_session_get_uuid(member->session));
+			//added for DS-76893 by lsq,2019.8.21//UC
 			switch_event_fire(&event);
 		}
 	}

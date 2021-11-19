@@ -876,7 +876,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 		switch_stun_packet_attribute_add_priority(packet, ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].priority);
 
-		switch_snprintf(sw, sizeof(sw), "FreeSWITCH (%s)", switch_version_revision_human());
+		switch_snprintf(sw, sizeof(sw), "SynSWITCH (%s)", switch_version_revision_human());
 		switch_stun_packet_attribute_add_software(packet, sw, (uint16_t)strlen(sw));
 
 		if ((ice->type & ICE_CONTROLLED)) {
@@ -1553,7 +1553,7 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	if (zrtp_on) {
 		uint32_t cache_len;
 		zrtp_config_defaults(&zrtp_config);
-		strcpy(zrtp_config.client_id, "FreeSWITCH");
+		strcpy(zrtp_config.client_id, "SynSWITCH");
 		zrtp_config.is_mitm = 1;
 		zrtp_config.lic_mode = ZRTP_LICENSE_MODE_ACTIVE;
 		switch_snprintf(zrtp_cache_path, sizeof(zrtp_cache_path), "%s%szrtp.dat", SWITCH_GLOBAL_dirs.db_dir, SWITCH_PATH_SEPARATOR);
@@ -2500,7 +2500,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		p += sizeof(switch_rtcp_sdes_unit_t) + unit->length;
 		unit = (switch_rtcp_sdes_unit_t *) p;
 		unit->type = _RTCP_SDES_NOTE;
-		snprintf((char *)unit->value, 80, "FreeSWITCH.org -- Come to ClueCon.com");
+		snprintf((char *)unit->value, 80, "SynSWITCH -- Come to synway.com");
 		unit->length = strlen((char *)unit->value);
 		sdes_bytes += sizeof(switch_rtcp_sdes_unit_t) + unit->length;
 
@@ -2626,6 +2626,35 @@ SWITCH_DECLARE(void) switch_rtp_get_random(void *buf, uint32_t len)
 #endif
 }
 
+//added by yy for DS-65516,2018.09.19,UC
+SWITCH_DECLARE(void) switch_rtp_reload(void)
+{
+	switch_core_port_allocator_t *alloc = NULL;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+
+	if (!global_init) {
+		return;
+	}
+
+	switch_mutex_lock(port_lock);
+
+	for (hi = switch_core_hash_first(alloc_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
+		if ((alloc = (switch_core_port_allocator_t *) val)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy port allocator for %s\n", (char *) var);
+			switch_core_port_allocator_destroy(&alloc);
+		}
+	}
+
+	switch_core_hash_destroy(&alloc_hash);
+
+	switch_core_hash_init(&alloc_hash);
+
+	switch_mutex_unlock(port_lock);
+
+}
 
 SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 {
@@ -7917,8 +7946,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					rtp_session->auto_adj_used = 1;
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr), 0, SWITCH_FALSE, &err);
 					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
-						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+						//switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);//UC
+						//switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);//UC
 					} else {
 						switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 					}

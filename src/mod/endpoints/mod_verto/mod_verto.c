@@ -1684,7 +1684,7 @@ static void http_static_handler(kws_request_t *request, verto_vhost_t *vhost)
 		switch_snprintf((char *)chunk, sizeof(chunk),
 			"HTTP/1.1 200 OK\r\n"
 			"Date: %s\r\n"
-			"Server: FreeSWITCH-%s-mod_verto\r\n"
+			"Server: SynSWITCH-%s-mod_verto\r\n"
 			"Content-Type: %s\r\n"
 			"Content-Length: %" SWITCH_SIZE_T_FMT "\r\n\r\n",
 			date,
@@ -1753,7 +1753,7 @@ new_req:
 			"Content-Length: 0\r\n"
 			"Date: %s\r\n"
 			"Allow: HEAD,GET,POST,PUT,DELETE,PATCH,OPTIONS\r\n"
-			"Server: FreeSWITCH-%s-mod_verto\r\n\r\n",
+			"Server: SynSWITCH-%s-mod_verto\r\n\r\n",
 			switch_event_get_header(stream.param_event, "Event-Date-GMT"),
 			switch_version_full());
 

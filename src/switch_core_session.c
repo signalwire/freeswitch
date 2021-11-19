@@ -534,6 +534,13 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	const char *forwardvar;
 	int forwardval = 70;
 
+#ifdef ENABLE_SSOFT//UC
+	if (switch_get_work() == SWITCH_FALSE) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not work and locate channel type %s\n", endpoint_name);
+		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
+	}
+#endif
+
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
@@ -2389,6 +2396,12 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	uint32_t count = 0;
 	int32_t sps = 0;
 
+#ifdef ENABLE_SSOFT//UC
+	if (switch_get_work() == SWITCH_FALSE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not work!\n");		
+		return NULL;
+	}
+#endif
 
 	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
@@ -2629,7 +2642,7 @@ SWITCH_DECLARE(uint32_t) switch_core_sessions_per_second(uint32_t new_limit)
 void switch_core_session_init(switch_memory_pool_t *pool)
 {
 	memset(&session_manager, 0, sizeof(session_manager));
-	session_manager.session_limit = 1000;
+	session_manager.session_limit = 3;
 	session_manager.session_id = 1;
 	session_manager.memory_pool = pool;
 	switch_core_hash_init(&session_manager.session_table);
@@ -2851,6 +2864,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	char *app_uuid = uuid_str;
 	switch_bool_t expand_variables = !switch_true(switch_channel_get_variable(session->channel, "app_disable_expand_variables"));
 
+#ifdef ENABLE_SSOFT//UC
+	if (switch_get_work() == SWITCH_FALSE) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s Could not work\n",
+						switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+#endif
+
 	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
 		app_uuid = (char *)app_uuid_var;
 		switch_channel_set_variable(channel, "app_uuid", NULL);
@@ -3018,6 +3039,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	switch_caller_extension_t *extension = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+#ifdef ENABLE_SSOFT//UC
+	if (switch_get_work() == SWITCH_FALSE) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error %s Could not work\n",
+						switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+#endif
+
 	if (!(profile = switch_channel_get_caller_profile(channel))) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -3035,6 +3064,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	new_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(session, sizeof(*new_profile->times));
 	*new_profile->times = *profile->times;
 
+	//added by yy for OS-12472,2018.08.02,UC
+	if (zstr(dialplan)) {
+		dialplan = profile->dialplan;
+	}
+
+	if (zstr(context)) {
+		context = profile->context;
+	}
+
+	if (zstr(dialplan)) {
+		dialplan = "XML";
+	}
+
+	if (zstr(context)) {
+		context = "default";
+	}
 
 	if (!zstr(dialplan)) {
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);

@@ -382,12 +382,15 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *banner_file = NULL;
 	int played_banner = 0, banner_counter = 0;
 	int pass_val = 0, last_pass_val = 0;
+	char dtmf_string[256]="";//added by dsq for os-15157 2019.12.4,UC
+	int  dtmf_count= 0;//added by dsq for os-15157 2019.12.4,UC
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
 	uint32_t vid_launch = 0;
 #endif
 	data->clean_exit = 0;
+	memset(dtmf_string,0,sizeof(dtmf_string)); //added by dsq for os-15157 2019.12.4
 
 	session_a = data->session;
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
@@ -677,6 +680,20 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_dtmf_t dtmf = { 0, 0 };
 			if (switch_channel_dequeue_dtmf(chan_a, &dtmf) == SWITCH_STATUS_SUCCESS) {
 				int send_dtmf = 1;
+				//added by dsq for OS-15175 2019.12.4 
+				if((dtmf_count < sizeof(dtmf_string)-1) ){
+					dtmf_string[dtmf_count++] = dtmf.digit;
+				}else{
+					dtmf_count = 0;
+				}
+				 switch_channel_set_variable_printf(chan_a, "channel-dtmf","%s",dtmf_string);		//a-hold 									
+				// switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Get Channel DTMF String [%s]\n", event_dtmf_string);
+				//end by dsq for OS-15175 2019.12.4
+				if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(chan_a, event);
+					//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-dtmf", event_dtmf_string);
+					switch_event_fire(&event);
+				}
 
 				if (input_callback) {
 					switch_status_t cb_status = input_callback(session_a, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0);
@@ -905,7 +922,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 #endif
 
-
+	if(strlen(dtmf_string)>0){//UC
+		switch_channel_set_variable_printf(chan_a, "dtmf_digit_string","%s",dtmf_string);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Get Channel DTMF String [%s]\n", dtmf_string);
+	}//UC
 
 	switch_core_session_reset(session_a, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
@@ -1445,7 +1465,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
-			switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
+			//switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));//Masked by yy for tmp,UC
 
 			if (switch_channel_up_nosig(other_channel)) {
 				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
@@ -1876,7 +1896,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
-	switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(peer_session));
+	//switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(peer_session));//Masked by yy for tmp,UC
 
 	if (br && switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
@@ -2328,7 +2348,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_intercept_session(switch_core_session
 	}
 
 	switch_channel_set_flag(rchannel, CF_INTERCEPTED);
-	status = switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), uuid);
+	status = switch_ivr_uuid_bridge(uuid,switch_core_session_get_uuid(session));//modified by lsq for IPPBX-59,bug118,2019.1.29,UC
+	
 	switch_core_session_rwunlock(rsession);
 
 	if (bsession) {

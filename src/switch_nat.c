@@ -498,10 +498,10 @@ static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_na
 
 	if (proto == SWITCH_NAT_TCP) {
 		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, port_str,
-								nat_globals.pvt_addr, "FreeSWITCH", "TCP", 0);
+								nat_globals.pvt_addr, "SynSWITCH", "TCP", 0);
 	} else if (proto == SWITCH_NAT_UDP) {
 		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, port_str,
-								nat_globals.pvt_addr, "FreeSWITCH", "UDP", 0);
+								nat_globals.pvt_addr, "SynSWITCH", "UDP", 0);
 	}
 
 	if (r == UPNPCOMMAND_SUCCESS) {

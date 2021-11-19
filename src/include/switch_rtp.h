@@ -191,6 +191,7 @@ SWITCH_DECLARE(void) switch_rtp_get_random(void *buf, uint32_t len);
 */
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool);
 SWITCH_DECLARE(void) switch_rtp_shutdown(void);
+SWITCH_DECLARE(void) switch_rtp_reload(void);//added by yy for DS-65516,2018.09.19,UC
 
 /*!
   \brief Set/Get RTP start port

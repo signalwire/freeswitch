@@ -179,7 +179,7 @@ static perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, char 
 		int argc = 0;
 		char *argv[128] = { 0 };
 		char *err;
-		argv[0] = "FreeSWITCH";
+		argv[0] = "SynSWITCH";
 		argc++;
 
 		argc += switch_separate_string(input_code, ' ', &argv[1], (sizeof(argv) / sizeof(argv[0])) - 1);
@@ -217,8 +217,8 @@ static void perl_function(switch_core_session_t *session, char *data)
 
 	switch_snprintf(code, sizeof(code),
 					"use lib '%s/perl';\n"
-					"use freeswitch;\n"
-					"$SWITCH_ENV{UUID} = \"%s\";\n" "$session = new freeswitch::Session(\"%s\")", SWITCH_GLOBAL_dirs.base_dir, uuid, uuid);
+					"use synswitch;\n"
+					"$SWITCH_ENV{UUID} = \"%s\";\n" "$session = new synswitch::Session(\"%s\")", SWITCH_GLOBAL_dirs.base_dir, uuid, uuid);
 
 	perl_parse_and_execute(my_perl, data, code);
 	destroy_perl(&my_perl);
@@ -259,14 +259,14 @@ static void *SWITCH_THREAD_FUNC perl_thread_run(switch_thread_t *thread, void *o
 	}
 
 	switch_snprintf(code, sizeof(code),
-					"use lib '%s/perl';\n" "use freeswitch;\n" "$SWITCH_ENV{UUID} = \"%s\";\n", SWITCH_GLOBAL_dirs.base_dir, switch_str_nil(uuid)
+					"use lib '%s/perl';\n" "use synswitch;\n" "$SWITCH_ENV{UUID} = \"%s\";\n", SWITCH_GLOBAL_dirs.base_dir, switch_str_nil(uuid)
 		);
 
 	perl_parse(my_perl, xs_init, 3, embedding, NULL);
 	Perl_safe_eval(my_perl, code);
 
 	if (uuid) {
-		switch_snprintf(code, sizeof(code), "$session = new freeswitch::Session(\"%s\")", uuid);
+		switch_snprintf(code, sizeof(code), "$session = new synswitch::Session(\"%s\")", uuid);
 		Perl_safe_eval(my_perl, code);
 	}
 
@@ -362,7 +362,7 @@ static switch_xml_t perl_fetch(const char *section,
 		SV *this;
 		char code[1024] = "";
 
-		argv[argc++] = "FreeSWITCH";
+		argv[argc++] = "SynSWITCH";
 		argv[argc++] = globals.xml_handler;
 
 		PERL_SET_CONTEXT(my_perl);
@@ -420,7 +420,7 @@ static switch_xml_t perl_fetch(const char *section,
 			}
 		}
 
-		switch_snprintf(code, sizeof(code), "use lib '%s/perl';\n" "use freeswitch;\n", SWITCH_GLOBAL_dirs.base_dir);
+		switch_snprintf(code, sizeof(code), "use lib '%s/perl';\n" "use synswitch;\n", SWITCH_GLOBAL_dirs.base_dir);
 		Perl_safe_eval(my_perl, code);
 
 		if (params) {

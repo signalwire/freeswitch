@@ -2570,9 +2570,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			}
 
 			if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-				char *command = switch_event_get_header(event, "eavesdrop-command");
-				if (command) {
-					fcommand = switch_core_session_strdup(session, command);
+				if(event->event_id == SWITCH_EVENT_SEND_EVENT) {//UC
+					char *command = switch_event_get_header(event, "Event-DTMF-Digit");//UC
+					if (command) {
+						fcommand = switch_core_session_strdup(session, command);
+					}
 				}
 				switch_event_destroy(&event);
 			}
@@ -2636,6 +2638,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 					case '6':
 						switch_media_bug_set_spy_fmt(bug, switch_media_bug_parse_spy_fmt("lower-right-large"));
 						break;
+					case '7'://eavesdrop to intercept,UC
+						switch_ivr_intercept_session(session,uuid,SWITCH_TRUE);//UC
+						break;
 					case '0':
 						switch_clear_flag(ep, ED_MUX_READ);
 						switch_clear_flag(ep, ED_MUX_WRITE);
@@ -2645,8 +2650,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 							switch_core_session_request_video_refresh(tsession);
 						}
 						break;
-					case '*':
-						goto end_loop;
+					//case '*'://delete by lsq for IPPBX-59 bug59,2019.1.15
+						//goto end_loop;
 					default:
 						z = 0;
 						break;

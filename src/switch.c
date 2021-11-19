@@ -53,7 +53,7 @@
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
-#define PIDFILE "freeswitch.pid"
+#define PIDFILE "synswitch.pid"
 static char *pfile = PIDFILE;
 static int system_ready = 0;
 
@@ -64,7 +64,7 @@ static int system_ready = 0;
 
 #ifdef WIN32
 /* If we are a windows service, what should we be called */
-#define SERVICENAME_DEFAULT "FreeSWITCH"
+#define SERVICENAME_DEFAULT "SynSWITCH"
 #define SERVICENAME_MAXLEN 256
 static char service_name[SERVICENAME_MAXLEN];
 static switch_core_flag_t service_flags = SCF_NONE;
@@ -87,6 +87,9 @@ static void handle_SIGILL(int sig)
 	int32_t arg = 0;
 	if (sig) {}
 	/* send shutdown signal to the freeswitch core */
+#ifdef ENABLE_SSOFT
+	switch_close_auth();
+#endif
 	switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 	return;
 }
@@ -132,7 +135,7 @@ static int freeswitch_kill_background()
 		fprintf(stderr, "Killing: %d\n", (int) pid);
 #ifdef WIN32
 		/* for windows we need the event to signal for shutting down a background FreeSWITCH */
-		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", pid);
+		snprintf(path, sizeof(path), "Global\\Synswitch.%d", pid);
 
 		/* open the event so we can signal it */
 		shutdown_event = OpenEvent(EVENT_MODIFY_STATE, FALSE, path);
@@ -295,7 +298,7 @@ static void daemonize(int *fds)
 
 			close(fds[1]);
 
-			if ((o = getenv("FREESWITCH_BG_TIMEOUT"))) {
+			if ((o = getenv("SYNSWITCH_BG_TIMEOUT"))) {
 				int tmp = atoi(o);
 				if (tmp > 0) {
 					sanity = tmp;
@@ -306,7 +309,7 @@ static void daemonize(int *fds)
 				system_ready = check_fd(fds[0], 2000);
 
 				if (system_ready == 0) {
-					printf("FreeSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
+					printf("SynSWITCH[%d] Waiting for background process pid:%d to be ready.....\n", (int)getpid(), (int) pid);
 				}
 
 			} while (--sanity && system_ready == 0);
@@ -317,12 +320,12 @@ static void daemonize(int *fds)
 
 
 			if (system_ready < 0) {
-				printf("FreeSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
+				printf("SynSWITCH[%d] Error starting system! pid:%d\n", (int)getpid(), (int) pid);
 				kill(pid, 9);
 				exit(EXIT_FAILURE);
 			}
 
-			printf("FreeSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
+			printf("SynSWITCH[%d] System Ready pid:%d\n", (int) getpid(), (int) pid);
 		}
 
 		exit(EXIT_SUCCESS);
@@ -417,12 +420,12 @@ static void reincarnate_protect(char **argv) {
 #endif
 
 static const char usage[] =
-	"Usage: freeswitch [OPTIONS]\n\n"
-	"These are the optional arguments you can pass to freeswitch:\n"
+	"Usage: synswitch [OPTIONS]\n\n"
+	"These are the optional arguments you can pass to synswitch:\n"
 #ifdef WIN32
-	"\t-service [name]        -- start freeswitch as a service, cannot be used if loaded as a console app\n"
-	"\t-install [name]        -- install freeswitch as a service, with optional service name\n"
-	"\t-uninstall             -- remove freeswitch as a service\n"
+	"\t-service [name]        -- start synswitch as a service, cannot be used if loaded as a console app\n"
+	"\t-install [name]        -- install synswitch as a service, with optional service name\n"
+	"\t-uninstall             -- remove synswitch as a service\n"
 	"\t-monotonic-clock       -- use monotonic clock as timer source\n"
 #else
 	"\t-nf                    -- no forking\n"
@@ -449,7 +452,7 @@ static const char usage[] =
 	"\t-nonatmap              -- disable auto nat port mapping\n"
 	"\t-nocal                 -- disable clock calibration\n"
 	"\t-nort                  -- disable clock clock_realtime\n"
-	"\t-stop                  -- stop freeswitch\n"
+	"\t-stop                  -- stop synswitch\n"
 	"\t-nc                    -- do not output to a console and background\n"
 #ifndef WIN32
 	"\t-ncwait                -- do not output to a console and background but wait until the system is ready before exiting (implies -nc)\n"
@@ -457,8 +460,8 @@ static const char usage[] =
 	"\t-c                     -- output to a console and stay in the foreground\n"
 	"\n\tOptions to control locations of files:\n"
 	"\t-base [basedir]         -- alternate prefix directory\n"
-	"\t-cfgname [filename]     -- alternate filename for FreeSWITCH main configuration file\n"
-	"\t-conf [confdir]         -- alternate directory for FreeSWITCH configuration files\n"
+	"\t-cfgname [filename]     -- alternate filename for SynSWITCH main configuration file\n"
+	"\t-conf [confdir]         -- alternate directory for SynSWITCH configuration files\n"
 	"\t-log [logdir]           -- alternate directory for logfiles\n"
 	"\t-run [rundir]           -- alternate directory for runtime files\n"
 	"\t-db [dbdir]             -- alternate directory for the internal database\n"
@@ -534,7 +537,7 @@ int main(int argc, char *argv[])
 		local_argv[x] = argv[x];
 	}
 
-	if ((opts = getenv("FREESWITCH_OPTS"))) {
+	if ((opts = getenv("SYNSWITCH_OPTS"))) {
 		strncpy(opts_str, opts, sizeof(opts_str) - 1);
 		i = switch_separate_string(opts_str, ' ', arg_argv, (sizeof(arg_argv) / sizeof(arg_argv[0])));
 		for (x = 0; x < i; x++) {
@@ -542,7 +545,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (local_argv[0] && strstr(local_argv[0], "freeswitchd")) {
+	if (local_argv[0] && strstr(local_argv[0], "synswitchd")) {
 		nc = SWITCH_TRUE;
 	}
 
@@ -575,7 +578,7 @@ int main(int argc, char *argv[])
 			SC_HANDLE hService;
 			SC_HANDLE hSCManager;
 			SERVICE_DESCRIPTION desc;
-			desc.lpDescription = "The FreeSWITCH service.";
+			desc.lpDescription = "The SynSWITCH service.";
 
 			x++;
 			if (!switch_strlen_zero(local_argv[x])) {
@@ -598,14 +601,14 @@ int main(int argc, char *argv[])
 			hService = CreateService(hSCManager, service_name, service_name, GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG, SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE,
 						 servicePath, NULL, NULL, NULL, NULL, /* Service start name */ NULL);
 			if (!hService) {
-				fprintf(stderr, "Error creating freeswitch service (%u).\n", GetLastError());
+				fprintf(stderr, "Error creating synswitch service (%u).\n", GetLastError());
 				CloseServiceHandle(hSCManager);
 				exit(EXIT_FAILURE);
 			}
 
 			/* Set desc, and don't care if it succeeds */
 			if (!ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &desc)) {
-				fprintf(stderr, "FreeSWITCH installed, but could not set the service description (%u).\n", GetLastError());
+				fprintf(stderr, "SynSWITCH installed, but could not set the service description (%u).\n", GetLastError());
 			}
 
 			CloseServiceHandle(hService);
@@ -712,7 +715,7 @@ int main(int argc, char *argv[])
 		}
 #endif
 		else if (!strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
+			fprintf(stdout, "SynSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
 			exit(EXIT_SUCCESS);
 		}
 
@@ -1152,8 +1155,8 @@ int main(int argc, char *argv[])
 
 		if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
 			/* Not loaded as a service */
-			fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
-			fprintf(stderr, "To install the service load freeswitch with -install\n");
+			fprintf(stderr, "Error Synswitch loaded as a console app with -service option\n");
+			fprintf(stderr, "To install the service load synswitch with -install\n");
 		}
 		exit(EXIT_SUCCESS);
 	}

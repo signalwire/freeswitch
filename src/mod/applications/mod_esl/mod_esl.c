@@ -50,7 +50,7 @@ SWITCH_STANDARD_API(single_esl_api_function)
 	char *s_port = NULL;
 	int port = 8021;
 	char *username = NULL;
-	char *password = "ClueCon";
+	char *password = "Synway";
 	char *args = NULL;
 	char *s_timeout = NULL;
 	int timeout = 5000;

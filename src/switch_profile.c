@@ -42,6 +42,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/sysinfo.h>//UC
 #endif
 
 struct profile_timer
@@ -72,6 +73,8 @@ struct profile_timer
 	/* /proc/stat file descriptor used to retrieve the counters */
 	int procfd;
 	int initd;
+	int procfd_mem;//UC
+	int initd_mem;//UC
 #elif defined (WIN32)  || defined (WIN64)
 	__int64 i64LastUserTime;
 	__int64 i64LastKernelTime;
@@ -330,6 +333,7 @@ SWITCH_DECLARE(void) switch_delete_profile_timer(switch_profile_timer_t **p)
 
 #ifdef __linux__
 	close((*p)->procfd);
+	close((*p)->procfd_mem);//UC
 #endif
 	free((*p)->percentage_of_idle_time_ring);
 	free(*p);

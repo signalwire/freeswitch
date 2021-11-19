@@ -532,8 +532,8 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				switch_snprintf(z, sizeof(z), "%s@%s", (box ? box : user), domain_name);
 				r->requestInfo.user = strdup(z);
 
-				ResponseAddField(r, "freeswitch-user", (box ? box : user));
-				ResponseAddField(r, "freeswitch-domain", domain_name);
+				ResponseAddField(r, "synswitch-user", (box ? box : user));
+				ResponseAddField(r, "synswitch-domain", domain_name);
 				ResponseStatus(r, 200);
 				rval = TRUE;
 				goto done;
@@ -864,9 +864,9 @@ abyss_bool handler_hook(TSession * r)
 
 	for (i = 0; i < r->responseHeaderFields.size; i++) {
 		TTableItem *ti = &r->responseHeaderFields.item[i];
-		if (!strcasecmp(ti->name, "freeswitch-user")) {
+		if (!strcasecmp(ti->name, "synswitch-user")) {
 			fs_user = ti->value;
-		} else if (!strcasecmp(ti->name, "freeswitch-domain")) {
+		} else if (!strcasecmp(ti->name, "synswitch-domain")) {
 			fs_domain = ti->value;
 		}
 	}
@@ -892,8 +892,8 @@ abyss_bool handler_hook(TSession * r)
 		if (api) {
 			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-API", "api");
 		}
-		if (fs_user)   switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
-		if (fs_domain) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
+		if (fs_user)   switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "SynSWITCH-User", fs_user);
+		if (fs_domain) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "SynSWITCH-Domain", fs_domain);
 		if (path_info) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
 
 		if (info->host)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-HOST", info->host);
@@ -1030,7 +1030,7 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 	/* Generation of the server field */
-	switch_snprintf(v, sizeof(v), "FreeSWITCH-%s-mod_xml_rpc", switch_version_full());
+	switch_snprintf(v, sizeof(v), "SynSWITCH-%s-mod_xml_rpc", switch_version_full());
 	ResponseAddField(r, "Server", v);
 
 	if (html) {
@@ -1222,10 +1222,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	globals.registryP = xmlrpc_registry_new(&env);
 
 	/* TODO why twice and why add_method for freeswitch.api and add_method2 for freeswitch.management ? */
-    xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch.api", &freeswitch_api, NULL, NULL, NULL);
-    xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch_api", &freeswitch_api, NULL, NULL, NULL);
-    xmlrpc_registry_add_method(&env, globals.registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
-    xmlrpc_registry_add_method(&env, globals.registryP, NULL, "freeswitch_management", &freeswitch_man, NULL);
+    xmlrpc_registry_add_method2(&env, globals.registryP, "synswitch.api", &freeswitch_api, NULL, NULL, NULL);
+    xmlrpc_registry_add_method2(&env, globals.registryP, "synswitch", &freeswitch_api, NULL, NULL, NULL);
+    xmlrpc_registry_add_method(&env, globals.registryP, NULL, "synswitch.management", &freeswitch_man, NULL);
+    xmlrpc_registry_add_method(&env, globals.registryP, NULL, "synswitch_management", &freeswitch_man, NULL);
 
 	MIMETypeInit();
 
@@ -1236,7 +1236,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 		}
 	}
 
-	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
+	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "synswitch_http.log");
 	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
 	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", globals.registryP);

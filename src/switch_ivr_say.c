@@ -153,13 +153,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_spell(switch_core_session_t *sess
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
+//UC
 #define say_num(num, meth) {											\
 		char tmp[80];													\
 		switch_status_t tstatus;										\
 		switch_say_method_t smeth = say_args->method;					\
 		switch_say_type_t stype = say_args->type;						\
-		say_args->type = SST_ITEMS; say_args->method = meth;			\
+		say_args->type = stype; say_args->method = meth;			\
 		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
 		if ((tstatus =													\
 			 number_func(session, tmp, say_args, args))					\

@@ -1,4 +1,4 @@
-#applications/mod_abstraction
+applications/mod_abstraction
 applications/mod_av
 #applications/mod_avmd
 #applications/mod_bert
@@ -26,6 +26,7 @@ applications/mod_hash
 #applications/mod_hiredis
 applications/mod_httapi
 #applications/mod_http_cache
+#applications/mod_ios_push
 #applications/mod_ladspa
 #applications/mod_lcr
 #applications/mod_memcache
@@ -161,6 +162,7 @@ say/mod_say_en
 #say/mod_say_sv
 #say/mod_say_th
 #say/mod_say_zh
+#say/mod_say_tr
 #timers/mod_posix_timer
 #timers/mod_timerfd
 xml_int/mod_xml_cdr

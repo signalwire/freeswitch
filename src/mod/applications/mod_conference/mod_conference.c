@@ -95,8 +95,8 @@ void conference_list(conference_obj_t *conference, switch_stream_handle_t *strea
 		profile = switch_channel_get_caller_profile(channel);
 		name = switch_channel_get_name(channel);
 
-		stream->write_function(stream, "%u%s%s%s%s%s%s%s%s%s",
-							   member->id, delim, name, delim, uuid, delim, profile->caller_id_name, delim, profile->caller_id_number, delim);
+		stream->write_function(stream, "%u%s%s%s%s%s%s%s%s%s%ld%s",
+							   member->id, delim, name, delim, uuid, delim, profile->caller_id_name, delim, profile->caller_id_number, delim, member->join_time, delim);//UC
 
 		if (!hold && conference_utils_member_test_flag(member, MFLAG_CAN_HEAR)) {
 			stream->write_function(stream, "hear");
@@ -177,7 +177,7 @@ void conference_send_notify(conference_obj_t *conference, const char *status, co
 	if (!(domain = conference->domain)) {
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		if (!(domain = dup_domain)) {
-			domain = "cluecon.com";
+			domain = "synway.com";
 		}
 	}
 
@@ -1700,13 +1700,20 @@ void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *o
 						   call->session, call->bridgeto, call->timeout,
 						   call->flags, call->cid_name, call->cid_num, call->profile, &cause, call->cancel_cause, call->var_event, &peer_uuid);
 
-		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
-			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-			conference_event_add_data(call->conference, event);
+		//Added by liangjie UC
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Peer-UUID", peer_uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cid_name", call->cid_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cid_num", call->cid_num);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "bridgeto", call->bridgeto);
+			if(call->conference) {
+				conference_event_add_data(call->conference, event);
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", call->conference_name);
+			}
 			switch_event_fire(&event);
 		}
 
@@ -1915,6 +1922,7 @@ SWITCH_STANDARD_APP(conference_function)
 	int locked = 0;
 	int mpin_matched = 0;
 	uint32_t *mid;
+	const char * greeting_sound = NULL;//added by lsq for DS-DS-76892,2019.8.26//UC
 
 	if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_DONE) &&
 		(switch_channel_test_flag(channel, CF_RECOVERED) || switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
@@ -2360,7 +2368,11 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
-		if (conference->member_enter_sound && !switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ)) {
+		//modified by lsq for DS-DS-76892,2019.8.26//UC
+		greeting_sound = switch_channel_get_variable(channel, "conference_greeting_sound");
+		if (!zstr(greeting_sound)){
+			conference_file_local_play(conference, session, (char *)greeting_sound, CONF_DEFAULT_LEADIN, NULL, 0);
+		}else if (conference->member_enter_sound && !switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ)) {
 			conference_file_local_play(conference, session, conference->member_enter_sound, CONF_DEFAULT_LEADIN, NULL, 0);
 		}
 
@@ -3169,6 +3181,12 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		caller_id_number = SWITCH_DEFAULT_CLID_NUMBER;
 	}
 
+	//added by lsq for DS-DS-76892,2019.8.26//UC
+	if (zstr(verbose_events)) {
+		verbose_events = (char *)switch_channel_get_variable(channel, "conference_verbose_events");
+	}
+	//end by lsq for DS-DS-76892,2019.8.26
+
 	if (!pool) {
 		/* Setup a memory pool to use. */
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -3566,6 +3584,13 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	conference->name = switch_core_strdup(conference->pool, name);
 
+	if (zstr(conference->alias_name)){//UC
+		conference->alias_name = (char *)switch_channel_get_variable(channel, "conference_room_name");
+	}
+	if (zstr(conference->number)){//UC
+		conference->number = (char *)switch_channel_get_variable(channel, "conference_room_extension");
+	}
+
 	if ((name_domain = strchr(conference->name, '@'))) {
 		name_domain++;
 		conference->domain = switch_core_strdup(conference->pool, name_domain);
@@ -3575,7 +3600,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		name_domain++;
 		conference->domain = switch_core_strdup(conference->pool, name_domain);
 	} else {
-		conference->domain = "cluecon.com";
+		conference->domain = "synway.com";
 	}
 
 	conference->chat_id = switch_core_sprintf(conference->pool, "conf+%s@%s", conference->name, conference->domain);

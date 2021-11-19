@@ -94,7 +94,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 		if (!(domain = conference->domain)) {
 			dup_domain = switch_core_get_domain(SWITCH_TRUE);
 			if (!(domain = dup_domain)) {
-				domain = "cluecon.com";
+				domain = "synway.com";
 			}
 		}
 	}
@@ -115,7 +115,7 @@ char *conference_cdr_rfc4579_render(conference_obj_t *conference, switch_event_t
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "display-text", off1++))) {
 		abort();
 	}
-	switch_xml_set_txt_d(x_tag1, conference->desc ? conference->desc : "FreeSWITCH Conference");
+	switch_xml_set_txt_d(x_tag1, conference->desc ? conference->desc : "SynSWITCH Conference");
 
 
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "conf-uris", off1++))) {
@@ -349,14 +349,14 @@ cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req)
 	if (!(domain = conference->domain)) {
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		if (!(domain = dup_domain)) {
-			domain = "cluecon.com";
+			domain = "synway.com";
 		}
 	}
 
 
 	uri = switch_mprintf("%s@%s", name, domain);
 	json_add_child_string(json, "entity", uri);
-	json_add_child_string(json, "conferenceDescription", conference->desc ? conference->desc : "FreeSWITCH Conference");
+	json_add_child_string(json, "conferenceDescription", conference->desc ? conference->desc : "SynSWITCH Conference");
 	json_add_child_string(json, "conferenceState", "active");
 	switch_snprintf(tmp, sizeof(tmp), "%u", conference->count);
 	json_add_child_string(json, "userCount", tmp);

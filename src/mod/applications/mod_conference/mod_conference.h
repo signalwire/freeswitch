@@ -595,6 +595,8 @@ typedef enum {
 /* Conference Object */
 typedef struct conference_obj {
 	char *name;
+	char *alias_name;//added by lsq for DS-76321,2019.7.31//UC
+	char *number;//added by lsq for DS-76321,2019.7.31//UC
 	char *la_name;
 	char *la_event_channel;
 	char *chat_event_channel;

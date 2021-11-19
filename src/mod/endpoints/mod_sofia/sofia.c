@@ -2032,6 +2032,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 				sip_to_tag(nua_handle_get_home(nh), sip->sip_to, to_tag);
+
+				switch_safe_free(contact_str);//added by yy for softuc UC
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_TO(sip->sip_to), NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());

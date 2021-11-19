@@ -84,6 +84,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	char *uuid_rediskey = NULL;
 	uint8_t increment = 1;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_bool_t delete_hash = SWITCH_FALSE;//first failed mast free,UC
 	REDIS redis;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_redis is deprecated and will be removed in FS 1.8. Check out mod_hiredis.\n");
@@ -107,12 +108,9 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
 		pvt = (limit_redis_private_t *) switch_core_session_alloc(session, sizeof(limit_redis_private_t));
 		switch_core_hash_init(&pvt->hash);
+		delete_hash = SWITCH_TRUE;//UC
 		switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_channel_set_private(channel, "limit_redis", pvt);
-	}
-
-	if (!(switch_core_hash_find_locked(pvt->hash, rediskey, pvt->mutex))) {
-		switch_core_hash_insert_locked(pvt->hash, rediskey, rediskey, pvt->mutex);
 	}
 
    	if (increment) {
@@ -144,11 +142,20 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 			}
 		}
     }
+
+	if (!(switch_core_hash_find_locked(pvt->hash, rediskey, pvt->mutex))) {//UC
+		switch_core_hash_insert_locked(pvt->hash, rediskey, rediskey, pvt->mutex);
+	}
 /*
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Limit incr redis : rediskey : %s val : %d max : %d\n", rediskey, val, max);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Limit incr redis : uuid_rediskey : %s uuid_val : %d max : %d\n", uuid_rediskey,uuid_val,max);
 */
 end:
+	if(status != SWITCH_STATUS_SUCCESS && delete_hash == SWITCH_TRUE) {//added by yy for mem leak free hash,2021.05.18,UC
+		if (pvt && pvt->hash) {
+			switch_core_hash_destroy(&pvt->hash);
+		}
+	}
 	if (redis) {
 		credis_close(redis);
 	}

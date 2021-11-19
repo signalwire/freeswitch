@@ -379,7 +379,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 						  (uint32_t) (menu->inlen - strlen(menu->buf)), (uint32_t) need, menu->inter_timeout);
 		status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf),
 												 need, terminator_str, &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout,
-												 menu->inter_timeout, menu->timeout);
+												 menu->inter_timeout, 0);//UC
 	}
 
 	if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && *menu->buf != '\0') {
@@ -568,7 +568,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 				if (ok) {
 					match++;
-					errs = 0;
+					//errs = 0;//UC
 					if (ap->function) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 										  "IVR function on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf, use_arg);
@@ -669,7 +669,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			if (SWITCH_STATUS_IS_BREAK(status)) {
 				status = SWITCH_STATUS_SUCCESS;
 			}
-		}
+			
+		} else{ //added by liangjie for OS-16676,2020.10.30,UC
+            if (!switch_channel_ready(channel)){
+                errs = 0;
+            }
+            else{
+                errs++;
+            }
+        }
 	}
 
 	if (stack->stack_count == 1) {

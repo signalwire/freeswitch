@@ -32,7 +32,11 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
+#ifdef ENABLE_SSOFT
+#define MAX_QUEUE_LEN 5000000
+#else
 #define MAX_QUEUE_LEN 100000
+#endif
 #define MAX_MISSED 500
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
@@ -2815,7 +2819,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	}
 
 	if (listener->sock) {
-		send_disconnect(listener, "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n");
+		send_disconnect(listener, "Disconnected, goodbye.\nSee you at Synway! http://www.synway.com/\n");
 		close_socket(&listener->sock);
 	}
 
@@ -2916,7 +2920,7 @@ static int config(void)
 	}
 
 	if (zstr(prefs.password)) {
-		set_pref_pass("ClueCon");
+		set_pref_pass("Synway");
 	}
 
 	if (!prefs.nat_map) {

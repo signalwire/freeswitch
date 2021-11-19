@@ -1043,6 +1043,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
+	int df_tick = 0;//UC
 	int tfd = -1;
 	uint32_t time_sync;
 
@@ -1074,6 +1075,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	runtime.profile_timer = switch_new_profile_timer();
 	switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
+
+	switch_get_mem_info(runtime.profile_timer, &runtime.mem_total, &runtime.mem_free);//added by yy for meminfo,UC
+	switch_get_df_info(runtime.profile_timer, &runtime.flashsize, &runtime.flashuse);//added by yy for dfinfo,UC
 
 	if (runtime.timer_affinity > -1) {
 		switch_core_thread_set_cpu_affinity(runtime.timer_affinity);
@@ -1237,7 +1241,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		if (tick >= (1000000 / runtime.microseconds_per_tick)) {
 			if (++profile_tick == 1) {
 				switch_get_system_idle_time(runtime.profile_timer, &runtime.profile_time);
+				switch_get_mem_info(runtime.profile_timer, &runtime.mem_total, &runtime.mem_free);//added by yy for meminfo,UC
 				profile_tick = 0;
+			}
+
+			if(++df_tick == 10){
+				switch_get_df_info(runtime.profile_timer, &runtime.flashsize, &runtime.flashuse);//added by yy for dfinfo,UC
+				df_tick = 0;
 			}
 
 			if (runtime.sps <= 0) {

@@ -61,6 +61,7 @@ typedef struct {
 
 	int lowbal_action_executed;	/* Set to 1 once lowbal_action has been executed */
 	int final_bill_done;		/* Set to 1 one the final rounding has been done on a call to prevent spurious rebills on hangup */
+	switch_time_t first_bill_period; /* get  the first bill time  */ 
 } nibble_data_t;
 
 
@@ -96,6 +97,8 @@ static struct {
 
 	/* Channel variable name options */
 	char *var_name_rate;
+	char *var_name_first_rate;
+	char *var_name_increment_count;
 	char *var_name_account;
 
 	/* Database settings */
@@ -133,6 +136,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_percall_action, globals.percall_act
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_lowbal_action, globals.lowbal_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_nobal_action, globals.nobal_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_var_name_rate, globals.var_name_rate);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_var_name_first_rate, globals.var_name_first_rate);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_var_name_increment_count, globals.var_name_increment_count);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_var_name_account, globals.var_name_account);
 
 static switch_cache_db_handle_t *nibblebill_get_db_handle(void)
@@ -253,6 +258,10 @@ static switch_status_t nibblebill_load_config(void)
 				globals.nobal_amt = atof(val);
 			} else if (!strcasecmp(var, "var_name_rate")) {
 				set_global_var_name_rate(val);
+			} else if (!strcasecmp(var, "var_name_first_rate")) {
+				set_global_var_name_first_rate(val);
+			} else if (!strcasecmp(var, "var_name_increment_count")) {
+				set_global_var_name_increment_count(val);
 			} else if (!strcasecmp(var, "var_name_account")) {
 				set_global_var_name_account(val);
 			} else if (!strcasecmp(var, "global_heartbeat")) {
@@ -275,6 +284,12 @@ static switch_status_t nibblebill_load_config(void)
 	}
 	if (zstr(globals.var_name_rate)) {
 		set_global_var_name_rate("nibble_rate");
+	}
+	if (zstr(globals.var_name_first_rate)) {
+		set_global_var_name_first_rate("nibble_first_rate");
+	}
+	if (zstr(globals.var_name_increment_count)) {
+		set_global_var_name_increment_count("nibble_increment_length");
 	}
 	if (zstr(globals.var_name_account)) {
 		set_global_var_name_account("nibble_account");
@@ -336,8 +351,8 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app_
 static void transfer_call(switch_core_session_t *session, char *destination)
 {
 	char *argv[4] = { 0 };
-	const char *uuid;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
+	//const char *uuid;
+	//switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *mydup;
 
 	if (!destination) {
@@ -349,26 +364,26 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 	switch_separate_string(mydup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	/* Find the uuid of our B leg. If it exists, transfer it first */
-	if ((uuid = switch_channel_get_partner_uuid(channel))) {
-		switch_core_session_t *b_session;
+	//if ((uuid = switch_channel_get_partner_uuid(channel))) {
+		//switch_core_session_t *b_session;
 
 		/* Get info on the B leg */
-		if ((b_session = switch_core_session_locate(uuid))) {
+		//if ((b_session = switch_core_session_locate(uuid))) {
 			/* Make sure we are in the media path on B leg */
-			switch_ivr_media(uuid, SMF_REBRIDGE);
+			//switch_ivr_media(uuid, SMF_REBRIDGE);
 
 			/* Execute extension on the B leg */
-			switch_core_session_execute_exten(b_session, argv[0], argv[1], argv[2]);
-			switch_core_session_rwunlock(b_session);
-		}
-	}
+			//switch_core_session_execute_exten(b_session, argv[0], argv[1], argv[2]);
+			//switch_core_session_rwunlock(b_session);
+		//}
+	//}
 
 	/* Make sure we are in the media path on A leg */
-	uuid = switch_core_session_get_uuid(session);
-	switch_ivr_media(uuid, SMF_REBRIDGE);
+	//uuid = switch_core_session_get_uuid(session);
+	//switch_ivr_media(uuid, SMF_REBRIDGE);
 
 	/* Execute extension on the A leg */
-	switch_core_session_execute_exten(session, argv[0], argv[1], argv[2]);
+	switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 	free(mydup);
 }
 
@@ -445,14 +460,20 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	/* Local vars */
 	nibble_data_t *nibble_data;
 	switch_time_t ts = switch_micro_time_now();
+	switch_time_t correction = 0;
 	double billamount;
 	char date[80] = "";
+	char nobal_action[128] = "";
 	char *uuid;
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	const char *billrate;
 	const char *billincrement;
+	const char *first_billrate; //added by dsq for DS-88227 2020-09-24
+	const char *billincrement_count;//added by dsq for DS-88227 2020-09-24 
 	const char *billaccount;
+	const char *lowbal_action = globals.lowbal_action;
+	const char *nobal_action_cst;
 	double nobal_amt = globals.nobal_amt;
 	double lowbal_amt = globals.lowbal_amt;
 	double balance;
@@ -462,6 +483,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	double rounded_billed = 0;
 	int billsecs = 0;
 	double balance_check = 0;
+	switch_time_t chargedunits =0; //added by dsq for DS-88227 2020-09-24
 
 	if (!session) {
 		/* Why are we here? */
@@ -477,9 +499,16 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	/* Variables kept in FS but relevant only to this module */
 	billrate = switch_channel_get_variable(channel, globals.var_name_rate);
+	first_billrate = switch_channel_get_variable(channel, globals.var_name_first_rate);
 	billincrement = switch_channel_get_variable(channel, "nibble_increment");
+	billincrement_count = switch_channel_get_variable(channel, globals.var_name_increment_count);
 	billaccount = switch_channel_get_variable(channel, globals.var_name_account);
+	nobal_action_cst = switch_channel_get_variable(channel, "nobal_action");
 
+	if(!zstr(nobal_action_cst))
+		strcpy(nobal_action,nobal_action_cst);
+	else
+		strcpy(nobal_action,globals.nobal_action);
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
 		nobal_amt = atof(switch_channel_get_variable(channel, "nobal_amt"));
 	}
@@ -496,15 +525,15 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		minimum_charge = atof(switch_channel_get_variable(channel, "nibble_minimum"));
 	}
 
-
-
+	if (!zstr(switch_channel_get_variable(channel, "lowbal_action"))) {
+		lowbal_action = switch_channel_get_variable(channel, "lowbal_action");
+	}
 	/* Return if there's no billing information on this session */
 	if (!billrate || !billaccount) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to bill at $%s per minute to account %s\n", billrate,
-					  billaccount);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attempting to first bill at $%s per minute to account %s and keep time %s then next bill at $%s per minute \n", billrate,billaccount,billincrement_count,first_billrate);
 
 	/* Get caller profile info from channel */
 	profile = switch_channel_get_caller_profile(channel);
@@ -562,7 +591,11 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 		/* Setup new billing data (based on call answer time, in case this module started late with active calls) */
 		nibble_data->lastts = profile->times->answered;	/* Set the initial answer time to match when the call was really answered */
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Beginning new billing on %s\n", uuid);
+		billincrement_count = switch_strlen_zero(billincrement_count)?"0":billincrement_count; 
+		if (!(switch_strlen_zero(billincrement))) {
+			nibble_data->first_bill_period = nibble_data->lastts+atoi(billincrement_count)* atol(billincrement)* 1000000;
+		} 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Beginning new billing on %s,and first bill time is %s\n", uuid,billincrement_count);
 	}
 
 	switch_time_exp_lt(&tm, nibble_data->lastts);
@@ -575,9 +608,14 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	if ((ts - nibble_data->lastts) >= 0) {
 		/* If billincrement is set we bill by it and not by time elapsed */
+		if(switch_channel_get_state(channel) == CS_HANGUP)
+			correction = (ts - nibble_data->lastts) % 1000000 > 0 ? 1 : 0;
 		if (!(switch_strlen_zero(billincrement))) {
-			switch_time_t chargedunits = (ts - nibble_data->lastts) / 1000000 <= atol(billincrement) ? atol(billincrement) * 1000000 : (switch_time_t)(ceil((ts - nibble_data->lastts) / (atol(billincrement) * 1000000.0))) * atol(billincrement) * 1000000;
-			billamount = (atof(billrate) / 1000000 / 60) * chargedunits - nibble_data->bill_adjustments;
+			if(!(switch_strlen_zero(first_billrate)) && !(switch_strlen_zero(billincrement_count)) && ((nibble_data->first_bill_period - ts)>=0 )){
+				billrate  = first_billrate; 
+			}
+			chargedunits = (ts - nibble_data->lastts) / 1000000 + correction <= atol(billincrement) ? atol(billincrement) * 1000000 : (switch_time_t)(ceil((ts - nibble_data->lastts) / (atol(billincrement) * 1000000.0))) * atol(billincrement) * 1000000;
+			billamount = (atof(billrate) / 1000000 / atol(billincrement)) * chargedunits - nibble_data->bill_adjustments;
 			/* Account for the prepaid amount */
 			nibble_data->lastts += chargedunits;
 		} else {
@@ -645,14 +683,14 @@ static switch_status_t do_billing(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Balance of %f fell below low balance amount of %f! (Account %s)\n",
 								  balance, lowbal_amt, billaccount);
 
-				if (exec_app(session, globals.lowbal_action) != SWITCH_STATUS_SUCCESS)
+				if (exec_app(session, lowbal_action) != SWITCH_STATUS_SUCCESS)
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Low balance action didn't execute\n");
 				else
 					nibble_data->lowbal_action_executed = 1;
 			}
 
 			/* See if this person has enough money left to continue the call */
-			if (balance <= nobal_amt) {
+			if (!zstr(nobal_action) && strcasecmp(nobal_action,"none") && balance <= nobal_amt) {
 				/* Not enough money - reroute call to nobal location */
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Balance of %f fell below allowed amount of %f! (Account %s)\n",
 								  balance, nobal_amt, billaccount);
@@ -661,7 +699,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 				/* in nibblebill checking the call again in the routing process for an allowed balance! */
 				/* If you intend to give the user the option to re-up their balance, you must clear & resume billing once the balance is updated! */
 				nibblebill_pause(session);
-				transfer_call(session, globals.nobal_action);
+				transfer_call(session, nobal_action);
 			}
 		}
 	}
@@ -752,7 +790,7 @@ static void nibblebill_resume(switch_core_session_t *session)
 	switch_time_t ts = switch_micro_time_now();
 	nibble_data_t *nibble_data;
 	const char *billrate;
-
+	const char *first_billrate;
 	if (!channel) {
 		return;
 	}
@@ -778,8 +816,11 @@ static void nibblebill_resume(switch_core_session_t *session)
 	}
 
 	billrate = switch_channel_get_variable(channel, globals.var_name_rate);
-
+	first_billrate = switch_channel_get_variable(channel, globals.var_name_first_rate);
 	/* Calculate how much was "lost" to billings during pause - we do this here because you never know when the billrate may change during a call */
+	if(!(switch_strlen_zero(first_billrate)) && (nibble_data->pausets < nibble_data->first_bill_period) ){
+		billrate = first_billrate ;
+	}
 	nibble_data->bill_adjustments += (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Resumed billing! Subtracted %f from this billing cycle.\n",
 					  (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets)));
@@ -1021,7 +1062,7 @@ switch_state_handler_table_t nibble_state_handler = {
 	/* on_execute */ sched_billing, 	/* Turn on heartbeat for this session and do an initial account check */
 	/* on_hangup */ process_hangup, 	/* On hangup - most important place to go bill */
 	/* on_exch_media */ process_and_sched,
-	/* on_soft_exec */ NULL,
+	/* on_soft_exec */ sched_billing,
 	/* on_consume_med */ process_and_sched,
 	/* on_hibernate */ NULL,
 	/* on_reset */ NULL,
@@ -1034,6 +1075,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_nibblebill_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
+	int device_modules_auth_sn = 0;
+	device_modules_auth_sn = switch_core_get_device_modules_auth_sn();
+	if(!(device_modules_auth_sn & MODULE_BILLING))
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_nibblebill auth fail!\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	/* Set every byte in this structure to 0 */
 	memset(&globals, 0, sizeof(globals));
@@ -1084,6 +1132,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nibblebill_shutdown)
 	switch_safe_free(globals.lowbal_action);
 	switch_safe_free(globals.nobal_action);
 	switch_safe_free(globals.var_name_rate);
+	switch_safe_free(globals.var_name_first_rate);
+	switch_safe_free(globals.var_name_increment_count);
 	switch_safe_free(globals.var_name_account);
 
 	return SWITCH_STATUS_UNLOAD;

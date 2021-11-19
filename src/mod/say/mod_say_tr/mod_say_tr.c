@@ -1,23 +1,23 @@
 /*
  * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *
+ * 
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- *
+ * 
  * * Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- *
+ * 
  * * Neither the name of the original author; nor the names of any contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- *
- *
+ * 
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,11 +36,11 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *
+ * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
  *
- * mod_say_en.c -- Say for English
+ * mod_say_tr.c -- Say for Turkish
  *
  */
 
@@ -48,8 +48,8 @@
 #include <math.h>
 #include <ctype.h>
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load);
-SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(mod_say_tr_load);
+SWITCH_MODULE_DEFINITION(mod_say_tr, mod_say_tr_load, NULL, NULL);
 
 
 #define say_num(_sh, num, meth) {										\
@@ -60,25 +60,13 @@ SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
 		say_args->type = SST_ITEMS; say_args->method = meth;			\
 		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
 		if ((tstatus =													\
-			 en_say_general_count(_sh, tmp, say_args))					\
+			 tr_say_general_count(_sh, tmp, say_args))					\
 			!= SWITCH_STATUS_SUCCESS) {									\
 			return tstatus;												\
 		}																\
 		say_args->method = smeth; say_args->type = stype;				\
 	}																	\
 
-#define say_num_goto_status(_sh, num, meth, tag) {						\
-		char tmp[80];													\
-		switch_status_t tstatus;										\
-		switch_say_args_t tsay_args = *say_args;						\
-		tsay_args.type = SST_ITEMS;										\
-		tsay_args.method = meth;										\
-		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
-		if ((tstatus = en_say_general_count(_sh, tmp, &tsay_args)) !=	\
-			SWITCH_STATUS_SUCCESS) {									\
-			switch_goto_status(tstatus, tag);							\
-		}																\
-	}
 
 
 static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
@@ -117,7 +105,7 @@ static switch_status_t play_group(switch_say_method_t method, int a, int b, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
+static switch_status_t tr_say_general_count(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	int in;
 	int x = 0;
@@ -152,7 +140,7 @@ static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *
 				in -= places[(uint32_t) x] * num;
 			}
 		}
-
+		
 
 		switch (say_args->method) {
 		case SSM_PRONOUNCED_YEAR:
@@ -194,7 +182,7 @@ static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
+static switch_status_t tr_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	int32_t t = 0;
 	switch_time_t target = 0, target_now = 0;
@@ -202,7 +190,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	const char *tz = NULL;
 
-	tz = switch_say_file_handle_get_variable(sh, "timezone");
+	tz = switch_say_file_handle_get_variable(sh, "timezone");		
 
 	
 	if (say_args->type == SST_TIME_MEASUREMENT) {
@@ -214,7 +202,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		if (strchr(tosay, ':')) {
 			char *tme = strdup(tosay);
 			char *p;
-			switch_assert(tme);
+
 			if ((p = strrchr(tme, ':'))) {
 				*p++ = '\0';
 				seconds = atoi(p);
@@ -331,8 +319,8 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	case SST_SHORT_DATE_TIME:
 		say_time = 1;
 		//Time is in the future
-		if ((tm.tm_year > tm_now.tm_year) ||
-		    (tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) ||
+		if ((tm.tm_year > tm_now.tm_year) || 
+		    (tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) || 
 		    (tm.tm_year == tm_now.tm_year && tm.tm_mon == tm_now.tm_mon && tm.tm_mday > tm_now.tm_mday))
 		{
 			say_date = 1;
@@ -355,17 +343,16 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			say_dow = 1;
 			break;
 		}
+		if (tm.tm_mon != tm_now.tm_mon) {
+			say_month = say_day = say_dow = 1;
+			break;
+		}
 
 		say_month = say_day = say_dow = 1;
 
 		break;
 	default:
 		break;
-	}
-
-	if (say_date) {
-		say_year = say_month = say_day = say_dow = 1;
-		say_today = say_yesterday = 0;
 	}
 
 	if (say_today) {
@@ -377,6 +364,12 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	if (say_dow) {
 		switch_say_file(sh, "time/day-%d", tm.tm_wday);
 	}
+
+	if (say_date) {
+		say_year = say_month = say_day = say_dow = 1;
+		say_today = say_yesterday = 0;
+	}
+
 	if (say_month) {
 		switch_say_file(sh, "time/mon-%d", tm.tm_mon);
 	}
@@ -453,7 +446,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 }
 
 
-static switch_status_t en_say_money(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
+static switch_status_t tr_say_money(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
 	char *dollars = NULL;
@@ -485,7 +478,7 @@ static switch_status_t en_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	}
 
 	/* Say dollar amount */
-	en_say_general_count(sh, dollars, say_args);
+	tr_say_general_count(sh, dollars, say_args);
 	if (atoi(dollars) == 1) {
 		switch_say_file(sh, "currency/dollar");
 	} else {
@@ -497,7 +490,7 @@ static switch_status_t en_say_money(switch_say_file_handle_t *sh, char *tosay, s
 		/* Say "and" */
 		switch_say_file(sh, "currency/and");
 
-		en_say_general_count(sh, cents, say_args);
+		tr_say_general_count(sh, cents, say_args);
 		if (atoi(cents) == 1) {
 			switch_say_file(sh, "currency/cent");
 		} else {
@@ -512,11 +505,11 @@ static switch_status_t en_say_money(switch_say_file_handle_t *sh, char *tosay, s
 static switch_status_t say_ip(switch_say_file_handle_t *sh,
 							  char *tosay,
 							  switch_say_args_t *say_args)
-
+	
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
+	
 	if (!(a = strdup(tosay))) {
 		abort();
 	}
@@ -539,16 +532,16 @@ static switch_status_t say_ip(switch_say_file_handle_t *sh,
 
 	*d++ = '\0';
 
-	say_num_goto_status(sh, atoi(a), say_args->method, end);
+	say_num(sh, atoi(a), say_args->method);
 	switch_say_file(sh, "digits/dot");
-	say_num_goto_status(sh, atoi(b), say_args->method, end);
+	say_num(sh, atoi(b), say_args->method);
 	switch_say_file(sh, "digits/dot");
-	say_num_goto_status(sh, atoi(c), say_args->method, end);
+	say_num(sh, atoi(c), say_args->method);
 	switch_say_file(sh, "digits/dot");
-	say_num_goto_status(sh, atoi(d), say_args->method, end);
+	say_num(sh, atoi(d), say_args->method);
 
  end:
-
+	
 	free(a);
 
 	return status;
@@ -608,14 +601,14 @@ static switch_new_say_callback_t choose_callback(switch_say_args_t *say_args)
 	case SST_ITEMS:
 	case SST_PERSONS:
 	case SST_MESSAGES:
-		say_cb = en_say_general_count;
+		say_cb = tr_say_general_count;
 		break;
 	case SST_TIME_MEASUREMENT:
 	case SST_CURRENT_DATE:
 	case SST_CURRENT_TIME:
 	case SST_CURRENT_DATE_TIME:
 	case SST_SHORT_DATE_TIME:
-		say_cb = en_say_time;
+		say_cb = tr_say_time;
 		break;
 	case SST_IP_ADDRESS:
 		say_cb = say_ip;
@@ -625,7 +618,7 @@ static switch_new_say_callback_t choose_callback(switch_say_args_t *say_args)
 		say_cb = say_spell;
 		break;
 	case SST_CURRENCY:
-		say_cb = en_say_money;
+		say_cb = tr_say_money;
 		break;
 	case SST_TELEPHONE_NUMBER:
 		say_cb = say_telephone_number;
@@ -644,14 +637,14 @@ static switch_status_t run_callback(switch_new_say_callback_t say_cb, char *tosa
 	switch_say_file_handle_t *sh;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *var_event = NULL;
-
+	
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_get_variables(channel, &var_event);
 	}
 
 	switch_say_file_handle_create(&sh, say_args->ext, &var_event);
-
+	
 	status = say_cb(sh, tosay, say_args);
 
 	if ((*rstr = switch_say_file_handle_detach_path(sh))) {
@@ -664,7 +657,7 @@ static switch_status_t run_callback(switch_new_say_callback_t say_cb, char *tosa
 }
 
 
-static switch_status_t en_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+static switch_status_t tr_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 
 	switch_new_say_callback_t say_cb = NULL;
@@ -679,7 +672,7 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 		if (session && string) {
 			status = switch_ivr_play_file(session, NULL, string, args);
 		}
-
+		
 		switch_safe_free(string);
 	}
 
@@ -687,7 +680,7 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 }
 
 
-static switch_status_t en_say_string(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, char **rstr)
+static switch_status_t tr_say_string(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, char **rstr)
 {
 
 	switch_new_say_callback_t say_cb = NULL;
@@ -708,16 +701,16 @@ static switch_status_t en_say_string(switch_core_session_t *session, char *tosay
 	return status;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_say_tr_load)
 {
 	switch_say_interface_t *say_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
-	say_interface->interface_name = "en";
-	say_interface->say_function = en_say;
-	say_interface->say_string_function = en_say_string;
-
+	say_interface->interface_name = "tr";
+	say_interface->say_function = tr_say;
+	say_interface->say_string_function = tr_say_string;
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

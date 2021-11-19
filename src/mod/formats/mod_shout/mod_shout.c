@@ -502,7 +502,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
+	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "SynSWITCH(mod_shout)/1.0");
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30);	/* eventually timeout connect */
 	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
@@ -862,12 +862,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 				goto error;
 			}
 
-			if (shout_set_url(context->shout, "http://www.freeswitch.org") != SHOUTERR_SUCCESS) {
+			if (shout_set_url(context->shout, "http://www.synway.com") != SHOUTERR_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
-			if (shout_set_description(context->shout, "FreeSWITCH mod_shout Broadcasting Module") != SHOUTERR_SUCCESS) {
+			if (shout_set_description(context->shout, "SynSWITCH mod_shout Broadcasting Module") != SHOUTERR_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting description: %s\n", shout_get_error(context->shout));
 				goto error;
 			}

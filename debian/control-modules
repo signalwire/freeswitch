@@ -129,6 +129,11 @@ Description: HTTP GET with caching
  This module provides an API for making HTTP GET requests where the
  result is cached.
 
+Module: applications/mod_ios_push
+Description: push msg to apple server
+ This module provides an APP for push msg to apple
+ result is cached.
+
 Module: applications/mod_ladspa
 Description: LADSPA
  This module provides an API for accessing LADSPA plugins.
@@ -779,6 +784,10 @@ Description: mod_say_th
 Module: say/mod_say_zh
 Description: mod_say_zh
  Adds mod_say_zh.
+
+Module: say/mod_say_tr
+Description: mod_say_tr
+ Adds mod_say_tr.
 
 ## mod/sdk
 

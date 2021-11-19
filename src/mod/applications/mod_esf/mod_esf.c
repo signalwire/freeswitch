@@ -415,7 +415,7 @@ SWITCH_STANDARD_APP(bcast_function)
 
 
 	if (!(caller_id_name = switch_channel_get_variable(channel, "caller_id_name"))) {
-		caller_id_name = "FreeSWITCH";
+		caller_id_name = "SynSWITCH";//UC
 	}
 
 	strncpy((char *)polycom_packet->cid, caller_id_name, sizeof(polycom_packet->cid));

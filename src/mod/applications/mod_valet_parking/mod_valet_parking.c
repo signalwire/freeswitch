@@ -50,6 +50,9 @@ typedef struct {
 	time_t timeout;
 	int bridged;
 	time_t start_time;
+	char number[40];//UC
+    char other_number[40];//UC
+    char start[40];//UC
 } valet_token_t;
 
 typedef struct {
@@ -324,7 +327,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 	}
 
 	if (zstr(domain_name)) {
-		domain_name = "cluecon.com";
+		domain_name = "synway.com";
 	}
 
 	count = valet_lot_count(lot);
@@ -463,6 +466,10 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 		const char *timeout, *orbit_exten, *orbit_dialplan, *orbit_context, *orbit_exit_key;
 		char *timeout_str = "", *orbit_exten_str = "", *orbit_dialplan_str = "", *orbit_context_str = "", *orbit_exit_key_str = "";
+		const char *number = "", *other_number = "", *direct="";//UC
+        char start[40]="";//UC
+        switch_time_exp_t tm;//UC
+		switch_size_t retsize;//UC
 
 		lot = valet_find_lot(lot_name, SWITCH_TRUE);
 		switch_assert(lot);
@@ -653,6 +660,22 @@ SWITCH_STANDARD_APP(valet_parking_function)
 										   orbit_exit_key_str,
 										   token->uuid, music, lot_name, ext);
 		switch_channel_set_variable(channel, "inline_destination", dest);
+		//start UC
+		direct = switch_channel_get_variable(channel, "direction");
+        number = switch_channel_get_variable(channel, "caller_id_number");
+        other_number = switch_channel_get_variable(channel, "callee_id_number");
+        if(!strcasecmp(direct, "Inbound")) {
+            switch_set_string(token->number, number);
+            switch_set_string(token->other_number, other_number);
+        } else {
+            switch_set_string(token->number, other_number);
+            switch_set_string(token->other_number, number);
+        }
+		switch_time_exp_lt(&tm, (switch_time_t) token->start_time*1000000);
+		switch_strftime_nocheck(start, &retsize, sizeof(start),  "%Y-%m-%d %T", &tm);
+		switch_set_string(token->start, start);
+		switch_channel_set_variable(channel, "valet_start_time", start);
+		//end UC
 
 		if (is_auto) {
 			char tmp[512] = "";
@@ -815,6 +838,47 @@ SWITCH_STANDARD_API(valet_info_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+//start UC
+SWITCH_STANDARD_API(valet_list_function)
+{
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	char *name;
+	int count = 0;
+	valet_lot_t *lot;
+
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_core_hash_first(globals.hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_hash_index_t *i_hi;
+		const void *i_var;
+		void *i_val;
+		char *i_ext;
+		switch_core_hash_this(hi, &var, NULL, &val);
+		name = (char *) var;
+		lot = (valet_lot_t *) val;
+		if (!zstr(cmd) && strcasecmp(cmd, name))
+			continue;
+		switch_mutex_lock(lot->mutex);
+		for (i_hi = switch_core_hash_first(lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
+			valet_token_t *token;
+			switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
+			i_ext = (char *) i_var;
+			token = (valet_token_t *) i_val;
+			if (!token->timeout) {
+                stream->write_function(stream, "%s;%s;%s;%s;%s;%s\n", token->uuid, name, token->number, token->other_number, token->start, i_ext);
+                count++;
+			}
+		}
+		switch_mutex_unlock(lot->mutex);
+	}
+	switch_mutex_unlock(globals.mutex);
+	if(!count) {
+		stream->write_function(stream, "No active parkings.\n");
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+//end UC
 
 static void pres_event_handler(switch_event_t *event)
 {

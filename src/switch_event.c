@@ -227,6 +227,8 @@ static char *EVENT_NAMES[] = {
 	"DEVICE_STATE",
 	"TEXT",
 	"SHUTDOWN_REQUESTED",
+	"CHANNEL_ROUTING",//UC
+	"SEND_EVENT",//UC
 	"ALL"
 };
 
@@ -875,6 +877,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 	int x = 0;
 	switch_ssize_t hlen = -1;
 	unsigned long hash = 0;
+	switch_bool_t bval = SWITCH_FALSE;
 
 	tp = event->headers;
 	hash = switch_ci_hashfunc_default(header_name, &hlen);
@@ -885,7 +888,18 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header_val(switch_event_t *even
 		x++;
 		switch_assert(x < 1000000);
 
-		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (zstr(val) || !strcmp(hp->value, val))) {
+		//added by yy for MN-1749,2018.08.02,UC
+		if(zstr(val))
+		{
+			bval = SWITCH_TRUE;
+		}
+		else if(!zstr(val) && !strcmp(hp->value, val))
+		{
+			bval = SWITCH_TRUE;
+		}
+		//end
+
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name) && (bval == SWITCH_TRUE)) {//UC
 			if (lp) {
 				lp->next = hp->next;
 			} else {
@@ -1973,10 +1987,10 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SynSWITCH-Hostname", switch_core_get_hostname());
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SynSWITCH-Switchname", switch_core_get_switchname());
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SynSWITCH-IPv4", guess_ip_v4);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SynSWITCH-IPv6", guess_ip_v6);
 
 	switch_time_exp_lt(&tm, ts);
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);

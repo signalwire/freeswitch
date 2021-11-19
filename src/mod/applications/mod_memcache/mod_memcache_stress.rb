@@ -4,7 +4,7 @@
 require "../../../../libs/esl/ruby/ESL"
 tries=10000
 
-con = ESL::ESLconnection.new("localhost", "8021", "ClueCon")
+con = ESL::ESLconnection.new("localhost", "8021", "Synway")
 e = con.sendRecv("api load mod_memcache")
 puts e.getBody()
 e = con.sendRecv("api reload mod_memcache")

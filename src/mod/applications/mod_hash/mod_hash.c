@@ -135,6 +135,7 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 	time_t now = switch_epoch_time_now(NULL);
 	limit_hash_private_t *pvt = NULL;
 	uint8_t increment = 1;
+	switch_bool_t delete_hash = SWITCH_FALSE;//first failed mast free,UC
 	limit_hash_item_t remote_usage;
 
 	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
@@ -154,6 +155,7 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 	}
 	if (!(pvt->hash)) {
 		switch_core_hash_init(&pvt->hash);
+		delete_hash = SWITCH_TRUE;//UC
 	}
 	increment = !switch_core_hash_find(pvt->hash, hashkey);
  	remote_usage = get_remote_usage(hashkey);
@@ -212,6 +214,11 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 	}
 
   end:
+  	if(status != SWITCH_STATUS_SUCCESS && delete_hash == SWITCH_TRUE) {//added by yy for mem leak free hash,2021.05.18,UC
+		if (pvt && pvt->hash) {
+			switch_core_hash_destroy(&pvt->hash);
+		}
+	}
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 	return status;
 }
@@ -812,7 +819,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 	while (remote->state > REMOTE_OFF) {
 		if (remote->state != REMOTE_UP) {
 			if  (esl_connect_timeout(&remote->handle, remote->host, (esl_port_t)remote->port, remote->username, remote->password, 5000) == ESL_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote FreeSWITCH (%s) at %s:%d\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected to remote SynSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
 
 				remote->state = REMOTE_UP;
@@ -824,7 +831,7 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 			if (esl_send_recv_timed(&remote->handle, "api hash_dump limit", 5000) != ESL_SUCCESS) {
 				esl_disconnect(&remote->handle);
 				memset(&remote->handle, 0, sizeof(remote->handle));
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnected from remote FreeSWITCH (%s) at %s:%d\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Disconnected from remote SynSWITCH (%s) at %s:%d\n",
 					remote->name, remote->host, remote->port);
 				memset(&remote->handle, 0, sizeof(remote->handle));
 				remote->state = REMOTE_DOWN;
