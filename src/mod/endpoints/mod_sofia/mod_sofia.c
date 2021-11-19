@@ -6140,7 +6140,12 @@ static switch_status_t sofia_stir_shaken_vs_create(stir_shaken_context_t *contex
 		return SWITCH_STATUS_FALSE;
 	}
 	if (mod_sofia_globals.stir_shaken_vs_ca_dir) {
-		stir_shaken_vs_load_ca_dir(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_ca_dir);
+		if (stir_shaken_vs_load_ca_dir(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_ca_dir) != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load trusted root certificates from %s\n", mod_sofia_globals.stir_shaken_vs_ca_dir);
+			return SWITCH_STATUS_FALSE;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded trusted root certificates from %s\n", mod_sofia_globals.stir_shaken_vs_ca_dir);
+		}
 	}
 	stir_shaken_vs_set_x509_cert_path_check(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_cert_path_check);
 	stir_shaken_vs_set_connect_timeout(context, sofia_stir_shaken_vs, 3);
