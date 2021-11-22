@@ -55,6 +55,7 @@ static struct {
 	switch_queue_t *event_queue;
 	switch_memory_pool_t *memory_pool;
 	uint32_t total_tasks;
+	uint32_t active_tasks;
 } globals = { 0 };
 
 static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
@@ -145,6 +146,9 @@ static int task_thread_loop(int done)
 
 			tofree = tp;
 			tp = tp->next;
+
+			globals.active_tasks--;
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting task %u %s (%s)\n",
 							  tofree->task.task_id, tofree->desc, switch_str_nil(tofree->task.group));
 
@@ -218,6 +222,15 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task()
 	return total;
 }
 
+SWITCH_DECLARE(uint32_t) switch_scheduler_get_active_task()
+{
+	uint32_t active;
+	switch_mutex_lock(globals.task_mutex);
+	active = globals.active_tasks;
+	switch_mutex_unlock(globals.task_mutex);
+	return active;
+}
+
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	switch_scheduler_func_t func,
 	const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
@@ -270,6 +283,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
 	for (container->task.task_id = 0; !container->task.task_id; container->task.task_id = ++globals.task_id);
 
 	globals.total_tasks++;
+	globals.active_tasks++;
 
 	tp = container;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added task %u %s (%s) to run at %" SWITCH_INT64_T_FMT "\n",
@@ -329,18 +343,22 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group_desc(const char *group,
 	switch_ssize_t hlen = -1;
 	unsigned long hash = 0;
 
-	if (zstr(group)) {
+	if (zstr(group) && zstr(desc)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty group and desc");
 		return 0;
 	}
 
-	hash = switch_ci_hashfunc_default(group, &hlen);
+	if (!zstr(group)) {
+		hash = switch_ci_hashfunc_default(group, &hlen);
+	}
 
 	switch_mutex_lock(globals.task_mutex);
 	for (tp = globals.task_list; tp; tp = tp->next) {
 		if (tp->destroyed) {
 			continue;
 		}
-		if (hash == tp->task.hash && !strcmp(tp->task.group, group) && (zstr(desc) || !strcmp(tp->desc, desc))) {
+		
+		if ((zstr(group) || (hash == tp->task.hash && !strcmp(tp->task.group, group))) && (zstr(desc) || !strcmp(tp->desc, desc))) {
 			if (switch_test_flag(tp, SSHF_NO_DEL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeletable task #%u (group %s)(desc %s)\n",
 								  tp->task.task_id, group, tp->desc);
@@ -361,9 +379,47 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group_desc(const char *group,
 	return delcnt;
 }
 
+void switch_scheduler_print_task(switch_stream_handle_t *stream)
+{
+	switch_scheduler_task_container_t *tp;
+	const char *line = "=========================================================================================================";
+
+	stream->write_function(stream, "%10s%40s%30s%13s  %s\n", "Id", "Group", "Desc", "Deletable", "State");
+	stream->write_function(stream, "%s\n", line);
+	switch_mutex_lock(globals.task_mutex);
+	for (tp = globals.task_list; tp; tp = tp->next) {
+		int64_t now = switch_epoch_time_now(NULL);
+		int32_t diff = 0;
+			
+		if (now >= tp->task.runtime) {
+			diff = (int32_t) (now - tp->task.runtime);
+		} else {
+			diff = (int32_t) (tp->task.runtime - now);
+		}
+
+		stream->write_function(stream, "%10u%40s%30s%13s", tp->task.task_id, tp->task.group, tp->desc, switch_test_flag(tp, SSHF_NO_DEL) ? "NO":"YES");
+
+		if(tp->destroyed) {
+			stream->write_function(stream, "  %s\n", "Destroyed");
+		} else if(tp->destroy_requested) {
+			stream->write_function(stream, "  %s\n", "Destroying");
+		} else if(tp->running) {
+			stream->write_function(stream, "  %s(%d)\n", "Executing", diff);
+		} else {
+			stream->write_function(stream, "  %s(%d)\n", "Waiting", diff);
+		}
+	}
+	switch_mutex_unlock(globals.task_mutex);
+}
+
 SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 {
 	return switch_scheduler_del_task_group_desc(group, NULL);
+}
+
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_desc(const char *desc)
+{
+	return switch_scheduler_del_task_group_desc(NULL, desc);
 }
 
 switch_thread_t *task_thread_p = NULL;
