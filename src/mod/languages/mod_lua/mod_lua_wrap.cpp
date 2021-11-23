@@ -9548,6 +9548,7 @@ static int _wrap_Dbh_test_reactive__SWIG_1(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
+  switch_assert(arg1);
   result = (bool)(arg1)->test_reactive(arg2,arg3);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;
@@ -9575,6 +9576,7 @@ static int _wrap_Dbh_test_reactive__SWIG_2(lua_State* L) {
   }
   
   arg2 = (char *)lua_tostring(L, 2);
+  switch_assert(arg1);
   result = (bool)(arg1)->test_reactive(arg2);
   lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
   return SWIG_arg;

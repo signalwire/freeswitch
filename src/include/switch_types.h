@@ -850,6 +850,9 @@ typedef enum {
 	SWITCH_RTP_FLAG_PASSTHRU,
 	SWITCH_RTP_FLAG_SECURE_SEND_MKI,
 	SWITCH_RTP_FLAG_SECURE_RECV_MKI,
+	SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR,
+	SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT,
+	SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -1142,6 +1145,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_DEFLECT,
 	SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ,
 	SWITCH_MESSAGE_INDICATE_DISPLAY,
+	SWITCH_MESSAGE_INDICATE_MEDIA_PARAMS,
 	SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
 	SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
 	SWITCH_MESSAGE_INDICATE_VIDEO_SYNC,
@@ -1178,6 +1182,7 @@ typedef enum {
 	SWITCH_MESSAGE_RESAMPLE_EVENT,
 	SWITCH_MESSAGE_HEARTBEAT_EVENT,
 	SWITCH_MESSAGE_INDICATE_SESSION_ID,
+	SWITCH_MESSAGE_INDICATE_PROMPT,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1331,13 +1336,17 @@ typedef enum {
 } switch_core_session_message_flag_enum_t;
 typedef uint32_t switch_core_session_message_flag_t;
 
+typedef struct switch_core_session switch_core_session_t;
+static inline switch_core_session_t *switch_core_session_type_check(switch_core_session_t *session) { return session; }
+static inline const char *switch_const_char_type_check(const char *str) { return str; }
+
 #define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
 #define SWITCH_CHANNEL_LOG_CLEAN SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
 #define SWITCH_CHANNEL_SESSION_LOG_CLEAN(x) SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, switch_core_session_get_uuid((x))
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
-#define SWITCH_CHANNEL_SESSION_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)(x)
+#define SWITCH_CHANNEL_SESSION_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)switch_core_session_type_check(x)
 #define SWITCH_CHANNEL_CHANNEL_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)switch_channel_get_session(x)
-#define SWITCH_CHANNEL_UUID_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, (x)
+#define SWITCH_CHANNEL_UUID_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, switch_const_char_type_check(x)
 
 typedef enum {
 	CCS_DOWN,
@@ -1457,6 +1466,7 @@ typedef enum {
 	CC_IO_OVERRIDE,
 	CC_RTP_RTT,
 	CC_MSRP,
+	CC_MUTE_VIA_MEDIA_STREAM,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CC_FLAG_MAX
 } switch_channel_cap_t;
@@ -1536,6 +1546,7 @@ typedef enum {
 	CF_INTERCEPTED,
 	CF_VIDEO_REFRESH_REQ,
 	CF_MANUAL_VID_REFRESH,
+	CF_MANUAL_MEDIA_PARAMS,
 	CF_SERVICE_AUDIO,
 	CF_SERVICE_VIDEO,
 	CF_ZRTP_PASSTHRU_REQ,
@@ -1570,6 +1581,7 @@ typedef enum {
 	CF_T38_PASSTHRU,
 	CF_DROP_DTMF,
 	CF_REINVITE,
+	CF_NOSDP_REINVITE,
 	CF_AUTOFLUSH_DURING_BRIDGE,
 	CF_RTP_NOTIMER_DURING_BRIDGE,
 	CF_AVPF,
@@ -1597,7 +1609,7 @@ typedef enum {
 	CF_VIDEO_DECODED_READ,
 	CF_VIDEO_DEBUG_READ,
 	CF_VIDEO_DEBUG_WRITE,
-	CF_VIDEO_ONLY,
+	CF_NO_RECOVER,
 	CF_VIDEO_READY,
 	CF_VIDEO_MIRROR_INPUT,
 	CF_VIDEO_READ_FILE_ATTACHED,
@@ -1634,6 +1646,10 @@ typedef enum {
 	CF_RFC7329_COMPAT,
 	CF_MEDIA_WRITABLE_FIRED,
 	CF_3PCC_PROXY,
+	CF_REATTACHED,
+	CF_VIDEO_READ_TAPPED,
+	CF_VIDEO_WRITE_TAPPED,
+	CF_DEVICES_CHANGED,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1912,7 +1928,8 @@ typedef enum {
 	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
 	SMBF_READ_VIDEO_PATCH = (1 << 24),
 	SMBF_READ_TEXT_STREAM = (1 << 25),
-	SMBF_FIRST = (1 << 26)
+	SMBF_FIRST = (1 << 26),
+	SMBF_PAUSE = (1 << 27)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -2049,6 +2066,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_SEND_INFO
     SWITCH_EVENT_RECV_INFO
     SWITCH_EVENT_RECV_RTCP_MESSAGE
+    SWITCH_EVENT_SEND_RTCP_MESSAGE
     SWITCH_EVENT_CALL_SECURE
     SWITCH_EVENT_NAT            	- NAT Management (new/del/status)
     SWITCH_EVENT_RECORD_START
@@ -2145,6 +2163,7 @@ typedef enum {
 	SWITCH_EVENT_SEND_INFO,
 	SWITCH_EVENT_RECV_INFO,
 	SWITCH_EVENT_RECV_RTCP_MESSAGE,
+	SWITCH_EVENT_SEND_RTCP_MESSAGE,
 	SWITCH_EVENT_CALL_SECURE,
 	SWITCH_EVENT_NAT,
 	SWITCH_EVENT_RECORD_START,
@@ -2248,7 +2267,12 @@ typedef enum {
 	SWITCH_CAUSE_DECLINE = 616,
 	SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 617,
 	SWITCH_CAUSE_NOT_ACCEPTABLE = 618,
-	SWITCH_CAUSE_UNWANTED = 619
+	SWITCH_CAUSE_UNWANTED = 619,
+	SWITCH_CAUSE_NO_IDENTITY = 620,
+	SWITCH_CAUSE_BAD_IDENTITY_INFO = 621,
+	SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 622,
+	SWITCH_CAUSE_INVALID_IDENTITY = 623,
+	SWITCH_CAUSE_STALE_DATE = 624
 } switch_call_cause_t;
 
 typedef enum {
@@ -2295,7 +2319,9 @@ typedef enum {
 	SCSC_SPS_PEAK_FIVEMIN,
 	SCSC_SESSIONS_PEAK,
 	SCSC_SESSIONS_PEAK_FIVEMIN,
-	SCSC_LOG_TRUNCATE
+	SCSC_LOG_TRUNCATE,
+	SCSC_MDNS_RESOLVE,
+	SCSC_SHUTDOWN_CAUSE
 } switch_session_ctl_t;
 
 typedef enum {
@@ -2328,7 +2354,6 @@ typedef struct switch_rtcp_frame switch_rtcp_frame_t;
 typedef struct switch_channel switch_channel_t;
 typedef struct switch_sql_queue_manager switch_sql_queue_manager_t;
 typedef struct switch_file_handle switch_file_handle_t;
-typedef struct switch_core_session switch_core_session_t;
 typedef struct switch_caller_profile switch_caller_profile_t;
 typedef struct switch_caller_extension switch_caller_extension_t;
 typedef struct switch_caller_application switch_caller_application_t;
@@ -2811,6 +2836,7 @@ typedef struct switch_mm_s {
 	int cbr;
 	float fps;
 	float source_fps;
+	int source_kps;
 	int vbuf;
 	switch_video_profile_t vprofile;
 	switch_video_encode_speed_t vencspd;

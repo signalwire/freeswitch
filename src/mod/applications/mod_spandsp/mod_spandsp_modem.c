@@ -279,11 +279,11 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	modem->stty = ptsname(modem->master);
 	if (modem->stty == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to obtain slave pty filename\n");
-	}
-
-	modem->slave = open(modem->stty, O_RDWR);
-	if (modem->slave < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to open slave pty %s\n", modem->stty);
+	} else {
+		modem->slave = open(modem->stty, O_RDWR);
+		if (modem->slave < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Fatal error: failed to open slave pty %s\n", modem->stty);
+		}
 	}
 #endif
 

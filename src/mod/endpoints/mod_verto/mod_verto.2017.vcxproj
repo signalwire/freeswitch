@@ -47,6 +47,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="..\..\..\..\w32\openssl.props" />
+  <Import Project="$(SolutionDir)\w32\libks.props" Condition=" '$(libksPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -135,12 +136,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_verto.c" />
-    <ClCompile Include="ws.c">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
     <ClCompile Include="mcast\mcast.c" />
     <ClCompile Include="mcast\mcast_cpp.cpp" />
   </ItemGroup>

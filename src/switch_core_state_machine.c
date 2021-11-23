@@ -133,13 +133,8 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 		}
 	}
 
-	rec = switch_channel_test_flag(session->channel, CF_RECOVERING);
 	switch_channel_clear_flag(session->channel, CF_RECOVERING);
-
-	if (!rec) {
-		switch_core_recovery_untrack(session, SWITCH_TRUE);
-	}
-
+	switch_core_recovery_untrack(session, SWITCH_TRUE);
 
 	if (!switch_channel_test_flag(session->channel, CF_ZOMBIE_EXEC)) {
 		return;
@@ -344,7 +339,9 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	switch_channel_clear_flag(session->channel, CF_RESET);
 
 	switch_core_session_video_reset(session);
-
+	switch_channel_audio_sync(session->channel);
+	switch_channel_video_sync(session->channel);
+	
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return;

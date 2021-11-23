@@ -37,7 +37,6 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
-%define build_mod_opusfile 0
 %define build_mod_v8 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
@@ -46,7 +45,6 @@
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
-%{?with_mod_opusfile:%define build_mod_opusfile 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
 
 %define nonparsedversion 1.7.0
@@ -142,7 +140,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.3
+BuildRequires: sofia-sip-devel >= 1.13.6
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -169,6 +167,19 @@ Requires: libjpeg
 Requires: zlib
 Requires: libxml2
 Requires: libsndfile
+
+%if 0%{?rhel} == 7
+# to build mariadb module required gcc >= 4.9 (more details GH #1046)
+# On CentOS 7 dist you can install fresh gcc using command
+# yum install centos-release-scl && yum install devtoolset-9
+BuildRequires: devtoolset-9
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+# On CentOS 8 dist you can install fresh gcc using command
+# dnf install gcc-toolset-9
+BuildRequires: gcc-toolset-9
+%endif
 
 %if 0%{?suse_version} > 800
 PreReq:       %insserv_prereq %fillup_prereq
@@ -1094,17 +1105,15 @@ BuildRequires:	lame-devel
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
 
-%if %{build_mod_opusfile}
-%package format-mod-opusfile
+%package format-opusfile
 Summary:	Plays Opus encoded files
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	opusfile >= 0.5
 BuildRequires:	opusfile-devel >= 0.5
 
-%description format-mod-opusfile
+%description format-opusfile
 Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
-%endif
 
 %if %{build_mod_ssml}
 %package format-ssml
@@ -1501,13 +1510,10 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 #					File and Audio Format Handlers
 #
 ######################################################################################################################
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile formats/mod_portaudio_stream \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
-%endif
-%if %{build_mod_opusfile}
-FORMATS_MODULES+=" formats/mod_opusfile"
 %endif
 
 ######################################################################################################################
@@ -1575,6 +1581,16 @@ export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9 (more details GH #1046)
+export CFLAGS="$CFLAGS -Wno-error=expansion-to-defined"
+. /opt/rh/devtoolset-9/enable
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+. /opt/rh/gcc-toolset-9/enable
+%endif
+
 ######################################################################################################################
 #
 #				Bootstrap, Configure and Build the whole enchilada
@@ -1635,6 +1651,15 @@ cd libs/esl
 #
 ######################################################################################################################
 %install
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9
+. /opt/rh/devtoolset-9/enable
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+. /opt/rh/gcc-toolset-9/enable
+%endif
+
 
 %{__make} DESTDIR=%{buildroot} install
 
@@ -2316,6 +2341,9 @@ fi
 
 %files format-native-file
 %{MODINSTDIR}/mod_native_file.so*
+
+%files format-opusfile
+%{MODINSTDIR}/mod_opusfile.so*
 
 %files format-portaudio-stream
 %{MODINSTDIR}/mod_portaudio_stream.so*

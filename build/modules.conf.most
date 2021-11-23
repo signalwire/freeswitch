@@ -47,6 +47,7 @@ applications/mod_soundtouch
 applications/mod_spandsp
 applications/mod_spy
 applications/mod_stress
+applications/mod_test
 applications/mod_translate
 applications/mod_valet_parking
 applications/mod_video_filter
@@ -127,7 +128,7 @@ languages/mod_java
 languages/mod_lua
 languages/mod_managed
 languages/mod_perl
-languages/mod_python
+languages/mod_python3
 #languages/mod_v8
 languages/mod_yaml
 loggers/mod_console
