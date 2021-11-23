@@ -2680,6 +2680,22 @@ const char *conference_get_variable(conference_obj_t *conference, const char *va
 	return rval;
 }
 
+static void check_var_event(conference_obj_t *conference, switch_event_t *var_event)
+{
+	switch_event_header_t *hi = NULL;
+
+	for (hi = var_event->headers; hi; hi = hi->next) {
+		char *vvar = hi->name;
+		char *vval = hi->value;
+		if (vvar && vval && !strncasecmp(vvar, "confvar_", 8)) {
+			vvar += 8;
+			if (vvar) {
+				conference_set_variable(conference, vvar, vval);
+			}
+		}
+	}
+}
+
 /* create a new conferene with a specific profile */
 conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool)
 {
@@ -2784,6 +2800,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *video_codec_config_profile_name = NULL;
 	int tmp;
 	int heartbeat_period_sec = 0;
+	switch_event_t *var_event = NULL;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -3688,6 +3705,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_mutex_init(&conference->canvas_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+
+	switch_core_get_variables(&var_event);
+	check_var_event(conference, var_event);
+	switch_event_destroy(&var_event);
+
+	switch_channel_get_variables(channel, &var_event);
+	check_var_event(conference, var_event);
+	switch_event_destroy(&var_event);
 
 	switch_mutex_lock(conference_globals.hash_mutex);
 	conference_utils_set_flag(conference, CFLAG_INHASH);
