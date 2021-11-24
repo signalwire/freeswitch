@@ -632,8 +632,8 @@ void OSSApplication::setup()
 {
 	poco_assert (_pInstance == 0);
 
-	_pConfig->add(new SystemConfiguration, PRIO_SYSTEM, false, false);
-	_pConfig->add(new MapConfiguration, PRIO_APPLICATION, true, false);
+	_pConfig->add(new SystemConfiguration, PRIO_SYSTEM, false);
+	_pConfig->add(new MapConfiguration, PRIO_APPLICATION, true);
 
 	addSubsystem(new OSSLoggingSubsystem);
 
@@ -760,7 +760,7 @@ int OSSApplication::loadConfiguration(int priority)
     //
     if (findAppConfigFile(appPath.getBaseName(), "properties", cfgPath))
     {
-        _pConfig->add(new PropertyFileConfiguration(cfgPath.toString()), priority, false, false);
+        _pConfig->add(new PropertyFileConfiguration(cfgPath.toString()), priority, false);
         _pConfig->setString("application.configDir", cfgPath.parent().toString());
         return 1;
     }
@@ -774,14 +774,14 @@ void OSSApplication::loadConfiguration(const std::string& path, int priority)
 Path confPath(path);
 std::string ext = confPath.getExtension();
 if (icompare(ext, "properties") == 0)
-    _pConfig->add(new PropertyFileConfiguration(confPath.toString()), priority, false, false);
+    _pConfig->add(new PropertyFileConfiguration(confPath.toString()), priority, false);
 else
     throw Poco::InvalidArgumentException("Unsupported configuration file type", ext);
 }
 
 void OSSApplication::loadConfiguration(std::istream& strm, int priority)
 {
-  _pConfig->add(new PropertyFileConfiguration(strm), priority, false, false);
+  _pConfig->add(new PropertyFileConfiguration(strm), priority, false);
 }
 
 std::string OSSApplication::commandName() const

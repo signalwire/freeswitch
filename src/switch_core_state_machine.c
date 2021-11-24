@@ -56,7 +56,6 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
 	switch_rtp_stats_t *audio_stats = NULL;
-	int rec;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));

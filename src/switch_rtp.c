@@ -8196,7 +8196,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 #else
 		if (!using_ice(rtp_session) && bytes) {
-			if (!rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
 				goto recvfrom;
 			}
 		}

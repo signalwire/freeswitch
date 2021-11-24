@@ -565,7 +565,7 @@ SWITCH_DECLARE(void) switch_log_meta_vprintf(switch_text_channel_t channel, cons
 										const char *userdata, switch_log_level_t level, cJSON **meta, const char *fmt, va_list ap)
 {
 	cJSON *log_meta = NULL;
-	char *data, *new_data = NULL;
+	char *data = NULL, *new_data = NULL;
 	char *new_fmt = NULL;
 	int ret = 0;
 	FILE *handle;
