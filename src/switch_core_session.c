@@ -2743,9 +2743,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	}
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_goto_status(SWITCH_STATUS_FALSE, done);
+		if (app == "spandsp_start_dtmf" && switch_channel_get_variable(session->channel, "inbound_bypass_media")){
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Invalid spandsp application error ignored!\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			switch_goto_status(SWITCH_STATUS_FALSE, done);
+		}
 	}
 
 	if (!application_interface->application_function) {
