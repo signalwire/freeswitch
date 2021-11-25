@@ -17,6 +17,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/bind/bind.hpp>
 
 #include "Telnyx/JSON/reader.h"
 #include "Telnyx/JSON/writer.h"

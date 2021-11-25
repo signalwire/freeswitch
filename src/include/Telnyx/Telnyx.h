@@ -224,7 +224,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <boost/assert.hpp>
-#include <boost/bind.hpp>
 #include <boost/function.hpp>
 
 

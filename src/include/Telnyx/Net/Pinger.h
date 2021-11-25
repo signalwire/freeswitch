@@ -12,7 +12,6 @@
 #define OSS_PINGER_H_INCLUDED
 
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <istream>
 #include <iostream>

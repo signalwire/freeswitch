@@ -13,7 +13,6 @@
 #include <signal.h>
 #include <boost/filesystem.hpp>
 #include <boost/function.hpp>
-#include <boost/bind.hpp>
 
 
 namespace Telnyx {
