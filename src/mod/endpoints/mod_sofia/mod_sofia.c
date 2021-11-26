@@ -6800,7 +6800,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
 	switch_console_set_complete("add sofia ::[help:status");
-	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
+	switch_console_set_complete("add sofia status profile ::sofia::list_profiles ::[reg:user:pres");
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
 
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
