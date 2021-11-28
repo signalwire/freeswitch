@@ -205,6 +205,8 @@
         <!-- <param name="bitpacking" value="aal2"/> -->
         <!-- max number of open dialogs in proceeding -->
         <!-- <param name="max-proceeding" value="1000"/> -->
+        <!-- max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
+        <!-- <param name="max-recv-requests-per-second" value="0"/> -->
         <!-- session timers for all call to expire after the specified seconds -->
         <!-- <param name="session-timeout" value="1800"/> -->
         <!-- Can be 'true' or 'contact' -->
@@ -329,6 +331,14 @@
              By default authentication is enabled.
              disable-auth-messages param has higher priority than the deprecated auth-messages param. -->
         <!-- <param name="disable-auth-messages" value="true"/> -->
+
+        <!-- NOTICE: auth-subscriptions was deprecated and authentication is enabled by default now.
+             See disable-auth-subscriptions param for more details. -->
+        <!-- <param name="auth-subscriptions" value="false"/> -->
+        <!-- Uncomment to stop authentication on subscriptions packets.
+             By default authentication is enabled.
+             disable-auth-subscriptions param has higher priority than the deprecated auth-subscriptions param. -->
+        <!-- <param name="disable-auth-subscriptions" value="true"/> -->
 
         <!-- external_sip_ip
              Used as the public IP address for SDP.

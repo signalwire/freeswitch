@@ -2858,6 +2858,10 @@ fct_standard_logger__on_chk(
     /* Only record failures. */
     if ( !fctchk__is_pass(e->chk) )
     {
+        printf("\nTEST FAIL: %s(%d): %s\n",
+            fctchk__file(e->chk),
+            fctchk__lineno(e->chk),
+            fctchk__msg(e->chk));
         fct_logger_record_failure(e->chk, &(logger->failed_cndtns_list));
     }
 }

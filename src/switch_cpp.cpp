@@ -1055,7 +1055,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndDetectSpeech(char *file, char *engine
 
 	char *result = NULL;
 
-	switch_status_t status = switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
+	switch_status_t status = switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, ap);
 	if (status == SWITCH_STATUS_SUCCESS) {
 		// good
 	} else if (status == SWITCH_STATUS_GENERR) {
@@ -1063,12 +1063,12 @@ SWITCH_DECLARE(char *) CoreSession::playAndDetectSpeech(char *file, char *engine
 	} else if (status == SWITCH_STATUS_NOT_INITALIZED) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ASR INIT ERROR\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ERROR\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ERROR status = %d\n", status);
 	}
 
 	end_allow_threads();
 
-	return result; // remeber to free me
+	return result ? strdup(result) : NULL; // remeber to free me
 }
 
 SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method, const char *say_gender)

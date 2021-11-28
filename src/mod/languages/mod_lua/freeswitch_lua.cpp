@@ -568,11 +568,11 @@ void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
 
 		switch_assert(*json);
 
-		if (lua_isnumber(L, -2)) {
+		if (lua_type(L, -2) == LUA_TNUMBER) {
 			ADDITEM(*json, key, cJSON_CreateNumber(lua_tonumber(L, -2)));
-		} else if (lua_isstring(L, -2)) {
+		} else if (lua_type(L, -2) == LUA_TSTRING) {
 			ADDITEM(*json, key, cJSON_CreateString(lua_tostring(L, -2)));
-		} else if (lua_isboolean(L, -2)) {
+		} else if (lua_type(L, -2) == LUA_TBOOLEAN) {
 			ADDITEM(*json, key, cJSON_CreateBool(lua_toboolean(L, -2)));
 		} else if (lua_isnil(L, -2)) {
 			ADDITEM(*json, key, cJSON_CreateNull());
