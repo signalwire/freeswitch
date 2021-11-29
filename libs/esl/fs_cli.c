@@ -9,7 +9,7 @@
 #include <getopt.h>
 
 #define CMD_BUFLEN 1024
-
+#define DISABLE_CC//UC
 #ifndef WIN32
 #include <esl_config_auto.h>
 #include <sys/select.h>
@@ -897,7 +897,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			!strcasecmp(cmd, "...") ||
 			!strcasecmp(cmd, "bye")
 			) {
-			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com/\n");
+			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at Synway http://www.synway.com/\n");
 			r = -1; goto end;
 		} else if (!strncasecmp(cmd, "logfilter", 9)) {
 			cmd += 9;
@@ -1043,18 +1043,13 @@ static const char *basic_gets(int *cnt)
 
 static const char *banner =
 	".=======================================================.\n"
-    "|            _____ ____     ____ _     ___              |\n"
-    "|           |  ___/ ___|   / ___| |   |_ _|             |\n"
-    "|           | |_  \\___ \\  | |   | |    | |              |\n"
-    "|           |  _|  ___) | | |___| |___ | |              |\n"
-    "|           |_|   |____/   \\____|_____|___|             |\n"
-	"|                                                       |\n"
+	"|			 											 |\n"
+	"|					█▀▀ █▀▀ █▀▀ █░░ ░▀░ 			 	 |\n"
+	"|					▀▀█ ▀▀█ █░░ █░░ ▀█▀ 			 	 |\n"
+	"|					▀▀▀ ▀▀▀ ▀▀▀ ▀▀▀ ▀▀▀ 			 	 |\n"
+	"|			 											 |\n"
 	".=======================================================.\n"
-    "| Anthony Minessale II, Ken Rice,                       |\n"
-    "| Michael Jerris, Travis Cross                          |\n"
-    "| FreeSWITCH (http://www.freeswitch.org)                |\n"
-    "| Paypal Donations Appreciated: paypal@freeswitch.org   |\n"
-    "| Brought to you by ClueCon http://www.cluecon.com/     |\n"
+    "| SynSWITCH (http://www.synway.com)                	 |\n"
     ".=======================================================.\n"
     "\n";
 
@@ -1285,7 +1280,7 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				esl_set_string(cur_cat, cfg.category);
 				esl_set_string(profiles[pcount].name, cur_cat);
 				esl_set_string(profiles[pcount].host, "127.0.0.1");
-				esl_set_string(profiles[pcount].pass, "ClueCon");
+				esl_set_string(profiles[pcount].pass, "Synway");
 				profiles[pcount].port = 8021;
 				set_fn_keys(&profiles[pcount]);
 				esl_set_string(profiles[pcount].prompt_color, prompt_color);
@@ -1517,7 +1512,7 @@ int main(int argc, char *argv[])
 	}
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
-	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
+	strncpy(internal_profile.pass, "Synway", sizeof(internal_profile.pass));
 	strncpy(internal_profile.name, hostname, sizeof(internal_profile.name));
 	internal_profile.port = 8021;
 	set_fn_keys(&internal_profile);
@@ -1759,7 +1754,7 @@ int main(int argc, char *argv[])
 		expand_prompt(profile->prompt_string, sizeof(profile->prompt_string), profile);
 		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "%s> ", profile->prompt_string);
 	} else {
-		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "freeswitch@%s> ", switchname);
+		snprintf(bare_prompt_str, sizeof(bare_prompt_str), "synswitch@%s> ", switchname);
 	}
 
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);

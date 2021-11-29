@@ -152,6 +152,8 @@ static const char *EVENT_NAMES[] = {
 	"DEVICE_STATE",
 	"TEXT",
 	"SHUTDOWN_REQUESTED",
+	"CHANNEL_ROUTING",//UC
+	"SEND_EVENT",//UC
 	"ALL"
 };
 

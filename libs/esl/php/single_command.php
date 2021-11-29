@@ -6,7 +6,7 @@ if ($argc > 1) {
     array_shift($argv);
     $command = sprintf('%s', implode(' ', $argv));
     printf("Command to run is: %s\n", $command);
-    $esl = new eslConnection('127.0.0.1', '8021', 'ClueCon');
+    $esl = new eslConnection('127.0.0.1', '8021', 'Synway');
     $e = $esl->api("$command");
     print $e->getBody();
 } else {
