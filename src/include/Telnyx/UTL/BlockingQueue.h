@@ -10,7 +10,6 @@
 #include <queue>
 #include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
-#include <boost/bind.hpp>
 #include "Telnyx/UTL/Thread.h"
 #include <unistd.h>
 

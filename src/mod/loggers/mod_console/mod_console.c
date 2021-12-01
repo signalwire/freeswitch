@@ -77,7 +77,8 @@ static switch_log_json_format_t json_format = {
 	{ "message", NULL }, // full_message
 	{ NULL, NULL }, // short_message
 	"", // custom_field_prefix
-	0.0 // timestamp_divisor
+	0.0, // timestamp_divisor
+	{ "sequence", NULL } // sequence
 };
 
 static char *to_json_string(const switch_log_node_t *node)
@@ -177,6 +178,8 @@ static switch_status_t config_logger(void)
 				json_format.full_message.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
 			} else if (!strcasecmp(var, "short-message")) {
 				json_format.short_message.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
+			} else if (!strcasecmp(var, "sequence")) {
+				json_format.sequence.name = zstr(val) ? NULL : switch_core_strdup(module_pool, val);
 			}
 		}
 		for (param = switch_xml_child(settings, "config"); param; param = param->next) {

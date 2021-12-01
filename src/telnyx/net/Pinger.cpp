@@ -9,6 +9,8 @@
 //
 
 #include "Telnyx/Net/Pinger.h"
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 
 
 namespace Telnyx {

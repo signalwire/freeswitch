@@ -722,6 +722,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+		switch_safe_free(dup);
 		return CC_ERROR;
 	}
 
