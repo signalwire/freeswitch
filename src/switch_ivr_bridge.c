@@ -627,6 +627,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 #if DEBUG_RTP
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #17 %p -> %p\n", (void*)session_a, (void*)session_b);
 #endif
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_WARNING, "Audio bridge thread: kill channel B: %p -> %p\n", (void*)session_a, (void*)session_b);
+
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.numeric_arg = 42;
 			msg.string_arg = data->b_uuid;
