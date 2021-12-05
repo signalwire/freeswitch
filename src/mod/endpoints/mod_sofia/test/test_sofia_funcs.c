@@ -112,6 +112,7 @@ FST_TEST_BEGIN(originate_test)
 }
 FST_TEST_END()
 
+#if HAVE_STIRSHAKEN
 FST_TEST_BEGIN(sofia_verify_identity_test_no_identity)
 {
 	switch_core_session_t *session = NULL;
@@ -255,6 +256,7 @@ FST_TEST_BEGIN(sofia_auth_identity_test_attest_a_date)
 	switch_sleep(10 * 1000 * 1000);
 }
 FST_TEST_END()
+#endif 
 
 FST_MODULE_END()
 

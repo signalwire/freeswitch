@@ -1,0 +1,1495 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+  <section name="configuration" description="Various Configuration">
+
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_sofia"/>
+        <load module="mod_loopback"/>
+        <load module="mod_dptools"/>
+        <load module="mod_dialplan_xml"/>
+        <load module="mod_commands"/>
+        <load module="mod_test"/> 
+        <load module="mod_tone_stream"/>
+        <load module="mod_voicemail"/>
+        <load module="mod_sndfile"/>
+        <load module="mod_say_en" />
+      </modules>
+    </configuration>
+
+<configuration name="voicemail.conf" description="Voicemail">
+  <settings>
+  </settings>
+  <profiles>
+    <profile name="default">
+      <param name="file-extension" value="wav"/>
+      <param name="terminator-key" value="#"/>
+      <param name="max-login-attempts" value="3"/>
+      <param name="digit-timeout" value="10000"/>
+      <param name="min-record-len" value="3"/>
+      <param name="max-record-len" value="300"/>
+      <param name="max-retries" value="3"/>
+      <param name="tone-spec" value="%(1000, 0, 640)"/>
+      <param name="callback-dialplan" value="XML"/>
+      <param name="callback-context" value="default"/>
+      <param name="play-new-messages-key" value="1"/>
+      <param name="play-saved-messages-key" value="2"/>
+      <!-- play-new-messages-lifo and play-saved-messages-lifo default is false, playing oldest messages first
+	   <param name="play-new-messages-lifo" value="false"/>
+	   <param name="play-saved-messages-lifo" value="false"/>
+      -->
+      <param name="login-keys" value="0"/>
+      <param name="main-menu-key" value="0"/>
+      <param name="config-menu-key" value="5"/>
+      <param name="record-greeting-key" value="1"/>
+      <param name="choose-greeting-key" value="2"/>
+      <param name="change-pass-key" value="6"/>
+      <param name="record-name-key" value="3"/>
+      <param name="record-file-key" value="3"/>
+      <param name="listen-file-key" value="1"/>
+      <param name="save-file-key" value="2"/>
+      <param name="delete-file-key" value="7"/>
+      <param name="undelete-file-key" value="8"/>
+      <param name="email-key" value="4"/>
+      <param name="pause-key" value="0"/>
+      <param name="restart-key" value="1"/>
+      <param name="ff-key" value="6"/>
+      <param name="rew-key" value="4"/>
+      <param name="skip-greet-key" value="#"/>
+      <param name="previous-message-key" value="1"/>
+      <param name="next-message-key" value="3"/>
+      <param name="skip-info-key" value="*"/>
+      <param name="repeat-message-key" value="0"/>
+      <param name="record-silence-threshold" value="200"/>
+      <param name="record-silence-hits" value="2"/>
+      <param name="web-template-file" value="web-vm.tpl"/>
+      <param name="db-password-override" value="false"/>
+      <param name="allow-empty-password-auth" value="true"/>
+      <!-- if you need to change the sample rate of the recorded files e.g. gmail voicemail player -->
+      <!--<param name="record-sample-rate" value="11025"/>-->
+      <!-- the next two both must be set for this to be enabled
+           the extension is in the format of <dest> [<dialplan>] [<context>]
+       -->
+      <param name="operator-extension" value="operator XML default"/>
+      <param name="operator-key" value="9"/>
+      <param name="vmain-extension" value="vmain XML default"/>
+      <param name="vmain-key" value="*"/>
+      <!-- playback created files as soon as they were recorded by default -->
+      <!--<param name="auto-playback-recordings" value="true"/>-->
+      <email>
+	<param name="template-file" value="voicemail.tpl"/>
+	<param name="notify-template-file" value="notify-voicemail.tpl"/>
+	<!-- this is the format voicemail_time will have -->
+        <param name="date-fmt" value="%A, %B %d %Y, %I %M %p"/>
+        <param name="email-from" value="${voicemail_account}@${voicemail_domain}"/>
+      </email>
+      <!--<param name="storage-dir" value="$${storage_dir}"/>-->
+      <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+      <!--<param name="record-comment" value="Your Comment"/>-->
+      <!--<param name="record-title" value="Your Title"/>-->
+      <!--<param name="record-copyright" value="Your Copyright"/>-->
+    </profile>
+  </profiles>
+</configuration> 
+
+<configuration name="voicemail_ivr.conf" description="Voicemail IVR">
+<profiles>
+	<profile name="default">
+		<settings>
+			<param name="IVR-Maximum-Attempts" value="3" />
+			<param name="IVR-Entry-Timeout" value="3000" />
+			<param name="Record-Format" value="wav" />
+			<!--<param name="Record-Sample-Rate" value="8000" />-->
+			<param name="Record-Silence-Hits" value="4" />
+			<param name="Record-Silence-Threshold" value="200" />
+			<param name="Record-Maximum-Length" value="30" />
+			<!--<param name="Record-Minimum-Length" value="3" />-->
+			<param name="Exit-Purge" value="true" />
+			<param name="Password-Mask" value="XXX." />
+			<param name="User-Mask" value="X." />
+
+		</settings>
+		<apis>
+			<api name="auth_login" value="vm_fsdb_auth_login" />
+			<api name="msg_list" value="vm_fsdb_msg_list" />
+			<api name="msg_count" value="vm_fsdb_msg_count" />
+			<api name="msg_delete" value="vm_fsdb_msg_delete" />
+			<api name="msg_undelete" value="vm_fsdb_msg_undelete" />
+			<api name="msg_save" value="vm_fsdb_msg_save" />
+			<api name="msg_purge" value="vm_fsdb_msg_purge" />
+			<api name="msg_get" value="vm_fsdb_msg_get" />
+			<api name="msg_forward" value="vm_fsdb_msg_forward" />
+			<api name="pref_greeting_set" value="vm_fsdb_pref_greeting_set" />
+			<api name="pref_greeting_get" value="vm_fsdb_pref_greeting_get" />
+			<api name="pref_recname_set" value="vm_fsdb_pref_recname_set" />
+			<api name="pref_password_set" value="vm_fsdb_pref_password_set" />
+		</apis>
+		<menus>
+			<menu name="std_authenticate">
+			<phrases>
+				<phrase name="fail_auth" value="fail_auth@voicemail_ivr" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+
+			<menu name="std_authenticate_ask_user">
+			<phrases>
+				<phrase name="instructions" value="enter_id@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
+			</keys>
+			</menu>
+
+			<menu name="std_authenticate_ask_password">
+			<phrases>
+				<phrase name="instructions" value="enter_pass@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
+			</keys>
+			</menu>
+
+			<menu name="std_main_menu">
+			<settings>
+				<param name="Action-On-New-Message" value="new_msg:std_navigator" />
+			</settings>
+			<phrases>
+				<phrase name="msg_count" value="message_count@voicemail_ivr" />
+				<phrase name="say_date" value="say_date_event@voicemail_ivr" />
+				<phrase name="say_msg_number" value="say_message_number@voicemail_ivr" />
+				<phrase name="menu_options" value="menu@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="new_msg:std_navigator" variable="VM-Key-Play-New-Messages" />
+				<key dtmf="2" action="saved_msg:std_navigator" variable="VM-Key-Play-Saved-Messages" />
+				<key dtmf="5" action="menu:std_preference" variable="VM-Key-Config-Menu"/>
+				<key dtmf="#" action="return" variable="VM-Key-Terminator" />
+			</keys>
+			</menu>
+
+			<menu name="std_navigator">
+			<settings>
+				<!--<param name="Nav-Action-On-Delete" value="next_msg" />-->
+			</settings>
+			<phrases>
+				<phrase name="msg_count" value="message_count@voicemail_ivr" />
+				<phrase name="say_date" value="say_date_event@voicemail_ivr" />
+				<phrase name="say_msg_number" value="say_message_number@voicemail_ivr" />
+				<phrase name="menu_options" value="listen_file_check@voicemail_ivr" />
+				<phrase name="ack" value="ack@voicemail_ivr" />
+				<phrase name="play_message" value="play_message@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="skip_intro" variable="VM-Key-Main-Listen-File" />
+				<key dtmf="6" action="next_msg" variable="VM-Key-Main-Next-Msg" />
+				<key dtmf="4" action="prev_msg" />
+				<key dtmf="7" action="delete_msg" variable="VM-Key-Main-Delete-File" /> <!-- Same key for undelete if it already deleted -->
+				<key dtmf="8" action="menu:std_forward" variable="VM-Key-Main-Forward" />
+				<key dtmf="2" action="save_msg" variable="VM-Key-Main-Save-File" />
+				<key dtmf="5" action="callback" variable="VM-Key-Main-Callback" />
+				<key dtmf="#" action="return" /> <!-- TODO Might Conflict with future fast-forward -->
+			</keys>
+			</menu>
+
+			<menu name="std_preference">
+			<phrases>
+				<phrase name="menu_options" value="config_menu@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="menu:std_record_greeting_with_slot" variable="VM-Key-Record-Greeting" />
+				<key dtmf="2" action="menu:std_select_greeting_slot" variable="VM-Key-Choose-Greeting" />
+				<key dtmf="3" action="menu:std_record_name" variable="VM-Key-Record-Name" />
+				<key dtmf="6" action="menu:std_set_password" variable="VM-Key-Change-Password" />
+				<key dtmf="0" action="return" variable="VM-Key-Main-Menu" />
+			</keys>
+			</menu>
+
+			<menu name="std_record_greeting">
+			<phrases>
+				<phrase name="instructions" value="record_greeting@voicemail_ivr" />
+				<phrase name="play_recording" value="play_recording@voicemail_ivr" />
+				<phrase name="menu_options" value="record_file_check@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
+				<key dtmf="2" action="save" variable="VM-Key-Save-File" />
+				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
+				<key dtmf="#" action="skip_instruction" />
+			</keys>
+			</menu>
+
+
+			<menu name="std_record_name">
+			<phrases>
+				<phrase name="instructions" value="record_name@voicemail_ivr" />
+				<phrase name="play_recording" value="play_recording@voicemail_ivr" />
+				<phrase name="menu_options" value="record_file_check@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
+				<key dtmf="2" action="save" variable="VM-Key-Save-File" />
+				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
+				<key dtmf="#" action="skip_instruction" />
+			</keys>
+			</menu>
+
+			<menu name="std_record_message">
+			<phrases>
+				<phrase name="instructions" value="record_message@voicemail_ivr" />
+				<phrase name="play_recording" value="play_recording@voicemail_ivr" />
+				<phrase name="menu_options" value="record_file_check@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="listen" variable="VM-Key-Listen-File" />
+				<key dtmf="2" action="save" variable="VM-Key-Save-File" />
+				<key dtmf="4" action="rerecord" variable="VM-Key-ReRecord-File" />
+				<key dtmf="#" action="skip_instruction" />
+			</keys>
+			</menu>			
+
+			<menu name="std_forward_ask_prepend">
+			<phrases>
+				<phrase name="menu_options" value="forward_ask_prepend@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="1" action="prepend" variable="VM-Key-Prepend" />
+				<key dtmf="8" action="forward" variable="VM-Key-Forward" />
+				<key dtmf="#" action="return" variable="VM-Key-Return" />
+			</keys>
+			</menu>
+
+			<menu name="std_forward_ask_extension">
+			<phrases>
+				<phrase name="instructions" value="forward_ask_extension@voicemail_ivr" />
+				<phrase name="ack" value="ack@voicemail_ivr" />
+				<phrase name="invalid_extension" value="invalid_extension@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
+			</keys>
+			</menu>
+
+			<menu name="std_select_greeting_slot">
+			<phrases>
+				<phrase name="instructions" value="choose_greeting@voicemail_ivr" />
+				<phrase name="invalid_slot" value="choose_greeting_fail@voicemail_ivr" />
+				<phrase name="selected_slot" value="greeting_selected@voicemail_ivr" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+
+			<menu name="std_record_greeting_with_slot">
+			<phrases>
+				<phrase name="instructions" value="choose_greeting@voicemail_ivr" />
+			</phrases>
+			<keys>
+			</keys>
+			</menu>
+
+			<menu name="std_set_password">
+			<phrases>
+				<phrase name="instructions" value="enter_pass@voicemail_ivr" />
+			</phrases>
+			<keys>
+				<key dtmf="#" action="ivrengine:terminate_entry" variable="VM-Key-Terminator" />
+			</keys>
+			</menu>
+		</menus>
+	</profile>
+</profiles>
+</configuration>
+
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="uuid" value="true"/>
+        <param name="loglevel" value="debug"/>
+      </settings>
+    </configuration>
+    <configuration name="sofia.conf" description="SofiaSIP">
+        <profiles>
+    <profile name="external">
+        <gateways>
+           <gateway name="freeswitch.org">
+                <param name="username" value="not-used"/>
+                <param name="password" value="not-used"/>
+                <param name="proxy" value="127.0.0.1:5080"/>
+                <param name="realm" value="no.local"/>
+                <param name="register" value="false"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>
+                    <variable name="rtp_secure_media" value="false" direction="outbound"/>
+                </variables>
+           </gateway>
+
+           <gateway name="testgw">
+                <param name="username" value="1001"/>
+                <param name="password" value="1234"/>
+                <param name="proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register" value="true"/>
+                <param name="realm" value="unresolvable.local"/>
+                <param name="outbound_proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register_proxy" value="127.0.0.1:6080"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>
+                    <variable name="rtp_secure_media" value="false" direction="outbound"/>
+                </variables>
+           </gateway>
+           <gateway name="testgw-noreg">
+                <param name="username" value="1001"/>
+                <param name="password" value="1234"/>
+                <param name="proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register" value="false"/>
+                <param name="realm" value="freeswitch.org"/>
+                <param name="outbound_proxy" value="$${local_ip_v4}:6080"/>
+                <param name="register_proxy" value="127.0.0.1:6080"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>
+                    <variable name="rtp_secure_media" value="false" direction="outbound"/>
+                </variables>
+            </gateway>
+        </gateways>
+
+      <domains>
+        <domain name="all" alias="false" parse="true"/>
+      </domains>
+
+      <settings>
+        <param name="debug" value="1"/>
+        <param name="shutdown-on-fail" value="true"/>
+        <param name="p-asserted-id-parse" value="verbatim"/>
+        <param name="username" value="FS"/>
+        <param name="user-agent-string" value="Unit Test"/>
+        <param name="sip-trace" value="yes"/>
+        <param name="sip-capture" value="no"/>
+        <param name="rfc2833-pt" value="101"/>
+        <param name="sip-port" value="5080"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="default"/>
+        <param name="dtmf-duration" value="2000"/>
+        <param name="inbound-codec-prefs" value="PCMU"/>
+        <param name="outbound-codec-prefs" value="PCMU"/>
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="local-network-acl" value="localnet.auto"/>
+        <param name="manage-presence" value="false"/>
+        <param name="inbound-codec-negotiation" value="generous"/>
+        <param name="nonce-ttl" value="60"/>
+        <param name="inbound-late-negotiation" value="true"/>
+        <param name="inbound-zrtp-passthru" value="false"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${local_ip_v4}"/>
+        <param name="rtp-timeout-sec" value="300"/>
+        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="session-timeout" value="600"/>
+        <param name="minimum-session-expires" value="90"/>
+        <param name="tls" value="false"/>
+      </settings>
+  </profile>
+
+    <profile name="internal">
+        <gateways>
+    </gateways>
+
+      <domains>
+        <domain name="all" alias="false" parse="true"/>
+      </domains>
+
+      <settings>
+        <param name="debug" value="1"/>
+        <param name="shutdown-on-fail" value="true"/>
+        <param name="p-asserted-id-parse" value="verbatim"/>
+        <param name="username" value="FS"/>
+        <param name="user-agent-string" value="Unit Test"/>
+        <param name="sip-trace" value="yes"/>
+        <param name="sip-capture" value="no"/>
+        <param name="rfc2833-pt" value="101"/>
+        <param name="sip-port" value="5060"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="default"/>
+        <param name="dtmf-duration" value="2000"/>
+        <param name="inbound-codec-prefs" value="PCMU"/>
+        <param name="outbound-codec-prefs" value="PCMU"/>
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="local-network-acl" value="localnet.auto"/>
+        <param name="manage-presence" value="true"/>
+        <param name="inbound-codec-negotiation" value="generous"/>
+        <param name="nonce-ttl" value="60"/>
+        <param name="inbound-late-negotiation" value="true"/>
+        <param name="inbound-zrtp-passthru" value="false"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${local_ip_v4}"/>
+        <param name="rtp-timeout-sec" value="300"/>
+        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="session-timeout" value="600"/>
+        <param name="minimum-session-expires" value="90"/>
+        <param name="tls" value="false"/>
+      </settings>
+  </profile>
+
+<profile name="external-ipv6">
+  <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
+  <!-- This profile is only for outbound registrations to providers -->
+  <gateways>
+           <gateway name="freeswitch.org">
+                <param name="username" value="not-used"/>
+                <param name="password" value="not-used"/>
+                <param name="proxy" value="[::1]:5080"/>
+                <param name="register" value="false"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>   
+                 <variable name="rtp_secure_media"  value="false"  direction="outbound"/>  
+                </variables>
+          </gateway>
+
+  </gateways>
+
+  <aliases>
+    <!--
+        <alias name="outbound"/>
+        <alias name="nat"/>
+    -->
+  </aliases>
+
+  <domains>
+    <!--<domain name="all" alias="false" parse="true"/>-->
+  </domains>
+
+  <settings>
+    <param name="debug" value="1"/>
+    <!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
+    <!-- <param name="shutdown-on-fail" value="true"/> -->
+    <param name="sip-trace" value="no"/>
+    <param name="sip-capture" value="no"/>
+    <param name="rfc2833-pt" value="101"/>
+    <!-- RFC 5626 : Send reg-id and sip.instance -->
+    <!--<param name="enable-rfc-5626" value="true"/> -->
+    <param name="sip-port" value="6060"/>
+    <param name="dialplan" value="XML"/>
+    <param name="context" value="default"/>
+    <param name="dtmf-duration" value="2000"/>
+    <param name="inbound-codec-prefs" value="PCMU"/>
+    <param name="outbound-codec-prefs" value="PCMU"/>    
+    <param name="hold-music" value="$${hold_music}"/>
+    <param name="rtp-timer-name" value="soft"/>
+    <!--<param name="enable-100rel" value="true"/>-->
+    <!--<param name="disable-srv503" value="true"/>-->
+    <!-- This could be set to "passive" -->
+    <param name="local-network-acl" value="localnet.auto"/>
+    <param name="manage-presence" value="false"/>
+
+    <!-- used to share presence info across sofia profiles
+         manage-presence needs to be set to passive on this profile
+         if you want it to behave as if it were the internal profile
+         for presence.
+    -->
+    <!-- Name of the db to use for this profile -->
+    <!--<param name="dbname" value="share_presence"/>-->
+    <!--<param name="presence-hosts" value="$${domain}"/>-->
+    <!--<param name="force-register-domain" value="$${domain}"/>-->
+    <!--all inbound reg will stored in the db using this domain -->
+    <!--<param name="force-register-db-domain" value="$${domain}"/>-->
+    <!-- ************************************************* -->
+
+    <!--<param name="aggressive-nat-detection" value="true"/>-->
+    <param name="inbound-codec-negotiation" value="generous"/>
+    <param name="nonce-ttl" value="60"/>
+    <param name="auth-calls" value="false"/>
+    <param name="inbound-late-negotiation" value="true"/>
+    <param name="inbound-zrtp-passthru" value="true"/> <!-- (also enables late negotiation) -->
+    <!--
+        DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
+    -->
+	<!-- <param name="rtp-ip" value="$${local_ip_v6}"/>
+	<param name="sip-ip" value="$${local_ip_v6}"/> -->
+	
+	<param name="rtp-ip" value="0000:0000:0000:0000:0000:0000:0000:0001"/>
+	<param name="sip-ip" value="0000:0000:0000:0000:0000:0000:0000:0001"/>
+ 
+	<!-- Shouldn't set these on IPv6 -->
+    <!--<param name="ext-rtp-ip" value="auto-nat"/>-->
+    <!--<param name="ext-sip-ip" value="auto-nat"/>-->
+    <param name="rtp-timeout-sec" value="300"/>
+    <param name="rtp-hold-timeout-sec" value="1800"/>
+    <!--<param name="enable-3pcc" value="true"/>-->
+
+    <!-- TLS: disabled by default, set to "true" to enable -->
+    <param name="tls" value="$${external_ssl_enable}"/>
+    <!-- Set to true to not bind on the normal sip-port but only on the TLS port -->
+    <param name="tls-only" value="false"/>
+    <!-- additional bind parameters for TLS -->
+    <param name="tls-bind-params" value="transport=tls"/>
+    <!-- Port to listen on for TLS requests. (5081 will be used if unspecified) -->
+    <param name="tls-sip-port" value="$${external_tls_port}"/>
+    <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
+    <!--<param name="tls-cert-dir" value=""/>-->
+    <!-- Optionally set the passphrase password used by openSSL to encrypt/decrypt TLS private key files -->
+    <param name="tls-passphrase" value=""/>
+    <!-- Verify the date on TLS certificates -->
+    <param name="tls-verify-date" value="true"/>
+    <!-- TLS verify policy, when registering/inviting gateways with other servers (outbound) or handling inbound registration/invite requests how should we verify their certificate -->
+    <!-- set to 'in' to only verify incoming connections, 'out' to only verify outgoing connections, 'all' to verify all connections, also 'subjects_in', 'subjects_out' and 'subjects_all' for subject validation. Multiple policies can be split with a '|' pipe -->
+    <param name="tls-verify-policy" value="none"/>
+    <!-- Certificate max verify depth to use for validating peer TLS certificates when the verify policy is not none -->
+    <param name="tls-verify-depth" value="2"/>
+    <!-- If the tls-verify-policy is set to subjects_all or subjects_in this sets which subjects are allowed, multiple subjects can be split with a '|' pipe -->
+    <param name="tls-verify-in-subjects" value=""/>
+    <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
+    <param name="tls-version" value="$${sip_tls_version}"/>
+  </settings>
+</profile>
+  </profiles>
+   </configuration>
+
+   <configuration name="switch.conf" description="Switch">
+     <param name="rtp-start-port" value="20000"/>
+     <param name="rtp-end-port" value="30000"/>
+     <param name="threaded-system-exec" value="false"/>
+   </configuration>
+
+   
+     <configuration name="timezones.conf" description="Timezones">
+        <timezones>
+        <zone name="GMT" value="GMT0" />
+        </timezones>
+     </configuration>
+
+ </section>
+
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <context name="default">
+
+    <extension name="unit_test_sipp-uac-digest-leak">
+        <condition field="destination_number" expression="^\+15553334444$">
+            <action application="info"/>
+			<action application="answer" />
+			<!-- <action application="system" data="sipp $${local_ip_v4}:5080 -nr -p 5062 -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf sipp-scenarios/uac_digest_leak.xml -bg > /dev/null 2>&1" /> -->
+			<action application="playback" data="silence_stream://-1"/>
+		</condition>
+    </extension>
+
+    <extension name="sipp_telephone_check">
+      <condition field="destination_number" expression="^1212121212$">
+        <action application="answer"/>
+        <action application="set" data="park_after_bridge=true"/>
+        <action application="park"/>
+      </condition>
+    </extension>
+
+	<extension name="sipp">
+		<condition>
+		   <action application="info"/>
+		   <action application="answer" />
+		   <action application="voicemail" data="default $${domain} 1001"/>
+       </condition>
+    </extension>
+
+	</context>
+
+  </section>
+
+	<section name="directory" description="User Directory">
+	<domain name="$${local_ip_v4}">
+	<users>
+		<user id="1001">
+			<params>
+				<param name="password" value="$${default_password}"/>
+				<param name="vm-password" value="1001"/>
+		 	</params>
+			<variables>
+				<variable name="toll_allow" value="domestic,international,local"/>
+				<variable name="accountcode" value="1001"/>
+				<variable name="user_context" value="default"/>
+				<variable name="effective_caller_id_name" value="Extension 1001"/>
+				<variable name="effective_caller_id_number" value="1001"/>
+				<variable name="outbound_caller_id_name" value="$${outbound_caller_name}"/>
+				<variable name="outbound_caller_id_number" value="$${outbound_caller_id}"/>
+				<variable name="callgroup" value="techsupport"/>
+			</variables>
+		</user>
+	</users>
+	</domain>
+
+	<domain name="$${local_ip_v6}">
+	<users>
+		<user id="1001">
+			<params>
+				<param name="password" value="$${default_password}"/>
+				<param name="vm-password" value="1001"/>
+		 	</params>
+			<variables>
+				<variable name="toll_allow" value="domestic,international,local"/>
+				<variable name="accountcode" value="1001"/>
+				<variable name="user_context" value="default"/>
+				<variable name="effective_caller_id_name" value="Extension 1001"/>
+				<variable name="effective_caller_id_number" value="1001"/>
+				<variable name="outbound_caller_id_name" value="$${outbound_caller_name}"/>
+				<variable name="outbound_caller_id_number" value="$${outbound_caller_id}"/>
+				<variable name="callgroup" value="techsupport"/>
+			</variables>
+		</user>
+	</users>
+	</domain>
+	</section>
+
+	<section name="languages" description="Language Management">
+		<language name="en" say-module="en" sound-prefix="$${sound_prefix}" tts-engine="cepstral" tts-voice="callie">
+			<phrases>
+				<macros>
+  <macro name="voicemail_enter_id">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-enter_id.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_enter_pass">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-enter_pass.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_fail_auth">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-fail_auth.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_change_pass_success">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-password_has_been_changed.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_change_pass_fail">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-password_not_valid.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_hello">
+    <input pattern="(.*)">
+      <match>
+        <!--<action function="play-file" data="voicemail/vm-hello.wav"/> -->
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_goodbye">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-goodbye.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_abort">
+    <input pattern="(.*)">
+      <match>
+        <action function="play-file" data="voicemail/vm-abort.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_message_count">
+    <input pattern="^(1):(.*)$" break_on_match="true">
+      <match>
+        <action function="play-file" data="voicemail/vm-you_have.wav"/>
+        <action function="say" data="$1" method="pronounced" type="items"/>
+        <action function="play-file" data="voicemail/vm-$2.wav"/>
+        <action function="play-file" data="voicemail/vm-message.wav"/>
+      </match>
+    </input>
+    <input pattern="^(\d+):(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-you_have.wav"/>
+        <action function="say" data="$1" method="pronounced" type="items"/>
+        <action function="play-file" data="voicemail/vm-$2.wav"/>
+        <action function="play-file" data="voicemail/vm-messages.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_menu">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+        <!-- To listen to new messages -->
+        <action function="play-file" data="voicemail/vm-listen_new.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- To listen to saved messages -->
+        <action function="play-file" data="voicemail/vm-listen_saved.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- For advanced options -->
+        <action function="play-file" data="voicemail/vm-advanced.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$3" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- To exit -->
+        <action function="play-file" data="voicemail/vm-to_exit.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$4" method="pronounced" type="name_phonetic"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_config_menu">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+        <!-- To record a greeting -->
+        <action function="play-file" data="voicemail/vm-to_record_greeting.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- To choose greeting -->
+        <action function="play-file" data="voicemail/vm-choose_greeting.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- To record your name -->
+        <action function="play-file" data="voicemail/vm-record_name2.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$3" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- To change password -->
+        <action function="play-file" data="voicemail/vm-change_password.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$4" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(100)"/>
+
+        <!-- To return to main menu -->
+        <action function="play-file" data="voicemail/vm-main_menu.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$5" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_name">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-record_name1.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_file_check">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+        <action function="play-file" data="voicemail/vm-listen_to_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-save_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-rerecord.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$3" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_urgent_check">
+    <input pattern="^([0-9#*]):([0-9#*])$">
+      <match>
+        <action function="play-file" data="voicemail/vm-mark-urgent.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-continue.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_forward_prepend">
+    <input pattern="^([0-9#*]):([0-9#*])$">
+      <match>
+        <action function="play-file" data="voicemail/vm-forward_add_intro.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-send_message_now.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_forward_message_enter_extension">
+    <input pattern="^([0-9#*])$">
+      <match>
+        <action function="play-file" data="voicemail/vm-forward_enter_ext.wav"/>
+        <action function="play-file" data="voicemail/vm-followed_by.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_invalid_extension">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-that_was_an_invalid_ext.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_listen_file_check">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-listen_to_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-save_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-delete_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$3" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-forward_to_email.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$4" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-return_call.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$5" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-to_forward.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$6" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+        <action function="play-file" data="voicemail/vm-listen_to_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-save_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-delete_recording.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$3" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-return_call.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$5" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-to_forward.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="say" data="$6" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_choose_greeting">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-choose_greeting_choose.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_choose_greeting_fail">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-choose_greeting_fail.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_greeting">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-record_greeting.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_message">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-record_message.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_greeting_selected">
+    <input pattern="^(\d+)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-greeting.wav"/>
+        <action function="say" data="$1" method="pronounced" type="items"/>
+        <action function="play-file" data="voicemail/vm-selected.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_play_greeting">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-person.wav"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="play-file" data="voicemail/vm-not_available.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_number">
+    <input pattern="^(\d+)$">
+      <match>
+        <action function="say" data="$1" method="pronounced" type="items"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_message_number">
+    <input pattern="^([a-z]+):(\d+)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-$1.wav"/>
+        <action function="play-file" data="voicemail/vm-message_number.wav"/>
+        <action function="say" data="$2" method="pronounced" type="items"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_phone_number">
+    <input pattern="^000|^$|^[Aa]non|^[Pp]rivate" break_on_match="true">
+      <match>
+        <action function="play-file" data="voicemail/vm-message_from.wav"/>
+        <action function="execute" data="sleep(100)"/>
+        <action function="play-file" data="ivr/ivr-anonymous_caller.wav"/>
+        <action function="execute" data="sleep(500)"/>
+      </match>
+    </input>
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-message_from.wav"/>
+        <action function="execute" data="sleep(100)"/>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        <action function="execute" data="sleep(500)"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_name">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+  <!-- Note: Update this to marked-urgent,emailed and saved once new sound files are recorded -->
+  <macro name="voicemail_ack">
+    <input pattern="^(too-small)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-too-small.wav"/>
+      </match>
+    </input>
+    <input pattern="^(deleted)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-message.wav"/>
+        <action function="play-file" data="voicemail/vm-$1.wav"/>
+      </match>
+    </input>
+    <input pattern="^(saved)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-message.wav"/>
+        <action function="play-file" data="voicemail/vm-$1.wav"/>
+      </match>
+    </input>
+    <input pattern="^(emailed)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-message.wav"/>
+        <action function="play-file" data="voicemail/vm-$1.wav"/>
+      </match>
+    </input>
+    <input pattern="^(marked-urgent)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-message.wav"/>
+        <action function="play-file" data="voicemail/vm-$1.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_date">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="say" data="$1" method="pronounced" type="short_date_time"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_disk_quota_exceeded">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="voicemail/vm-mailbox_full.wav"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="valet_announce_ext">
+    <input pattern="^([^\:]+):(.*)$">
+      <match>
+        <action function="say" data="$2" method="pronounced" type="name_spelled"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="valet_lot_full">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="tone_stream://%(275,10,600);%(275,100,300)"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="valet_lot_empty">
+    <input pattern="^(.*)$">
+      <match>
+        <action function="play-file" data="tone_stream://%(275,10,600);%(275,100,300)"/>
+      </match>
+    </input>
+  </macro>
+				</macros>
+
+  <macros name="voicemail_ivr">
+    <macro name="press_key">
+      <input pattern="^(.*):(.*)$">
+        <match>
+          <action function="play-file" data="$2"/>
+          <action function="play-file" data="voicemail/vm-press.wav"/>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="plural_msg">
+      <input pattern="^[1]:(.*):(.*)$" break_on_match="true">
+        <match>
+          <action function="play-file" data="$1"/>
+        </match>
+      </input>
+      <input pattern="^.*:(.*):(.*)$" break_on_match="true">
+        <match>
+          <action function="play-file" data="$2"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="enter_id">
+      <input pattern="(.+)">
+        <match>
+          <action function="play-file" data="voicemail/vm-enter_id.wav"/>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        </match>
+        <nomatch>
+          <action function="play-file" data="voicemail/vm-enter_id.wav"/>
+          <action function="say" data="${VM-Key-Terminator}" method="pronounced" type="name_spelled"/>
+        </nomatch>
+      </input>
+    </macro>
+
+    <macro name="enter_pass">
+      <input pattern="(.+)">
+        <match>
+          <action function="play-file" data="voicemail/vm-enter_pass.wav"/>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        </match>
+        <nomatch>
+          <action function="play-file" data="voicemail/vm-enter_pass.wav"/>
+          <action function="say" data="${VM-Key-Terminator}" method="pronounced" type="name_spelled"/>
+        </nomatch>
+
+      </input>
+    </macro>
+
+    <macro name="fail_auth">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-fail_auth.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="hello">
+      <input>
+        <match>
+          <!--<action function="play-file" data="voicemail/vm-hello.wav"/> -->
+        </match>
+      </input>
+    </macro>
+
+    <macro name="goodbye">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-goodbye.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="abort">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-abort.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="message_count">
+      <input field="${VM-Total-New-Urgent-Messages}" pattern="^(0)$">
+        <nomatch>
+          <action function="play-file" data="voicemail/vm-you_have.wav"/>
+          <action function="say" data="${VM-Total-New-Urgent-Messages}" method="pronounced" type="items"/>
+          <action function="play-file" data="voicemail/vm-urgent-new.wav"/>
+          <action function="phrase" phrase="plural_msg@voicemail_ivr" data="${VM-Total-New-Urgent-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
+        </nomatch>
+      </input>
+      <input field="${VM-Total-New-Messages}" pattern="^(\d+)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-you_have.wav"/>
+          <action function="say" data="${VM-Total-New-Messages}" method="pronounced" type="items"/>
+          <action function="play-file" data="voicemail/vm-new.wav"/>
+          <action function="phrase" phrase="plural_msg@voicemail_ivr" data="${VM-Total-New-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
+        </match>
+      </input>
+      <input field="${VM-Total-Saved-Messages}" pattern="^(0)$">
+        <nomatch>
+          <action function="play-file" data="currency/and.wav"/>
+          <action function="say" data="${VM-Total-Saved-Messages}" method="pronounced" type="items"/>
+          <action function="play-file" data="voicemail/vm-saved.wav"/>
+          <action function="phrase" phrase="plural_msg@voicemail_ivr" data="${VM-Total-Saved-Messages}:voicemail/vm-message.wav:voicemail/vm-messages.wav"/>
+        </nomatch>
+      </input>
+    </macro>
+
+    <macro name="menu">
+      <input field="${VM-Total-New-Messages}" pattern="^(0)$">
+        <nomatch>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Play-New-Messages}:voicemail/vm-listen_new.wav"/>
+	</nomatch>
+      </input>
+      <input field="${VM-Total-Saved-Messages}" pattern="^(0)$">
+	<nomatch>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Play-Saved-Messages}:voicemail/vm-listen_saved.wav"/>
+	</nomatch>
+      </input>
+      <input>
+	<match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Config-Menu}:voicemail/vm-advanced.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Terminator}:voicemail/vm-to_exit.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="config_menu">
+      <input>
+        <match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Record-Greeting}:voicemail/vm-to_record_greeting.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Choose-Greeting}:voicemail/vm-choose_greeting.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Record-Name}:voicemail/vm-record_name2.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Change-Password}:voicemail/vm-change_password.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Menu}:voicemail/vm-main_menu.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="record_name">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-record_name1.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="forward_ask_prepend">
+      <input>
+        <match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Prepend}:voicemail/vm-forward_add_intro.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Forward}:voicemail/vm-send_message_now.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="forward_ask_extension">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-forward_enter_ext.wav"/>
+          <!--<action function="phrase" phrase="play-file" data="voicemail/vm-followed_by.wav"/>-->
+          <!--<action function="say" data="${VM-Key-Terminate}" method="pronounced" type="name_spelled"/>-->
+        </match>
+      </input>
+    </macro>
+
+    <macro name="record_file_check">
+      <input>
+        <match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Listen-File}:voicemail/vm-listen_to_recording.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Save-File}:voicemail/vm-save_recording.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Record-File}:voicemail/vm-rerecord.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="record_urgent_check">
+      <input>
+        <match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Urgent}:voicemail/vm-mark-urgent.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Terminator}:voicemail/vm-continue.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="forward_prepend">
+      <input>
+        <match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Prepend}:voicemail/vm-forward_add_intro.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Forward}:voicemail/vm-send_message_now.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="forward_message_enter_extension">
+      <input pattern="^([0-9#*])$">
+        <match>
+          <action function="play-file" data="voicemail/vm-forward_enter_ext.wav"/>
+          <action function="play-file" data="voicemail/vm-followed_by.wav"/>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="invalid_extension">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-that_was_an_invalid_ext.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="listen_file_check">
+      <input>
+        <match>
+          <!--<action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Next-Msg}:voicemail/vm-for_next_msg.wav"/>--> <!-- Not existant in callie recordings -->
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Listen-File}:voicemail/vm-listen_to_recording.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Save-File}:voicemail/vm-save_recording.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Delete-File}:voicemail/vm-delete_recording.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Forward}:voicemail/vm-to_forward.wav"/>
+        </match>
+      </input>
+      <input field="${VM-Message-Email}" pattern="^$">
+        <nomatch>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Email}:voicemail/vm-forward_to_email.wav"/>
+        </nomatch>
+      </input>
+      <input>
+        <match>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Callback}:voicemail/vm-return_call.wav"/>
+          <action function="phrase" phrase="press_key@voicemail_ivr" data="${VM-Key-Main-Forward}:voicemail/vm-to_forward.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="choose_greeting">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-choose_greeting_choose.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="choose_greeting_fail">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-choose_greeting_fail.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="record_greeting">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-record_greeting.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="record_message">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-record_message.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="greeting_selected">
+      <input pattern="^(\d+)$">
+        <match>
+	  <action function="play-file" data="${VM-Preference-Greeting-File-Path}"/>
+          <action function="play-file" data="voicemail/vm-greeting.wav"/>
+          <action function="say" data="$1" method="pronounced" type="items"/>
+          <action function="play-file" data="voicemail/vm-selected.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="play_greeting">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-person.wav"/>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+          <action function="play-file" data="voicemail/vm-not_available.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="say_number">
+      <input pattern="^(\d+)$">
+        <match>
+          <action function="say" data="$1" method="pronounced" type="items"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="say_message_number">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-${VM-Message-Type}.wav"/>
+          <action function="play-file" data="voicemail/vm-message_number.wav"/>
+          <action function="say" data="${VM-Message-Number}" method="pronounced" type="items"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="say_phone_number">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="say_name">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+        </match>
+      </input>
+    </macro>
+    <!-- Note: Update this to marked-urgent,emailed and saved once new sound files are recorded -->
+    <macro name="ack">
+      <input pattern="^(too-small)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-too-small.wav"/>
+        </match>
+      </input>
+      <input pattern="^(undeleted)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-message.wav"/>
+          <action function="play-file" data="voicemail/vm-$1.wav"/>
+        </match>
+      </input>
+      <input pattern="^(deleted)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-message.wav"/>
+          <action function="play-file" data="voicemail/vm-$1.wav"/>
+        </match>
+      </input>
+      <input pattern="^(saved)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-message.wav"/>
+          <action function="play-file" data="voicemail/vm-$1.wav"/>
+        </match>
+      </input>
+      <input pattern="^(emailed)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-message.wav"/>
+          <action function="play-file" data="voicemail/vm-$1.wav"/>
+        </match>
+      </input>
+      <input pattern="^(marked-urgent)$">
+        <match>
+          <action function="play-file" data="voicemail/vm-message.wav"/>
+          <action function="play-file" data="voicemail/vm-$1.wav"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="say_date">
+      <input pattern="^(.*)$">
+        <match>
+          <action function="say" data="$1" method="pronounced" type="short_date_time"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="say_date_event">
+      <input>
+        <match>
+          <action function="say" data="${VM-Message-Received-Epoch}" method="pronounced" type="short_date_time"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="play_message">
+      <input>
+        <match>
+          <action function="play-file" data="${VM-Message-File-Path}"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="play_recording">
+      <input>
+        <match>
+          <action function="play-file" data="${VM-Record-File-Path}"/>
+        </match>
+      </input>
+    </macro>
+
+    <macro name="disk_quota_exceeded">
+      <input>
+        <match>
+          <action function="play-file" data="voicemail/vm-mailbox_full.wav"/>
+        </match>
+      </input>
+    </macro>
+  </macros>
+
+
+			</phrases>
+		</language>
+	</section>
+</document>
+
+

@@ -49,6 +49,7 @@
 #endif
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
@@ -390,13 +391,13 @@ static void reincarnate_protect(char **argv) {
 			sigaction(SIGTERM, &sa15_prev, NULL);
 			sigaction(SIGCHLD, &sa17_prev, NULL);
 			if (argv) {
-				if (execv(argv[0], argv) == -1) {
+				if (argv[0] && execv(argv[0], argv) == -1) {
 					char buf[256];
 					fprintf(stderr, "Reincarnate execv() failed: %d %s\n", errno,
 							switch_strerror_r(errno, buf, sizeof(buf)));
 				}
 				fprintf(stderr, "Trying reincarnate-reexec plan B...\n");
-				if (execvp(argv[0], argv) == -1) {
+				if (argv[0] && execvp(argv[0], argv) == -1) {
 					char buf[256];
 					fprintf(stderr, "Reincarnate execvp() failed: %d %s\n", errno,
 							switch_strerror_r(errno, buf, sizeof(buf)));

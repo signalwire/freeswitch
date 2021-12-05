@@ -248,7 +248,7 @@ endif
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(SOFIA_SIP_CFLAGS) $(AM_CFLAGS) $(TPL_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(SYSTEMD_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -300,6 +300,7 @@ library_include_HEADERS = \
 	src/include/switch_dso.h \
 	src/include/switch_loadable_module.h \
 	src/include/switch_module_interfaces.h \
+	src/include/switch_packetizer.h \
 	src/include/switch_platform.h \
 	src/include/switch_resample.h \
 	src/include/switch_regex.h \
@@ -309,6 +310,7 @@ library_include_HEADERS = \
 	src/include/switch_jitterbuffer.h \
 	src/include/switch_estimators.h \
 	src/include/switch_rtcp_frame.h \
+	src/include/switch_spandsp.h \
 	src/include/switch_stun.h \
 	src/include/switch_nat.h \
 	src/include/switch_log.h \
@@ -364,6 +366,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_version.c \
 	src/switch_core_media.c \
 	src/switch_core_video.c \
+	src/switch_packetizer.c \
 	src/switch_sdp.c \
 	src/switch_scheduler.c \
 	src/switch_core_db.c \
@@ -383,6 +386,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_ivr_say.c \
 	src/switch_ivr_menu.c \
 	src/switch_ivr.c \
+	src/switch_spandsp.c \
 	src/switch_stun.c \
 	src/switch_nat.c \
 	src/switch_log.c \
@@ -599,14 +603,15 @@ libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
 
-SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/srtp/ekt.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
+SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
 		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
 		libs/srtp/crypto/hash/null_auth.c libs/srtp/crypto/hash/sha1.c \
 		libs/srtp/crypto/hash/hmac.c libs/srtp/crypto/hash/auth.c \
-		libs/srtp/crypto/math/datatypes.c libs/srtp/crypto/math/stat.c \
+		libs/srtp/crypto/math/datatypes.c \
 		libs/srtp/crypto/kernel/crypto_kernel.c libs/srtp/crypto/kernel/alloc.c \
 		libs/srtp/crypto/kernel/key.c libs/srtp/crypto/kernel/err.c \
-		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c libs/srtp/crypto/replay/ut_sim.c 
+		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c \
+		libs/srtp/crypto/cipher/cipher_test_cases.c libs/srtp/crypto/hash/auth_test_cases.c
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 	touch $(switch_srcdir)/src/include/switch.h
@@ -741,7 +746,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean python-reconf
+update-clean: clean python-reconf python3-reconf
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
@@ -756,6 +761,10 @@ sndfile-reconf:
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
+	./config.status
+
+python3-reconf:
+	rm -f src/mod/languages/mod_python3/Makefile
 	./config.status
 
 reconf:

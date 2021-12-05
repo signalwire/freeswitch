@@ -40,48 +40,49 @@
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\..\..\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Dll|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Dll|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Dll|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Dll|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -346,8 +347,10 @@
     </ClCompile>
     <ClCompile Include="crypto\cipher\aes_icm.c" />
     <ClCompile Include="crypto\cipher\cipher.c" />
+    <ClCompile Include="crypto\cipher\cipher_test_cases.c" />
     <ClCompile Include="crypto\cipher\null_cipher.c" />
     <ClCompile Include="crypto\hash\auth.c" />
+    <ClCompile Include="crypto\hash\auth_test_cases.c" />
     <ClCompile Include="crypto\hash\hmac.c" />
     <ClCompile Include="crypto\hash\null_auth.c" />
     <ClCompile Include="crypto\hash\sha1.c" />
@@ -356,11 +359,8 @@
     <ClCompile Include="crypto\kernel\err.c" />
     <ClCompile Include="crypto\kernel\key.c" />
     <ClCompile Include="crypto\math\datatypes.c" />
-    <ClCompile Include="crypto\math\stat.c" />
     <ClCompile Include="crypto\replay\rdb.c" />
     <ClCompile Include="crypto\replay\rdbx.c" />
-    <ClCompile Include="crypto\replay\ut_sim.c" />
-    <ClCompile Include="srtp\ekt.c" />
     <ClCompile Include="srtp\srtp.c" />
   </ItemGroup>
   <ItemGroup>
@@ -389,11 +389,9 @@
     <ClInclude Include="crypto\include\rdb.h" />
     <ClInclude Include="crypto\include\rdbx.h" />
     <ClInclude Include="crypto\include\sha1.h" />
-    <ClInclude Include="crypto\include\stat.h" />
     <ClInclude Include="include\ekt.h" />
     <ClInclude Include="include\srtp.h" />
     <ClInclude Include="include\srtp_priv.h" />
-    <ClInclude Include="include\ut_sim.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="config.hw" />

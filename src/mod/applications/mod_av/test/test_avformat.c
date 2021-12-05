@@ -162,6 +162,94 @@ FST_CORE_BEGIN("conf")
 		}
 		FST_TEST_END()
 
+		FST_TEST_BEGIN(avformat_test_play_no_decode)
+		{
+			char path[1024];
+			switch_status_t status;
+			switch_file_handle_t fh = { 0 };
+			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			switch_frame_t frame = { 0 };
+			switch_size_t len = SAMPLES;
+			uint32_t flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
+			int i = 0;
+
+			sprintf(path, "{no_video_decode=true}%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../test_RGB.mp4");
+			// switch_set_string(path, "{no_video_decode=true}/usr/local/freeswitch/storage/bingbing.mp4");
+			status = switch_core_file_open(&fh, path, 1, 8000, flags, fst_pool);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
+			frame.packet = data;
+			frame.data = data + 12;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+			do {
+				frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+				status = switch_core_file_read(&fh, data, &len);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "status: %d len: %d\n", status, (int)len);
+				fst_check(frame.img == NULL);
+				frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
+				status = switch_core_file_read_video(&fh, &frame, 0);
+				fst_check(frame.img == NULL);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "status: %d len: %d %02x\n", status, frame.datalen, *(uint8_t *)frame.data);
+			} while (status == SWITCH_STATUS_MORE_DATA);
+
+			switch_core_file_close(&fh);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(avformat_test_read_err)
+		{
+			char *path = "$$-non-exist-file.mp4";
+			switch_status_t status;
+			switch_file_handle_t fh = { 0 };
+			uint32_t flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
+
+			status = switch_core_file_open(&fh, path, 1, 8000, flags, fst_pool);
+			fst_check(status == SWITCH_STATUS_GENERR);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(avformat_test_read_ok)
+		{
+			char path[1024];
+			switch_status_t status;
+			switch_file_handle_t fh = { 0 };
+			uint8_t data[SAMPLES * 2] = { 0 };
+			switch_frame_t frame = { 0 };
+			switch_size_t len = SAMPLES;
+			uint32_t flags = SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO;
+
+			frame.data = data;
+
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../test_RGB.mp4");
+			status = switch_core_file_open(&fh, path, 1, 8000, flags, fst_pool);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(switch_test_flag(&fh, SWITCH_FILE_OPEN));
+
+			while (1) {
+				status = switch_core_file_read(&fh, data, &len);
+				if (status != SWITCH_STATUS_SUCCESS) break;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "read: %" SWITCH_SIZE_T_FMT "\n", len);
+				// fst_check(len == SAMPLES);
+				status = switch_core_file_read_video(&fh, &frame, SVR_FLUSH);
+
+				if (status == SWITCH_STATUS_BREAK) {
+					switch_yield(20000);
+					continue;
+				}
+
+				if (status != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+
+				switch_img_free(&frame.img);
+				switch_yield(20000);
+			}
+
+			switch_core_file_close(&fh);
+		}
+		FST_TEST_END()
+
 		FST_TEARDOWN_BEGIN()
 		{
 		  //const char *err = NULL;

@@ -131,6 +131,7 @@ struct local_stream_source {
 	uint8_t logo_opacity;
 	uint8_t text_opacity;
 	switch_mm_t mm;
+	int sync;
 };
 
 typedef struct local_stream_source local_stream_source_t;
@@ -362,6 +363,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
+			source->sync = 0;
 			switch_buffer_zero(audio_buffer);
 
 			if (switch_core_file_has_video(&fh, SWITCH_FALSE)) {
@@ -907,7 +909,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	handle->private_info = context;
 	handle->interval = source->interval;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening Stream [%s] %dhz\n", path, handle->samplerate);
-
+	handle->mm.source_fps = source->mm.source_fps;
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->pool);
 	if (switch_buffer_create_dynamic(&context->audio_buffer, 512, 1024, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
@@ -999,14 +1001,19 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 	local_stream_context_t *context = handle->private_info;
 	switch_status_t status;
 	switch_time_t now;
-	unsigned int fps = (unsigned int)ceil(handle->mm.fps);
-	unsigned int min_qsize = fps / 2;
-	unsigned int buf_qsize = 5;
+	unsigned int min_qsize = 1;
+	unsigned int buf_qsize = 1;
+
+	handle->mm.source_fps = context->source->mm.source_fps;
 
 	if (!(context->ready && context->source->ready)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!context->source->sync) {
+		return SWITCH_STATUS_BREAK;
+	}
+	
 	if (!context->source->has_video) {
 		if (frame) {
 			switch_image_t *src_img = context->source->cover_art;
@@ -1038,11 +1045,6 @@ static switch_status_t local_stream_file_read_video(switch_file_handle_t *handle
 
 	if ((flags & SVR_CHECK)) {
 		return SWITCH_STATUS_BREAK;
-	}
-
-	if (handle->mm.fps >= context->source->mm.source_fps) {
-		min_qsize = 1;
-		buf_qsize = 1;
 	}
 
 	while(context->ready && context->source->ready && switch_queue_size(context->video_q) > min_qsize) {
@@ -1170,9 +1172,12 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 
 	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
 		*len = bytes / 2 / context->source->channels;
+		context->source->sync = 1;
 	} else {
 		size_t blank;
 
+		context->source->sync = 0;
+		
 		switch_assert(handle->samplerate <= 48000);
 		switch_assert(handle->real_channels <= 2);
 

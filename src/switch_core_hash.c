@@ -55,6 +55,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_pointer(switch_hash_t *hash, const void *data)
+{
+	size_t bytes_required = snprintf(NULL, 0, "%p", data) + 1;
+	char *dkey = malloc(bytes_required);
+	size_t bytes_written = snprintf(dkey, bytes_required, "%p", data);
+
+	if (bytes_written > 0 && bytes_written < bytes_required) {
+		if (switch_hashtable_insert_destructor(hash, dkey, (void *)data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, NULL)) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	switch_safe_free(dkey);
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data)
 {
 	char *dkey = strdup(key);
@@ -63,6 +80,62 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	switch_safe_free(dkey);
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_auto_free(switch_hash_t *hash, const char *key, const char *str)
+{
+	char *dkey = strdup(key);
+	char *dup = strdup(str);
+
+	assert(dup);
+
+	if (switch_hashtable_insert_destructor(hash, dkey, (void *)dup, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_FLAG_FREE_VALUE | HASHTABLE_DUP_CHECK, NULL)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_safe_free(dup);
+	switch_safe_free(dkey);
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(void *) switch_core_hash_insert_alloc_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ size_t size, hashtable_destructor_t destructor) {
+	char *dkey;
+	void *data;
+
+	if (!size) return NULL;
+
+	dkey = strdup(key);
+	data = malloc(size);
+
+	assert(data);
+
+	if (switch_hashtable_insert_destructor(hash, dkey, data, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor)) {
+		memset(data, 0, size);
+		return data;
+	}
+
+	free(data);
+	switch_safe_free(dkey);
+
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_destructor(switch_hash_t *hash, const char *key, const char *str, hashtable_destructor_t destructor)
+{
+	char *dkey = strdup(key);
+	char *dup = strdup(str);
+
+	assert(dup);
+
+	if (switch_hashtable_insert_destructor(hash, dkey, (void *)dup, HASHTABLE_FLAG_FREE_KEY | HASHTABLE_DUP_CHECK, destructor)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_safe_free(dup);
 	switch_safe_free(dkey);
 
 	return SWITCH_STATUS_FALSE;

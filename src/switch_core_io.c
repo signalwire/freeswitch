@@ -242,7 +242,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		for (bp = session->bugs; bp; bp = bp->next) {
 			ok = SWITCH_TRUE;
 
-			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+			if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 				continue;
 			}
 
@@ -303,7 +303,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -422,7 +422,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			if (is_cng) {
 				if (session->plc) {
-					plc_fillin(session->plc, session->raw_read_frame.data, read_frame->codec->implementation->decoded_bytes_per_packet / 2);
+					switch_plc_fillin(session->plc, session->raw_read_frame.data, read_frame->codec->implementation->decoded_bytes_per_packet / 2);
 					is_cng = 0;
 					flag &= ~SFF_CNG;
 				} else {
@@ -470,7 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (!switch_test_flag(read_frame->codec, SWITCH_CODEC_FLAG_HAS_PLC) &&
 					(switch_channel_test_flag(session->channel, CF_JITTERBUFFER_PLC) ||
 					 switch_channel_test_flag(session->channel, CF_CNG_PLC)) && !session->plc) {
-					session->plc = plc_init(NULL);
+					session->plc = switch_plc_init(NULL);
 				}
 
 				if (!switch_test_flag(read_frame->codec, SWITCH_CODEC_FLAG_HAS_PLC) && session->plc && switch_test_flag(read_frame, SFF_PLC)) {
@@ -519,10 +519,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (status == SWITCH_STATUS_SUCCESS && session->read_impl.number_of_channels == 1) {
 					if (session->plc) {
 						if (switch_test_flag(read_frame, SFF_PLC)) {
-							plc_fillin(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
+							switch_plc_fillin(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
 							switch_clear_flag(read_frame, SFF_PLC);
 						} else {
-							plc_rx(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
+							switch_plc_rx(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
 						}
 					}
 				}
@@ -652,7 +652,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -703,7 +703,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -883,7 +883,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 

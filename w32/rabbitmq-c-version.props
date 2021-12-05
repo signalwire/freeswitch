@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <rabbitmq_cVersion>0.8.0</rabbitmq_cVersion>
+    <rabbitmq_cVersion>0.11.0</rabbitmq_cVersion>
   </PropertyGroup>
   <PropertyGroup>
     <rabbitmq_cVersionImported>true</rabbitmq_cVersionImported>
