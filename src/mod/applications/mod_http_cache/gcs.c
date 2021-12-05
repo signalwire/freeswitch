@@ -183,7 +183,7 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 
 		size = switch_file_get_size(fd);
 		if (size) {
-			contents = malloc(size);
+			contents = apr_palloc(pool,size);
 			switch_file_read(fd, (void *) contents, &size);
 		} else {
 			switch_safe_free(file);
