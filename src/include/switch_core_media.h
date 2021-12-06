@@ -437,6 +437,8 @@ SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session,
 SWITCH_DECLARE(void) switch_core_media_set_resolveice(switch_bool_t resolve_ice);
 SWITCH_DECLARE(switch_bool_t) switch_core_media_has_resolveice(void);
 
+SWITCH_DECLARE(void) switch_core_media_do_2833(switch_core_session_t *session);
+																		
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

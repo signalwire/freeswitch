@@ -31,6 +31,7 @@
 
 #include <switch.h>
 #define DEFAULT_LEAD_FRAMES 10
+#define DEBUG_RTP 0
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 static void cleanup_proxy_mode_a(switch_core_session_t *session);
@@ -394,6 +395,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		return NULL;
 	}
 
+#if DEBUG_RTP
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: START %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+	//switch_channel_set_flag(switch_core_session_get_channel(session_b), CF_ACCEPT_CNG);
+#endif
+
 	switch_core_session_get_read_impl(session_a, &read_impl);
 
 	input_callback = data->input_callback;
@@ -465,6 +471,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: silence_var - %s %p\n", silence_var, (void*)session_a);
+#endif
 
 		if (!switch_channel_media_up(chan_a)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_ERROR, "Channel has no media!\n");
@@ -501,85 +510,166 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				silence_frame.samples = silence_frame.datalen / sizeof(int16_t);
 			}
 		}
+	} else {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: NO silence_var %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+#endif
 	}
 
 	bridge_filter_dtmf = switch_true(switch_channel_get_variable(chan_a, "bridge_filter_dtmf"));
 
 
 	for (;;) {
+		int sanity = 1000;
 		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
+
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: LOOP %p -> %p --------------------------------------- \n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (switch_core_session_transcoding(session_a, session_b, SWITCH_MEDIA_TYPE_AUDIO)) {
 			pass_val = 1;
 		} else {
 			pass_val = 2;
 		}
+
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #1 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 		
 		if (pass_val != last_pass_val) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #2 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			switch_core_session_passthru(session_a, SWITCH_MEDIA_TYPE_AUDIO, pass_val == 2 ? SWITCH_TRUE : SWITCH_FALSE);
 			last_pass_val = pass_val;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #3 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 		
 		if (switch_channel_test_flag(chan_a, CF_TRANSFER)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #4 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			data->clean_exit = 1;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #5 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (data->clean_exit || switch_channel_test_flag(chan_b, CF_TRANSFER)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #6 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			switch_channel_clear_flag(chan_a, CF_HOLD);
 			switch_channel_clear_flag(chan_a, CF_SUSPEND);
 			goto end_of_bridge_loop;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #7 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (!switch_channel_test_flag(chan_b, CF_BRIDGED)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #8 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			goto end_of_bridge_loop;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #9 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (!switch_channel_ready(chan_a)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #10 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			if (switch_channel_up(chan_a)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #11 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 				data->clean_exit = 1;
 			}
 			goto end_of_bridge_loop;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #12 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if ((b_state = switch_channel_down_nosig(chan_b))) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #13 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			goto end_of_bridge_loop;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #14 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (switch_channel_test_flag(chan_a, CF_HOLD_ON_BRIDGE)) {
 			switch_core_session_message_t hmsg = { 0 };
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #15 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			switch_channel_clear_flag(chan_a, CF_HOLD_ON_BRIDGE);
 			hmsg.message_id = SWITCH_MESSAGE_INDICATE_HOLD;
 			hmsg.from = __FILE__;
 			hmsg.numeric_arg = 1;
 			switch_core_session_receive_message(session_a, &hmsg);
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #16 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (read_frame_count > DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a) && switch_core_session_private_event_count(session_a)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #17 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_WARNING, "Audio bridge thread: kill channel B: %p -> %p\n", (void*)session_a, (void*)session_b);
+
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.numeric_arg = 42;
 			msg.string_arg = data->b_uuid;
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 			msg.from = __FILE__;
 			switch_core_session_receive_message(session_a, &msg);
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #18 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			switch_ivr_parse_next_event(session_a);
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			switch_core_session_receive_message(session_a, &msg);
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #19 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		switch_ivr_parse_all_messages(session_a);
 
 		if (!inner_bridge && (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND))) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #21 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #22 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #23 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 				goto end_of_bridge_loop;
 			}
 			continue;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #23 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (switch_channel_test_flag(chan_a, CF_HAS_TEXT) && switch_channel_test_flag(chan_b, CF_HAS_TEXT) && !txt_launch) {
 			txt_launch++;
@@ -608,8 +698,14 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 		}
 #endif
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #24 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (read_frame_count >= DEFAULT_LEAD_FRAMES && switch_channel_media_ack(chan_a)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #25 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			if (!played_banner && switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO) &&
 				switch_channel_test_flag(chan_a, CF_ANSWERED) && switch_channel_test_flag(chan_b, CF_ANSWERED) &&
 				++banner_counter > 100 &&
@@ -620,6 +716,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				if (!b_banner_file) {
 					b_banner_file = switch_channel_get_variable(chan_a, "video_pre_call_banner_bleg");
 				}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #26 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 
 				switch_channel_clear_flag(chan_a, CF_VIDEO_PAUSE_READ);
@@ -671,19 +770,31 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				goto end_of_bridge_loop;
 			}
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #27 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		/* if 1 channel has DTMF pass it to the other */
 		while (switch_channel_has_dtmf(chan_a)) {
 			switch_dtmf_t dtmf = { 0, 0 };
 			if (switch_channel_dequeue_dtmf(chan_a, &dtmf) == SWITCH_STATUS_SUCCESS) {
 				int send_dtmf = 1;
+#if DEBUG_RTP
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: dequeued DTMF %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+#endif
 
 				if (input_callback) {
 					switch_status_t cb_status = input_callback(session_a, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0);
 
 					if (cb_status == SWITCH_STATUS_IGNORE) {
 						send_dtmf = 0;
+#if DEBUG_RTP
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: DTMF input callback - IGNORE %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+#endif
 					} else if (cb_status != SWITCH_STATUS_SUCCESS) {
+#if DEBUG_RTP
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: DTMF input callback - !SUCCESS %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+#endif
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
 						switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 						goto end_of_bridge_loop;
@@ -696,13 +807,33 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				}
 
 				if (send_dtmf) {
+#if DEBUG_RTP
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: DTMF - SEND %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+#endif
 					switch_core_session_send_dtmf(session_b, &dtmf);
 					switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 				}
 			}
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #28 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
+
+		while (switch_channel_has_dtmf(chan_b) && (sanity > 0)) {
+#if DEBUG_RTP
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: handling DTMF for B (sanity: %d) %p -> %p\n", sanity, (void*)session_a, (void*)session_b);
+#endif
+			switch_core_media_do_2833(session_b);
+			sanity--;
+		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #29 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (switch_core_session_dequeue_event(session_a, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #30 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			if (input_callback) {
 				input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}
@@ -713,8 +844,14 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #31 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #32 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Answer timeout hit on %s.\n", switch_channel_get_name(chan_a));
 			if (switch_true(switch_channel_get_variable_dup(chan_a, "continue_on_answer_timeout", SWITCH_FALSE, -1))) {
 				data->clean_exit = 1;
@@ -725,6 +862,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 
 		if (!switch_channel_test_flag(chan_a, CF_ANSWERED)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #33 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			if (originator) {
 				if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 					switch_channel_pass_callee_id(chan_b, chan_a);
@@ -770,6 +910,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				}
 			}
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #34 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (originator && !ans_b) ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
 
@@ -789,12 +932,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_core_session_write_video_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 #endif
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #35 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		if (!switch_channel_test_flag(chan_a, CF_AUDIO)) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #36 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			switch_ivr_sleep(session_a, 5000, SWITCH_FALSE, NULL);
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #37 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 			continue;
 		}
 
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #38 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 		/* read audio from 1 channel and write it to the other */
 		status = switch_core_session_read_frame(session_a, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
@@ -807,15 +962,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 												read_impl.number_of_channels, silence_val);
 					read_frame = &silence_frame;
 				} else if (!switch_channel_test_flag(chan_b, CF_ACCEPT_CNG)) {
+#if DEBUG_RTP
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: skip write frame, reason: CF_ACCEPT_CNG %p %p -> %p\n", (void*)session_b, (void*)session_a, (void*)session_b);
+#endif
 					continue;
 				}
 			}
 
 			if (switch_channel_test_flag(chan_a, CF_BRIDGE_NOWRITE)) {
+#if DEBUG_RTP
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: skip write frame, reason: CF_BRIDGE_NOWRITE %p %p -> %p\n", (void*)session_a, (void*)session_a, (void*)session_b);
+#endif
 				continue;
 			}
 
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD) && !switch_channel_test_flag(chan_b, CF_LEG_HOLDING)) {
+#if DEBUG_RTP
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: write frame %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 				if (switch_core_session_write_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG,
 									  "%s ending bridge by request from write function\n", switch_channel_get_name(chan_b));
@@ -826,9 +990,15 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "%s ending bridge by request from read function\n", switch_channel_get_name(chan_a));
 			goto end_of_bridge_loop;
 		}
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #39 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 	}
 
   end_of_bridge_loop:
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #40 %p -> %p\n", (void*)session_a, (void*)session_b);
+#endif
 
 	switch_core_session_passthru(session_a, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_FALSE);
 

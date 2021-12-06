@@ -976,10 +976,18 @@ typedef enum {
 	*/
 
 
-	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12)
+	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12),
 
 	/*
 	  Leave the auto-adjust behavior enableed permenantly rather than only at appropriate times.  (IMPLICITLY sets RTP_BUG_ACCEPT_ANY_PACKETS)
+
+	 */
+
+	RTP_BUG_SEND_NORMALISED_TIMESTAMPS = (1 << 13)
+
+	/*
+	  Send linear timestamps, including synchronised timestamps of 2833 DTMF packets. With this flag set, DTMF's timestamp will be synchronised
+	  with RTP timestamp to produce linear sequence. This sequence will increase by fixed (negotiated) sample count between two RTP packets independent of time.
 
 	 */
 

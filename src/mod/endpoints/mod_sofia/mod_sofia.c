@@ -49,6 +49,8 @@
 #include <stir_shaken.h>
 #endif
 
+#define DEBUG_RTP 0
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
@@ -1275,6 +1277,10 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	switch_time_t now = switch_micro_time_now();
 	switch_assert(tech_pvt != NULL);
 
+#if DEBUG_RTP
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sofia: write frame %p\n", (void*)session);
+#endif
+
 	if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 		if (switch_channel_up_nosig(channel)) {
 			return SWITCH_STATUS_SUCCESS;
@@ -1401,6 +1407,10 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 
 	dtmf_type = tech_pvt->mparams.dtmf_type;
 
+#if DEBUG_RTP
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sofia: send_dtmf [digit: %c, duration: %u, flags: %d, source: %d] (%p)\n", dtmf->digit, dtmf->duration, dtmf->flags, dtmf->source, (void*)session);
+#endif
+
 	/* We only can send INFO when we have no media */
 	if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) ||
 		!switch_channel_media_ready(tech_pvt->channel) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
@@ -1411,6 +1421,9 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	switch (dtmf_type) {
 	case DTMF_2833:
 		{
+#if DEBUG_RTP
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sofia: send_dtmf [digit: %c, duration: %u, flags: %d, source: %d] queue 2833 (%p)\n", dtmf->digit, dtmf->duration, dtmf->flags, dtmf->source, (void*)session);
+#endif
 			return switch_core_media_queue_rfc2833(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, dtmf);
 		}
 	case DTMF_INFO:

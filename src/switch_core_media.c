@@ -40,6 +40,8 @@
 #include <sofia-sip/sdp.h>
 #include <sofia-sip/su.h>
 
+#define DEBUG_RTP 0
+
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
 static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp, switch_sdp_type_t sdp_type);
@@ -1158,6 +1160,14 @@ SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *fla
 
 	if (switch_stristr("~ALWAYS_AUTO_ADJUST", str)) {
 		*flag_pole &= ~(RTP_BUG_ALWAYS_AUTO_ADJUST | RTP_BUG_ACCEPT_ANY_PACKETS);
+	}
+
+	if (switch_stristr("SEND_NORMALISED_TIMESTAMPS", str)) {
+		*flag_pole |= (RTP_BUG_SEND_NORMALISED_TIMESTAMPS);
+	}
+
+	if (switch_stristr("~SEND_NORMALISED_TIMESTAMPS", str)) {
+		*flag_pole &= ~(RTP_BUG_SEND_LINEAR_TIMESTAMPS);
 	}
 }
 
@@ -3625,7 +3635,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 	int fire_writable = 0;
 
 	switch_assert(session);
-
+#if DEBUG_RTP
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Core: write frame %p\n", (void*)session);
+#endif
 	if (!(smh = session->media_handle)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -11413,13 +11425,18 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	switch_core_media_check_dtmf_type(session);
 
-	if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) ||
-		((val = switch_channel_get_variable(session->channel, "supress_cng")) && switch_true(val)) ||
-		((val = switch_channel_get_variable(session->channel, "suppress_cng")) && switch_true(val))) {
-		use_cng = 0;
-		smh->mparams->cng_pt = 0;
+	val = switch_channel_get_variable(session->channel, "suppress_supress_cng");
+	if (!val) {
+	   val = switch_channel_get_variable(session->channel, "suppress_suppress_cng");
 	}
-
+	if (!val || !switch_true(val)) {
+		if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) ||
+				((val = switch_channel_get_variable(session->channel, "supress_cng")) && switch_true(val)) ||
+				((val = switch_channel_get_variable(session->channel, "suppress_cng")) && switch_true(val))) {
+			use_cng = 0;
+			smh->mparams->cng_pt = 0;
+		}
+	}
 
 
 
@@ -16956,6 +16973,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
 
+#if DEBUG_RTP
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Core session: write frame %p\n", (void*)session);
+#endif
+
 	if (!switch_channel_up_nosig(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -17595,6 +17616,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_mutex_unlock(session->codec_write_mutex);
 
 	return status;
+}
+
+SWITCH_DECLARE(void) switch_core_media_do_2833(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+
+	if (!session) {
+		return;
+	}
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Core media do 2833 (%p): no media\n", (void*) session);
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Core media do 2833 (%p): no RTP session\n", (void*) session);
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Core media do 2833 (%p)\n", (void*) session);
+	do_2833(a_engine->rtp_session);
 }
 
 
