@@ -2437,10 +2437,6 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
 					switch_core_max_audio_channels(atoi(val));
-				} else if  (!strcasecmp(var, "lic-sn") && !zstr(val)) {//added by yy for UC
-					strncpy(runtime.lic_sn,val,sizeof(runtime.lic_sn));
-				} else if  (!strcasecmp(var, "lic-pw") && !zstr(val)) {//added by yy for UC
-					strncpy(runtime.lic_pw,val,sizeof(runtime.lic_pw));
 				}
 			}
 		}

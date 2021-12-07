@@ -26,8 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  *
  *
- * switch_config.c -- Configuration File Parser
- *
+ * switch_uc.c
  */
 
 #include <switch.h>
@@ -792,6 +791,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err)
 	runtime.exp_alive_time = 1800;//30 m
 	runtime.can_rcs_work = SWITCH_FALSE;
 	strcpy(runtime.device_type,"SoftUC");
+
+
+
+
+	switch_xml_t xml = NULL, cfg = NULL;
+
+
+	if ((xml = switch_xml_open_cfg("cloudauth.conf", &cfg, NULL))) {
+		switch_xml_t settings, param;
+
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				const char *var = switch_xml_attr_soft(param, "name");
+				const char *val = switch_xml_attr_soft(param, "value");
+
+				if  (!strcasecmp(var, "lic-sn") && !zstr(val)) {//added by yy for UC
+					strncpy(runtime.lic_sn,val,sizeof(runtime.lic_sn));
+				} else if  (!strcasecmp(var, "lic-pw") && !zstr(val)) {//added by yy for UC
+					strncpy(runtime.lic_pw,val,sizeof(runtime.lic_pw));
+				}
+			}
+		}
+		switch_xml_free(xml);
+	}
+
 
 	start = switch_StartAuthManagerEx(RCS_KEY_ID,szIPRErr,runtime.lic_sn,runtime.lic_pw);
 
