@@ -1405,7 +1405,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_port_token(const char
 	} else if (strchr(list_name, '/')) {
 		if (strchr(list_name, ',')) {
 			char *list_name_dup = strdup(list_name);
-			char *argv[32];
+			char *argv[100]; /* MAX ACL */
 			int argc;
 
 			switch_assert(list_name_dup);
