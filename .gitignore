@@ -214,6 +214,8 @@ ipch/
 /src/mod/directories/mod_ldap/Win32/Release MS-LDAP/mod_ldap.*.log
 /src/mod/languages/mod_managed/Win32/Debug_CLR/mod_managed.*.log
 /src/mod/languages/mod_managed/Win32/Release_CLR/mod_managed.*.log
+/src/mod/languages/mod_managedcore/Win32/Debug_CLR/mod_managedcore.*.log
+/src/mod/languages/mod_managedcore/Win32/Release_CLR/mod_managedcore.*.log
 
 /src/.dirstamp
 /src/mod/languages/mod_v8/src/.dirstamp
