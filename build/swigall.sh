@@ -21,5 +21,6 @@ cd src/mod/languages/mod_managed
 make reswig
 cd ../../../..
 
-
-
+cd src/mod/languages/mod_managedcore
+make reswig
+cd ../../../..
