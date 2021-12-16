@@ -1234,6 +1234,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	sip_p_asserted_identity_t *passerted = NULL;
+	sip_p_preferred_identity_t* ppreferred = NULL;
 	char *name = NULL;
 	const char *number = "unknown", *tmp;
 	switch_caller_profile_t *caller_profile;
@@ -1308,6 +1309,22 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 			}
 			if (!zstr(rpid->rpid_display)) {
 				dup = strdup(rpid->rpid_display);
+				switch_assert(dup);
+				if (*dup == '"') {
+					name = dup + 1;
+				} else {
+					name = dup;
+				}
+				if (end_of(name) == '"') {
+					end_of(name) = '\0';
+				}
+			}
+		} else if ((ppreferred = sip_p_preferred_identity(sip))) {
+			if (ppreferred->ppid_url->url_user) {
+				number = ppreferred->ppid_url->url_user;
+			}
+			if (!zstr(ppreferred->ppid_display)) {
+				dup = strdup(ppreferred->ppid_display);
 				switch_assert(dup);
 				if (*dup == '"') {
 					name = dup + 1;
@@ -10152,6 +10169,28 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 
 		if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 			tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+		}
+	}
+
+	if (session && channel && sip && sip->sip_user_agent)
+	{
+		const char* ua = switch_channel_get_variable(channel, "sip_user_agent");
+		if (ua &&
+			(switch_string_match(ua, strlen(ua) - 1, "OpenScape 4000", 13) == SWITCH_STATUS_SUCCESS ||
+				switch_string_match(ua, strlen(ua) - 1, "anynode", 6) == SWITCH_STATUS_SUCCESS)) {
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Potential update callee ID\n");
+
+			if (sip->sip_referred_by) {
+				if (sip->sip_referred_by->b_display) {
+					switch_channel_set_variable_printf(channel, "sip_reffered-by_name", "%d", sip->sip_referred_by->b_display);
+				}
+				if (sip->sip_referred_by->b_cid) {
+					switch_channel_set_variable_printf(channel, "sip_reffered-by_cid", "%d", sip->sip_referred_by->b_cid);
+				}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Update callee ID\n");
+				sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
+			}
 		}
 	}
 
