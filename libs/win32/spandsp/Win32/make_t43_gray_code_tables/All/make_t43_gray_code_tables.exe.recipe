@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\git_fs\fs_1.10_Release\fs_1_10_fork_II\freeswitch\libs\win32\spandsp\Win32\All\make_t43_gray_code_tables.exe</FullPath>
+      <FullPath>D:\git\freeswitch-c4b\libs\win32\spandsp\Win32\All\make_t43_gray_code_tables.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
