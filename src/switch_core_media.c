@@ -9907,7 +9907,8 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 		int this_ptime = (imp->microseconds_per_packet / 1000);
-
+		payload_map_t *pmap;
+		
 		if (!strcasecmp(imp->iananame, "ilbc") || !strcasecmp(imp->iananame, "isac") ) {
 			this_ptime = 20;
 		}
@@ -9932,7 +9933,18 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			continue;
 		}
 
+
+		switch_mutex_lock(smh->sdp_mutex);
+		for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+			if (pmap->negotiated && !strcasecmp(imp->iananame, pmap->iananame)) {
+				smh->ianacodes[i] = pmap->pt;
+				break;
+			}
+		}
+		switch_mutex_unlock(smh->sdp_mutex);
+		
 		already_did[smh->ianacodes[i]] = 1;
+
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->ianacodes[i]);
 	}
 
@@ -11114,13 +11126,21 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							continue;
 						}
 
-						if (smh->ianacodes[i] < 128) {
-							if (already_did[smh->ianacodes[i]]) {
-								continue;
-							}
-							already_did[smh->ianacodes[i]] = 1;
+						if (smh->ianacodes[i] >= 128 || already_did[smh->ianacodes[i]]) {
+							continue;
 						}
 
+						switch_mutex_lock(smh->sdp_mutex);
+						for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+							if (pmap->negotiated && !strcasecmp(imp->iananame, pmap->iananame)) {
+								smh->ianacodes[i] = pmap->pt;
+								break;
+							}
+						}
+						switch_mutex_unlock(smh->sdp_mutex);
+		
+						already_did[smh->ianacodes[i]] = 1;
+						
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->ianacodes[i]);
 
 						if (!ptime) {
