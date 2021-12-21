@@ -883,7 +883,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h sys/time.h])
 
 # Solaris 11 privilege management
 AS_CASE([$host],
