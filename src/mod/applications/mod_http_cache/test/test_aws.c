@@ -184,9 +184,7 @@ FST_TEST_END()
 
 FST_TEST_BEGIN(get_time)
 {
-	char time_stamp[TIME_STAMP_LENGTH];
 	char date_stamp[DATE_STAMP_LENGTH];
-	char time_stamp_test[TIME_STAMP_LENGTH];
 	char date_stamp_test[DATE_STAMP_LENGTH];
 
 	// Get date and time for test case
@@ -197,16 +195,13 @@ FST_TEST_BEGIN(get_time)
 
 	// Get date and time to test
 	get_time("%Y%m%d", date_stamp, DATE_STAMP_LENGTH);
-	get_time("%Y%m%dT%H%M%SZ", time_stamp, TIME_STAMP_LENGTH);
 
 	// https://fresh2refresh.com/c-programming/c-time-related-functions/
 	// https://stackoverflow.com/questions/5141960/get-the-current-time-in-c/5142028
 	// https://linux.die.net/man/3/ctime
 	// https://stackoverflow.com/questions/153890/printing-leading-0s-in-c
 	switch_snprintf(date_stamp_test, DATE_STAMP_LENGTH, "%d%02d%02d", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
-	switch_snprintf(time_stamp_test, TIME_STAMP_LENGTH, "%d%02d%02dT%02d%02d%02dZ", timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 
-	fst_check_string_equals(time_stamp_test, time_stamp);
 	fst_check_string_equals(date_stamp_test, date_stamp);
 }
 FST_TEST_END()

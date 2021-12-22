@@ -1145,6 +1145,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 		if (read_frame && !pass) {
 
+			if (!write_frame.codec) {
+				status = SWITCH_STATUS_FALSE;
+				break;
+			}
+
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
@@ -1668,7 +1673,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			getcause = 0;
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
-	} else {
+	} else if (hl) {
 		x_argc = hl->handle_idx;
 	}
 
@@ -3482,7 +3487,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									}
 								}
 							} else {
-								if (switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
+								if (write_frame.codec && switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
 									write_frame.datalen = (uint32_t)switch_buffer_read(early_state.buffer, write_frame.data,
 																			 write_frame.codec->implementation->decoded_bytes_per_packet);
 								}
@@ -3884,8 +3889,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					}
 				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n",
-								  switch_channel_get_name(peer_channel));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s] Peer UUID: %s\n",
+								  switch_channel_get_name(peer_channel), switch_channel_get_uuid(peer_channel));
 				*cause = SWITCH_CAUSE_SUCCESS;
 
 			} else {

@@ -58,9 +58,9 @@ static void set_max_recursion_depth(void);
 static switch_api_interface_t python_run_interface;
 static void print_python_error(const char * script);
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
-SWITCH_MODULE_DEFINITION_EX(mod_python, mod_python_load, mod_python_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
+SWITCH_MODULE_LOAD_FUNCTION(mod_python3_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python3_shutdown);
+SWITCH_MODULE_DEFINITION_EX(mod_python3, mod_python3_load, mod_python3_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -535,7 +535,7 @@ SWITCH_STANDARD_CHAT_APP(python_chat_function)
 
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_python3_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
@@ -574,7 +574,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 
 		// swap out threadstate since the call threads will create
 		// their own and swap in their threadstate
-		PyThreadState_Swap(NULL);
+		// and release the global interpreter lock
+		PyEval_SaveThread();
+
 	}
 
 	switch_mutex_init(&THREAD_POOL_LOCK, SWITCH_MUTEX_NESTED, pool);
@@ -595,7 +597,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 
 /*
   Called when the system shuts down*/
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python3_shutdown)
 {
 	PyInterpreterState *mainInterpreterState;
 	PyThreadState *myThreadState;
@@ -619,6 +621,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 		pt = nextpt;
 	}
 	PyThreadState_Swap(mainThreadState);
+	PyEval_ReleaseThread(mainThreadState);
 	switch_yield(1000000);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Had to kill %d threads\n", thread_cnt);
@@ -644,8 +647,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 	mainInterpreterState = mainThreadState->interp;
 	myThreadState = PyThreadState_New(mainInterpreterState);
 	PyThreadState_Swap(myThreadState);
+	PyEval_ReleaseThread(myThreadState);
 
 	Py_Finalize();
+
+	// Release the global interpreter lock
+	PyEval_SaveThread();
 
 	return SWITCH_STATUS_UNLOAD;
 

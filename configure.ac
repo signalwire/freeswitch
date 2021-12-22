@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.7-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.8-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [7-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -598,7 +598,7 @@ AC_ARG_ENABLE(srtp,
 AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
 
 have_openal=no
-AC_CHECK_LIB(openal, alMidiGainSOFT, [have_openal="yes"])
+AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
 AC_ARG_ENABLE(zrtp,
@@ -725,7 +725,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.5],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.6],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
@@ -883,7 +883,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h sys/time.h])
 
 # Solaris 11 privilege management
 AS_CASE([$host],
@@ -1531,11 +1531,25 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
 
 PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])])
+    if module_enabled mod_verto; then
+      AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
+    else
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install libks or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+      fi
+    fi
+])
 
 PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])])
+    if module_enabled mod_signalwire; then
+      AC_MSG_ERROR([You need to either install signalwire-client-c or disable mod_signalwire in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+    fi
+])
 
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
@@ -1577,6 +1591,17 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
       ])])])
+
+AC_ARG_ENABLE(systemd,
+  [AS_HELP_STRING([--enable-systemd], [Compile with systemd notify support])])
+
+AS_IF([test "x$enable_systemd" = "xyes"],[
+  PKG_CHECK_MODULES([SYSTEMD], [libsystemd >= 219], [
+    AC_DEFINE([HAVE_SYSTEMD], [1], [Define to 1 if systemd is available])])
+])
+
+AC_SUBST(SYSTEMD_LIBS)
+
 
 dnl ---------------------------------------------------------------------------
 dnl - OpenLDAP SDK
@@ -1973,6 +1998,55 @@ if test "${enable_address_sanitizer}" = "yes"; then
   APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong)
   APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong)
   APR_ADDTO(LDFLAGS, -fsanitize=address)
+fi
+
+#  Enable HEAP profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(heap_profiler,
+  [AC_HELP_STRING([--enable-heap-profiler],[build with google heap profiler])],
+  [enable_heap_profiler="$enable_heap_profiler"],
+  [enable_heap_profiler="no"])
+
+#  Enable CPU profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(cpu_profiler,
+  [AC_HELP_STRING([--enable-cpu-profiler],[build with google cpu profiler])],
+  [enable_cpu_profiler="$enable_cpu_profiler"],
+  [enable_cpu_profiler="no"])
+
+PKG_CHECK_MODULES([TCMALLOC], [libtcmalloc], [have_tcmalloc=yes], [have_tcmalloc=no])
+
+if test "${enable_heap_profiler}" = "yes" || test "${enable_cpu_profiler}" = "yes"; then
+  if test "x$have_tcmalloc" != "xyes" ; then
+    AC_MSG_ERROR([You must install libgoogle-perftools-dev in order to use heap or cpu profiler])
+  fi
+fi
+
+# WARNING: When both enabled you can NOT link them statically and MUST use the special library
+if test "${enable_heap_profiler}" = "yes" && test "${enable_cpu_profiler}" = "yes"; then
+  APR_ADDTO(CFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(CXXFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(LDFLAGS, -ltcmalloc_and_profiler)
+else
+  if test "${enable_heap_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -ltcmalloc)
+    APR_ADDTO(CXXFLAGS, -ltcmalloc)
+    APR_ADDTO(LDFLAGS, -ltcmalloc)
+  fi
+
+  if test "${enable_cpu_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -lprofiler)
+    APR_ADDTO(CXXFLAGS, -lprofiler)
+    APR_ADDTO(LDFLAGS, -lprofiler)
+  fi
+fi
+
+#  Enable fake dlclose
+AC_ARG_ENABLE(fake_dlclose,
+  [AC_HELP_STRING([--enable-fake-dlclose],[Do not unload dynamic libraries])],
+  [enable_fake_dlclose="$enable_fake_dlclose"],
+  [enable_fake_dlclose="no"])
+
+if test "${enable_fake_dlclose}" = "yes"; then
+  APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_FAKE_DLCLOSE)
 fi
 
 AC_ARG_ENABLE(,

@@ -472,8 +472,7 @@ static int process_xml_lang(struct ssml_parser *parsed_data, char **atts)
 		while (atts[i]) {
 			if (!strcmp("xml:lang", atts[i])) {
 				if (!zstr(atts[i + 1])) {
-					strncpy(cur_node->language, atts[i + 1], LANGUAGE_LEN);
-					cur_node->language[LANGUAGE_LEN - 1] = '\0';
+					snprintf(cur_node->language, LANGUAGE_LEN, "%s", atts[i + 1]);
 				}
 			}
 			i += 2;
@@ -494,18 +493,15 @@ static int process_voice(struct ssml_parser *parsed_data, char **atts)
 		while (atts[i]) {
 			if (!strcmp("xml:lang", atts[i])) {
 				if (!zstr(atts[i + 1])) {
-					strncpy(cur_node->language, atts[i + 1], LANGUAGE_LEN);
-					cur_node->language[LANGUAGE_LEN - 1] = '\0';
+					snprintf(cur_node->language, LANGUAGE_LEN, "%s", atts[i + 1]);
 				}
 			} else if (!strcmp("name", atts[i])) {
 				if (!zstr(atts[i + 1])) {
-					strncpy(cur_node->name, atts[i + 1], NAME_LEN);
-					cur_node->name[NAME_LEN - 1] = '\0';
+					snprintf(cur_node->name, NAME_LEN, "%s", atts[i + 1]);
 				}
 			} else if (!strcmp("gender", atts[i])) {
 				if (!zstr(atts[i + 1])) {
-					strncpy(cur_node->gender, atts[i + 1], GENDER_LEN);
-					cur_node->gender[GENDER_LEN - 1] = '\0';
+					snprintf(cur_node->gender, GENDER_LEN, "%s", atts[i + 1]);
 				}
 			}
 			i += 2;
@@ -633,8 +629,7 @@ static int tag_hook(void *user_data, char *name, char **atts, int type)
 		}
 		new_node->tts_voice = NULL;
 		new_node->say_macro = NULL;
-		strncpy(new_node->tag_name, name, TAG_LEN);
-		new_node->tag_name[TAG_LEN - 1] = '\0';
+		snprintf(new_node->tag_name, TAG_LEN, "%s", name);
 		parsed_data->cur_node = new_node;
 		result = process_tag(parsed_data, name, atts);
 	}
@@ -743,8 +738,7 @@ static int process_cdata_tts(struct ssml_parser *parsed_data, char *data, size_t
 		/* try macro */
 		to_say = malloc(len + 1);
 		switch_assert(to_say);
-		strncpy(to_say, data, len);
-		to_say[len] = '\0';
+		snprintf(to_say, len + 1, "%s", data);
 		if (!cur_node->say_macro || !get_file_from_macro(parsed_data, to_say)) {
 			/* use voice instead */
 			if (!get_file_from_voice(parsed_data, to_say)) {
@@ -941,6 +935,12 @@ static switch_status_t tts_file_open(switch_file_handle_t *handle, const char *p
 	memset(context, 0, sizeof(*context));
 	context->flags = SWITCH_SPEECH_FLAG_NONE;
 	if ((status = switch_core_speech_open(&context->sh, module, voice, handle->samplerate, handle->interval, handle->channels, &context->flags, NULL)) == SWITCH_STATUS_SUCCESS) {
+		if (handle->params) {
+			const char *channel_uuid = switch_event_get_header(handle->params, "channel-uuid");
+			if (!zstr(channel_uuid)) {
+				switch_core_speech_text_param_tts(&context->sh, "channel-uuid", channel_uuid);
+			}
+		}
 		if ((status = switch_core_speech_feed_tts(&context->sh, document, &context->flags)) == SWITCH_STATUS_SUCCESS) {
 			handle->channels = 1;
 			handle->samples = 0;
