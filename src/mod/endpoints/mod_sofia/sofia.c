@@ -4601,7 +4601,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				uint8_t disable_message_auth_flag = 0;
 				uint8_t disable_subscription_auth_flag = 0;
 				uint8_t max_recv_requests_per_second_initialized = 0;
-				struct in_addr extaddr;
+				ip_t extaddr;
 				char extip[256] = "";
 
 				if (!xprofilename) {
@@ -6208,7 +6208,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					switch_safe_free(ip);
 				}
 				//for extrtpip extsipip domain name added by yy DS-80287 //UC
-				if (!profile->extrtpip) {
+				if (profile->extrtpip) {
 					if (switch_inet_pton(AF_INET, profile->extrtpip, &extaddr) <= 0) {
 						switch_resolve_host(profile->extrtpip,extip,sizeof(extip));
 						if (strlen(extip) != 0) {
@@ -6219,7 +6219,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 				}
 				//for extrtpip extsipip domain name added by yy DS-80287 //UC
-				if (!profile->extsipip) {
+				if (profile->extsipip) {
 					if (switch_inet_pton(AF_INET, profile->extsipip, &extaddr) <= 0) {
 						switch_resolve_host(profile->extsipip,extip,sizeof(extip));
 						if (strlen(extip) != 0) {
