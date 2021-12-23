@@ -1130,7 +1130,7 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 sofia_gateway_t *sofia_find_gateway__(const char *file, const char *func, int line, switch_channel_t *channel, sip_t const *sip);//added by yy for OS-16451,2020.09.18
 #define sofia_find_gateway(x,y) sofia_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x, y)//added by yy for OS-16451,2020.09.18
 
-sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key);
+sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key, int findnr);
 #define sofia_reg_find_gateway_by_realm(x,y) sofia_reg_find_gateway_by_realm__(__FILE__, __SWITCH_FUNC__, __LINE__,  x, y)
 
 sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *gateway_ptr, const char *event);

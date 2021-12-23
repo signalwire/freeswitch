@@ -6211,7 +6211,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				if (!profile->extrtpip) {
 					if (switch_inet_pton(AF_INET, profile->extrtpip, &extaddr) <= 0) {
 						switch_resolve_host(profile->extrtpip,extip,sizeof(extip));
-						if (strlen(extip) != 0)
+						if (strlen(extip) != 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Domain External RTP IP change [%s]->[%s] \n", profile->extrtpip, extip);
 							profile->extrtpip = switch_core_strdup(profile->pool, extip);
 							
@@ -6222,7 +6222,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				if (!profile->extsipip) {
 					if (switch_inet_pton(AF_INET, profile->extsipip, &extaddr) <= 0) {
 						switch_resolve_host(profile->extsipip,extip,sizeof(extip));
-						if (strlen(extip) != 0)
+						if (strlen(extip) != 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Domain External SIP IP change [%s]->[%s] \n", profile->extsipip, extip);
 							profile->extsipip = switch_core_strdup(profile->pool, extip);
 						}
