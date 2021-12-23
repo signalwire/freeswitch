@@ -339,7 +339,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 		nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 
-		switch_snprintf(header, sizeof(header), "X-FS-Sending-Message: %s", switch_core_get_uuid());
+		switch_snprintf(header, sizeof(header), "X-SH-Sending-Message: %s", switch_core_get_uuid());
 
 		switch_uuid_str(uuid_str, sizeof(uuid_str));
 
@@ -4820,7 +4820,7 @@ void sofia_presence_handle_sip_i_message(int status,
 			}
 		}
 
-		if ((us = sofia_glue_get_unknown_header(sip, "X-FS-Sending-Message")) && !strcmp(us, switch_core_get_uuid())) {
+		if ((us = sofia_glue_get_unknown_header(sip, "X-SH-Sending-Message")) && !strcmp(us, switch_core_get_uuid())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not sending message to ourselves!\n");
 			nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			return;

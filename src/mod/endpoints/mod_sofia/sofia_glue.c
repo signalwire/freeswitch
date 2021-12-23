@@ -1195,26 +1195,32 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		if (!tech_pvt->from_str) {
 			const char *sipip;
+			switch_port_t sip_port; //added by dsq for DS-82556 2020-04-01
+			const char *sipport; //added by dsq for DS-82556 2020-04-01
 			const char *format;
 			char *use_cid_num = switch_core_session_url_encode(tech_pvt->session, cid_num);
 
 			sipip = tech_pvt->profile->sipip;
+			sip_port = tech_pvt->profile->sip_port;//added by dsq for DS-82556 2020-04-01
 
 			if (!zstr(tech_pvt->mparams.remote_ip) && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->mparams.remote_ip)) {
 				sipip = tech_pvt->profile->extsipip;
+				sip_port = tech_pvt->profile->extsipport;//added by dsq for DS-82556 2020-04-01
 			}
 
-			if (!zstr(invite_domain)) {
+			if (!zstr(invite_domain) && strcasecmp(invite_domain, "IPPBX")) {//modified by yy for OS-16451,2020.09.23
 				sipip = invite_domain;
 			}
 			
+			sipport = switch_core_session_sprintf(tech_pvt->session,":%d",sip_port);
+
 			if (zstr(tech_pvt->caller_profile->aniii)){
-				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
-				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", sipip);
-			} else {
-				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s];isup-oli=%s>" : "\"%s\" <sip:%s%s%s;isup-oli=%s>";
+				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s%s]>" : "\"%s\" <sip:%s%s%s%s>";
+				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", sipip, strchr(sipip, ':') ? "" : sipport);
+			} else {;
+				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s%s];isup-oli=%s>" : "\"%s\" <sip:%s%s%s%s;isup-oli=%s>";
 				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", 
-						sipip, tech_pvt->caller_profile->aniii);
+						sipip, strchr(sipip, ':') ? "" : sipport, tech_pvt->caller_profile->aniii);
 			}
 		}
 
@@ -1466,6 +1472,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		switch (cid_type) {
 		case CID_TYPE_PID:
+			//UC
+			if(!zstr(tech_pvt->gateway_username)) {
+				use_number = tech_pvt->gateway_username;
+			}
+
 			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
@@ -1691,7 +1702,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(date), SIPTAG_DATE_STR(date)),
 				   TAG_IF(!zstr(alert_info), SIPTAG_HEADER_STR(alert_info)),
 				   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-				   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+				   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 				   TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 				   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
 				   TAG_IF(!zstr(invite_route_uri), NUTAG_INITIAL_ROUTE_STR(invite_route_uri)),
@@ -1729,7 +1740,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 				   TAG_IF(!zstr(alert_info), SIPTAG_HEADER_STR(alert_info)),
 				   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-				   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+				   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 				   TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 				   TAG_IF(!zstr(identity), SIPTAG_IDENTITY_STR(identity)),
 				   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
@@ -2066,7 +2077,7 @@ void sofia_glue_del_every_gateway(sofia_profile_t *profile)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (gp = profile->gateways; gp; gp = gp->next) {
-		sofia_glue_del_gateway(gp);
+		sofia_glue_del_gateway(gp,profile);//modified by lj for MN-1832 bug7,2019.4.2 //UC
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
@@ -2088,15 +2099,16 @@ void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *s
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
-
-void sofia_glue_del_gateway(sofia_gateway_t *gp)
+//modified by lj for MN-1832 bug7,2019.4.2 //UC
+void sofia_glue_del_gateway(sofia_gateway_t *gp, sofia_profile_t *profile)
 {
 	if (!gp->deleted) {
+		switch_mutex_lock(profile->gw_mutex);
 		if (gp->state != REG_STATE_NOREG) {
 			gp->retry = 0;
 			gp->state = REG_STATE_UNREGISTER;
 		}
-
+		switch_mutex_unlock(profile->gw_mutex);
 		gp->deleted = 1;
 	}
 }

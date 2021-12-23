@@ -265,7 +265,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 
 		if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
 			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>%s\n"
-											  "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n",
+											  "X-SH-Display-Name: %s\nX-FS-Display-Number: %s\n",
 											  header, callee_name, callee_number,
 											  tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua) ?
 											  ";party=calling;privacy=off;screen=no" : "",
@@ -831,7 +831,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-									   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
+									   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
 				} else {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								NUTAG_MEDIA_ENABLE(0),
@@ -842,7 +842,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 								SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-									   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
+									   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
 				}
 
 
@@ -989,7 +989,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SOATAG_RTP_SELECT(1),
 						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
+							   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
 		} else {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
@@ -1007,7 +1007,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str),
 						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)), TAG_END());
+							   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
 		}
 		switch_safe_free(extra_headers);
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -2014,16 +2014,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						zstr(tech_pvt->last_sent_callee_id_number) || strcmp(tech_pvt->last_sent_callee_id_number, number)) {
 
 						if (switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote)) {
-							snprintf(message, sizeof(message), "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n", name, number);
+							snprintf(message, sizeof(message), "X-SH-Display-Name: %s\nX-FS-Display-Number: %s\n", name, number);
 
 							if (switch_channel_test_flag(tech_pvt->channel, CF_LAZY_ATTENDED_TRANSFER)) {
-								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-FS-Lazy-Attended-Transfer: true\n");
+								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-SH-Lazy-Attended-Transfer: true\n");
 								switch_channel_clear_flag(tech_pvt->channel, CF_LAZY_ATTENDED_TRANSFER);
 								switch_channel_clear_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER);
 							}
 
 							if (switch_channel_test_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER)) {
-								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-FS-Attended-Transfer: true\n");
+								snprintf(message + strlen(message), sizeof(message) - strlen(message), "X-SH-Attended-Transfer: true\n");
 								switch_channel_clear_flag(tech_pvt->channel, CF_ATTENDED_TRANSFER);
 							}
 
@@ -2447,7 +2447,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-							   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+							   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 						TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 						TAG_END());
 		}
@@ -2489,7 +2489,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 								TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-									   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+									   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_END());
 					break;
@@ -2503,7 +2503,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 								TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-									   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+									   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_END());
 
@@ -2652,7 +2652,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 									TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-										   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+										   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 									TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 									TAG_END());
 					} else {
@@ -2668,7 +2668,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 									TAG_IF(!zstr(extra_header), SIPTAG_HEADER_STR(extra_header)),
 									TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-										   SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
+										   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
 									TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 									TAG_END());
 					}
@@ -2987,6 +2987,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "CallsOUT\t%u\n", gp->ob_calls);
 				stream->write_function(stream, "FailedCallsIN\t%u\n", gp->ib_failed_calls);
 				stream->write_function(stream, "FailedCallsOUT\t%u\n", gp->ob_failed_calls);
+				stream->write_function(stream, "NetIPPort\t%s\n", switch_str_nil(gp->net_ip_port));//UC
 				stream->write_function(stream, "%s\n", line);
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -3239,6 +3240,7 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", gp->ob_calls);
 	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
 	stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", gp->ob_failed_calls);
+	stream->write_function(stream, "    <netipport>%s</netipport>\n", switch_str_nil(gp->net_ip_port));//UC
 
 	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 		time_t now = switch_epoch_time_now(NULL);
@@ -3567,7 +3569,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			stream->write_function(stream, "+OK every gateway marked for deletion.\n");
 		} else {
 			if ((gateway_ptr = sofia_reg_find_gateway(argv[2]))) {
-				sofia_glue_del_gateway(gateway_ptr);
+				sofia_glue_del_gateway(gateway_ptr,profile);//modified by lj for MN-1832 bug7,2019.4.2 //UC
 				sofia_reg_release_gateway(gateway_ptr);
 				stream->write_function(stream, "+OK gateway marked for deletion.\n");
 			} else {
@@ -4861,6 +4863,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (!sofia_test_flag(gateway_ptr, REG_FLAG_CALLERID)) {
 			tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
 		}
+
+		//UC
+		if (zstr(gateway_ptr->pai_feild_source) || !strcasecmp(gateway_ptr->pai_feild_source, "register")){
+            tech_pvt->gateway_username =  switch_core_session_strdup(nsession, gateway_ptr->register_username);
+        }
 
 		if (!strchr(dest, '@')) {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s@%s", gateway_ptr->destination_prefix, dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));

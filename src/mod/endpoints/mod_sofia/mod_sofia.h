@@ -221,6 +221,7 @@ typedef enum {
 	PFLAG_RUNNING,
 	PFLAG_RESPAWN,
 	PFLAG_MULTIREG,
+	PFLAG_MULTIREG_PORT, //added by dsq  for DS-80595
 	PFLAG_TLS,
 	PFLAG_CHECKUSER,
 	PFLAG_SECURE,
@@ -537,6 +538,11 @@ struct sofia_gateway {
 	char *register_url;
 	char *destination_prefix;
 	char *from_domain;
+	char *net_ip_port;//UC
+	char *regex_username;//UC
+	char *register_str; //UC
+	char *sla_gateway_name; //added by liangjie for OS-14641,2019.8.15 //UC
+	char *pai_feild_source; //added by lsq for OS-15177 //UC
 	sofia_transport_t register_transport;
 	uint32_t freq;
 	time_t expires;
@@ -577,6 +583,7 @@ struct sofia_gateway {
 	char register_network_ip[80];
 	int register_network_port;
 	char *gw_auth_acl;
+	
 };
 
 typedef enum {
@@ -838,6 +845,7 @@ struct private_object {
 	char *preferred_id;
 	char *privacy;
 	char *gateway_from_str;
+	char *gateway_username;//UC
 	char *dest;
 	char *dest_to;
 	char *key;
@@ -1119,8 +1127,11 @@ switch_status_t sofia_reg_add_gateway(sofia_profile_t *profile, const char *key,
 sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, const char *key);
 #define sofia_reg_find_gateway(x) sofia_reg_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
+sofia_gateway_t *sofia_find_gateway__(const char *file, const char *func, int line, switch_channel_t *channel, sip_t const *sip);//added by yy for OS-16451,2020.09.18
+#define sofia_find_gateway(x,y) sofia_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x, y)//added by yy for OS-16451,2020.09.18
+
 sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key);
-#define sofia_reg_find_gateway_by_realm(x) sofia_reg_find_gateway_by_realm__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
+#define sofia_reg_find_gateway_by_realm(x,y) sofia_reg_find_gateway_by_realm__(__FILE__, __SWITCH_FUNC__, __LINE__,  x, y)
 
 sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *gateway_ptr, const char *event);
 
@@ -1132,7 +1143,7 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 
 #define sofia_use_soa(_t) sofia_test_flag(_t, TFLAG_ENABLE_SOA)
 
-#define sofia_test_extra_headers(val) (((!strncasecmp(val, "X-", 2) && strncasecmp(val, "X-FS-", 5)) || !strncasecmp(val, "P-", 2) || !strncasecmp(val, "On", 2)) ? 1 : 0)
+#define sofia_test_extra_headers(val) (((!strncasecmp(val, "X-", 2) && strncasecmp(val, "X-SH-", 5)) || !strncasecmp(val, "P-", 2) || !strncasecmp(val, "On", 2)) ? 1 : 0)
 
 #define check_decode(_var, _session) do {								\
 		assert(_session);												\
@@ -1190,7 +1201,7 @@ void sofia_reg_check_sync(sofia_profile_t *profile);
 
 char *sofia_glue_get_register_host(const char *uri);
 const char *sofia_glue_strip_proto(const char *uri);
-void sofia_glue_del_gateway(sofia_gateway_t *gp);
+void sofia_glue_del_gateway(sofia_gateway_t *gp, sofia_profile_t *profile);//modified by lj for MN-1832 bug7,2019.4.2 //UC
 void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *stream, int up);
 void sofia_glue_del_every_gateway(sofia_profile_t *profile);
 void sofia_reg_send_reboot(sofia_profile_t *profile, const char *callid, const char *user, const char *host, const char *contact, const char *user_agent,

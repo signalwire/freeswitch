@@ -694,9 +694,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_yield(20000);
 				switch_ivr_parse_all_events(session);
 				if (!--new_loops) {
-					//modifiled by dsq for fail2ban 407 2020-4.30,UC
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "[%s] Abandoned from ip %s\n",
-									  switch_core_session_get_name(session),switch_channel_get_variable(session->channel, "remote_network_ip"));
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s %s Abandoned\n",
+									  session->uuid_str, switch_core_session_get_name(session));
 					switch_channel_set_flag(session->channel, CF_NO_CDR);
 					switch_channel_hangup(session->channel, SWITCH_CAUSE_WRONG_CALL_STATE);
 				}

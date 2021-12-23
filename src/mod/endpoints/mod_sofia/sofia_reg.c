@@ -157,6 +157,13 @@ void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int sta
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "State", sofia_state_string(gateway->state));
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Ping-Status", sofia_gateway_status_name(gateway->status));
+		//added by dsq 	
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Register-Realm", gateway->register_realm);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Register-Str", gateway->register_str);	
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Register_Transport", sofia_glue_transport2str(gateway->register_transport));
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "variable_gateway_name", gateway->sla_gateway_name);//added by liangjie for OS-14641,2019.8.15
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Failures", "%d", gateway->failures);
+		//end added by dsq 
 		if (!zstr_buf(gateway->register_network_ip)) {
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Register-Network-IP", gateway->register_network_ip);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Register-Network-Port", "%d", gateway->register_network_port);
@@ -1326,6 +1333,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	const char *sub_host = profile->sub_domain;
 	char contact_str[1024] = "";
 	uint8_t multi_reg = 0, multi_reg_contact = 0, avoid_multi_reg = 0;
+	uint8_t multi_reg_port = 0; //UC
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res = AUTH_OK;
 	long exptime = 300;
@@ -1361,6 +1369,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	char *sw_to_user;
 	char *sw_reg_host;
 	char *token_val = NULL;
+	switch_cache_db_handle_t *dbh; //UC
 
 
 	if (sofia_private_p) {
@@ -1935,6 +1944,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	/* Does this profile supports multiple registrations ? */
 	multi_reg = (sofia_test_pflag(profile, PFLAG_MULTIREG)) ? 1 : 0;
 	multi_reg_contact = (sofia_test_pflag(profile, PFLAG_MULTIREG_CONTACT)) ? 1 : 0;
+	multi_reg_port = (sofia_test_pflag(profile, PFLAG_MULTIREG_PORT)) ? 1 : 0;  //DS-80595 //UC
 
 
 	if (multi_reg && avoid_multi_reg) {
@@ -1955,6 +1965,13 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			username = switch_event_get_header(auth_params, "sip_auth_username");
 			realm = switch_event_get_header(auth_params, "sip_auth_realm");
 		}
+
+		if (multi_reg) {//added by dsq for DS-80595 2019-12-17 //UC
+			if(multi_reg_port){
+				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and network_ip='%q' and network_port='%q'", to_user,reg_host,network_ip,network_port_c);
+				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+			}
+		} 
 
 		if (auth_res != AUTH_RENEWED || !multi_reg) {
 			if (multi_reg) {
@@ -1984,6 +2001,29 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 				update_registration = SWITCH_TRUE;
 			}
 		}
+		//start UC
+		if (switch_get_soft() && !update_registration)
+		{
+				char buf1[32] = "";
+		
+				sql = switch_mprintf("select count(*) from (select reg_user ,count(reg_user) as row from registrations group by reg_user having count(reg_user)>=1) ");
+				if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
+					switch_goto_int(r, 1, end);
+				}
+				
+				switch_cache_db_execute_sql2str(dbh, sql, buf1, sizeof(buf1), NULL);
+				switch_safe_free(sql);
+				switch_cache_db_release_db_handle(&dbh);
+				
+				if (atoi(buf1) >= switch_get_maxext_num()) {				
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Exceeding the maximum number of channels\n");
+					nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+					switch_goto_int(r, 1, end);
+				}
+		
+		}
+		//end UC
 
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 
@@ -2623,7 +2663,7 @@ void sofia_reg_handle_sip_r_register(int status,
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
 			if (!zstr_buf(network_ip)) {
 				snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
-
+				gateway->net_ip_port =  switch_core_sprintf(gateway->pool, "%s:%d",gateway->register_network_ip,gateway->register_network_port);//UC
 			}
 		}
 
@@ -2707,6 +2747,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	int indexnum;
 	char *cur;
 	char authentication[256] = "";
+	char fulluser[128] = "";//UC
 	int ss_state;
 	sofia_gateway_t *var_gateway = NULL;
 	const char *gw_name = NULL;
@@ -2795,7 +2836,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 				*p = '\0';
 			}
 			if (!(var_gateway = sofia_reg_find_gateway(rb))) {
-				var_gateway = sofia_reg_find_gateway_by_realm(rb);
+				var_gateway = sofia_reg_find_gateway_by_realm(rb,0);
 			}
 		}
 
@@ -2845,23 +2886,37 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (sip_auth_username && sip_auth_password) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, sip_auth_username, sip_auth_password);
-	} else if (gateway && is_legitimate_gateway(de, gateway)) {
-		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
-		if (gateway) {
-			switch_event_t *s_event;
-			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_INVALID_DIGEST_REQ) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", gateway->profile->name);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
-				switch_event_fire(&s_event);
+		/*begin, modified by fky for DS-72494*/
+		if (!gateway && sip && sip->sip_from)
+		{
+			if(sip->sip_from->a_url->url_port && strcasecmp(sip->sip_from->a_url->url_port, "5060")) //modified by liangjie for DS-84131,2020.5.12
+				switch_snprintf(fulluser,sizeof(fulluser),"%s@%s:%s",sip->sip_from->a_url->url_user,sip->sip_from->a_url->url_host,sip->sip_from->a_url->url_port);
+			else {
+				switch_snprintf(fulluser,sizeof(fulluser),"%s@%s",sip->sip_from->a_url->url_user,sip->sip_from->a_url->url_host);
 			}
+			gateway = sofia_reg_find_gateway_by_realm(fulluser,0);
 		}
+		/*end, modified by fky for DS-72494*/
+		
+		if(gateway && is_legitimate_gateway(de, gateway))
+		{
+			switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
+		} else {
+			if (gateway) {
+				switch_event_t *s_event;
+				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_INVALID_DIGEST_REQ) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", gateway->profile->name);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+					switch_event_fire(&s_event);
+				}
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+								"Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-							  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
-
-		goto cancel;
+			goto cancel;
+		}
 	}
 
 	if (profile->debug) {
@@ -3636,12 +3691,13 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 }
 
 
-sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key)
+sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char *func, int line, const char *key, int findnr)
 {
 	sofia_gateway_t *gateway = NULL;
 	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
+	char fullusername[128] = "";
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_core_hash_first(mod_sofia_globals.gateway_hash); hi; hi = switch_core_hash_next(&hi)) {
@@ -3649,9 +3705,229 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
 		if (key && (gateway = (sofia_gateway_t *) val) && !gateway->deleted && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
 			break;
 		} else {
+			/*begin, added by fky for DS-72494*/
+			if(key && gateway && !gateway->deleted && gateway->register_username && gateway->register_realm)
+			{
+				switch_snprintf(fullusername, sizeof(fullusername), "%s@%s", gateway->register_username, gateway->register_realm);
+				if(!strcasecmp(fullusername, key))
+					break;
+			}
+			if(key && gateway && !gateway->deleted && gateway->register_username && gateway->net_ip_port)
+			{
+				switch_snprintf(fullusername, sizeof(fullusername), "%s@%s", gateway->register_username, gateway->net_ip_port);
+				if(!strcasecmp(fullusername, key))
+					break;
+			}
+			/*end, added by fky for DS-72494*/
 			gateway = NULL;
 		}
 	}
+	switch_safe_free(hi);
+
+	if (gateway) {
+		if (!sofia_test_pflag(gateway->profile, PFLAG_RUNNING) || gateway->deleted) {
+			gateway = NULL;
+			goto done;
+		}
+		if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
+			gateway = NULL;
+		}
+	}
+	if (gateway) {
+#ifdef SOFIA_DEBUG_RWLOCKS
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
+#endif
+	}
+
+  done:
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	return gateway;
+}
+
+//added by yy for OS-16451,2020.09.18
+sofia_gateway_t *sofia_find_gateway__(const char *file, const char *func, int line, switch_channel_t *channel, sip_t const *sip)
+{
+	sofia_gateway_t *gateway = NULL;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+
+	const char *sip_network_ip = NULL;
+	const char *sip_network_port = NULL;
+
+	const char *sip_req_user = NULL;
+	const char *sip_to_user = NULL;
+
+	const char *sip_contact_host = NULL;
+	const char *sip_contact_port = NULL;
+
+	const char *sip_via_host = NULL;
+	const char *sip_via_port = NULL;
+
+	char ip_port[128] = "";
+
+	if(channel) {
+
+		sip_network_ip = switch_channel_get_variable(channel, "sip_network_ip");
+		sip_network_port = switch_channel_get_variable(channel, "sip_network_port");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway sip_network_ip:sip_network_port = [%s:%s]\n", sip_network_ip, sip_network_port);
+		
+		sip_req_user = switch_channel_get_variable(channel, "sip_req_user");
+		sip_to_user = switch_channel_get_variable(channel, "sip_to_user");
+		
+		sip_contact_host = switch_channel_get_variable(channel, "sip_contact_host");
+		sip_contact_port = switch_channel_get_variable(channel, "sip_contact_port");
+		if(!sip_contact_port) {
+			sip_contact_port = "5060";
+		}
+
+		sip_via_host = switch_channel_get_variable(channel, "sip_via_host");
+		sip_via_port = switch_channel_get_variable(channel, "sip_via_port");
+		if(!sip_via_port) {
+			sip_via_port = "5060";
+		}
+	}
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_core_hash_first(mod_sofia_globals.gateway_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
+
+		if((gateway = (sofia_gateway_t *) val) && !gateway->deleted) {
+
+			switch_bool_t find_user = SWITCH_FALSE;
+			switch_bool_t find_host = SWITCH_FALSE;
+			switch_bool_t find_port = SWITCH_FALSE;
+
+			if(gateway->sla_gateway_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway gateway_name = [%s]\n", gateway->sla_gateway_name);
+			}
+			if(gateway->net_ip_port) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway net_ip_port = [%s]\n", gateway->net_ip_port);
+			}
+			if(gateway->register_username) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway register_username = [%s]\n", gateway->register_username);
+			}
+			if(gateway->auth_username) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway auth_username = [%s]\n", gateway->auth_username);
+			}
+			
+			if(gateway->register_realm) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway register_realm = [%s]\n", gateway->register_realm);
+			}
+			if(gateway->register_proxy) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway register_proxy = [%s]\n", gateway->register_proxy);
+			}
+
+			if(gateway->regex_username) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway regex_username = [%s]\n", gateway->regex_username);
+			}
+
+			//has reg gateway
+			if(switch_true(gateway->register_str)) {
+				//domain
+				if(find_host == SWITCH_FALSE && sip_network_ip && sip_network_port && gateway->net_ip_port) {
+
+					switch_snprintf(ip_port, sizeof(ip_port), "%s:%s", sip_network_ip,sip_network_port);
+					if(!strcasecmp(ip_port, gateway->net_ip_port)){
+						find_host = SWITCH_TRUE;
+					}
+				}
+				//regex reg username
+				if(switch_true(gateway->regex_username)) {
+					//find user
+					if(find_user == SWITCH_FALSE && sip_req_user && gateway->register_username) {
+						if(!strcasecmp(sip_req_user, gateway->register_username)) {
+							find_user = SWITCH_TRUE;
+						}
+					}
+					if(find_user == SWITCH_FALSE && sip_req_user && gateway->auth_username) {
+						if(!strcasecmp(sip_req_user, gateway->auth_username)) {
+							find_user = SWITCH_TRUE;
+						}
+					} 
+					if(find_user == SWITCH_FALSE && sip_to_user && gateway->register_username) {
+						if(!strcasecmp(sip_to_user, gateway->register_username)) {
+							find_user = SWITCH_TRUE;
+						}
+					} 
+					if(find_user == SWITCH_FALSE && sip_to_user && gateway->auth_username) {
+						if(!strcasecmp(sip_to_user, gateway->auth_username)) {
+							find_user = SWITCH_TRUE;
+						}
+					}
+				}
+			}
+
+			//find host
+			if (gateway->register_realm && strstr(gateway->register_realm, ":")) {
+				find_port = SWITCH_TRUE;//has port
+			}
+			if(find_host == SWITCH_FALSE && sip_network_ip && sip_network_port && gateway->register_realm) {
+
+				if(find_port == SWITCH_TRUE) {
+					switch_snprintf(ip_port, sizeof(ip_port), "%s:%s", sip_network_ip,sip_network_port);
+					if(!strcasecmp(ip_port, gateway->register_realm)) {
+						find_host = SWITCH_TRUE;
+					}
+				} else {
+					if(!strcasecmp(sip_network_ip, gateway->register_realm)) {
+						find_host = SWITCH_TRUE;
+					}
+				}
+ 				
+			}
+
+			if(find_host == SWITCH_FALSE && sip_contact_host && sip_contact_port && gateway->register_realm) {
+
+				if(find_port == SWITCH_TRUE) {
+					switch_snprintf(ip_port, sizeof(ip_port), "%s:%s", sip_contact_host,sip_contact_port);
+					if(!strcasecmp(ip_port, gateway->register_realm)) {
+						find_host = SWITCH_TRUE;
+					}
+				} else {
+					if(!strcasecmp(sip_contact_host, gateway->register_realm)) {
+						find_host = SWITCH_TRUE;
+					}
+				}
+			}
+
+			if(find_host == SWITCH_FALSE && sip_via_host && sip_via_port && gateway->register_realm) {
+
+				if(find_port == SWITCH_TRUE) {
+					switch_snprintf(ip_port, sizeof(ip_port), "%s:%s", sip_via_host,sip_via_port);
+					if(!strcasecmp(ip_port, gateway->register_realm)) {
+						find_host = SWITCH_TRUE;
+					}
+				} else {
+					if(!strcasecmp(sip_via_host, gateway->register_realm)) {
+						find_host = SWITCH_TRUE;
+					}
+				}
+			}
+			//regex reg usernmae
+			if(switch_true(gateway->register_str) && switch_true(gateway->regex_username)) {
+				if(find_user == SWITCH_TRUE && find_host == SWITCH_TRUE) {
+					if(gateway->sla_gateway_name) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway gateway_name = [%s]\n", gateway->sla_gateway_name);
+					}
+					break;
+				}
+
+			} else {
+				if(find_host == SWITCH_TRUE) {
+					if(gateway->sla_gateway_name) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway gateway_name = [%s]\n", gateway->sla_gateway_name);
+					}
+					break;
+				}
+			}
+
+			gateway = NULL;
+		}
+		
+	}
+
 	switch_safe_free(hi);
 
 	if (gateway) {
