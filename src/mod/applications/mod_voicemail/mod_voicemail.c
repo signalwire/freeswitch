@@ -2583,7 +2583,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				if (!auth) {
 					if (!zstr(cbt.password) && !strcmp(cbt.password, mypass)) {
 						auth++;
-					} else if (!thepass && profile->allow_empty_password_auth) {
+					} else if (!thehash && !thepass && profile->allow_empty_password_auth) {
 						auth++;
 					}
 
