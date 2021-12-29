@@ -779,6 +779,13 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 		case PGRES_PIPELINE_SYNC:
 			break;
 #endif
+//#if POSTGRESQL_MAJOR_VERSION >= 14
+		case PGRES_PIPELINE_SYNC:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Query (%s) returned PGRES_PIPELINE_SYNC\n", handle->sql);
+		case PGRES_PIPELINE_ABORTED:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Query (%s) returned PGRES_PIPELINE_ABORTED\n", handle->sql);
+		/* Added in PostgreSQL 14.x */
+//#endif
 		case PGRES_EMPTY_QUERY:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Query (%s) returned PGRES_EMPTY_QUERY\n", handle->sql);
 		case PGRES_BAD_RESPONSE:
