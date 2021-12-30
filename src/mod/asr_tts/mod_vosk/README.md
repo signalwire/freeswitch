@@ -34,9 +34,9 @@ Run the following sample dialplan:
 git clone --branch vosk-fix --single-branch https://github.com/alphacep/libks
 ```
 
-You can create more advanced dealplans with ESL and scripts in various languages. See examples in scripts folder.
+You can create more advanced dialplans with ESL and scripts in various languages. See examples in scripts folder.
 
-!!! ATTENSION In order for ESL to recieve events, make sure that fire_asr_events variable is set to true (false by default).
+!!! ATTENTION In order for ESL to recieve events, make sure that fire_asr_events variable is set to true (false by default).
 The dialplan can look like this:
 
 ```
