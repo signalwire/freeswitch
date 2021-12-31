@@ -665,12 +665,12 @@ AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 case $host in
      *-darwin*)
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/libpq/lib/pkgconfig
+	path_push_unique PKG_CONFIG_PATH /usr/local/opt/openssl@1.1/lib/pkgconfig
      ;;
 esac
 
 if test "$PKG_CONFIG" = "no" \
-	|| test x"$enable_core_pgsql_pkgconfig" = x"no" \
-	|| ! pkg-config libpq; then
+	|| test x"$enable_core_pgsql_pkgconfig" = x"no"; then
 	if test "$PG_CONFIG" != "no"; then
 		AC_MSG_CHECKING([for PostgreSQL libraries via pg_config])
 		POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
