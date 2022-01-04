@@ -795,7 +795,7 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		return;
 	}
 
-	if (!root->pi || !root->pi[0]) {
+	if (root->pi == (char ***)(SWITCH_XML_NIL) || !root->pi || !root->pi[0]) {
 		root->pi = (char ***) switch_must_malloc(sizeof(char **));
 		*(root->pi) = NULL;		/* first pi */
 	}
