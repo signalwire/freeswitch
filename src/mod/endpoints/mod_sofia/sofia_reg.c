@@ -2810,9 +2810,11 @@ void sofia_reg_handle_sip_r_challenge(int status,
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
 					if (!strcasecmp(var, "reverse-auth-user")) {
+						switch_safe_free(dup_user);
 						dup_user = strdup(val);
 						sip_auth_username = dup_user;
 					} else if (!strcasecmp(var, "reverse-auth-pass")) {
+						switch_safe_free(dup_pass);
 						dup_pass = strdup(val);
 						sip_auth_password = dup_pass;
 					}
