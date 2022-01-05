@@ -5210,12 +5210,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_validate_common_audio_sdp(switch_core_
 	}
 
 	if (!(smh = session->media_handle)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Media session is already initialized?\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Media session is already initialized?\n");
 		return 0;
 	}
 
 	if (!switch_stristr("m=audio", r_sdp)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No Audio found! Skip audio validation.\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No Audio found! Skip audio validation.\n");
 		return -1;
 	}
 
@@ -5661,7 +5661,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, NULL);
 
 	if ((sdp->sdp_connection && sdp->sdp_connection->c_address && !strcmp(sdp->sdp_connection->c_address, "0.0.0.0"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "RFC2543 from March 1999 called; They want their 0.0.0.0 hold method back.....\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "RFC2543 from March 1999 called; They want their 0.0.0.0 hold method back.....\n");
 		sendonly = 2;			/* global sendonly always wins */
 	}
 

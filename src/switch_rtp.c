@@ -7568,7 +7568,7 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 		len = ((switch_size_t)ntohs(msg->header.length) * 4) + 4;
 
 		if (msg->header.version != 2 || !(msg->header.type > 191 && msg->header.type < 210)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
 							  "INVALID RTCP PACKET TYPE %d VER %d LEN %" SWITCH_SIZE_T_FMT "\n", msg->header.type,
 							  msg->header.version, len);
 			status = SWITCH_STATUS_BREAK;
@@ -7579,7 +7579,7 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 		//"WTF BYTES %ld REMAIN %ld PACKET TYPE %d LEN %ld\n", *bytes, remain, msg->header.type, len);
 
 		if (len > remain) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
 							  "RTCP INVALID LENGTH %" SWITCH_SIZE_T_FMT "\n", len);
 			len = remain;
 		}
