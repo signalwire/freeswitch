@@ -344,6 +344,7 @@ void vpx_int_pro_row_c(int16_t hbuf[16], const uint8_t *ref,
                        const int ref_stride, const int height) {
   int idx;
   const int norm_factor = height >> 1;
+  if (height == 1) return;
   for (idx = 0; idx < 16; ++idx) {
     int i;
     hbuf[idx] = 0;
