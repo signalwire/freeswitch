@@ -490,7 +490,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 
 					} else {
-						file_sample_len = file_data_len = 0;
+						file_sample_len = 0;
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
@@ -1891,7 +1891,6 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 SWITCH_STANDARD_APP(conference_function)
 {
-	switch_codec_t *read_codec = NULL;
 	//uint32_t flags = 0;
 	conference_member_t member = { 0 };
 	conference_obj_t *conference = NULL;
@@ -1931,7 +1930,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	/* Save the original read codec. */
-	if (!(read_codec = switch_core_session_get_read_codec(session))) {
+	if (!switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel has no media!\n");
 		goto end;
 	}
