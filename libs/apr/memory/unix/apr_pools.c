@@ -1005,7 +1005,7 @@ APR_DECLARE(char *) apr_pvsprintf(apr_pool_t *pool, const char *fmt, va_list ap)
 	if (pool->user_mutex) apr_thread_mutex_lock(pool->user_mutex);
 #endif
 
-    ps.node = active = pool->active;
+    ps.node = pool->active;
     ps.pool = pool;
     ps.vbuff.curpos  = ps.node->first_avail;
 

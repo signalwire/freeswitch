@@ -1069,7 +1069,7 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
 
                 s_len = strlen(s);
 
-                if (alternate_form && (q = strchr(s, '.')) == NULL) {
+                if (alternate_form && strchr(s, '.') == NULL) {
                     s[s_len++] = '.';
                     s[s_len] = '\0'; /* delimit for following strchr() */
                 }
