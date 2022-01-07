@@ -2429,7 +2429,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 
 switch_status_t verto_tech_media(verto_pvt_t *tech_pvt, const char *r_sdp, switch_sdp_type_t sdp_type)
 {
-	uint8_t match = 0, p = 0;
+	uint8_t p = 0;
 
 	switch_assert(tech_pvt != NULL);
 	switch_assert(r_sdp != NULL);
@@ -2438,7 +2438,7 @@ switch_status_t verto_tech_media(verto_pvt_t *tech_pvt, const char *r_sdp, switc
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, r_sdp, &p, sdp_type))) {
+	if (switch_core_media_negotiate_sdp(tech_pvt->session, r_sdp, &p, sdp_type)) {
 		if (switch_core_media_choose_ports(tech_pvt->session, SWITCH_TRUE, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		//if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
@@ -3413,7 +3413,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
 		} else if (!strcasecmp(action, "updateMedia")) {
 			const char *sdp = NULL;
-			uint8_t match = 0, p = 0;
+			uint8_t p = 0;
 
 			if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -3443,7 +3443,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 			//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-			if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_REQUEST))) {
+			if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_REQUEST)) {
 				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 		
 				if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
@@ -3549,7 +3549,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	cJSON *dialog;
 	verto_pvt_t *tech_pvt = NULL;
 	const char *call_id = NULL, *sdp = NULL;
-	uint8_t match = 0, p = 0;
+	uint8_t p = 0;
 
 	*response = obj;
 
@@ -3601,7 +3601,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 	//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE))) {
+	if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE)) {
 		//switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 		
 		if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
@@ -4573,7 +4573,6 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 {
 	cJSON *cmd = NULL, *arg = NULL, *reply;
 	switch_stream_handle_t stream = { 0 };
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (params) {
 		cmd = cJSON_GetObjectItem(params, "cmd");
@@ -4598,7 +4597,7 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 
 	SWITCH_STANDARD_STREAM(stream);
 
-	if (cmd && (status = switch_api_execute(cmd->valuestring, arg ? arg->valuestring : NULL, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+	if (cmd && switch_api_execute(cmd->valuestring, arg ? arg->valuestring : NULL, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		cJSON_AddItemToObject(reply, "message", cJSON_CreateString((char *) stream.data));
 	} else {
 		cJSON_AddItemToObject(reply, "message", cJSON_CreateString("INVALID CALL"));
@@ -5921,10 +5920,9 @@ static switch_status_t verto_write_text_frame(switch_core_session_t *session, sw
 	}
 
 	if (switch_buffer_inuse(tech_pvt->text_write_buffer)) {
-		uint32_t datalen;
 		switch_byte_t data[SWITCH_RTP_MAX_BUF_LEN] = "";
 
-		if ((datalen = switch_buffer_read(tech_pvt->text_write_buffer, data, 100))) {
+		if (switch_buffer_read(tech_pvt->text_write_buffer, data, 100)) {
 			cJSON *obj = NULL, *txt = NULL, *params = NULL;
 			jsock_t *jsock;
 
