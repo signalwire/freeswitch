@@ -918,7 +918,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
-		(val = switch_channel_get_variable(channel, "sip-force-contact")) ||
+		switch_channel_get_variable(channel, "sip-force-contact") ||
 		((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 		sticky = tech_pvt->record_route;
 		session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
@@ -2615,7 +2615,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 
 				if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
-					(val = switch_channel_get_variable(channel, "sip-force-contact")) ||
+					switch_channel_get_variable(channel, "sip-force-contact") ||
 					((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 					sticky = tech_pvt->record_route;
 					switch_channel_set_variable(channel, "sip_nat_detected", "true");
@@ -4389,7 +4389,6 @@ SWITCH_STANDARD_API(sofia_gateway_data_function)
 {
 	char *argv[4];
 	char *mydata;
-	int argc;
 	sofia_gateway_t *gateway;
 	char *gwname, *param, *varname;
 	const char *val = NULL;
@@ -4402,7 +4401,7 @@ SWITCH_STANDARD_API(sofia_gateway_data_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
+	if (!switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) || !argv[0]) {
 		goto end;
 	}
 
@@ -4679,7 +4678,7 @@ static int protect_dest_uri(switch_caller_profile_t *cp)
 	switch_size_t enclen = 0;
 	int mod = 0;
 
-	if (!(e = strchr(p, '@'))) {
+	if (!strchr(p, '@')) {
 		return 0;
 	}
 
