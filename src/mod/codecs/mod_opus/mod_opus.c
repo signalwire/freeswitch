@@ -145,22 +145,22 @@ struct opus_context {
 };
 
 struct {
-	int use_vbr;
-	int use_dtx;
+	switch_bool_t use_vbr;
+	switch_bool_t use_dtx;
 	int complexity;
 	int maxaveragebitrate;
 	int maxplaybackrate;
 	int sprop_maxcapturerate;
 	int plpct;
-	int asymmetric_samplerates;
-	int bitrate_negotiation;
-	int keep_fec;
-	int fec_decode;
-	int adjust_bitrate;
+	switch_bool_t asymmetric_samplerates;
+	switch_bool_t bitrate_negotiation;
+	switch_bool_t keep_fec;
+	switch_bool_t fec_decode;
+	switch_bool_t adjust_bitrate;
 	int debuginfo;
-	uint32_t use_jb_lookahead;
+	switch_bool_t use_jb_lookahead;
 	switch_mutex_t *mutex;
-	int mono;
+	switch_bool_t mono;
 } opus_prefs;
 
 static struct {
@@ -1052,25 +1052,25 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(key, "use-vbr") && !zstr(val)) {
-				opus_prefs.use_vbr = atoi(val);
+				opus_prefs.use_vbr = switch_true(val);
 			} else if (!strcasecmp(key, "use-dtx")) {
-				opus_prefs.use_dtx = atoi(val);
+				opus_prefs.use_dtx =  switch_true(val);
 			} else if (!strcasecmp(key, "complexity")) {
 				opus_prefs.complexity = atoi(val);
 			} else if (!strcasecmp(key, "packet-loss-percent")) {
 				opus_prefs.plpct = atoi(val);
 			} else if (!strcasecmp(key, "asymmetric-sample-rates")) {
-				opus_prefs.asymmetric_samplerates = atoi(val);
+				opus_prefs.asymmetric_samplerates = switch_true(val);
 			} else if (!strcasecmp(key, "bitrate-negotiation")) {
-				opus_prefs.bitrate_negotiation = atoi(val);
+				opus_prefs.bitrate_negotiation = switch_true(val);
 			} else if (!strcasecmp(key, "use-jb-lookahead")) {
 				opus_prefs.use_jb_lookahead = switch_true(val);
 			} else if (!strcasecmp(key, "keep-fec-enabled")) { /* encoder */
-				opus_prefs.keep_fec = atoi(val);
+				opus_prefs.keep_fec = switch_true(val);
 			} else if (!strcasecmp(key, "advertise-useinbandfec")) { /*decoder, has meaning only for FMTP: useinbandfec=1 by default */
-				opus_prefs.fec_decode = atoi(val);
+				opus_prefs.fec_decode = switch_true(val);
 			} else if (!strcasecmp(key, "adjust-bitrate")) { /* encoder, this setting will make the encoder adjust its bitrate based on a feedback loop (RTCP). This is not "VBR".*/
-				opus_prefs.adjust_bitrate = atoi(val);
+				opus_prefs.adjust_bitrate = switch_true(val);
 			} else if (!strcasecmp(key, "maxaveragebitrate")) {
 				opus_prefs.maxaveragebitrate = atoi(val);
 				if (opus_prefs.maxaveragebitrate < SWITCH_OPUS_MIN_BITRATE || opus_prefs.maxaveragebitrate > SWITCH_OPUS_MAX_BITRATE) {
@@ -1087,7 +1087,7 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 					opus_prefs.sprop_maxcapturerate = 0; /* value not supported */
 				}
 			} else if (!strcasecmp(key, "mono")) {
-				opus_prefs.mono = atoi(val);
+				opus_prefs.mono = switch_true(val);
 			}
 		}
 	}
