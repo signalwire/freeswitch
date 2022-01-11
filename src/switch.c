@@ -230,7 +230,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 static int check_fd(int fd, int ms)
 {
 	struct pollfd pfds[2] = { { 0 } };
-	int s, r = 0, i = 0;
+	int s, r = 0;
 
 	pfds[0].fd = fd;
 	pfds[0].events = POLLIN | POLLERR;
@@ -242,7 +242,7 @@ static int check_fd(int fd, int ms)
 		r = -1;
 
 		if ((pfds[0].revents & POLLIN)) {
-			if ((i = read(fd, &r, sizeof(r))) > -1) {
+			if (read(fd, &r, sizeof(r)) > -1) {
 				(void)write(fd, &r, sizeof(r));
 			}
 		}
@@ -1206,9 +1206,9 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	if (do_wait) {
 		if (fds[1] > -1) {
-			int i, v = 1;
+			int v = 1;
 
-			if ((i = write(fds[1], &v, sizeof(v))) < 0) {
+			if (write(fds[1], &v, sizeof(v)) < 0) {
 				fprintf(stderr, "System Error [%s]\n", strerror(errno));
 			} else {
 				(void)read(fds[1], &v, sizeof(v));

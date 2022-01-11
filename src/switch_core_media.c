@@ -6667,7 +6667,6 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
 			int media_on_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
-			int media_on_hold_b = 0;
 			int bypass_after_hold_a = 0;
 			int bypass_after_hold_b = 0;
 
@@ -6676,7 +6675,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			}
 
 			if (b_channel) {
-				if ((media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1)))) {
+				if (switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1))) {
 					bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
 				}
 			}
@@ -13622,16 +13621,12 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_session_t *session, const char *r_sdp,
 															  switch_sdp_type_t sdp_type, const char *codec_string)
 {
-
-	
-
 	sdp_parser_t *parser;
 	sdp_session_t *sdp;
-	switch_media_handle_t *smh;
 
 	switch_assert(session);
 
-	if (!(smh = session->media_handle)) {
+	if (!session->media_handle) {
 		return;
 	}
 
@@ -13652,7 +13647,6 @@ SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_sessio
 
 		sdp_parser_free(parser);
 	}
-
 }
 
 

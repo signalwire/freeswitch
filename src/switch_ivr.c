@@ -2135,10 +2135,9 @@ SWITCH_DECLARE(void) switch_ivr_bg_media(const char *uuid, switch_media_flag_t f
 SWITCH_DECLARE(void) switch_ivr_check_hold(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_media_flow_t flow;
 
 	if (switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_test_cap(channel, CC_MUTE_VIA_MEDIA_STREAM) &&
-		(flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO)) != SWITCH_MEDIA_FLOW_SENDRECV) {
+		switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO) != SWITCH_MEDIA_FLOW_SENDRECV) {
 		switch_core_session_message_t msg = { 0 };
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;

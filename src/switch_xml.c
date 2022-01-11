@@ -1257,7 +1257,7 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	char *wp = ebuf;
 	char *ep = ebuf + elen - 1;
 
-	if (!(var = strstr(rp, "$${"))) {
+	if (!strstr(rp, "$${")) {
 		*newlen = strlen(buf);
 		return buf;
 	}

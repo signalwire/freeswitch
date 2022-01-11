@@ -3425,7 +3425,7 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t shell, sw
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "posix_spawn is unsupported on current platform\n");
 	return 1;
 #else
-	int status = 0, rval;
+	int status = 0;
 	char buffer[1024];
 	pid_t pid;
 	char *pdata = NULL, *argv[64];
@@ -3521,7 +3521,7 @@ SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t shell, sw
 					.revents = 0
 			};
 
-			while ((rval = poll(pfds, 2, /*timeout*/-1)) > 0) {
+			while (poll(pfds, 2, /*timeout*/-1) > 0) {
 				if (pfds[0].revents & POLLIN) {
 					int bytes_read = read(cout_pipe[0], buffer, sizeof(buffer));
 					stream->raw_write_function(stream, (unsigned char *)buffer, bytes_read);

@@ -2532,12 +2532,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		oglobals.ignore_ring_ready = 1;
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_ring"))) {
+	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_ring")) && switch_true(var_val)) {
 		oglobals.early_ok = 0;
 		oglobals.monitor_early_media_ring = 1;
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_fail"))) {
+	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_fail")) && switch_true(var_val)) {
 		oglobals.early_ok = 0;
 		oglobals.monitor_early_media_fail = 1;
 	}

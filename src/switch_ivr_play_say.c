@@ -1375,7 +1375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		if ((alt = strchr(file, ':'))) {
+		if (strchr(file, ':')) {
 			char *dup;
 
 			if (!strncasecmp(file, "phrase:", 7)) {
