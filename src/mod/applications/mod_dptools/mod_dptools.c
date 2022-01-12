@@ -1459,7 +1459,6 @@ SWITCH_STANDARD_APP(wait_for_video_ready_function)
 SWITCH_STANDARD_APP(presence_function)
 {
 	char *argv[6] = { 0 };
-	int argc;
 	char *mydata = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -1468,7 +1467,7 @@ SWITCH_STANDARD_APP(presence_function)
 		return;
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
+	if (switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0])) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 		return;
 	}

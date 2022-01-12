@@ -276,6 +276,7 @@ static INLINE void hadamard_8x8_sse2(const int16_t *src_diff,
   src[5] = _mm_load_si128((const __m128i *)(src_diff += src_stride));
   src[6] = _mm_load_si128((const __m128i *)(src_diff += src_stride));
   src[7] = _mm_load_si128((const __m128i *)(src_diff += src_stride));
+  (void)src_diff;
 
   hadamard_col8_sse2(src, 0);
   hadamard_col8_sse2(src, 1);

@@ -883,10 +883,9 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 {
 	va_list ap;
 	char *data = NULL;
-	int ret;
 
 	va_start(ap, fmt);
-	if ((ret = switch_vasprintf(&data, fmt, ap)) != -1) {
+	if (switch_vasprintf(&data, fmt, ap) != -1) {
 		if (!strncasecmp(data, "+xml:", 5)) {
 			switch_xml_t xml;
 			char *form;
@@ -3062,7 +3061,6 @@ SWITCH_STANDARD_API(dl_logout)
 SWITCH_STANDARD_API(dingaling)
 {
 	char *argv[10] = { 0 };
-	int argc = 0;
 	void *val;
 	char *myarg = NULL;
 	mdl_profile_t *profile = NULL;
@@ -3077,7 +3075,7 @@ SWITCH_STANDARD_API(dingaling)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((argc = switch_separate_string(myarg, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) != 1) {
+	if (switch_separate_string(myarg, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) != 1) {
 		stream->write_function(stream, "USAGE: %s\n", DINGALING_SYNTAX);
 		goto done;
 	}

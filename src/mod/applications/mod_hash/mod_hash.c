@@ -435,7 +435,7 @@ SWITCH_STANDARD_APP(hash_function)
 		if (argc < 4) {
 			goto usage;
 		}
-		if (!(value = switch_core_hash_find(globals.db_hash, hash_key))) {
+		if (!switch_core_hash_find(globals.db_hash, hash_key)) {
 			switch_core_hash_insert_dup(globals.db_hash, hash_key, argv[3]);
 		}
 
@@ -507,7 +507,7 @@ SWITCH_STANDARD_API(hash_api_function)
 			goto usage;
 		}
 		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
-		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
+		if (switch_core_hash_find(globals.db_hash, hash_key)) {
 			stream->write_function(stream, "-ERR key already exists\n");
 		} else {
 			switch_core_hash_insert_dup(globals.db_hash, hash_key, argv[3]);
