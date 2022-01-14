@@ -281,7 +281,9 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 		}
 	}
 
+#ifdef CRYPTO_MEM_CHECK_ON
 	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
+#endif
 
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
 
