@@ -782,9 +782,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err)
 	
 	runtime.serial_num = -1;
 	runtime.has_rcs_key = SWITCH_FALSE;
-	runtime.max_concurrency = 1;
-	runtime.max_extension = 2;
-	runtime.max_api_num = 2;
+	runtime.max_concurrency = 2;
+	runtime.max_extension = 5;
+	runtime.max_api_num = 1;
 	runtime.can_rcs_work = SWITCH_FALSE;
 	runtime.device_features_auth_sn = 0;
 	runtime.device_modules_auth_sn = 0;
