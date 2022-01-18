@@ -1109,13 +1109,15 @@ SWITCH_STANDARD_API(event_sink_function)
 					switch_xml_free(xml);
 				} else {
 					stream->write_function(stream, "<data><reply type=\"error\">XML Render Error</reply></data>\n");
-					break;
+					goto endloop;
 				}
 
 				stream->write_function(stream, "%s\n", listener->ebuf);
 			}
 
 			switch_safe_free(listener->ebuf);
+			
+		  endloop:
 			switch_event_destroy(&pevent);
 		}
 
