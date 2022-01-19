@@ -3313,7 +3313,7 @@ char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_b
 			break;
 		}
 
-		route = sip_header_as_string(nh->nh_home, (void *) rr);
+		route = sip_header_as_string(nua_handle_home(nh), (void *) rr);
 		route_len = (int)strlen(route);
 		route_encoded_len = (route_len * 3) + (count ? 3 : 0);
 		routes[count] = route;
@@ -3448,7 +3448,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 
 	if (sip->sip_record_route) {
 		char *fs_path_str = sofia_glue_get_encoded_fs_path(nh, sip->sip_record_route, SWITCH_FALSE);
-		char *full_contact = sip_header_as_string(nh->nh_home, (void *) contact);
+		char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) contact);
 		char *full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
 		if (fs_path_str && full_contact_dup) {
 			contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, fs_path_str);
