@@ -269,6 +269,7 @@ switch_status_t conference_member_add_event_data(conference_member_t *member, sw
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Ghost", "%s", conference_utils_member_test_flag(member, MFLAG_GHOST) ? "true" : "false");
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Current-Energy", "%d", member->score);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Endconf", "%s", conference_utils_member_test_flag(member, MFLAG_ENDCONF) ? "true" : "false" );
 
 	return status;
 }
