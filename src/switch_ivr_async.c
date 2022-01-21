@@ -1924,6 +1924,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 	if (!strcasecmp(file, "all")) {
 		return switch_core_media_bug_remove_callback(session, record_callback);
 	} else if ((bug = switch_channel_get_private(channel, file))) {
+		switch_channel_set_private(channel, file, NULL);
 		switch_core_media_bug_remove(session, &bug);
 		return SWITCH_STATUS_SUCCESS;
 	}
