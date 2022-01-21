@@ -9599,6 +9599,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if ((val = switch_channel_get_variable(session->channel, "rtp_manual_rtp_bugs"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Processing RTP bugs: %s\n", val);
+		switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
+		if (!a_engine->rtp_session) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No RTP session for RTP bugs: %s\n", val);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Setting RTP bugs: %s\n", val);
+			switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);
+		}
+	}
+
 	switch_core_media_parse_media_flags(session);
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
@@ -9670,7 +9681,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	if (!(switch_media_handle_test_media_flag(smh, SCMF_REWRITE_TIMESTAMPS) ||
-		  ((val = switch_channel_get_variable(session->channel, "rtp_rewrite_timestamps")) && switch_true(val)))) {
+		  ((val = switch_channel_get_variable(session->channel, "rtp_rewrite_timestamps")) && switch_false(val)))) {
 		flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
 	}
 
@@ -9871,25 +9882,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			vad_out = 0;
 		}
 
-
 		a_engine->ssrc = switch_rtp_get_ssrc(a_engine->rtp_session);
 		switch_channel_set_variable_printf(session->channel, "rtp_use_ssrc", "%u", a_engine->ssrc);
-
-
 
 		if (smh->mparams->auto_rtp_bugs & RTP_BUG_IGNORE_MARK_BIT) {
 			a_engine->rtp_bugs |= RTP_BUG_IGNORE_MARK_BIT;
 		}
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_manual_rtp_bugs"))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Processing RTP bugs: %s\n", val);
 			switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
+			if (!a_engine->rtp_session) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No RTP session for RTP bugs: %s\n", val);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Setting RTP bugs: %s\n", val);
+				switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);
+			}
 		}
-
-		//if (switch_channel_test_flag(session->channel, CF_AVPF)) {
-		//	smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
-		//}
-
-		switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);
 
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(a_engine->rtp_session, session, &a_engine->read_codec, SWITCH_VAD_FLAG_TALKING | SWITCH_VAD_FLAG_EVENTS_TALK | SWITCH_VAD_FLAG_EVENTS_NOTALK);
@@ -10370,6 +10379,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 
 				if ((val = switch_channel_get_variable(session->channel, "rtp_manual_text_rtp_bugs"))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Processing RTP bugs: %s\n", val);
 					switch_core_media_parse_rtp_bugs(&t_engine->rtp_bugs, val);
 				}
 
@@ -10699,6 +10709,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 
 				if ((val = switch_channel_get_variable(session->channel, "rtp_manual_video_rtp_bugs"))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Processing RTP bugs: %s\n", val);
 					switch_core_media_parse_rtp_bugs(&v_engine->rtp_bugs, val);
 				}
 
