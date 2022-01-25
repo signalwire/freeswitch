@@ -6736,6 +6736,26 @@ static void mod_verto_ks_logger(const char *file, const char *func, int line, in
 	va_end(ap);
 }
 
+static void verto_event_free_subclass() 
+{
+	switch_event_free_subclass(MY_EVENT_LOGIN);
+	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
+	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
+}
+
+static void verto_destroy_globals_hash_tables()
+{
+	if (verto_globals.method_hash) {
+		switch_core_hash_destroy(&verto_globals.method_hash);
+	}
+	if (verto_globals.event_channel_hash) {
+		switch_core_hash_destroy(&verto_globals.event_channel_hash);
+	}
+	if (verto_globals.jsock_hash) {
+		switch_core_hash_destroy(&verto_globals.jsock_hash);
+	}
+}
+
 /* Macro expands to: switch_status_t mod_verto_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 {
@@ -6750,16 +6770,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	ks_init();
 
 	if (switch_event_reserve_subclass(MY_EVENT_LOGIN) != SWITCH_STATUS_SUCCESS) {
+		ks_shutdown();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_LOGIN);
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_DISCONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_event_free_subclass(MY_EVENT_LOGIN);
+		ks_shutdown();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_DISCONNECT);
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_CONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_event_free_subclass(MY_EVENT_LOGIN);
+		switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
+		ks_shutdown();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_CONNECT);
 		return SWITCH_STATUS_TERM;
 	}
@@ -6810,7 +6836,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	r = init();
 
-	if (r) return SWITCH_STATUS_TERM;
+	if (r) {
+		switch_core_hash_destroy(&json_GLOBALS.store_hash);
+		verto_event_free_subclass();
+		switch_event_channel_unbind(NULL, verto_broadcast, NULL);
+		verto_destroy_globals_hash_tables();
+		ks_shutdown();
+		return SWITCH_STATUS_TERM;
+	}
 
 	if (verto_globals.kslog_on == SWITCH_TRUE) {
 		ks_global_set_logger(mod_verto_ks_logger);
@@ -6848,6 +6881,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	if (verto_globals.enable_fs_events) {
 		if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+			verto_event_free_subclass();
+			switch_event_channel_unbind(NULL, verto_broadcast, NULL);
+			switch_core_hash_destroy(&json_GLOBALS.store_hash);
+			verto_destroy_globals_hash_tables();
+			ks_global_set_logger(NULL);
+			ks_shutdown();
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 			return SWITCH_STATUS_GENERR;
 		}
@@ -6865,9 +6904,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 {
 
-	switch_event_free_subclass(MY_EVENT_LOGIN);
-	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
-	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
+	verto_event_free_subclass();
 
 	json_cleanup();
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
@@ -6881,9 +6918,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	attach_wake();
 	attach_wake();
 
-	switch_core_hash_destroy(&verto_globals.method_hash);
-	switch_core_hash_destroy(&verto_globals.event_channel_hash);
-	switch_core_hash_destroy(&verto_globals.jsock_hash);
+	verto_destroy_globals_hash_tables();
 
 	ks_global_set_logger(NULL);
 	ks_shutdown();
