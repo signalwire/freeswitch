@@ -651,7 +651,6 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 {
 	switch_threadattr_t *thd_attr;
 	uint32_t index = 0;
-	int launched = 0;
 	uint32_t sanity = 200;
 
 	switch_memory_pool_t *pool = RUNTIME_POOL;
@@ -677,12 +676,11 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE, pool);
 		while(--sanity && !EVENT_DISPATCH_QUEUE_RUNNING[index]) switch_yield(10000);
 
-		if (index == 1) {
+		if (index == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Create event dispatch thread %d\n", index);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Create additional event dispatch thread %d\n", index);
 		}
-		launched++;
 	}
 
 	SOFT_MAX_DISPATCH = index;
