@@ -1192,7 +1192,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto (type=%s, index=%d, direction=%s, force=%d)\n", type2str(type), index, direction == SWITCH_RTP_CRYPTO_SEND ? "SEND" : "RECV", force);
 
-	if (!force && engine->ssec[ctype].local_raw_key[0]) {
+	if (!force && !zstr(engine->ssec[ctype].local_crypto_key)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "CRYPTO: Building crypto SKIP\n");
 		return SWITCH_STATUS_IGNORE;
 	}
