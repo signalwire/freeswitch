@@ -57,7 +57,8 @@
 #define HAVE_FUNC 1
 #endif
 
-#define ROUTE_MAX_HEADERS 10
+#define ROUTE_MAX_HEADERS 20
+#define ROUTE_ENCODED_HEADER_MAX_CHARS (1024 * 3)
 #define MAX_CODEC_CHECK_FRAMES 50
 #define MAX_MISMATCH_FRAMES 5
 #define MODNAME "mod_sofia"

@@ -3296,60 +3296,39 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 
 char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix)
 {
-	char *route;
+	char *route = NULL;
 	int count = 0;
-	char *routes[ROUTE_MAX_HEADERS] = {0};
-	int buf_len_required = (add_fs_path_prefix ? 10 : 1);  /* ;fs_path=  + nul byte*/
-	int buf_len_avail;
-	char *route_encoded_buf = NULL;
-	char *buf_p = NULL;
+	char route_buf[ROUTE_ENCODED_HEADER_MAX_CHARS] = {0};
+	sip_route_t *rrp;
+	switch_stream_handle_t rr_stream = { 0 };
+	SWITCH_STANDARD_STREAM(rr_stream);
 
-	for (sip_route_t *rr = rt; rr; rr = rr->r_next) {
-		int route_len;
-		int route_encoded_len;
+	if (add_fs_path_prefix) {
+		rr_stream.write_function(&rr_stream, ";fs_path=");
+	}
+
+	for(rrp = rt; rrp; rrp = rrp->r_next) {
+		char *sep = count == 0 ? "" : "%2C";
+		char *rr = sip_header_as_string(nua_handle_home(nh), (void *) rrp);
+		switch_url_encode(rr, route_buf, ROUTE_ENCODED_HEADER_MAX_CHARS);
+		rr_stream.write_function(&rr_stream, "%s%s", sep, route_buf);
+		su_free(nua_handle_home(nh), rr);
 
 		if (count >= ROUTE_MAX_HEADERS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Message exceeds ROUTE_MAX_HEADERS of %d\n", ROUTE_MAX_HEADERS);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ROUTE_MAX_HEADERS of %d reached\n", ROUTE_MAX_HEADERS);
 			break;
 		}
-
-		route = sip_header_as_string(nua_handle_home(nh), (void *) rr);
-		route_len = (int)strlen(route);
-		route_encoded_len = (route_len * 3) + (count ? 3 : 0);
-		routes[count] = route;
-		buf_len_required += route_encoded_len;
 		count++;
 	}
 
-	switch_zmalloc(route_encoded_buf, buf_len_required);
-	buf_p = route_encoded_buf;
-	buf_len_avail = buf_len_required;
-
-	if (add_fs_path_prefix) {
-		switch_copy_string(buf_p, ";fs_path=", 10);
-		buf_p += 9;
-		buf_len_avail -= 9;
+	if (!zstr((char *) rr_stream.data)) {
+		route = rr_stream.data;
+	} else {
+		switch_safe_free(rr_stream.data);
 	}
 
-	for (int i = 0; i < count; i++) {
-		int actual_encoded_len;
-		route = routes[i];
-		if (i) {
-			switch_copy_string(buf_p, "%2C", buf_len_avail);
-			buf_p += 3;
-			buf_len_avail -= 3;
-		}
-
-		switch_url_encode(route, buf_p, buf_len_avail);
-		actual_encoded_len = strlen(buf_p);
-		buf_p += actual_encoded_len;
-		buf_len_avail -= actual_encoded_len;
-
-		su_free(nua_handle_home(nh), route);
-	}
-
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Record-Route headers [%s]\n", count, route_encoded_buf);
-	return route_encoded_buf;
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Route headers [%s]\n", count, route ? route : "");
+	return route;
 }
 
 
