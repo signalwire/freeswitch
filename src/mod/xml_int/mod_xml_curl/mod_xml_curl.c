@@ -53,6 +53,7 @@ struct xml_binding {
 	char *ssl_key_password;
 	char *ssl_version;
 	char *ssl_cacert_file;
+	char *unix_socket_path;
 	uint32_t enable_ssl_verifyhost;
 	char *cookie_file;
 	switch_hash_t *vars_map;
@@ -281,6 +282,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
 		}
 
+		if (binding->unix_socket_path) {
+            switch_curl_easy_setopt(curl_handle, CURLOPT_UNIX_SOCKET_PATH, binding->unix_socket_path);
+        }
+
 		if (binding->cookie_file) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, binding->cookie_file);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, binding->cookie_file);
@@ -372,6 +377,7 @@ static switch_status_t do_config(void)
 		char *ssl_key_password = NULL;
 		char *ssl_version = NULL;
 		char *ssl_cacert_file = NULL;
+		char *unix_socket_path = NULL;
 		uint32_t enable_ssl_verifyhost = 0;
 		char *cookie_file = NULL;
 		hash_node_t *hash_node;
@@ -437,6 +443,8 @@ static switch_status_t do_config(void)
 				cookie_file = val;
 			} else if (!strcasecmp(var, "use-dynamic-url") && switch_true(val)) {
 				use_dynamic_url = 1;
+			} else if (!strcasecmp(var, "unix-socket-path")) {
+                unix_socket_path = val;
 			} else if (!strcasecmp(var, "enable-post-var")) {
 				if (!vars_map && need_vars_map == 0) {
 					if (switch_core_hash_init(&vars_map) != SWITCH_STATUS_SUCCESS) {
@@ -529,6 +537,10 @@ static switch_status_t do_config(void)
 		if (cookie_file) {
 			binding->cookie_file = switch_core_strdup(globals.pool, cookie_file);
 		}
+
+		if (unix_socket_path) {
+            binding->unix_socket_path = switch_core_strdup(globals.pool, unix_socket_path);
+        }
 
 		binding->vars_map = vars_map;
 
