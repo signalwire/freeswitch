@@ -10103,26 +10103,30 @@ static switch_status_t switch_rtp_sendto(switch_rtp_t *rtp_session, switch_socke
 {
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 
-	if (!rtp_session || !where || !send_msg || !len || !*len) {
+	if (!rtp_session) {
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (rtp_session->rtp_bugs & RTP_BUG_SEND_NORMALISED_TIMESTAMPS) {
 		{
 			uint32_t ts = normalised_ts_get_next(rtp_session);
+
+			if (!where || !send_msg || !len || !*len) {
+				return SWITCH_STATUS_GENERR;
+			}
 #if DEBUG_RTP
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "RTP: NORM ts: %u %s %p/%p\n", ts,
 					rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName", (void*)rtp_session->session, (void*)rtp_session);
 #endif
 			send_msg->header.ts = htonl(ts);
-			ret = switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, len);
+			ret = switch_socket_sendto(sock, where, 0, (void *) send_msg, len);
 			if (ret != SWITCH_STATUS_SUCCESS) {
 				return ret;
 			}
 			normalised_ts_commit(rtp_session, ts);
 		}
 	} else {
-		return switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, len);
+		return switch_socket_sendto(sock, where, 0, (void *) send_msg, len);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
