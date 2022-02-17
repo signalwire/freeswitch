@@ -4851,21 +4851,23 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 			switch_port_t remote_rtcp_port = engine->remote_rtcp_port;
 
-			if (remote_rtcp_port) {
-				if (!strcasecmp(val, "passthru")) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PASSTHRU PORT %d\n",
-									  type2str(type), remote_rtcp_port);
-					switch_rtp_activate_rtcp(engine->rtp_session, -1, remote_rtcp_port, engine->rtcp_mux > 0);
-				} else {
-					int interval = atoi(val);
-					if (interval < 100 || interval > 500000) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_ERROR,
-										  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-						interval = 5000;
-					}
+			if (switch_channel_var_false(smh->session->channel, "telnyx_disable_rtcp") || !switch_channel_get_variable(smh->session->channel, "telnyx_disable_rtcp")) {
+				if (remote_rtcp_port) {
+					if (!strcasecmp(val, "passthru")) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PASSTHRU PORT %d\n",
+								type2str(type), remote_rtcp_port);
+						switch_rtp_activate_rtcp(engine->rtp_session, -1, remote_rtcp_port, engine->rtcp_mux > 0);
+					} else {
+						int interval = atoi(val);
+						if (interval < 100 || interval > 500000) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_ERROR,
+									"Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+							interval = 5000;
+						}
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PORT %d\n", type2str(type), remote_rtcp_port);
-					switch_rtp_activate_rtcp(engine->rtp_session, interval, remote_rtcp_port, engine->rtcp_mux > 0);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PORT %d\n", type2str(type), remote_rtcp_port);
+						switch_rtp_activate_rtcp(engine->rtp_session, interval, remote_rtcp_port, engine->rtcp_mux > 0);
+					}
 				}
 			}
 		}
@@ -9937,24 +9939,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			const char *rport = switch_channel_get_variable(session->channel, "rtp_remote_audio_rtcp_port");
 			switch_port_t remote_rtcp_port = a_engine->remote_rtcp_port;
 
-			if (!remote_rtcp_port && rport) {
-				remote_rtcp_port = (switch_port_t)atoi(rport);
-			}
-
-			if (!strcasecmp(val, "passthru")) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PASSTHRU PORT %d\n", remote_rtcp_port);
-				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port, a_engine->rtcp_mux > 0);
-			} else {
-				int interval = atoi(val);
-				if (interval < 100 || interval > 500000) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-									  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-					interval = 5000;
+			if (switch_channel_var_false(smh->session->channel, "telnyx_disable_rtcp") || !switch_channel_get_variable(smh->session->channel, "telnyx_disable_rtcp")) {
+				if (!remote_rtcp_port && rport) {
+					remote_rtcp_port = (switch_port_t)atoi(rport);
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating RTCP PORT %d\n", remote_rtcp_port);
-				switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
+				if (!strcasecmp(val, "passthru")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PASSTHRU PORT %d\n", remote_rtcp_port);
+					switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port, a_engine->rtcp_mux > 0);
+				} else {
+					int interval = atoi(val);
+					if (interval < 100 || interval > 500000) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+									"Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+						interval = 5000;
+					}
 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating RTCP PORT %d\n", remote_rtcp_port);
+					switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
+
+				}
 			}
 
 			if (a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].ready && a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].ready &&
@@ -10307,23 +10311,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					const char *rport = switch_channel_get_variable(session->channel, "rtp_remote_text_rtcp_port");
 					switch_port_t remote_port = t_engine->remote_rtcp_port;
 
-					if (rport) {
-						remote_port = (switch_port_t)atoi(rport);
-					}
-					if (!strcasecmp(val, "passthru")) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating TEXT RTCP PASSTHRU PORT %d\n", remote_port);
-						switch_rtp_activate_rtcp(t_engine->rtp_session, -1, remote_port, t_engine->rtcp_mux > 0);
-					} else {
-						int interval = atoi(val);
-						if (interval < 100 || interval > 500000) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-											  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-							interval = 5000;
+					if (switch_channel_var_false(smh->session->channel, "telnyx_disable_rtcp") || !switch_channel_get_variable(smh->session->channel, "telnyx_disable_rtcp")) {
+						if (rport) {
+							remote_port = (switch_port_t)atoi(rport);
 						}
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
-										  "Activating TEXT RTCP PORT %d interval %d mux %d\n", remote_port, interval, t_engine->rtcp_mux);
-						switch_rtp_activate_rtcp(t_engine->rtp_session, interval, remote_port, t_engine->rtcp_mux > 0);
+						if (!strcasecmp(val, "passthru")) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating TEXT RTCP PASSTHRU PORT %d\n", remote_port);
+							switch_rtp_activate_rtcp(t_engine->rtp_session, -1, remote_port, t_engine->rtcp_mux > 0);
+						} else {
+							int interval = atoi(val);
+							if (interval < 100 || interval > 500000) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+												  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+								interval = 5000;
+							}
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+											  "Activating TEXT RTCP PORT %d interval %d mux %d\n", remote_port, interval, t_engine->rtcp_mux);
+							switch_rtp_activate_rtcp(t_engine->rtp_session, interval, remote_port, t_engine->rtcp_mux > 0);
 
+						}
 					}
 
 
@@ -10635,23 +10641,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					const char *rport = switch_channel_get_variable(session->channel, "rtp_remote_video_rtcp_port");
 					switch_port_t remote_port = v_engine->remote_rtcp_port;
 
-					if (rport) {
-						remote_port = (switch_port_t)atoi(rport);
-					}
-					if (!strcasecmp(val, "passthru")) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PASSTHRU PORT %d\n", remote_port);
-						switch_rtp_activate_rtcp(v_engine->rtp_session, -1, remote_port, v_engine->rtcp_mux > 0);
-					} else {
-						int interval = atoi(val);
-						if (interval < 100 || interval > 500000) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-											  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-							interval = 5000;
+					if (switch_channel_var_false(smh->session->channel, "telnyx_disable_rtcp") || !switch_channel_get_variable(smh->session->channel, "telnyx_disable_rtcp")) {
+						if (rport) {
+							remote_port = (switch_port_t)atoi(rport);
 						}
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
-										  "Activating VIDEO RTCP PORT %d interval %d mux %d\n", remote_port, interval, v_engine->rtcp_mux);
-						switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
+						if (!strcasecmp(val, "passthru")) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PASSTHRU PORT %d\n", remote_port);
+							switch_rtp_activate_rtcp(v_engine->rtp_session, -1, remote_port, v_engine->rtcp_mux > 0);
+						} else {
+							int interval = atoi(val);
+							if (interval < 100 || interval > 500000) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+												  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+								interval = 5000;
+							}
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+											  "Activating VIDEO RTCP PORT %d interval %d mux %d\n", remote_port, interval, v_engine->rtcp_mux);
+							switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
 
+						}
 					}
 
 
