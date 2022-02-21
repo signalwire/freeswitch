@@ -3042,7 +3042,7 @@ SWITCH_DECLARE(void) switch_rtp_set_media_timeout(switch_rtp_t *rtp_session, uin
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
-					  "%s MEDIA TIMEOUT %s set to %u", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session), ms);
+					  "%s MEDIA TIMEOUT %s set to %u\n", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session), ms);
 	rtp_session->media_timeout = ms;
 	switch_rtp_reset_media_timer(rtp_session);
 }
@@ -6610,11 +6610,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
 
-			if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
-				switch_core_timer_sync(&rtp_session->timer);
-				reset_jitter_seq(rtp_session);
-			}
-
 			status = switch_jb_put_packet(rtp_session->jb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);
 			if (status == SWITCH_STATUS_TOO_LATE) {
 				goto more;
@@ -7805,10 +7800,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						process_rtcp_packet(rtp_session, &rtcp_bytes);
 						ret = 1;
 
-						if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-							switch_core_timer_sync(&rtp_session->timer);
-							reset_jitter_seq(rtp_session);
-						}
 						continue;
 					}
 				}
