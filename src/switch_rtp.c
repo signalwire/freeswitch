@@ -7809,7 +7809,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 							switch_core_timer_sync(&rtp_session->timer);
 							reset_jitter_seq(rtp_session);
 						}
-						goto recvfrom;
+						continue;
 					}
 				}
 			}
