@@ -794,3 +794,4 @@ mariadb-connector-c-*
 /spandsp*/
 /spandsp*
 win32/spandsp/spandsp.h
+win32/spandsp/win32

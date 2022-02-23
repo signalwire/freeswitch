@@ -172,6 +172,8 @@
     <!-- <param name="bitpacking" value="aal2"/> -->
     <!--max number of open dialogs in proceeding -->
     <!--<param name="max-proceeding" value="1000"/>-->
+    <!--max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
+    <!--<param name="max-recv-requests-per-second" value="0"/> -->
     <!--session timers for all call to expire after the specified seconds -->
     <!--<param name="session-timeout" value="1800"/>-->
     <!-- Can be 'true' or 'contact' -->
@@ -215,6 +217,14 @@
 
     <!-- TLS ciphers default: ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH  -->
     <param name="tls-ciphers" value="$${sip_tls_ciphers}"/>
+
+    <!--
+        Connect timeout for outgoing requests using TLS (in milliseconds).
+        Set the timeout and SIP engine will try again sending an outgoing request
+        and when possible - using an alternative address (DNS failover).
+        Default - 0 (disabled)
+    -->
+    <!-- <param name="tls-orq-connect-timeout" value="3000" /> -->
 
     <!-- turn on auto-flush during bridge (skip timer sleep when the socket already has data)
          (reduces delay on latent connections default true, must be disabled explicitly)-->

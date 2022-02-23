@@ -492,6 +492,7 @@ Description: Adds mod_verto.
  Adds mod_verto.
 Build-Depends: libperl-dev
 Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
+Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
 
 ## mod/event_handlers
 
@@ -665,11 +666,17 @@ Description: mod_perl
  Adds mod_perl.
 Build-Depends: libperl-dev
 Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
+Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
 
 Module: languages/mod_python
 Description: mod_python
  Adds mod_python.
-Build-Depends: python-dev 
+Build-Depends: python-dev | python-dev-is-python2
+
+Module: languages/mod_python3
+Description: mod_python3
+ Adds mod_python3.
+Build-Depends: python3-dev
 
 Module: languages/mod_v8
 Description: mod_v8

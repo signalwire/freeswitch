@@ -377,7 +377,7 @@ static void event_handler(switch_event_t *event)
 			if (!uuid || (l->session && strcmp(uuid, switch_core_session_get_uuid(l->session)))) {
 				send = 0;
 			}
-			if (!strcmp(switch_core_session_get_uuid(l->session), switch_event_get_header_nil(event, "Job-Owner-UUID"))) {
+			if (l->session && !strcmp(switch_core_session_get_uuid(l->session), switch_event_get_header_nil(event, "Job-Owner-UUID"))) {
 			    send = 1;
 			}
 		}

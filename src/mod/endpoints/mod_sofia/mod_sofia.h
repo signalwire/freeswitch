@@ -363,6 +363,7 @@ typedef enum {
 	TFLAG_PASS_ACK,
 	TFLAG_KEEPALIVE,
 	TFLAG_SKIP_EARLY,
+	TFLAG_100_UEPOCH_SET,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -461,6 +462,7 @@ typedef enum {
 	SOFIA_TLS_VERSION_TLSv1 = (1 << 2),
 	SOFIA_TLS_VERSION_TLSv1_1 = (1 << 3),
 	SOFIA_TLS_VERSION_TLSv1_2 = (1 << 4),
+	SOFIA_TLS_VERSION_TLSv1_3 = (1 << 5),
 } sofia_tls_version_t;
 
 typedef enum {
@@ -720,6 +722,7 @@ struct sofia_profile {
 	uint32_t session_timeout;
 	uint32_t minimum_session_expires;
 	uint32_t max_proceeding;
+	uint32_t max_recv_requests_per_second;
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
 	char *odbc_dsn;
@@ -760,6 +763,7 @@ struct sofia_profile {
 	uint32_t timer_t1x64;
 	uint32_t timer_t2;
 	uint32_t timer_t4;
+	uint32_t tls_orq_connect_timeout;
 	char *contact_user;
 	char *local_network;
 	uint32_t trans_timeout;

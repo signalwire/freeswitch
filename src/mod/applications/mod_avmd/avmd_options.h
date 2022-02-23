@@ -5,7 +5,7 @@
  *
  * Contributor(s):
  *
- * Piotr Gregor     <piotrgregor@rsyncme.org>
+ * Piotr Gregor <piotrgregor@rsyncme.org>
  */
 
 
