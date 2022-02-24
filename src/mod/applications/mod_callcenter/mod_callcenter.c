@@ -1606,6 +1606,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
 	switch_cache_db_test_reactive(dbh, "select count(external_calls_count) from agents", NULL, "alter table agents add external_calls_count integer not null default 0;");
+	switch_cache_db_test_reactive(dbh, "select count(last_bridge_end_old) from agents", NULL, "alter table agents add last_bridge_end_old integer not null default 0;");
+	switch_cache_db_test_reactive(dbh, "select count(send_event) from agents", NULL, "alter table agents add send_event integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
 	/* This will rename column system for SQLite */
 	if (switch_cache_db_get_type(dbh) == SCDB_TYPE_CORE_DB) {
