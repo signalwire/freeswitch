@@ -470,6 +470,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	if (switch_channel_var_true(chan_a, "bridge_accept_cng")) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: accept_cng %p\n", (void*)session_a);
+#endif
+		switch_channel_set_flag(chan_b, CF_ACCEPT_CNG);
+	}
+
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
 #if DEBUG_RTP
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: silence_var - %s %p\n", silence_var, (void*)session_a);
