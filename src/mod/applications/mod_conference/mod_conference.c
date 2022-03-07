@@ -2479,9 +2479,13 @@ SWITCH_STANDARD_APP(conference_function)
 	do {
 		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
 		
-		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_RECVONLY)) {
+		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_SENDONLY)) {
 			conference_loop_output(&member);
 		} else {
+			if (!member.input_thread) {
+				conference_loop_launch_input(&member, switch_core_session_get_pool(member.session));
+			}
+
 			if (conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
 				switch_yield(100000);
 				member.loop_loop = 1;
