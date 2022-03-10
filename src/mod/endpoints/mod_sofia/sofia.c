@@ -11456,7 +11456,20 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				if (!zstr(un->un_value)) {
 					char *tmp_name;
 					if ((tmp_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
-						switch_channel_set_variable(channel, tmp_name, un->un_value);
+
+						const char* diversion_var = switch_channel_get_variable(channel, tmp_name);
+						if (!zstr(diversion_var)) {
+							char* tmp_str;
+							if ((tmp_str = switch_mprintf("%s, %s", diversion_var, un->un_value))) {
+								switch_channel_set_variable(channel, tmp_name, tmp_str);
+								free(tmp_str);
+							}
+							else {
+								switch_channel_set_variable(channel, tmp_name, un->un_value);
+							}
+						} else {
+							switch_channel_set_variable(channel, tmp_name, un->un_value);
+						}
 						free(tmp_name);
 					}
 				}
