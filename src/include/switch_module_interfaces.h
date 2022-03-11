@@ -356,6 +356,7 @@ struct switch_file_handle {
 	switch_size_t samples_in;
 	switch_size_t samples_out;
 	int32_t vol;
+	int32_t volgranular;
 	switch_audio_resampler_t *resampler;
 	switch_buffer_t *buffer;
 	switch_byte_t *dbuf;
