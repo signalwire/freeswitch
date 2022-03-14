@@ -40,10 +40,14 @@ typedef enum {
 	FTDM_ANALOG_CALLERID = (1 << 1),
 	FTDM_ANALOG_ANSWER_POLARITY_REVERSE = (1 << 2),
 	FTDM_ANALOG_HANGUP_POLARITY_REVERSE = (1 << 3),
-	FTDM_ANALOG_POLARITY_CALLERID = (1 << 4)
+	FTDM_ANALOG_POLARITY_CALLERID = (1 << 4),
+	FTDM_ANALOG_CLEARLETTER = (1<<5),
+	FTDM_ANALOG_ENABLE_AMD = (1<<6),  //added by dsq for DS-73667
+	FTDM_ANALOG_ENABLE_SR = (1<<7)  //added by dsq for DS-85568 2020.07.17 
 } ftdm_analog_flag_t;
 
 #define FTDM_MAX_HOTLINE_STR		32
+#define FTDM_MAX_TRAIN_STR          1280
 #define MAX_DTMF 256
 
 struct ftdm_analog_data {
@@ -53,12 +57,21 @@ struct ftdm_analog_data {
 	uint32_t polarity_delay;
 	uint32_t digit_timeout;
 	char hotline[FTDM_MAX_HOTLINE_STR];
+	uint32_t wait_dial_timeout;//added by yy for DS-70107,2019.02.22
+	uint32_t hotline_timeout;//added by yy for DS-70107,2019.02.22
+	uint32_t delay_dial_timeout;//added by yy for DS-77498,2019.08.29
+	uint32_t on_ring_cnt;//added by yy for DS-80779,2019.12.31
+	uint32_t  silence_time; //added by dsq for DS-73667,2019.07.30
+	char train_data_path[FTDM_MAX_TRAIN_STR]; //added by dsq for DS-73667
+	uint32_t shaihao_period; //added by dsq for ds-73667 
+	int dtmf_levelmin; //added by dsq for OS-16875 2021.1.8
+
 };
 
 /* Analog flags to be set in the sflags (signaling flags) channel memeber */
 #define AF_POLARITY_REVERSE (1 << 0)
 
-static void *ftdm_analog_run(ftdm_thread_t *me, void *obj);
+void *ftdm_analog_run(ftdm_thread_t *me, void *obj);
 typedef struct ftdm_analog_data ftdm_analog_data_t;
 
 #endif

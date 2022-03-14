@@ -77,6 +77,8 @@ struct zt_params {
 	int start_time;
 	int receive_wink_time;
 	int receive_flash_time;
+	int min_receive_flash_time;//added by yy for fxs min rxflash,2018.01.13
+	int max_receive_flash_time;//added by yy for fxs max rxflash,2018.01.13
 	int debounce_time;
 	int pulse_break_time;
 	int pulse_make_time;
@@ -223,7 +225,8 @@ typedef enum {
 	ZT_FLASH				= 3,
 	ZT_START				= 4,
 	ZT_RING					= 5,
-	ZT_RINGOFF				= 6
+	ZT_RINGOFF				= 6,
+	ZT_RINGSTOP             = 7
 } zt_hookstate_t;
 
 typedef enum {

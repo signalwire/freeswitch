@@ -1751,7 +1751,7 @@ static FIO_IO_LOAD_FUNCTION(wanpipe_init)
 
 	wp_globals.codec_ms = 20;
 	wp_globals.wink_ms = 150;
-	wp_globals.flash_ms = 750;
+	wp_globals.flash_ms = 500;
 	wp_globals.ring_on_ms = 2000;
 	wp_globals.ring_off_ms = 4000;
 	/* 0 for queue size will leave driver defaults */

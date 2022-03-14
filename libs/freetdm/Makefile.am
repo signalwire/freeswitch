@@ -74,6 +74,10 @@ libfreetdm_la_SOURCES = \
 	$(SRC)/fsk.c \
 	$(SRC)/uart.c \
 	$(SRC)/g711.c \
+	$(SRC)/dtmf.c \
+	$(SRC)/fsk_detect.c \
+	$(SRC)/detect_amd.c \
+	$(SRC)/detect_shaihao.c \
 	$(SRC)/libteletone_detect.c \
 	$(SRC)/libteletone_generate.c \
 	$(SRC)/ftdm_buffer.c \

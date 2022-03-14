@@ -1,4 +1,4 @@
-/*
+﻿/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -536,10 +536,27 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	name = switch_channel_get_name(channel);
 
+	chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);
+	if(chantype== FTDM_CHAN_TYPE_FXO ){
+		switch_channel_set_variable_partner(channel,"freetdm_shaihao_record",ftdm_channel_get_shaihao_recordfile(tech_pvt->ftdmchan));
+		switch_channel_set_variable_printf(channel,"freetdm_shaihao_record", "%s",ftdm_channel_get_shaihao_recordfile(tech_pvt->ftdmchan));
+	    if(ftdm_channel_amd_enable(tech_pvt->ftdmchan)){
+			switch_channel_set_variable_partner(channel,"freetdm_shaihao_amd_enable","true");
+			switch_channel_set_variable(channel,"freetdm_shaihao_amd_enable", "true");
+		}else
+		{
+			switch_channel_set_variable_partner(channel,"freetdm_shaihao_amd_enable","false");
+			switch_channel_set_variable(channel,"freetdm_shaihao_amd_enable", "false");			
+		}
+		
+
+	}
+
 	span_id = tech_pvt->ftdmchan ? ftdm_channel_get_span_id(tech_pvt->ftdmchan) : 0;
 	chan_id = tech_pvt->ftdmchan ? ftdm_channel_get_id(tech_pvt->ftdmchan) : 0;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP ENTER\n", span_id, chan_id, name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP ENTER ---- %s:%s \n", span_id, chan_id, name,switch_channel_get_variable(channel,"freetdm_shaihao_record"),ftdm_channel_get_shaihao_recordfile(tech_pvt->ftdmchan));
+	
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%d:%d] %s CHANNEL HANGUP ENTER\n", span_id, chan_id, name);
 
 	/* First verify this call has a device attached */
 	if (!tech_pvt->ftdmchan) {
@@ -711,6 +728,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	int chunk, do_break = 0;
 	uint32_t span_id, chan_id;
 	const char *name = NULL;
+	ftdm_chan_type_t chantype;
+	int32_t  chanSrState;
+	int32_t  chanAmdState;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -739,9 +759,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
  top:
 
-	if (switch_channel_test_flag(channel, CF_SUSPEND)) {
-		do_break = 1;
-	}
+	// if (switch_channel_test_flag(channel, CF_SUSPEND)) {
+	// 	do_break = 1;
+	// }  //modified by dsq for OS-16565
+
 
 	if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
 		switch_clear_flag_locked(tech_pvt, TFLAG_BREAK);
@@ -801,6 +822,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 	} else {
+		//added by dsq  for DS-73667 2019.09.10
+		chantype = ftdm_channel_get_type(tech_pvt->ftdmchan);
+		chanSrState = ftdm_channel_get_sr_state(tech_pvt->ftdmchan);
+		chanAmdState = ftdm_channel_get_amd_state(tech_pvt->ftdmchan);
+		if(chantype== FTDM_CHAN_TYPE_FXO && chanSrState >=2 && chanAmdState != 0){
+			switch_channel_set_variable_partner(channel,"freetdm_shaihao_record",ftdm_channel_get_shaihao_recordfile(tech_pvt->ftdmchan));
+		}
+		//end by dsq for DS-73667 2019.09.10
 		tech_pvt->read_error = 0;
 	}
 
@@ -894,7 +923,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (ftdm_channel_write(tech_pvt->ftdmchan, frame->data, frame->buflen, &len) != FTDM_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Failed to write to channel %s device %d:%d!\n", name, span_id, chan_id);
 		if (++tech_pvt->write_error > FTDM_MAX_READ_WRITE_ERRORS) {
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), 
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel),
 					SWITCH_LOG_ERROR, "Too many I/O write errors on channel %s device %d:%d!\n", name, span_id, chan_id);
 			goto fail;
 		}
@@ -929,7 +958,7 @@ static switch_status_t channel_receive_message_cas(switch_core_session_t *sessio
 	}
 
 	phy_id = ftdm_channel_get_ph_id(tech_pvt->ftdmchan);
-	ftdm_log(FTDM_LOG_DEBUG, "Got Freeswitch message in R2 channel %d [%d]\n", phy_id, msg->message_id);
+	ftdm_log(FTDM_LOG_DEBUG, "Got Synswitch message in R2 channel %d [%d]\n", phy_id, msg->message_id);
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		return SWITCH_STATUS_SUCCESS;
@@ -1047,6 +1076,10 @@ static switch_status_t channel_receive_message_fxo(switch_core_session_t *sessio
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		//added by dsq for 1.8.0 release 2020.4.24 bug25 bug 58 bug41  //解决当开启同步振铃时，FXO直接摘机，FXS的状态处于振铃状态，而实际并没有振铃的问题
+		ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA);
+		switch_channel_mark_pre_answered(channel);
+		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		ftdm_channel_call_answer(tech_pvt->ftdmchan);
 		break;
@@ -1079,6 +1112,11 @@ static switch_status_t channel_receive_message_fxs(switch_core_session_t *sessio
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		//begin, added by fky for IPPBX160-1
+		ftdm_channel_call_indicate(tech_pvt->ftdmchan, FTDM_CHANNEL_INDICATE_PROGRESS_MEDIA);
+		switch_channel_mark_pre_answered(channel);
+		break;
+		//end, added by fky for IPPBX160-1
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		ftdm_channel_call_answer(tech_pvt->ftdmchan);
 		switch_channel_mark_answered(channel);
@@ -1147,6 +1185,29 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			ftdm_channel_replace_token(tech_pvt->ftdmchan, msg->string_array_arg[0], msg->string_array_arg[1]);
 		}
 		break;
+		//added by liangjie for OS-14019 bug4 O口呼入振铃组callee_num为空
+	case SWITCH_MESSAGE_INDICATE_DISPLAY:
+		{
+			const char *name = NULL, *number = NULL;
+			name = msg->string_array_arg[0];
+			number = msg->string_array_arg[1];
+			if (!zstr(name) && strcmp(name, "_undef_")) {
+				switch_event_t *event;
+				if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
+					const char *uuid = switch_channel_get_partner_uuid(channel);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "SEND");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sent-Callee-ID-Name", name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sent-Callee-ID-Number", number);
+					if (uuid) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+					}
+					switch_channel_event_set_data(channel, event);
+					switch_event_fire(&event);
+				}
+			}
+		}
+		break;
+		//end by liangjie for OS-14019 bug4 O口呼入振铃组callee_num为空
 	default:
 		break;
 	}
@@ -1226,6 +1287,7 @@ typedef struct {
 static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t *caller_data)
 {
 	uint32_t span_id, chan_id;
+	uint32_t p_span_id = 0, p_chan_id = 0;
 	const char *var;
 	char *sess_uuid;
 	char name[128];
@@ -1239,6 +1301,25 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 			ftdm_channel_command(fchan, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tmp);
 		}
 	}
+
+	//added by yy for DS-70358,2019.03.13
+	if ((var = switch_channel_get_variable(channel, "p_freetdm_span_number"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			p_span_id = tmp;
+		}
+	}
+
+	if ((var = switch_channel_get_variable(channel, "p_freetdm_chan_number"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			p_chan_id = tmp;
+		}
+	}
+
+	ftdm_channel_set_pid(fchan,p_span_id,p_chan_id);
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "p_span_id[%d],p_chan_id[%d]\n", p_span_id,p_chan_id);
 
 	span_id = ftdm_channel_get_span_id(fchan);
 	chan_id = ftdm_channel_get_id(fchan);
@@ -1764,7 +1845,37 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			ftdm_usrmsg_add_var(&usrmsg, "sigbridge_peer", sigbridge_peer);
 		}
 
+		if(session){
+			const char *var;
+			uint64_t device_features_auth_sn = 0;
+			if(!peer_chan){
+				peer_chan = switch_core_session_get_channel(session);
+			}
+			if(our_chan && peer_chan){
+				var = switch_channel_get_variable(peer_chan, "gateway_type");
+				device_features_auth_sn = switch_core_get_device_features_auth_sn();
+				if(var && (device_features_auth_sn & MODULE_SYN_RING)){
+					var = switch_channel_get_variable(peer_chan, "freetdm_span_number");
+
+					if(var){
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(peer_chan), SWITCH_LOG_DEBUG, "p_span_id[%s]\n", var);
+						switch_channel_set_variable_printf(our_chan, "p_freetdm_span_number", "%s", var);
+
+					}
+					var = switch_channel_get_variable(peer_chan, "freetdm_chan_number");
+					if(var){
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(peer_chan), SWITCH_LOG_DEBUG, "p_chan_id[%s]\n", var);
+						switch_channel_set_variable_printf(our_chan, "p_freetdm_chan_number", "%s", var);
+					}
+				}
+			}
+
+
+
+		}
+
 		if ((status = ftdm_call_place_ex(&caller_data, &hunting, &usrmsg)) != FTDM_SUCCESS) {
+
 			if (tech_pvt->read_codec.implementation) {
 				switch_core_codec_destroy(&tech_pvt->read_codec);
 			}
@@ -1791,6 +1902,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 fail:
+	ftdm_usrmsg_free_ex(&usrmsg);
 	return cause;
 }
 
@@ -2256,6 +2368,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	uint32_t spanid;
 	uint32_t chanid;
 	ftdm_caller_data_t *caller_data;
+	// switch_event_t *event = NULL;//added by liangjie for OS-14678,2019.8.21
 
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	chanid = ftdm_channel_get_id(sigmsg->channel);
@@ -2348,6 +2461,21 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 		/* span signaling status changed ... nothing to do here .. */
+	    //added by liangjie for OS-14678,2019.8.21
+		// if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "ftdm::info") == SWITCH_STATUS_SUCCESS) {
+		// 	if (sigmsg->ev_data.sigstatus.status == FTDM_SIG_STATE_UP) {
+		// 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "up");
+		// 	}
+		// 	else {
+		// 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "down");
+		// 	}
+		// 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "variable_gateway_name", switch_mprintf("fxo%d",spanid));
+		// 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled msg type %d for channel %d:%d  status %d\n",
+		// 	//				  sigmsg->event_id, spanid, chanid,sigmsg->ev_data.sigstatus.status);
+		// 	switch_event_fire(&event);
+		// 	break;
+		// }
+		//end by liangjie for OS-14678,2019.8.21
 		break;
 	default:
 		{
@@ -2433,17 +2561,47 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 				}
 
 				if (channel_a && channel_b &&  switch_channel_direction(channel_a) == SWITCH_CALL_DIRECTION_INBOUND &&
-					switch_channel_direction(channel_b) == SWITCH_CALL_DIRECTION_INBOUND) {
+					(switch_channel_direction(channel_b) == SWITCH_CALL_DIRECTION_INBOUND
+					//added by yy for IPPBX-37 FLASH transfer Call ,2018.07.13
+					|| switch_channel_direction(channel_b) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 
 					cause = SWITCH_CAUSE_ATTENDED_TRANSFER;
 					if (br_a_uuid && br_b_uuid) {
+						switch_core_session_t *br_a_session = NULL;
+						switch_channel_t *br_a_channel = NULL;
+						switch_core_session_t *br_b_session = NULL;
+						switch_channel_t *br_b_channel = NULL;
+
+						br_a_session = switch_core_session_locate(br_a_uuid);
+						if(br_a_session)
+							br_a_channel = switch_core_session_get_channel(br_a_session);
+
+						br_b_session = switch_core_session_locate(br_b_uuid);
+						if(br_b_session)
+							br_b_channel = switch_core_session_get_channel(br_b_session);
+
+						if(br_a_channel)
+							switch_channel_set_variable(br_a_channel, "attended_transfer", "true");
+						if(br_b_channel)
+							switch_channel_set_variable(br_b_channel, "attended_transfer", "true");
+
 						switch_ivr_uuid_bridge(br_a_uuid, br_b_uuid);
+
+						if(br_a_session) {
+							switch_core_session_rwunlock(br_a_session);
+						}
+
+						if(br_b_session) {
+							switch_core_session_rwunlock(br_b_session);
+						}
+
 					} else if (br_a_uuid && digits) {
 						session_t = switch_core_session_locate(br_a_uuid);
 					} else if (br_b_uuid && digits) {
 						session_t = switch_core_session_locate(br_b_uuid);
 					}
 				}
+
 
 				if (session_t) {
 					switch_ivr_session_transfer(session_t, caller_data->collected, NULL, NULL);
@@ -3464,6 +3622,7 @@ static void parse_bri_pri_spans(switch_xml_t cfg, switch_xml_t spans)
 		ftdm_span_start(span);
 	}
 }
+
 static switch_status_t load_config_path(void)
 {
 	const char *cf = "freetdm.conf";
@@ -3663,12 +3822,36 @@ static switch_status_t load_config(void)
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
 			const char *enable_callerid = "true";
+			const char *enable_clearletter = "true";			
 			const char *answer_polarity = "false";
 			const char *hangup_polarity = "false";
 			const char *polarity_callerid = "false";
+			const char *enable_amd = "false"; //added by dsq for ds-73667,2019.07.16
+			const char *enable_sr = "false"; //added by dsq for ds-85568,2020.07.17
+			const char *traindata_path = "/shdisk/synswitch/share/synswitch/sounds/trainingdata/zh";
+			int silence_time = 4000;  //added by dsq for ds-73667,2019.07.16 silence time default 1s
 			int polarity_delay = 600;
 			int callwaiting = 1;
 			int dialtone_timeout = 5000;
+			int dial_timeout = 10000;//added by yy for DS-70107,2019.02.22
+			int hotline_timeout = 3000;//added by yy for DS-70107,2019.02.22
+			int delay_dial_timeout = 500;//added by yy for DS-77498,2019.08.29
+			int on_ring_cnt = 0; //added by dsq for DS-80779,2019,12.31
+			//added by dsq for ds-73667 2019.08.26
+			int noSoundTime = 30000;
+			int noSoundDail = 15000;
+			int nSilenceEnergy = 8192;
+			int ns2OnTime = 80;
+			int ns2OffTime = 400;
+			int nTimeA = 600;
+			int nTimeB = 180;
+			int nTimeC = 1200;
+			int nTimeD = 1000;
+			int nAmdTimeout = 70000;
+			int nToneTimeLimit = 3;
+			int shaihao_period = 10000;
+			//ended by dsq for ds-73667
+			int dtmf_levelmin=-21; 
 
 			uint32_t span_id = 0, to = 0, max = 0;
 			ftdm_span_t *span = NULL;
@@ -3741,6 +3924,8 @@ static switch_status_t load_config(void)
 					dial_regex = val;
 				} else if (!strcasecmp(var, "enable-callerid")) {
 					enable_callerid = val;
+				} else if (!strcasecmp(var, "enable-clearletter")) {  //added by dsq for DS-79532 2019-11-19
+					enable_clearletter = val;
 				} else if (!strcasecmp(var, "answer-polarity-reverse")) {
 					answer_polarity = val;
 				} else if (!strcasecmp(var, "hangup-polarity-reverse")) {
@@ -3761,6 +3946,48 @@ static switch_status_t load_config(void)
 					callwaiting = switch_true(val) ? 1 : 0;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
+				} else if (!strcasecmp(var, "wait-dial-timeout")) {//added by yy for DS-70107,2019.02.22
+					dial_timeout = atoi(val);
+				} else if (!strcasecmp(var, "hotline-timeout")) {//added by yy for DS-70107,2019.02.22
+					hotline_timeout = atoi(val);
+				} else if (!strcasecmp(var, "delay-dial-timeout")) {//added by yy for DS-77498,2019.08.29
+					delay_dial_timeout = atoi(val);
+				}else if (!strcasecmp(var, "on-ring-cnt")) {//added by dsq for DS-80779,2019.12.31
+					on_ring_cnt = atoi(val);
+				}else if (!strcasecmp(var, "answer-machine-detect")){
+					enable_amd = val;   //added by dsq for ds-73667,2019.07.16
+				}else if (!strcasecmp(var, "shaihao-detect")){
+					enable_sr = val;   //added by dsq for ds-85568,2020.07.17
+				}else if (!strcasecmp(var, "switch-respones-time")){
+					silence_time = atoi(val);   //added by dsq for ds-73667,2019.08.16
+				}else if (!strcasecmp(var, "shaihao-training-data")){  //added by dsq for ds-73667,2019.08.16
+					traindata_path = val;
+				}else if (!strcasecmp(var, "no-sound-time")){
+					noSoundTime = atoi(val);
+				}else if (!strcasecmp(var, "nosound-time-afterdial")){
+					noSoundDail = atoi(val);
+				}else if (!strcasecmp(var, "time-out")){
+					nAmdTimeout = atoi(val);
+				}else if (!strcasecmp(var, "ns2on-time")){
+					ns2OnTime = atoi(val);
+				}else if (!strcasecmp(var, "ns2off-time")){
+					ns2OffTime = atoi(val);
+				}else if (!strcasecmp(var, "amd-timea")){
+					nTimeA = atoi(val);
+				}else if (!strcasecmp(var, "amd-timeb")){
+					nTimeB = atoi(val);
+				}else if (!strcasecmp(var, "amd-timec")){
+					nTimeC = atoi(val);
+				}else if (!strcasecmp(var, "amd-timed")){
+					nTimeD = atoi(val);
+				}else if (!strcasecmp(var, "tone-time-limit")){
+					nToneTimeLimit = atoi(val);
+				}else if (!strcasecmp(var, "silence-energy-limit")){
+					nSilenceEnergy = atoi(val);
+				}else if (!strcasecmp(var, "shaihao-period")){
+					shaihao_period = atoi(val);
+				}else if (!strcasecmp(var, "dtmf-levelmin")){
+					dtmf_levelmin = atoi(val);
 				}
 			}
 
@@ -3815,6 +4042,28 @@ static switch_status_t load_config(void)
 								   "polarity_delay", &polarity_delay,
 								   "callwaiting", &callwaiting,
 								   "wait_dialtone_timeout", &dialtone_timeout,
+								   "wait_dial_timeout", &dial_timeout,//added by yy for DS-70107,2019.02.22
+								   "hotline_timeout", &hotline_timeout,//added by yy for DS-70107,2019.02.22
+								   "delay_dial_timeout", &delay_dial_timeout,//added by yy for DS-77498,2019.08.29
+								   "on_ring_cnt", &on_ring_cnt,//added by dsq for DS-80779,2019.12.31
+								   "enable_clearletter",enable_clearletter,	//added by dsq for DS-79532,2019.11.19
+								   "enable_amd",enable_amd, //added by dsq for ds-73667,2019.07.16
+								   "enable_sr",enable_sr, //added by dsq for ds-85568,2020.07.17
+								   "tone_silence_time",&silence_time,
+								   "train_data_path",traindata_path,
+								   "no_sound_time",&noSoundTime,
+								   "no_sound_time_afterdial",&noSoundDail,
+								   "ns2on_time",&ns2OnTime,
+								   "ns2off_time",&ns2OffTime,
+								   "time_out",&nAmdTimeout,
+								   "tone_time_limit",&nToneTimeLimit,
+								   "silence_energy_limit",&nSilenceEnergy,
+								   "ntimeA",&nTimeA,
+								   "ntimeB",&nTimeB,
+								   "ntimeC",&nTimeC,
+								   "ntimeD",&nTimeD,
+								   "shaihao_period",&shaihao_period,
+								   "dtmf_levelmin",&dtmf_levelmin,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				LOAD_ERROR("Error configuring FreeTDM analog span %s\n", ftdm_span_get_name(span));
 				continue;
@@ -5132,6 +5381,56 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+FTDM_CLI_DECLARE(ftdm_cmd_callerid)
+{
+	unsigned i = 0;
+	uint32_t chan_id = 0;
+	unsigned schan_count = 0;
+	ftdm_span_t *span = NULL;
+	ftdm_command_t fcmd = FTDM_COMMAND_ENABLE_CALLERID_DETECT;
+	ftdm_channel_t *fchan;
+
+	if (argc < 3) {
+		print_usage(stream, cli);
+		goto end;
+	}
+
+	if (switch_true(argv[1])) {
+		fcmd = FTDM_COMMAND_ENABLE_CALLERID_DETECT;
+	} else {
+		fcmd = FTDM_COMMAND_DISABLE_CALLERID_DETECT;
+	}
+
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR failed to find span %s\n", argv[2]);
+		goto end;
+	}
+
+	schan_count = ftdm_span_get_chan_count(span);
+	if (argc > 3) {
+		chan_id = atoi(argv[3]);
+		if (chan_id > schan_count) {
+			stream->write_function(stream, "-ERR invalid channel\n");
+			goto end;
+		}
+	}
+
+	if (chan_id) {
+		fchan = ftdm_span_get_channel(span, chan_id);
+		ftdm_channel_command(fchan, fcmd, NULL);
+	} else {
+		for (i = 1; i <= schan_count; i++) {
+			fchan = ftdm_span_get_channel(span, i);
+			ftdm_channel_command(fchan, fcmd, NULL);
+		}
+	}
+
+	stream->write_function(stream, "+OK CALLERID detection was %s\n", fcmd == FTDM_COMMAND_ENABLE_CALLERID_DETECT ? "enabled" : "disabled");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
 FTDM_CLI_DECLARE(ftdm_cmd_dtmf)
 {
 	unsigned i = 0;
@@ -5473,6 +5772,7 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	{ "trace", "<path> <span_id|span_name> [<chan_id>]", "", NULL, ftdm_cmd_trace, NULL },
 	{ "notrace", "<span_id|span_name> [<chan_id>]", "", NULL, ftdm_cmd_notrace, NULL },
 	{ "gains", "<rxgain> <txgain> <span_id|span_name> [<chan_id>]", "", NULL, ftdm_cmd_gains, NULL },
+	{ "callerid", "on|off <span_id|span_name> [<chan_id>]", "::[on:off", NULL, ftdm_cmd_callerid, NULL },
 	{ "dtmf", "on|off <span_id|span_name> [<chan_id>]", "::[on:off", NULL, ftdm_cmd_dtmf, NULL },
 	{ "queuesize", "<rxsize> <txsize> <span_id|span_name> [<chan_id>]", "", NULL, ftdm_cmd_queuesize, NULL },
 	{ "iostats", "enable|disable|flush|print <span_id|span_name> <chan_id>", "::[enable:disable:flush:print", NULL, ftdm_cmd_iostats, NULL },
@@ -5630,17 +5930,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_freetdm_load)
 
 	ftdm_global_set_config_directory(SWITCH_GLOBAL_dirs.conf_dir);
 
-	if (load_config_path() != SWITCH_STATUS_SUCCESS) {
-		ftdm_global_destroy();
-		return SWITCH_STATUS_TERM;
-	}
-
 	if (ftdm_global_init() != FTDM_SUCCESS) {
 		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error loading FreeTDM\n");
 		return SWITCH_STATUS_TERM;
 	}
 
+	if (load_config_path() != SWITCH_STATUS_SUCCESS) {
+		ftdm_global_destroy();
+		return SWITCH_STATUS_TERM;
+	}
+	//second
 	if (ftdm_global_configuration() != FTDM_SUCCESS) {
 		ftdm_global_destroy();
 		ftdm_log(FTDM_LOG_ERROR, "Error configuring FreeTDM\n");

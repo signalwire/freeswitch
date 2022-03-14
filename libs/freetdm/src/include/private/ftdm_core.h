@@ -121,6 +121,10 @@
 #include "ftdm_threadmutex.h"
 #include "ftdm_sched.h"
 #include "ftdm_call_utils.h"
+#include "dtmf.h"
+#include "fsk_detect.h"
+#include "detect_shaihao.h"
+#include "detect_amd.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -364,6 +368,7 @@ typedef enum {
 	FTDM_TYPE_CHANNEL
 } ftdm_data_type_t;
 
+
 /* number of bytes for the IO dump circular buffer (5 seconds worth of audio by default) */
 #define FTDM_IO_DUMP_DEFAULT_BUFF_SIZE 8 * 5000
 typedef struct {
@@ -384,11 +389,65 @@ typedef struct {
 } ftdm_dtmf_debug_t;
 
 typedef struct {
+	uint8_t enabled;
+	uint8_t requested;
+	uint8_t type;
+	FILE *file;
+	ftdm_mutex_t *mutex;
+	char dbgfile[1024];
+} ftdm_callerid_debug_t;
+
+typedef struct {
 	uint32_t duration_ms;
 	ftdm_time_t start_time;
 	/* If set to 1, we will send DTMF event the the tone starts, instead of waiting for end */
 	uint8_t trigger_on_start; 
 } ftdm_dtmf_detect_t;
+#if 0
+struct ftdm_amd_t
+{
+    const char* 		Stream1;
+    int 				Stream2;	
+    const char* 		Stream3;
+    uint32_t  	dwInforToneCnt;
+    uint32_t 	dwS2OnCnt;
+    uint32_t 	dwS2OffCnt;
+    uint32_t 	dwS3OnCnt;
+    uint32_t 	dwS3OffCnt;
+    int  		nStatus;
+	int  		nOldStatus;
+    const char * 		bDetectColorRing;
+	const char * 		bDetectTone;
+    uint32_t 	dwNoSoundAfterDial;
+    uint32_t 	dwNoSound;
+    uint32_t 	dwTimeOut;
+    int  		nAMDResult;
+	uint32_t 	dwEchoHighCount;
+	uint32_t 	dwEchoLowCount;
+};
+enum
+{
+    T1_WaitOff,
+    T1_CountOff,
+    T2_CountOn,
+    T3_CountOff,
+};
+
+enum
+{
+    AMD_ACTUAL_PICKUP, 
+    AMD_TONE,   
+    AMD_COLORRING,  
+    AMD_TIMEOUT,  
+    AMD_NOSOUND,  
+    AMD_NOSOUND_AFTERDIAL,
+    AMD_BUSYTONE,   
+    AMD_FAX,   
+	AMD_BEEPTONE,
+};
+//end added by dsq for DS-73667
+#endif 
+
 
 /* 2^8 table size, one for each byte (sample) value */
 #define FTDM_GAINS_TABLE_SIZE 256
@@ -422,6 +481,7 @@ struct ftdm_channel {
 	uint8_t hindex;
 	ftdm_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
+	dtmf_rx_state_t dtmf_rx;
 	uint32_t buffer_delay;
 	ftdm_event_t event_header;
 	char last_error[256];
@@ -436,6 +496,7 @@ struct ftdm_channel {
 	uint32_t dtmf_on;
 	uint32_t dtmf_off;
 	char *dtmf_hangup_buf;
+	char *terminal_key_buf;
 	teletone_generation_session_t tone_session;
 	ftdm_time_t last_event_time;
 	ftdm_time_t ring_time;
@@ -448,7 +509,9 @@ struct ftdm_channel {
 	char chan_number[32];
 	ftdm_filehandle_t fds[2];
 	ftdm_fsk_data_state_t fsk;
-	uint8_t fsk_buf[80];
+	fsk_rx_state_t fsk_rx;
+	fsk_spec_t fsk_spec;
+	uint8_t fsk_buf[256];
 	uint32_t ring_count;
 	ftdm_polarity_t polarity;
 	/* Private I/O data. Do not touch unless you are an I/O module */
@@ -478,6 +541,23 @@ struct ftdm_channel {
 	ftdm_usrmsg_t *usrmsg;
 	ftdm_time_t last_state_change_time;
 	ftdm_time_t last_release_time;
+	/*added by yy for support chan conf*/
+	uint32_t codec_ms;
+	uint32_t eclevel;
+	uint32_t etlevel;
+	float hw_rxgain;
+	float hw_txgain;
+	uint32_t p_span_id;
+	uint32_t p_chan_id;
+	uint32_t stop_ring_count;
+	int32_t send_sig_progress;
+	ftdm_callerid_debug_t ciddbg;
+	int send_two;//added by yy for DS-77498,2019.09.11
+	//added by dsq for amd
+	amd_acutalpickup_t amd;
+	shaihao_state_s_t shaihao;
+	int8_t dtmf_flag;
+	//end add by dsq 
 };
 
 struct ftdm_span {
@@ -523,6 +603,8 @@ struct ftdm_span {
 	char *type;
 	char *dtmf_hangup;
 	size_t dtmf_hangup_len;
+	char *terminal_key;
+	size_t terminal_key_len;
 	ftdm_state_map_t *state_map;
 	ftdm_caller_data_t default_caller_data;
 	ftdm_queue_t *pendingchans; /*!< Channels pending of state processing */

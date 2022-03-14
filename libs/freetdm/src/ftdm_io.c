@@ -47,6 +47,7 @@
 #include "ftdm_pika.h"
 #endif
 #include "ftdm_cpu_monitor.h"
+#include "ftmod/ftmod_analog/ftdm_analog.h"
 
 #ifndef localtime_r
 struct tm *localtime_r(const time_t *clock, struct tm *result);
@@ -58,8 +59,22 @@ struct tm *localtime_r(const time_t *clock, struct tm *result);
 #define MAX_CALLIDS 6000
 #define FTDM_HALF_DTMF_PAUSE 500
 #define FTDM_FULL_DTMF_PAUSE 1000
-
+#if 0
+#define TONE_ANALYZE_PERIOD  16  //tone analyzation period(ms) added by dsq 
+#define S2_TOn				 5  //80/16
+#define S2_TOff				(400/16) 
+#define AMDTimeA			(600/16)
+#define AMDTimeB			(180/16)
+#define AMDTimeC			(1200/16)
+#define AMDTimeD			(1000/16)
+#define SilentEnergy 		10000
+#define TIMEOUT             70000
+#define NoSoundTime         6000
+#endif 
 #define FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan) (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT) && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_DTMF_DETECTION))
+
+extern DtmfPara gPara;//added by yy for IPPBX-29 detect dtmf,2018.08.20
+extern FskPara gFSKPara;
 
 ftdm_time_t time_last_throttle_log = 0;
 ftdm_time_t time_current_throttle_log = 0;
@@ -139,7 +154,6 @@ static unsigned long long ftdm_str2val(const char *str, val_str_t *val_str_table
 
 
 static int time_is_init = 0;
-
 static void time_init(void)
 {
 #ifdef WIN32
@@ -165,6 +179,62 @@ FT_DECLARE(ftdm_time_t) ftdm_current_time_in_ms(void)
 	gettimeofday(&tv, NULL);
 	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
 #endif
+}
+static void dump_mem(ftdm_channel_t *fchan, unsigned char *buf, unsigned short uiTotalBytes)
+{
+    // Local variables
+    unsigned short  uiIdx;
+    char szText[2000];
+    char szTemp[10];
+    unsigned char * p = buf;
+    // Initialize variables
+    szText[0] = 0;
+    for (uiIdx = 0; uiIdx < uiTotalBytes; uiIdx++)
+    {
+        if ((uiIdx % 16) == 0)
+            strcat(szText, "\r\n");
+        sprintf(szTemp, "%02x ", *p++);
+        strcat(szText, szTemp);
+    }
+    ftdm_log_chan(fchan, FTDM_LOG_ERROR, "# DM %p %u Bytes: \r\n %s", buf, uiTotalBytes, szText);
+} // End of function DumpMemory
+
+/*@function:filterfskcallerId
+**@param1:szCallerId 传入获取到的FSK数据
+**@return :无
+**@comment:过滤获取的FSK数据，只获取DT数据(包含*号和#号)
+*/
+static void filterfskcallerId(unsigned char * szCallerId)
+{
+	int nCallerIdLen = 0;
+    unsigned char szBackUpCallerId[255];
+	unsigned int nIndex=0;
+	unsigned int i=0;
+
+	if(!szCallerId||strlen((char*)szCallerId)<=0) return;
+
+	nCallerIdLen = strlen((char*)szCallerId);
+	memset(szBackUpCallerId,0,sizeof(szBackUpCallerId));
+	for(i=0;i<nCallerIdLen;i++)
+	{
+		//DT的保留，其他的不要
+		if((0x30<=szCallerId[i]&& szCallerId[i]<=0x39)
+			||szCallerId[i] == 0x2a ||szCallerId[i]==0x23)
+		{
+			szBackUpCallerId[nIndex] = szCallerId[i];
+			nIndex++;
+		}
+	}
+	if(nIndex >0)
+	{
+		memcpy(szCallerId, szBackUpCallerId, nIndex * sizeof(unsigned char));
+		szCallerId[nIndex] = 0;
+	}
+	else
+	{
+		memset(szCallerId, 0, nCallerIdLen * sizeof(unsigned char));
+	}
+	return;
 }
 
 static void write_chan_io_dump(ftdm_io_dump_t *dump, char *dataptr, int dlen)
@@ -267,6 +337,7 @@ static void close_dtmf_debug_file(ftdm_channel_t *ftdmchan)
 	}
 }
 
+
 static ftdm_status_t disable_dtmf_debug(ftdm_channel_t *ftdmchan)
 {
 	if (!ftdmchan->dtmfdbg.enabled) {
@@ -281,6 +352,94 @@ static ftdm_status_t disable_dtmf_debug(ftdm_channel_t *ftdmchan)
 	close_dtmf_debug_file(ftdmchan);
 	stop_chan_io_dump(&ftdmchan->rxdump);
 	ftdmchan->dtmfdbg.enabled = 0;
+	return FTDM_SUCCESS;
+}
+
+static void close_callerid_debug_file(ftdm_channel_t *ftdmchan, ftdm_bool_t enabled)
+{
+	if (ftdmchan->ciddbg.file) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "closing debug caller id file\n");
+		fclose(ftdmchan->ciddbg.file);
+		ftdmchan->ciddbg.file = NULL;
+		if (enabled) {
+			unlink(ftdmchan->ciddbg.dbgfile);
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "unlink debug caller id file %s\n",ftdmchan->ciddbg.dbgfile);
+		}
+		else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "unknown debug caller id file %s\n",ftdmchan->ciddbg.dbgfile);
+		}
+	}
+}
+
+static ftdm_status_t disable_callerid_debug(ftdm_channel_t *ftdmchan, ftdm_bool_t enabled)
+{
+	if (!ftdmchan->ciddbg.enabled) {
+		return FTDM_SUCCESS;
+	}
+	close_callerid_debug_file(ftdmchan, enabled);
+	ftdmchan->ciddbg.enabled = 0;
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t write_callerid_debug_file(ftdm_channel_t *ftdmchan ,char * data, int dlen)
+{
+	if (ftdmchan->ciddbg.file) {
+		ftdm_size_t rc = 0;
+		rc = fwrite(data, 1, dlen, ftdmchan->ciddbg.file);
+		if (rc != dlen) {
+			ftdm_log(FTDM_LOG_WARNING, "callerid debugger wrote only %"FTDM_SIZE_FMT" out of %"FTDM_SIZE_FMT" bytes: %s\n",
+				rc, (ftdm_size_t)dlen, strerror(errno));
+				return FTDM_FAIL;
+		}
+	}
+	return FTDM_SUCCESS;
+}
+
+static ftdm_status_t open_callerid_debug_file(ftdm_channel_t *ftdmchan , char * debug_directory)
+{
+	if (!ftdmchan->ciddbg.enabled) {
+		return FTDM_SUCCESS;
+	}
+
+	if (!ftdmchan->ciddbg.file) {
+		struct tm currtime;
+		time_t currsec;
+		//char dfile[1138];
+
+		currsec = time(NULL);
+
+		memset(ftdmchan->ciddbg.dbgfile, 0, sizeof(ftdmchan->ciddbg.dbgfile));
+
+#ifdef WIN32
+		_tzset();
+		_localtime64_s(&currtime, &currsec);
+#else
+		localtime_r(&currsec, &currtime);
+#endif
+
+		if (ftdm_strlen_zero(debug_directory)) {
+			snprintf(ftdmchan->ciddbg.dbgfile, sizeof(ftdmchan->ciddbg.dbgfile), "callerid-s%dc%d-20%d-%d-%d-%d%d%d.%s", 
+					ftdmchan->span_id, ftdmchan->chan_id, 
+					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		} else {
+			snprintf(ftdmchan->ciddbg.dbgfile, sizeof(ftdmchan->ciddbg.dbgfile), "%s/callerid-s%dc%d-20%d-%d-%d-%d%d%d.%s", 
+					debug_directory,
+					ftdmchan->span_id, ftdmchan->chan_id, 
+					currtime.tm_year-100, currtime.tm_mon+1, currtime.tm_mday,
+					currtime.tm_hour, currtime.tm_min, currtime.tm_sec, ftdmchan->native_codec == FTDM_CODEC_ULAW ? "ulaw" : ftdmchan->native_codec == FTDM_CODEC_ALAW ? "alaw" : "sln");
+		}
+		ftdmchan->ciddbg.file = fopen(ftdmchan->ciddbg.dbgfile, "wb");
+		if (!ftdmchan->ciddbg.file) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "failed to open debug callerid file %s\n", ftdmchan->ciddbg.dbgfile);
+			return FTDM_FAIL;
+		} else {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "open debug callerid file %s\n", ftdmchan->ciddbg.dbgfile);
+			return FTDM_SUCCESS;
+		}
+	} else {
+		return FTDM_SUCCESS;
+	}
 	return FTDM_SUCCESS;
 }
 
@@ -662,7 +821,8 @@ static ftdm_status_t ftdm_channel_destroy(ftdm_channel_t *ftdmchan)
 		ftdmchan->pre_buffer_size = 0;
 
 		ftdm_safe_free(ftdmchan->dtmf_hangup_buf);
-
+		ftdm_safe_free(ftdmchan->terminal_key_buf);
+		
 		if (ftdmchan->tone_session.buffer) {
 			teletone_destroy_session(&ftdmchan->tone_session);
 			memset(&ftdmchan->tone_session, 0, sizeof(ftdmchan->tone_session));
@@ -926,9 +1086,9 @@ FT_DECLARE(ftdm_status_t) ftdm_span_close_all(void)
 		if (ftdm_test_flag(span, FTDM_SPAN_CONFIGURED)) {
 			for(j = 1; j <= span->chan_count && span->channels[j]; j++) {
 				ftdm_channel_t *toclose = span->channels[j];
-				if (ftdm_test_flag(toclose, FTDM_CHANNEL_INUSE)) {
+				//if (ftdm_test_flag(toclose, FTDM_CHANNEL_INUSE)) {
 					ftdm_channel_close(&toclose);
-				}
+				//}
 				i++;
 			}
 		} 
@@ -1116,6 +1276,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_add_channel(ftdm_span_t *span, ftdm_socket_t
 		ftdm_buffer_create(&new_chan->gen_dtmf_buffer, 128, 128, 0);
 
 		new_chan->dtmf_hangup_buf = ftdm_calloc (span->dtmf_hangup_len + 1, sizeof (char));
+		new_chan->terminal_key_buf = ftdm_calloc (span->terminal_key_len + 1, sizeof (char));
 
 		/* set 0.0db gain table */
 		i = 0;
@@ -1412,6 +1573,15 @@ FT_DECLARE(uint32_t) ftdm_channel_get_type(const ftdm_channel_t *ftdmchan)
 	return ftdmchan->type;
 }
 
+FT_DECLARE(int32_t) ftdm_channel_get_sr_state(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->shaihao.nShaihaoState;
+}
+FT_DECLARE(int32_t) ftdm_channel_get_amd_state(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->amd.nAMDResult;
+}
+
 FT_DECLARE(ftdm_codec_t) ftdm_channel_get_codec(const ftdm_channel_t *ftdmchan)
 {
 	return ftdmchan->effective_codec;
@@ -1479,7 +1649,7 @@ FT_DECLARE(ftdm_status_t) ftdm_group_channel_use_count(ftdm_group_t *group, uint
 	return FTDM_SUCCESS;
 }
 
-static __inline__ int chan_is_avail(ftdm_channel_t *check)
+static __inline__ int chan_is_avail(ftdm_channel_t *check, int callerid)
 {
 	if ((check->span->signal_type == FTDM_SIGTYPE_M2UA) || 
 			(check->span->signal_type == FTDM_SIGTYPE_NONE)) {
@@ -1487,7 +1657,8 @@ static __inline__ int chan_is_avail(ftdm_channel_t *check)
 			ftdm_test_flag(check, FTDM_CHANNEL_INUSE) ||
 			ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) ||
 			ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) ||
-			check->state != FTDM_CHANNEL_STATE_DOWN) {
+			(!callerid && check->state != FTDM_CHANNEL_STATE_DOWN) ||
+			(callerid && ftdm_test_flag(check, FTDM_CHANNEL_INUSE))) {
 			return 0;
 		}
 	} else {
@@ -1496,7 +1667,8 @@ static __inline__ int chan_is_avail(ftdm_channel_t *check)
 			ftdm_test_flag(check, FTDM_CHANNEL_INUSE) ||
 			ftdm_test_flag(check, FTDM_CHANNEL_SUSPENDED) ||
 			ftdm_test_flag(check, FTDM_CHANNEL_IN_ALARM) ||
-			check->state != FTDM_CHANNEL_STATE_DOWN) {
+			(!callerid && check->state != FTDM_CHANNEL_STATE_DOWN) ||
+			(callerid && ftdm_test_flag(check, FTDM_CHANNEL_INUSE))) {
 			return 0;
 		}
 	}
@@ -1518,7 +1690,7 @@ static __inline__ int chan_voice_is_avail(ftdm_channel_t *check)
 	if (!FTDM_IS_VOICE_CHANNEL(check)) {
 		return 0;
 	}
-	return chan_is_avail(check);
+	return chan_is_avail(check, ftdm_test_flag((ftdm_analog_data_t *)check->span->signal_data, FTDM_ANALOG_CALLERID) ? 1 : 0);
 }
 
 static __inline__ int request_voice_channel(ftdm_channel_t *check, ftdm_channel_t **ftdmchan, 
@@ -1902,7 +2074,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_chan(ftdm_channel_t *ftdmchan)
 
 	status = ftdmchan->fio->open(ftdmchan);
 	if (status == FTDM_SUCCESS) {
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OPEN | FTDM_CHANNEL_INUSE);
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_OPEN);
 	} else {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "IO open failed: %d\n", status);
 	}
@@ -1921,6 +2093,7 @@ static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm
 	ftdm_channel_t *best_rated = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 	int best_rate = 0;
+	ftdm_analog_data_t *analog_data = NULL;
 
 	*ftdmchan = NULL;
 
@@ -1987,7 +2160,8 @@ static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm
 
 	ftdm_channel_lock(check);
 
-	if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN)) {
+	analog_data = span->signal_data;
+	if (ftdm_test_flag(check, FTDM_CHANNEL_OPEN) && !ftdm_test_flag(analog_data, FTDM_ANALOG_CALLERID)){
 		/* let them know is already open, but return the channel anyway */
 		status = FTDM_EBUSY;
 		*ftdmchan = check;
@@ -2009,7 +2183,7 @@ static ftdm_status_t _ftdm_channel_open(uint32_t span_id, uint32_t chan_id, ftdm
 	}
 
 	/* if channel is available, time to open it */
-	if (chan_is_avail(check)) {
+	if (chan_is_avail(check,ftdm_test_flag(analog_data, FTDM_ANALOG_CALLERID) ? 1 : 0)) {
 		goto openchan;
 	}
 
@@ -2029,14 +2203,20 @@ openchan:
 			ftdm_set_flag(check, FTDM_CHANNEL_OPEN);
 		}
 	} else {
-		status = FTDM_SUCCESS;
+		if( (check->state== FTDM_CHANNEL_STATE_BUSY || check->state== FTDM_CHANNEL_STATE_DIALTONE || check->state== FTDM_CHANNEL_STATE_ATTN) &&
+		check->type == FTDM_CHAN_TYPE_FXS && check->token_count == 0 ){
+			status = FTDM_EINVAL;
+		}	
+		else 
+			status = FTDM_SUCCESS;
 	}
-	ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
+	//ftdm_set_flag(check, FTDM_CHANNEL_INUSE);
 	ftdm_set_flag(check, FTDM_CHANNEL_OUTBOUND);
 	*ftdmchan = check;
 
 	/* we've got the channel, do not unlock it */
-	goto done;
+	if(status == FTDM_SUCCESS )
+		goto done;
 
 unlockchan:
 	ftdm_channel_unlock(check);
@@ -2100,6 +2280,19 @@ FT_DECLARE(const char *) ftdm_channel_get_span_name(const ftdm_channel_t *ftdmch
 FT_DECLARE(void) ftdm_span_set_trunk_type(ftdm_span_t *span, ftdm_trunk_type_t type)
 {
 	span->trunk_type = type;
+}
+
+FT_DECLARE(const char *)ftdm_channel_get_shaihao_recordfile(const ftdm_channel_t *ftdmchan)
+{
+	return ftdmchan->shaihao.debugrecordname;
+}  //added by dsq for DS-73667 2019.09.02
+
+FT_DECLARE(ftdm_bool_t) ftdm_channel_amd_enable(const ftdm_channel_t *ftdmchan)
+{
+	ftdm_bool_t condition;
+	ftdm_analog_data_t *analog_data = ftdmchan->span->signal_data;
+	condition = ftdm_test_flag(analog_data, FTDM_ANALOG_ENABLE_AMD) ? FTDM_TRUE : FTDM_FALSE;
+	return condition;
 }
 
 FT_DECLARE(ftdm_status_t) ftdm_span_set_blocking_mode(const ftdm_span_t *span, ftdm_bool_t enabled)
@@ -2732,7 +2925,8 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 	}
 
 	/* if the signaling stack left the channel in state down on success, is expecting us to move to DIALING */
-	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN) {
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_DOWN ||
+		(ftdmchan->state == FTDM_CHANNEL_STATE_GET_CALLERID && ftdm_test_flag((ftdm_analog_data_t *)ftdmchan->span->signal_data, FTDM_ANALOG_CALLERID))) {
 		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
 			ftdm_channel_set_state(file, func, line, ftdmchan, FTDM_CHANNEL_STATE_DIALING, 1, usrmsg);	
 		} else {
@@ -2741,11 +2935,12 @@ static ftdm_status_t _ftdm_channel_call_place_nl(const char *file, const char *f
 	} else if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_STATE_CHANGE) &&
 		   !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_NONBLOCK)) {
 		
-		ftdm_channel_unlock(ftdmchan);
+		ftdm_channel_save_usrmsg(ftdmchan, usrmsg);
+		//ftdm_channel_unlock(ftdmchan);
 
-		ftdm_interrupt_wait(ftdmchan->state_completed_interrupt, 500);
+		//ftdm_interrupt_wait(ftdmchan->state_completed_interrupt, 500);
 
-		ftdm_channel_lock(ftdmchan);
+		//ftdm_channel_lock(ftdmchan);
 	}
 
 done:
@@ -2788,7 +2983,6 @@ FT_DECLARE(ftdm_status_t) _ftdm_call_place(const char *file, const char *func, i
 		ftdm_log(FTDM_LOG_ERROR, "Cannot make outbound call with invalid hunting mode %d\n", hunting->mode);
 		return FTDM_EINVAL;
 	}
-
 	if (status != FTDM_SUCCESS) {
 		return FTDM_EBUSY;
 	}
@@ -2932,6 +3126,8 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_USER_HANGUP);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DIGITAL_MEDIA);
 	ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_NATIVE_SIGBRIDGE);
+	ftdm_clear_flag(ftdmchan,FTDM_CHANNEL_SHAIHAO_FLAG);
+	ftdm_clear_flag(ftdmchan,FTDM_CHANNEL_AMD_FLAG);
 	ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
 	ftdm_buffer_destroy(&ftdmchan->pre_buffer);
 	ftdmchan->pre_buffer_size = 0;
@@ -2946,8 +3142,10 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	ftdmchan->state_status = FTDM_STATE_STATUS_COMPLETED;
 
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_DTMF, NULL);
+	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_DEBUG_CALLERID, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_INPUT_DUMP, NULL);
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_OUTPUT_DUMP, NULL);
+	
 
 	if (FTDM_IS_VOICE_CHANNEL(ftdmchan) && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALL_STARTED)) {
 		ftdm_sigmsg_t sigmsg;
@@ -2996,6 +3194,7 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 	}
 
 	memset(ftdmchan->dtmf_hangup_buf, '\0', ftdmchan->span->dtmf_hangup_len);
+	memset(ftdmchan->terminal_key_buf, '\0', ftdmchan->span->terminal_key_len);
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE)) {
 		ftdmchan->effective_codec = ftdmchan->native_codec;
@@ -3042,6 +3241,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_close(ftdm_channel_t **ftdmchan)
 		ftdm_channel_done(check);
 		*ftdmchan = NULL;
 		check->ring_count = 0;
+		check->stop_ring_count = 0;//added by yy for DS-70107,2019.02.22
+		check->send_sig_progress = 0;
 		ftdm_mutex_unlock(check->mutex);
 	}
 	
@@ -3111,10 +3312,14 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_ENABLE_CALLERID_DETECT:
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_CALLERID)) {
+				fsk_detect_init(&ftdmchan->fsk_rx, &ftdmchan->fsk_spec,gFSKPara.nFSK_FREQ_ZERO, gFSKPara.nFSK_FREQ_ONE, gFSKPara.nFSK_MIN_LEVEL, gFSKPara.nFSK_BAUD_RATE, 0);
+				fsk_detect_set_param(&ftdmchan->fsk_rx, gFSKPara.nFSK_PRE1_LEN, gFSKPara.nFSK_PRE2_LEN,gFSKPara.nFSK_END_LEN, 0 , &ftdmchan->fsk_rx);
+				/*
 				if (ftdm_fsk_demod_init(&ftdmchan->fsk, ftdmchan->rate, ftdmchan->fsk_buf, sizeof(ftdmchan->fsk_buf)) != FTDM_SUCCESS) {
 					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
 					GOTO_STATUS(done, FTDM_FAIL);
-				}
+				}*/
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled software CALLERID detector\n");
 				ftdm_set_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT);
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
@@ -3123,7 +3328,8 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_DISABLE_CALLERID_DETECT:
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_CALLERID)) {
-				ftdm_fsk_demod_destroy(&ftdmchan->fsk);
+				//ftdm_fsk_demod_destroy(&ftdmchan->fsk);
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disable software CALLERID detector\n");
 				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT);
 				GOTO_STATUS(done, FTDM_SUCCESS);
 			}
@@ -3197,7 +3403,6 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			GOTO_STATUS(done, FTDM_SUCCESS);
 		}
 		break;
-
 	/*!< Disable DTMF debugging (if not disabled explicitly, it is disabled automatically when calls hangup) */
 	case FTDM_COMMAND_DISABLE_DEBUG_DTMF:
 		{
@@ -3207,6 +3412,41 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			}
 			if (disable_dtmf_debug(ftdmchan) != FTDM_SUCCESS) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to disable DTMF debug\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+
+	/*!< Enable Callerid debugging */
+	case FTDM_COMMAND_ENABLE_DEBUG_CALLERID:
+		{
+			if (ftdmchan->ciddbg.enabled) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Cannot enable debug CALLERID again\n");	
+				GOTO_STATUS(done, FTDM_FAIL);
+			}
+			
+			ftdmchan->ciddbg.enabled = 1;
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled CALLERID debugging\n");	
+			GOTO_STATUS(done, FTDM_SUCCESS);
+		}
+		break;
+	/*!< Disable DTMF debugging (if not disabled explicitly, it is disabled automatically when calls hangup) */
+	case FTDM_COMMAND_DISABLE_DEBUG_CALLERID:
+		{
+			ftdm_bool_t enable = 0;
+			if (!obj) {
+				enable = 1;
+			} else {
+				enable = *(ftdm_bool_t *)obj;
+			}
+
+			if (!ftdmchan->ciddbg.enabled) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "CALLERID debug is already disabled\n");	
+				GOTO_STATUS(done, FTDM_SUCCESS);
+			}
+			if (disable_callerid_debug(ftdmchan,enable) != FTDM_SUCCESS) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failed to disable CALLERID debug\n");	
 				GOTO_STATUS(done, FTDM_FAIL);
 			}
 			GOTO_STATUS(done, FTDM_SUCCESS);
@@ -3400,7 +3640,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 			/* if they don't have thier own, use ours */
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 				if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan)) {
-					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+					//teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "get software DTMF threshold %d\n",gPara.nLevelMinIn);
+					dtmf_detect_init(&ftdmchan->dtmf_rx, NULL, NULL);//added by yy for IPPBX-29 detect dtmf,2018.08.20
+					dtmf_detect_setpara(&ftdmchan->dtmf_rx, &gPara);//added by yy for IPPBX-29 detect dtmf,2018.08.20
+
 					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Enabled software DTMF detector\n");
@@ -3413,7 +3657,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
 				if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan)) {
-					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+					//teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
 					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled software DTMF detector\n");
@@ -3464,11 +3708,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				int val = FTDM_COMMAND_OBJ_INT;
-				if (val > 10 && val < 1000) {
+				if (val >= 20 && val <= 800) {//modified by liangjie for IPPBX60 bug10 ,2019.3.19
 					ftdmchan->dtmf_on = val;
 					GOTO_STATUS(done, FTDM_SUCCESS);
 				} else {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid value %d range 10-1000", val);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid value %d range 20-800", val);
 					GOTO_STATUS(done, FTDM_FAIL);
 				}
 			}
@@ -3478,11 +3722,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				int val = FTDM_COMMAND_OBJ_INT;
-				if (val > 10 && val < 1000) {
+				if (val >= 20 && val <= 800) {//modified by liangjie for IPPBX60 bug10 ,2019.3.19
 					ftdmchan->dtmf_off = val;
 					GOTO_STATUS(done, FTDM_SUCCESS);
 				} else {
-					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid value %d range 10-1000", val);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid value %d range 20-800", val);
 					GOTO_STATUS(done, FTDM_FAIL);
 				}
 			}
@@ -3804,6 +4048,14 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 	ftdm_assert_return(ftdmchan != NULL, FTDM_FAIL, "No channel\n");
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s (debug = %d)\n", dtmf, ftdmchan->dtmfdbg.enabled);
+	
+	//added by dsq for DS-78336 2019-09-27
+
+	if(ftdm_test_flag(ftdmchan,FTDM_CHANNEL_AMD_FLAG) && ftdmchan->amd.nAMDResult >= AMD_ACTUAL_PICKUP && ftdmchan->amd.nAMDResult <= AMD_COLORRING){ 
+		ftdmchan->dtmf_flag = 1; 
+		// ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "dtmf flag is %d \n", ftdmchan->dtmf_flag);
+	}
+	//ended by dsq for DS-78336 2019-09-27
 
 	if (ftdmchan->span->sig_queue_dtmf && (ftdmchan->span->sig_queue_dtmf(ftdmchan, dtmf) == FTDM_BREAK)) {
 		/* Signalling module wants to absorb this DTMF event */
@@ -3875,6 +4127,19 @@ skipdebug:
 				ftdm_log(FTDM_LOG_DEBUG, "DTMF hangup detected.\n");
 
 				ftdm_channel_set_state(__FILE__, __FTDM_FUNC__, __LINE__, ftdmchan, FTDM_CHANNEL_STATE_HANGUP, 0, NULL);
+				break;
+			}
+		}
+	}
+
+	if (ftdmchan->span->terminal_key_len) {
+		for (p = dtmf; ftdm_is_dtmf(*p); p++) {
+			memmove (ftdmchan->terminal_key_buf, ftdmchan->terminal_key_buf + 1, ftdmchan->span->terminal_key_len - 1);
+			ftdmchan->terminal_key_buf[ftdmchan->span->terminal_key_len - 1] = *p;
+			if (!strcmp(ftdmchan->terminal_key_buf, ftdmchan->span->terminal_key)) {
+				ftdm_log(FTDM_LOG_DEBUG, "DTMF terminal detected.\n");
+
+				ftdm_channel_set_state(__FILE__, __FTDM_FUNC__, __LINE__, ftdmchan, FTDM_CHANNEL_STATE_RING, 0, NULL);
 				break;
 			}
 		}
@@ -3958,6 +4223,11 @@ FT_DECLARE(ftdm_status_t) ftdm_raw_read (ftdm_channel_t *ftdmchan, void *data, f
 
 		write_chan_io_dump(&ftdmchan->rxdump, data, (int)dlen);
 
+		if(open_callerid_debug_file(ftdmchan,globals.dtmfdebug_directory) == FTDM_SUCCESS) {
+
+			write_callerid_debug_file(ftdmchan, data, (int)dlen);
+		}
+
 		/* if dtmf debug is enabled and initialized, write there too */
 		if (ftdmchan->dtmfdbg.file) {
 			rc = fwrite(data, 1, dlen, ftdmchan->dtmfdbg.file);
@@ -3970,6 +4240,7 @@ FT_DECLARE(ftdm_status_t) ftdm_raw_read (ftdm_channel_t *ftdmchan, void *data, f
 				close_dtmf_debug_file(ftdmchan);
 			}
 		}
+
 	}
 	return status;
 }
@@ -3985,6 +4256,7 @@ static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan)
 	 * dtmf_buffer: raw linear tone data generated by teletone to be written to the devices
 	 * fsk_buffer: raw linear FSK modulated data for caller id
 	 */
+	ftdm_status_t status = FTDM_SUCCESS;//added by yy for DS-77498,2019.09.11
 	ftdm_buffer_t *buffer = NULL;
 	ftdm_size_t dblen = 0;
 	int wrote = 0;
@@ -4025,13 +4297,19 @@ static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan)
 			}
 		}
 	}
+	
 
+done://added by yy for DS-77498,2019.09.11
+	// if(ftdmchan->type == FTDM_CHAN_TYPE_FXS){
+	// 	ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "test bufffer delay ,ftdmchan->buffer_delay:%d",ftdmchan->buffer_delay);
+	// }
 	if (!ftdmchan->buffer_delay || --ftdmchan->buffer_delay == 0) {
 		/* time to pick a buffer, either the dtmf or fsk buffer */
 		if (ftdmchan->dtmf_buffer && (dblen = ftdm_buffer_inuse(ftdmchan->dtmf_buffer))) {
 			buffer = ftdmchan->dtmf_buffer;
 		} else if (ftdmchan->fsk_buffer && (dblen = ftdm_buffer_inuse(ftdmchan->fsk_buffer))) {
-			buffer = ftdmchan->fsk_buffer;			
+			buffer = ftdmchan->fsk_buffer;
+					
 		}
 	}
 
@@ -4075,12 +4353,21 @@ static ftdm_status_t handle_tone_generation(ftdm_channel_t *ftdmchan)
 				fio_slin2alaw(auxbuf, max, &dlen);
 			}
 		}
-		
-		/* write the tone to the channel */
-		return ftdm_raw_write(ftdmchan, auxbuf, &dlen);
-	} 
 
-	return FTDM_SUCCESS;
+		/* write the tone to the channel */
+		status = ftdm_raw_write(ftdmchan, auxbuf, &dlen);
+
+		//补偿主叫发送数据，否则容易出现插静音，导致主叫检测不到
+		if(ftdmchan->send_two > 0)//added by yy for DS-77498,2019.09.11
+		{
+			ftdmchan->send_two --;
+			goto done;
+		}
+	} else {
+		ftdmchan->send_two = 1;
+	}
+
+	return status;
 
 }
 
@@ -4138,11 +4425,15 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 
 	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT) ||
 		ftdm_test_flag(ftdmchan, FTDM_CHANNEL_PROGRESS_DETECT) ||
-		ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT)) {
+		ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT) ||
+		ftdm_test_flag(ftdmchan, FTDM_CHANNEL_AMD_FLAG) ||
+		ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SHAIHAO_FLAG)
+		) {
 
 		uint8_t sln_buf[1024] = {0};
 		int16_t *sln;
 		ftdm_size_t slen = 0;
+		int fsk_len = 0;
 
 		if (ftdmchan->effective_codec == FTDM_CODEC_SLIN) {
 			sln = data;
@@ -4173,59 +4464,109 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 			slen = len;
 		}
 
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT)) {
-			if (ftdm_fsk_demod_feed(&ftdmchan->fsk, sln, slen) != FTDM_SUCCESS) {
-				ftdm_size_t type, mlen;
-				char str[128], *sp;
-				
-				while(ftdm_fsk_data_parse(&ftdmchan->fsk, &type, &sp, &mlen) == FTDM_SUCCESS) {
-					*(str+mlen) = '\0';
-					ftdm_copy_string(str, sp, ++mlen);
-					ftdm_clean_string(str);
+		 
+		//added by dsq for Answering Machine Detector
+		get_overall_energy(&ftdmchan->amd,sln,(int)slen,ftdmchan->rxgain); //added by for get overall energy 
+		if(ftdmchan->type ==FTDM_CHAN_TYPE_FXO){
+			if(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SHAIHAO_FLAG)){
+				if(ftdmchan->shaihao.nShaihaoState==1){
+					if(ftdmchan->shaihao.pRecordfile!=NULL){
+						fwrite(sln_buf,1,slen*2,ftdmchan->shaihao.pRecordfile);
+					} 
+			 	}
+			}
+			if(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_AMD_FLAG)){
+				if(ftdmchan->amd.uEnableAmd==1){
+					ExecutAMD(&ftdmchan->amd);
+			 	}
+			}
+		}
+		  
+		#if 0
+			if(ftdmchan->type ==FTDM_CHAN_TYPE_FXO && ftdmchan->amd.uEnableAmd==1 ){
+			int32_t nenergy = (int32_t)(20 * log10((double)(ftdmchan->amd.getOverallEnergy.dwOverallEnergy) / 32767.0));
+			ftdm_log(FTDM_LOG_DEBUG, "fxo :test by dsq :%d,energy:%d buflen:%ld,amdreslut:%d,amd enable:%d",
+						ftdmchan->amd.getOverallEnergy.dwOverallEnergy,nenergy,slen,ftdmchan->amd.nAMDResult,ftdmchan->amd.uEnableAmd);
+		}
+		#endif 
 
-					ftdm_log(FTDM_LOG_DEBUG, "FSK: TYPE %s LEN %"FTDM_SIZE_FMT" VAL [%s]\n",
-						ftdm_mdmf_type2str(type), mlen-1, str);
-					
-					switch(type) {
-					case MDMF_DDN:
-					case MDMF_PHONE_NUM:
-						{
-							if (mlen > sizeof(ftdmchan->caller_data.ani)) {
-								mlen = sizeof(ftdmchan->caller_data.ani);
-							}
-							ftdm_set_string(ftdmchan->caller_data.ani.digits, str);
+		#if 0
+		if(ftdm_test_flag(ftdmchan, FTDM_CHANNEL_PROGRESS_DETECT)){ //enable amd
+				
+			#if 1
+				if(ftdmchan->type ==FTDM_CHAN_TYPE_FXO &&(ftdmchan->uShaihaoState==1)){
+					// ftdm_log(FTDM_LOG_DEBUG, "fxo :test by dsq,energy:%d,codec:%d ",
+							// ftdmchan->dwOverallEnergy,ftdmchan->effective_codec);
+					//ftdmchan->iEStatus = get_energy_state(ftdmchan,sln,slen); //get state of sound for 2 shaihao 
+					if(ftdmchan->file!=NULL){
+						fwrite(sln_buf,1,slen*2,ftdmchan->file);
+				 	}
+				
+			}
+			#endif
+			 get_overall_energy(ftdmchan,sln, slen);
+			 if(ftdmchan->type ==FTDM_CHAN_TYPE_FXO && (ftdmchan->uEnableAmd == 1)){
+				 ExecutAMD(ftdmchan);
+			 }
+			#if 0
+			if(ftdmchan->type ==FTDM_CHAN_TYPE_FXO){
+				int32_t nenergy = (int32_t)(20 * log10((double)(ftdmchan->dwOverallEnergy) / 32767.0));
+				ftdm_log(FTDM_LOG_DEBUG, "fxo :test by dsq :%d,energy:%d buflen:%ld,shaihaostate:%d,iEStatus:%d",
+							ftdmchan->dwOverallEnergy,nenergy,slen,ftdmchan->uShaihaoState,ftdmchan->iEStatus);
+			}
+
+			#endif
+		}
+		//ended by dsq
+       #endif 
+		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_CALLERID_DETECT)) {
+
+			fsk_detect(&ftdmchan->fsk_rx, sln, slen);
+
+			memset(ftdmchan->fsk_buf, 0, sizeof(ftdmchan->fsk_buf));
+
+			if ((fsk_len = fsk_detect_get_data(&ftdmchan->fsk_rx, &ftdmchan->fsk_spec,ftdmchan->fsk_buf)) > 0) {
+				//ftdm_size_t type, mlen;
+				//char str[128], *sp;
+				unsigned char caller_id[255];
+				unsigned char date_time[255];
+				unsigned char caller_name[255];
+				// char digits[255] ="";
+				//ftdm_status_t parseStatus;
+				int analyze = 0;
+				// char *cur ;
+
+				memset(caller_id, 0, sizeof(caller_id));
+    			memset(date_time, 0, sizeof(date_time));
+    			memset(caller_name, 0, sizeof(caller_name));
+
+				if((analyze = fsk_detect_data_analyze(ftdmchan->fsk_buf,fsk_len,caller_id, date_time, caller_name)) > 0){
+
+					if(strlen((char *)caller_id) > 0){
+						filterfskcallerId(caller_id);
+						if(strlen((char *)caller_id) > 0){
+							ftdm_set_string(ftdmchan->caller_data.ani.digits, (char *)caller_id);
 							ftdm_set_string(ftdmchan->caller_data.cid_num.digits, ftdmchan->caller_data.ani.digits);
 						}
-						break;
-					case MDMF_NO_NUM:
-						{
-							ftdm_set_string(ftdmchan->caller_data.ani.digits, *str == 'P' ? "private" : "unknown");
-							ftdm_set_string(ftdmchan->caller_data.cid_name, ftdmchan->caller_data.ani.digits);
-						}
-						break;
-					case MDMF_PHONE_NAME:
-						{
-							if (mlen > sizeof(ftdmchan->caller_data.cid_name)) {
-								mlen = sizeof(ftdmchan->caller_data.cid_name);
-							}
-							ftdm_set_string(ftdmchan->caller_data.cid_name, str);
-						}
-						break;
-					case MDMF_NO_NAME:
-						{
-							ftdm_set_string(ftdmchan->caller_data.cid_name, *str == 'P' ? "private" : "unknown");
-						}
-					case MDMF_DATETIME:
-						{
-							if (mlen > sizeof(ftdmchan->caller_data.cid_date)) {
-								mlen = sizeof(ftdmchan->caller_data.cid_date);
-							}
-							ftdm_set_string(ftdmchan->caller_data.cid_date, str);
-						}
-						break;
 					}
+					if(strlen((char *)caller_name) > 0){
+						ftdm_set_string(ftdmchan->caller_data.cid_name, (char *)caller_name);
+					}
+					if(strlen((char *)date_time) > 0){
+						ftdm_set_string(ftdmchan->caller_data.cid_date, (char *)date_time);
+					}
+
 				}
-				ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_CALLERID_DETECT, NULL);
+				if(analyze < 0 && !strcasecmp(ftdmchan->caller_data.ani.digits, "unknown")){
+					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Fsk Analyze Failed!");
+					dump_mem(ftdmchan,ftdmchan->fsk_buf,fsk_len);//added by yy for DS-75886
+				}
+				else{
+					ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Fsk Analyze Success! cid_num=%s cid_name=%s cid_date=%s", ftdmchan->caller_data.cid_num.digits, ftdmchan->caller_data.cid_name, ftdmchan->caller_data.cid_date);
+					dump_mem(ftdmchan,ftdmchan->fsk_buf,fsk_len);//added by yy for DS-75886
+
+					ftdm_channel_command(ftdmchan, FTDM_COMMAND_DISABLE_CALLERID_DETECT, NULL);
+				}
 			}
 		}
 
@@ -4245,30 +4586,39 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 		}
 
 		if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan) && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT)) {
-			teletone_hit_type_t hit;
+			//teletone_hit_type_t hit;
 			char digit_char;
-			uint32_t dur;
+			//uint32_t dur;
 
-			if ((hit = teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen)) == TT_HIT_END) {
-				teletone_dtmf_get(&ftdmchan->dtmf_detect, &digit_char, &dur);
-
-				if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (digit_char == 'D' || digit_char == 'A')) {
-					ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
-				} else {
-					char digit_str[2] = { 0 };
-
-					digit_str[0] = digit_char;
-
-					ftdm_channel_queue_dtmf(ftdmchan, digit_str);
-
-					if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF)) {
-						ftdmchan->skip_read_frames = 20;
-					}
+			if(dtmf_detect(&ftdmchan->dtmf_rx, sln, (int)slen) > 0){//added by yy for IPPBX-29 detect dtmf,2018.08.20
+				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF)) {
+					ftdmchan->skip_read_frames = 20;
 				}
+			}
+			if (dtmf_detect_get(&ftdmchan->dtmf_rx, &digit_char, sizeof(digit_char)) > 0){
+				//if ((hit = teletone_dtmf_detect(&ftdmchan->dtmf_detect, sln, (int)slen)) == TT_HIT_END) {
+				//	teletone_dtmf_get(&ftdmchan->dtmf_detect, &digit_char, &dur);
+					if (ftdmchan->state == FTDM_CHANNEL_STATE_CALLWAITING && (digit_char == 'D' || digit_char == 'A')) {
+						ftdmchan->detected_tones[FTDM_TONEMAP_CALLWAITING_ACK]++;
+					} else {
+						char digit_str[2] = { 0 };
+						//added by dsq for DS-79532 2019.11.19
+						if(ftdm_test_flag((ftdm_analog_data_t *)ftdmchan->span->signal_data, FTDM_ANALOG_CLEARLETTER) 
+							&&ftdmchan->state != FTDM_CHANNEL_STATE_UP){ 
+							// ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "DTMF cid_num=%d A%dB%dC%dD%d", digit_char,'A','B','C','D');
+							if(digit_char== 'A'||digit_char == 'B'||digit_char == 'C'||digit_char== 'D'){
+								// ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "DTMF do continue cid_num=%d ", digit_char);
+								goto do_continue;
+							}
+						}
+						
+						digit_str[0] = digit_char;
+						ftdm_channel_queue_dtmf(ftdmchan, digit_str);
+					}
 			}
 		}
 	}
-
+do_continue:
 	if (ftdmchan->skip_read_frames > 0 || ftdm_test_flag(ftdmchan, FTDM_CHANNEL_MUTE)) {
 
 		ftdm_mutex_lock(ftdmchan->pre_buffer_mutex);
@@ -5087,7 +5437,18 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 
 	currindex = span->chan_count;
 	*configured = 0;
-	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number);
+	ftdm_log(FTDM_LOG_DEBUG, "open span %d %d %d %d %d %f %f %d\n", chan_config->codec_ms,  chan_config->min_rxflash_ms, chan_config-> max_rxflash_ms,  chan_config->eclevel,  chan_config->etlevel,  chan_config->hw_rxgain,  chan_config->hw_txgain,  chan_config->flash_ms);
+
+	*configured = span->fio->configure_span(span, str, chan_config->type, chan_config->name, chan_config->number, 
+		chan_config->codec_ms, 
+		chan_config->min_rxflash_ms, 
+		chan_config->max_rxflash_ms, 
+		chan_config->eclevel, 
+		chan_config->etlevel, 
+		chan_config->hw_rxgain, 
+		chan_config->hw_txgain,
+		chan_config->flash_ms);
+		
 	if (!*configured) {
 		ftdm_log(FTDM_LOG_ERROR, "%d:Failed to configure span\n", span->span_id);
 		return FTDM_FAIL;
@@ -5116,6 +5477,11 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 
 		if (chan_config->debugdtmf) {
 			span->channels[chan_index]->dtmfdbg.requested = 1;
+		}
+
+		if (chan_config->debugcallerid) {
+			span->channels[chan_index]->ciddbg.requested = 1;
+			span->channels[chan_index]->ciddbg.type = chan_config->dbgcid_type;
 		}
 
 		span->channels[chan_index]->dtmfdetect.duration_ms = chan_config->dtmfdetect_ms;
@@ -5147,6 +5513,8 @@ static ftdm_status_t load_config(void)
 	ftdm_size_t len = 0;
 	ftdm_channel_config_t chan_config;
 	ftdm_status_t ret = FTDM_SUCCESS;
+	int num;
+	float fnum;
 
 	memset(&chan_config, 0, sizeof(chan_config));
 	sprintf(chan_config.group_name, "__default");
@@ -5234,7 +5602,82 @@ static ftdm_status_t load_config(void)
 				} else {
 					ftdm_copy_string(chan_config.number, val, FTDM_MAX_NUMBER_STR_SZ);
 				}
-			} else if (!strcasecmp(var, "analog-start-type")) {
+			}
+			//start added by yy for chan conf, 2018.02.24 
+			else if (!strcasecmp(var, "codec_ms")) {
+				num = atoi(val);
+				if (num < 10 || num > 60) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid codec ms: %d\n", num);
+				} else {
+					chan_config.codec_ms = num;
+					ftdm_log(FTDM_LOG_INFO, "Setting codec_ms val to %d\n", num);
+				}
+			} else if (!strcasecmp(var, "min_rxflash_ms")) {
+				num = atoi(val);
+				if (num < 50 || num > 3000) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid flash ms: %d\n", num);
+				} else {
+					chan_config.min_rxflash_ms = num;
+					ftdm_log(FTDM_LOG_INFO, "Setting min_rxflash_ms val to %d\n", num);
+				}
+			} else if (!strcasecmp(var, "max_rxflash_ms")) {
+				num = atoi(val);
+				if (num < 50 || num > 3000) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid flash ms: %d\n", num);
+				} else {
+					chan_config.max_rxflash_ms = num;
+					ftdm_log(FTDM_LOG_INFO, "Setting max_rxflash_ms val to %d\n", num);
+				}
+			} else if (!strcasecmp(var, "echo_cancel_level")) {
+				num = atoi(val);
+				if (num < 0 || num > 1024) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid echo can val: %d\n", num);
+				} else {
+					chan_config.eclevel = num;
+					ftdm_log(FTDM_LOG_INFO, "Setting echo_cancel_level val to %d\n", num);
+				}
+			} else if (!strcasecmp(var, "echo_train_level")) {
+				if (chan_config.eclevel <  1) {
+					ftdm_log(FTDM_LOG_ERROR, "can't set echo train level without setting echo cancel level first: %d\n", chan_config.eclevel);
+				} else {
+					num = atoi(val);
+					if (num < 0 || num > 256) {
+						ftdm_log(FTDM_LOG_ERROR, "invalid echo train val: %d\n", num);
+					} else {
+						chan_config.etlevel = num;
+						ftdm_log(FTDM_LOG_INFO, "Setting echo_train_level val to %d\n", num);
+					}
+				}
+			} else if (!strcasecmp(var, "hw_rxgain")) {
+				fnum = (float)atof(val);
+				if (fnum < -100.0 || fnum > 100.0) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid hw_rxgain val: %f\n", fnum);
+				} else {
+					chan_config.hw_rxgain = fnum;
+					ftdm_log(FTDM_LOG_INFO, "Setting hw_rxgain val to %f\n", fnum);
+				}
+			} else if (!strcasecmp(var, "hw_txgain")) {
+				fnum = (float)atof(val);
+				if (fnum < -100.0 || fnum > 100.0) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid hw_txgain val: %f\n", fnum);
+				} else {
+					chan_config.hw_txgain = fnum;
+					ftdm_log(FTDM_LOG_INFO, "Setting hw_txgain val to %f\n", fnum);
+				}
+			}
+			/*added by xjj for OS-14483 2019.7.24*/
+			else if (!strcasecmp(var, "flash_ms")) {
+				num = atoi(val);
+				if (num < 50 || num > 3000) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid flash ms: %d\n", num);
+				} else {
+					chan_config.flash_ms = num;
+					ftdm_log(FTDM_LOG_INFO, "Setting flash_ms val to %d\n", num);
+				}
+			}
+			/*end by xjj for OS-14483 2019.7.24*/
+			//end added by yy for chan conf, 2018.02.24  
+			else if (!strcasecmp(var, "analog-start-type")) {
 				if (span->trunk_type == FTDM_TRUNK_FXS || span->trunk_type == FTDM_TRUNK_FXO || span->trunk_type == FTDM_TRUNK_EM) {
 					if ((tmp = ftdm_str2ftdm_analog_start_type(val)) != FTDM_ANALOG_START_NA) {
 						span->start_type = tmp;
@@ -5338,6 +5781,9 @@ static ftdm_status_t load_config(void)
 			} else if (!strcasecmp(var, "dtmf_hangup")) {
 				span->dtmf_hangup = ftdm_strdup(val);
 				span->dtmf_hangup_len = strlen(val);
+			}else if (!strcasecmp(var, "terminal_key")) {
+				span->terminal_key = ftdm_strdup(val);
+				span->terminal_key_len = strlen(val);
 			} else if (!strcasecmp(var, "txgain")) {
 				if (sscanf(val, "%f", &(chan_config.txgain)) != 1) {
 					ftdm_log(FTDM_LOG_ERROR, "invalid txgain: '%s'\n", val);
@@ -5349,6 +5795,12 @@ static ftdm_status_t load_config(void)
 			} else if (!strcasecmp(var, "debugdtmf")) {
 				chan_config.debugdtmf = ftdm_true(val);
 				ftdm_log(FTDM_LOG_DEBUG, "Setting debugdtmf to '%s'\n", chan_config.debugdtmf ? "yes" : "no");
+			} else if (!strcasecmp(var, "debugcallerid")) {
+				chan_config.debugcallerid = ftdm_true(val);
+				ftdm_log(FTDM_LOG_DEBUG, "Setting debugcallerid to '%s'\n", chan_config.debugcallerid ? "yes" : "no");
+			} else if (!strcasecmp(var, "dbgcid_type")) {
+				chan_config.dbgcid_type = ftdm_true(val);
+				ftdm_log(FTDM_LOG_DEBUG, "Setting dbgcid_type to '%s'\n", chan_config.dbgcid_type ? "yes" : "no");
 			} else if (!strncasecmp(var, "dtmfdetect_ms", sizeof("dtmfdetect_ms")-1)) {
 				if (chan_config.dtmf_on_start == FTDM_TRUE) {
 					chan_config.dtmf_on_start = FTDM_FALSE;
@@ -5488,6 +5940,7 @@ static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)
 	}
 
 	while (ftdm_config_next_pair(&cfg, &var, &val)) {
+		//ftdm_log(FTDM_LOG_DEBUG, "Module %s configuration %s %s %s %d.\n", fio->name,cfg.category,var,val,cfg.lineno);
 		fio->configure(cfg.category, var, val, cfg.lineno);
 	}
 
@@ -5832,13 +6285,14 @@ static void *ftdm_span_service_events(ftdm_thread_t *me, void *obj)
 	}
 
 	while (ftdm_running() && !(ftdm_test_flag(span, FTDM_SPAN_STOP_THREAD))) {
-		waitms = 1000;
+		waitms = 200;//modified by yy for IPPBX-37 event,2018.07.13
 		status = ftdm_span_poll_event(span, waitms, poll_events);
 		switch (status) {
 			case FTDM_FAIL:
 				ftdm_log(FTDM_LOG_CRIT, "%s:Failed to poll span for events\n", span->name);
 				break;
 			case FTDM_TIMEOUT:
+				while (ftdm_span_next_event(span, &event) == FTDM_SUCCESS);//added by yy for IPPBX-37 event,2018.07.13
 				break;
 			case FTDM_SUCCESS:
 				/* Check if there are any channels that have events available */
@@ -6436,6 +6890,7 @@ static void destroy_span(ftdm_span_t *span)
 	}
 	hashtable_remove(globals.span_hash, (void *)span->name);
 	ftdm_safe_free(span->dtmf_hangup);
+	ftdm_safe_free(span->terminal_key);
 	ftdm_safe_free(span->type);
 	ftdm_safe_free(span->name);
 	ftdm_safe_free(span);
@@ -7013,7 +7468,32 @@ FT_DECLARE(ftdm_status_t) ftdm_usrmsg_free(ftdm_usrmsg_t **usrmsg)
 	return FTDM_SUCCESS;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_usrmsg_free_ex(ftdm_usrmsg_t *usrmsg)
+{
+	if (!usrmsg) {
+		return FTDM_SUCCESS;
+	}
 
+	if (usrmsg->variables) {
+		hashtable_destroy(usrmsg->variables);
+		usrmsg->variables = NULL;
+	}
+
+	if (usrmsg->raw.data) {
+		ftdm_safe_free(usrmsg->raw.data);
+		usrmsg->raw.data = NULL;
+		usrmsg->raw.len = 0;
+	}
+
+	return FTDM_SUCCESS;
+}
+
+FT_DECLARE(uint32_t) ftdm_channel_set_pid(ftdm_channel_t *ftdmchan, uint32_t p_span_id, uint32_t p_chan_id)
+{
+	ftdmchan->p_span_id = p_span_id;
+	ftdmchan->p_chan_id = p_chan_id;
+	return FTDM_SUCCESS;
+}
 
 /* For Emacs:
  * Local Variables:

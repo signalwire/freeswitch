@@ -53,10 +53,13 @@ static struct {
 	uint32_t codec_ms;
 	uint32_t wink_ms;
 	uint32_t flash_ms;
+	uint32_t min_rxflash_ms;//added by yy for fxs min rxflash,2018.01.13
+	uint32_t max_rxflash_ms;//added by yy for fxs max rxflash,2018.01.13
 	uint32_t eclevel;
 	uint32_t etlevel;
     float rxgain;
-    float txgain;
+	float txgain;
+	
 } zt_globals;
 
 #if defined(__FreeBSD__)
@@ -270,13 +273,15 @@ static void zt_build_gains(struct zt_gains *g, float rxgain, float txgain, int c
  * \param cas_bits CAS bits
  * \return number of spans configured
  */
-static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, ftdm_chan_type_t type, char *name, char *number, unsigned char cas_bits)
+static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, ftdm_chan_type_t type, char *name, char *number,uint32_t codec_ms, uint32_t min_rxflash_ms, uint32_t max_rxflash_ms, uint32_t eclevel, uint32_t etlevel, float hw_rxgain, float hw_txgain, uint32_t flash_ms, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
 	zt_params_t ztp;
 	zt_tone_mode_t mode = 0;
 
 	memset(&ztp, 0, sizeof(ztp));
+
+	ftdm_log(FTDM_LOG_DEBUG, "open span %d %d %d %d %d %f %f %d\n", codec_ms,  min_rxflash_ms,  max_rxflash_ms,  eclevel,  etlevel,  hw_rxgain,  hw_txgain,  flash_ms);
 
 	if (type == FTDM_CHAN_TYPE_CAS) {
 		ftdm_log(FTDM_LOG_DEBUG, "Configuring CAS channels with abcd == 0x%X\n", cas_bits);
@@ -372,10 +377,16 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 			}
 
 			if (ftdmchan->type != FTDM_CHAN_TYPE_DQ921 && ftdmchan->type != FTDM_CHAN_TYPE_DQ931) {
-				len = zt_globals.codec_ms * 8;
+				if(codec_ms > 0) {
+					ftdmchan->codec_ms = codec_ms;
+				} else {
+					ftdmchan->codec_ms = zt_globals.codec_ms;
+				}
+				len = ftdmchan->codec_ms * 8;
+			
 				if (ioctl(ftdmchan->sockfd, codes.SET_BLOCKSIZE, &len)) {
-					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d err:%s\n", 
-							chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd, strerror(errno));
+					ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d len=%d fd:%d err:%s\n", 
+							chanpath, ftdmchan->span_id, ftdmchan->chan_id, len, sockfd, strerror(errno));
 					close(sockfd);
 					continue;
 				}
@@ -430,9 +441,54 @@ static unsigned zt_open_range(ftdm_span_t *span, unsigned start, unsigned end, f
 
 				}
 			}
+			//start added by yy for chan conf,2018.02.24
+			//modified by lsq for echo cancel level,0 means disable
+			if(eclevel >= 0 && eclevel <= 1024) {
+				ftdmchan->eclevel = eclevel;
+			} else {
+				ftdmchan->eclevel = zt_globals.eclevel;
+			}
+			//modified by lsq for echo cancel level
+			if(etlevel > 0) {
+				ftdmchan->etlevel = etlevel;
+			} else {
+				ftdmchan->etlevel = zt_globals.etlevel;
+			}
+
+			if(hw_rxgain > 0) {
+				ftdmchan->rxgain = hw_rxgain;
+			} else {
+				ftdmchan->rxgain = zt_globals.rxgain;
+			}
+
+			if(hw_txgain > 0) {
+				ftdmchan->txgain = hw_txgain;
+			} else {
+				ftdmchan->txgain = zt_globals.txgain;
+			}
+			//start added by yy for chan conf,2018.02.24
 
 			ztp.wink_time = zt_globals.wink_ms;
-			ztp.flash_time = zt_globals.flash_ms;
+			//ztp.flash_time = zt_globals.flash_ms;
+			/*added by xjj for OS-14483 2019.7.24*/
+			if(flash_ms > 0) {
+				ztp.flash_time = flash_ms;
+			} else {
+				ztp.flash_time = zt_globals.flash_ms;
+			}
+			/*end by xjj for OS-14483 2019.7.24*/
+			if(min_rxflash_ms > 0) {
+				ztp.min_receive_flash_time = min_rxflash_ms;
+			} else {
+				ztp.min_receive_flash_time = zt_globals.min_rxflash_ms;
+			}
+			if(max_rxflash_ms > 0) {
+				ztp.max_receive_flash_time = max_rxflash_ms;
+			} else {
+				ztp.max_receive_flash_time = zt_globals.max_rxflash_ms;
+			}
+			//ztp.min_receive_flash_time = zt_globals.min_rxflash_ms;
+			//ztp.max_receive_flash_time = zt_globals.max_rxflash_ms;
 
 			if (ioctl(sockfd, codes.SET_PARAMS, &ztp) < 0) {
 				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, sockfd);
@@ -528,7 +584,7 @@ static FIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 			ftdm_log(FTDM_LOG_ERROR, "Failed to get CAS bits in CAS channel\n");
 			continue;
 		}
-		configured += zt_open_range(span, channo, top, type, name, number, cas_bits);
+		configured += zt_open_range(span, channo, top, type, name, number, codec_ms, min_rxflash_ms, max_rxflash_ms, eclevel, etlevel, hw_rxgain, hw_txgain, flash_ms, cas_bits);
 
 	}
 	
@@ -550,7 +606,9 @@ static FIO_CONFIGURE_FUNCTION(zt_configure)
 {
 
 	int num;
-    float fnum;
+	float fnum;
+
+	//ftdm_log(FTDM_LOG_INFO, "zt_configure %s %s %s %d\n", category, var, val, lineno);
 
 	if (!strcasecmp(category, "defaults")) {
 		if (!strcasecmp(var, "codec_ms")) {
@@ -567,12 +625,19 @@ static FIO_CONFIGURE_FUNCTION(zt_configure)
 			} else {
 				zt_globals.wink_ms = num;
 			}
-		} else if (!strcasecmp(var, "flash_ms")) {
+		}  else if (!strcasecmp(var, "min_rxflash_ms")) {
 			num = atoi(val);
 			if (num < 50 || num > 3000) {
 				ftdm_log(FTDM_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
 			} else {
-				zt_globals.flash_ms = num;
+				zt_globals.min_rxflash_ms = num;
+			}
+		} else if (!strcasecmp(var, "max_rxflash_ms")) {
+			num = atoi(val);
+			if (num < 50 || num > 3000) {
+				ftdm_log(FTDM_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
+			} else {
+				zt_globals.max_rxflash_ms = num;
 			}
 		} else if (!strcasecmp(var, "echo_cancel_level")) {
 			num = atoi(val);
@@ -608,7 +673,14 @@ static FIO_CONFIGURE_FUNCTION(zt_configure)
 				zt_globals.txgain = fnum;
 				ftdm_log(FTDM_LOG_INFO, "Setting txgain val to %f\n", fnum);
 			}
-		} else {
+		} else if (!strcasecmp(var, "flash_ms")) {
+			num = atoi(val);
+			if (num < 50 || num > 3000) {
+				ftdm_log(FTDM_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
+			} else {
+				zt_globals.flash_ms = num;
+			}
+		}else {
 				ftdm_log(FTDM_LOG_WARNING, "Ignoring unknown setting '%s'\n", var);
 		}
 	}
@@ -628,7 +700,7 @@ static FIO_OPEN_FUNCTION(zt_open)
 	if (ftdmchan->type == FTDM_CHAN_TYPE_DQ921 || ftdmchan->type == FTDM_CHAN_TYPE_DQ931) {
 		ftdmchan->native_codec = ftdmchan->effective_codec = FTDM_CODEC_NONE;
 	} else {
-		int blocksize = zt_globals.codec_ms * (ftdmchan->rate / 1000);
+		int blocksize = ftdmchan->codec_ms * (ftdmchan->rate / 1000);
 		int err;
 		if ((err = ioctl(ftdmchan->sockfd, codes.SET_BLOCKSIZE, &blocksize))) {
 			snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "%s", strerror(errno));
@@ -647,18 +719,18 @@ static FIO_OPEN_FUNCTION(zt_open)
 				return FTDM_FAIL;
 			}
 		}
-		if (zt_globals.rxgain || zt_globals.txgain) {
+		if (ftdmchan->rxgain || ftdmchan->txgain) {
 			struct zt_gains gains;
 			memset(&gains, 0, sizeof(gains));
 
 			gains.chan_no = ftdmchan->physical_chan_id;
-			zt_build_gains(&gains, zt_globals.rxgain, zt_globals.txgain, ftdmchan->native_codec);
+			zt_build_gains(&gains, ftdmchan->rxgain, ftdmchan->txgain, ftdmchan->native_codec);
 
-			if (zt_globals.rxgain)
-				ftdm_log(FTDM_LOG_INFO, "Setting rxgain to %f on channel %d\n", zt_globals.rxgain, gains.chan_no);
+			if (ftdmchan->rxgain)
+				ftdm_log(FTDM_LOG_INFO, "Setting rxgain to %f on channel %d\n", ftdmchan->rxgain, gains.chan_no);
 
-			if (zt_globals.txgain)
-				ftdm_log(FTDM_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
+			if (ftdmchan->txgain)
+				ftdm_log(FTDM_LOG_INFO, "Setting txgain to %f on channel %d\n", ftdmchan->txgain, gains.chan_no);
 
 			if (ioctl(ftdmchan->sockfd, codes.SETGAINS, &gains) < 0) {
 				ftdm_log(FTDM_LOG_ERROR, "failure configuring device %s as FreeTDM device %d:%d fd:%d\n", chanpath, ftdmchan->span_id, ftdmchan->chan_id, ftdmchan->sockfd);
@@ -666,7 +738,7 @@ static FIO_OPEN_FUNCTION(zt_open)
 		}
 
 		if (1) {
-			int len = zt_globals.eclevel;
+			int len = ftdmchan->eclevel;
 			if (len) {
 				ftdm_log(FTDM_LOG_INFO, "Setting echo cancel to %d taps for %d:%d\n", len, ftdmchan->span_id, ftdmchan->chan_id);
 			} else {
@@ -674,8 +746,8 @@ static FIO_OPEN_FUNCTION(zt_open)
 			}
 			if (ioctl(ftdmchan->sockfd, codes.ECHOCANCEL, &len)) {
 				ftdm_log(FTDM_LOG_WARNING, "Echo cancel not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
-			} else if (zt_globals.etlevel > 0) {
-				len = zt_globals.etlevel;
+			} else if (ftdmchan->etlevel > 0) {
+				len = ftdmchan->etlevel;
 				if (ioctl(ftdmchan->sockfd, codes.ECHOTRAIN, &len)) {
 					ftdm_log(FTDM_LOG_WARNING, "Echo training not available for %d:%d\n", ftdmchan->span_id, ftdmchan->chan_id);
 				}
@@ -799,6 +871,16 @@ static FIO_COMMAND_FUNCTION(zt_command)
 			int command = ZT_RINGOFF;
 			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Ring-off Failed");
+				return FTDM_FAIL;
+			}
+			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_RINGING);
+		}
+		break;
+	case FTDM_COMMAND_GENERATE_RING_STOP:
+		{
+			int command = ZT_RINGSTOP;
+			if (ioctl(ftdmchan->sockfd, codes.HOOK, &command)) {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Ring-stop Failed");
 				return FTDM_FAIL;
 			}
 			ftdm_clear_flag_locked(ftdmchan, FTDM_CHANNEL_RINGING);
@@ -957,10 +1039,10 @@ static FIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 		fchan->last_event_time = ftdm_current_time_in_ms(); \
 	} while (0);
 
-#define ftdm_zt_store_chan_event(fchan, revent) \
+#define ftdm_zt_store_chan_event(fchan, zt_event_id) \
 	do { \
 		if (fchan->io_data) { \
-			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Dropping event %d, not retrieved on time\n", revent); \
+			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Dropping event %d, not retrieved on time\n", zt_event_id); \
 		} \
 		fchan->io_data = (void *)zt_event_id; \
 		ftdm_zt_set_event_pending(fchan); \
@@ -1185,7 +1267,7 @@ static __inline__ ftdm_status_t zt_channel_process_event(ftdm_channel_t *fchan, 
 					*event_id = FTDM_OOB_OFFHOOK;
 				}
 			} else if (fchan->type == FTDM_CHAN_TYPE_FXO) {
-				*event_id = FTDM_OOB_RING_START;
+				*event_id = FTDM_OOB_RING_STOP;
 			}
 		}
 		break;
@@ -1328,7 +1410,7 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 
 			continue;
 		}
-
+		
 		if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
 			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to process DAHDI event %d from channel\n", zt_event_id);
 
@@ -1402,7 +1484,7 @@ static FIO_READ_FUNCTION(zt_read)
 			} else {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Skipping one IO read cycle due to DTMF event processing\n");
 			}
-			break;
+			continue;//modified by yy for IPPBX-37 event,2018.07.13
 		}
 
 		/* Read error, keep going unless to many errors force us to abort ...*/
@@ -1516,9 +1598,13 @@ static FIO_IO_LOAD_FUNCTION(zt_init)
 
 	zt_globals.codec_ms = 20;
 	zt_globals.wink_ms = 150;
-	zt_globals.flash_ms = 750;
+	zt_globals.min_rxflash_ms = 200;
+	zt_globals.max_rxflash_ms = 1250;
 	zt_globals.eclevel = 0;
 	zt_globals.etlevel = 0;
+	zt_globals.rxgain = 0;
+	zt_globals.txgain = 0;
+	zt_globals.flash_ms = 500;
 	
 	zt_interface.name = "zt";
 	zt_interface.configure = zt_configure;

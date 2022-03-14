@@ -275,6 +275,10 @@ typedef enum {
 #define FTDM_CHANNEL_MAX_FLAG 	     (1ULL << 39)
 /*!<When adding a new flag, need to update ftdm_io.c:channel_flag_strs */
 
+#define FTDM_CHANNEL_AMD_FLAG           (1ULL << 40)
+#define FTDM_CHANNEL_SHAIHAO_FLAG       (1ULL << 41)
+#define FTDM_CHANNEL_SILENCE_FLAG       (1ULL << 42)
+
 #include "ftdm_state.h"
 
 typedef enum ftdm_channel_hw_link_status {

@@ -106,6 +106,8 @@ typedef enum {
 	FTDM_CAUSE_RESPONSE_TO_STATUS_ENQUIRY = 30,
 	FTDM_CAUSE_NORMAL_UNSPECIFIED = 31,
 	FTDM_CAUSE_NORMAL_CIRCUIT_CONGESTION = 34,
+	FTDM_CAUSE_NO_DAIL_TONE = 35,
+	FTDM_CAUSE_NO_TONE_AFTERDIAL = 36,
 	FTDM_CAUSE_NETWORK_OUT_OF_ORDER = 38,
 	FTDM_CAUSE_PERMANENT_FRAME_MODE_CONNECTION_OOS = 39,
 	FTDM_CAUSE_PERMANENT_FRAME_MODE_OPERATIONAL = 40,
@@ -536,6 +538,18 @@ typedef struct ftdm_channel_config {
 	uint32_t dtmf_time_on;
 	uint32_t dtmf_time_off;
 	uint8_t iostats;
+	/*added by yy for support chan conf*/
+	uint32_t codec_ms;
+	uint32_t min_rxflash_ms;
+	uint32_t max_rxflash_ms;
+	uint32_t eclevel;
+	uint32_t etlevel;
+	float hw_rxgain;
+	float hw_txgain;
+	uint8_t debugcallerid;
+	uint8_t dbgcid_type;
+	uint32_t flash_ms;  //added by xjj for OS-14483 2019.7.24
+
 } ftdm_channel_config_t;
 
 /*!
@@ -771,6 +785,9 @@ typedef enum {
 	/*!< Enable/disable DTMF removal */
 	FTDM_COMMAND_ENABLE_DTMF_REMOVAL = 61,
 	FTDM_COMMAND_DISABLE_DTMF_REMOVAL = 62,
+	FTDM_COMMAND_ENABLE_DEBUG_CALLERID = 63,
+	FTDM_COMMAND_DISABLE_DEBUG_CALLERID = 64,
+	FTDM_COMMAND_GENERATE_RING_STOP = 65,	
 
 	FTDM_COMMAND_COUNT,
 } ftdm_command_t;
@@ -807,7 +824,7 @@ struct ftdm_memory_handler {
 #define FIO_CHANNEL_NEXT_EVENT_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t **event)
 #define FIO_SIGNAL_CB_ARGS (ftdm_sigmsg_t *sigmsg)
 #define FIO_EVENT_CB_ARGS (ftdm_channel_t *ftdmchan, ftdm_event_t *event)
-#define FIO_CONFIGURE_SPAN_ARGS (ftdm_span_t *span, const char *str, ftdm_chan_type_t type, char *name, char *number)
+#define FIO_CONFIGURE_SPAN_ARGS (ftdm_span_t *span, const char *str, ftdm_chan_type_t type, char *name, char *number, uint32_t codec_ms, uint32_t min_rxflash_ms, uint32_t max_rxflash_ms, uint32_t eclevel, uint32_t etlevel, float hw_rxgain, float hw_txgain, uint32_t flash_ms)
 #define FIO_CONFIGURE_ARGS (const char *category, const char *var, const char *val, int lineno)
 #define FIO_OPEN_ARGS (ftdm_channel_t *ftdmchan)
 #define FIO_CLOSE_ARGS (ftdm_channel_t *ftdmchan)
@@ -1591,6 +1608,9 @@ FT_DECLARE(ftdm_status_t) ftdm_sigmsg_get_raw_data_detached(ftdm_sigmsg_t *sigms
  * */
 FT_DECLARE(ftdm_status_t) ftdm_usrmsg_add_var(ftdm_usrmsg_t *usrmsg, const char *var_name, const char *value);
 
+/*! \brief free usrmsg and variables/raw data attached to it */
+FT_DECLARE(ftdm_status_t) ftdm_usrmsg_free_ex(ftdm_usrmsg_t *usrmsg);
+
 /*! \brief Attach raw data to usrmsg
  *  \param usrmsg The message structure containing the variables
  *  \param data pointer to data
@@ -1643,6 +1663,13 @@ FT_DECLARE(const char *) ftdm_channel_get_number(const ftdm_channel_t *ftdmchan)
 /*! \brief Get the number physical id associated to the channel */
 FT_DECLARE(uint32_t) ftdm_channel_get_ph_id(const ftdm_channel_t *ftdmchan);
 
+//added by yy for DS-70358,2019.03.13
+FT_DECLARE(uint32_t) ftdm_channel_set_pid(ftdm_channel_t *ftdmchan, uint32_t p_span_id, uint32_t p_chan_id);
+FT_DECLARE(ftdm_bool_t) ftdm_channel_amd_enable(const ftdm_channel_t *ftdmchan);
+//added by dsq for DS-73667 2019.09.02
+FT_DECLARE(const char *)ftdm_channel_get_shaihao_recordfile(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(int32_t) ftdm_channel_get_sr_state(const ftdm_channel_t *ftdmchan);
+FT_DECLARE(int32_t) ftdm_channel_get_amd_state(const ftdm_channel_t *ftdmchan);
 /*! 
  * \brief Configure span with a signaling type 
  *
