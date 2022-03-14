@@ -3277,6 +3277,14 @@ SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const c
 	switch_cache_db_handle_t *dbh;
 	int r = 0;
 
+	int device_modules_auth_sn = 0;
+	device_modules_auth_sn = switch_core_get_device_modules_auth_sn();
+	if(!(device_modules_auth_sn & MODULE_HA))
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ha auth fail!\n");
+		return 0;
+	}
+
 	if (!sql_manager.manage) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DATABASE NOT AVAIALBLE, REVCOVERY NOT POSSIBLE\n");
 		return 0;

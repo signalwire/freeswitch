@@ -484,6 +484,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	int billsecs = 0;
 	double balance_check = 0;
 	switch_time_t chargedunits =0; //added by dsq for DS-88227 2020-09-24
+	double first_billamount = 0; //added by dsq for DS-88227 2020-09-24
 
 	if (!session) {
 		/* Why are we here? */
@@ -593,7 +594,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 		nibble_data->lastts = profile->times->answered;	/* Set the initial answer time to match when the call was really answered */
 		billincrement_count = switch_strlen_zero(billincrement_count)?"0":billincrement_count; 
 		if (!(switch_strlen_zero(billincrement))) {
-			nibble_data->first_bill_period = nibble_data->lastts+atoi(billincrement_count)* atol(billincrement)* 1000000;
+			nibble_data->first_bill_period = nibble_data->lastts+atol(billincrement_count)* atol(billincrement)* 1000000;
 		} 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Beginning new billing on %s,and first bill time is %s\n", uuid,billincrement_count);
 	}
@@ -608,14 +609,23 @@ static switch_status_t do_billing(switch_core_session_t *session)
 
 	if ((ts - nibble_data->lastts) >= 0) {
 		/* If billincrement is set we bill by it and not by time elapsed */
-		if(switch_channel_get_state(channel) == CS_HANGUP)
+		if(switch_channel_get_state(channel) == CS_HANGUP){
 			correction = (ts - nibble_data->lastts) % 1000000 > 0 ? 1 : 0;
+		}
 		if (!(switch_strlen_zero(billincrement))) {
-			if(!(switch_strlen_zero(first_billrate)) && !(switch_strlen_zero(billincrement_count)) && ((nibble_data->first_bill_period - ts)>=0 )){
+			if (!(switch_strlen_zero(first_billrate)) && !(switch_strlen_zero(billincrement_count))){
+				if ((nibble_data->first_bill_period - ts)>=0){
 				billrate  = first_billrate; 
+				}else if (nibble_data->first_bill_period-nibble_data->lastts > 0 && nibble_data->first_bill_period < ts ){
+					chargedunits = nibble_data->first_bill_period - nibble_data->lastts;
+					first_billamount = (atof(first_billrate) / 1000000 / atol(billincrement))* chargedunits;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%d seconds passed since last bill time of chargedunits:%ld and first_billamount:%f\n",billsecs, chargedunits,first_billamount);
+					nibble_data->lastts += chargedunits;	
+					nibble_data->first_bill_period = nibble_data->lastts;
+				}
 			}
 			chargedunits = (ts - nibble_data->lastts) / 1000000 + correction <= atol(billincrement) ? atol(billincrement) * 1000000 : (switch_time_t)(ceil((ts - nibble_data->lastts) / (atol(billincrement) * 1000000.0))) * atol(billincrement) * 1000000;
-			billamount = (atof(billrate) / 1000000 / atol(billincrement)) * chargedunits - nibble_data->bill_adjustments;
+			billamount = first_billamount +  (atof(billrate) / 1000000 / atol(billincrement)) * chargedunits - nibble_data->bill_adjustments;
 			/* Account for the prepaid amount */
 			nibble_data->lastts += chargedunits;
 		} else {

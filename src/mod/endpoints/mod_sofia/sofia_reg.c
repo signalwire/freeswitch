@@ -763,6 +763,22 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 			sofia_event_fire(profile, &s_event);
 		}
 
+		//added by dsq for unregistered  report 2021-12-28
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", argv[10]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", argv[1]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", argv[1]);
+		    switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", argv[2]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", argv[3]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", argv[0]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", argv[14]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", argv[11]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", argv[12]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", argv[7]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "expires", argv[6]);
+			sofia_event_fire(profile, &s_event);
+		}
+		//end by  dsq for unregistered  report 2021-12-28
 	}
 	return 0;
 }

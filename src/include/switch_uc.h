@@ -53,7 +53,11 @@ typedef enum {
 	MODULE_FAX = (1 << 5),
 	MODULE_SYN_RING = (1 << 6),
 	MODULE_NUM_ATTR = (1 << 7),
-	MODULE_LRIO = (1 << 8)
+	MODULE_LRIO = (1 << 8),
+	MODULE_SR = (1 << 9),
+	MODULE_CLOUD = (1 << 10),
+	MODULE_SLA = (1 << 11),
+	MODULE_HA = (1 << 12)
 } device_modules_auth_sn_type_t;
 //+++end+++ added by yy for auth modules,2019.04.04
 

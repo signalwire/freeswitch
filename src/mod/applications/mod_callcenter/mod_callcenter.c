@@ -2153,13 +2153,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
 
-		if ((o_announce = switch_channel_get_variable(member_channel, "cc_outbound_announce"))) {
-			playback_array(agent_session, o_announce);
-		}
-
 		/* This is used for the waiting caller to quit waiting for a agent */
-		//switch_channel_set_variable(member_channel, "cc_agent_found", "true");//UC
+		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
 		//switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);//UC
+
 		if (switch_true(switch_channel_get_variable(member_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) || switch_true(switch_channel_get_variable(agent_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_set_flag(member_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 		}
@@ -2190,6 +2187,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			}
 		} else if (!bridged && !switch_channel_up(agent_channel)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Failed to bridge, agent %s has no session\n", h->agent_name);
+			switch_channel_set_variable(member_channel, "cc_agent_found", NULL); //added by dsq for ippbx200 bug 3 2021-12-15
 			/* Put back member on Waiting state, previous Trying */
 			sql = switch_mprintf("UPDATE members SET state = '%q' WHERE uuid = '%q' AND session_uuid = '%q' AND instance_id = '%q'", cc_member_state2str(CC_MEMBER_STATE_WAITING), h->member_uuid, h->member_session_uuid, globals.cc_instance_id);
 			cc_execute_sql(NULL, sql, NULL);
@@ -2201,7 +2199,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_channel_set_variable(member_channel, "cc_agent_bridged", "true");
 			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "true");
 			/* This is used for the waiting caller to quit waiting for a agent */
-			switch_channel_set_variable(member_channel, "cc_agent_found", "true");
+			//switch_channel_set_variable(member_channel, "cc_agent_found", "true");//UC
 			switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
 		}
 
@@ -3646,6 +3644,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
 				break;
 			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
+				switch_yield(1000);//wait 1ms modifed by dsq for IPPBX200 bug 3 2021-12-15//UC
 				break;
 			}
 		} else {
