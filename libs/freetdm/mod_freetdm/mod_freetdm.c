@@ -1847,14 +1847,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if(session){
 			const char *var;
-			uint64_t device_features_auth_sn = 0;
+			int device_modules_auth_sn = 0;
 			if(!peer_chan){
 				peer_chan = switch_core_session_get_channel(session);
 			}
 			if(our_chan && peer_chan){
 				var = switch_channel_get_variable(peer_chan, "gateway_type");
-				device_features_auth_sn = switch_core_get_device_features_auth_sn();
-				if(var && (device_features_auth_sn & MODULE_SYN_RING)){
+				device_modules_auth_sn = switch_core_get_device_modules_auth_sn();
+				if(var && (device_modules_auth_sn & MODULE_SYN_RING)){
 					var = switch_channel_get_variable(peer_chan, "freetdm_span_number");
 
 					if(var){

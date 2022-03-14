@@ -1209,6 +1209,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 							ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
 							ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
 						}
+						ftdm_channel_clear_detected_tones(ftdmchan); //added by dsq for OS-13701 XBLUE 2021-6-2 
 					}
 				}
 				break;
@@ -1337,8 +1338,8 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 						if(enable_ftdm_sleep == 1) {
 							ftdm_sleep(interval);
 						}
-					} else if (ftdmchan->state == FTDM_CHANNEL_STATE_UP
-						   && ftdm_test_sflag(ftdmchan, AF_POLARITY_REVERSE)){
+					} else if (ftdmchan->state == FTDM_CHANNEL_STATE_UP){
+						if (ftdm_test_sflag(ftdmchan, AF_POLARITY_REVERSE)){
 						/* if this polarity reverse is close to the answer polarity reverse, ignore it */
 						if (answer_on_polarity_counter 
 						&& (state_counter - answer_on_polarity_counter) > analog_data->polarity_delay) {
@@ -1349,6 +1350,16 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 							"Not hanging up on polarity reverse, too close to Answer reverse\n");
 						}
 						ftdm_clear_sflag(ftdmchan, AF_POLARITY_REVERSE);
+					}
+					else {
+							if (ftdmchan->detected_tones[FTDM_TONEMAP_BUSY]){
+								ftdmchan->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
+								ftdm_channel_clear_detected_tones(ftdmchan); //added by dsq for OS-13701 XBLUE 2021-6-2 
+								ftdm_channel_clear_needed_tones(ftdmchan);
+								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+							}
+						}
+						ftdm_sleep(interval);
 					}
 					else {
 						ftdm_sleep(interval);
@@ -1492,6 +1503,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Reversing polarity on hangup\n");
 					ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_POLARITY, &polarity);
 				}
+				ftdm_channel_clear_detected_tones(ftdmchan); //added by dsq for OS-13701 XBLUE 2021-6-2 
 				break;
 
 			case FTDM_CHANNEL_STATE_DOWN:
@@ -1689,11 +1701,15 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 				}
 			}
 			
-			if (ftdmchan->detected_tones[FTDM_TONEMAP_BUSY] || 
+			if ((ftdmchan->detected_tones[FTDM_TONEMAP_BUSY] || 
 				ftdmchan->detected_tones[FTDM_TONEMAP_FAIL1] ||
 				ftdmchan->detected_tones[FTDM_TONEMAP_FAIL2] ||
 				ftdmchan->detected_tones[FTDM_TONEMAP_FAIL3] ||
-				ftdmchan->detected_tones[FTDM_TONEMAP_ATTN]
+				ftdmchan->detected_tones[FTDM_TONEMAP_ATTN] ) && 
+				(ftdmchan->state  != FTDM_CHANNEL_STATE_DOWN || 
+				 ftdmchan->state  != FTDM_CHANNEL_STATE_GET_CALLERID ||
+				 ftdmchan->state  != FTDM_CHANNEL_STATE_HANGUP || 
+				 ftdmchan->state  != FTDM_CHANNEL_STATE_BUSY)
 				) {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_ERROR, "Failure indication detected!\n");
 				ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_BUSY);
