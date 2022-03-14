@@ -1,0 +1,633 @@
+<!-- Please refer to http://wiki.freeswitch.org/wiki/FreeTDM for further documentation  -->
+
+<!-- 
+This is a sample FreeSWITCH XML configuration for FreeTDM
+Remember you still need to configure freetdm.conf (no XML extension) in $prefix/conf/
+directory of FreeSWITCH. The freetdm.conf (no XML extension) is a simple text file
+definining the I/O interfaces (Sangoma, DAHDI etc). This file (freetdm.conf.xml) deals
+with the signaling protocols that you can run on top of your I/O interfaces.
+-->
+<configuration name="freetdm.conf" description="FreeTDM Configuration">
+	
+	<settings>
+		<param name="debug" value="0"/>
+		<!--<param name="hold-music" value="$${moh_uri}"/>-->
+		<!-- Analog global options (they apply to all spans) 
+		     Remember you can only choose between either call-swap
+		     or 3-way, not both!
+		-->
+		<!--<param name="enable-analog-option" value="call-swap"/>-->
+		<!--<param name="enable-analog-option" value="3-way"/>-->
+		<!--
+		Refuse to load the module if there is configuration errors
+		Defaults to 'no'
+		-->
+		<!--<param name="fail-on-error" value="no"/>-->
+	</settings>
+
+	<!-- Sample analog configuration (The analog_spans tag is for ftmod_analog) -->
+	<analog_spans>
+		<!-- The span name must match the name in your freetdm.conf -->
+		<span name="myAnalog">
+			<!--<param name="hold-music" value="$${moh_uri}"/>-->
+			<!--
+			     3-way allows you to flash your FXS line and dial
+			     another number and put all the parties in a conference
+
+			     call-swap allows you to flash your FXS line and swap
+			     between one call and another
+
+			     Remember you can only choose between either call-swap
+			     or 3-way, not both!
+
+			<param name="enable-analog-option" value="call-swap"/>
+			<param name="enable-analog-option" value="3-way"/>
+			-->
+
+			<!-- Tones are defined in tones.conf
+			     This setting is very important for analog lines to
+			     work properly
+		       	-->
+			<param name="tonegroup" value="us"/>
+
+			<!-- How much time to wait for digits (in FXS lines) -->
+			<param name="digit-timeout" value="2000"/>
+
+			<!-- Maximum number of digits to wait for (in FXS lines) -->
+			<param name="max-digits" value="11"/>
+
+			<!-- whether you want to wait for caller id -->
+			<param name="enable-callerid" value="true"/>
+
+			<!-- How much to wait for dial tone (0 if you just want to dial out immediately without waiting for dial tone) -->
+			<!--<param name="wait-dialtone-timeout" value="5000"/>-->
+
+			<!-- whether you want to enable callwaiting feature -->
+			<!--<param name="callwaiting" value="true"/>-->
+
+			<!-- whether you want to answer/hangup on polarity reverse for outgoing calls in FXO devices 
+			     and send polarity reverse on answer/hangup for incoming calls in FXS devices -->
+			<!--<param name="answer-polarity-reverse" value="false"/>-->
+			<!--<param name="hangup-polarity-reverse" value="false"/>-->
+			<!--
+			Minimum delay (in milliseconds) required between an answer polarity reverse
+			and hangup polarity reverse in order to assume the second polarity reverse is a real hangup
+			<param name="polarity-delay" value="600"/>
+			-->
+
+			<!-- Retrieve caller id on polarity reverse -->
+			<!-- 
+			<param name="polarity-callerid" value="true"/>
+			-->
+
+			<!-- regex to stop dialing when it matches -->
+			<!--<param name="dial-regex" value="5555"/>-->
+
+			<!-- regex to stop dialing when it does not match -->
+			<!--<param name="fail-dial-regex" value="^5"/>-->
+
+			<!-- FreeSWITCH dialplan type and context to send the calls -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+		</span>
+	</analog_spans>
+
+	<!-- 
+	
+ 	openr2 (MFC-R2 signaling) spans (ftmod_r2)
+	
+	In order to use this type of spans your FreeTDM must have been compiled with ftmod_r2 module.
+	The module is compiled if the openr2 library is present when running the ./configure script
+	in the FreeTDM source code
+
+	MFC-R2 signaling has lots of variants from country to country and even sometimes
+	minor variants inside the same country. The only mandatory parameters here are:
+	variant, but typically you also want to set max_ani and max_dnis.
+	IT IS RECOMMENDED that you leave the default values (leaving them commented) for the 
+	other parameters unless you have problems or you have been instructed to change some 
+	parameter. OpenR2 library uses the 'variant' parameter to try to determine the 
+	best defaults for your country.  If you want to contribute your configs for a particular 
+	country send them to the e-mail of the primary OpenR2 developer that you can find in the 
+	AUTHORS file of the OpenR2 package, they will be added to the samples directory of openr2.
+
+	-->
+	<r2_spans>
+		<span name="wp1" cfgprofile="testr2">
+			
+			<!--
+			MFC/R2 variant. This depends on the OpenR2 supported variants
+			A list of values can be found by executing the openr2 command r2test -l
+			some valid values are:
+			mx (Mexico)
+			ar (Argentina)
+			br (Brazil)
+			ph (Philippines)
+			itu (per ITU spec)
+			-->
+			<param name="variant" value="mx"/>
+
+			<!-- switch parameters (required), where to send calls to -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+
+			<!-- 
+			Max amount of ANI (caller id digits) to ask for
+			<param name="max_ani" value="4"/> 
+			-->
+			<!-- 
+			Max amount of DNIS to ask for 
+			<param name="max_dnis" value="4"/> 
+			-->
+
+			<!-- Do not set parameters below this line unless you desire to tweak it because is not working -->
+			
+			<!-- 
+			Whether or not to get the ANI before getting DNIS (only affects incoming calls)
+			Some telcos require ANI first some others do not care, if default go wrong on 
+			incoming calls, change this value
+			<param name="get_ani_first" value="yes"/>
+			-->
+
+			<!--
+			Caller Category to send. Accepted values:
+				- national_subscriber
+				- national_priority_subscriber
+				- international_subscriber
+				- international_priority_subscriber
+				- collect_call
+			Usually national_subscriber (the default) works just fine
+			<param name="category" value="national_subscriber"/>
+			-->
+
+			<!--
+			Brazil uses a special calling party category for collect calls (llamadas por cobrar)
+			instead of using the operator (as in Mexico). The R2 spec in Brazil says a special GB tone
+			should be used to reject collect calls. If you want to ALLOW collect calls specify 'yes',
+			if you want to BLOCK collect calls then say 'no'. Default is to block collect calls.
+			(see also 'double_answer')
+			<param name="allow_collect_calls" value="yes"/>
+			-->
+
+			<!--
+			This feature is related but independent of allow_collect_calls
+			Some PBX's require a double-answer process to block collect calls, if
+			you ever have problems blocking collect calls using Group B signals (allow_collect_calls=no)
+			then you may want to try with double_answer=yes, this will cause that every answer signal
+			is changed to perform 'answer -> clear back -> answer' (sort of a flash)
+			(see also 'allow_collect_calls')
+			<param name="double_answer" value="yes"/>
+			-->
+
+			<!--
+			This feature allows to skip the use of Group B/II signals and go directly
+			to the accepted state for incoming calls
+			<param name="immediate_accept" value="yes"/>
+			-->
+
+			<!--
+			Skip request of calling party category and ANI
+			<param name="skip_category" value="yes"/>
+			-->
+
+			<!--
+			Brazil use a special signal to force the release of the line (hangup) from the
+			backward perspective. When forced_release=no, the normal clear back signal
+			will be sent on hangup, which is OK for all mfcr2 variants I know of, except for
+			Brazilian variant, where the central will leave the line up for several seconds (30, 60)
+			which sometimes is not what people really want. When forced_release=yes, a different
+			signal will be sent to hangup the call indicating that the line should be released immediately
+			<param name="forced_release" value="yes"/>
+			-->
+
+			<!--
+			Whether or not report to the other end 'accept call with charge'
+			This setting has no effect with most telecos, usually is safe
+			leave the default (yes), but once in a while when interconnecting with
+			old PBXs this may be useful.
+			Concretely this affects the Group B signal used to accept calls
+			<param name="charge_calls" value="yes"/>
+			-->
+
+			<!--
+			MFC/R2 value in milliseconds for the MF timeout. Any negative value
+			means 'default', smaller values than 500ms are not recommended
+			and can cause malfunctioning. If you experience protocol error
+			due to MF timeout try incrementing this value in 500ms steps
+			<param name="mfback_timeout" value="1500"/>
+			-->
+
+			<!--
+			MFC/R2 value in milliseconds for the metering pulse timeout.
+			Metering pulses are sent by some telcos for some R2 variants
+			during a call presumably for billing purposes to indicate costs,
+			however this pulses use the same signal that is used to indicate
+			call hangup, therefore a timeout is sometimes required to distinguish
+			between a *real* hangup and a billing pulse that should not
+			last more than 500ms, If you experience call drops after some
+			minutes of being stablished try setting a value of some ms here,
+			values greater than 500ms are not recommended.
+			BE AWARE that choosing the proper protocol variant parameter
+			implicitly sets a good recommended value for this timer, use this
+			parameter only when you *really* want to override the default, otherwise
+			just comment out this value.
+			<param name="metering_pulse_timeout" value="1000"/>
+			-->
+
+			<!--
+			WARNING: advanced users only! I really mean it
+			this parameter is commented by default because
+			YOU DON'T NEED IT UNLESS YOU REALLY GROK MFC/R2
+			READ COMMENTS on doc/r2proto.conf in openr2 package 
+			for more info
+			<param name="advanced_protocol_file" value="/usr/local/freeswitch/conf/r2proto.conf"/>
+			-->
+
+			<!-- USE THIS FOR DEBUGGING MFC-R2 PROTOCOL -->
+			<!-- 
+			Where to dump advanced call file protocol logs
+			<param name="logdir" value="$${base_dir}/log/mfcr2"/>
+			-->
+
+			<!-- 
+			MFC/R2 valid logging values are: all,error,warning,debug,notice,cas,mf,nothing
+			error,warning,debug and notice are self-descriptive
+			'cas' is for logging ABCD CAS tx and rx
+			'mf' is for logging of the Multi Frequency tones
+			You can mix up values, like: loglevel=error,debug,mf to log just error, debug and 
+			multi frequency messages
+			'all' is a special value to log all the activity
+			'nothing' is a clean-up value, in case you want to not log any activity for
+			a channel or group of channels
+			BE AWARE that the level of output logged will ALSO depend on
+			the value you have in FreeSWITCH logging configurations, if you disable output FreeSWITCH
+			then it does not matter if you specify 'all' here, nothing will be logged
+			so FreeSWITCH has the last word on what is going to be logged
+			<param name="logging" value="debug,notice,warning,error,mf,cas"/>
+			-->
+
+			<!-- 
+			whether or not to drop protocol call files into 'logdir'
+			<param name="call_files" value="yes"/>
+			-->
+
+			<!--
+			Use only for very technical debugging
+			This is the size (if 0, dumps are disabled) of MF dump files. MF dump files
+			are audio files that are dumped when a protocol error occurs.
+			The files are dumped in whatever you set in the logdir parameter.
+			Value -1 uses a default recommended size (which stores 5 seconds of audio)
+			<param name="mf_dump_size" value="-1"/>
+			-->
+		</span>
+	</r2_spans>
+
+	<!-- Sangoma ISDN PRI/BRI spans. Requires libsng_isdn to be installed -->
+	<sangoma_pri_spans>
+		<span name="wp1">
+			<!-- 
+				Switch emulation/Variant
+				Possible values are:
+					national
+					4ess
+					5ess
+					qsig
+					euroisdn
+					ntt
+			
+			<param name="switchtype" value="national"/>
+			-->
+			<!--
+				Signalling
+				Possible values are:
+					net
+					cpe
+				
+				<param name="signalling" value="cpe"/>
+			-->
+			<!--
+				Overlap - whether to support overlap receive
+				Possible values are: Yes/No
+
+				<param name="overlap" value="yes"/>
+			-->
+			<!--
+				Facility - whether to support facility messages
+				Possible values are: Yes/No
+
+				<param name="facility" value="yes"/>
+			-->
+			<!--
+				Minimum Digits
+				In overlap receive mode.
+				Minimum number of digits to receive before sending notification
+				to the dialplan
+				Possible values are: <Any digit>
+
+				<param name="min-digits" value="8"/>
+			-->
+			<!--
+				TEI - default value for Terminal Equipment Identifier.
+				Used in Point-to-point connections
+				Possible values are: <1-127>
+
+				<param name="tei" value="0"/>
+			-->
+			<!--
+				Type of Number (TON)
+				Set the TON on outbound calls
+				Possible values are:
+				unknown
+				international
+				national
+				network-specific
+				subscriber-number
+				abbreviated-number
+
+				<param name="outbound-called-ton" value="unknown"/>
+				<param name="outbound-calling-ton" value="unknown"/>
+				<param name="outbound-rdnis-ton" value="unknown"/>
+			-->
+			<!--
+				Numbering Plan Indendification (NPI)
+				Set the NPI on outbound calls
+				Possible values are:
+				unknown
+				isdn
+				data
+				telex
+				national
+				private
+				reserved
+
+				<param name="outbound-called-npi" value="unknown"/>
+				<param name="outbound-calling-npi" value="unknown"/>
+				<param name="outbound-rdnis-npi" value="unknown"/>
+			-->
+			<!--
+				Bearer Capability - Transfer Capability
+				Set the Bearer Capability - Transfer Capability on outbound calls
+				Possible values are:
+				speech
+				unrestricted-digital-information
+				restricted-digital-information
+				3.1-Khz-audio
+				7-Khz-audio
+				15-Khz-audio
+				video
+
+				<param name="outbound-bc-transfer-cap" value="speech"/>
+			-->
+			<!--
+				Bearer Capability - User Layer 1
+				Set the Bearer Capability - User Layer 1 on outbound calls
+				Possible values are:
+				
+				V.110
+				ulaw
+				alaw
+
+				<param name="outbound-bc-user-layer1" value="speech"/>
+			-->
+			<!--
+				Channel Restart Timeout
+				If we do not receive a RESTART message within this timeout on link
+				UP, we will send a channel restart.
+				
+				
+				<param name="channel-restart-timeout" value="20"/>
+			-->
+			<!--
+				Local Number (MSN)
+				On incoming calls, we will only respond to this call if 
+				the Called Party Number matches this value.
+
+				Note: Up to 8 local numbers can be added per span.
+				<param name="local-number" value="9054741990"/>
+			-->
+			<!--
+				Facility Timeout
+				Amount of time to wait for the FACILITY message after a SETUP message is
+				received
+				<param name="facility-timeout" value="1"/>
+			-->
+			<!--
+				Transfer Timeout
+				Amount of time to wait for the remote switch to respond to a transfer request
+				<param name="transfer-timeout" value="20"/>
+			-->
+			<!--
+				AT&T Transfer - Remove DTMF
+				Whether to remove DTMF tones received from remote switch when performing
+				AT&T Transfer.
+
+				<param name="att-remove-dtmf" value="yes/no"/>
+			-->
+			<!--
+				Facility Information Element Decoding
+				Whether to decode contents within Facility IE. You should only disable this option if your custom application has its own Facility IE decoding.
+
+				<param name="facility-ie-decode" value="yes/no"/>
+			-->
+			<!--
+				Ignore cause value
+				When using 5ESS switchtype, whether or not do initiate disconnects based on cause code.
+
+				<param name="ignore-cause-value" value="yes/no"/>
+			-->
+			<!--
+				Trace (Interpreted)
+				Whether or not to enable Q921/Q931 trace on start
+
+				<param name="q931-trace" value="yes/no"/>
+				<param name="q921-trace" value="yes/no"/>
+			-->
+			<!--
+				Trace (Raw)
+				Whether or not to enable Q921/Q931 trace on start
+
+				<param name="q931-raw-trace" value="yes/no"/>
+				<param name="q921-raw-trace" value="yes/no"/>
+			-->
+			<!--
+				Force sending complete
+				Will add Sending Complete IE to outgoing SETUP message
+				By default, enabled on EuroISDN, disabled on US variants.
+				
+				<param name="force-sending-complete" value="yes/no"/>
+			-->
+			<!--
+				Early Media Override
+				Assume early media is available, even if Q.931 message does not have
+				progress indicator IE = in-band data ready
+
+				Possible values
+					on-proceed
+					on-progress
+					on-alert
+				
+				<param name="early-media-override" value="on-alert"/>
+			-->
+			<!--
+				Invert Channel ID Invert Bit
+
+				Invert the Channel ID Extend Bit 
+
+				<param name="chan-id-invert-extend-bit" value="yes/no"/>
+			-->
+			<!--
+				CID Name transmit method
+
+				How to transmit Caller ID Name
+				
+				Possible values:
+				display-ie
+				user-user-ie
+				facility-ie
+				default (will transmit CID-Name based on variant)
+
+				<param name="cid-name-transmit-method" value="default"/>
+			-->
+			<!--
+				CID Name transmit
+
+				Whether to transmit Caller ID Name
+
+				Possible values:
+				yes	 	- always send CID-name
+				no		- nether send CID-name
+				default (will transmit CID-Name based on variant)
+
+				<param name="cid-name-transmit-method" value="default"/>
+			-->
+			<!-- 
+				Send CONNECT ACK
+				Whether to send a Connect Ack 
+
+				Possible values:
+				yes - send connect ack
+				no - do not send connect ack
+				default (will transmit Connect Ack based on variant + signaling)
+			
+				<param name="send-connect-ack" value="yes"/>
+			-->
+
+			<!-- 
+				Q.931 Timers in seconds
+				
+				Override default Q.931 values
+				
+				timers:
+				timer-t301
+				timer-t302
+				timer-t303
+				timer-t304
+				timer-t305
+				timer-t306
+				timer-t307
+				timer-t308
+				timer-t310
+				timer-t312
+				timer-t313
+				timer-t314
+				timer-t316
+				timer-t318
+				timer-t319
+				timer-t322
+
+				<param name="timer-t301" value="10"/>
+				-->
+		</span>
+	</sangoma_pri_spans>
+	
+
+	<!-- 
+		PRI passive tapping spans. Requires patched version from libpri at http://svn.digium.com/svn/libpri/team/moy/tap-1.4
+		You must also configure FreeTDM with "-with-pritap" (see ./configure help for details)
+	-->
+	<pritap_spans>
+		<span name="tapped1">
+			<!-- The peer span name used to tap the link -->
+			<param name="peerspan" value="tapped2"/>
+
+			<!-- 
+				Whether to mix the audio from the peerspan with the audio from this span 
+				This is most likely what you want (and therefore the default) so you can hear
+				the full conversation being tapped instead of just one side
+			-->
+			<!-- <param name="mixaudio" value="yes"/> -->
+			
+			<!-- switch parameters (required), where to send calls to -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+		</span>
+
+		<span name="tapped2">
+			<!-- This span is linked to "tapped1" through its peerspan parameter -->
+			<param name="peerspan" value="tapped1"/>
+			<!-- <param name="mixaudio" value="yes"/> -->
+
+			<!-- switch parameters (required), where to send calls to -->
+			<param name="dialplan" value="XML"/>
+			<param name="context" value="default"/>
+		</span>
+	</pritap_spans>
+
+	<!--
+	GSM spans (libwat must be installed when configuring the freetdm build)
+	-->
+	<gsm_spans>
+		<span name="gsm01">
+			<!-- where to send inbound calls to -->
+			<param name="dialplan" value="XML" />
+			<param name="context" value="module1" />
+
+			<!--
+				GSM module type
+				Accepted values: "telit", "telit-gc864", "telit-he910", "telit-cc864", "telit-de910", "motorola"
+			-->
+			<param name="moduletype" value="telit-gc864" />
+
+			<!--
+				Debug mask (accepted values: all, uart_raw, uart_raw, call_state, span_state, at_parse, at_handle, sms_encode, sms_decode, none)
+				comma-separated values are accepted to combine those levels
+			-->
+			<param name="debug" value="all" />
+
+			<!--
+				Whether to enable HW DTMF in the hardware module
+				Accepted values: true, generate, detect, false
+			-->
+			<param name="hwdtmf" value="true" />
+
+			<!--
+				This enables conditional forwarding on module startup
+			-->
+			<!-- <param name="conditional-forwarding-prefix" value="*71" /> -->
+			<!-- <param name="conditional-forwarding-number" value="123456789" /> -->
+
+			<!--
+				This enables immediate forwarding logic to simulate hunt groups
+				The syntax for immediate-forwarding-numbers ia a comma-separated
+				list of elements in the form [<span-name>:]<number>
+
+				if span-name is specified, the span will be checked for availability
+				before enabling forwarding to that span number
+
+				The span-name must be a defined freetdm span name
+
+				If the span-name is not specified then only first number specified is used for
+				forwarding whenever this span is busy
+			-->
+			<!-- <param name="immediate-forwarding-prefix" value="*72" /> -->
+			<!-- <param name="immediate-forwarding-numbers" value="gsm02:123456789" /> -->
+
+			<!-- Number to dial to disable forwarding when the call ends (if immediate forwarding was enabled) -->
+			<!-- <param name="disable-forwarding-number" value="*73" /> -->
+
+			<!-- Startup raw AT commands to run, you can repeat this parameter as many times as needed -->
+			<!-- <param name="startup-command" value="AT$GPSP=1" /> -->
+			<!-- <param name="startup-command" value="AT$GPSAT=1" /> -->
+		</span>
+	</gsm_spans>
+</configuration>
+

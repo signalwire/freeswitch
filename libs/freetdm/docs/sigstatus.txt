@@ -1,0 +1,59 @@
+FreeTDM can both notify and set signaling status changes in the different protocols thru a unified interface. More
+specific details on the C data types and function prototypes are found in freetdm.h
+
+The API provides the following functions and data types to do it:
+
+The signaling status in any channel/span is represented thru ftdm_signaling_status_t
+
+	/* The signaling link is down (no d-chans up in the span/group, MFC-R2 bit pattern unidentified) */
+	FTDM_SIG_STATE_DOWN,
+	/* The signaling link is suspended (MFC-R2 bit pattern blocked, PRI maintenance, ss7 blocked?) */
+	FTDM_SIG_STATE_SUSPENDED,
+	/* The signaling link is ready and calls can be placed (ie: d-chan up, MFC-R2 both rx and tx in IDLE) */
+	FTDM_SIG_STATE_UP,
+	/* Invalid status */
+	FTDM_SIG_STATE_INVALID
+
+Changes in the signaling status are notified to the user using the standard callback notification function provided 
+during configuration using the sigevent type FTDM_SIGEVENT_SIGSTATUS_CHANGED which is sent when the line status changes.
+
+On startup the signalling status default is FTDM_SIG_STATE_DOWN, and no notification is provided until the state change,
+so applications must assume the status is down unless told otherwise.
+
+When ftdm_span_start is called, the signaling stack takes care of attempting to bring the status to UP
+but it will ultimately depend on the other side too.
+
+== Setting the signaling status ==
+
+Users can set the signaling status on a given channel/span thru FreeTDM the following API functions:
+
+ftdm_channel_set_sig_status
+ftdm_span_set_sig_status
+
+If the user calls ftdm_channel_set_sig_status(chan, FTDM_SIG_STATE_SUSPENDED), the signaling stack will try to set 
+the status of the line to the one requested, if successful, it will result in a SIGEVENT_SIGSTATUS_CHANGED notification 
+being sent with status FTDM_SIG_STATE_SUSPENDED.
+
+** MFC-R2 Signaling Notes **
+For MFC-R2, calling ftdm_span_start() results in setting the tx CAS bits to IDLE. However, if the rx bits are in BLOCKED state
+the signaling status will be reported as SUSPENDED. 
+
+If the user calls ftdm_channel_set_sig_status(chan, SUSPENDED), the tx CAS bits will be set to BLOCKED and, if, the current rx bits
+are IDLE then a SIGEVENT_SIGSTATUS_CHANGED with state SUSPENDED will be sent. If the rx bits are already in blocked then no further
+SIGEVENT_SIGSTATUS_CHANGED notification is needed (because it was already sent when the rx bits were initially detected as BLOCKED).
+
+If the user calls ftdm_channel_set_sig_status(chan, UP), the tx CAS bits will be set to IDLE and, if, the current rx bits
+are IDLE, then SIGEVENT_SIGSTATUS_CHANGED with state UP will be sent. If the rx bits are BLOCKED, then no notification is 
+sent at all until the rx bits change.
+
+Bottom line is, for MFC-R2, SIGEVENT_SIGSTATUS_CHANGED UP is only sent to the user when both the rx and tx bits are in IDLE, and
+SIGEVENT_SIGSTATUS_CHANGED SUSPENDED is only sent to the user when any of the rx or tx bits are in BLOCKED.
+
+== Getting the signaling status ==
+Users can get the signaling status on a given channel/span thru FreeTDM the following API functions:
+
+ftdm_channel_get_sig_status
+ftdm_span_get_sig_status
+
+The line status returned should be the same as the last time a SIGEVENT_SIGSTATUS_CHANGED was reported.
+

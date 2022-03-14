@@ -1,0 +1,76 @@
+== This is an email sent to stkn responding to his post http://stkn.techmage.de/archives/200 ==
+
+1. FreeTDM open channels immediately.
+
+Yes, this seems to come from the early days of Freetdm where probably the analog modules were implemented first and was dragged incorrectly to ISDN.
+The open API also sets the flag in use so others cannot use it. We should decouple this open and reserve operations. Does not seem very hard to do, 
+I'll take a look at it on my way back to Toronto this week or earlier if possible, I'll create a git branch for it and send you the url for peer review. 
+Feel free to do the opposite if you are in a hurry.
+
+2. FreeTDM does not completely close the channel on hangup.
+
+As long as the signaling module calls ftdm_channel_close() the fio->close API will be called where the IO module is responsible
+for turning off ec or any other operations to leave the channel unused/idle (not really closed). There was indeed a bug where ftdm_zt module
+was not properly closing the channel, if that is what you mean, then it means that was already fixed by you with your audio mode turn off patch.
+
+Now, a more lengthy response ...
+
+When we, Sangoma, took over freetdm and renamed it to freetdm, it was not just a name change, many API cleanups were done so API users cannot access
+
+the internal data structures and cannot explicitly move between channel states. Also, some order on the state transitions has been put into place. 
+
+We've tried to keep backwards compatibility though, so old modules may not follow all of the conventions. Some unwritten conventions are:
+
+1. Signaling modules are responsible for calling ftdm_channel_close() when done with the channel. In fact, signaling modules should not
+   call ftdm_channel_done unless they really know what they're doing. ftdm_channel_close will call ftdm_channel_done anyways.
+
+2. When remote end hangs up a call, signaling module should go to TERMINATING state and send SIGEVENT_STOP to the user. The signaling stack 
+   should not acknowledge the hangup until the user implicitly moves us to HANGUP (via ftdm_channel_call_hangup()). There is a core timer
+   that will ensure we move from TERMINATING to HANGUP if the user does not moves us fast enough (arbitrarely 3000ms), although that is considered
+   a bug in the user application (at some point we saw that in FreeSWITCH) and we complain loudly when that happens.
+
+3. Signaling modules should leave the channel with NO pending states once they unlock it. This means, whenever  you have a message to process
+   you must lock the channel, check its current state (the user may have already changed the state to something else), process any pending
+   state set by the user, then process your message and if required move the channel to a new state and process that state before releasing the lock. 
+   There is a chance of a deadlock due to the callbacks we use to notify users of messages if we call those callbacks with the channel lock held and 
+   that is why new signaling modules should use the FTDM_SPAN_USE_SIGNALS_QUEUE to defer the notification to the user when the ftdm_channel_t is not 
+   locked calling ftdm_span_trigger_signals() at the end of their processing loop which delivers the callback notifications to users.
+
+Having said that, there is a major architectural change coming, probably early 2011, and I'd like to have your input.
+
+== Decoupling calls from IO channels ==
+
+We've also found that the concept of a channel and a call are unnecesarily coupled together in FreeTDM. I've never asked Anthony the reasoning 
+for this, but it seems the API was meant to be used with, or without calls. That is, a user should be able to just 'open' a channel and start 
+reading and writing raw data without ever launching one of the provided signaling stacks on top, may be just because the user is using their 
+own signaling stack and just needs freetdm as an I/O API. In fact, signaling modules work like this (but there are defects there).  
+The problem is, as you have noticed, the way ftdm_channel_open_xx APIs has been implemented is abusing this concept. 
+
+Problems with current implementation.
+
+1. Exclusive channel is the only way we can request channels to the ISDN network. There is no room to change the channel later on easily.
+2. Multi-rate calls cannot be done. We need to associate multiple B-channels to a single call.
+3. Low-bit-rate calls (not sure what is the proper name for them) where a single B-channel can feed media to multiple calls with a low bit-rate
+   codec (I know of at least one request from a big company for this to support some Q.SIG stuff for Eurocontrol).
+
+
+What do we need?
+
+I think there should be only one open() API that wraps calls around fio->open(), the other current open_xx functions that do hunting, should 
+be eliminated and some extra arguments provided to ftdm_channel_call_place to provide information about the channel where we would like to 
+place the call or group hunting information and the API would return immediately providing a ftdm_call_t reference pointer that can be used 
+to further track the status of that call, or in the case where a channel exclusivity was requested and we know for a fact is not available, 
+just return failure. At that point there is no I/O channel involved yet. Eventually after the signaling stack hunts the channel and 
+negotiaties its availability with the network, an I/O channel can be attached to that call, or even attach multiple channels (for the case 
+of multi rate calls?). 
+
+This involves heavy changes. The state machine should be moved out of the ftdm_channel_t structure along with probably some other members 
+and stuffed into a new ftdm_call_t structure. Signaling modules would have to be updated to run their state machines with this call 
+structure and then at some point attach IO channels to the call. There would be 2 type of read/write APIs, one low level ftdm_channel_read 
+which receives an ftdm_channel_t as parameter and an ftdm_call_read() which receives an ftdm_call_t as parameter, for the case of multi-rate 
+calls or low-bit-rate multiplexed calls in the same B-channel this API would return just the media corresponding to that call already 
+demultiplexed or concatenated, or whatever needs to be done with the media from the multiple low-level IO channels.
+
+This is fairly disruptive, but I believe should be done sooner or later.
+
+

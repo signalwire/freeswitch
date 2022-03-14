@@ -1,0 +1,13 @@
+Last Updated: Jan 19, 2011
+
+== BACKGROUND ==
+
+The IO module provides an abstracted IO interface to FreeTDM. 
+
+== SHUTDOWN ==
+Upon global shutdown, for each channel FIO_CLOSE_FUNCTION will be called. 
+When FIO_CLOSE_FUNCTION is called, all waiters on this channel shall be signalled.
+If FIO_WAIT_FUNCTION is called on a function that has already been closed, this function shall return FTDM_TIMEOUT without blocking.
+FIO_CHANNEL_DESTROY will eventually be called, and IO module is responsible for clearing all internal states and free allocated memory upon channel destroy. 
+
+

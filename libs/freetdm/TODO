@@ -1,0 +1,22 @@
+== Interface inconsistency ==
+- enum_id member of ftdm_event_t is inconsistent. Most of the time is just for OOB events, the only other
+  type of event as of now is FTDM_EVENT_DTMF and is not using the enum_id member. I think we can get rid
+  of the FTDM_EVENT_DTMF and create ftdm_dtmf_event_t type instead of reusing ftdm_event_t
+  then ftdm_event_t would be renamed to ftdm_oob_event_t and the enum_id renamed to type, then ftdm_span_next_event()
+  will only return OOB events
+
+- Deprecate last_error members. 
+  It requires a lot of discipline to set the last_error string for every failure.
+  It does not add much value to the user either, most of the errors are criptic and
+  cannot be shown to end users, we already provide extensive logging for problem
+  troubleshooting.
+
+- Implement threaded IO.
+  Currently IO modules only work on-demand, where the user (ie, FreeSWITCH) drives the read/write
+  of media. If the user stops reading, some functions are not possible 
+  (DTMF detection or Hangup tone detection). It would be useful to implement a FreeTDM mode
+  where the media is driven by a group of threads that are always reading (and possibly writing)
+  then when the user does ftdm_channel_read(), the media would be read from the buffers filled
+  by the media thread and not from the underlying IO device, this gives a chance to FreeTDM to
+  still perform hangup detection or other media services even if the application is not reading.
+

@@ -1,0 +1,24 @@
+FT_CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
+
+BASE=../../..
+FT_DIR=..
+VERBOSE=1
+FTLA=$(FT_DIR)/libfreetdm.la
+LOCAL_OBJS=tdm.o
+LOCAL_CFLAGS=-I$(FT_DIR)/src/include -I$(FT_DIR)/src/isdn/include $(FT_CFLAGS)
+LOCAL_LDFLAGS=-L$(FT_DIR) -lfreetdm 
+include $(BASE)/build/modmake.rules
+
+local_depend: $(FTLA)
+
+$(FTLA): $(FT_DIR)/.update
+	cd $(FT_DIR) && $(MAKE)
+
+local_install:
+	cd $(FT_DIR) && $(MAKE) install
+	[ -f $(DESTDIR)@confdir@/autoload_configs/freetdm.conf.xml ] || cp -f $(FT_DIR)/conf/freetdm.conf.xml  $(DESTDIR)@confdir@/autoload_configs
+
+local_clean:
+	cd $(FT_DIR) && $(MAKE) clean
+
+
