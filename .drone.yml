@@ -13,9 +13,15 @@ steps:
     - name: configure
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - git clone https://github.com/freeswitch/sofia-sip.git
       - cd sofia-sip && ./autogen.sh && ./configure.gnu && make -j`nproc` && make install && cd ..
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -29,9 +35,15 @@ steps:
     - name: build
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - cd sofia-sip && make install && cd ..
       - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
@@ -40,9 +52,15 @@ steps:
     - name: run-tests
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - cd sofia-sip && make install && cd ..
       - make install || true
       - cd tests/unit
@@ -86,9 +104,15 @@ steps:
     - name: configure
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -117,9 +141,15 @@ steps:
     - name: scan-build
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - mkdir -p scan-build
       - echo '#!/bin/bash\nscan-build-7 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
@@ -147,6 +177,6 @@ trigger:
 
 ---
 kind: signature
-hmac: a85b0db203d2c9a71c3e4a63a46b5513fbdb3b8f5135e21d0fe0992f33626824
+hmac: 2d5d834ca6a67e0c22a7ce7407ee9de8520eb11789f3a9c836f3ec8ad5c53c87
 
 ...
