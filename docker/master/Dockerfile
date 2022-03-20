@@ -1,6 +1,7 @@
 # vim:set ft=dockerfile:
-FROM debian:buster
-ENV DEBIAN_VERSION buster
+ARG DEBIAN_VERSION=buster
+FROM debian:${DEBIAN_VERSION}
+ARG TOKEN
 
 # Source Dockerfile:
 # https://github.com/docker-library/postgres/blob/master/9.4/Dockerfile
@@ -11,6 +12,8 @@ RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 frees
 # grab gosu for easy step-down from root
 RUN apt-get update && apt-get install -y --no-install-recommends dirmngr gnupg2 \
     && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 655DA1341B5207915210AFE936B4249FA7B0FB03 \
+    && gpg2 --output /usr/share/keyrings/signalwire-freeswitch-repo.gpg --export 655DA1341B5207915210AFE936B4249FA7B0FB03 \
     && apt-get purge -y --auto-remove gnupg2
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)" \
@@ -25,24 +28,14 @@ RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* 
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
 
-# https://files.freeswitch.org/repo/deb/freeswitch-1.*/dists/buster/main/binary-amd64/Packages
+# https://freeswitch.org/confluence/display/FREESWITCH/Debian
 
-ENV FS_MAJOR debian-unstable
-
-RUN sed -i "s/${DEBIAN_VERSION} main/${DEBIAN_VERSION} main contrib non-free/" /etc/apt/sources.list
-
-# https://freeswitch.org/confluence/display/FREESWITCH/Debian+10+Buster
-
-RUN apt-get update && apt-get install -y curl \
-    && curl https://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub | apt-key add - \
-    && echo "deb http://files.freeswitch.org/repo/deb/$FS_MAJOR/ ${DEBIAN_VERSION} main" > /etc/apt/sources.list.d/freeswitch.list \
-    && apt-get purge -y --auto-remove curl
-
-RUN apt-get update && apt-get install -y freeswitch-all \
+RUN apt-get update && apt-get install ca-certificates lsb-release -y --no-install-recommends \
+    && echo "machine freeswitch.signalwire.com login signalwire password ${TOKEN}" > /etc/apt/auth.conf \
+    && echo "deb [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ `lsb_release -sc` main" > /etc/apt/sources.list.d/freeswitch.list \
+    && apt-get update && apt-get install -y freeswitch-all \
+    && apt-get purge -y --auto-remove ca-certificates lsb-release \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Clean up
-RUN apt-get autoremove
 
 COPY docker-entrypoint.sh /
 # Add anything else here
