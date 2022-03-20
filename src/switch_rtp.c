@@ -7350,7 +7350,7 @@ static void check_timeout(switch_rtp_t *rtp_session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10,
-					  "%s MEDIA TIMEOUT %s %d/%d", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session),
+					  "%s MEDIA TIMEOUT %s %d/%d\n", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session),
 					  elapsed, rtp_session->media_timeout);
 
 	if (elapsed > rtp_session->media_timeout) {
