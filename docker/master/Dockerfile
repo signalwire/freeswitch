@@ -10,18 +10,17 @@ ARG TOKEN
 RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 freeswitch
 
 # grab gosu for easy step-down from root
-RUN apt-get update && apt-get install -y --no-install-recommends dirmngr gnupg2 \
+RUN apt-get update && apt-get install -y --no-install-recommends dirmngr gnupg2 ca-certificates wget \
     && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 655DA1341B5207915210AFE936B4249FA7B0FB03 \
     && gpg2 --output /usr/share/keyrings/signalwire-freeswitch-repo.gpg --export 655DA1341B5207915210AFE936B4249FA7B0FB03 \
-    && apt-get purge -y --auto-remove gnupg2
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/* \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc" \
     && gpg --verify /usr/local/bin/gosu.asc \
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu \
-    && apt-get purge -y --auto-remove ca-certificates wget
+    && apt-get purge -y --auto-remove ca-certificates wget dirmngr gnupg2
 
 # make the "en_US.UTF-8" locale so freeswitch will be utf-8 enabled by default
 RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
