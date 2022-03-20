@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends dirmngr gnupg2 
     && gpg --verify /usr/local/bin/gosu.asc \
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu \
-    && apt-get purge -y --auto-remove ca-certificates wget
+    && apt-get purge -y --auto-remove ca-certificates wget dirmngr gnupg2
 
 # make the "en_US.UTF-8" locale so freeswitch will be utf-8 enabled by default
 RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
