@@ -185,6 +185,14 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate
 	return session;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_check_session_down(switch_core_session_t *session)
+{
+	if (session && session->channel && (switch_test_flag(session, SSF_DESTROYED) || switch_channel_down_nosig(session->channel))) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_get_partner(switch_core_session_t *session, switch_core_session_t **partner,
 																		const char *file, const char *func, int line)
