@@ -943,6 +943,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate
 
 #define switch_core_session_force_locate(uuid_str) switch_core_session_perform_force_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_check_session_down(switch_core_session_t *session);
 
 /*!
   \brief Retrieve a global variable from the core

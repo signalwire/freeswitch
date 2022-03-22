@@ -1663,9 +1663,13 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, swi
 
 	switch_assert(channel != NULL);
 
-	switch_mutex_lock(channel->flag_mutex);
+	if (channel->flag_mutex) {
+		switch_mutex_lock(channel->flag_mutex);
+	}
 	r = channel->flags[flag];
-	switch_mutex_unlock(channel->flag_mutex);
+	if (channel->flag_mutex) {
+		switch_mutex_unlock(channel->flag_mutex);
+	}
 
 	return r;
 }
