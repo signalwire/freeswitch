@@ -233,6 +233,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 	status = ah->asr_interface->asr_close(ah, flags);
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 
+	switch_safe_free(ah->dbuf);
 	switch_resample_destroy(&ah->resampler);
 
 	UNPROTECT_INTERFACE(ah->asr_interface);
@@ -260,7 +261,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 
 		switch_resample_process(ah->resampler, data, len / 2);
 		if (ah->resampler->to_len * 2 > orig_len) {
-			if (!ah->dbuf) {
+			if (ah->dbuflen < ah->resampler->to_len * 2) {
 				void *mem;
 				ah->dbuflen = ah->resampler->to_len * 2;
 				mem = realloc(ah->dbuf, ah->dbuflen);
