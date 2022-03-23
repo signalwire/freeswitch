@@ -29,10 +29,13 @@ The main index for documentation is available at:
   * https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes
 
 ### Installation
+SignalWire Personal Access Tokens (PAT)s are required to access FreeSWITCH install packages.
+
+  * [HOWTO Create a SignalWire Personal Access Token](https://freeswitch.org/confluence/display/FREESWITCH/HOWTO+Create+a+SignalWire+Personal+Access+Token)
 
 Step by step tutorials to install FreeSWITCH from packages or source code are available at:
 
-  * [Debian 10 Buster](https://freeswitch.org/confluence/display/FREESWITCH/Debian+10+Buster) [<b>Recommended</b>]
+  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian) [<b>Recommended</b>]
   * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
   * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
 
