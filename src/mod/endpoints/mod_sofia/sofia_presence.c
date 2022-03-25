@@ -4914,6 +4914,9 @@ void sofia_presence_handle_sip_i_message(int status,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", full_from);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
 
+				if (sofia_test_pflag(profile, PFLAG_CHAT_SKIP_GLOBAL_PROCESS)) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+				}
 
 				if (sip->sip_call_info) {
 					sip_call_info_t *call_info = sip->sip_call_info;

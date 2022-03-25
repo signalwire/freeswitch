@@ -4917,6 +4917,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_ENABLE_CHAT);
 						}
+					} else if (!strcasecmp(var, "chat-skip-global-process")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_CHAT_SKIP_GLOBAL_PROCESS);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_CHAT_SKIP_GLOBAL_PROCESS);
+						}
 					} else if (!strcasecmp(var, "fire-bye-response-events")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_FIRE_BYE_RESPONSE_EVENTS);
