@@ -2353,7 +2353,7 @@ SWITCH_DECLARE(switch_core_media_params_t *) switch_core_media_get_mparams(switc
 	return smh->mparams;
 }
 
-SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
+SWITCH_DECLARE(switch_status_t) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
 {
 	const char *abs, *codec_string = NULL;
 	const char *ocodec = NULL, *val;
@@ -2363,11 +2363,11 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!force && (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA))) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (force) {
@@ -2375,7 +2375,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
 	if (smh->mparams->num_codecs) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE);
@@ -2419,6 +2419,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 	smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 	smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, smh->fmtp, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
