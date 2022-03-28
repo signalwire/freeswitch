@@ -8681,13 +8681,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		goto end;
 	}
 
-	if (switch_channel_var_true(session->channel, "fire_rtcp_events")) {
-		flags[SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT] = 1;
-		if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && 
-				switch_channel_var_true(session->channel, "rtp_video_send_rtcp_message_event")) { 
-			flags[SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT] = 1;
-		}
-	}
 
 	if (!is_reinvite) {
 		if (switch_rtp_ready(a_engine->rtp_session)) {
@@ -8713,6 +8706,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	memset(flags, 0, sizeof(flags));
 	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+
+    if (switch_channel_var_true(session->channel, "fire_rtcp_events")) {
+        flags[SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT] = 1;
+    }
 
 	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
 		!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
@@ -9601,6 +9598,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (v_engine->tmmbr) {
 				flags[SWITCH_RTP_FLAG_TMMBR]++;
 			}
+
+			if (switch_channel_var_true(session->channel, "fire_rtcp_events")) {
+                if (switch_channel_var_true(session->channel, "rtp_video_send_rtcp_message_event")) {
+                    flags[SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT] = 1;
+                }
+            }
+
 			
 			v_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 														 v_engine->local_sdp_port,
