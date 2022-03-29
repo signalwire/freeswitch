@@ -823,7 +823,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	//switch_sockaddr_t *remote_addr = rtp_session->remote_addr;
 	switch_socket_t *sock_output = rtp_session->sock_output;
 	switch_time_t now = switch_micro_time_now();
-
+	
 	if (ice->type & ICE_LITE) {
 		// no connectivity checks for ICE-Lite
 		return SWITCH_STATUS_BREAK;
@@ -854,6 +854,19 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 		if (elapsed > 30000) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "No %s stun for a long time!\n", rtp_type(rtp_session));
 			rtp_session->last_stun = switch_micro_time_now();
+			
+			switch_channel_t* channel;
+			switch_event_t* event;
+
+			channel = switch_core_session_get_channel(rtp_session->session);
+			if (channel && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "media::no_media") == SWITCH_STATUS_SUCCESS)
+			{
+				switch_channel_event_set_data(channel, event);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-Type", "%s", rtp_type(rtp_session));
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Media-No-Media-Ms", "%d", elapsed);
+				switch_event_fire(&event);
+			}
+
 			//status = SWITCH_STATUS_GENERR;
 			//goto end;
 		}
