@@ -1391,7 +1391,7 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t *stream, char *rtp_packet,
 	switch_size_t len = rtp_packet_length;
 	zrtp_status_t status = zrtp_status_ok;
 
-	if (!rtp_session->sock_output) {
+	if (!rtp_session || !rtp_session->sock_output) {
 		return status;
 	}
 
