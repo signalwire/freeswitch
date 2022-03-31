@@ -2069,8 +2069,8 @@ static switch_status_t switch_xml_locate_user_cache(const char *key, const char 
 			switch_time_t time_now = 0;
 
 			time_now = switch_micro_time_now();
-			time_expires = atol(expires_lookup);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache Info\nTime Now:\t%ld\nExpires:\t%ld\n", (long)time_now, (long)time_expires);
+			time_expires = atoll(expires_lookup);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache Info\nTime Now:\t%lld\nExpires:\t%lld\n", (long long)time_now, (long long)time_expires);
 			if (time_expires < time_now) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cache expired for %s@%s, doing fresh lookup\n", user_name, domain_name);
 			} else {
@@ -2106,7 +2106,7 @@ static void switch_xml_user_cache(const char *key, const char *user_name, const 
 	}
 	if (expires) {
 		char *expires_val = (char *)switch_core_hash_insert_alloc(CACHE_EXPIRES_HASH, mega_key, 22);
-		if (!snprintf(expires_val, 22, "%ld", (long)expires)) {
+		if (!snprintf(expires_val, 22, "%lld", (long long)expires)) {
 			switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
 			switch_safe_free(expires_val);
 		}
