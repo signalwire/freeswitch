@@ -1,8 +1,5 @@
 *~
-*.o
-*.so
 *.lo
-*.a
 *.la
 *.loT
 *.orig
