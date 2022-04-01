@@ -311,6 +311,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			switch_size_t olen;
 			const char *artist = NULL, *title = NULL;
 			char tmp_space[128] = "";
+			const char *l;
 
 			if (fd > -1) {
 				char *pb;
@@ -330,7 +331,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 				switch_snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
 
-				if (switch_stristr(".loc", path_buf)) {
+				if ((l = switch_stristr(".loc", fname)) && (l == fname + strlen(fname) - 4)) {
 					if ((fd = open(path_buf, O_RDONLY)) < 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s\n", fname);
 						switch_yield(1000000);

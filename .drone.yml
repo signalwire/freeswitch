@@ -29,7 +29,7 @@ steps:
       - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
       - sed -i '/formats\\/mod_opusfile/s/^#//g' modules.conf
       - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
-      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
+      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
       - ./configure --enable-address-sanitizer
 
     - name: build
@@ -64,6 +64,7 @@ steps:
       - cd sofia-sip && make install && cd ..
       - make install || true
       - cd tests/unit
+      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
       - ./run-tests.sh
       - ls -la /cores
       - mkdir logs && (mv log_run-tests_*.html logs || true) && (mv backtrace_*.txt logs || true)
@@ -177,6 +178,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 2d5d834ca6a67e0c22a7ce7407ee9de8520eb11789f3a9c836f3ec8ad5c53c87
+hmac: 8fd652a876c5578617608e516c37c156219c62a29b2f14114e876745a1aab597
 
 ...
