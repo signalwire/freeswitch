@@ -325,7 +325,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_df_info(switch_profile_timer_t *p, unsi
 	}
 	while (fgets(dfbuff, sizeof(dfbuff), fp) != NULL) {
 		
-		if (sscanf(dfbuff, "%s %llu %llu %llu %*s\n", devbuff,&fstotal, flashuse, flashsize) == 3){
+		if (sscanf(dfbuff, "%s %llu %llu %llu %*s\n", devbuff,&fstotal, flashuse, flashsize) == 4){
 			*flashsize += *flashuse;
 				break;
 		}
