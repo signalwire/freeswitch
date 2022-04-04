@@ -1316,7 +1316,7 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "br: %d fps: %f\n", context->bandwidth, fps);
 
-	context->encoder_ctx->bit_rate = context->bandwidth * 1024;
+	context->encoder_ctx->bit_rate = context->bandwidth * 1000;
 	context->encoder_ctx->rc_min_rate = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->rc_max_rate = context->encoder_ctx->bit_rate;
 	context->encoder_ctx->rc_buffer_size = context->encoder_ctx->bit_rate;
@@ -1330,13 +1330,13 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	context->encoder_ctx->height = context->codec_settings.video.height;
 	if (context->pts) {
 		context->encoder_ctx->time_base = (AVRational){1, fps};
+		context->encoder_ctx->framerate = (AVRational){fps, 1};
 		context->encoder_ctx->ticks_per_frame = 1;
 	} else {
 		context->encoder_ctx->ticks_per_frame = 1000000 / fps;
 		context->encoder_ctx->time_base = (AVRational){1, 1000000};
 	}
 	context->encoder_ctx->pkt_timebase = context->encoder_ctx->time_base;
-	context->encoder_ctx->framerate = context->encoder_ctx->time_base;
 	context->encoder_ctx->max_b_frames = aprofile->ctx.max_b_frames;
 	context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 	context->encoder_ctx->thread_count = aprofile->ctx.thread_count;
