@@ -518,7 +518,7 @@ void *SWITCH_THREAD_FUNC ios_wakeup_thread(switch_thread_t *thread, void *obj){
 
 	int socket = -1;
 	uint32_t msgid = 1;
-	uint32_t expire = time(NULL) + global.expire; // expire 1 sec
+	uint32_t expire = time(NULL) + globals.expire; // expire 1 sec
 
 	SSL *ssl = NULL;
 	const char* clientcert = NULL;
@@ -541,7 +541,7 @@ void *SWITCH_THREAD_FUNC ios_wakeup_thread(switch_thread_t *thread, void *obj){
 	}
 	/* Parse application data  */
 	init_openssl();
-	clientcert = switch_core_session_sprintf(session, "%s/%s", SWITCH_GLOBAL_dirs.certs_dir,global.cert);
+	clientcert = switch_core_session_sprintf(session, "%s/%s", SWITCH_GLOBAL_dirs.certs_dir,globals.cert);
 	
 	ctx = init_ssl_context(clientcert, clientcert, "synway", NULL);
 	if (!ctx) {
@@ -549,7 +549,7 @@ void *SWITCH_THREAD_FUNC ios_wakeup_thread(switch_thread_t *thread, void *obj){
 		return NULL;
 	}
 
-	socket = tcp_connect(global.host, global.port);
+	socket = tcp_connect(globals.host, globals.port);
 	if (socket < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "failed to connect to host %s\n",strerror(errno));
 		return NULL;
@@ -653,7 +653,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool) {
 		goto end;
 	}
 
-	if ((settings = switch_xml_child(*cfg, "settings"))) {
+	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char*)switch_xml_attr_soft(param, "name");
 			char *val = (char*)switch_xml_attr_soft(param, "value");
@@ -683,10 +683,8 @@ end:
 SWITCH_MODULE_LOAD_FUNCTION(mod_ios_push_load)
 {
 	switch_status_t status = SWITCH_STATUS_TERM;
-	switch_api_interface_t *api_interface;
-	switch_xml_t cfg, xml;
-	int count = 0;
-	
+	switch_application_interface_t *app_interface;
+
 	globals.pool = pool;
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -695,10 +693,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ios_push_load)
 	if ((status = load_config(globals.pool)) != SWITCH_STATUS_SUCCESS) return status;
 
 	SWITCH_ADD_APP(app_interface, "ios_push", "ios_push", "ios_push", ios_push_function, ios_PUSH_SYNTAX, SAF_NONE);
-
-end:
-	if (xml)
-		switch_xml_free(xml);
 
 	return status;
 }
