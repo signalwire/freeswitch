@@ -109,7 +109,7 @@ event_handlers/mod_cdr_sqlite
 #event_handlers/mod_erlang_event
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
-#event_handlers/mod_fail2ban
+event_handlers/mod_fail2ban
 #event_handlers/mod_format_cdr
 #event_handlers/mod_json_cdr
 #event_handlers/mod_radius_cdr
@@ -125,7 +125,7 @@ formats/mod_native_file
 formats/mod_png
 #formats/mod_portaudio_stream
 #formats/mod_shell_stream
-#formats/mod_shout
+formats/mod_shout
 formats/mod_sndfile
 #formats/mod_ssml
 formats/mod_tone_stream
