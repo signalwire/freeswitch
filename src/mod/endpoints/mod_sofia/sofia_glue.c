@@ -1217,7 +1217,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (zstr(tech_pvt->caller_profile->aniii)){
 				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s%s]>" : "\"%s\" <sip:%s%s%s%s>";
 				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", sipip, strchr(sipip, ':') ? "" : sipport);
-			} else {;
+			} else {
 				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s%s];isup-oli=%s>" : "\"%s\" <sip:%s%s%s%s;isup-oli=%s>";
 				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", 
 						sipip, strchr(sipip, ':') ? "" : sipport, tech_pvt->caller_profile->aniii);

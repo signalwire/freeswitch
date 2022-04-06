@@ -4871,6 +4871,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!strchr(dest, '@')) {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s@%s", gateway_ptr->destination_prefix, dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));
+
+			//added by yy for IPPBX-59,2018.10.24//UC
+            if(!dest_to && !zstr(gateway_ptr->from_domain))
+            {
+                dest_to = switch_core_session_sprintf(nsession, "%s%s@%s", gateway_ptr->destination_prefix, dest, gateway_ptr->from_domain);
+            }
 		} else {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s", gateway_ptr->destination_prefix, dest);
 		}

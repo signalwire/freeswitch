@@ -3,6 +3,6 @@
     <param name="host" value="gateway.push.apple.com"/>
     <param name="port" value="2195"/>
 	<param name="expire" value="10"/>
-	<param name="cert" value="iso_certificate.pem"/>
+	<param name="cert" value="ios_certificate.pem"/>
   </settings>
 </configuration>

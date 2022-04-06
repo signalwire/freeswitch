@@ -26,7 +26,7 @@ applications/mod_hash
 applications/mod_hiredis
 applications/mod_httapi
 applications/mod_http_cache
-#applications/mod_ios_push
+applications/mod_ios_push
 #applications/mod_ladspa
 applications/mod_lcr
 applications/mod_memcache
@@ -163,3 +163,4 @@ xml_int/mod_xml_ldap
 #xml_int/mod_xml_radius
 xml_int/mod_xml_rpc
 xml_int/mod_xml_scgi
+../../libs/freetdm/mod_freetdm
