@@ -87,13 +87,22 @@ static void fail2ban_event_handler(switch_event_t *event)
 	char msg[256] = { 0 };
 	if (event->event_id == SWITCH_EVENT_CUSTOM && event->subclass_name) {
 		if (strncmp(event->subclass_name, MY_EVENT_REGISTER_FAILURE,23) == 0) {
-			switch_snprintf(msg, sizeof(msg), "A registration failed user[%s] ip[%s]",switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
+			switch_snprintf(msg, sizeof(msg), "A registration failed on profile[%s] user[%s] ip[%s]",
+				switch_event_get_header(event, "profile-name"),
+				switch_event_get_header(event, "to-user"),
+				switch_event_get_header(event, "network-ip"));
 			fail2ban_logger(msg);
 		} else if (strncmp(event->subclass_name, MY_EVENT_REJECTED_ACL,19) == 0) {
-			switch_snprintf(msg, sizeof(msg), "Rejected by acl port[%s] ip[%s]",switch_event_get_header(event, "network-port"), switch_event_get_header(event, "network-ip"));
+			switch_snprintf(msg, sizeof(msg), "Rejected by acl on profile[%s] port[%s] ip[%s]",
+				switch_event_get_header(event, "profile-name"),
+				switch_event_get_header(event, "network-port"),
+				switch_event_get_header(event, "network-ip"));
 			fail2ban_logger(msg);
 		} else if (strncmp(event->subclass_name, MY_EVENT_WRONG_CALL_STATE,23) == 0) {
-			switch_snprintf(msg, sizeof(msg), "Abandoned call from user[%s] ip[%s]",switch_event_get_header(event, "from-user"), switch_event_get_header(event, "network-ip"));
+			switch_snprintf(msg, sizeof(msg), "Abandoned call from on profile[%s] user[%s] ip[%s]",
+				switch_event_get_header(event, "profile-name"),
+				switch_event_get_header(event, "from-user"), 
+				switch_event_get_header(event, "network-ip"));
 			fail2ban_logger(msg);
 		}
 	}
