@@ -646,9 +646,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	if (cause == SWITCH_CAUSE_WRONG_CALL_STATE) {
 		switch_event_t *s_event;
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_WRONG_CALL_STATE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->from_user);
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network_ip", tech_pvt->mparams.remote_ip);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "network_port", "%d", tech_pvt->mparams.remote_port);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", tech_pvt->from_user);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", tech_pvt->mparams.remote_ip);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "network-port", "%d", tech_pvt->mparams.remote_port);
 			switch_event_fire(&s_event);
 		}
 	}
@@ -6579,6 +6579,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 		switch_goto_status(SWITCH_STATUS_TERM, err);
 	}
 
+	if (switch_event_reserve_subclass(MY_EVENT_WRONG_CALL_STATE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_WRONG_CALL_STATE);
+		switch_goto_status(SWITCH_STATUS_TERM, err);
+	}
+
 	if (switch_event_reserve_subclass(MY_EVENT_UNREGISTER) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_UNREGISTER);
 		switch_goto_status(SWITCH_STATUS_TERM, err);
@@ -6888,7 +6893,8 @@ void mod_sofia_shutdown_cleanup() {
 	switch_event_free_subclass(MY_EVENT_REGISTER);
 	switch_event_free_subclass(MY_EVENT_GATEWAY_ADD);
 	switch_event_free_subclass(MY_EVENT_BYE_RESPONSE);
-
+	switch_event_free_subclass(MY_EVENT_WRONG_CALL_STATE);
+	
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");
 

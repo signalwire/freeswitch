@@ -1824,7 +1824,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", to_host);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user-agent", agent);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
 				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "registration-type", (regtype == REG_INVITE) ? "INVITE" : "REGISTER");
 				switch_event_fire(&s_event);
@@ -2370,6 +2369,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	int network_port = 0;
 	char *is_nat = NULL;
 	const char *acl_token = NULL;
+	switch_event_t *s_event;
 
 
 #if 0 /* This seems to cause undesirable effects so nevermind */
@@ -2462,6 +2462,12 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		} else if (!ok) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", network_ip, profile->reg_acl[x]);
 			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REJECTED_ACL) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "network-port", "%d", network_port);
+				switch_event_fire(&s_event);
+			}
 			goto end;
 		}
 	}

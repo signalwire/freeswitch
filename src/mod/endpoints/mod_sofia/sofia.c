@@ -10481,6 +10481,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	sofia_gateway_t *gateway = NULL;//UC
 	char *extension = NULL;//UC
 	int findnr = 0;//UC
+	switch_event_t *s_event = NULL; //UC
 	switch_time_t sip_invite_time;
 	const char *session_id_header;
 
@@ -10746,6 +10747,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					if (!acl_context) {
 						nua_respond(nh, SIP_403_FORBIDDEN,
 									TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
+						if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REJECTED_ACL) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", x_auth_ip);
+							switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "network-port", "%d", network_port);
+							switch_event_fire(&s_event);
+						}
 						goto fail;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
@@ -10762,6 +10769,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 						  network_ip, network_port);
 		nua_respond(nh, SIP_403_FORBIDDEN,
 					TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REJECTED_ACL) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "network-port", "%d", network_port);
+			switch_event_fire(&s_event);
+		}
 		goto fail;
 	}
 

@@ -1,5 +1,10 @@
 #include <switch.h>
 
+
+#define MY_EVENT_REGISTER_FAILURE "sofia::register_failure"
+#define MY_EVENT_REJECTED_ACL "sofia::rejected_acl"
+#define MY_EVENT_WRONG_CALL_STATE "sofia::wrong_call_state"
+
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fail2ban_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fail2ban_load);
 
@@ -63,7 +68,7 @@ static switch_status_t mod_fail2ban_do_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int fail2ban_logger(const char *message, char *user, char *ip)
+static int fail2ban_logger(const char *message)
 {
 	switch_time_exp_t tm;
 	if (!globals.logfile) {
@@ -72,20 +77,24 @@ static int fail2ban_logger(const char *message, char *user, char *ip)
 	}                                                                                                                                            
 	
 	switch_time_exp_lt(&tm, switch_micro_time_now());
-	return switch_file_printf(globals.logfile, "%s user[%s] ip[%s] at[%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d]\n", message, user, ip,
+	return switch_file_printf(globals.logfile, "%s at[%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d]\n", message,
 								tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
 								tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
 }
 
 static void fail2ban_event_handler(switch_event_t *event)
 {
+	char msg[256] = { 0 };
 	if (event->event_id == SWITCH_EVENT_CUSTOM && event->subclass_name) {
-		if (strncmp(event->subclass_name, "sofia::register_attempt",23) == 0) {
-			fail2ban_logger("A registration was attempted", switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
-		} else if (strncmp(event->subclass_name, "sofia::register_failure",23) == 0) {
-			fail2ban_logger("A registration failed", switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
-		} else if (strncmp(event->subclass_name, "sofia::wrong_call_state",23) == 0) {
-			fail2ban_logger("Abandoned call from ", switch_event_get_header(event, "from_user"), switch_event_get_header(event, "network_ip"));
+		if (strncmp(event->subclass_name, MY_EVENT_REGISTER_FAILURE,23) == 0) {
+			switch_snprintf(msg, sizeof(msg), "A registration failed user[%s] ip[%s]",switch_event_get_header(event, "to-user"), switch_event_get_header(event, "network-ip"));
+			fail2ban_logger(msg);
+		} else if (strncmp(event->subclass_name, MY_EVENT_REJECTED_ACL,19) == 0) {
+			switch_snprintf(msg, sizeof(msg), "Rejected by acl port[%s] ip[%s]",switch_event_get_header(event, "network-port"), switch_event_get_header(event, "network-ip"));
+			fail2ban_logger(msg);
+		} else if (strncmp(event->subclass_name, MY_EVENT_WRONG_CALL_STATE,23) == 0) {
+			switch_snprintf(msg, sizeof(msg), "Abandoned call from user[%s] ip[%s]",switch_event_get_header(event, "from-user"), switch_event_get_header(event, "network-ip"));
+			fail2ban_logger(msg);
 		}
 	}
 }
