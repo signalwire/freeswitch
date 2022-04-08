@@ -122,9 +122,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fail2ban_load)
 	if ((status = switch_event_bind(modname, SWITCH_EVENT_CUSTOM, SWITCH_EVENT_SUBCLASS_ANY, fail2ban_event_handler, user_data)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "event bind failed\n");
 		return SWITCH_STATUS_FALSE;
-	} 
-
-	switch_file_printf(globals.logfile, "Fail2ban was started\n");
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -132,10 +130,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fail2ban_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fail2ban_shutdown)
 {
 	switch_status_t status;
-
-	if (globals.logfile != NULL) {
-	  switch_file_printf(globals.logfile, "Fail2ban stoping\n");
-	}
 
 	if ((status = switch_event_unbind_callback(fail2ban_event_handler)) != SWITCH_STATUS_SUCCESS) {
 	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "event unbind failed\n");
