@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2022, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -33,6 +33,7 @@
  * Leon de Rooij <leon@scarlet-internet.nl>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  * William King <william.king@quentustech.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * sofia_reg.c -- SOFIA SIP Endpoint (registration code)
  *
@@ -2943,23 +2944,25 @@ sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive)
 
 switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen) 
 {
+	switch_status_t status;
+
 	switch (use_alg) 
 	{
 		case ALG_MD5:
-			switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
 			break;
 		case ALG_SHA256:
-			switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
 			break;
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		case ALG_SHA512:
-			switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
 			break;
 #endif
 		default:
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
 	}
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
