@@ -1177,14 +1177,14 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 
 		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "last_bridge_end_old")) {
-		sql = switch_mprintf("UPDATE agents SET last_bridge_end_old = '%s', system = 'single_box' WHERE name = '%q'", value, agent);
+		sql = switch_mprintf("UPDATE agents SET last_bridge_end_old = '%s', instance_id = 'single_box' WHERE name = '%q'", value, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
 
 	} else if (!strcasecmp(key, "send_event")) {
-		sql = switch_mprintf("UPDATE agents SET send_event = '%s', system = 'single_box' WHERE name = '%q'", value, agent);
+		sql = switch_mprintf("UPDATE agents SET send_event = '%s', instance_id = 'single_box' WHERE name = '%q'", value, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
