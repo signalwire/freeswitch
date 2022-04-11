@@ -321,7 +321,7 @@
            <gateway name="freeswitch.org">
                 <param name="username" value="not-used"/>
                 <param name="password" value="not-used"/>
-                <param name="proxy" value="127.0.0.1:5080"/>
+                <param name="proxy" value="127.0.0.1:5084"/>
                 <param name="realm" value="no.local"/>
                 <param name="register" value="false"/>
                 <param name="retry-seconds" value="30"/>
@@ -374,7 +374,7 @@
         <param name="sip-trace" value="yes"/>
         <param name="sip-capture" value="no"/>
         <param name="rfc2833-pt" value="101"/>
-        <param name="sip-port" value="5080"/>
+        <param name="sip-port" value="5084"/>
         <param name="dialplan" value="XML"/>
         <param name="context" value="default"/>
         <param name="dtmf-duration" value="2000"/>
@@ -416,7 +416,7 @@
         <param name="sip-trace" value="yes"/>
         <param name="sip-capture" value="no"/>
         <param name="rfc2833-pt" value="101"/>
-        <param name="sip-port" value="5060"/>
+        <param name="sip-port" value="5064"/>
         <param name="dialplan" value="XML"/>
         <param name="context" value="default"/>
         <param name="dtmf-duration" value="2000"/>
@@ -448,7 +448,7 @@
            <gateway name="freeswitch.org">
                 <param name="username" value="not-used"/>
                 <param name="password" value="not-used"/>
-                <param name="proxy" value="[::1]:5080"/>
+                <param name="proxy" value="[::1]:5084"/>
                 <param name="register" value="false"/>
                 <param name="retry-seconds" value="30"/>
                 <param name="dtmf-type" value="rfc2833"/>
@@ -579,7 +579,7 @@
         <condition field="destination_number" expression="^\+15553334444$">
             <action application="info"/>
 			<action application="answer" />
-			<!-- <action application="system" data="sipp $${local_ip_v4}:5080 -nr -p 5062 -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf sipp-scenarios/uac_digest_leak.xml -bg > /dev/null 2>&1" /> -->
+			<!-- <action application="system" data="sipp $${local_ip_v4}:5084 -nr -p 5062 -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf sipp-scenarios/uac_digest_leak.xml -bg > /dev/null 2>&1" /> -->
 			<action application="playback" data="silence_stream://-1"/>
 		</condition>
     </extension>
