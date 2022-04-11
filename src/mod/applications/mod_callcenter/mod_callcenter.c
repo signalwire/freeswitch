@@ -1176,6 +1176,19 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
+	} else if (!strcasecmp(key, "last_bridge_end_old")) {
+		sql = switch_mprintf("UPDATE agents SET last_bridge_end_old = '%s', system = 'single_box' WHERE name = '%q'", value, agent);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+
+		result = CC_STATUS_SUCCESS;
+
+	} else if (!strcasecmp(key, "send_event")) {
+		sql = switch_mprintf("UPDATE agents SET send_event = '%s', system = 'single_box' WHERE name = '%q'", value, agent);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+
+		result = CC_STATUS_SUCCESS;
 
 	} else if (!strcasecmp(key, "state_if_waiting")) {
 		if (cc_agent_str2state(value) == CC_AGENT_STATE_UNKNOWN) {
@@ -4428,7 +4441,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					cc_queue_t *queue;
 					switch_core_hash_this(hi, &key, &keylen, &val);
 					queue = (cc_queue_t *) val;
-					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%s|%d|%d|%d|%s|%d|%d|%d|%s|%s%d\n",
+					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%s|%d|%d|%d|%s|%d|%d|%d|%s|%s|%d\n",
 					                       queue->name,
 					                       queue->strategy,
 					                       queue->moh,
