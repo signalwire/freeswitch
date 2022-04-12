@@ -3778,18 +3778,22 @@ sofia_gateway_t *sofia_find_gateway__(const char *file, const char *func, int li
 		
 		sip_req_user = switch_channel_get_variable(channel, "sip_req_user");
 		sip_to_user = switch_channel_get_variable(channel, "sip_to_user");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway sip_req_user:sip_to_user = [%s:%s]\n", sip_req_user, sip_to_user);
 		
 		sip_contact_host = switch_channel_get_variable(channel, "sip_contact_host");
 		sip_contact_port = switch_channel_get_variable(channel, "sip_contact_port");
 		if(!sip_contact_port) {
 			sip_contact_port = "5060";
 		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway sip_contact_host:sip_contact_port = [%s:%s]\n", sip_contact_host, sip_contact_port);
 
 		sip_via_host = switch_channel_get_variable(channel, "sip_via_host");
 		sip_via_port = switch_channel_get_variable(channel, "sip_via_port");
 		if(!sip_via_port) {
 			sip_via_port = "5060";
 		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_find_gateway sip_via_host:sip_via_port = [%s:%s]\n", sip_via_host, sip_via_port);
+
 	}
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
@@ -3878,7 +3882,6 @@ sofia_gateway_t *sofia_find_gateway__(const char *file, const char *func, int li
 						find_host = SWITCH_TRUE;
 					}
 				}
- 				
 			}
 
 			if(find_host == SWITCH_FALSE && sip_contact_host && sip_contact_port && gateway->register_realm) {
