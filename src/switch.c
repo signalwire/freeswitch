@@ -99,6 +99,9 @@ static void handle_SIGTERM(int sig)
 	int32_t arg = 0;
 	if (sig) {}
 	/* send shutdown signal to the freeswitch core */
+#ifdef ENABLE_SSOFT
+	switch_close_auth();
+#endif
 	switch_core_session_ctl(SCSC_SHUTDOWN_ELEGANT, &arg);
 	return;
 }
@@ -519,9 +522,9 @@ int main(int argc, char *argv[])
 	int alt_dirs = 0, alt_base = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int priority = 0;
 #if (defined(__SVR4) && defined(__sun))
-	switch_core_flag_t flags = SCF_USE_SQL | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT | SCF_AUTH;
 #else
-	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_USE_NAT_MAPPING | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_USE_NAT_MAPPING | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT | SCF_AUTH;
 #endif
 	int ret = 0;
 	switch_status_t destroy_status;
@@ -733,6 +736,10 @@ int main(int argc, char *argv[])
 
 		else if (!strcmp(local_argv[x], "-nosql")) {
 			flags &= ~SCF_USE_SQL;
+		}
+
+		else if (!strcmp(local_argv[x], "-noauth")) {
+			flags &= ~SCF_AUTH;
 		}
 
 		else if (!strcmp(local_argv[x], "-nonat")) {

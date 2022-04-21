@@ -391,7 +391,8 @@ typedef enum {
 	SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27),
 	SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE = (1 << 28),
 	SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29),
-	SCF_LOG_DISABLE = (1 << 30)
+	SCF_LOG_DISABLE = (1 << 30),
+	SCF_AUTH = (1 << 31)//UC
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 

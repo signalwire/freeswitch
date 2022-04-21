@@ -2510,20 +2510,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (switch_test_flag((&runtime), SCF_AUTH)) {
 #ifdef ENABLE_SSOFT
-	//added by yy for Soft UC,2020.07.07
-	if(switch_core_check_usb_key(err) != SWITCH_STATUS_SUCCESS) {
-		*err = "Cannot check usb key";
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
-		return SWITCH_STATUS_GENERR;
-	}
+		//added by yy for Soft UC,2020.07.07
+		if(switch_core_check_usb_key(err) != SWITCH_STATUS_SUCCESS) {
+			*err = "Cannot check usb key";
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
+			return SWITCH_STATUS_GENERR;
+		}
 #else
-	//added by yy for encrypt UC,2018.06.28
-	if(switch_core_encrypt(flags, console, err) != SWITCH_STATUS_SUCCESS){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
-		return SWITCH_STATUS_GENERR;
-	}
+		//added by yy for encrypt UC,2018.06.28
+		if(switch_core_encrypt(flags, console, err) != SWITCH_STATUS_SUCCESS){
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s\n", *err);
+			return SWITCH_STATUS_GENERR;
+		}
 #endif
+	}
 
 	if (runtime.runlevel > 1) {
 		/* one per customer */
@@ -2885,6 +2887,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		abort();
 		break;
 	case SCSC_SHUTDOWN_NOW:
+#ifdef ENABLE_SSOFT
+		switch_close_auth();//UC
+#endif
 		switch_console_save_history();
 		exit(0);
 		break;

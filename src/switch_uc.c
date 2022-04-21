@@ -722,16 +722,7 @@ static void *SWITCH_THREAD_FUNC switch_check_usbkey_thread(switch_thread_t *thre
 				if (runtime.has_rcs_key == FALSE)
 				{
 					//不要反复close，容易成为授权漏洞
-					//CloseAuthManager();
-					if (switch_GetCKMLicAuth())
-					{
-						;
-					}
-					else
-					{
-						switch_CloseAuthManager();
-					}
-					
+					//switch_CloseAuthManager();
 					switch_StartAuthManagerEx(RCS_KEY_ID,NULL,runtime.lic_sn,runtime.lic_pw);
 				}
 
