@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
 	switch_bool_t win32_service = SWITCH_FALSE;
 #endif
 	switch_bool_t nc = SWITCH_FALSE;				/* TRUE if we are running in noconsole mode */
-	switch_bool_t auth = SWITCH_TURE; //UC
+	switch_bool_t auth = SWITCH_TRUE; //UC
 	switch_bool_t elegant_term = SWITCH_FALSE;
 	pid_t pid = 0;
 	int i, x;
