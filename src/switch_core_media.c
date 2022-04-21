@@ -12209,7 +12209,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				char o_line[1024] = "";
 
 				if (oe >= pe) {
-					bad = 5;
+					bad = 4;
 					goto end;
 				}
 
@@ -12265,7 +12265,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			p += 8;
 
 			if (p >= pe) {
-				bad = 4;
+				bad = 6;
 				goto end;
 			}
 
@@ -12273,7 +12273,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += 8;
 
 			if (q >= qe) {
-				bad = 5;
+				bad = 7;
 				goto end;
 			}
 
@@ -12282,13 +12282,13 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(port_buf);
 
 			if (q >= qe) {
-				bad = 6;
+				bad = 8;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 				if (p >= pe) {
-					bad = 7;
+					bad = 9;
 					goto end;
 				}
 				p++;
@@ -12329,14 +12329,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			p += 8;
 
 			if (p >= pe) {
-				bad = 8;
+				bad = 10;
 				goto end;
 			}
 
 			q += 8;
 
 			if (q >= qe) {
-				bad = 9;
+				bad = 11;
 				goto end;
 			}
 
@@ -12344,14 +12344,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(vport_buf);
 
 			if (q >= qe) {
-				bad = 10;
+				bad = 12;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 
 				if (p >= pe) {
-					bad = 11;
+					bad = 13;
 					goto end;
 				}
 
@@ -12359,7 +12359,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			}
 
 			has_video++;
-		} else if (!strncmp("m=text ", p, 8) && *(p + 8) != '0') {
+		} else if (!strncmp("m=text ", p, 7) && *(p + 7) != '0') {
 			if (!has_text) {
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_TEXT, 1);
 				clear_pmaps(t_engine);
@@ -12388,18 +12388,18 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				//TEXT switch_core_media_set_text_codec(session, SWITCH_FALSE);
 			}
 
-			strncpy(q, p, 8);
-			p += 8;
+			strncpy(q, p, 7);
+			p += 7;
 
 			if (p >= pe) {
-				bad = 8;
+				bad = 14;
 				goto end;
 			}
 
-			q += 8;
+			q += 7;
 
 			if (q >= qe) {
-				bad = 9;
+				bad = 15;
 				goto end;
 			}
 
@@ -12407,14 +12407,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(tport_buf);
 
 			if (q >= qe) {
-				bad = 10;
+				bad = 16;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 
 				if (p >= pe) {
-					bad = 11;
+					bad = 17;
 					goto end;
 				}
 
@@ -12428,12 +12428,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		while (p && *p && *p != '\n') {
 
 			if (p >= pe) {
-				bad = 12;
+				bad = 18;
 				goto end;
 			}
 
 			if (q >= qe) {
-				bad = 13;
+				bad = 19;
 				goto end;
 			}
 
@@ -12441,12 +12441,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		}
 
 		if (p >= pe) {
-			bad = 14;
+			bad = 20;
 			goto end;
 		}
 
 		if (q >= qe) {
-			bad = 15;
+			bad = 21;
 			goto end;
 		}
 
