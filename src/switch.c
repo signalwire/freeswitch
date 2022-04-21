@@ -219,7 +219,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	switch_core_set_globals();
 
 	/* attempt to initialize freeswitch and load modules */
-	if (switch_core_init_and_modload(flags, SWITCH_FALSE, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(flags, SWITCH_FALSE, SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		/* freeswitch did not start successfully */
 		status.dwCurrentState = SERVICE_STOPPED;
 	} else {
@@ -511,6 +511,7 @@ int main(int argc, char *argv[])
 	switch_bool_t win32_service = SWITCH_FALSE;
 #endif
 	switch_bool_t nc = SWITCH_FALSE;				/* TRUE if we are running in noconsole mode */
+	switch_bool_t auth = SWITCH_TURE; //UC
 	switch_bool_t elegant_term = SWITCH_FALSE;
 	pid_t pid = 0;
 	int i, x;
@@ -522,9 +523,9 @@ int main(int argc, char *argv[])
 	int alt_dirs = 0, alt_base = 0, log_set = 0, run_set = 0, do_kill = 0;
 	int priority = 0;
 #if (defined(__SVR4) && defined(__sun))
-	switch_core_flag_t flags = SCF_USE_SQL | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT | SCF_AUTH;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
 #else
-	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_USE_NAT_MAPPING | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT | SCF_AUTH;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT | SCF_USE_NAT_MAPPING | SCF_CALIBRATE_CLOCK | SCF_USE_CLOCK_RT;
 #endif
 	int ret = 0;
 	switch_status_t destroy_status;
@@ -739,7 +740,7 @@ int main(int argc, char *argv[])
 		}
 
 		else if (!strcmp(local_argv[x], "-noauth")) {
-			flags &= ~SCF_AUTH;
+			auth = SWITCH_FALSE;
 		}
 
 		else if (!strcmp(local_argv[x], "-nonat")) {
@@ -1208,7 +1209,7 @@ int main(int argc, char *argv[])
 
 	switch_file_write(fd, pid_buffer, &pid_len);
 
-	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, auth, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initialize [%s]\n", err);
 		return 255;
 	}

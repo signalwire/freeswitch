@@ -2492,7 +2492,7 @@ switch_status_t switch_core_sqldb_init(const char **err)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, switch_bool_t auth, const char **err)
 {
 	switch_event_t *event;
 	char *cmd;
@@ -2510,7 +2510,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_test_flag((&runtime), SCF_AUTH)) {
+	if (auth) {
 #ifdef ENABLE_SSOFT
 		//added by yy for Soft UC,2020.07.07
 		if(switch_core_check_usb_key(err) != SWITCH_STATUS_SUCCESS) {
