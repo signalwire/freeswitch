@@ -146,7 +146,7 @@ void FSHost::run(void)
     }
 
     emit loadingModules("Loading modules...", Qt::AlignRight|Qt::AlignBottom, Qt::blue);
-    if (switch_core_init_and_modload(flags, console, &err) != SWITCH_STATUS_SUCCESS) {
+    if (switch_core_init_and_modload(flags, console, SWITCH_FALSE, &err) != SWITCH_STATUS_SUCCESS) {
         fprintf(stderr, "Failed to initialize FreeSWITCH's core: %s\n", err);
         emit coreLoadingError(err);
     }

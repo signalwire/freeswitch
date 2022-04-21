@@ -8298,10 +8298,10 @@ else
     }
   }
 
-  public static switch_status_t switch_core_init_and_modload(uint flags, switch_bool_t console, out string err) {
+  public static switch_status_t switch_core_init_and_modload(uint flags, switch_bool_t console, switch_bool_t auth, out string err) {
 var err_ptr = global::System.IntPtr.Zero;
     try {
-      switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_init_and_modload(flags, (int)console, ref err_ptr);
+      switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_init_and_modload(flags, (int)console, (int)auth, ref err_ptr);
       return ret;
     } finally {
 if(err_ptr != global::System.IntPtr.Zero)
@@ -18692,7 +18692,7 @@ class freeswitchPINVOKE {
   public static extern int switch_core_init(uint jarg1, int jarg2, ref global::System.IntPtr jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_init_and_modload___")]
-  public static extern int switch_core_init_and_modload(uint jarg1, int jarg2, ref global::System.IntPtr jarg3);
+  public static extern int switch_core_init_and_modload(uint jarg1, int jarg2, int jarg3, ref global::System.IntPtr jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_session_limit___")]
   public static extern uint switch_core_session_limit(uint jarg1);

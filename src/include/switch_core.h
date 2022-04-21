@@ -496,7 +496,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(_In_ switch_core_flag_t flags, 
   \param err a pointer to set any errors to
   \note to be called at application startup instead of switch_core_init.  Includes module loading.
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(_In_ switch_core_flag_t flags, _In_ switch_bool_t console, _Out_ const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(_In_ switch_core_flag_t flags, _In_ switch_bool_t console, _In_ switch_bool_t auth, _Out_ const char **err);
 
 /*!
   \brief Set/Get Session Limit

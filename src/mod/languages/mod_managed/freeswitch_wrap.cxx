@@ -12791,17 +12791,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_core_init___(unsigned
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_core_init_and_modload___(unsigned long jarg1, int jarg2, void * jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_core_init_and_modload___(unsigned long jarg1, int jarg2, int jarg3, void * jarg4) {
   int jresult ;
   switch_core_flag_t arg1 ;
   switch_bool_t arg2 ;
-  char **arg3 = (char **) 0 ;
+  switch_bool_t arg3 ;
+  char **arg4 = (char **) 0 ;
   switch_status_t result;
   
   arg1 = (switch_core_flag_t)jarg1; 
   arg2 = (switch_bool_t)jarg2; 
-  arg3 = (char **)jarg3; 
-  result = (switch_status_t)switch_core_init_and_modload(arg1,arg2,(char const **)arg3);
+  arg3 = (switch_bool_t)jarg3; 
+  arg4 = (char **)jarg4; 
+  result = (switch_status_t)switch_core_init_and_modload(arg1,arg2,arg3,(char const **)arg4);
   jresult = (int)result; 
   return jresult;
 }
