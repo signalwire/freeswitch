@@ -4008,7 +4008,7 @@ static int member_bridge_callback(void *pArg, int argc, char **argv, char **colu
 		queue_rwunlock(queue);
 	}
 
-	sql = switch_mprintf("SELECT system, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, last_status_change, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+	sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, last_status_change, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q' AND (status = '%q' OR status = '%q') AND name = '%q'",
 				cbt.queue_name,cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK),cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT),pArg);
     //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mytest member_bridge_callback sql =%s\n",sql);
