@@ -1962,18 +1962,13 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			realm = switch_event_get_header(auth_params, "sip_auth_realm");
 		}
 
-		if (multi_reg) {//added by dsq for DS-80595 2019-12-17 //UC
-			if(multi_reg_port){
-				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and network_ip='%q' and network_port='%q'", to_user,reg_host,network_ip,network_port_c);
-				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-			}
-		} 
-
 		if (auth_res != AUTH_RENEWED || !multi_reg) {
 			if (multi_reg) {
 				if (multi_reg_contact) {
 					sql =
 						switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
+				} else if (multi_reg_port) {//DS-80595 //UC
+					sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and network_ip='%q' and network_port='%q'", to_user,reg_host,network_ip,network_port_c);
 				} else {
 					sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 				}
@@ -2103,6 +2098,9 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		if (multi_reg) {
 			if (multi_reg_contact) {
 				sql = switch_mprintf("delete from sip_registrations where contact='%q' and expires!=%ld", contact_str, (long) reg_time + (long) exptime + profile->sip_expires_late_margin);
+			} else if(multi_reg_port) {//DS-80595 //UC
+				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and network_ip='%q' and network_port='%q' and expires!=%ld", 
+				to_user,reg_host,network_ip,network_port_c, (long) reg_time + (long) exptime + profile->sip_expires_late_margin);
 			} else {
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q' and expires!=%ld", call_id, (long) reg_time + (long) exptime + profile->sip_expires_late_margin);
 			}
@@ -2183,6 +2181,8 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			if (multi_reg_contact) {
 				sql =
 					switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and contact='%q'", to_user, reg_host, contact_str);
+			} else if(multi_reg_port) {//DS-80595 //UC
+				sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and network_ip='%q' and network_port='%q'", to_user,reg_host,network_ip,network_port_c);
 			} else {
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 			}

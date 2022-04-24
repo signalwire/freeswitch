@@ -5438,8 +5438,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);
 							profile->pres_type = PRES_TYPE_FULL;
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
-							sofia_set_pflag(profile, PFLAG_MULTIREG_PORT);//added by dsq for DS-80595 2019-12-17 //UC
-
 						} else if (val && !strcasecmp(val, "sylantro")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 											  "Sylantro support has been removed.\n"
@@ -5501,7 +5499,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_MULTIREG_CONTACT);
 						} else if (!switch_true(val)) {
 							sofia_clear_pflag(profile, PFLAG_MULTIREG);
-							sofia_clear_pflag(profile, PFLAG_MULTIREG_CONTACT);
+							//sofia_clear_pflag(profile, PFLAG_MULTIREG_CONTACT);
+							sofia_set_pflag(profile, PFLAG_MULTIREG_PORT);//DS-80595 //UC
 						}
 					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {
