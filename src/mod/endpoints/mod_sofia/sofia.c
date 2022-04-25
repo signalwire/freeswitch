@@ -7345,8 +7345,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					r_sdp = tech_pvt->mparams.last_sdp_response;
 				}
 			} else if (ss_state == nua_callstate_received || ss_state == nua_callstate_ready) {
+				char* osb_no_sdp;
 				if (tech_pvt->mparams.last_sdp_str) {
 					r_sdp = tech_pvt->mparams.last_sdp_str;
+				}
+				else if (channel && (osb_no_sdp = switch_channel_get_variable(channel, "osb_no_sdp"))) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "OpenScape Business osb_no_sdp %s\n", osb_no_sdp);
+					if (tech_pvt->mparams.prev_sdp_str) {
+						char* tmp = switch_string_replace(tech_pvt->mparams.prev_sdp_str, "inactive", "sendrecv");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adapted remote SDP %s\n", tmp);
+						r_sdp = switch_core_session_strdup(session, tmp);
+						free(tmp);
+					}
+					switch_channel_set_variable(channel, "osb_no_sdp", NULL);
 				}
 			}
 		}
@@ -10191,6 +10202,9 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Update callee ID\n");
 				sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 			}
+		}
+		if (!sip->sip_payload && ua && switch_string_match(ua, strlen(ua) - 1, "OpenScape Business", 17) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_set_variable(channel, "osb_no_sdp", "true");
 		}
 	}
 
