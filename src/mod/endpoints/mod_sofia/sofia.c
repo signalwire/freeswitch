@@ -7345,11 +7345,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					r_sdp = tech_pvt->mparams.last_sdp_response;
 				}
 			} else if (ss_state == nua_callstate_received || ss_state == nua_callstate_ready) {
-				char* osb_no_sdp;
+				const char* osb_no_sdp = switch_channel_get_variable(channel, "osb_no_sdp");
 				if (tech_pvt->mparams.last_sdp_str) {
 					r_sdp = tech_pvt->mparams.last_sdp_str;
 				}
-				else if (channel && (osb_no_sdp = switch_channel_get_variable(channel, "osb_no_sdp"))) {
+				else if (channel && osb_no_sdp) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "OpenScape Business osb_no_sdp %s\n", osb_no_sdp);
 					if (tech_pvt->mparams.prev_sdp_str) {
 						char* tmp = switch_string_replace(tech_pvt->mparams.prev_sdp_str, "inactive", "sendrecv");
