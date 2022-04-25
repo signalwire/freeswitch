@@ -504,7 +504,9 @@ static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "octet-align=%d; ", octet_align);
 
 #ifndef AMRWB_PASSTHROUGH
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=%d; ", globals.default_bitrate);
+	//snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=%d; ", globals.default_bitrate);
+	// ENGDESK-15706
+	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=0,1,2; ");
 
 	if (globals.volte) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "max-red=0; mode-change-capability=2; ");
