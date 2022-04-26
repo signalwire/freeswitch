@@ -2598,7 +2598,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 		}
 	}
 
-	if (globals.reserve_agents) {
+	if (globals.reserve_agents) {	
 		/* Updating agent state to Reserved only if it was Waiting previously, this is done to avoid race conditions
 		   when updating agents table with external applications */
 		if (cc_agent_update("state_if_waiting", cc_agent_state2str(CC_AGENT_STATE_RESERVED), agent_name) == CC_STATUS_SUCCESS) {
@@ -4008,10 +4008,9 @@ static int member_bridge_callback(void *pArg, int argc, char **argv, char **colu
 		queue_rwunlock(queue);
 	}
 
-	sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, last_status_change, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+	sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q' AND (status = '%q' OR status = '%q') AND name = '%q'",
 				cbt.queue_name,cc_agent_status2str(CC_AGENT_STATUS_ON_BREAK),cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT),pArg);
-    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mytest member_bridge_callback sql =%s\n",sql);
 	cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, agents_callback, &cbt /* Call back variables */);
 
 	switch_safe_free(sql);
@@ -4050,7 +4049,6 @@ cc_status_t cc_member_bridge(char *member_uuid, char *agent, char *ret_result, s
 	sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,state,abandoned_epoch, serving_agent"
 				"  FROM members WHERE (state = '%q' OR state = '%q') and session_uuid = '%q'",
 				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), member_uuid);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mytest cc_member_bridge sql= %s\n",sql);
 	cc_execute_sql_callback(NULL, NULL, sql, member_bridge_callback, agent);
 	switch_safe_free(sql)
 
