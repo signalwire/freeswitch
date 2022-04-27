@@ -960,6 +960,7 @@ SWITCH_STANDARD_API(curl_function)
 	int i = 0;
 	char *append_headers[HTTP_MAX_APPEND_HEADERS + 1] = { 0 };
 	int ah_index = 0;
+	switch_channel_t *channel;
 
 	switch_memory_pool_t *pool = NULL;
 	curl_options_t options = { .insecure = !globals.validate_certs };
@@ -970,6 +971,7 @@ SWITCH_STANDARD_API(curl_function)
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
+		channel = switch_core_session_get_channel(session);
 	} else {
 		switch_core_new_memory_pool(&pool);
 	}
@@ -1050,6 +1052,12 @@ SWITCH_STANDARD_API(curl_function)
 				stream->write_function(stream, "\n");
 			}
 			stream->write_function(stream, "%s", http_data->http_response ? http_data->http_response : "");
+		}
+
+		if (session) {
+			switch_channel_set_variable(channel, "curl_response_data", stream->data);
+			switch_channel_set_variable(channel, "curl_response_code", switch_core_sprintf(pool, "%ld", http_data->http_response_code));
+			switch_channel_set_variable(channel, "curl_method", method);
 		}
 	}
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
