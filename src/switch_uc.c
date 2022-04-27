@@ -674,14 +674,14 @@ static void check_key_verify(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "auth lost, please check auth!\n");
 		}
 
-		if ((key_lost_cnt >= 60*12) && (key_lost_cnt % 60 == 0))// when usbkey not exists after 12 min ,usb key restart
+		if ((key_lost_cnt >= 60*20) && (key_lost_cnt % 60 == 0))// when usbkey not exists after 12 min ,usb key restart
 		{
 			//event fire SYS_USBKEY_DETECTED
 			runtime.rcs_key_restart = SWITCH_TRUE;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "auth lost, restart auth!\n");
 		}
 
-		if (key_lost_cnt > runtime.exp_alive_time)// when usbkey not exists after 30 min ,usb key removed
+		if ((key_lost_cnt >= runtime.exp_alive_time) && (key_lost_cnt % 60 == 0))// when usbkey not exists after 30 min ,usb key removed
 		{
 			//event fire SYS_USBKEY_DETECTED
 			runtime.can_rcs_work = SWITCH_FALSE;
@@ -730,7 +730,7 @@ static void *SWITCH_THREAD_FUNC switch_check_usbkey_thread(switch_thread_t *thre
 				runtime.check_rcs_key = SWITCH_FALSE;
 			}
 			else
-			{	//超过12分钟，每1分钟重新reset
+			{	//超过20分钟，每1分钟重新reset
 				if (runtime.rcs_key_restart == SWITCH_TRUE)
 				{
 					runtime.rcs_key_restart = SWITCH_FALSE;
@@ -843,7 +843,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err)
 			runtime.auth_expired = SWITCH_TRUE;
 		}
 
-		runtime.exp_alive_time = switch_GetExpAliveTime(RCS_KEY_ID) * 125;
+		runtime.exp_alive_time = switch_GetExpAliveTime(RCS_KEY_ID);
 
 		runtime.device_features_auth_sn = switch_GetAuthFeatures(RCS_KEY_ID);
 
