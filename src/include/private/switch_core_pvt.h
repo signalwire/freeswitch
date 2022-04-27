@@ -304,7 +304,7 @@ struct switch_runtime {
 	unsigned int max_api_num;
 	switch_bool_t has_rcs_key;
 	switch_bool_t check_rcs_key;
-	switch_boot_t rcs_key_restart;
+	switch_bool_t rcs_key_restart;
 	switch_bool_t can_rcs_work;
 	unsigned int used_period;
 	unsigned int valid_period;
