@@ -70,6 +70,11 @@ SWITCH_DECLARE(void) switch_RCSRunToCrash()
 	return RCSRunToCrash();
 }
 
+SWITCH_DECLARE(BOOL) switch_GetRCSTestAuth()
+{
+	return GetRCSTestAuth();
+}
+
 SWITCH_DECLARE(BOOL) switch_CheckPassword(char * szLicPw)
 {
 	return CheckPassword(szLicPw);

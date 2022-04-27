@@ -59,6 +59,8 @@ SWITCH_DECLARE(BOOL) switch_CheckPassword(char * szLicPw);
 SWITCH_DECLARE(void) switch_CloseAuthManager();
 SWITCH_DECLARE(void) switch_RCSRunToCrash();
 
+SWITCH_DECLARE(BOOL) switch_GetRCSTestAuth();
+
 SWITCH_DECLARE(DWORD) switch_GetUsedPeriod(int nKeyID);
 SWITCH_DECLARE(BOOL) switch_WriteUsedPeriod(int nKeyID, DWORD deUsedPeriod);
 SWITCH_DECLARE(DWORD) switch_GetValidPeriod(int nKeyID);

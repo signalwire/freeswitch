@@ -583,11 +583,17 @@ static void check_key_verify(void)
 
 		check_key_count ++;
 
-		if(int_count > 18000) { //5 h to SWITCH_TRUE
-			//event fire Test Time out
-			switch_RCSRunToCrash();
+		if(switch_GetRCSTestAuth()) {
+			if(int_count >= 18000) { //5 h to SWITCH_TRUE
+				//event fire Test Time out
+				runtime.can_rcs_work = SWITCH_FALSE;
+				if (int_count % 60 == 0)// 1 min
+				{
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "test time out, switch can't work!\n");
+				}
+				return;
+			}
 		}
-
 
 		if (key_removed)//从没有到有的情况，初始化
 		{
@@ -639,12 +645,11 @@ static void check_key_verify(void)
 			}
 		}
 	}
-	else//如果key 不存在，则继续检测key是否存在，如果5分钟内，一直不再则不再工作
+	else//如果key 不存在，则继续检测key是否存在，如果30分钟内，一直不再则不再工作
 	{
 		check_key_count = 0;
 		key_lost_cnt++;
 		
-
 		if (switch_GetCKMLicAuth())
 		{
 			if((key_lost_cnt % 60) == 0)//1分钟
@@ -666,13 +671,21 @@ static void check_key_verify(void)
 			//event fire SYS_USBKEY_DETECTED
 			key_removed = SWITCH_TRUE;
 			key_recoverd_cnt = 0;
-			runtime.can_rcs_work = SWITCH_FALSE;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "auth lost, please check auth!\n");
 		}
 
-		if (key_lost_cnt > runtime.exp_alive_time)// when usbkey not exists after 5 min ,usb key removed
+		if (key_lost_cnt >= 60*12 && (key_lost_cnt % 60 == 0)// when usbkey not exists after 12 min ,usb key restart
+		{
+			//event fire SYS_USBKEY_DETECTED
+			runtime.rcs_key_restart = SWITCH_TRUE;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "auth lost, restart auth!\n");
+		}
+
+		if (key_lost_cnt > runtime.exp_alive_time)// when usbkey not exists after 30 min ,usb key removed
 		{
 			//event fire SYS_USBKEY_DETECTED
 			runtime.can_rcs_work = SWITCH_FALSE;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "auth lost, switch can't work!\n");
 		}
 	}
 }
@@ -712,17 +725,18 @@ static void *SWITCH_THREAD_FUNC switch_check_usbkey_thread(switch_thread_t *thre
 				{
 					nErrCnt=0;
 					runtime.has_rcs_key = SWITCH_FALSE;
-					//CloseAuthManager(); //不要反复close，容易成为授权漏洞
 				}
 				
 				runtime.check_rcs_key = SWITCH_FALSE;
 			}
 			else
-			{
-				if (runtime.has_rcs_key == FALSE)
+			{	//超过12分钟，每1分钟重新reset
+				if (runtime.rcs_key_restart == SWITCH_TRUE)
 				{
-					//不要反复close，容易成为授权漏洞
-					//switch_CloseAuthManager();
+					runtime.rcs_key_restart = SWITCH_FALSE
+
+					switch_CloseAuthManager();
+
 					switch_StartAuthManagerEx(RCS_KEY_ID,NULL,runtime.lic_sn,runtime.lic_pw);
 				}
 
@@ -777,13 +791,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err)
 	runtime.max_extension = 5;
 	runtime.max_api_num = 1;
 	runtime.can_rcs_work = SWITCH_FALSE;
+	runtime.rcs_key_restart = SWITCH_FALSE;
 	runtime.device_features_auth_sn = 0;
 	runtime.device_modules_auth_sn = 0;
 	runtime.exp_alive_time = 1800;//30 m
-	runtime.can_rcs_work = SWITCH_FALSE;
 	strcpy(runtime.device_type,"SoftUC");
-
-
 
 
 	switch_xml_t xml = NULL, cfg = NULL;
