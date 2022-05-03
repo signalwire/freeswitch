@@ -5897,7 +5897,7 @@ SWITCH_DECLARE(void) do_2833(switch_rtp_t *rtp_session)
 	switch_frame_flag_t flags = 0;
 	uint32_t samples = rtp_session->samples_per_interval;
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "do_2833 %s / %p\n", rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName", (void*) rtp_session);
+	//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "do_2833 %s / %p\n", rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName", (void*) rtp_session);
 
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1;

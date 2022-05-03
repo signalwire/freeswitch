@@ -89,6 +89,7 @@ static struct {
 	switch_byte_t adjust_bitrate;
 	switch_byte_t force_oa; /*force OA when originating*/
 	switch_byte_t mode_set_overwrite;
+	struct amrwb_context context;
 	int debug;
 } globals;
 
@@ -500,13 +501,24 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 {
 	char buf[256] = { 0 };
+#ifndef AMRWB_PASSTHROUGH
+	int i = 0;
+#endif
 
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "octet-align=%d; ", octet_align);
 
 #ifndef AMRWB_PASSTHROUGH
-	//snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=%d; ", globals.default_bitrate);
 	// ENGDESK-15706
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=0,1,2; ");
+	if (globals.context.enc_modes && !globals.mode_set_overwrite) {
+			for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
+				if (globals.context.enc_modes & (1 << i)) {
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), i > 0 ? ",%d" : "mode-set=%d", i);
+				}
+			}
+	} else {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=%d", globals.default_bitrate);
+	}
+	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "; ");
 
 	if (globals.volte) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "max-red=0; mode-change-capability=2; ");
@@ -578,6 +590,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 				if (!strcasecmp(var, "mode-set-overwrite")) {
 					globals.mode_set_overwrite = (switch_byte_t) atoi(val);
 				}
+				if (!strcasecmp(var, "mode-set")) {
+						int y, m_argc;
+						char *m_argv[SWITCH_AMRWB_MODES-1]; /* AMRWB has 9 modes */
+						m_argc = switch_separate_string(val, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+						for (y = 0; y < m_argc; y++) {
+							globals.context.enc_modes |= (1 << atoi(m_argv[y]));
+							globals.context.enc_mode = atoi(m_argv[y]);
+						}
+					}
 			}
 		}
 	}
