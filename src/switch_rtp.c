@@ -4792,6 +4792,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_ssrc(switch_rtp_t *rtp_session, u
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc)
 {
+	if (!rtp_session) return SWITCH_STATUS_FALSE;
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Assign remote ssrc (current: %u, new: %u)\n", rtp_session->remote_ssrc, ssrc);
 	rtp_session->remote_ssrc = ssrc;
 	rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC] = 0;
 	return SWITCH_STATUS_SUCCESS;
@@ -6500,9 +6502,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				//if (rtp_session->remote_ssrc != rtp_session->stats.rtcp.peer_ssrc && rtp_session->stats.rtcp.peer_ssrc) {
 				//	rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
 				//}
+				uint32_t ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
-				if (rtp_session->remote_ssrc != rtp_session->last_rtp_hdr.ssrc && rtp_session->last_rtp_hdr.ssrc) {
-					rtp_session->remote_ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
+				if (rtp_session->remote_ssrc != ssrc && ssrc) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Assign remote ssrc (current: %u, new: %u)\n", rtp_session->remote_ssrc, ssrc);
+					rtp_session->remote_ssrc = ssrc;
 				}
 			}
 		}
