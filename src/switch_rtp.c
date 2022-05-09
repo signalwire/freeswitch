@@ -6452,15 +6452,13 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		if (rtp_session->has_rtp) {
+			int accept_packet = 1;
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
-
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 				rtp_session->last_rtp_hdr.pt != 13 &&
 				rtp_session->last_rtp_hdr.pt != rtp_session->recv_te &&
 				rtp_session->last_rtp_hdr.pt != rtp_session->cng_pt) {
-				int accept_packet = 1;
-
 
 				if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && 
 					!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && rtp_session->pmaps && *rtp_session->pmaps) {
@@ -6498,14 +6496,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 			}
 
-			if (rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC]) {
+			if (accept_packet && rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC]) {
 				//if (rtp_session->remote_ssrc != rtp_session->stats.rtcp.peer_ssrc && rtp_session->stats.rtcp.peer_ssrc) {
 				//	rtp_session->remote_ssrc = rtp_session->stats.rtcp.peer_ssrc;
 				//}
 				uint32_t ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
 				if (rtp_session->remote_ssrc != ssrc && ssrc) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Assign remote ssrc (current: %u, new: %u)\n", rtp_session->remote_ssrc, ssrc);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Assign remote ssrc (current: %u, new: %u, local: %u)\n", rtp_session->remote_ssrc, ssrc, rtp_session->ssrc);
 					rtp_session->remote_ssrc = ssrc;
 				}
 			}
