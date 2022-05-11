@@ -1709,6 +1709,7 @@ static void do_mos(switch_rtp_t *rtp_session) {
 							  rtp_session->consecutive_flaws, penalty);
 			rtp_session->bad_stream++;
 			rtp_session->stats.inbound.flaws += penalty;
+			rtp_session->stats.inbound.cumulative_flaws += penalty;
 			rtp_session->stats.inbound.last_flaw = rtp_session->stats.inbound.flaws;
 			
 			if (rtp_session->stats.inbound.error_log) {
@@ -1727,6 +1728,10 @@ static void do_mos(switch_rtp_t *rtp_session) {
 
 	rtp_session->stats.inbound.R = R;
 	rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
+
+	rtp_session->stats.inbound.avg_R += R;
+	rtp_session->stats.inbound.avg_mos += rtp_session->stats.inbound.mos;
+	rtp_session->stats.inbound.counter_mos++;
 		
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
 					  rtp_session_name(rtp_session),
@@ -1820,6 +1825,7 @@ static void check_jitter(switch_rtp_t *rtp_session)
 
 		rtp_session->bad_stream++;
 		rtp_session->stats.inbound.flaws += lost;
+		rtp_session->stats.inbound.cumulative_flaws += lost;
 
 		if (rtp_session->stats.inbound.error_log) {
 			rtp_session->stats.inbound.error_log->flaws += lost;
@@ -7940,6 +7946,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 						rtp_session->bad_stream++;
 						rtp_session->stats.inbound.flaws += rtp_session->sync_packets;
+						rtp_session->stats.inbound.cumulative_flaws += rtp_session->sync_packets;
 
 						if (rtp_session->stats.inbound.error_log) {
 							rtp_session->stats.inbound.error_log->flaws += rtp_session->sync_packets;
@@ -8533,6 +8540,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						rtp_session->stats.inbound.error_log->flaws++;
 					}
 					rtp_session->stats.inbound.flaws++;
+					rtp_session->stats.inbound.cumulative_flaws++;
 					do_mos(rtp_session);
 				}
 
