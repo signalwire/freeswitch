@@ -257,7 +257,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			int sipp_ret;
 			int sdp_count = 0;
 
-			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1212121212", "sipp-scenarios/uac_telephone_event.xml", "");
+			sipp_ret = start_sipp_uac(local_ip_v4, 5085, "1212121212", "sipp-scenarios/uac_telephone_event.xml", "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_check(!"sipp not found");
 			} else {
@@ -312,7 +312,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			int sipp_ret;
 			int sdp_count = 0;
 
-			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1212121212", "sipp-scenarios/uac_savp_check.xml", "");
+			sipp_ret = start_sipp_uac(local_ip_v4, 5085, "1212121212", "sipp-scenarios/uac_savp_check.xml", "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_check(!"sipp not found");
 			} else {
@@ -373,7 +373,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak.xml", "");
+			sipp_ret = start_sipp_uac(local_ip_v4, 5085, "1001", "sipp-scenarios/uac_digest_leak.xml", "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_check(!"sipp not found");
 			} else {
@@ -424,7 +424,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak-tcp.xml", "-t t1");
+			sipp_ret = start_sipp_uac(local_ip_v4, 5085, "1001", "sipp-scenarios/uac_digest_leak-tcp.xml", "-t t1");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_check(!"sipp not found");
 			} else {
@@ -591,7 +591,7 @@ skiptest:
 			int sipp_ret;
 
 			/* check without 407 Proxy Authentication. If count not 0 fail case. */
-			sipp_ret = run_sipp(local_ip_v4, 5060, 6091, "1001", "sipp-scenarios/uac_subscriber.xml", auth_password, "");
+			sipp_ret = run_sipp(local_ip_v4, 5065, 6091, "1001", "sipp-scenarios/uac_subscriber.xml", auth_password, "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_check(!"sipp not found");
 			} else {
@@ -604,7 +604,7 @@ skiptest:
 				fst_check_string_equals(count1, "0");
 
 				/* check with 407  Proxy Authentication Required. If count not 1 fail case. */
-				sipp_ret = run_sipp(local_ip_v4, 5060, 6090, "1001", "sipp-scenarios/uac_407_subscriber.xml", auth_password, "");
+				sipp_ret = run_sipp(local_ip_v4, 5065, 6090, "1001", "sipp-scenarios/uac_407_subscriber.xml", auth_password, "");
 				if (sipp_ret < 0 || sipp_ret == 127) {
 					fst_check(!"sipp not found");
 				} else {
