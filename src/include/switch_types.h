@@ -857,6 +857,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR,
 	SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT,
 	SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT,
+	SWITCH_RTP_FLAG_USE_MILLISECONDS_PER_PACKET,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -987,12 +988,28 @@ typedef enum {
 
 	 */
 
-	RTP_BUG_SEND_NORMALISED_TIMESTAMPS = (1 << 13)
+	RTP_BUG_SEND_NORMALISED_TIMESTAMPS = (1 << 13),
 
 	/*
 	  Send linear timestamps, including synchronised timestamps of 2833 DTMF packets. With this flag set, DTMF's timestamp will be synchronised
 	  with RTP timestamp to produce linear sequence. This sequence will increase by fixed (negotiated) sample count between two RTP packets independent of time.
 
+	 */
+
+	RTP_BUG_ADJUST_DTMF_TIMESTAMPS = (1 << 14)
+
+	/*
+	 * DTMF timestamp for RFC2833 packets is linear and monotonically increasing with regard to RTP timestamps.
+	 * This applies to when RTP timestamp is copied (SWITCH_RTP_FLAG_RAW_WRITE), and also when it is generated (rtp_rewrite_timestamps).
+	 * If a diff in time between last RTP packet and DTMF is more than milliseconds per packet
+	 * then DTMF's timestamp gets out of sync with a wall media clock (which is syncronised with RTP timestamp).
+	 *
+	 * Even if this is a default behaviour of FreeSWITCH and it seems to be toletared most of the time
+	 * by RTP implementations (including FreeSWITCH itself), it introduces significant problems for some of them.
+	 * For example, Genesys call centre will drop DTMF due to misaligned timestamp.
+	 *
+	 * If RTP_BUG_ADJUST_DTMF_TIMESTAMPS is set, it checks for a gap in time between DTMF and last timestamp (of DTMF or RTP packet)
+	 * and adjusts DTMF timestamp for that. This has been tested with Genesys Cloud CX 2.
 	 */
 
 } switch_rtp_bug_flag_t;
