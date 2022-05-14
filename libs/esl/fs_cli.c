@@ -632,7 +632,8 @@ static const char *usage_str =
 	"  -b, --batchmode                 Batch mode\n"
 	"  -t, --timeout                   Timeout for API commands (in milliseconds)\n"
 	"  -T, --connect-timeout           Timeout for socket connection (in milliseconds)\n"
-	"  -n, --no-color                  Disable color\n\n";
+	"  -n, --no-color                  Disable color\n"
+	"  -s, --set-log-uuid              Set UUID to filter log events\n\n";
 
 static int usage(char *name){
 	printf(usage_str, name);
@@ -1483,6 +1484,7 @@ int main(int argc, char *argv[])
 	int argv_exec = 0;
 	char argv_command[1024] = "";
 	char argv_loglevel[127] = "";
+	char argv_filter_uuid[64] = {0};
 	int argv_log_uuid = 0;
 	int argv_log_uuid_short = 0;
 	int argv_quiet = 0;
@@ -1539,7 +1541,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qQrRhib?n", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qQrRhib?ns:", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1614,6 +1616,11 @@ int main(int argc, char *argv[])
 			case 'T':
 				connect_timeout = atoi(optarg);
 				break;
+			case 's':
+				esl_set_string(argv_filter_uuid, optarg);
+				filter_uuid = strdup(argv_filter_uuid);
+				break;
+
 			case 'h':
 			case '?':
 				print_banner(stdout, is_color);
