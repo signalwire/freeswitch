@@ -1469,6 +1469,7 @@ int main(int argc, char *argv[])
 		{"reconnect", 0, 0, 'R'},
 		{"timeout", 1, 0, 't'},
 		{"connect-timeout", 1, 0, 'T'},
+		{"set-log-uuid", 1, 0, 's'},
 		{0, 0, 0, 0}
 	};
 	char temp_host[128];
