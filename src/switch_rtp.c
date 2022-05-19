@@ -3420,22 +3420,98 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, uint32_t ssrc, const char *cmd)
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, uint32_t ssrc, const char *cmd, const char *codec_iananame)
 {
 	switch_sockaddr_t *addr = NULL;
 	switch_fork_session_t *fork = NULL;
+	int transcoding = 0;
+	switch_channel_t *channel = NULL;
+	const char *rtp_codec_iananame = NULL;
+	char codec_lwc[FORK_CODEC_NAME_LEN] = { 0 };
+	const char *rtp_pt = NULL;
 
 	if (!rtp_session) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
+	channel = switch_core_session_get_channel(rtp_session->session);
+
 	fork = (direction == FORK_DIRECTION_RX ? &rtp_session->fork.fork_rx : &rtp_session->fork.fork_tx);
 
 	if (switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS || !addr) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: cannot reslove IP address\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: cannot resolve IP address\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	strncpy(codec_lwc, codec_iananame, FORK_CODEC_NAME_LEN);
+	codec_lwc[FORK_CODEC_NAME_LEN - 1] = 0;
+	switch_string_tolower(codec_lwc);
+
+	rtp_codec_iananame = switch_channel_get_variable(channel, direction == FORK_DIRECTION_RX ? "read_codec" : "write_codec");
+	if (zstr(rtp_codec_iananame)) {
+		rtp_codec_iananame = switch_channel_get_variable(channel, "rtp_use_codec_name");
+	}
+
+	rtp_pt = switch_channel_get_variable(channel, "rtp_use_pt");
+	if (zstr(rtp_pt)) {
+		rtp_pt = switch_channel_get_variable(channel, "rtp_audio_recv_pt");
+	}
+
+	strncpy(fork->rtp_codec, rtp_codec_iananame, FORK_CODEC_NAME_LEN);
+	fork->rtp_codec[FORK_CODEC_NAME_LEN - 1] = 0;
+	switch_string_tolower(fork->rtp_codec);
+
+	strncpy(fork->fork_codec, fork->rtp_codec, FORK_CODEC_NAME_LEN);
+
+	// Transcode audio to requested fork codec if necessary
+	if (!zstr(codec_iananame)) {
+
+		uint32_t rate_in = 8000, rate_out = 8000;
+		uint32_t bitrate_in = 0, bitrate_out = 0;
+		uint32_t channels_in = 1, channels_out = 1;
+		uint32_t ptime_in = 20, ptime_out = 20;
+		uint8_t pt = 0;
+
+		if ((pt = strncmp(codec_lwc, "pcma", 5)) && (strncmp(codec_lwc, "pcmu", 5))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: requested transcoding not supported (%s), only PCMA/PCMU is supported (fork will forward packets without transcoding)\n", codec_iananame);
+			goto fork_setup;
+		}
+
+		if (zstr(rtp_codec_iananame)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: transcode fail. RTP codec is not set\n");
+			goto fork_setup;
+		}
+
+		if (!strncmp(fork->rtp_codec, codec_lwc, FORK_CODEC_NAME_LEN)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Fork: ignoring transcoding request from %s to %s (transcoding not needed)\n", fork->rtp_codec, codec_lwc);
+			goto fork_setup;
+		}
+
+		strncpy(fork->fork_codec, codec_lwc, FORK_CODEC_NAME_LEN);
+		fork->transcoding_pt = (pt == 0 ? 8 : 0);
+		fork->rtp_pt = atoi(rtp_pt);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Fork: transcoding from %s to %s is needed\n", fork->rtp_codec, fork->fork_codec);
+
+		if (SWITCH_STATUS_SUCCESS != switch_core_codec_init_with_bitrate(&fork->codec_in, fork->rtp_codec, NULL, "", rate_in, ptime_in, channels_in, bitrate_in, 
+					SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, rtp_session->pool)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: couldn't initialize codec for input: %s@%dhz@%d\n", fork->rtp_codec, rate_in, ptime_in);
+			goto fork_setup;
+		}
+
+		if (SWITCH_STATUS_SUCCESS != switch_core_codec_init_with_bitrate(&fork->codec_out, fork->fork_codec, NULL, "", rate_out, ptime_out, channels_out, bitrate_out, 
+					SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, rtp_session->pool)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: couldn't initialize codec for output: %s@%dhz@%d\n", fork->fork_codec, rate_out, ptime_out);
+			switch_core_codec_destroy(&fork->codec_in);
+			goto fork_setup;
+		}
+
+		transcoding = 1;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Fork: transcoding %s -> %s (pt: %u -> %u)\n", fork->rtp_codec, fork->fork_codec, fork->rtp_pt, fork->transcoding_pt);
+	}
+
+fork_setup:
 
 	switch_mutex_lock(direction == FORK_DIRECTION_RX ? rtp_session->read_mutex : rtp_session->write_mutex);
 
@@ -3443,10 +3519,17 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, s
 	fork->host_str = switch_core_strdup(rtp_session->pool, host);
 	fork->port = port;
 	fork->ssrc = ssrc;
+	if (!zstr(codec_iananame)) {
+		strncpy(fork->codec_iananame, codec_iananame, FORK_CODEC_NAME_LEN);
+		fork->codec_iananame[FORK_CODEC_NAME_LEN - 1] = 0;
+	}
+	fork->transcoding = transcoding;
 	if (!zstr(cmd)) {
 		strncpy(fork->cmd, cmd, 500);
 		fork->cmd[499] = '\0';
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "%s Fork (%s): ready (%s to %s:%d)\n", switch_channel_get_name(channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", fork->fork_codec, host, port);
 
 	switch_mutex_unlock(direction == FORK_DIRECTION_RX ? rtp_session->read_mutex : rtp_session->write_mutex);
 
@@ -5752,6 +5835,18 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		switch_core_timer_destroy(&(*rtp_session)->write_timer);
 	}
 
+	if ((*rtp_session)->fork.fork_rx.transcoding) {
+		(*rtp_session)->fork.fork_rx.transcoding = 0;
+		switch_core_codec_destroy(&(*rtp_session)->fork.fork_rx.codec_in);
+		switch_core_codec_destroy(&(*rtp_session)->fork.fork_rx.codec_out);
+	}
+
+	if ((*rtp_session)->fork.fork_tx.transcoding) {
+		(*rtp_session)->fork.fork_tx.transcoding = 0;
+		switch_core_codec_destroy(&(*rtp_session)->fork.fork_tx.codec_in);
+		switch_core_codec_destroy(&(*rtp_session)->fork.fork_tx.codec_out);
+	}
+
 	switch_rtp_release_port((*rtp_session)->rx_host, (*rtp_session)->rx_port);
 	switch_mutex_unlock((*rtp_session)->flag_mutex);
 
@@ -6884,24 +6979,57 @@ fork_done:
 #endif
 		}
 
-		if (rtp_session->fork.fork_rx.active) {
-			if (rtp_session->sock_output && (*bytes > 0)) {
+			if (rtp_session->fork.fork_rx.active) {
+				if (rtp_session->sock_output && (*bytes > 0)) {
 
-				size_t lbytes = *bytes;
-				switch_fork_state_t *fork = &rtp_session->fork;
+					size_t lbytes = *bytes;
+					switch_fork_state_t *fork = &rtp_session->fork;
+					char payload_in[2048] = { 0};
+					char payload_out[2048] = { 0};
+					char packet[2048] = { 0};
+					int pt = rtp_session->recv_msg.header.pt;
+					int recv_pt = get_recv_payload(rtp_session);
+					//switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 
-				// IF Send only SSRC that was fired in event ?
-				if (FORK_SSRC_CHECK && (rtp_session->remote_ssrc != fork->fork_rx.ssrc)) {
-					uint32_t ssrc = rtp_session->remote_ssrc;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Fork (rx): skip transmit %zu bytes as ssrc %u does not match fork ssrc %u\n", lbytes, ssrc, fork->fork_rx.ssrc);
-					goto fork_end;
-				}
+					// IF Send only SSRC that was fired in event ?
+					if (FORK_SSRC_CHECK && (rtp_session->remote_ssrc != fork->fork_rx.ssrc)) {
+						uint32_t ssrc = rtp_session->remote_ssrc;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Fork (rx): skip transmit %zu bytes as ssrc %u does not match fork ssrc %u\n", lbytes, ssrc, fork->fork_rx.ssrc);
+						goto fork_end;
+					}
 
-				if (switch_socket_sendto(rtp_session->sock_output, fork->fork_rx.addr, 0, (void *) &rtp_session->recv_msg.header, &lbytes) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (rx): failed to transmit %zu bytes\n", lbytes);
+					memcpy(packet, (void*) &rtp_session->recv_msg.header, lbytes);
+
+					if (pt == recv_pt) {
+
+						// Transcode audio to requested fork codec if necessary
+						if (fork->fork_rx.transcoding) {
+
+							uint32_t len_in = lbytes;
+							uint32_t len_out = 2048 - 12;
+							uint32_t rate_in = 8000, rate_out = 8000;
+
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Fork (rx): transcoding to %s\n", fork->fork_rx.codec_iananame);
+
+							if (lbytes > 12) {
+								len_in = lbytes - 12 > 2048 - 12 ? 2048 - 12 : lbytes - 12;
+								memcpy(payload_in, ((char*) &rtp_session->recv_msg.header) + 12, len_in);
+								if (SWITCH_STATUS_SUCCESS != switch_rtp_transcode(&fork->fork_rx.codec_in, &fork->fork_rx.codec_out, payload_in, len_in, payload_out, &len_out, rate_in, rate_out)) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (rx): failed to transcode %d bytes of payload\n", len_in);
+									goto fork_end;
+								}
+								packet[1] = fork->fork_rx.transcoding_pt;
+								memcpy(&packet[12], payload_out, len_out);
+								lbytes = len_out + 12;
+							}
+						}
+					}
+
+					if (switch_socket_sendto(rtp_session->sock_output, fork->fork_rx.addr, 0, (void *) &packet, &lbytes) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (rx): failed to transmit %zu bytes\n", lbytes);
+					}
 				}
 			}
-		}
 
 fork_end:
 
@@ -9299,6 +9427,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 			if (rtp_session->sock_output && (bytes > 0)) {
 				size_t lbytes = bytes;
+				switch_fork_state_t *fork = &rtp_session->fork;
+				char payload_in[2048] = { 0};
+				char payload_out[2048] = { 0};
+				char packet[2048] = { 0};
+				int pt = send_msg->header.pt;
 
 				// IF Send only SSRC that was fired in event ?
 				if (FORK_SSRC_CHECK && (rtp_session->ssrc != rtp_session->fork.fork_tx.ssrc)) {
@@ -9307,7 +9440,34 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 					goto fork_done;
 				}
 
-				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork.fork_tx.addr, 0, (void *) send_msg, &lbytes) != SWITCH_STATUS_SUCCESS) {
+				memcpy(packet, (void*) &send_msg->header, lbytes);
+
+				if (pt == fork->fork_tx.rtp_pt) {
+
+					// Transcode audio to requested fork codec if necessary
+					if (fork->fork_tx.transcoding) {
+
+						uint32_t len_in = lbytes;
+						uint32_t len_out = 2048 - 12;
+						uint32_t rate_in = 8000, rate_out = 8000;
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Fork (tx): transcoding to %s\n", fork->fork_tx.codec_iananame);
+
+						if (lbytes > 12) {
+							len_in = lbytes - 12 > 2048 - 12 ? 2048 - 12 : lbytes - 12;
+							memcpy(payload_in, ((char*) &send_msg->header) + 12, len_in);
+							if (SWITCH_STATUS_SUCCESS != switch_rtp_transcode(&fork->fork_tx.codec_in, &fork->fork_tx.codec_out, payload_in, len_in, payload_out, &len_out, rate_in, rate_out)) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (tx): failed to transcode %d bytes of payload\n", len_in);
+								goto fork_done;
+							}
+							packet[1] = fork->fork_tx.transcoding_pt;
+							memcpy(&packet[12], payload_out, len_out);
+							lbytes = len_out + 12;
+						}
+					}
+				}
+
+				if (switch_socket_sendto(rtp_session->sock_output, rtp_session->fork.fork_tx.addr, 0, (void *) packet, &lbytes) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork (tx): failed to transmit %zu bytes\n", lbytes);
 				}
 			}
@@ -10173,6 +10333,30 @@ static switch_status_t switch_rtp_sendto(switch_rtp_t *rtp_session, switch_socke
 	} else {
 		return switch_socket_sendto(sock, where, 0, (void *) send_msg, len);
 	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_transcode(switch_codec_t *codec_in, switch_codec_t *codec_out, char *payload_in, uint32_t len_in, char *payload_out, uint32_t *len_out, uint32_t rate_in, uint32_t rate_out)
+{
+	char buf[2048] = { 0 };
+	uint32_t buf_len = 2048;
+	unsigned int flags = 0;
+
+	if (!codec_in || !codec_out || !payload_in || len_in == 0 || !payload_out || len_out == 0) {
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_core_codec_decode(codec_in, NULL, payload_in, len_in, rate_in, buf, &buf_len, &rate_in, &flags) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Transcoding: decoder error\n");
+		return SWITCH_STATUS_BREAK;
+	}
+
+
+	if (switch_core_codec_encode(codec_out, NULL, buf, buf_len, rate_out, payload_out, len_out, &rate_out, &flags) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Transcoding: encoder error\n");
+		return SWITCH_STATUS_BREAK;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

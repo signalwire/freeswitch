@@ -9088,7 +9088,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_sessi
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd)
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd, const char *codec_iananame)
 {
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_media_handle_t *smh = NULL;
@@ -9123,9 +9123,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t
 
 	ssrc = (direction == FORK_DIRECTION_RX ? a_engine->remote_ssrc : a_engine->ssrc);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (%s): setting up forking of media to %s:%d ssrc: %u\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port, ssrc);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork (%s): setting up forking of media to %s:%d ssrc: %u codec: %s\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port, ssrc, !zstr(codec_iananame) ? codec_iananame : "not set");
 
-	status = switch_rtp_fork_set(a_engine->rtp_session, direction, ip, port, ssrc, cmd);
+	status = switch_rtp_fork_set(a_engine->rtp_session, direction, ip, port, ssrc, cmd, codec_iananame);
 	if (status != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork (%s): failed to setup forking media to %s:%d ssrc: %u\n", switch_channel_get_name(session->channel), direction == FORK_DIRECTION_RX ? "rx" : "tx", ip, port, ssrc);
 		return SWITCH_STATUS_FALSE;
