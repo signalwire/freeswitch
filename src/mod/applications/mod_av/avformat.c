@@ -2037,7 +2037,6 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 		datalen = *len * 2 * handle->channels;
 
 		if (context->offset) {
-			char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 			switch_size_t samples = *len;
 			int fps = handle->samplerate / samples;
 			int lead_frames = (context->offset * fps) / 1000;
