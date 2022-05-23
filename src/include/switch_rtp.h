@@ -299,7 +299,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, switch_port_t remote_rtcp_port,
 															  switch_bool_t change_adv_addr, const char **err);
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, uint32_t ssrc, const char *cmd);
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, switch_fork_direction_t direction, const char *host, switch_port_t port, uint32_t ssrc, const char *cmd, const char *codec_iananame);
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_id(switch_rtp_t *rtp_session, const char *id);
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_wait_ssrc(switch_rtp_t *rtp_session, int timeout_ms);
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_local_address(switch_rtp_t *rtp_session, const char *ip, uint16_t port);
@@ -634,6 +634,7 @@ SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session);
 
 SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_core_session(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) do_2833(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(switch_status_t) switch_rtp_transcode(switch_codec_t *codec_in, switch_codec_t *codec_out, char *payload_in, uint32_t len_in, char *payload_out, uint32_t *len_out, uint32_t rate_in, uint32_t rate_out);
 /*!
   \}
 */

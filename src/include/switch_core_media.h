@@ -196,6 +196,7 @@ static inline const char *switch_media_type2str(switch_media_type_t type)
 	}
 }
 
+#define FORK_CODEC_NAME_LEN 100
 typedef struct switch_fork_s {
 	switch_sockaddr_t	*addr;
 	char				*host_str;
@@ -203,6 +204,14 @@ typedef struct switch_fork_s {
 	uint32_t			ssrc;
 	char				cmd[500];
 	uint8_t				active;
+	char				codec_iananame[FORK_CODEC_NAME_LEN];
+	char				rtp_codec[FORK_CODEC_NAME_LEN];
+	char				fork_codec[FORK_CODEC_NAME_LEN];
+	uint8_t				transcoding_pt;
+	uint8_t				transcoding;
+	uint8_t				rtp_pt;
+	switch_codec_t codec_in;
+	switch_codec_t codec_out;
 } switch_fork_session_t;
 
 typedef struct switch_fork_state_s {
@@ -263,7 +272,7 @@ SWITCH_DECLARE(int) switch_core_media_check_nat(switch_media_handle_t *smh, cons
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_session_t *session, switch_media_type_t type, int force);
 SWITCH_DECLARE(switch_status_t) switch_core_media_choose_ports(switch_core_session_t *session, switch_bool_t audio, switch_bool_t video);
-SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t *session, switch_fork_direction_t direction, const char *ip, switch_port_t port, const char *cmd, const char *codec_iananame);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_session_t *session, const char *id);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session, int timeout_ms);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session);
