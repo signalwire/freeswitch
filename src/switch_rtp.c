@@ -10264,6 +10264,16 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 			goto end;
 		}
 
+		if (fork_rx->transcoding) {
+			cJSON_AddBoolToObject(rx, "transcoding", 1);
+			cJSON_AddStringToObject(rx, "transcoding_codec_in", fork_rx->rtp_codec);
+			cJSON_AddStringToObject(rx, "transcoding_codec_out", fork_rx->fork_codec);
+			cJSON_AddNumberToObject(rx, "transcoding_pt_in", fork_rx->rtp_pt);
+			cJSON_AddNumberToObject(rx, "transcoding_pt_out", fork_rx->transcoding_pt);
+		} else {
+			cJSON_AddBoolToObject(rx, "transcoding", 0);
+		}
+
 		cJSON_AddItemToObject(f, "rx", rx);
 	}
 
@@ -10283,6 +10293,16 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 
 		if (cJSON_AddNumberToObject(tx, "port", fork_tx->port) == NULL) {
 			goto end;
+		}
+
+		if (fork_tx->transcoding) {
+			cJSON_AddBoolToObject(tx, "transcoding", 1);
+			cJSON_AddStringToObject(tx, "transcoding_codec_in", fork_tx->rtp_codec);
+			cJSON_AddStringToObject(tx, "transcoding_codec_out", fork_tx->fork_codec);
+			cJSON_AddNumberToObject(tx, "transcoding_pt_in", fork_tx->rtp_pt);
+			cJSON_AddNumberToObject(tx, "transcoding_pt_out", fork_tx->transcoding_pt);
+		} else {
+			cJSON_AddBoolToObject(tx, "transcoding", 0);
 		}
 
 		cJSON_AddItemToObject(f, "tx", tx);
