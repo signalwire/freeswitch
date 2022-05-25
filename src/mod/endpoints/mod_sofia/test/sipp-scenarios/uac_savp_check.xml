@@ -26,7 +26,7 @@
   	b=TIAS:64000
   	b=AS:80
   	t=0 0
-  	m=audio [auto_media_port] RTP/SAVP 18 0 8 100
+  	m=audio [media_port] RTP/SAVP 18 0 8 100
   	a=rtpmap:0 PCMU/8000
   	a=rtpmap:8 PCMA/8000
   	a=rtpmap:18 G729/8000
