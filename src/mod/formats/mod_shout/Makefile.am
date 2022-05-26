@@ -16,7 +16,7 @@ else
 install: error
 all: error
 error:
-       $(error You must install libmp3lame-dev to build mod_shout)
+	$(error You must install libmp3lame-dev to build mod_shout)
 endif
 
 else
