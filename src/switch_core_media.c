@@ -2353,7 +2353,7 @@ SWITCH_DECLARE(switch_core_media_params_t *) switch_core_media_get_mparams(switc
 	return smh->mparams;
 }
 
-SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
+SWITCH_DECLARE(switch_status_t) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
 {
 	const char *abs, *codec_string = NULL;
 	const char *ocodec = NULL, *val;
@@ -2363,11 +2363,11 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!force && (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA))) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (force) {
@@ -2375,7 +2375,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
 	if (smh->mparams->num_codecs) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE);
@@ -2419,6 +2419,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 	smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 	smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, smh->fmtp, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
@@ -8709,8 +8710,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	switch_core_media_set_video_codec(session, 0);
 
-
-	memset(flags, 0, sizeof(flags));
 	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
 
 	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
@@ -12208,7 +12207,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				char o_line[1024] = "";
 
 				if (oe >= pe) {
-					bad = 5;
+					bad = 4;
 					goto end;
 				}
 
@@ -12264,7 +12263,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			p += 8;
 
 			if (p >= pe) {
-				bad = 4;
+				bad = 6;
 				goto end;
 			}
 
@@ -12272,7 +12271,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += 8;
 
 			if (q >= qe) {
-				bad = 5;
+				bad = 7;
 				goto end;
 			}
 
@@ -12281,13 +12280,13 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(port_buf);
 
 			if (q >= qe) {
-				bad = 6;
+				bad = 8;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 				if (p >= pe) {
-					bad = 7;
+					bad = 9;
 					goto end;
 				}
 				p++;
@@ -12328,14 +12327,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			p += 8;
 
 			if (p >= pe) {
-				bad = 8;
+				bad = 10;
 				goto end;
 			}
 
 			q += 8;
 
 			if (q >= qe) {
-				bad = 9;
+				bad = 11;
 				goto end;
 			}
 
@@ -12343,14 +12342,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(vport_buf);
 
 			if (q >= qe) {
-				bad = 10;
+				bad = 12;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 
 				if (p >= pe) {
-					bad = 11;
+					bad = 13;
 					goto end;
 				}
 
@@ -12358,7 +12357,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			}
 
 			has_video++;
-		} else if (!strncmp("m=text ", p, 8) && *(p + 8) != '0') {
+		} else if (!strncmp("m=text ", p, 7) && *(p + 7) != '0') {
 			if (!has_text) {
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_TEXT, 1);
 				clear_pmaps(t_engine);
@@ -12387,18 +12386,18 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				//TEXT switch_core_media_set_text_codec(session, SWITCH_FALSE);
 			}
 
-			strncpy(q, p, 8);
-			p += 8;
+			strncpy(q, p, 7);
+			p += 7;
 
 			if (p >= pe) {
-				bad = 8;
+				bad = 14;
 				goto end;
 			}
 
-			q += 8;
+			q += 7;
 
 			if (q >= qe) {
-				bad = 9;
+				bad = 15;
 				goto end;
 			}
 
@@ -12406,14 +12405,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(tport_buf);
 
 			if (q >= qe) {
-				bad = 10;
+				bad = 16;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 
 				if (p >= pe) {
-					bad = 11;
+					bad = 17;
 					goto end;
 				}
 
@@ -12427,12 +12426,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		while (p && *p && *p != '\n') {
 
 			if (p >= pe) {
-				bad = 12;
+				bad = 18;
 				goto end;
 			}
 
 			if (q >= qe) {
-				bad = 13;
+				bad = 19;
 				goto end;
 			}
 
@@ -12440,12 +12439,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		}
 
 		if (p >= pe) {
-			bad = 14;
+			bad = 20;
 			goto end;
 		}
 
 		if (q >= qe) {
-			bad = 15;
+			bad = 21;
 			goto end;
 		}
 

@@ -3114,6 +3114,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 
 			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", path);
+				set_completion_cause(rh, "uri-failure");
 				switch_goto_status(SWITCH_STATUS_GENERR, err);
 			}
 
@@ -3136,6 +3137,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			}
+			set_completion_cause(rh, "uri-failure");
 			switch_goto_status(SWITCH_STATUS_GENERR, err);
 		}
 
@@ -3188,6 +3190,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			}
+			set_completion_cause(rh, "uri-failure");
 			switch_goto_status(SWITCH_STATUS_GENERR, err);
 		}
 
@@ -3198,6 +3201,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			}
+			set_completion_cause(rh, "uri-failure");
 			switch_goto_status(SWITCH_STATUS_GENERR, err);
 		}
 
@@ -3333,6 +3337,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 	return SWITCH_STATUS_SUCCESS;
 
 err:
+	if (!zstr(rh->completion_cause)) {
+		switch_channel_set_variable_printf(channel, "record_completion_cause", "%s", rh->completion_cause);
+	}
 	record_helper_destroy(&rh, session);
 
 	return status;

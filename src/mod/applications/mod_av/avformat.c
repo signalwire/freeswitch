@@ -2037,13 +2037,12 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 		datalen = *len * 2 * handle->channels;
 
 		if (context->offset) {
-			char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 			switch_size_t samples = *len;
 			int fps = handle->samplerate / samples;
 			int lead_frames = (context->offset * fps) / 1000;
 
 			for (int x = 0; x < lead_frames; x++) {
-				switch_buffer_write(context->audio_buffer, buf, datalen);
+				switch_buffer_zero_fill(context->audio_buffer, datalen);
 			}
 			context->offset = 0;
 		}
@@ -2063,8 +2062,7 @@ GCC_DIAG_ON(deprecated-declarations)
 	if (context->closed) {
 		inuse = switch_buffer_inuse(context->audio_buffer);
 		if (inuse < bytes) {
-			char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
-			switch_buffer_write(context->audio_buffer, buf, bytes - inuse);
+			switch_buffer_zero_fill(context->audio_buffer, bytes - inuse);
 		}
 	}
 

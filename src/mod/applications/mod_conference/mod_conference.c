@@ -2479,9 +2479,13 @@ SWITCH_STANDARD_APP(conference_function)
 	do {
 		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
 		
-		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_RECVONLY)) {
+		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_SENDONLY)) {
 			conference_loop_output(&member);
 		} else {
+			if (!conference_utils_member_test_flag(&member, MFLAG_ITHREAD)) {
+				conference_loop_launch_input(&member, switch_core_session_get_pool(member.session));
+			}
+
 			if (conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
 				switch_yield(100000);
 				member.loop_loop = 1;
@@ -2490,6 +2494,16 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 		}
 	} while (member.loop_loop);
+
+	conference_utils_member_clear_flag_locked(&member, MFLAG_RUNNING);
+	
+	/* Wait for the input thread to end */
+	if (member.input_thread) {
+		switch_status_t st;
+
+		switch_thread_join(&st, member.input_thread);
+		member.input_thread = NULL;
+	}
 
 	switch_core_session_video_reset(session);
 	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);
