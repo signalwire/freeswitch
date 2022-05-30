@@ -3473,8 +3473,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, s
 		uint32_t ptime_in = 20, ptime_out = 20;
 		uint8_t pt = 0;
 
+		if ((strncmp(fork->rtp_codec, "pcma", 5)) && (strncmp(fork->rtp_codec, "pcmu", 5))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: requested transcoding not supported (%s -> %s), only PCMA -> PCMU and PCMU -> PCMA is supported (fork will forward packets without transcoding)\n", fork->rtp_codec, codec_lwc);
+			goto fork_setup;
+		}
+
 		if ((pt = strncmp(codec_lwc, "pcma", 5)) && (strncmp(codec_lwc, "pcmu", 5))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: requested transcoding not supported (%s), only PCMA/PCMU is supported (fork will forward packets without transcoding)\n", codec_iananame);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: requested transcoding not supported (%s -> %s), only PCMA -> PCMU and PCMU -> PCMA is supported (fork will forward packets without transcoding)\n", fork->rtp_codec, codec_lwc);
 			goto fork_setup;
 		}
 
