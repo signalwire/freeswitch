@@ -192,7 +192,7 @@ static void event_handler_reg_ok(switch_event_t *event)
 	
 	if (new_ev && !strcmp(new_ev, "sofia::gateway_state")) {
 		const char *state = switch_event_get_header(event, "State");
-		if (state && !strcmp(state, "REGED")) {
+		if (state && (!strcmp(state, "REGED") || !strcmp(state,"REGISTER"))) {
 			test_success++;
 		}
 	}
