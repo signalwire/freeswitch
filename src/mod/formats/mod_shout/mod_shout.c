@@ -55,11 +55,13 @@ static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 static struct {
 	char decoder[256];
+	char* bind_ip;
 	float vol;
 	uint32_t outscale;
 	uint32_t brate;
 	uint32_t resample;
 	uint32_t quality;
+	switch_memory_pool_t *pool;
 } globals;
 
 mpg123_handle *our_mpg123_new(const char *decoder, int *error)
@@ -491,6 +493,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_CURL *curl_handle = NULL;
 	switch_CURLcode cc;
 	shout_context_t *context = (shout_context_t *) obj;
+	char *local_ip = NULL;
+	long local_port = 0;
+	char *remote_ip = NULL;
+	long remote_port = 0;
 
 	switch_thread_rwlock_rdlock(context->rwlock);
 	switch_mutex_lock(context->audio_mutex);
@@ -510,18 +516,31 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
 	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
+	if (!zstr(globals.bind_ip)) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, globals.bind_ip);
+	}
 	curl_easy_setopt(curl_handle, CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_SOCKOPTDATA, (void *)context);
 
 	cc = switch_curl_easy_perform(curl_handle);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_LOCAL_IP , &local_ip);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_LOCAL_PORT , &local_port);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_PRIMARY_IP, &remote_ip);
+	switch_curl_easy_getinfo(curl_handle, CURLINFO_PRIMARY_PORT, &remote_port);
 
 	switch_mutex_lock(context->audio_mutex);
 	context->curlfd = -1;
 	switch_mutex_unlock(context->audio_mutex);
 
 	if (cc && cc != CURLE_WRITE_ERROR) {	/* write error is ok, we just exited from callback early */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, switch_curl_easy_strerror(cc),
-						  context->curl_error_buff, context->stream_url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s] (local:%s:%ld remote:%s:%ld)\n", cc, switch_curl_easy_strerror(cc),
+						  context->curl_error_buff, context->stream_url,
+						  !zstr(local_ip) ? local_ip : "N/A", local_port,
+						  !zstr(remote_ip) ? remote_ip : "N/A", remote_port);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "CURL returned success: (local:%s:%ld remote:%s:%ld)\n",
+						  !zstr(local_ip) ? local_ip : "N/A", local_port,
+						  !zstr(remote_ip) ? remote_ip : "N/A", remote_port);
 	}
 	switch_curl_easy_cleanup(curl_handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read Thread Done\n");
@@ -1543,12 +1562,13 @@ SWITCH_STANDARD_API(telecast_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_config(void)
+static switch_status_t load_config(switch_memory_pool_t* pool)
 {
 	char *cf = "shout.conf";
 	switch_xml_t cfg, xml, settings, param;
 
 	memset(&globals, 0, sizeof(globals));
+	globals.pool = pool;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -1562,6 +1582,8 @@ static switch_status_t load_config(void)
 
 			if (!strcmp(var, "decoder")) {
 				switch_set_string(globals.decoder, val);
+			} else if (!strcmp(var, "bind-ip")) {
+				globals.bind_ip = switch_core_strdup(globals.pool, val);
 			} else if (!strcmp(var, "volume")) {
 				globals.vol = (float) atof(val);
 			} else if (!strcmp(var, "outscale")) {
@@ -1757,7 +1779,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 	shout_init();
 	mpg123_init();
-	load_config();
+	load_config(pool);
 
 	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
 

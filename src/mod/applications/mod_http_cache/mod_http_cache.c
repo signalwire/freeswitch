@@ -201,6 +201,8 @@ struct url_cache {
 	size_t size;
 	/** The location of the cache in the filesystem */
 	char *location;
+	/** bind ip or local ip to use*/
+	char *bind_ip;
 	/** HTTP profiles */
 	switch_hash_t *profiles;
 	/** profiles mapped by FQDN */
@@ -1164,6 +1166,10 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	switch_CURLcode curl_status = CURLE_UNKNOWN_OPTION;
 	char *query_string = NULL;
 	char *full_url = NULL;
+	char *local_ip = NULL;
+	long local_port = 0;
+	char *remote_ip = NULL;
+	long remote_port = 0;
 	char errbuf[CURL_ERROR_SIZE] = { 0 };
 
 	/* set up HTTP GET */
@@ -1189,9 +1195,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	curl_handle = switch_curl_easy_init();
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "opening %s for URL cache\n", get_data.url->filename);
 #ifdef WIN32
-	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | O_BINARY)) > -1) {
+	if (curl_handle && (get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR | O_BINARY)) > -1) {
 #else
-	if ((get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+	if (curl_handle && (get_data.fd = open(get_data.url->filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #endif
 		int i;
 
@@ -1209,6 +1215,9 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 		switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errbuf);
+		if (!zstr(cache->bind_ip)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, cache->bind_ip);
+		}
 		if (cache->connect_timeout > 0) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
 		}
@@ -1231,19 +1240,26 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		
 		for (i = 0; i < cache->max_retry; ++i) {
 			curl_status = switch_curl_easy_perform(curl_handle);
+			switch_curl_easy_getinfo(curl_handle, CURLINFO_LOCAL_IP , &local_ip);
+			switch_curl_easy_getinfo(curl_handle, CURLINFO_LOCAL_PORT , &local_port);
+			switch_curl_easy_getinfo(curl_handle, CURLINFO_PRIMARY_IP, &remote_ip);
+			switch_curl_easy_getinfo(curl_handle, CURLINFO_PRIMARY_PORT, &remote_port);
 			if (curl_status == CURLE_OK 
 				|| curl_status == CURLE_HTTP_RETURNED_ERROR
 				|| curl_status == CURLE_OPERATION_TIMEDOUT) {
 				// Dont retry to errors or timeout operation
 				break;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d (attempt:%d) trying to fetch %s\n", curl_status, i+1, url->url);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR
+					, "Received curl error %d (attempt:%d) trying to fetch %s (local:%s:%ld remote:%s:%ld)\n"
+					, curl_status, i+1, url->url
+					, !zstr(local_ip) ? local_ip : "N/A", local_port
+					, !zstr(remote_ip) ? remote_ip : "N/A", remote_port);
 				switch_sleep(cache->retry_delay_ms * 1000);
 			}
 		}
 
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
-		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "URL %s open() error: %s\n", url->url, strerror(errno));
@@ -1253,17 +1269,21 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 
 	if (curl_status == CURLE_OK) {
 		int duration_ms = (switch_time_now() / 1000) - start_time_ms;
-		if (duration_ms > 500) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "URL %s downloaded in %d ms\n", url->url, duration_ms);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "URL %s downloaded in %d ms\n", url->url, duration_ms);
-		}
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), duration_ms > 500 ? SWITCH_LOG_WARNING : SWITCH_LOG_INFO
+			, "URL %s downloaded in %d ms (local:%s:%ld remote:%s:%ld)\n"
+			, url->url, duration_ms
+			, !zstr(local_ip) ? local_ip : "N/A", local_port
+			, !zstr(remote_ip) ? remote_ip : "N/A", remote_port);
 		if (use_mime_extension || !url->extension) {
 			cached_url_set_extension_from_content_type(url, session);
 		}
 	} else {
 		url->size = 0; // nothing downloaded or download interrupted
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Received curl error %d HTTP error code %ld trying to fetch %s\n", curl_status, httpRes, url->url);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR
+			, "Received curl error %d HTTP error code %ld trying to fetch %s (local:%s:%ld remote:%s:%ld)\n"
+			, curl_status, httpRes, url->url
+			, !zstr(local_ip) ? local_ip : "N/A", local_port
+			, !zstr(remote_ip) ? remote_ip : "N/A", remote_port);
 		status = SWITCH_STATUS_GENERR;
 		goto done;
 	}
@@ -1276,10 +1296,18 @@ done:
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_curl_error", "%s", !zstr(errbuf) ? errbuf : curl_easy_strerror(curl_status));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_response_code", "%ld", httpRes);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_file_create_result", "%d", errno);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_local_ip", "%s", !zstr(local_ip) ? local_ip : "N/A");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_local_port", "%ld", local_port);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_remote_ip", "%s", !zstr(remote_ip) ? remote_ip : "N/A");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "http_cache_local_port", "%ld", remote_port);
 	}
 
 	if (headers) {
 		switch_curl_slist_free_all(headers);
+	}
+
+	if (curl_handle) {
+		switch_curl_easy_cleanup(curl_handle);
 	}
 
 	return status;
@@ -1773,6 +1801,9 @@ static switch_status_t do_config(url_cache_t *cache)
 			} else if (!strcasecmp(var, "location")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting location to %s\n", val);
 				cache->location = switch_core_strdup(cache->pool, val);
+			} else if (!strcasecmp(var, "bind-ip")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting bind-ip to %s\n", val);
+				cache->bind_ip = switch_core_strdup(cache->pool, val);
 			} else if (!strcasecmp(var, "default-max-age")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting default-max-age to %s\n", val);
 				default_max_age_sec = atoi(val);
