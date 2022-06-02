@@ -624,9 +624,9 @@ SWITCH_STANDARD_CHAT_APP(transfer_function)
 
 	switch_event_del_header(message, "context");
 	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "context", context);
+	switch_safe_free(context);
 
 	switch_core_chat_send("GLOBAL", message);
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
