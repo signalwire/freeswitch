@@ -610,6 +610,30 @@ SWITCH_STANDARD_CHAT_APP(reply_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_CHAT_APP(transfer_function)
+{
+	char *context;
+
+	if (!data) return SWITCH_STATUS_SUCCESS;
+
+	context = strdup(data);
+	if (!context) return SWITCH_STATUS_SUCCESS;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS transfer to %s \n", data);
+
+	switch_event_del_header(message, "context");
+	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "context", context);
+
+	switch_core_chat_send("GLOBAL", message);
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+
 /* Macro expands to: switch_status_t mod_sms_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 {
@@ -640,6 +664,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "send", "send the message as-is", "send the message as-is", send_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "fire", "fire the message", "fire the message", fire_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "system", "execute a system command", "execute a sytem command", system_function, "", SCAF_NONE);
+
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "transfer", "transfer a message to another context", "transfer a message to another context", transfer_function, "", SCAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
