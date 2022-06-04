@@ -892,6 +892,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		switch_channel_set_state(channel, CS_INIT);
+		switch_channel_set_flag(channel, CF_AUDIO);
 
 		return SWITCH_CAUSE_SUCCESS;
 
@@ -997,6 +998,7 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 	switch_channel_set_caller_profile(channel, caller_profile);
 	tech_pvt->caller_profile = caller_profile;
 	switch_channel_set_state(channel, CS_INIT);
+	switch_channel_set_flag(channel, CF_AUDIO);
 
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error spawning thread\n");
