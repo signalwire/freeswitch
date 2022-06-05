@@ -65,6 +65,17 @@ char *encoded_token(const char *token_uri, const char *client_email, const char 
 	return signee;
 }
 
+switch_size_t file_size_to_alloc(switch_size_t in) {
+	switch_size_t last = 4096;
+	for (int i = 0; i < 20; i++) {
+		if (! (in & last)) {
+			return last;
+		}
+		last *= 2;
+	}
+	return last;
+}
+
 void signtoken(char *token, int tokenlen,char *pkey, char *out) {
 	unsigned char *sig = NULL;
 	BIO *b = NULL;
@@ -183,10 +194,11 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 
 		size = switch_file_get_size(fd);
 		if (size) {
-			contents = malloc(size);
+			contents = malloc(file_size_to_alloc(size * 2) * sizeof(char));
 			switch_file_read(fd, (void *) contents, &size);
 		} else {
 			switch_safe_free(file);
+			status = switch_file_close(fd);
 			return SWITCH_STATUS_FALSE;
 		}
 
