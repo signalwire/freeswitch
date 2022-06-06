@@ -311,7 +311,6 @@ char *gcs_auth_request(char *content, char *url) {
 	char *ct = "Content-Type: application/x-www-form-urlencoded";
 	struct http_data http_data;
 	CURLcode res;
-
 	memset(&http_data, 0, sizeof(http_data));
 	http_data.max_bytes = 10240;
 	SWITCH_STANDARD_STREAM(http_data.stream);
@@ -349,6 +348,9 @@ char *gcs_auth_request(char *content, char *url) {
 		cJSON_Delete(json);
 	}
 	switch_safe_free(http_data.stream.data);
+	if (headers) {
+		switch_curl_slist_free_all(headers);
+	}
 	return response;
 }
 #endif
