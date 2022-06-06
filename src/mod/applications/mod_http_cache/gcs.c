@@ -113,10 +113,13 @@ switch_status_t gcs_refresh_authorization (http_profile_t *profile)
 	assertion = malloc(sizeof(char) * (1 + token_length + 343));
 	sprintf(assertion, "%s.%s", token, encoded);
 	free(token);
+	free(encoded);
 	signature_url_encoded = switch_string_replace(assertion, "+", "%2B");
 	sprintf(content,"%s%s", "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=", signature_url_encoded);
+	free(signature_url_encoded);
 	auth = gcs_auth_request(content, profile->region);
 	profile->gcs_credentials = auth;
+	free(auth);
 	exp = now + 3540;
 	profile->expires = exp;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Credentials Expries Unix Time: %ld", exp);
@@ -201,7 +204,6 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 			status = switch_file_close(fd);
 			return SWITCH_STATUS_FALSE;
 		}
-
 		status = switch_file_close(fd);
 		if (status != SWITCH_STATUS_SUCCESS) {
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERR, "Could not close credencial file\n", profile->bytes_per_block);
@@ -273,7 +275,6 @@ switch_status_t gcs_config_profile(switch_xml_t xml, http_profile_t *profile,swi
 	if (status != SWITCH_STATUS_SUCCESS){
 		return status;
 	}
-	
 	if (base_domain_xml) {
 		profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
 		if (zstr(profile->base_domain)) {
@@ -347,6 +348,7 @@ char *gcs_auth_request(char *content, char *url) {
 		}
 		cJSON_Delete(json);
 	}
+	switch_safe_free(http_data.stream.data);
 	return response;
 }
 #endif

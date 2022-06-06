@@ -134,6 +134,7 @@ FST_TEST_BEGIN(parse_xml_config_with_gcs)
 		switch_safe_free(http_profile.aws_s3_access_key_id);
 		switch_safe_free(http_profile.secret_access_key);
 		switch_safe_free(http_profile.base_domain);
+		switch_safe_free(http_profile.gcs_email);
 		switch_core_destroy_memory_pool(&pool);
 	}
 
