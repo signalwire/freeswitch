@@ -1232,7 +1232,7 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
 static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 {
 	modem_t *modem = obj;
-	int r, avail;
+	int r, avail, taken;
 #ifdef WIN32
 	DWORD readBytes;
 	OVERLAPPED o;
@@ -1272,30 +1272,43 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 			}
 
 			avail = t31_at_rx_free_space(modem->t31_state);
-			if (avail == 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
+			if (avail == 0 || modem->t31_state->non_ecm_tx.holding) {
+				if (! modem->t31_state->non_ecm_tx.holding)
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
 				switch_yield(10000);
 				continue;
 			}
 
+			do {
 #ifndef WIN32
-			r = read(modem->master, buf, avail);
+				r = read(modem->master, buf, 1);
 #else
-			o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+				o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-			/* Initialize the rest of the OVERLAPPED structure to zero. */
-			o.Internal = 0;
-			o.InternalHigh = 0;
-			o.Offset = 0;
-			o.OffsetHigh = 0;
-			assert(o.hEvent);
-			if (!ReadFile(modem->master, buf, avail, &readBytes, &o)) {
-				GetOverlappedResult(modem->master, &o, &readBytes,TRUE);
-			}
-			CloseHandle (o.hEvent);
-			r = readBytes;
+				/* Initialize the rest of the OVERLAPPED structure to zero. */
+				o.Internal = 0;
+				o.InternalHigh = 0;
+				o.Offset = 0;
+				o.OffsetHigh = 0;
+				assert(o.hEvent);
+				if (!ReadFile(modem->master, buf, 1, &readBytes, &o)) {
+					GetOverlappedResult(modem->master, &o, &readBytes,TRUE);
+				}
+				CloseHandle (o.hEvent);
+				r = readBytes;
 #endif
-			t31_at_rx(modem->t31_state, buf, r);
+				if (r > 0) {
+					taken = t31_at_rx(modem->t31_state, buf, r);
+					if (taken != r) {
+						/* As we checked the available buffer beforehand and only
+						   read and sent that number of bytes, this should not
+						   happen, and if it does will cause data loss and possibly
+						   timing problems. */
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unexpected modem buffering [%s]. Sent %d bytes, modem buffered %d.\n", modem->devlink, r, taken);
+					}
+					avail -= taken;
+				}
+			} while (r > 0 && avail > 0);
 
 			if (!strncasecmp(buf, "AT", 2)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Command on %s [%s]\n", modem->devlink, buf);
