@@ -1279,6 +1279,12 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 				continue;
 			}
 
+			/* I'm not sure why this is necessary, but if we don't sleep/yield for a moment here then we end up with
+			   the potential for lost audio data happening. Is it because we're sending audio data to FreeSWITCH faster
+			   than it's being sent over the channel. Is it because of audio data in spandsp getting overwritten?
+			   Whatever the case, this here seems to do the trick. */
+			switch_yield(1000);
+
 			do {
 #ifndef WIN32
 				r = read(modem->master, buf, 1);
