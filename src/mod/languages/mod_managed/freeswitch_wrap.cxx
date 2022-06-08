@@ -28820,6 +28820,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_vol_get__
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_volgranular_set___(void * jarg1, int jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  int32_t arg2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (int32_t)jarg2; 
+  if (arg1) (arg1)->volgranular = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_volgranular_get___(void * jarg1) {
+  int jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  int32_t result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (int32_t) ((arg1)->volgranular);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_resampler_set___(void * jarg1, void * jarg2) {
   switch_file_handle *arg1 = (switch_file_handle *) 0 ;
   switch_audio_resampler_t *arg2 = (switch_audio_resampler_t *) 0 ;
