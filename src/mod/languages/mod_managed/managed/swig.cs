@@ -22447,6 +22447,12 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_file_handle_vol_get___")]
   public static extern int switch_file_handle_vol_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_file_handle_volgranular_set___")]
+  public static extern void switch_file_handle_volgranular_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_file_handle_volgranular_get___")]
+  public static extern int switch_file_handle_volgranular_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_file_handle_resampler_set___")]
   public static extern void switch_file_handle_resampler_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
@@ -31035,35 +31041,35 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_INTERWORKING = 127,
   SWITCH_CAUSE_SUCCESS = 142,
   SWITCH_CAUSE_ORIGINATOR_CANCEL = 487,
-  SWITCH_CAUSE_CRASH = 500,
-  SWITCH_CAUSE_SYSTEM_SHUTDOWN = 501,
-  SWITCH_CAUSE_LOSE_RACE = 502,
-  SWITCH_CAUSE_MANAGER_REQUEST = 503,
-  SWITCH_CAUSE_BLIND_TRANSFER = 600,
-  SWITCH_CAUSE_ATTENDED_TRANSFER = 601,
-  SWITCH_CAUSE_ALLOTTED_TIMEOUT = 602,
-  SWITCH_CAUSE_USER_CHALLENGE = 603,
-  SWITCH_CAUSE_MEDIA_TIMEOUT = 604,
-  SWITCH_CAUSE_PICKED_OFF = 605,
-  SWITCH_CAUSE_USER_NOT_REGISTERED = 606,
-  SWITCH_CAUSE_PROGRESS_TIMEOUT = 607,
-  SWITCH_CAUSE_INVALID_GATEWAY = 608,
-  SWITCH_CAUSE_GATEWAY_DOWN = 609,
-  SWITCH_CAUSE_INVALID_URL = 610,
-  SWITCH_CAUSE_INVALID_PROFILE = 611,
-  SWITCH_CAUSE_NO_PICKUP = 612,
-  SWITCH_CAUSE_SRTP_READ_ERROR = 613,
-  SWITCH_CAUSE_BOWOUT = 614,
-  SWITCH_CAUSE_BUSY_EVERYWHERE = 615,
-  SWITCH_CAUSE_DECLINE = 616,
-  SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 617,
-  SWITCH_CAUSE_NOT_ACCEPTABLE = 618,
-  SWITCH_CAUSE_UNWANTED = 619,
-  SWITCH_CAUSE_NO_IDENTITY = 620,
-  SWITCH_CAUSE_BAD_IDENTITY_INFO = 621,
-  SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 622,
-  SWITCH_CAUSE_INVALID_IDENTITY = 623,
-  SWITCH_CAUSE_STALE_DATE = 624
+  SWITCH_CAUSE_CRASH = 700,
+  SWITCH_CAUSE_SYSTEM_SHUTDOWN = 701,
+  SWITCH_CAUSE_LOSE_RACE = 702,
+  SWITCH_CAUSE_MANAGER_REQUEST = 703,
+  SWITCH_CAUSE_BLIND_TRANSFER = 800,
+  SWITCH_CAUSE_ATTENDED_TRANSFER = 801,
+  SWITCH_CAUSE_ALLOTTED_TIMEOUT = 802,
+  SWITCH_CAUSE_USER_CHALLENGE = 803,
+  SWITCH_CAUSE_MEDIA_TIMEOUT = 804,
+  SWITCH_CAUSE_PICKED_OFF = 805,
+  SWITCH_CAUSE_USER_NOT_REGISTERED = 806,
+  SWITCH_CAUSE_PROGRESS_TIMEOUT = 807,
+  SWITCH_CAUSE_INVALID_GATEWAY = 808,
+  SWITCH_CAUSE_GATEWAY_DOWN = 809,
+  SWITCH_CAUSE_INVALID_URL = 810,
+  SWITCH_CAUSE_INVALID_PROFILE = 811,
+  SWITCH_CAUSE_NO_PICKUP = 812,
+  SWITCH_CAUSE_SRTP_READ_ERROR = 813,
+  SWITCH_CAUSE_BOWOUT = 814,
+  SWITCH_CAUSE_BUSY_EVERYWHERE = 815,
+  SWITCH_CAUSE_DECLINE = 816,
+  SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 817,
+  SWITCH_CAUSE_NOT_ACCEPTABLE = 818,
+  SWITCH_CAUSE_UNWANTED = 819,
+  SWITCH_CAUSE_NO_IDENTITY = 820,
+  SWITCH_CAUSE_BAD_IDENTITY_INFO = 821,
+  SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 822,
+  SWITCH_CAUSE_INVALID_IDENTITY = 823,
+  SWITCH_CAUSE_STALE_DATE = 824
 }
 
 }
@@ -37578,6 +37584,16 @@ public class switch_file_handle : global::System.IDisposable {
     } 
     get {
       int ret = freeswitchPINVOKE.switch_file_handle_vol_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int volgranular {
+    set {
+      freeswitchPINVOKE.switch_file_handle_volgranular_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_file_handle_volgranular_get(swigCPtr);
       return ret;
     } 
   }
