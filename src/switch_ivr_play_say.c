@@ -259,7 +259,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 						switch_normalize_volume_granular(volume)
 						pfh.volgranular = volume;
 
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Setting playback volume to %d\n", pfh.volgranular);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting playback volume to %d\n", pfh.volgranular);
 					}
 					status = switch_ivr_play_file(session, &pfh, odata, args);
 				} else if (!strcasecmp(func, "phrase")) {
