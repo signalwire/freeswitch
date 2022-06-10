@@ -965,6 +965,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	t30_set_phase_d_handler(t30, phase_d_handler, pvt);
 	t30_set_phase_b_handler(t30, phase_b_handler, pvt);
 
+	t30_set_retransmit_capable(t30, TRUE);
 	t30_set_supported_image_sizes(t30,
 								  T4_SUPPORT_LENGTH_US_LETTER
 								| T4_SUPPORT_LENGTH_US_LEGAL
