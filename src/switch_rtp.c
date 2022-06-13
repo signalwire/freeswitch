@@ -4898,12 +4898,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_ses
 SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session,
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
-												  uint32_t ms_per_packet,
+												  uint32_t ms_per_pkt,
 												  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
 	switch_core_session_t *session = switch_core_memory_pool_get_data(pool, "__session");
 	switch_channel_t *channel = NULL;
+	uint32_t ms_per_packet = ms_per_pkt;
+	uint32_t us_per_packet = 1000 * ms_per_packet;
 
 	if (session) channel = switch_core_session_get_channel(session);
 
@@ -4972,7 +4974,17 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->payload = payload;
 	rtp_session->rtcp_last_sent = switch_micro_time_now();
 
-	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
+	/* If not using MILLISECONDS_PER_PACKET then ms_per_packet must be us per packet */
+	
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "ms per packet is %ums, %uus\n", ms_per_packet, us_per_packet);
+
+	if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_MILLISECONDS_PER_PACKET)) {
+		ms_per_packet = ms_per_pkt / 1000;
+		us_per_packet = ms_per_pkt;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Nop, ms per packet is actually %ums, %uus\n", ms_per_packet, us_per_packet);
+	}	
+
+	switch_rtp_set_interval(rtp_session, ms_per_pkt, samples_per_interval);
 	rtp_session->conf_samples_per_interval = samples_per_interval;
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && zstr(timer_name)) {
@@ -4990,17 +5002,17 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 
-		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet, samples_per_interval, pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
-							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet / 1000);
-			switch_core_timer_init(&rtp_session->write_timer, timer_name, (ms_per_packet / 1000), samples_per_interval, pool);
+							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet);
+			switch_core_timer_init(&rtp_session->write_timer, timer_name, ms_per_packet, samples_per_interval, pool);
 #ifdef DEBUG_TS_ROLLOVER
 			rtp_session->timer.tick = TS_ROLLOVER_START / samples_per_interval;
 #endif
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
-							  "Error Starting timer [%s] %d bytes per %dms, async RTP disabled\n", timer_name, samples_per_interval, ms_per_packet / 1000);
+							  "Error Starting timer [%s] %d bytes per %dms, async RTP disabled\n", timer_name, samples_per_interval, ms_per_packet);
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		}
 	} else {
