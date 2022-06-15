@@ -84,4 +84,29 @@
       </params>
     </profile>
   </logging>
+  <xml_handler>
+    <profile name="default">
+      <connections>
+        <connection name="primary">
+          <param name="hostname" value="localhost"/>
+          <param name="virtualhost" value="/"/>
+          <param name="username" value="guest"/>
+          <param name="password" value="guest"/>
+          <param name="port" value="5672"/>
+          <param name="heartbeat" value="0"/>
+        </connection>
+      </connections>
+      <params>
+        <param name="exchange-name" value="TAP.XML_handler"/>
+        <param name="exchange-type" value="topic"/>
+        <param name="reply-exchange-name" value="TAP.XML_handler_reply"/>
+        <param name="reply-exchange-type" value="direct"/>
+        <param name="send_queue_size" value="5000"/>
+        <param name="reconnect_interval_ms" value="1000"/>
+        <param name="xml-handler-bindings" value="directory"/>
+        <param name="format_fields" value="#FreeSWITCH,FreeSWITCH-Hostname,section,tag_name,key_name,key_value"/>
+        <param name="max-temp-conn" value="30"/>
+      </params>
+    </profile>
+  </xml_handler>
 </configuration>
