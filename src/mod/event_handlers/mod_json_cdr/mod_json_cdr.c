@@ -48,8 +48,10 @@ static struct {
 	int url_index;
 	switch_thread_rwlock_t *log_path_lock;
 	char *base_log_dir;
+	char *base_tmp_dir;
 	char *base_err_log_dir[MAX_ERR_DIRS];
 	char *log_dir;
+	char *tmp_dir;
 	char *err_log_dir[MAX_ERR_DIRS];
 	int err_dir_count;
 	uint32_t delay;
@@ -80,6 +82,7 @@ static struct {
 typedef struct {
 	char *json_text;
 	char *json_text_escaped;
+	char *tmpdir;
 	char *logdir;
 	char *uuid;
 	char *filename;
@@ -148,6 +151,20 @@ static switch_status_t set_json_cdr_log_dirs()
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set log_dir path\n");
 				status = SWITCH_STATUS_FALSE;
 			}
+		}
+	}
+
+	if (!zstr(globals.base_tmp_dir)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting temporary log file path to %s\n", globals.base_tmp_dir);
+		if ((path = switch_safe_strdup(globals.base_tmp_dir))) {
+			switch_thread_rwlock_wrlock(globals.log_path_lock);
+			switch_safe_free(globals.tmp_dir);
+			switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, globals.pool);
+			globals.tmp_dir = path;
+			switch_thread_rwlock_unlock(globals.log_path_lock);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set tmp_dir path\n");
+			status = SWITCH_STATUS_FALSE;
 		}
 	}
 
@@ -271,8 +288,8 @@ static void process_cdr(cdr_data_t *data)
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Process [%s]\n", data->filename);
 
 	if (!zstr(data->logdir) && (globals.log_http_and_disk || !globals.url_count)) {
-		char *path = switch_mprintf("%s%s%s", data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Log to disk [%s]\n", path);
+		char *path = switch_mprintf("%s%s%s", !zstr(data->tmpdir) ? data->tmpdir : data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Log to %sdisk [%s]\n", !zstr(data->tmpdir) ? "tmp " : "", path);
 		if (path) {
 #ifdef _MSC_VER
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
@@ -290,6 +307,16 @@ static void process_cdr(cdr_data_t *data)
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 					if (0 > unlink(path))
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error unlinking [%s]\n",path);
+				} else {
+					if(!zstr(data->tmpdir)) {
+						char *move_path = switch_mprintf("%s%s%s", data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
+						if(move_path && rename(path, move_path) != -1) {
+							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Fail to move CDR [%s] to [%s]\n", data->filename, data->logdir);
+						}
+						switch_safe_free(move_path);
+					}
 				}
 			} else {
 				char ebuf[512] = { 0 };
@@ -443,6 +470,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	const char *a_prefix = "";
 	cdr_data_t *cdr_data = NULL;
 	const char *logdir = NULL;
+	const char *tmpdir = NULL;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -492,7 +520,13 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	if (!(logdir = switch_channel_get_variable(channel, "json_cdr_base"))) {
 		logdir = globals.log_dir;
 	}
+
+	if (!(tmpdir = switch_channel_get_variable(channel, "json_cdr_tmp_base"))) {
+		tmpdir = globals.tmp_dir;
+	}
+
 	cdr_data->logdir = switch_safe_strdup(logdir);
+	cdr_data->tmpdir = switch_safe_strdup(tmpdir);
 
 	switch_thread_rwlock_unlock(globals.log_path_lock);
 
@@ -635,6 +669,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 						globals.base_log_dir = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
 				}
+			} else if (!strcasecmp(var, "tmp-log-dir") && !zstr(val)) {
+				if (switch_is_file_path(val)) {
+					globals.base_tmp_dir = switch_core_strdup(globals.pool, val);
+				} else {
+					globals.base_tmp_dir = switch_core_sprintf(globals.pool, "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
+				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
 				if (globals.err_dir_count >= MAX_ERR_DIRS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "maximum error directories configured!\n");
@@ -744,6 +784,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 	}
 
 	switch_safe_free(globals.log_dir);
+	switch_safe_free(globals.tmp_dir);
 
 	for (;err_dir_index < globals.err_dir_count; err_dir_index++) {
 		switch_safe_free(globals.err_log_dir[err_dir_index]);
