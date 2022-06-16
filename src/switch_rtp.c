@@ -85,6 +85,7 @@
 #define MAX_SRTP_ERRS 100
 #define NTP_TIME_OFFSET 2208988800UL
 #define ZRTP_MAGIC_COOKIE 0x5a525450
+#define TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S 2
 static const switch_payload_t INVALID_PT = 255;
 
 #define DTMF_SANITY (rtp_session->one_second * 30)
@@ -345,6 +346,7 @@ struct switch_rtp {
 	switch_socket_t *sock_input, *sock_output, *rtcp_sock_input, *rtcp_sock_output;
 	switch_pollfd_t *read_pollfd, *rtcp_read_pollfd;
 	switch_pollfd_t *jb_pollfd;
+	uint32_t poll_timeout_s;
 
 	switch_sockaddr_t *local_addr, *rtcp_local_addr;
 	rtp_msg_t send_msg;
@@ -5130,6 +5132,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
+	rtp_session->poll_timeout_s = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
+
+	{
+		const char *v = switch_channel_get_variable(channel, "telnyx_rtp_poll_timeout_s");
+		if (!zstr(v) && switch_true(v)) {
+			rtp_session->poll_timeout_s = atoi(v);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Using non-standard poll timeout %us\n", rtp_session->poll_timeout_s);
+		}
+	}
+
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
 	
@@ -7981,7 +7993,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int check = 0;
 	int ret = -1;
 	int sleep_mss = 1000;
-	int poll_sec = 5;
+	int poll_sec = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
 	int poll_loop = 0;
 	int fdr = 0;
 	int rtcp_fdr = 0;
@@ -8001,6 +8013,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
 		sleep_mss = rtp_session->timer.interval * 1000;
 	}
+	poll_sec = rtp_session->poll_timeout_s;
 
 	READ_INC(rtp_session);
 
