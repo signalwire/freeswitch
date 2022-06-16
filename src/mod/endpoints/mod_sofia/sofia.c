@@ -8269,6 +8269,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 		} else if (tech_pvt && sofia_test_flag(tech_pvt, TFLAG_SDP) && !r_sdp) {
+			const char * regenerate_offer = NULL;
 			sofia_set_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing  NOSDP Re-INVITE.\n");
 			if ((switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
@@ -8297,7 +8298,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				goto done;
 			}
 
-			if (sofia_test_pflag(profile, PFLAG_ALWAYS_REGENERATE_OFFER) || switch_channel_var_true(channel, "3pcc_always_regenerate_offer")) {
+			regenerate_offer = switch_channel_get_variable(channel, "3pcc_always_regenerate_offer");
+			if ((zstr(regenerate_offer) && sofia_test_pflag(profile, PFLAG_ALWAYS_REGENERATE_OFFER)) || switch_true(regenerate_offer)) {
 				switch_channel_set_variable(channel, "sdp_clear_previous_negotiation", "true");
 				sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 				switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
