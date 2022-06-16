@@ -1416,6 +1416,47 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 	return x;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_events(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	int x = 0;
+	void *pop;
+
+	if (session->private_event_queue) {
+		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue_pri, &pop)) == SWITCH_STATUS_SUCCESS) {
+			if (pop) {
+				switch_event_t *interrupt_event = NULL;
+				switch_event_t *command_event = (switch_event_t *) pop;
+				if (switch_event_create(&interrupt_event, SWITCH_EVENT_COMMAND_INTERRUPTED) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "Unique-ID", session->uuid_str);
+					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-name", switch_event_get_header(command_event, "execute-app-name"));
+					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-arg", switch_event_get_header(command_event, "execute-app-arg"));
+					switch_event_fire(&interrupt_event);
+				}
+				switch_event_destroy(&command_event);
+			}
+			x++;
+		}
+		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			if (pop) {
+				switch_event_t *interrupt_event = NULL;
+				switch_event_t *command_event = (switch_event_t *) pop;
+				if (switch_event_create(&interrupt_event, SWITCH_EVENT_COMMAND_INTERRUPTED) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "Unique-ID", session->uuid_str);
+					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-name", switch_event_get_header(command_event, "execute-app-name"));
+					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-arg", switch_event_get_header(command_event, "execute-app-arg"));
+					switch_event_fire(&interrupt_event);
+				}
+				switch_event_destroy(&command_event);
+			}
+			x++;
+		}
+		check_media(session);
+	}
+
+	return x;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;

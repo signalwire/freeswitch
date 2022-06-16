@@ -1318,6 +1318,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(_In_ s
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_session_t *session);
 
+/*!
+  \brief Flush the private event queue of a session and publish COMMAND_INTERRUPTED event
+  \param session the session to flush
+  \return SWITCH_STATUS_SUCCESS if the events have been flushed
+*/
+SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_events(switch_core_session_t *session);
+
 
 /*!
   \brief Read a frame from a session
