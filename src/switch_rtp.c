@@ -1729,8 +1729,8 @@ static void do_mos(switch_rtp_t *rtp_session) {
 	rtp_session->stats.inbound.R = R;
 	rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
 
-	rtp_session->stats.inbound.avg_R += R;
-	rtp_session->stats.inbound.avg_mos += rtp_session->stats.inbound.mos;
+	rtp_session->stats.inbound.sum_R += R;
+	rtp_session->stats.inbound.sum_mos += rtp_session->stats.inbound.mos;
 	rtp_session->stats.inbound.counter_mos++;
 		
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",

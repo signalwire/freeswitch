@@ -2750,8 +2750,8 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 	add_stat_double(x_in, stats->inbound.R, "quality_percentage");
 	add_stat_double(x_in, stats->inbound.mos, "mos");
 	add_stat(x_in, stats->inbound.cumulative_flaws, "cumulative_flaw");
-	add_stat_double(x_in, (stats->inbound.avg_R/stats->inbound.counter_mos), "avg_quality_percentage");
-	add_stat_double(x_in, (stats->inbound.avg_mos/stats->inbound.counter_mos), "avg_mos");
+	add_stat_double(x_in, (stats->inbound.sum_R/stats->inbound.counter_mos), "avg_quality_percentage");
+	add_stat_double(x_in, (stats->inbound.sum_mos/stats->inbound.counter_mos), "avg_mos");
 
 
 	if (stats->inbound.error_log && !exclude_error_log_from_xml_cdr) {
@@ -3261,8 +3261,8 @@ SWITCH_DECLARE(void) switch_ivr_set_json_call_stats(cJSON *json, switch_core_ses
 	add_jstat(j_in, stats->inbound.R, "quality_percentage");
 	add_jstat(j_in, stats->inbound.mos, "mos");
 	add_jstat(j_in, stats->inbound.cumulative_flaws, "cumulative_flaw");
-	add_jstat(j_in, (stats->inbound.avg_R/stats->inbound.counter_mos), "avg_quality_percentage");
-	add_jstat(j_in, (stats->inbound.avg_mos/stats->inbound.counter_mos), "avg_mos");
+	add_jstat(j_in, (stats->inbound.sum_R/stats->inbound.counter_mos), "avg_quality_percentage");
+	add_jstat(j_in, (stats->inbound.sum_mos/stats->inbound.counter_mos), "avg_mos");
 
 
 	if (stats->inbound.error_log) {

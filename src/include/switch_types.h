@@ -722,8 +722,8 @@ typedef struct {
 	double R;
 	double mos;
 	switch_size_t cumulative_flaws;
-	double avg_R;
-	double avg_mos;
+	double sum_R;
+	double sum_mos;
 	int counter_mos;
 	struct error_period *error_log;
 } switch_rtp_numbers_t;
