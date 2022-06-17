@@ -74,9 +74,10 @@ static void test_wait_for_uuid(char *uuid)
 static const char *test_wait_for_chan_var(switch_channel_t *channel, const char *seq) 
 {
 	int loop_count = 50;
-	const char *var=NULL;
+	const char *var = NULL, cseq = NULL;
 	do {
-		if (!strcmp(switch_channel_get_variable(channel, "sip_cseq"),seq)){
+		cseq = switch_channel_get_variable(channel, "sip_cseq");
+		if (cseq && !strcmp(cseq,seq)){
 			switch_sleep(100 * 1000);
 			var = switch_channel_get_variable(channel, "rtp_local_sdp_str");
 			break;
