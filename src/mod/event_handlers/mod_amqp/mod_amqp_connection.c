@@ -216,9 +216,7 @@ switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *base_conn, m
 	char key_string[256] = {0};
 	amqp_rpc_reply_t status;
 	amqp_socket_t *socket = NULL;
-	int amqp_status = -1;
 	amqp_queue_declare_ok_t *recv_queue;
-	amqp_bytes_t queueName = {0, NULL};
 	switch_uuid_t uuid;
 
 	amqp_connection_state_t newConnection = amqp_new_connection();
@@ -270,14 +268,13 @@ switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *base_conn, m
 		}
 	}
 
-	amqp_status = -1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Trying to add additional connect to AMQP %s:%d\n",
 					  base_conn->hostname, base_conn->port);
 
-	if ((amqp_status = amqp_socket_open(socket, base_conn->hostname, base_conn->port))) {
+	if (amqp_socket_open(socket, base_conn->hostname, base_conn->port)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-						  "Could not open socket connection to AMQP broker %s:%d status(%d) %s\n", base_conn->hostname,
-						  base_conn->port, amqp_status, amqp_error_string2(amqp_status));
+						  "Could not open socket connection to AMQP broker %s:%d\n", base_conn->hostname,
+						  base_conn->port);
 		goto err;
 	}
 
@@ -322,11 +319,10 @@ switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *base_conn, m
 										1,									   /* exclusive */
 										1,									   /* auto-delete */
 										amqp_empty_table);					   // args
-		queueName = amqp_bytes_malloc_dup(recv_queue->queue);
-		(*aux_conn)->queueName = queueName;
+		(*aux_conn)->queueName = amqp_bytes_malloc_dup(recv_queue->queue);
 		amqp_queue_bind(newConnection,						   // state
 						1,									   // channel
-						queueName,							   // queue
+						(*aux_conn)->queueName,							   // queue
 						amqp_cstring_bytes(reply_exchange),	   // exchange
 						amqp_cstring_bytes((*aux_conn)->uuid), // routing key
 						amqp_empty_table);					   // args

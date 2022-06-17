@@ -115,8 +115,6 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 	switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_key", uuid_str);
 	switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_exchange", profile->reply_exchange);
 
-	switch_malloc(amqp_message, sizeof(mod_amqp_message_t));
-	mod_amqp_xml_handler_routing_key(profile, amqp_message->routing_key, params, profile->format_fields);
 	if (profile->running && profile->conn_active) {
 		switch_mutex_lock(profile->mutex);
 		for (conn = profile->conn_aux; conn; conn = conn_next) {
@@ -139,6 +137,8 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 		switch_mutex_unlock(profile->mutex);
 
 		if (conn_tmp) {
+	                switch_malloc(amqp_message, sizeof(mod_amqp_message_t));
+	                mod_amqp_xml_handler_routing_key(profile, amqp_message->routing_key, params, profile->format_fields);
 			amqp_maybe_release_buffers(conn_tmp->state);
 			switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_queue", conn_tmp->uuid);
 			switch_event_serialize_json(params, &amqp_message->pjson);
@@ -154,6 +154,7 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 								  profile->circuit_breaker_ms / 1000.0, queue_size);
 
 				mod_amqp_util_msg_destroy(&amqp_message);
+				goto done;
 			}
 
 			// Start a command
@@ -218,7 +219,7 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 							}
 						}
 					}
-					if (strcmp(fs_resp_id, uuid_str) == 0) {
+					if (fs_resp_id && strcmp(fs_resp_id, uuid_str) == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got my message. Trying to parse...\n");
 						break;
 					}
@@ -228,16 +229,16 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 				}
 			}
 
-			if (res.reply_type != AMQP_RESPONSE_NORMAL ||
+			if (res.reply_type != AMQP_RESPONSE_NORMAL || 
 				!(xml = switch_xml_parse_str_dynamic((char *)envelope.message.body.bytes, SWITCH_TRUE))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
-			} else {
-				xml = NULL;
 			}
+
 
 			amqp_destroy_envelope(&envelope);
 		}
 	}
+done:
 	if (conn_tmp) {
 		switch_mutex_lock(profile->mutex);
 		conn_tmp->locked = 0;
