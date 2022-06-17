@@ -74,7 +74,7 @@ static void test_wait_for_uuid(char *uuid)
 static const char *test_wait_for_chan_var(switch_channel_t *channel, const char *seq) 
 {
 	int loop_count = 50;
-	const char *var = NULL, cseq = NULL;
+	const char *var = NULL, *cseq = NULL;
 	do {
 		cseq = switch_channel_get_variable(channel, "sip_cseq");
 		if (cseq && !strcmp(cseq,seq)){
