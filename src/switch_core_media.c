@@ -9584,6 +9584,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	switch_media_handle_t *smh;
 	int is_reinvite = 0;
 
+	// Use static global default from RTP poll timeout
+	uint32_t poll_timeout_s = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
+
 #ifdef HAVE_OPENSSL_DTLSv1_2_method
 			uint8_t want_DTLSv1_2 = 1;
 #else
@@ -9634,6 +9637,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	
 	if (want_DTLSv1_2) {
 		switch_channel_set_flag(session->channel, CF_WANT_DTLSv1_2);
+	}
+
+	// If global XML setting is defined, use that
+	{
+		char *val = switch_core_get_variable("telnyx_rtp_poll_timeout_s");
+		if (!zstr(val) && switch_is_number(val)) {
+			poll_timeout_s = atoi(val);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Using XML setting for RTP poll timeout (%u)\n", poll_timeout_s);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Using static global setting for RTP poll timeout (%u)\n", poll_timeout_s);
+		}
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -9840,7 +9854,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											   a_engine->read_impl.samples_per_packet,
 											   codec_ms,
 											   flags, timer_name, &err, switch_core_session_get_pool(session),
-											   0, 0);
+											   poll_timeout_s);
 		{
 			const char *val = NULL;
 			if (((val = switch_channel_get_variable(session->channel, "telnyx_voicemail")) && switch_true(val))) {
@@ -10135,9 +10149,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				//const char *port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 				char *remote_host = switch_rtp_get_remote_host(t_engine->rtp_session);
 				switch_port_t remote_port = switch_rtp_get_remote_port(t_engine->rtp_session);
-
-
-
+				
 				if (remote_host && remote_port && !strcmp(remote_host, t_engine->cur_payload_map->remote_sdp_ip) && remote_port == t_engine->cur_payload_map->remote_sdp_port) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Text params are unchanged for %s.\n",
 									  switch_channel_get_name(session->channel));
@@ -10169,7 +10181,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (t_engine->rtp_session && is_reinvite) {
 				const char *rport = NULL;
 				switch_port_t remote_rtcp_port = t_engine->remote_rtcp_port;
-
 				//switch_channel_clear_flag(session->channel, CF_REINVITE);
 
 				if (!remote_rtcp_port) {
@@ -10257,7 +10268,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 												   t_engine->cur_payload_map->remote_sdp_port,
 												   t_engine->cur_payload_map->pt,
 												   TEXT_TIMER_SAMPLES, TEXT_TIMER_MS * 1000, flags, NULL, &err, switch_core_session_get_pool(session),
-												   0, 0);
+												   poll_timeout_s);
 
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sTEXT RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
@@ -10480,7 +10491,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (v_engine->rtp_session && is_reinvite) {
 				const char *rport = NULL;
 				switch_port_t remote_rtcp_port = v_engine->remote_rtcp_port;
-
 				//switch_channel_clear_flag(session->channel, CF_REINVITE);
 
 				if (!remote_rtcp_port) {
@@ -10583,7 +10593,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 														 v_engine->cur_payload_map->remote_sdp_port,
 														 v_engine->cur_payload_map->pt,
 														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(session),
-														 0, 0);
+														 poll_timeout_s);
 
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",

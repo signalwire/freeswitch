@@ -2452,6 +2452,14 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "log-truncate")) {
 					int truncate = atoi(val);
 					switch_core_session_ctl(SCSC_LOG_TRUNCATE, &truncate);
+				} else if (!strcasecmp(var, "telnyx-rtp-poll-timeout-s") && !zstr(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting RTP blocking mode poll timeout\n");
+					if (!switch_is_number(val)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RTP blocking mode poll timeout set but is not a number - ignoring\n");
+					} else {
+						switch_core_set_variable("telnyx_rtp_poll_timeout_s", val);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set RTP blocking mode poll timeout to %s\n", val);
+					}
 				}
 			}
 		}

@@ -50,6 +50,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
 
 #define SWITCH_RTP_BUNDLE_INTERNAL_PT 21
+#define TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S 5
 
 typedef struct {
 	switch_rtp_hdr_t header;
@@ -260,7 +261,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool);
+												  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool, uint32_t poll_timeout_s);
 
 
 /*!
@@ -276,7 +277,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
   \param timer_name timer interface to use
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
-  \param bundle_port port used by bundled stream locally, for video thread this is the port where it will forward audio (internal bundle port on which audio is listening), and for audio this is the port where it will send RTP (external bundle port where video is listening)
   \return the new RTP session or NULL on failure
 */
 SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
@@ -286,7 +286,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool, switch_port_t bundle_internal_ports, switch_port_t bundle_external_port);
+											  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool, uint32_t poll_timeout_s);
 
 
 /*!

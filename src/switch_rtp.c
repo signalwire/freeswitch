@@ -345,6 +345,7 @@ struct switch_rtp {
 	switch_socket_t *sock_input, *sock_output, *rtcp_sock_input, *rtcp_sock_output;
 	switch_pollfd_t *read_pollfd, *rtcp_read_pollfd;
 	switch_pollfd_t *jb_pollfd;
+	uint32_t poll_timeout_s;
 
 	switch_sockaddr_t *local_addr, *rtcp_local_addr;
 	rtp_msg_t send_msg;
@@ -4899,7 +4900,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_pkt,
-												  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool)
+												  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool, uint32_t poll_timeout_s)
 {
 	switch_rtp_t *rtp_session = NULL;
 	switch_core_session_t *session = switch_core_memory_pool_get_data(pool, "__session");
@@ -5130,6 +5131,21 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
+	rtp_session->poll_timeout_s = poll_timeout_s;
+
+	{
+		const char *v = switch_channel_get_variable(channel, "telnyx_rtp_poll_timeout_s");
+		if (!zstr(v)) {
+			if (!switch_is_number(v)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RTP blocking mode poll timeout variable set but is not a number - ignoring\n");
+			} else {
+				rtp_session->poll_timeout_s = atoi(v);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Setting RTP poll timeout to %us (based on variable)\n", rtp_session->poll_timeout_s);
+			}
+		}
+	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTP poll timeout set to %us\n", rtp_session->poll_timeout_s);
+
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
 	
@@ -5148,8 +5164,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
 											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool,
-                                              switch_port_t bundle_internal_port,
-                                              switch_port_t bundle_external_port)
+											  uint32_t poll_timeout_s)
 {
 	switch_rtp_t *rtp_session = NULL;
 
@@ -5173,7 +5188,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
-	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool, poll_timeout_s) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
 
@@ -7981,7 +7996,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int check = 0;
 	int ret = -1;
 	int sleep_mss = 1000;
-	int poll_sec = 5;
+	int poll_sec = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
 	int poll_loop = 0;
 	int fdr = 0;
 	int rtcp_fdr = 0;
@@ -8001,6 +8016,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
 		sleep_mss = rtp_session->timer.interval * 1000;
 	}
+	poll_sec = rtp_session->poll_timeout_s;
 
 	READ_INC(rtp_session);
 
