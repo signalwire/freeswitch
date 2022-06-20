@@ -85,7 +85,6 @@
 #define MAX_SRTP_ERRS 100
 #define NTP_TIME_OFFSET 2208988800UL
 #define ZRTP_MAGIC_COOKIE 0x5a525450
-#define TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S 2
 static const switch_payload_t INVALID_PT = 255;
 
 #define DTMF_SANITY (rtp_session->one_second * 30)
@@ -4901,7 +4900,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_pkt,
-												  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool)
+												  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool, uint32_t poll_timeout_s)
 {
 	switch_rtp_t *rtp_session = NULL;
 	switch_core_session_t *session = switch_core_memory_pool_get_data(pool, "__session");
@@ -5132,15 +5131,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
-	rtp_session->poll_timeout_s = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
+	rtp_session->poll_timeout_s = poll_timeout_s;
 
 	{
 		const char *v = switch_channel_get_variable(channel, "telnyx_rtp_poll_timeout_s");
-		if (!zstr(v) && switch_true(v)) {
-			rtp_session->poll_timeout_s = atoi(v);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Using non-standard poll timeout %us\n", rtp_session->poll_timeout_s);
+		if (!zstr(v)) {
+			if (!switch_is_number(v)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RTP blocking mode poll timeout variable set but is not a number - ignoring\n");
+			} else {
+				rtp_session->poll_timeout_s = atoi(v);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Setting RTP poll timeout to %us (based on variable)\n", rtp_session->poll_timeout_s);
+			}
 		}
 	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTP poll timeout set to %us\n", rtp_session->poll_timeout_s);
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
@@ -5160,8 +5164,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
 											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool,
-                                              switch_port_t bundle_internal_port,
-                                              switch_port_t bundle_external_port)
+											  uint32_t poll_timeout_s)
 {
 	switch_rtp_t *rtp_session = NULL;
 
@@ -5185,7 +5188,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
-	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool, poll_timeout_s) != SWITCH_STATUS_SUCCESS) {
 		goto end;
 	}
 
