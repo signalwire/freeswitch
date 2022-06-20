@@ -2070,6 +2070,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									  (switch_stristr("cisco/spa50", ua) ||
 									  switch_stristr("cisco/spa525", ua)) ||
 									  switch_stristr("cisco/spa30", ua) ||
+									  switch_stristr("Fanvil", ua) ||
 									  switch_stristr("Grandstream", ua) ||
 									  switch_stristr("Yealink", ua) ||
 									  switch_stristr("Mitel", ua) ||
