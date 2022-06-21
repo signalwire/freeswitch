@@ -9584,9 +9584,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	switch_media_handle_t *smh;
 	int is_reinvite = 0;
 
-	// Use static global default from RTP poll timeout
-	uint32_t poll_timeout_s = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
-
 #ifdef HAVE_OPENSSL_DTLSv1_2_method
 			uint8_t want_DTLSv1_2 = 1;
 #else
@@ -9637,17 +9634,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	
 	if (want_DTLSv1_2) {
 		switch_channel_set_flag(session->channel, CF_WANT_DTLSv1_2);
-	}
-
-	// If global XML setting is defined, use that
-	{
-		char *val = switch_core_get_variable("telnyx_rtp_poll_timeout_s");
-		if (!zstr(val) && switch_is_number(val)) {
-			poll_timeout_s = atoi(val);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Using XML setting for RTP poll timeout (%u)\n", poll_timeout_s);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Using static global setting for RTP poll timeout (%u)\n", poll_timeout_s);
-		}
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -9853,8 +9839,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											   a_engine->cur_payload_map->pt,
 											   a_engine->read_impl.samples_per_packet,
 											   codec_ms,
-											   flags, timer_name, &err, switch_core_session_get_pool(session),
-											   poll_timeout_s);
+											   flags, timer_name, &err, switch_core_session_get_pool(session));
 		{
 			const char *val = NULL;
 			if (((val = switch_channel_get_variable(session->channel, "telnyx_voicemail")) && switch_true(val))) {
@@ -10267,9 +10252,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 												   t_engine->cur_payload_map->remote_sdp_ip,
 												   t_engine->cur_payload_map->remote_sdp_port,
 												   t_engine->cur_payload_map->pt,
-												   TEXT_TIMER_SAMPLES, TEXT_TIMER_MS * 1000, flags, NULL, &err, switch_core_session_get_pool(session),
-												   poll_timeout_s);
-
+												   TEXT_TIMER_SAMPLES, TEXT_TIMER_MS * 1000, flags, NULL, &err, switch_core_session_get_pool(session));
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sTEXT RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) ? "PROXY " : "",
@@ -10592,9 +10575,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 														 v_engine->cur_payload_map->remote_sdp_ip,
 														 v_engine->cur_payload_map->remote_sdp_port,
 														 v_engine->cur_payload_map->pt,
-														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(session),
-														 poll_timeout_s);
-
+														 1, 90000, flags, NULL, &err, switch_core_session_get_pool(session));
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%sVIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
 							  switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) ? "PROXY " : "",
