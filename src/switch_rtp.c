@@ -5164,10 +5164,12 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool,
-											  uint32_t poll_timeout_s)
+											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
+
+	// Use static global default from RTP poll timeout
+	uint32_t poll_timeout_s = TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S;
 
 	if (zstr(rx_host)) {
 		*err = "Missing local host";
@@ -5187,6 +5189,17 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 	if (!tx_port) {
 		*err = "Missing remote port";
 		goto end;
+	}
+
+	// If global XML setting is defined, use that
+	{
+		char *val = switch_core_get_variable("telnyx_rtp_poll_timeout_s");
+		if (!zstr(val) && switch_is_number(val)) {
+			poll_timeout_s = atoi(val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Using XML setting for RTP poll timeout (%us)\n", poll_timeout_s);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Using static global setting for RTP poll timeout (%us)\n", poll_timeout_s);
+		}
 	}
 
 	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, timer_name, err, pool, poll_timeout_s) != SWITCH_STATUS_SUCCESS) {
