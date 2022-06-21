@@ -365,6 +365,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			bson_append_long(&cdr, "profile_created_time", caller_profile->times->profile_created);
 			bson_append_long(&cdr, "progress_time", caller_profile->times->progress);
 			bson_append_long(&cdr, "progress_media_time", caller_profile->times->progress_media);
+			bson_append_long(&cdr, "ringback_delay_time", caller_profile->times->ringback_delay);
+			bson_append_long(&cdr, "first_early_rtp_packet_time", caller_profile->times->first_early_rtp_packet);
 			bson_append_long(&cdr, "answered_time", caller_profile->times->answered);
 			bson_append_long(&cdr, "bridged_time", caller_profile->times->bridged);
 			bson_append_long(&cdr, "last_hold_time", caller_profile->times->last_hold);

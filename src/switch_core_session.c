@@ -2392,6 +2392,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 							caller_profile->times->progress = v;
 						} else if (!strcmp(tag3->name, "progress_media_time")) {
 							caller_profile->times->progress_media = v;
+						} else if (!strcmp(tag3->name, "ringback_delay_time")) {
+							caller_profile->times->ringback_delay = v;
+						} else if (!strcmp(tag3->name, "first_early_rtp_packet_time")) {
+							caller_profile->times->first_early_rtp_packet = v;
 						} else if (!strcmp(tag3->name, "answered_time")) {
 							caller_profile->times->answered = v;
 						} else if (!strcmp(tag3->name, "hangup_time")) {

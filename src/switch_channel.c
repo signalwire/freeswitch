@@ -192,6 +192,7 @@ struct switch_channel {
 
 static void process_device_hup(switch_channel_t *channel);
 static void switch_channel_check_device_state(switch_channel_t *channel, switch_channel_callstate_t callstate);
+static switch_time_t select_ringback_delay(switch_time_t progress_time, switch_time_t first_early_rtp_packet);
 
 SWITCH_DECLARE(switch_hold_record_t *) switch_channel_get_hold_record(switch_channel_t *channel)
 {
@@ -2897,6 +2898,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 		caller_profile->times->answered = channel->caller_profile->times->answered;
 		caller_profile->times->progress = channel->caller_profile->times->progress;
 		caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
+		caller_profile->times->ringback_delay = channel->caller_profile->times->ringback_delay;
+		caller_profile->times->first_early_rtp_packet = channel->caller_profile->times->first_early_rtp_packet;
 		caller_profile->times->created = channel->caller_profile->times->created;
 		caller_profile->times->hungup = channel->caller_profile->times->hungup;
 		if (channel->caller_profile->caller_extension) {
@@ -3375,8 +3378,22 @@ SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel)
 	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
 		switch_mutex_lock(channel->profile_mutex);
 		channel->caller_profile->times->hungup = switch_micro_time_now();
+		channel->caller_profile->times->ringback_delay = select_ringback_delay(
+			channel->caller_profile->times->progress,
+			channel->caller_profile->times->first_early_rtp_packet);
 		switch_mutex_unlock(channel->profile_mutex);
 	}
+}
+
+SWITCH_DECLARE(void) switch_channel_set_first_early_rtp_packet_time(switch_channel_t *channel)
+{
+	switch_mutex_lock(channel->profile_mutex);
+	if (channel->caller_profile && channel->caller_profile->times 
+		&& switch_channel_test_flag(channel, CF_EARLY_MEDIA) 
+		&& !switch_channel_test_flag(channel, CF_ANSWERED)) {
+		channel->caller_profile->times->first_early_rtp_packet = switch_micro_time_now();
+	}
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 static switch_bool_t is_delay_disconnect(switch_channel_t *channel)
@@ -3943,6 +3960,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	if (channel->caller_profile && channel->caller_profile->times) {
 		switch_mutex_lock(channel->profile_mutex);
 		channel->caller_profile->times->answered = switch_micro_time_now();
+		channel->caller_profile->times->ringback_delay = select_ringback_delay(
+			channel->caller_profile->times->progress,
+			channel->caller_profile->times->first_early_rtp_packet);
+		// Calculate ringback delay
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
@@ -4607,13 +4628,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	char start[80] = "", resurrect[80] = "", answer[80] = "", hold[80],
 		bridge[80] = "", progress[80] = "", progress_media[80] = "", end[80] = "", tmp[80] = "",
 		profile_start[80] =	"";
-	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0, progressmsec = 0, progress_mediamsec = 0;
+	int32_t duration = 0, legbillsec = 0, billsec = 0, mduration = 0, billmsec = 0, legbillmsec = 0, progressmsec = 0, progress_mediamsec = 0, ringback_delaymsec = 0, first_early_rtp_packetmsec = 0;
 	int32_t answersec = 0, answermsec = 0, waitsec = 0, waitmsec = 0;
 	switch_time_t answerusec = 0;
-	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0, waitusec = 0;
+	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0, ringback_delaysec = 0, ringback_delayusec = 0, first_early_rtp_packetsec = 0, first_early_rtp_packetusec = 0, waitusec = 0;
 	time_t tt_created = 0, tt_answered = 0, tt_resurrected = 0, tt_bridged, tt_last_hold, tt_hold_accum,
-		tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_bridged = 0,
-		mtt_hungup = 0, tt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
+		tt_progress = 0, tt_progress_media = 0, tt_ringback_delay = 0, tt_first_early_rtp_packet = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_bridged = 0,
+		mtt_hungup = 0, tt_prof_created, mtt_progress = 0, mtt_progress_media = 0, mtt_ringback_delay = 0, mtt_first_early_rtp_packet = 0,
+		sip_invite_received = 0,tt_sip_invite_received = 0, mtt_sip_invite_received = 0;
 	void *pop;
 	char dtstr[SWITCH_DTMF_LOG_LEN + 1] = "";
 	int x = 0;
@@ -4768,6 +4790,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			free(stream.data);
 		}
 
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND)
+		{
+			const char *var = switch_channel_get_variable(channel, "sip_invite_stamp");
+			sip_invite_received = (time_t) atol(var);
+			if (sip_invite_received)
+			{
+				tt_sip_invite_received = (time_t) (sip_invite_received / 1000000);
+				mtt_sip_invite_received = (time_t) (sip_invite_received / 1000);
+			}
+		}
+
 		switch_time_exp_lt(&tm, caller_profile->times->hungup);
 		switch_strftime_nocheck(end, &retsize, sizeof(end), fmt, &tm);
 		switch_channel_set_variable(channel, "end_stamp", end);
@@ -4833,6 +4866,20 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 		switch_channel_set_variable(channel, "progress_media_uepoch", tmp);
 
+		tt_ringback_delay = (time_t) (caller_profile->times->ringback_delay / 1000000);
+		mtt_ringback_delay = (time_t) (caller_profile->times->ringback_delay / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_ringback_delay);
+		switch_channel_set_variable(channel, "ringback_delay_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->ringback_delay);
+		switch_channel_set_variable(channel, "ringback_delay_uepoch", tmp);
+
+		tt_first_early_rtp_packet = (time_t) (caller_profile->times->first_early_rtp_packet / 1000000);
+		mtt_first_early_rtp_packet = (time_t) (caller_profile->times->first_early_rtp_packet / 1000);
+		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_first_early_rtp_packet);
+		switch_channel_set_variable(channel, "first_early_rtp_packet_epoch", tmp);
+		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->first_early_rtp_packet);
+		switch_channel_set_variable(channel, "first_early_rtp_packet_uepoch", tmp);
+
 		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
 		mtt_hungup = (time_t) (caller_profile->times->hungup / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_hungup);
@@ -4880,6 +4927,18 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 			progress_mediausec = caller_profile->times->progress_media - caller_profile->times->created;
 		}
 
+		if (caller_profile->times->ringback_delay) {
+			ringback_delaysec = (int32_t) (tt_ringback_delay - (tt_sip_invite_received ? tt_sip_invite_received : tt_created));
+			ringback_delaymsec = (int32_t) (mtt_ringback_delay - (mtt_sip_invite_received ? mtt_sip_invite_received : mtt_created));
+			ringback_delayusec = caller_profile->times->ringback_delay - (sip_invite_received ? sip_invite_received : caller_profile->times->created);
+		}
+
+		if (caller_profile->times->first_early_rtp_packet) {
+			first_early_rtp_packetsec = (int32_t) (tt_first_early_rtp_packet - tt_created);
+			first_early_rtp_packetmsec = (int32_t) (mtt_first_early_rtp_packet - mtt_created);
+			first_early_rtp_packetusec = caller_profile->times->first_early_rtp_packet - caller_profile->times->created;
+		}
+
 	}
 
 	switch_channel_set_variable(channel, "last_app", last_app);
@@ -4904,6 +4963,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, progress_mediasec);
 	switch_channel_set_variable(channel, "progress_mediasec", tmp);
 
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, ringback_delaysec);
+	switch_channel_set_variable(channel, "ringback_delaysec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, first_early_rtp_packetsec);
+	switch_channel_set_variable(channel, "first_early_rtp_packetsec", tmp);
+
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillsec);
 	switch_channel_set_variable(channel, "flow_billsec", tmp);
 
@@ -4925,6 +4990,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", progress_mediamsec);
 	switch_channel_set_variable(channel, "progress_mediamsec", tmp);
 
+	switch_snprintf(tmp, sizeof(tmp), "%d", ringback_delaymsec);
+	switch_channel_set_variable(channel, "ringback_delaymsec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%d", first_early_rtp_packetmsec);
+	switch_channel_set_variable(channel, "first_early_rtp_packetmsec", tmp);
+
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillmsec);
 	switch_channel_set_variable(channel, "flow_billmsec", tmp);
 
@@ -4945,6 +5016,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progress_mediausec);
 	switch_channel_set_variable(channel, "progress_mediausec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, ringback_delayusec);
+	switch_channel_set_variable(channel, "ringback_delayusec", tmp);
+
+	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, first_early_rtp_packetusec);
+	switch_channel_set_variable(channel, "first_early_rtp_packetusec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, legbillusec);
 	switch_channel_set_variable(channel, "flow_billusec", tmp);
@@ -5559,6 +5636,18 @@ static switch_status_t create_device_record(switch_device_record_t **drecp, cons
 	*drecp = drec;
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_time_t select_ringback_delay(switch_time_t progress_time, switch_time_t first_early_rtp_packet_time)
+{
+	if (progress_time && first_early_rtp_packet_time) {
+		if (first_early_rtp_packet_time < progress_time) {
+			return first_early_rtp_packet_time;
+		} else {
+			return progress_time;
+		}
+	}
+	return progress_time ? progress_time : first_early_rtp_packet_time;
 }
 
 

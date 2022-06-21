@@ -276,7 +276,7 @@ struct switch_media_handle_s {
 	int video_write_thread_running;
 
 	switch_time_t last_text_frame;
-
+	switch_time_t first_audio_frame;
 };
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
@@ -3354,6 +3354,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			uint32_t bytes = 0;
 			int frames = 1;
 
+			if (smh->first_audio_frame == 0) {
+				switch_channel_set_first_early_rtp_packet_time(session->channel);
+				smh->first_audio_frame = switch_micro_time_now();
+			}
+
 			/* autofix timing */
 			if (!switch_test_flag((&engine->read_frame), SFF_CNG)) {
 				if (!engine->read_codec.implementation || !switch_core_codec_ready(&engine->read_codec)) {
@@ -3667,6 +3672,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 
 		if (audio_flow != SWITCH_MEDIA_FLOW_SENDRECV && audio_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if (smh->first_audio_frame == 0) {
+			switch_channel_set_first_early_rtp_packet_time(session->channel);
+			smh->first_audio_frame = switch_micro_time_now();
 		}
 	}
 

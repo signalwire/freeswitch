@@ -300,6 +300,12 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	if (!strcasecmp(name, "progress_media_time")) {
 		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 	}
+	if (!strcasecmp(name, "ringback_delay_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->ringback_delay);
+	}
+	if (!strcasecmp(name, "first_early_rtp_packet_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->first_early_rtp_packet);
+	}
 	if (!strcasecmp(name, "hungup_time")) {
 		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 	}
@@ -439,6 +445,8 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->progress);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Media-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->progress_media);
+		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Ringback-Delay", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->ringback_delay);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hungup);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);

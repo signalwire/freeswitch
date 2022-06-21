@@ -46,6 +46,7 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t answered;
 	switch_time_t progress;
 	switch_time_t progress_media;
+	switch_time_t ringback_delay;
 	switch_time_t hungup;
 	switch_time_t transferred;
 	switch_time_t resurrected;
@@ -54,6 +55,7 @@ SWITCH_BEGIN_EXTERN_C struct switch_channel_timetable {
 	switch_time_t hold_accum;
 	switch_time_t last_rtp_read_heartbeat;
 	switch_time_t last_rtp_write_heartbeat;
+ 	switch_time_t first_early_rtp_packet;
 	struct switch_channel_timetable *next;
 };
 
@@ -667,6 +669,7 @@ SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *app, switch_cha
 
 SWITCH_DECLARE(void) switch_channel_set_bridge_time(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel);
+SWITCH_DECLARE(void) switch_channel_set_first_early_rtp_packet_time(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_logical_direction(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, switch_call_direction_t direction);

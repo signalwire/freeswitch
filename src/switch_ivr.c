@@ -3143,6 +3143,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 			switch_xml_set_txt_d(time_tag, tmp);
 
+			if (!(time_tag = switch_xml_add_child_d(x_times, "ringback_delay_time", t_off++))) {
+				goto error;
+			}
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->ringback_delay);
+			switch_xml_set_txt_d(time_tag, tmp);
+
+			if (!(time_tag = switch_xml_add_child_d(x_times, "first_early_rtp_packet_time", t_off++))) {
+				goto error;
+			}
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->first_early_rtp_packet);
+			switch_xml_set_txt_d(time_tag, tmp);
+
 			if (!(time_tag = switch_xml_add_child_d(x_times, "answered_time", t_off++))) {
 				goto error;
 			}
@@ -3531,6 +3543,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
 			cJSON_AddItemToObject(j_times, "progress_media_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->ringback_delay);
+			cJSON_AddItemToObject(j_times, "ringback_delay_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->first_early_rtp_packet);
+			cJSON_AddItemToObject(j_times, "first_early_rtp_packet_time", cJSON_CreateString(tmp));
 
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 			cJSON_AddItemToObject(j_times, "answered_time", cJSON_CreateString(tmp));
