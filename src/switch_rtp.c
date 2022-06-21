@@ -1694,6 +1694,7 @@ static void normalised_ts_commit_dtmf_ts(switch_rtp_t *rtp_session, uint32_t ts)
 
 static void do_mos(switch_rtp_t *rtp_session) {
 	int R;
+	int cumulative_R;
 	
 	if ((switch_size_t)rtp_session->stats.inbound.recved < rtp_session->stats.inbound.flaws) {
 		rtp_session->stats.inbound.flaws = 0;
@@ -1724,15 +1725,15 @@ static void do_mos(switch_rtp_t *rtp_session) {
 	}
 
 	R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
+	cumulative_R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.cumulative_flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
 
 	if (R < 0 || R > 100) R = 100;
 
 	rtp_session->stats.inbound.R = R;
 	rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
 
-	rtp_session->stats.inbound.sum_R += R;
-	rtp_session->stats.inbound.sum_mos += rtp_session->stats.inbound.mos;
-	rtp_session->stats.inbound.counter_mos++;
+	rtp_session->stats.inbound.cumulative_R = cumulative_R;
+	rtp_session->stats.inbound.cumulative_mos = 1 + (0.035) * cumulative_R + (.000007) * cumulative_R * (cumulative_R-60) * (100-cumulative_R);
 		
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
 					  rtp_session_name(rtp_session),
