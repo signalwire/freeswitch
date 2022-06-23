@@ -41,6 +41,7 @@
 #include <switch_ssl.h>
 #include <switch_stun.h>
 #include <switch_nat.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
 #include <switch_msrp.h>
@@ -71,6 +72,10 @@
 #ifdef WIN32
 #define popen _popen
 #define pclose _pclose
+#endif
+
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
 #endif
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
@@ -446,7 +451,8 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
+			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
+			free(v);
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
@@ -1399,7 +1405,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_port_token(const char
 	} else if (strchr(list_name, '/')) {
 		if (strchr(list_name, ',')) {
 			char *list_name_dup = strdup(list_name);
-			char *argv[32];
+			char *argv[100]; /* MAX ACL */
 			int argc;
 
 			switch_assert(list_name_dup);
@@ -1852,6 +1858,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	memset(&runtime, 0, sizeof(runtime));
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
+	runtime.shutdown_cause = SWITCH_CAUSE_SYSTEM_SHUTDOWN;
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;
 	runtime.event_heartbeat_interval = 20;
@@ -2303,6 +2310,13 @@ static void switch_load_core_config(const char *file)
 						switch_core_set_variable("spawn_instead_of_system", "false");
 					}
 #endif
+				} else if (!strcasecmp(var, "exclude-error-log-from-xml-cdr") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_core_set_variable("exclude_error_log_from_xml_cdr", "true");
+					} else {
+						switch_core_set_variable("exclude_error_log_from_xml_cdr", "false");
+					}
 				} else if (!strcasecmp(var, "min-idle-cpu") && !zstr(val)) {
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
@@ -2343,6 +2357,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						runtime.timer_affinity = atoi(val);
 					}
+				} else if (!strcasecmp(var, "ice-resolve-candidate")) {
+					switch_core_media_set_resolveice(switch_true(val));
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
@@ -2556,6 +2572,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		free(stream.data);
 		free(cmd);
 	}
+
+#ifdef HAVE_SYSTEMD
+	sd_notifyf(0, "READY=1\n"
+		"MAINPID=%lu\n", (unsigned long) getpid());
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -2879,6 +2900,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
+#ifdef HAVE_SYSTEMD
+					sd_notifyf(0, "STOPPING=1\n");
+#endif
 #ifdef _MSC_VER
 					fclose(stdin);
 #endif
@@ -2995,6 +3019,12 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		switch_core_memory_reclaim_all();
 		newintval = 0;
 		break;
+	case SCSC_MDNS_RESOLVE:
+		switch_core_media_set_resolveice(!!oldintval);
+		break;
+	case SCSC_SHUTDOWN_CAUSE:
+		runtime.shutdown_cause = oldintval;
+		break;
 	}
 
 	if (intval) {
@@ -3050,7 +3080,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
-	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+	switch_core_session_hupall(runtime.shutdown_cause);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();

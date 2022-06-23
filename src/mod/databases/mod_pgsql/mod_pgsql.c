@@ -36,6 +36,7 @@
 #include <switch.h>
 
 #include <libpq-fe.h>
+#include <pg_config.h>
 
 #ifndef _WIN32
 #include <poll.h>
@@ -597,7 +598,7 @@ switch_status_t database_handle_exec_string(switch_database_interface_handle_t *
 		goto done;
 	} else {
 		switch (result->status) {
-#if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
+#if PG_VERSION_NUM >= 90002
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
 #endif
@@ -756,24 +757,29 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 		*result_out = res;
 		res->status = PQresultStatus(res->result);
 		switch (res->status) {
-//#if (POSTGRESQL_MAJOR_VERSION == 9 && POSTGRESQL_MINOR_VERSION >= 2) || POSTGRESQL_MAJOR_VERSION > 9
+#if PG_VERSION_NUM >= 90002
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
-//#endif
+#endif
 		case PGRES_TUPLES_OK:
 		{
 			res->rows = PQntuples(res->result);
 			res->cols = PQnfields(res->result);
 		}
 		break;
-//#if (POSTGRESQL_MAJOR_VERSION == 9 && POSTGRESQL_MINOR_VERSION >= 1) || POSTGRESQL_MAJOR_VERSION > 9
+#if PG_VERSION_NUM >= 90001
 		case PGRES_COPY_BOTH:
 			/* Added in PostgreSQL 9.1 */
-//#endif
+#endif
 		case PGRES_COPY_OUT:
 		case PGRES_COPY_IN:
 		case PGRES_COMMAND_OK:
 			break;
+#if PG_VERSION_NUM >= 140001
+		case PGRES_PIPELINE_ABORTED:
+		case PGRES_PIPELINE_SYNC:
+			break;
+#endif
 		case PGRES_EMPTY_QUERY:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Query (%s) returned PGRES_EMPTY_QUERY\n", handle->sql);
 		case PGRES_BAD_RESPONSE:

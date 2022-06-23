@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT(srtp, 1.4.2, mcgrew@cisco.com)
+AC_INIT(srtp, 2.4.0, mcgrew@cisco.com)
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE
 
@@ -286,6 +286,7 @@ else
    HMAC_OBJS="crypto/hash/hmac.o crypto/hash/sha1.o"
 fi
 AM_CONDITIONAL([ENABLE_OPENSSL],[test "${enable_openssl}" = "yes"])
+AM_CONDITIONAL([GCM],[test "${enable_openssl}" = "yes"])
 
 AC_SUBST(AES_ICM_OBJS)                              
 AC_SUBST(HMAC_OBJS)
@@ -319,21 +320,9 @@ if test "$enable_console" = "yes"; then
 fi
 AC_MSG_RESULT($enable_console)
 
-AC_MSG_CHECKING(whether to use GDOI key management)
-AC_ARG_ENABLE(gdoi,
-  [AS_HELP_STRING([--enable-gdoi], [enable GDOI key management])],
-  [], enable_gdoi=no)
-if test "$enable_gdoi" = "yes"; then
-   AC_DEFINE(SRTP_GDOI, 1, [Define to use GDOI.])
-   GDOI_OBJS=gdoi/srtp+gdoi.o
-   AC_SUBST(GDOI_OBJS)                              
-fi
-AC_MSG_RESULT($enable_gdoi)
-AM_CONDITIONAL([GDOI],[test "SRTP_GDOI" = "1"])
-
 AC_CONFIG_HEADERS(crypto/include/config.h:config_in.h)
 
-AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile libsrtp2.pc)
+AC_OUTPUT(Makefile crypto/Makefile doc/Makefile libsrtp2.pc)
 
 # This is needed when building outside the source dir.
 AS_MKDIR_P(crypto/cipher)

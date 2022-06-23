@@ -13,26 +13,37 @@ steps:
     - name: configure
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - git clone https://github.com/freeswitch/sofia-sip.git
       - cd sofia-sip && ./autogen.sh && ./configure.gnu && make -j`nproc` && make install && cd ..
-      - echo "applications/mod_test" >> modules.conf
       - echo 'codecs/mod_openh264' >> modules.conf
       - sed -i '/applications\\/mod_http_cache/s/^#//g' modules.conf
       - sed -i '/event_handlers\\/mod_rayo/s/^#//g' modules.conf
       - sed -i '/formats\\/mod_opusfile/s/^#//g' modules.conf
       - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
-      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1;
+      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
       - ./configure --enable-address-sanitizer
 
     - name: build
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - cd sofia-sip && make install && cd ..
       - echo '#!/bin/bash\nmake -j`nproc --all` |& tee ./unit-tests-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./build-status.txt\n' > build.sh
       - chmod +x build.sh
@@ -41,12 +52,19 @@ steps:
     - name: run-tests
       image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libsofia-sip-ua0 libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - cd sofia-sip && make install && cd ..
       - make install || true
       - cd tests/unit
+      - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
       - ./run-tests.sh
       - ls -la /cores
       - mkdir logs && (mv log_run-tests_*.html logs || true) && (mv backtrace_*.txt logs || true)
@@ -79,17 +97,23 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: always
       commands:
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - cp build/modules.conf.most modules.conf
       #Enable/Uncomment mods
       - echo 'codecs/mod_openh264' >> modules.conf
@@ -116,13 +140,19 @@ steps:
       - ./configure
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base:stretch
+      image: signalwire/freeswitch-public-base
       pull: always
+      environment:
+        REPOTOKEN:
+          from_secret: repotoken
       commands:
+      - echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf
       - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -yq remove libspandsp-dev
       - DEBIAN_FRONTEND=noninteractive apt-get -yq install libsofia-sip-ua-dev libspandsp3-dev
+      - export REPOTOKEN=''
+      - rm -rf /etc/apt/auth.conf
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-4.0 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-7 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -148,6 +178,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 5d5cfb225053294d7cf1a4fed88eaf9a3a53c99a7bad4dc7164eece336c8861a
+hmac: 8fd652a876c5578617608e516c37c156219c62a29b2f14114e876745a1aab597
 
 ...

@@ -625,6 +625,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 		const char *use_uuid;
+		const char *use_external_id;
 		switch_core_session_t *other_session = NULL;
 
 		switch_assert(peer_channel);
@@ -643,6 +644,17 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
 								  switch_channel_get_name(peer_channel), use_uuid);
+			}
+		}
+
+		if ((use_external_id = switch_event_get_header(var_event, "origination_external_id"))) {
+			if (switch_core_session_set_external_id(*new_session, use_external_id) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "%s set external_id=%s\n", switch_channel_get_name(peer_channel),
+								  use_external_id);
+				switch_event_del_header(var_event, "origination_external_id");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set external_id=%s FAILED\n",
+								  switch_channel_get_name(peer_channel), use_external_id);
 			}
 		}
 
@@ -827,6 +839,8 @@ static const char *message_names[] = {
 	"RING_EVENT",
 	"RESAMPLE_EVENT",
 	"HEARTBEAT_EVENT",
+	"SESSION_ID",
+	"PROMPT",
 	"INVALID"
 };
 
@@ -1556,6 +1570,9 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
+	if ((*session)->external_id) {
+		switch_core_hash_delete(session_manager.session_table, (*session)->external_id);
+	}
 	if (session_manager.session_count) {
 		session_manager.session_count--;
 		if (session_manager.session_count == 0) {
@@ -1568,7 +1585,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	if ((*session)->plc) {
-		plc_free((*session)->plc);
+		switch_plc_free((*session)->plc);
 		(*session)->plc = NULL;
 	}
 
@@ -1779,8 +1796,10 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 #ifdef DEBUG_THREAD_POOL
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) (intptr_t) thread);
 #endif
+			td->running = 1;
 			td->func(thread, td->obj);
-
+			td->running = 0;
+			
 			if (td->pool) {
 				switch_memory_pool_t *pool = td->pool;
 				td = NULL;
@@ -1896,6 +1915,15 @@ SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_d
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_wait(switch_thread_data_t *td, int ms)
+{
+	while(!td->running && --ms > 0) {
+		switch_cond_next();
+	}
+
+	return ms > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TIMEOUT;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_INUSE;
@@ -1919,7 +1947,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session)
 {
@@ -2039,6 +2066,38 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	switch_channel_event_set_data(session->channel, event);
 	switch_event_fire(&event);
 
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(switch_core_session_t *session, const char *use_external_id)
+{
+	switch_assert(use_external_id);
+
+	if (session->external_id && !strcmp(use_external_id, session->external_id)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (strcmp(use_external_id, session->uuid_str) && switch_core_hash_find(session_manager.session_table, use_external_id)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Duplicate External ID!\n");
+		switch_mutex_unlock(runtime.session_hash_mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_channel_set_variable(session->channel, "session_external_id", use_external_id);
+
+	if (session->external_id && strcmp(session->external_id, session->uuid_str)) {
+		switch_core_hash_delete(session_manager.session_table, session->external_id);
+	}
+
+	session->external_id = switch_core_session_strdup(session, use_external_id);
+
+	if (strcmp(session->external_id, session->uuid_str)) {
+		switch_core_hash_insert(session_manager.session_table, session->external_id, session);
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2528,6 +2587,11 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
 	return session->uuid_str;
 }
 
+SWITCH_DECLARE(const char *) switch_core_session_get_external_id(switch_core_session_t *session)
+{
+	if (!session) return NULL;
+	return session->external_id;
+}
 
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 {
@@ -2785,6 +2849,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	int scope = 0;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *app_uuid = uuid_str;
+	switch_bool_t expand_variables = !switch_true(switch_channel_get_variable(session->channel, "app_disable_expand_variables"));
 
 	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
 		app_uuid = (char *)app_uuid_var;
@@ -2802,10 +2867,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	app = application_interface->interface_name;
 
 	if (arg) {
-		expanded = switch_channel_expand_variables(session->channel, arg);
+		if (expand_variables) {
+			expanded = switch_channel_expand_variables(session->channel, arg);
+		} else {
+			expanded = (char *)arg;
+		}
 	}
 
-	if (expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
+	if (expand_variables && expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
 		char *p, *dup;
 		switch_event_t *ovars = NULL;
 

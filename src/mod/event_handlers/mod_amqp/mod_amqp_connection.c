@@ -116,6 +116,14 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 	amqp_status = -1;
 
 	while (connection_attempt && amqp_status){
+		if (connection_attempt->ssl_on == 1) {
+			amqp_set_initialize_ssl_library(connection_attempt->ssl_on);
+			if (!(socket = amqp_ssl_socket_new(newConnection))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not create SSL socket\n");
+				goto err;
+			}
+			amqp_ssl_socket_set_verify_peer(socket, connection_attempt->ssl_verify_peer);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile[%s] trying to connect to AMQP broker %s:%d\n",
 						  profile_name, connection_attempt->hostname, connection_attempt->port);
 
@@ -191,6 +199,8 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	char *name = (char *) switch_xml_attr_soft(cfg, "name");
 	char *hostname = NULL, *virtualhost = NULL, *username = NULL, *password = NULL;
 	unsigned int port = 0, heartbeat = 0;
+	amqp_boolean_t ssl_on = 0;
+	amqp_boolean_t ssl_verify_peer = 1;
 
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection missing name attribute\n%s\n", switch_xml_toxml(cfg, 1));
@@ -233,6 +243,10 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 			if (interval && interval > 0) {
 				heartbeat = interval;
 			}
+		} else if (!strncmp(var, "ssl_on", 3) && switch_true(val) == SWITCH_TRUE) {
+			ssl_on = 1;
+		} else if (!strncmp(var, "ssl_verify_peer", 15) && switch_true(val) == SWITCH_FALSE) {
+			ssl_verify_peer = 0;
 		}
 	}
 
@@ -242,6 +256,8 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	new_con->password = password ? password : "guest";
 	new_con->port = port ? port : 5672;
 	new_con->heartbeat = heartbeat ? heartbeat : 0;
+	new_con->ssl_on = ssl_on;
+	new_con->ssl_verify_peer = ssl_verify_peer;
 
 	*conn = new_con;
 	return SWITCH_STATUS_SUCCESS;

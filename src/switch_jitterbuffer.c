@@ -640,7 +640,6 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 
 	node->packet = *packet;
 	node->len = len;
-	memcpy(node->packet.body, packet->body, len);
 
 	switch_core_inthash_insert(jb->node_hash, node->packet.header.seq, node);
 
@@ -1006,10 +1005,10 @@ SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t t
 		frame->seq = ntohs(node->packet.header.seq);
 		frame->timestamp = ntohl(node->packet.header.ts);
 		frame->m = node->packet.header.m;
-		frame->datalen = node->len - 12;
+		frame->datalen = node->len - SWITCH_RTP_HEADER_LEN;
 
-		if (frame->data && frame->buflen > node->len - 12) {
-			memcpy(frame->data, node->packet.body, node->len - 12);
+		if (frame->data && frame->buflen > node->len - SWITCH_RTP_HEADER_LEN) {
+			memcpy(frame->data, node->packet.body, node->len - SWITCH_RTP_HEADER_LEN);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1221,9 +1220,9 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 	uint32_t i;
 	uint16_t want = ntohs(jb->next_seq), got = ntohs(packet->header.seq);
 
-	if (len >= sizeof(switch_rtp_packet_t)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "trying to put %" SWITCH_SIZE_T_FMT " bytes exceeding buffer, truncate to %" SWITCH_SIZE_T_FMT "\n", len, sizeof(switch_rtp_packet_t));
-		len = sizeof(switch_rtp_packet_t);
+	if (len >= SWITCH_RTP_MAX_PACKET_LEN) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "trying to put %" SWITCH_SIZE_T_FMT " bytes exceeding buffer, truncate to %" SWITCH_SIZE_T_FMT "\n", len, SWITCH_RTP_MAX_PACKET_LEN);
+		len = SWITCH_RTP_MAX_PACKET_LEN;
 	}
 
 	switch_mutex_lock(jb->mutex);
@@ -1279,7 +1278,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 		}
 	}
 
-
 	add_node(jb, packet, len);
 
 	if (switch_test_flag(jb, SJB_QUEUE_ONLY) && jb->max_packet_len && jb->max_frame_len * 2 > jb->max_packet_len &&
@@ -1307,7 +1305,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet_by_seq(switch_jb_t *jb, uin
 		jb_debug(jb, 2, "Found buffered seq: %u\n", ntohs(seq));
 		*packet = node->packet;
 		*len = node->len;
-		memcpy(packet->body, node->packet.body, node->len);
 		packet->header.version = 2;
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
@@ -1461,7 +1458,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		*packet = node->packet;
 		*len = node->len;
 		jb->last_len = *len;
-		memcpy(packet->body, node->packet.body, node->len);
 		packet->header.version = 2;
 		hide_node(node, SWITCH_TRUE);
 
@@ -1504,7 +1500,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 	
 	return status;
 }
-
 
 /* For Emacs:
  * Local Variables:

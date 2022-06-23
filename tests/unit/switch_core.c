@@ -30,8 +30,6 @@
  *
  */
 #include <switch.h>
-#include <stdlib.h>
-
 #include <test/switch_test.h>
 
 #if defined(HAVE_OPENSSL)
@@ -52,6 +50,50 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+		FST_TEST_BEGIN(test_switch_event_add_header_leak)
+		{
+			switch_event_t* event;
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[0]", "1");
+				switch_event_fire(&event);
+			}
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[5000]", "12");
+				switch_event_fire(&event);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_xml_free_attr)
+		{
+			switch_xml_t parent_xml = switch_xml_new("xml");
+			switch_xml_t xml = switch_xml_add_child_d(parent_xml, "test", 1);
+			switch_xml_set_attr(xml, "a1", "v1");
+			switch_xml_set_attr_d(xml, "a2", "v2");
+			switch_xml_free(parent_xml);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_xml_set_attr)
+		{
+			switch_xml_t parent_xml = switch_xml_new("xml");
+			switch_xml_t xml = switch_xml_add_child_d(parent_xml, "test", 1);
+			switch_xml_set_attr_d(xml, "test1", "1");
+			switch_xml_set_attr(xml, "a1", "v1");
+			switch_xml_set_attr_d(xml, "a2", "v2");
+			switch_xml_set_attr(xml, "test1", NULL);
+			switch_xml_set_attr_d(xml, "test2", "2");
+			switch_xml_set_attr_d(xml, "a3", "v3");
+			switch_xml_set_attr(xml, "test2", NULL);
+			switch_xml_set_attr(xml, "a1", NULL);
+			switch_xml_set_attr(xml, "a2", NULL);
+			switch_xml_set_attr(xml, "a3", NULL);
+			switch_xml_free(parent_xml);
+		}
+		FST_TEST_END()
 
 #ifdef HAVE_OPENSSL
 		FST_TEST_BEGIN(test_md5)
@@ -237,6 +279,84 @@ FST_CORE_BEGIN("./conf")
 			fst_check_int_equals(switch_safe_atoll("9275806", 0), 9275806);
 			fst_check_int_equals(switch_safe_atoll("", 2), 0);
 			fst_check_int_equals(switch_safe_atoll(0, 3), 3);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_dup)
+		{
+			char *magicnumber = malloc(9);
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			void *hash_val;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			snprintf(magicnumber, 9, "%s", "DEADBEEF");
+			switch_core_hash_insert_dup(hash, "test", (const char *)magicnumber);
+			snprintf(magicnumber, 9, "%s", "BAADF00D");
+
+			hi = switch_core_hash_first(hash);
+			switch_core_hash_this(hi, NULL, NULL, &hash_val);
+			fst_check_string_equals(hash_val, "DEADBEEF");
+			switch_safe_free(hash_val);
+			free(magicnumber);
+			free(hi);
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_alloc)
+		{
+			char *item;
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			void *hash_val;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			item = switch_core_hash_insert_alloc(hash, "test", 10);
+			fst_requires(item);
+			snprintf(item, 9, "%s", "DEADBEEF");
+
+			hi = switch_core_hash_first(hash);
+			switch_core_hash_this(hi, NULL, NULL, &hash_val);
+			fst_check_string_equals(hash_val, "DEADBEEF");
+			free(hi);
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+			free(item);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_pointer)
+		{
+			int i, sum = 0;
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			for (i = 0; i < 10; i++) {
+				int *num = malloc(sizeof(int));
+				*num = i;
+				fst_check_int_equals(switch_core_hash_insert_pointer(hash, (void*)num), SWITCH_STATUS_SUCCESS);
+			}
+
+			i = 0;
+			for (hi = switch_core_hash_first(hash); hi; hi = switch_core_hash_next(&hi)) {
+				void *hash_val;
+				switch_core_hash_this(hi, NULL, NULL, &hash_val);
+				sum += *(int*)hash_val;
+				free(hash_val);
+				i++;
+			}
+
+			fst_check_int_equals(i, 10);
+			fst_check_int_equals(sum, 45);
+
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
 		}
 		FST_TEST_END()
 	}
