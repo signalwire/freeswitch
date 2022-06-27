@@ -61,7 +61,7 @@ FST_TEARDOWN_END()
 		switch_rtp_stats_t *stats;
 		switch_core_new_memory_pool(&pool);
 		
-		rtp_session = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "soft", &err, pool, 0, 0);
+		rtp_session = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "soft", &err, pool);
 		fst_xcheck(rtp_session != NULL, "get RTP session");
 		fst_requires(rtp_session);
 		fst_requires(switch_rtp_ready(rtp_session));
@@ -98,7 +98,7 @@ FST_TEARDOWN_END()
 		switch_core_memory_pool_set_data(pool, "__session", session);
 		session = switch_core_memory_pool_get_data(pool, "__session");
 		fst_requires(session);
-		rtp_session = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "soft", &err, pool, 0, 0);
+		rtp_session = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "soft", &err, pool);
 		fst_xcheck(rtp_session != NULL, "switch_rtp_new()");
 		fst_requires(switch_rtp_ready(rtp_session));
 		switch_rtp_activate_rtcp(rtp_session, 5, rx_port + 1, 0);
