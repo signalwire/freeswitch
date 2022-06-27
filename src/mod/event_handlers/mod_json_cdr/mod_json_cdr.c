@@ -310,12 +310,25 @@ static void process_cdr(cdr_data_t *data)
 				} else {
 					if(!zstr(data->tmpdir)) {
 						char *move_path = switch_mprintf("%s%s%s", data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
-						if(move_path && rename(path, move_path) != -1) {
-							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Fail to move CDR [%s] to [%s]\n", data->filename, data->logdir);
+						if(move_path) {
+							if (rename(path, move_path) == 0) {
+								switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
+							} else {
+								// Lets fallback to copy and delete file
+								switch_memory_pool_t *pool = NULL;
+								switch_core_new_memory_pool(&pool);
+								if(pool && switch_file_copy(path, move_path, SWITCH_FPROT_FILE_SOURCE_PERMS, pool) == SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Fail to move CDR [%s] to [%s] - %s\n", data->filename, data->logdir, strerror(errno));
+								}
+
+								if(pool) {
+									switch_core_destroy_memory_pool(&pool);
+								}
+							}
+							switch_safe_free(move_path);
 						}
-						switch_safe_free(move_path);
 					}
 				}
 			} else {
