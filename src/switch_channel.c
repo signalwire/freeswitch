@@ -4793,8 +4793,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND)
 		{
 			const char *var = switch_channel_get_variable(channel, "sip_invite_stamp");
-			sip_invite_received = (time_t) atol(var);
-			if (sip_invite_received)
+			if (!zstr(var) && (sip_invite_received = (time_t) atol(var)) > 0)
 			{
 				tt_sip_invite_received = (time_t) (sip_invite_received / 1000000);
 				mtt_sip_invite_received = (time_t) (sip_invite_received / 1000);
