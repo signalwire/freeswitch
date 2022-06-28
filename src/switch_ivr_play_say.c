@@ -2542,6 +2542,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 	channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, NULL);
+	switch_channel_set_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE, NULL);
 
 	if (var_name) {
 		switch_channel_set_variable(channel, var_name, NULL);
