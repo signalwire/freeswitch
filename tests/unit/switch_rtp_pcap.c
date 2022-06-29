@@ -76,6 +76,7 @@ struct sniff_ip {
 #define IP_HL(ip)		(((ip)->ip_vhl) & 0x0f)
 
 /* switch_rtp.c - calc_local_lsr_now()  */
+#if 0
 static inline uint32_t test_calc_local_lsr_now(switch_time_t now, uint32_t past /*milliseconds*/) 
 {
 //	switch_time_t now;
@@ -90,7 +91,6 @@ static inline uint32_t test_calc_local_lsr_now(switch_time_t now, uint32_t past 
 	return lsr_now;
 }
 
-#if 0
 static void test_prepare_rtcp(void *rtcp_packet, float est_last, uint32_t rtt, uint8_t loss) 
 {
 	/* taken from switch_rtp.c, rtcp_generate_sender_info() */
