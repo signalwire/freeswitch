@@ -748,6 +748,7 @@ typedef struct conference_obj {
 	int super_canvas_show_all_layers;
 	int canvas_running_count;
 	switch_mutex_t *canvas_mutex;
+	switch_mutex_t *relate_mutex;
 	switch_hash_t *layout_hash;
 	switch_hash_t *layout_group_hash;
 	switch_fps_t video_fps;
