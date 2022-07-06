@@ -591,7 +591,7 @@ skiptest:
 			char count1[20]="";
 			int sipp_ret;
 
-			/* check without 407 Proxy Authentication. If count not 0 fail case. */
+			/* check without 407 Proxy Authentication not Required. If count not 0 fail case. */
 			sipp_ret = run_sipp(local_ip_v4, 5065, 6091, "1001", "sipp-scenarios/uac_subscriber.xml", auth_password, "");
 			if (sipp_ret < 0 || sipp_ret == 127) {
 				fst_check(!"sipp not found");
