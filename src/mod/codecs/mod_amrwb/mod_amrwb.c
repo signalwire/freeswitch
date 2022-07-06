@@ -38,7 +38,10 @@
 #include "switch.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load);
-SWITCH_MODULE_DEFINITION(mod_amrwb, mod_amrwb_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amrwb_unload);
+SWITCH_MODULE_DEFINITION(mod_amrwb, mod_amrwb_load, mod_amrwb_unload, NULL);
+switch_mutex_t *global_lock;
+char AMRWB_CONFIGURATION[2000];
 
 #ifndef AMRWB_PASSTHROUGH
 #include "opencore-amrwb/dec_if.h" /*AMR-WB decoder API*/
@@ -88,7 +91,9 @@ static struct {
 	switch_byte_t volte;
 	switch_byte_t adjust_bitrate;
 	switch_byte_t force_oa; /*force OA when originating*/
+	switch_byte_t force_be;
 	switch_byte_t mode_set_overwrite;
+	switch_byte_t mode_set_overwrite_with_default_bitrate;
 	struct amrwb_context context;
 	int debug;
 } globals;
@@ -216,11 +221,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		context->enc_mode = globals.default_bitrate;
 
 		/* octet-align = 0  - per RFC - if there's no `octet-align` FMTP value then BE is employed */
-		if (!globals.force_oa) {
-			switch_clear_flag(context, AMRWB_OPT_OCTET_ALIGN);
-		} else {
-			switch_set_flag(context, AMRWB_OPT_OCTET_ALIGN);
-		}
+		switch_clear_flag(context, AMRWB_OPT_OCTET_ALIGN);
 
 		if (codec->fmtp_in) {
 			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -275,7 +276,18 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			}
 		}
 
+		if (globals.force_oa) {
+			switch_set_flag(context, AMRWB_OPT_OCTET_ALIGN);
+		}
+
+		if (globals.force_be) {
+			switch_clear_flag(context, AMRWB_OPT_OCTET_ALIGN);
+		}
+
 		if (context->enc_modes && !globals.mode_set_overwrite) {
+
+			/* If inbound fmtp has mode-set and XML overwrite is not set, then mirror these mode-set */
+
 			/* choose the highest mode (bitrate) for high audio quality. */
 			for (i = SWITCH_AMRWB_MODES-2; i > -1; i--) {
 				if (context->enc_modes & (1 << i)) {
@@ -293,8 +305,24 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			}
 
 		} else {
-			/* use default mode-set */
-			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", context->enc_mode);
+
+			/* It is inbound fmtp with no mode-set or outbound */
+
+			if (globals.mode_set_overwrite_with_default_bitrate) {
+				fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", globals.default_bitrate);
+			} else {
+				char modes[100] = { 0 };
+				int i = 0, j = 0;
+
+				for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
+					if (globals.context.enc_modes & (1 << i)) {
+						j++;
+						snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), j > 1 ? ",%d" : "%d", i);
+					}
+				}
+
+				fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%s", modes);
+			}
 		}
 
 		if (globals.adjust_bitrate) {
@@ -502,7 +530,7 @@ static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 {
 	char buf[256] = { 0 };
 #ifndef AMRWB_PASSTHROUGH
-	int i = 0;
+	int i = 0, j =0;
 #endif
 
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "octet-align=%d; ", octet_align);
@@ -512,7 +540,8 @@ static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 	if (globals.context.enc_modes && !globals.mode_set_overwrite) {
 			for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
 				if (globals.context.enc_modes & (1 << i)) {
-					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), i > 0 ? ",%d" : "mode-set=%d", i);
+					j++;
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), j > 1 ? ",%d" : "mode-set=%d", i);
 				}
 			}
 	} else {
@@ -554,6 +583,51 @@ SWITCH_STANDARD_API(mod_amrwb_debug)
 }
 #endif
 
+static void mod_amrwb_configuration_snprintf(void) {
+	char modes[100] = { 0 };
+	int i = 0, j = 0;
+
+	for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
+		if (globals.context.enc_modes & (1 << i)) {
+			j++;
+			snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), j > 1 ? ",%d" : "%d", i);
+		}
+	}
+
+	snprintf(AMRWB_CONFIGURATION, sizeof(AMRWB_CONFIGURATION),
+			"modes: %s, "
+			"mode-set-overwrite: %d, "
+			"mode-set-overwrite-with-default-bitrate: %d, "
+			"default-bitrate: %d, "
+			"volte: %d, "
+			"adjust-bitrate: %d, "
+			"force-oa: %d, "
+			"force-be: %d, "
+			"debug: %d\n",
+			modes,
+			globals.mode_set_overwrite,
+			globals.mode_set_overwrite_with_default_bitrate,
+			globals.default_bitrate,
+			globals.volte,
+			globals.adjust_bitrate,
+			globals.force_oa,
+			globals.force_be,
+			globals.debug
+	);
+}
+
+#define AMRWB_SHOW_SYNTAX ""
+SWITCH_STANDARD_API(mod_amrwb_show)
+{
+	if (stream && stream->write_function) {
+		switch_mutex_lock(global_lock);
+		mod_amrwb_configuration_snprintf();
+		switch_mutex_unlock(global_lock);
+		stream->write_function(stream, AMRWB_CONFIGURATION);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /* Registration */
 SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 {
@@ -568,6 +642,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.default_bitrate = SWITCH_AMRWB_DEFAULT_BITRATE;
+	globals.mode_set_overwrite_with_default_bitrate = 1;
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		if ((settings = switch_xml_child(cfg, "settings"))) {
@@ -587,18 +662,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 				if (!strcasecmp(var, "force-oa")) {
 					globals.force_oa = (switch_byte_t) atoi(val);
 				}
+				if (!strcasecmp(var, "force-be")) {
+					globals.force_be = (switch_byte_t) atoi(val);
+				}
 				if (!strcasecmp(var, "mode-set-overwrite")) {
 					globals.mode_set_overwrite = (switch_byte_t) atoi(val);
 				}
+				if (!strcasecmp(var, "mode-set-overwrite-with-default-bitrate")) {
+					globals.mode_set_overwrite_with_default_bitrate = (switch_byte_t) atoi(val);
+				}
 				if (!strcasecmp(var, "mode-set")) {
-						int y, m_argc;
-						char *m_argv[SWITCH_AMRWB_MODES-1]; /* AMRWB has 9 modes */
-						m_argc = switch_separate_string(val, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
-						for (y = 0; y < m_argc; y++) {
-							globals.context.enc_modes |= (1 << atoi(m_argv[y]));
-							globals.context.enc_mode = atoi(m_argv[y]);
-						}
+					int y, m_argc;
+					char *m_argv[SWITCH_AMRWB_MODES-1]; /* AMRWB has 9 modes */
+					m_argc = switch_separate_string(val, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+					for (y = 0; y < m_argc; y++) {
+						globals.context.enc_modes |= (1 << atoi(m_argv[y]));
+						globals.context.enc_mode = atoi(m_argv[y]);
 					}
+				}
+				if (!strcasecmp(var, "debug")) {
+					globals.debug = (switch_byte_t) atoi(val);
+				}
 			}
 		}
 	}
@@ -617,6 +701,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 	switch_console_set_complete("add amrwb_debug on");
 	switch_console_set_complete("add amrwb_debug off");
 #endif
+	SWITCH_ADD_API(commands_api_interface, "amrwb_show", "Show AMR-WB configuration", mod_amrwb_show, AMRWB_SHOW_SYNTAX);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Octet Aligned");
 
@@ -641,7 +726,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;
 #endif
+
+	switch_mutex_init(&global_lock, SWITCH_MUTEX_NESTED, pool);
+	mod_amrwb_configuration_snprintf();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "AMRWB config: %s", AMRWB_CONFIGURATION);
+
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amrwb_unload) {
+	switch_mutex_destroy(global_lock);
 	return SWITCH_STATUS_SUCCESS;
 }
 
