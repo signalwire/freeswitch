@@ -2882,8 +2882,18 @@ static void check_media_timeout_params(switch_core_session_t *session, switch_rt
 
 	if (switch_rtp_ready(engine->rtp_session) && engine->media_timeout) {
 		switch_rtp_set_media_timeout(engine->rtp_session, engine->media_timeout);
-	}
+		if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+			/* the values are in milliseconds, not in seconds as the deprecated rtp_timeout_sec */
+			engine->max_missed_packets = (engine->read_impl.samples_per_second * engine->media_timeout / 1000) / engine->read_impl.samples_per_packet;
 
+			switch_rtp_set_max_missed_packets(engine->rtp_session, engine->max_missed_packets);
+			if (!engine->media_hold_timeout) {
+				engine->media_hold_timeout = engine->media_timeout * 10;
+			}
+
+			engine->max_missed_hold_packets = (engine->read_impl.samples_per_second * engine->media_hold_timeout / 1000) / engine->read_impl.samples_per_packet;
+		}
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,

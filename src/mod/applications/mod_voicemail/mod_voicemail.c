@@ -5430,7 +5430,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 
 	if (!msg_order) {
 		msg_order = "ASC";
-	} else if (strcasecmp(msg_order, "ASC") || strcasecmp(msg_order, "DESC")) {
+	} else if (strcasecmp(msg_order, "ASC") && strcasecmp(msg_order, "DESC")) {
 		stream->write_function(stream, "-ERR Bad Argument: '%s'\n", msg_order);
 		goto done;
 	}
