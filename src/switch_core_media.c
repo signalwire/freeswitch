@@ -5562,6 +5562,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int rtcp_auto_audio = 0, rtcp_auto_video = 0;
 	int got_audio_rtcp = 0, got_video_rtcp = 0;
 	switch_port_t audio_port = 0, video_port = 0;
+	int amrwb_offerings_n = 0;
+	int amrwb_offerings_rejected_n = 0;
 
 	switch_assert(session);
 
@@ -6224,6 +6226,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				uint32_t map_bit_rate = 0;
 				switch_codec_fmtp_t codec_fmtp = { 0 };
 				int map_channels = map->rm_params ? atoi(map->rm_params) : 1;
+				int amrwb_matched = 0;
 
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
@@ -6298,7 +6301,22 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						map_bit_rate = 32000;
 					}
 				} else {
-					if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
+					switch_status_t s = SWITCH_STATUS_FALSE;
+
+					// Count AMR-WB offerings
+					if (!strcasecmp(map->rm_encoding, "AMR-WB") && !amrwb_offerings_n) {
+						sdp_rtpmap_t *mp = NULL;
+						for (mp = m->m_rtpmaps; mp; mp = mp->rm_next) {
+							if (!strcasecmp(mp->rm_encoding, "AMR-WB")) {
+								++amrwb_offerings_n;
+							}
+						}
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "There is %d AMR-WB rtpmap%s\n",
+								amrwb_offerings_n, amrwb_offerings_n == 1 ? "" : "s");
+					}
+
+					s = switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp);
+					if (s == SWITCH_STATUS_SUCCESS) {
 						if (codec_fmtp.bits_per_second) {
 							map_bit_rate = codec_fmtp.bits_per_second;
 						}
@@ -6345,6 +6363,20 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						match = 0;
 					}
 
+					/*
+					 * Check AMR-WB codec preferences in case multiple offerings are present in incoming fmtp.
+					 * Reject match if codec ignores the candidate codec.
+					 * If this is last codec, accept it (in case of multiple, they could have been rejected but last should get matched
+					 * to any AMR-WB implementation loaded).
+					 */
+					if (amrwb_offerings_n > 1) {
+						if (amrwb_offerings_rejected_n + 1 < amrwb_offerings_n) {
+							if (SWITCH_STATUS_IGNORE == switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) {
+								match = 0;
+							}
+						}
+					}
+
 					if (match && remote_codec_rate && codec_rate && remote_codec_rate != codec_rate && (!strcasecmp(map->rm_encoding, "pcma") ||
 																							  !strcasecmp(map->rm_encoding, "pcmu"))) {
 						/* if the sampling rate is specified and doesn't match, this is not a codec match for G.711 */
@@ -6389,12 +6421,23 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 										  "Audio Codec Compare [%s:%d:%u:%d:%u:%d] ++++ is saved as a match\n",
 										  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
 
+						if (!strcasecmp(map->rm_encoding, "AMR-WB")) {
+							amrwb_matched = 1;
+						}
+
 						if (m_idx >= MAX_MATCHES) {
 							break;
 						}
 
 						match = 0;
 					}
+				}
+
+				// Count rejected AMR-WB offerings
+				if (!amrwb_matched && !strcasecmp(map->rm_encoding, "AMR-WB")) {
+					++amrwb_offerings_rejected_n;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AMR-WB codec [%s:%d:%u%d] rejected\n",
+							rm_encoding, map->rm_pt, (int) remote_codec_rate, codec_ms);
 				}
 
 				if (m_idx >= MAX_MATCHES) {

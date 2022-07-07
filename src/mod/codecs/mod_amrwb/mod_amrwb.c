@@ -94,6 +94,8 @@ static struct {
 	switch_byte_t force_be;
 	switch_byte_t mode_set_overwrite;
 	switch_byte_t mode_set_overwrite_with_default_bitrate;
+	switch_byte_t invite_prefer_oa;
+	switch_byte_t invite_prefer_be;
 	struct amrwb_context context;
 	int debug;
 } globals;
@@ -189,6 +191,54 @@ static switch_bool_t switch_amrwb_info(switch_codec_t *codec, unsigned char *enc
 	return SWITCH_TRUE;
 }
 #endif
+
+static switch_status_t amrwb_parse_fmtp_cb(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	/* Must return IGNORE for FS to skip this codec */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Considering fmtp\n");
+
+	if (!zstr(fmtp)) {
+		int x, argc;
+		char *argv[10];
+		char *fmtp_dup = strdup(fmtp);
+
+		/* If there is no octet-align param on fmtp then default is 0 (bandwidth efficient). */
+		int oa = 0;
+
+		if (!fmtp_dup) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+		for (x = 0; x < argc; x++) {
+			char *data = argv[x];
+			char *arg;
+			while (*data == ' ') {
+				data++;
+			}
+
+			if ((arg = strchr(data, '='))) {
+				*arg++ = '\0';
+
+				if (!strcasecmp(data, "octet-align")) {
+					oa = switch_true(arg);
+				}
+			}
+		}
+		free(fmtp_dup);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AMR-WB fmtp mode: %s\n", oa ? "octet aligned" : "bandwidth efficient");
+		switch_mutex_lock(global_lock);
+		if ((oa == 0 && globals.invite_prefer_oa) || (oa == 1 && globals.invite_prefer_be)) {
+			switch_mutex_unlock(global_lock);
+			return SWITCH_STATUS_IGNORE;
+		}
+		switch_mutex_unlock(global_lock);
+	}
+
+	/* Must return FALSE for FS to continue as if callback was not called */
+	return SWITCH_STATUS_FALSE;
+}
 
 static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -587,12 +637,14 @@ static void mod_amrwb_configuration_snprintf(void) {
 	char modes[100] = { 0 };
 	int i = 0, j = 0;
 
+	snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), "[");
 	for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
 		if (globals.context.enc_modes & (1 << i)) {
 			j++;
 			snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), j > 1 ? ",%d" : "%d", i);
 		}
 	}
+	snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), "]");
 
 	snprintf(AMRWB_CONFIGURATION, sizeof(AMRWB_CONFIGURATION),
 			"modes: %s, "
@@ -603,6 +655,8 @@ static void mod_amrwb_configuration_snprintf(void) {
 			"adjust-bitrate: %d, "
 			"force-oa: %d, "
 			"force-be: %d, "
+			"invite-prefer-oa: %d, "
+			"invite-prefer-be: %d, "
 			"debug: %d\n",
 			modes,
 			globals.mode_set_overwrite,
@@ -612,6 +666,8 @@ static void mod_amrwb_configuration_snprintf(void) {
 			globals.adjust_bitrate,
 			globals.force_oa,
 			globals.force_be,
+			globals.invite_prefer_oa,
+			globals.invite_prefer_be,
 			globals.debug
 	);
 }
@@ -671,6 +727,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 				if (!strcasecmp(var, "mode-set-overwrite-with-default-bitrate")) {
 					globals.mode_set_overwrite_with_default_bitrate = (switch_byte_t) atoi(val);
 				}
+				if (!strcasecmp(var, "invite-prefer-oa")) {
+					globals.invite_prefer_oa = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "invite-prefer-be")) {
+					globals.invite_prefer_be = (switch_byte_t) atoi(val);
+				}
 				if (!strcasecmp(var, "mode-set")) {
 					int y, m_argc;
 					char *m_argv[SWITCH_AMRWB_MODES-1]; /* AMRWB has 9 modes */
@@ -704,6 +766,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 	SWITCH_ADD_API(commands_api_interface, "amrwb_show", "Show AMR-WB configuration", mod_amrwb_show, AMRWB_SHOW_SYNTAX);
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Octet Aligned");
+	codec_interface->parse_fmtp = amrwb_parse_fmtp_cb;
 
 	default_fmtp_oa = generate_fmtp(pool, 1);
 
@@ -716,6 +779,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 #endif
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Bandwidth Efficient");
+	codec_interface->parse_fmtp = amrwb_parse_fmtp_cb;
 
 	default_fmtp_be = generate_fmtp(pool, 0);
 
