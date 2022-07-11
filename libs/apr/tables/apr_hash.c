@@ -28,6 +28,8 @@
 #include <string.h>
 #endif
 
+#include <assert.h>     /* assert() */
+
 #if APR_POOL_DEBUG && APR_HAVE_STDIO_H
 #include <stdio.h>
 #endif
@@ -433,6 +435,7 @@ APR_DECLARE(apr_hash_t *) apr_hash_merge(apr_pool_t *p,
     for (k = 0; k <= base->max; k++) {
         for (iter = base->array[k]; iter; iter = iter->next) {
             i = iter->hash & res->max;
+            assert(new_vals);
             new_vals[j].klen = iter->klen;
             new_vals[j].key = iter->key;
             new_vals[j].val = iter->val;

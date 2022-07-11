@@ -62,6 +62,8 @@
 #include <openssl/ssl.h>
 #include "mcast.h"
 
+#include "ks.h"
+
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
 
@@ -93,16 +95,18 @@ typedef enum {
 	JPFLAG_CHECK_ATTACH = (1 << 2),
 	JPFLAG_EVENTS = (1 << 3),
 	JPFLAG_AUTH_EVENTS = (1 << 4),
-	JPFLAG_ALL_EVENTS_AUTHED = (1 << 5)
+	JPFLAG_ALL_EVENTS_AUTHED = (1 << 5),
+	JPFLAG_AUTH_EXPIRED = (1 << 6)
 } jpflag_t;
 
 struct verto_profile_s;
 
 struct jsock_s {
-	ws_socket_t client_socket;
+	ks_socket_t client_socket;
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
-	wsh_t ws;
+	ks_pool_t *kpool;
+	kws_t *ws;
 	unsigned char buf[65535];
 	char *name;
 	jsock_type_t ptype;
@@ -111,10 +115,11 @@ struct jsock_s {
 #ifndef WIN32
 	struct passwd pw;
 #endif
-
+	uint32_t attach_timer;
+	
 	uint8_t drop;
 	uint8_t nodelete;
-	ws_socket_t local_sock;
+	ks_socket_t local_sock;
 	SSL *ssl;
 
 	jpflag_t flags;
@@ -136,12 +141,14 @@ struct jsock_s {
 	char remote_host[256];
 	int remote_port;
 	int family;
-
+	time_t exptime;
+	time_t logintime;
 	struct verto_profile_s *profile;
 	switch_thread_rwlock_t *rwlock;
 
 	switch_mutex_t *write_mutex;
 	switch_mutex_t *filter_mutex;
+	switch_mutex_t *flag_mutex;
 
 	switch_event_t *params;
 	switch_event_t *vars;
@@ -230,19 +237,22 @@ struct verto_profile_s {
 
 	jsock_t *jsock_head;
 	int jsock_count;
-	ws_socket_t server_socket[MAX_BIND];
+	ks_socket_t server_socket[MAX_BIND];
 	int running;
 
 	int ssl_ready;
 	int ready;
 	int debug;
-
+	int chop_domain;
+	
 	int in_thread;
 	int blind_reg;
 
 	char *userauth;
 	char *root_passwd;
 
+	int send_passwd;
+	
 	char *context;
 	char *dialplan;
 
@@ -304,9 +314,11 @@ struct globals_s {
 
 	int debug;
 	int ready;
+	int send_passwd;
 	int profile_threads;
 	int enable_presence;
 	int enable_fs_events;
+	switch_bool_t kslog_on;
 
 	switch_hash_t *jsock_hash;
 	switch_mutex_t *jsock_mutex;
@@ -322,6 +334,9 @@ struct globals_s {
 	uint32_t detach_timeout;
 
 	switch_event_channel_id_t event_channel_id;
+
+	switch_log_level_t debug_level;
+
 };
 
 

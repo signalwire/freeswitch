@@ -278,6 +278,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_log_tags(switch_channel_t *ch
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_strip_quotes_var_check(switch_channel_t *channel,
+	const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(switch_status_t) switch_channel_add_variable_var_check(switch_channel_t *channel,
 																	  const char *varname, const char *value, switch_bool_t var_check, switch_stack_t stack);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname, const char *fmt, ...);
@@ -295,6 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_transfer_variable_prefix(switch_c
 
 #define switch_channel_set_variable_safe(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_FALSE)
 #define switch_channel_set_variable(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_TRUE)
+#define switch_channel_set_variable_strip_quotes(_channel, _var, _val) switch_channel_set_variable_strip_quotes_var_check(_channel, _var, _val, SWITCH_TRUE)
 #define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 
 
@@ -323,7 +326,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 #define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE, -1)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
-
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variables_prefix(switch_channel_t *channel, const char *prefix, switch_event_t **event);
 SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel);
 
 static inline int switch_channel_var_false(switch_channel_t *channel, const char *variable) {
@@ -682,6 +685,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 /** @} */
 
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix);
+SWITCH_DECLARE(switch_status_t) switch_channel_execute_on_value(switch_channel_t *channel, const char *variable_value);
 SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel, const char *variable_prefix);
 SWITCH_DECLARE(void) switch_channel_process_device_hangup(switch_channel_t *channel);
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel);

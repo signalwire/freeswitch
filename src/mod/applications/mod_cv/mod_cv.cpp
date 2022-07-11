@@ -37,7 +37,7 @@
 
 #include <switch.h>
 
-#include "highgui.h"
+#include "opencv2/highgui/highgui_c.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -596,9 +596,9 @@ void detectAndDraw(cv_context_t *context)
 
     context->cascade->detectMultiScale( smallImg, detectedObjs,
                                         context->search_scale, context->neighbors, 0
-                                        |CV_HAAR_FIND_BIGGEST_OBJECT
-                                        |CV_HAAR_DO_ROUGH_SEARCH
-                                        |CV_HAAR_SCALE_IMAGE
+                                        |CASCADE_FIND_BIGGEST_OBJECT
+                                        |CASCADE_DO_ROUGH_SEARCH
+                                        |CASCADE_SCALE_IMAGE
                                         ,
                                         Size(context->max_search_w, context->max_search_h) );
 
@@ -679,7 +679,7 @@ void detectAndDraw(cv_context_t *context)
                                                   //|CV_HAAR_FIND_BIGGEST_OBJECT
                                                   //|CV_HAAR_DO_ROUGH_SEARCH
                                                   //|CV_HAAR_DO_CANNY_PRUNING
-                                                  |CV_HAAR_SCALE_IMAGE
+                                                  |CASCADE_SCALE_IMAGE
                                                   ,
                                                   Size(30, 30) );
 
@@ -690,7 +690,7 @@ void detectAndDraw(cv_context_t *context)
 		//printf("WTF %d\n", object_neighbors);
         //cout << "Detected " << object_neighbors << " object neighbors" << endl;
         const int rect_height = cvRound((float)img.rows * object_neighbors / max_neighbors);
-        CvScalar col = CV_RGB((float)255 * object_neighbors / max_neighbors, 0, 0);
+        cv:Scalar col = CV_RGB((float)255 * object_neighbors / max_neighbors, 0, 0);
         rectangle(img, cvPoint(0, img.rows), cvPoint(img.cols/10, img.rows - rect_height), col, -1);
 
         parse_stats(&context->nestDetected, nestedObjects.size(), context->skip);
