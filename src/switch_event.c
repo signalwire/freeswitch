@@ -207,6 +207,7 @@ static char *EVENT_NAMES[] = {
 	"SEND_INFO",
 	"RECV_INFO",
 	"RECV_RTCP_MESSAGE",
+	"SEND_RTCP_MESSAGE",
 	"CALL_SECURE",
 	"NAT",
 	"RECORD_START",
@@ -1061,11 +1062,14 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 							exists = 1;
 						}
 
+						FREE(data);
 						goto redraw;
 					}
 				} else if (tmp_header) {
 					free_header(&tmp_header);
 				}
+
+				FREE(data);
 				goto end;
 			} else {
 				if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
@@ -3607,7 +3611,8 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_add(switch_live_array_t *la, c
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *action = "add";
 	cJSON *msg = NULL, *data = NULL;
-
+	const char *visibility = NULL;
+	
 	switch_mutex_lock(la->mutex);
 
 	if ((node = switch_core_hash_find(la->hash, name))) {
@@ -3674,7 +3679,9 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_add(switch_live_array_t *la, c
 
 	msg = cJSON_CreateObject();
 	data = json_add_child_obj(msg, "data", NULL);
-
+	if ((visibility = cJSON_GetObjectCstr(node->obj, "contentVisibility"))) {
+		cJSON_AddItemToObject(msg, "contentVisibility", cJSON_CreateString(visibility));
+	}
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(la->event_channel));
 	cJSON_AddItemToObject(data, "action", cJSON_CreateString(action));
 

@@ -132,6 +132,7 @@ static const char *EVENT_NAMES[] = {
 	"SEND_INFO",
 	"RECV_INFO",
 	"RECV_RTCP_MESSAGE",
+	"SEND_RTCP_MESSAGE",
 	"CALL_SECURE",
 	"NAT",
 	"RECORD_START",
@@ -483,11 +484,14 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 							exists = 1;
 						}
 
+						FREE(data);
 						goto redraw;
 					}
 				} else if (tmp_header) {
 					free_header(&tmp_header);
 				}
+
+				FREE(data);
 				goto end;
 			} else {
 				if ((stack & ESL_STACK_PUSH) || (stack & ESL_STACK_UNSHIFT)) {

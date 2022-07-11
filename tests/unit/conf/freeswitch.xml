@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <document type="freeswitch/xml">
   <X-PRE-PROCESS cmd="exec-set" data="test=echo 1234"/>
+  <X-PRE-PROCESS cmd="set" data="spawn_instead_of_system=true"/>
+  <X-PRE-PROCESS cmd="exec-set" data="shell_exec_set_test=ls / | grep usr"/>
+  <X-PRE-PROCESS cmd="set" data="spawn_instead_of_system=false"/>
   <X-PRE-PROCESS cmd="set" data="default_password=$${test}"/>
+  <X-PRE-PROCESS cmd="set" data="rtp_timer_name=soft" />
   <section name="configuration" description="Various Configuration">
     <configuration name="modules.conf" description="Modules">
       <modules>
@@ -20,6 +24,23 @@
       </modules>
     </configuration>
 
+<configuration name="switch.conf" description="Core Configuration">
+
+  <default-ptimes>
+  </default-ptimes>
+
+  <settings>
+
+    <param name="colorize-console" value="false"/>
+    <param name="dialplan-timestamps" value="false"/>
+    <param name="loglevel" value="debug"/>
+    <param name="rtp-start-port" value="1234"/> 
+    <param name="rtp-end-port" value="1234"/> 
+    <param name="rtp-enable-zrtp" value="false"/>
+
+  </settings>
+
+ </configuration>
     <configuration name="console.conf" description="Console Logger">
       <mappings>
         <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
