@@ -36,5 +36,5 @@ else
 install: error
 all: error
 error:
-	$(error You must install libavformat-dev to build mod_av)
+	$(error You must install libavformat-dev and libswscale-dev to build mod_av)
 endif

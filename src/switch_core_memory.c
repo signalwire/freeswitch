@@ -33,6 +33,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 //#define DEBUG_ALLOC
@@ -465,46 +466,48 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 {
 	char *tmp;
 	const char *tag;
+	switch_memory_pool_t *tmp_pool = NULL;
 	switch_assert(pool != NULL);
 	
 	/* In tag we store who calls the pool creation.
 	   Now we append it with who calls the pool destroy.
 	*/
 	if (*pool) {
-		tag = apr_pool_tag(*pool, NULL);
-		tmp = switch_core_sprintf(*pool, "%s,%s:%d", (tag ? tag : ""), file, line);
-		apr_pool_tag(*pool, tmp);
+		tmp_pool = *pool;
+		*pool = NULL;
+
+		tag = apr_pool_tag(tmp_pool, NULL);
+		tmp = switch_core_sprintf(tmp_pool, "%s,%s:%d", (tag ? tag : ""), file, line);
+		apr_pool_tag(tmp_pool, tmp);
 	}
 
 #ifdef DEBUG_ALLOC2
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) tmp_pool, apr_pool_tag(tmp_pool, NULL));
 #endif
 
 #ifdef INSTANTLY_DESTROY_POOLS
 #ifdef USE_MEM_LOCK
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
-	apr_pool_destroy(*pool);
+	apr_pool_destroy(tmp_pool);
 #ifdef USE_MEM_LOCK
 	switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 #else
-	if ((memory_manager.pool_thread_running != 1) || (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS)) {
+	if ((memory_manager.pool_thread_running != 1) || (switch_queue_push(memory_manager.pool_queue, tmp_pool) != SWITCH_STATUS_SUCCESS)) {
 #ifdef USE_MEM_LOCK
 		switch_mutex_lock(memory_manager.mem_lock);
 #endif
 #if APR_POOL_DEBUG
-		apr_pool_destroy_debug(*pool, func);
+		apr_pool_destroy_debug(tmp_pool, func);
 #else
-		apr_pool_destroy(*pool);
+		apr_pool_destroy(tmp_pool);
 #endif
 #ifdef USE_MEM_LOCK
 		switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 	}
 #endif
-
-	*pool = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }

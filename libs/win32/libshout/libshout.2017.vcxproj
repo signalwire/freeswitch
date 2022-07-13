@@ -182,6 +182,9 @@
       <Project>{0feeaec6-4399-4c46-b7db-62ece80d15b4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\pthread\pthread.2017.vcxproj">
+      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

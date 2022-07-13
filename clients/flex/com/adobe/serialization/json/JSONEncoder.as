@@ -104,7 +104,7 @@ package com.adobe.serialization.json
 		}
 		
 		/**
-		 * Escapes a string accoding to the JSON specification.
+		 * Escapes a string according to the JSON specification.
 		 *
 		 * @param str The string to be escaped
 		 * @return The string with escaped special characters

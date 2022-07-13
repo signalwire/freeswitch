@@ -190,6 +190,11 @@
     <ClInclude Include="include\mpf_termination_factory.h" />
     <ClInclude Include="include\mpf_types.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\win32\apr\libapr.2017.vcxproj">
+      <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

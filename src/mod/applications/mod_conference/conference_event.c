@@ -634,7 +634,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
 	switch_core_media_gen_key_frame(member->session);
 
-	if (conference && conference->la && member->session && !switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
+	if (conference && conference->la && member->session) {
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
 		const char *cookie = switch_channel_get_variable(member->channel, "event_channel_cookie");

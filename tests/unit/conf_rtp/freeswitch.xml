@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+  <X-PRE-PROCESS cmd="exec-set" data="test=echo 1234"/>
+  <X-PRE-PROCESS cmd="set" data="default_password=$${test}"/>
+  <X-PRE-PROCESS cmd="set" data="core_video_blank_image=$${conf_dir}/freeswitch-logo.png"/>
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_loopback"/>
+        <load module="mod_commands"/>
+        <load module="mod_sndfile"/>
+        <load module="mod_dptools"/>
+        <load module="mod_tone_stream"/>
+		<load module="mod_test"/>
+      </modules>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="loglevel" value="debug"/>
+    
+      </settings>
+    </configuration>
+
+ <configuration name="switch.conf" description="Core Configuration">
+ 
+   <default-ptimes>
+   </default-ptimes>
+ 
+   <settings>
+ 
+     <param name="colorize-console" value="false"/>
+     <param name="dialplan-timestamps" value="false"/>
+     <param name="loglevel" value="debug"/>
+     <param name="rtp-start-port" value="1234"/>
+     <param name="rtp-end-port" value="1234"/>
+     <param name="rtp-enable-zrtp" value="false"/>
+ 
+   </settings>
+ </configuration>
+ 
+    <configuration name="timezones.conf" description="Timezones">
+      <timezones>
+          <zone name="GMT" value="GMT0" />
+      </timezones>
+    </configuration>
+
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+  <context name="test">
+    <extension>
+      <condition field="${sip_h_X-COUNTDOWN}" expression="^0$" break="on-true">
+        <action application="answer"/>
+        <action application="playback" data="tone_stream://%(251,0,1004);loops=-1"/>
+      </condition>
+      <condition field="${sip_h_X-COUNTDOWN}" expression="^(\d+)$" break="never">
+        <action application="export" data="_nolocal_sip_h_X-COUNTDOWN=${expr($1 - 1)}"/>
+        <anti-action application="export" data="_nolocal_sip_h_X-COUNTDOWN=10"/>
+      </condition>
+      <condition>
+        <action application="bridge" data="sofia/test/1234@127.0.0.1"/>
+      </condition>
+    </extension>
+  </context>
+
+	</section>
+</document>

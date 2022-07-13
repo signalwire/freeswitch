@@ -333,7 +333,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 				} else if (value && switch_false(value)) {
 					newval = SWITCH_FALSE;
 				} else if (value) {
-					/* Value isnt true or false */
+					/* Value isn't true or false */
 					newval = (switch_bool_t) (intptr_t) item->defaultvalue;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n",
 									  value, item->key, newval ? "true" : "false");

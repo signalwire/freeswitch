@@ -77,6 +77,7 @@ typedef struct h264_codec_context_s {
 	switch_bool_t last_received_complete_picture;
 	switch_codec_settings_t codec_settings;
 	unsigned int bandwidth;
+	int32_t debug;
 } h264_codec_context_t;
 
 int FillSpecificParameters(h264_codec_context_t *context) {
@@ -745,6 +746,12 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 
 	switch(cmd) {
+		case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			context->debug = level;
+		}
+		break;
 	case SCC_VIDEO_GEN_KEYFRAME:
 		context->need_key_frame = 1;
 		break;
