@@ -309,6 +309,12 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
 	}
 
+	/*
+		http://www.mega-nerd.com/libsndfile/api.html#note2
+	 */
+	if (switch_test_flag(handle, SWITCH_FILE_DATA_SHORT)) {
+		sf_command(context->handle,  SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE);
+	}
 
   end:
 

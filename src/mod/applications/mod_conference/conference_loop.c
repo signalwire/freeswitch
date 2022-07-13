@@ -839,6 +839,12 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 			continue;
 		}
 
+		if (conference_utils_test_flag(member->conference, CFLAG_BREAKABLE) &&
+			switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			break;
+		}
+
 		/* Read a frame. */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -1280,15 +1286,19 @@ void conference_loop_launch_input(conference_member_t *member, switch_memory_poo
 {
 	switch_threadattr_t *thd_attr = NULL;
 
-	if (member == NULL || member->input_thread)
-		return;
-
-	switch_threadattr_create(&thd_attr, pool);
-	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	conference_utils_member_set_flag_locked(member, MFLAG_ITHREAD);
-	if (switch_thread_create(&member->input_thread, thd_attr, conference_loop_input, member, pool) != SWITCH_STATUS_SUCCESS) {
-		conference_utils_member_clear_flag_locked(member, MFLAG_ITHREAD);
+	switch_mutex_lock(member->flag_mutex);
+	
+	if (member != NULL && !conference_utils_member_test_flag(member, MFLAG_ITHREAD)) {
+		switch_threadattr_create(&thd_attr, pool);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_threadattr_priority_set(thd_attr, SWITCH_PRI_REALTIME);
+		conference_utils_member_set_flag_locked(member, MFLAG_ITHREAD);
+		if (switch_thread_create(&member->input_thread, thd_attr, conference_loop_input, member, pool) != SWITCH_STATUS_SUCCESS) {
+			conference_utils_member_clear_flag_locked(member, MFLAG_ITHREAD);
+		}
 	}
+
+	switch_mutex_unlock(member->flag_mutex);
 }
 
 /* marshall frames from the conference (or file or tts output) to the call leg */
@@ -1308,7 +1318,6 @@ void conference_loop_output(conference_member_t *member)
 	call_list_t *call_list, *cp;
 	switch_codec_implementation_t read_impl = { 0 }, real_read_impl = { 0 };
 	int sanity;
-	switch_status_t st;
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
 	switch_core_session_get_real_read_impl(member->session, &real_read_impl);
@@ -1648,12 +1657,6 @@ void conference_loop_output(conference_member_t *member)
 
 	if (!member->loop_loop) {
 		conference_utils_member_clear_flag_locked(member, MFLAG_RUNNING);
-
-		/* Wait for the input thread to end */
-		if (member->input_thread) {
-			switch_thread_join(&st, member->input_thread);
-			member->input_thread = NULL;
-		}
 	}
 
 	switch_core_timer_destroy(&timer);

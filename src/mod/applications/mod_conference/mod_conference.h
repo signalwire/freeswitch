@@ -214,6 +214,7 @@ typedef enum {
 	MFLAG_VIDEO_JOIN,
 	MFLAG_DED_VID_LAYER,
 	MFLAG_HOLD,
+	MFLAG_SKIP_DTMF,
 	///////////////////////////
 	MFLAG_MAX
 } member_flag_t;
@@ -255,6 +256,7 @@ typedef enum {
 	CFLAG_VIDEO_MUTE_EXIT_CANVAS,
 	CFLAG_NO_MOH,
 	CFLAG_DED_VID_LAYER_AUDIO_FLOOR,
+	CFLAG_BREAKABLE,
 	/////////////////////////////////
 	CFLAG_MAX
 } conference_flag_t;
@@ -760,6 +762,7 @@ typedef struct conference_obj {
 	char *default_layout_name;
 	int mux_paused;
 	char *video_codec_config_profile_name;
+	int heartbeat_period_sec;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -1097,6 +1100,7 @@ void conference_member_set_score_iir(conference_member_t *member, uint32_t score
 
 conference_relationship_t *conference_member_add_relationship(conference_member_t *member, uint32_t id);
 conference_member_t *conference_member_get(conference_obj_t *conference, uint32_t id);
+conference_member_t *conference_member_get_by_str(conference_obj_t *conference, const char *id_str);
 conference_member_t *conference_member_get_by_var(conference_obj_t *conference, const char *var, const char *val);
 conference_member_t *conference_member_get_by_role(conference_obj_t *conference, const char *role_id);
 switch_status_t conference_member_del_relationship(conference_member_t *member, uint32_t id);
@@ -1106,6 +1110,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj);
 void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_t *thread, void *obj);
 void conference_loop_output(conference_member_t *member);
+void conference_loop_launch_input(conference_member_t *member, switch_memory_pool_t *pool);
 uint32_t conference_file_stop(conference_obj_t *conference, file_stop_t stop);
 switch_status_t conference_file_play(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async);
 void conference_member_send_all_dtmf(conference_member_t *member, conference_obj_t *conference, const char *dtmf);
@@ -1214,6 +1219,8 @@ switch_status_t conference_api_sub_hold(conference_member_t *member, switch_stre
 switch_status_t conference_api_sub_unhold(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 switch_status_t conference_api_sub_pauserec(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_volume_out(conference_member_t *member, switch_stream_handle_t *stream, void *data);
+switch_status_t conference_api_sub_getvar(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
+switch_status_t conference_api_sub_setvar(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_lock(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_unlock(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
 switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv);
@@ -1307,8 +1314,8 @@ const char *conference_get_variable(conference_obj_t *conference, const char *va
 /* Entries in this list should be kept in sync with the enum above */
 extern api_command_t conference_api_sub_commands[];
 extern struct _mapping control_mappings[];
-
-
+#define stream_write(__stream, __fmt, ...) if (__stream)__stream->write_function(__stream, __fmt, __VA_ARGS__)
+#define VA_NONE "%s", ""
 #endif /* MOD_CONFERENCE_H */
 
 /* For Emacs:

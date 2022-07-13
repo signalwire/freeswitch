@@ -496,6 +496,9 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 	if (!added_server) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Nameservers specified, using host default\n");
 		/* create a new resolver from /etc/resolv.conf */
+		if (res) {
+			ldns_resolver_free(res);
+		}
 		s = ldns_resolver_new_frm_file(&res, NULL);
 	}
 

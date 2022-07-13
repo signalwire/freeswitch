@@ -4482,6 +4482,44 @@ XS(_wrap_Event_fire) {
 }
 
 
+XS(_wrap_Event_merge) {
+  {
+    Event *arg1 = (Event *) 0 ;
+    Event *arg2 = (Event *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    bool result;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Event_merge(self,to_merge);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Event_merge" "', argument " "1"" of type '" "Event *""'"); 
+    }
+    arg1 = reinterpret_cast< Event * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_Event, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Event_merge" "', argument " "2"" of type '" "Event *""'"); 
+    }
+    arg2 = reinterpret_cast< Event * >(argp2);
+    result = (bool)(arg1)->merge(arg2);
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_EventConsumer_events_set) {
   {
     EventConsumer *arg1 = (EventConsumer *) 0 ;
@@ -10792,6 +10830,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::Event_addHeader", _wrap_Event_addHeader},
 {"freeswitchc::Event_delHeader", _wrap_Event_delHeader},
 {"freeswitchc::Event_fire", _wrap_Event_fire},
+{"freeswitchc::Event_merge", _wrap_Event_merge},
 {"freeswitchc::EventConsumer_events_set", _wrap_EventConsumer_events_set},
 {"freeswitchc::EventConsumer_events_get", _wrap_EventConsumer_events_get},
 {"freeswitchc::EventConsumer_e_event_id_set", _wrap_EventConsumer_e_event_id_set},

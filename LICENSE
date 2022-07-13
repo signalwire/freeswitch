@@ -3,8 +3,8 @@ Upstream-Name: freeswitch
 Source: https://freeswitch.org/
 
 Files: *
-Copyright: 2005-2014 Anthony Minessale II <anthm@freeswitch.org>
- 2005-2014 Anthony Minessale II
+Copyright: 2005-2022 Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2022 Anthony Minessale II
 License: MPL-1.1
                            MOZILLA PUBLIC LICENSE
                                  Version 1.1

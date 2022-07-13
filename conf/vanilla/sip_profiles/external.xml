@@ -92,5 +92,7 @@
     <param name="tls-verify-in-subjects" value=""/>
     <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
+    <!-- TLS ciphers default: ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH -->
+    <param name="tls-ciphers" value="$${sip_tls_ciphers}"/>
   </settings>
 </profile>
