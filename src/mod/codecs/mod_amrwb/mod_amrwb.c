@@ -40,7 +40,9 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amrwb_unload);
 SWITCH_MODULE_DEFINITION(mod_amrwb, mod_amrwb_load, mod_amrwb_unload, NULL);
+
 switch_mutex_t *global_lock;
+int global_debug;
 char AMRWB_CONFIGURATION[2000];
 
 #ifndef AMRWB_PASSTHROUGH
@@ -97,7 +99,7 @@ static struct {
 	switch_byte_t invite_prefer_oa;
 	switch_byte_t invite_prefer_be;
 	struct amrwb_context context;
-	int debug;
+	char *fmtp_extra;
 } globals;
 
 const int switch_amrwb_frame_sizes[] = {17, 23, 32, 36, 40, 46, 50, 58, 60, 5, 0, 0, 0, 0, 1, 1};
@@ -228,12 +230,9 @@ static switch_status_t amrwb_parse_fmtp_cb(const char *fmtp, switch_codec_fmtp_t
 		free(fmtp_dup);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AMR-WB fmtp mode: %s\n", oa ? "octet aligned" : "bandwidth efficient");
-		switch_mutex_lock(global_lock);
 		if ((oa == 0 && globals.invite_prefer_oa) || (oa == 1 && globals.invite_prefer_be)) {
-			switch_mutex_unlock(global_lock);
 			return SWITCH_STATUS_IGNORE;
 		}
-		switch_mutex_unlock(global_lock);
 	}
 
 	/* Must return FALSE for FS to continue as if callback was not called */
@@ -380,12 +379,17 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		}
 
 		if (!globals.volte) {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d",
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, "; octet-align=%d",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		} else {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, "; octet-align=%d; max-red=0; mode-change-capability=2",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
+
+		if (!zstr(globals.fmtp_extra)) {
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, "; %s", globals.fmtp_extra);
+		}
+
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->encoder_state = NULL;
@@ -459,9 +463,11 @@ static switch_status_t switch_amrwb_encode(switch_codec_t *codec,
 		switch_amrwb_pack_be(shift_buf, n);
 	}
 
-	if (globals.debug) {
+	switch_mutex_lock(global_lock);
+	if (global_debug) {
 		switch_amrwb_info(codec, shift_buf, *encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB encoder");
 	}
+	switch_mutex_unlock(global_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -487,9 +493,11 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (globals.debug) {
+	switch_mutex_lock(global_lock);
+	if (global_debug) {
 		switch_amrwb_info(codec, buf, encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB decoder");
 	}
+	switch_mutex_unlock(global_lock);
 
 	if (switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN)) {
 		/* Octed Aligned */
@@ -522,6 +530,11 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 										   void **ret_data)
 {
 	struct amrwb_context *context = codec->private_info;
+	int debug = 0;
+
+	switch_mutex_lock(global_lock);
+	debug = global_debug;
+	switch_mutex_unlock(global_lock);
 
 	switch(cmd) {
 	case SCC_DEBUG:
@@ -538,7 +551,7 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 				if (context->enc_mode < SWITCH_AMRWB_MODES - 1) {
 					int mode_step = 2; /*this is the mode, not the actual bitrate*/
 					context->enc_mode = context->enc_mode + mode_step;
-					if (globals.debug || context->debug) {
+					if (debug || context->debug) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"AMRWB encoder: Adjusting mode to %d (increase)\n", context->enc_mode);
 					}
@@ -547,21 +560,21 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 				if (context->enc_mode > 0) {
 					int mode_step = 2; /*this is the mode, not the actual bitrate*/
 					context->enc_mode = context->enc_mode - mode_step;
-					if (globals.debug || context->debug) {
+					if (debug || context->debug) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"AMRWB encoder: Adjusting mode to %d (decrease)\n", context->enc_mode);
 					}
 				}
 			} else if (!strcasecmp(cmd, "default")) {
 					context->enc_mode = globals.default_bitrate;
-					if (globals.debug || context->debug) {
+					if (debug || context->debug) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"AMRWB encoder: Adjusting mode to %d (default)\n", context->enc_mode);
 					}
 			} else {
 				/*minimum bitrate (AMRWB mode)*/
 				context->enc_mode = 0;
-				if (globals.debug || context->debug) {
+				if (debug || context->debug) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							"AMRWB encoder: Adjusting mode to %d (minimum)\n", context->enc_mode);
 				}
@@ -604,6 +617,10 @@ static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 	}
 #endif
 
+	if (!zstr(globals.fmtp_extra)) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s", globals.fmtp_extra);
+	}
+
 	if (end_of(buf) == ' ') {
 		*(end_of_p(buf) - 1) = '\0';
 	}
@@ -620,13 +637,17 @@ SWITCH_STANDARD_API(mod_amrwb_debug)
 		stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
 	} else {
 		if (!strcasecmp(cmd, "on")) {
-			globals.debug = 1;
+			switch_mutex_lock(global_lock);
+			global_debug = 1;
+			switch_mutex_unlock(global_lock);
 			stream->write_function(stream, "AMRWB Debug: on\n");
 		} else if (!strcasecmp(cmd, "off")) {
-				globals.debug = 0;
-				stream->write_function(stream, "AMRWB Debug: off\n");
+			switch_mutex_lock(global_lock);
+			global_debug = 0;
+			switch_mutex_unlock(global_lock);
+			stream->write_function(stream, "AMRWB Debug: off\n");
 		} else {
-				stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
+			stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -636,6 +657,7 @@ SWITCH_STANDARD_API(mod_amrwb_debug)
 static void mod_amrwb_configuration_snprintf(void) {
 	char modes[100] = { 0 };
 	int i = 0, j = 0;
+	int debug = 0;
 
 	snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), "[");
 	for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
@@ -645,6 +667,10 @@ static void mod_amrwb_configuration_snprintf(void) {
 		}
 	}
 	snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), "]");
+
+	switch_mutex_lock(global_lock);
+	debug = global_debug;
+	switch_mutex_unlock(global_lock);
 
 	snprintf(AMRWB_CONFIGURATION, sizeof(AMRWB_CONFIGURATION),
 			"modes: %s, "
@@ -657,6 +683,7 @@ static void mod_amrwb_configuration_snprintf(void) {
 			"force-be: %d, "
 			"invite-prefer-oa: %d, "
 			"invite-prefer-be: %d, "
+			"fmtp-extra: [%s], "
 			"debug: %d\n",
 			modes,
 			globals.mode_set_overwrite,
@@ -668,7 +695,8 @@ static void mod_amrwb_configuration_snprintf(void) {
 			globals.force_be,
 			globals.invite_prefer_oa,
 			globals.invite_prefer_be,
-			globals.debug
+			!zstr(globals.fmtp_extra) ? globals.fmtp_extra : "",
+			debug
 	);
 }
 
@@ -676,9 +704,7 @@ static void mod_amrwb_configuration_snprintf(void) {
 SWITCH_STANDARD_API(mod_amrwb_show)
 {
 	if (stream && stream->write_function) {
-		switch_mutex_lock(global_lock);
 		mod_amrwb_configuration_snprintf();
-		switch_mutex_unlock(global_lock);
 		stream->write_function(stream, AMRWB_CONFIGURATION);
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -743,7 +769,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 					}
 				}
 				if (!strcasecmp(var, "debug")) {
-					globals.debug = (switch_byte_t) atoi(val);
+					global_debug = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "fmtp-extra")) {
+					globals.fmtp_extra = switch_core_strdup(pool, val);
+					switch_assert(globals.fmtp_extra);
 				}
 			}
 		}
