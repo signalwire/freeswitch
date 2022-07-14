@@ -1630,6 +1630,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	const char *var;
 	switch_call_cause_t cause;
 	switch_core_session_message_t msg = { 0 };
+	char protected_channel_status[CS_NONE + 1] = {"0000000000000"};
 
 	if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Call has no media... Redirecting to signal bridge.\n");
@@ -1952,10 +1953,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		if (switch_channel_test_flag(caller_channel, CF_RESET)) {
 			switch_channel_clear_flag(caller_channel, CF_RESET);
 		} else {
-			state = switch_channel_get_state(caller_channel);
-			if (!(state == CS_RESET || state == CS_PARK || state == CS_ROUTING || state == CS_EXECUTE)) {
-				switch_channel_set_state(caller_channel, CS_RESET);
-			}
+			protected_channel_status[CS_RESET] = '1';
+			protected_channel_status[CS_PARK] = '1';
+			protected_channel_status[CS_ROUTING] = '1';
+			protected_channel_status[CS_EXECUTE] = '1';			
+			switch_channel_set_variable(caller_channel, "protected_channel_status", protected_channel_status);
+			switch_channel_set_state(caller_channel, CS_RESET);	
 		}
 	}
 

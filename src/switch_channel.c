@@ -2402,6 +2402,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 {
 	switch_channel_state_t last_state;
 	int ok = 0;
+	const char *protected_channel_status = switch_channel_get_variable(channel, "protected_channel_status");
 
 	switch_assert(channel != NULL);
 	switch_assert(state <= CS_DESTROY);
@@ -2412,6 +2413,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 	if (last_state == state) {
 		goto done;
+	}
+	
+	if (protected_channel_status != NULL && last_state < CS_NONE && protected_channel_status[last_state] == '1'){
+		goto done;			
 	}
 
 	if (last_state >= CS_HANGUP && state < last_state) {
