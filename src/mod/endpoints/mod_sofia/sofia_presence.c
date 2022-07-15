@@ -2349,6 +2349,11 @@ static void _send_presence_notify(sofia_profile_t *profile,
 			   SIPTAG_FROM_STR(full_to),
 			   SIPTAG_TO_STR(full_from),
 
+			   TAG_IF(!zstr(ct) && !strcmp(ct, "application/dialog-info+xml"), SIPTAG_ALLOW(SIP_NONE)),
+			   TAG_IF(!zstr(ct) && !strcmp(ct, "application/dialog-info+xml"), SIPTAG_SUPPORTED(SIP_NONE)),
+			   TAG_IF(!zstr(ct) && !strcmp(ct, "application/dialog-info+xml"),
+			   	SIPTAG_ALLOW_EVENTS_STR("presence, dialog, message-summary, refer")),
+
 			   SIPTAG_CALL_ID_STR(call_id),
 			   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
