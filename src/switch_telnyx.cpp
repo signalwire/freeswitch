@@ -4,11 +4,13 @@
 #include <algorithm>
 
 typedef std::vector<switch_telnyx_on_populate_core_heartbeat_func> heartbeat_callbacks;
+typedef std::vector<switch_telnyx_on_populate_event_func> populate_event_callback;
 typedef std::vector<switch_telnyx_on_populate_plain_status_func> plain_status_callback;
 typedef std::vector<switch_telnyx_on_populate_json_status_func> json_status_callback;
 
 static switch_telnyx_event_dispatch_t _event_dispatch;
 static heartbeat_callbacks _heartbeat_callbacks;
+static populate_event_callback _populate_event_callbacks;
 static plain_status_callback _plain_status_callbacks;
 static json_status_callback _json_status_callbacks;
 static switch_thread_rwlock_t* _rwlock;
@@ -22,6 +24,7 @@ void switch_telnyx_init(switch_memory_pool_t *pool)
 void switch_telnyx_deinit()
 {
 	switch_thread_rwlock_wrlock(_rwlock);
+	_populate_event_callbacks.clear();
 	_heartbeat_callbacks.clear();
 	switch_thread_rwlock_unlock(_rwlock);
 	memset(&_event_dispatch, 0, sizeof(_event_dispatch));
@@ -95,6 +98,16 @@ void switch_telnyx_process_audio_stats(switch_core_session_t* session, switch_rt
 	}
 }
 
+void switch_telnyx_on_populate_event(switch_event_t* event)
+{
+	switch_thread_rwlock_rdlock(_rwlock);
+	for (auto& cb : _populate_event_callbacks)
+	{
+    	cb(event); 
+	}
+	switch_thread_rwlock_unlock(_rwlock);
+}
+
 void switch_telnyx_on_populate_core_heartbeat(switch_event_t* event)
 {
 	switch_thread_rwlock_rdlock(_rwlock);
@@ -122,6 +135,13 @@ void switch_telnyx_on_populate_api_json_status(cJSON* reply)
 	{
     	cb(reply); 
 	}
+	switch_thread_rwlock_unlock(_rwlock);
+}
+
+void switch_telnyx_add_populate_event_callback(switch_telnyx_on_populate_event_func cb)
+{
+	switch_thread_rwlock_wrlock(_rwlock);
+	_populate_event_callbacks.push_back(cb);
 	switch_thread_rwlock_unlock(_rwlock);
 }
 

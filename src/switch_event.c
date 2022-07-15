@@ -1988,7 +1988,7 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Sequence", "%" SWITCH_UINT64_T_FMT, seq);
 
-
+	switch_telnyx_on_populate_event(event);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data)
