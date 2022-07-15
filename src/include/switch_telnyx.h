@@ -12,9 +12,12 @@ typedef void (*switch_telnyx_on_set_variable_func)(switch_channel_t*, const char
 typedef int (*switch_telnyx_recover_func)(switch_core_session_t *);
 typedef void (*switch_telnyx_on_channel_recover_func)(switch_channel_t*);
 typedef void (*switch_telnyx_on_populate_core_heartbeat_func)(switch_event_t *);
+typedef void (*switch_telnyx_on_populate_plain_status_func)(switch_stream_handle_t *);
+typedef void (*switch_telnyx_on_populate_json_status_func)(cJSON *);
 typedef void (*switch_telnyx_publish_json_event_func)(const char*);
 typedef void (*switch_telnyx_process_audio_stats_func)(switch_core_session_t*,switch_rtp_stats_t*);
 typedef void (*switch_telnyx_process_flaws_func)(switch_rtp_t *,int);
+typedef void (*switch_telnyx_process_packet_loss_func)(switch_rtp_t *,int);
 typedef void (*switch_telnyx_set_current_trace_message_func)(const char*);
 typedef switch_call_cause_t (*switch_telnyx_recompute_cause_code_func)(switch_channel_t*, int , switch_call_cause_t);
 typedef switch_bool_t (*switch_telnyx_sip_cause_to_q850_func)(int, switch_call_cause_t*);
@@ -30,6 +33,7 @@ typedef struct switch_telnyx_event_dispatch_s {
 	switch_telnyx_publish_json_event_func switch_telnyx_publish_json_event;
 	switch_telnyx_process_audio_stats_func switch_telnyx_process_audio_stats;
 	switch_telnyx_process_flaws_func switch_telnyx_process_flaws;
+	switch_telnyx_process_packet_loss_func switch_telnyx_process_packet_loss;
 	switch_telnyx_set_current_trace_message_func switch_telnyx_set_current_trace_message;
 	switch_telnyx_recompute_cause_code_func switch_telnyx_recompute_cause_code;
 	switch_telnyx_sip_cause_to_q850_func switch_telnyx_sip_cause_to_q850;
@@ -46,10 +50,15 @@ SWITCH_DECLARE(void) switch_telnyx_on_set_variable(switch_channel_t* channel, co
 SWITCH_DECLARE(int) switch_telnyx_call_recover(switch_core_session_t* session);
 SWITCH_DECLARE(void) switch_telnyx_on_channel_recover(switch_channel_t* channel);
 SWITCH_DECLARE(void) switch_telnyx_on_populate_core_heartbeat(switch_event_t* event);
+SWITCH_DECLARE(void) switch_telnyx_on_populate_api_plain_status(switch_stream_handle_t *stream);
+SWITCH_DECLARE(void) switch_telnyx_on_populate_api_json_status(cJSON* reply);
 SWITCH_DECLARE(void) switch_telnyx_add_core_heartbeat_callback(switch_telnyx_on_populate_core_heartbeat_func cb);
+SWITCH_DECLARE(void) switch_telnyx_add_populate_api_plain_status_callback(switch_telnyx_on_populate_plain_status_func cb);
+SWITCH_DECLARE(void) switch_telnyx_add_populate_api_json_status_callback(switch_telnyx_on_populate_json_status_func cb);
 SWITCH_DECLARE(void) switch_telnyx_publish_json_event(const char* json);
 SWITCH_DECLARE(void) switch_telnyx_process_audio_stats(switch_core_session_t* session, switch_rtp_stats_t* stats);
 SWITCH_DECLARE(void) switch_telnyx_process_flaws(switch_rtp_t* rtp_session, int penalty);
+SWITCH_DECLARE(void) switch_telnyx_process_packet_loss(switch_rtp_t* rtp_session, int loss);
 SWITCH_DECLARE(void) switch_telnyx_set_current_trace_message(const char* msg);
 
 SWITCH_DECLARE(switch_call_cause_t) switch_telnyx_recompute_cause_code(switch_channel_t* channel, int status, switch_call_cause_t cause);

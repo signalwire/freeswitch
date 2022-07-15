@@ -1833,6 +1833,8 @@ static void check_jitter(switch_rtp_t *rtp_session)
 			rtp_session->stats.inbound.error_log->flaws += lost;
 		}
 
+		switch_telnyx_process_flaws(rtp_session, lost);
+		switch_telnyx_process_packet_loss(rtp_session, lost);
 	} else {
 		rtp_session->stats.inbound.last_loss = 0;
 	}

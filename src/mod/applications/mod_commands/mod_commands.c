@@ -42,6 +42,7 @@
  */
 #include <switch.h>
 #include <switch_stun.h>
+#include <switch_telnyx.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
@@ -2382,6 +2383,8 @@ SWITCH_STANDARD_API(status_function)
 
 	if (switch_core_get_stacksizes(&cur, &max) == SWITCH_STATUS_SUCCESS) {		stream->write_function(stream, "Current Stack Size/Max %ldK/%ldK\n", cur / 1024, max / 1024);
 	}
+
+	switch_telnyx_on_populate_api_plain_status(stream);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -7554,6 +7557,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 		cJSON_AddItemToObject(o, "max", cJSON_CreateNumber((double)(max / 1024)));
 	}
 
+	switch_telnyx_on_populate_api_json_status(reply);
 
 	*json_reply = reply;
 
