@@ -3757,6 +3757,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_mutex_init(&conference->canvas_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+	switch_mutex_init(&conference->relate_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 
 	switch_mutex_lock(conference_globals.hash_mutex);
 	conference_utils_set_flag(conference, CFLAG_INHASH);

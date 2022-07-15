@@ -3415,6 +3415,7 @@ switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_s
 		uint32_t member_id, other_member_id;
 		for (i = 0; i < members && members_array[i]; i++) {
 			member_id = atoi(members_array[i]);
+			switch_mutex_lock(conference->relate_mutex);
 			for (i2 = 0; i2 < other_members && other_members_array[i2]; i2++) {
 				other_member_id = atoi(other_members_array[i2]);
 				if (clear) {
@@ -3424,6 +3425,7 @@ switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_s
 					_conference_api_sub_relate_set_member_relationship(conference, stream, member_id, other_member_id, nospeak, nohear, sendvideo, action);
 				}
 			}
+			switch_mutex_unlock(conference->relate_mutex);
 		}
 	}
 	switch_safe_free(lbuf_members);
