@@ -1728,6 +1728,8 @@ static void do_mos(switch_rtp_t *rtp_session) {
 	cumulative_R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.cumulative_flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
 
 	if (R < 0 || R > 100) R = 100;
+	if (cumulative_R < 0) cumulative_R = 0;
+	if (cumulative_R > 100) cumulative_R = 100;
 
 	rtp_session->stats.inbound.R = R;
 	rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
