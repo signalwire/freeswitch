@@ -31,7 +31,35 @@
  *
  * The amrwb codec itself is not distributed with this module.
  *
- * mod_amrwb.c -- GSM-AMRWB Codec Module
+ * mod_amrwb.c -- GSM-AMRWB Codec Modul
+ *
+ *
+ * XML Parameters
+ *
+ * default-bitrate
+ *		Bitrate mode that will be used if mode-set-overwrite and mode-set-overwrite-with-default-bitrate are set).
+ * volte
+ *		If set, configures codec for use on cellular networks.
+ * adjust-bitrate
+ *		Vary bitrate according to feedback from RTCP.
+ * force-oa
+ *		Configure codec in octet aligned mode.
+ * force-be
+ *		Configure codec in bandwidth efficient mode.
+ * mode-set-overwrite
+ *		When answering a call, use codec bitrate modes from mode-set param, instead of mirroring the OFFER.
+ * mode-set-overwrite-with-default-bitrate
+ *		If mode-set-overwrite is on, then use default-bitrate mode instead of mode-set.
+ * invite-prefer-oa
+ *		When answering a call, if AMR-WB is offered in 2 modes (octet aligned and bandwidth efficient), select octet aligned.
+ * invite-prefer-be
+ *		When answering a call, if AMR-WB is offered in 2 modes (octet aligned and bandwidth efficient), select bandwidth efficient.
+ * mode-set
+ *		Provides bitrate modes to be used with mode-set-overwrite (if mode-set-overwrite-with-default-bitrate is off).
+ * debug
+ *		If on, print extra codec info (CMR, ToC, last frame flag) at the FS's DEBUG level.
+ * fmtp-extra
+ *		Append any extra info to fmtp entry for AMR-WB.
  *
  */
 
