@@ -8142,9 +8142,7 @@ SWITCH_DECLARE(int) switch_core_media_check_nat(switch_media_handle_t *smh, cons
 {
 	switch_assert(network_ip);
 
-	return (smh->mparams->extsipip &&
-			!switch_check_network_list_ip(network_ip, "loopback.auto") &&
-			!switch_check_network_list_ip(network_ip, smh->mparams->local_network));
+	return (smh->mparams->extsipip && !switch_check_network_list_ip(network_ip, smh->mparams->local_network));
 }
 
 //?
