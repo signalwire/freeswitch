@@ -31,7 +31,7 @@
  *
  * The amrwb codec itself is not distributed with this module.
  *
- * mod_amrwb.c -- GSM-AMRWB Codec Modul
+ * mod_amrwb.c -- GSM-AMRWB Codec Module
  *
  *
  * XML Parameters
@@ -58,6 +58,8 @@
  *		Provides bitrate modes to be used with mode-set-overwrite (if mode-set-overwrite-with-default-bitrate is off).
  * debug
  *		If on, print extra codec info (CMR, ToC, last frame flag) at the FS's DEBUG level.
+ * silence-supp-off
+ *		If true, then SDP has 'silenceSupp:off - - - -' to turn silence suppression off (no CNG).
  * fmtp-extra
  *		Append any extra info to fmtp entry for AMR-WB.
  *
@@ -128,6 +130,7 @@ static struct {
 	switch_byte_t invite_prefer_be;
 	struct amrwb_context context;
 	char *fmtp_extra;
+	switch_byte_t silence_supp_off;
 } globals;
 
 const int switch_amrwb_frame_sizes[] = {17, 23, 32, 36, 40, 46, 50, 58, 60, 5, 0, 0, 0, 0, 1, 1};
@@ -281,6 +284,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
+	switch_core_session_t *session = codec->session;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -416,6 +420,18 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 
 		if (!zstr(globals.fmtp_extra)) {
 			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, "; %s", globals.fmtp_extra);
+		}
+
+		if (globals.silence_supp_off) {
+			switch_channel_t *channel = NULL;
+			if (session) {
+				channel = switch_core_session_get_channel(session);
+				switch_assert(channel);
+				switch_channel_set_variable(channel, "suppress_cng", "true");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Turning CNG off (silence suppression off, suppress_cng=true) due to silence-supp-off=true\n");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot turn silence suppression off - session missing\n");
+			}
 		}
 
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
@@ -712,7 +728,8 @@ static void mod_amrwb_configuration_snprintf(void) {
 			"invite-prefer-oa: %d, "
 			"invite-prefer-be: %d, "
 			"fmtp-extra: [%s], "
-			"debug: %d\n",
+			"debug: %d, "
+			"silence-supp-off: %d\n",
 			modes,
 			globals.mode_set_overwrite,
 			globals.mode_set_overwrite_with_default_bitrate,
@@ -724,7 +741,8 @@ static void mod_amrwb_configuration_snprintf(void) {
 			globals.invite_prefer_oa,
 			globals.invite_prefer_be,
 			!zstr(globals.fmtp_extra) ? globals.fmtp_extra : "",
-			debug
+			debug,
+			globals.silence_supp_off
 	);
 }
 
@@ -802,6 +820,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 				if (!strcasecmp(var, "fmtp-extra")) {
 					globals.fmtp_extra = switch_core_strdup(pool, val);
 					switch_assert(globals.fmtp_extra);
+				}
+				if (!strcasecmp(var, "silence-supp-off")) {
+					globals.silence_supp_off = (switch_byte_t) atoi(val);
 				}
 			}
 		}

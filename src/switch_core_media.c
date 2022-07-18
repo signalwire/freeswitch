@@ -9675,6 +9675,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		}
 	}
 
+	val = switch_channel_get_variable(session->channel, "suppress_supress_cng");
+	if (!val) {
+		val = switch_channel_get_variable(session->channel, "suppress_suppress_cng");
+	}
+	if (!val || !switch_true(val)) {
+		if (((val = switch_channel_get_variable(session->channel, "supress_cng")) && switch_true(val)) ||
+				((val = switch_channel_get_variable(session->channel, "suppress_cng")) && switch_true(val))) {
+			switch_media_handle_set_media_flag(smh, SCMF_SUPPRESS_CNG);
+		}
+	}
+
 	switch_core_media_parse_media_flags(session);
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
