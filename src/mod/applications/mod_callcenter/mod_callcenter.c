@@ -4047,8 +4047,8 @@ cc_status_t cc_member_bridge(char *member_uuid, char *agent, char *ret_result, s
 
 
 	sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,state,abandoned_epoch, serving_agent"
-				"  FROM members WHERE (state = '%q' OR state = '%q') and session_uuid = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), member_uuid);
+				"  FROM members WHERE (state = '%q' OR state = '%q' OR state = '%q') and session_uuid = '%q'",
+				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING), member_uuid);
 	cc_execute_sql_callback(NULL, NULL, sql, member_bridge_callback, agent);
 	switch_safe_free(sql)
 
