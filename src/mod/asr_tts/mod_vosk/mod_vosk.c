@@ -69,7 +69,7 @@ static switch_status_t vosk_asr_open(switch_asr_handle_t *ah, const char *codec,
 {
 	vosk_t *vosk;
 	ks_json_t *req = ks_json_create_object();
-	ks_json_add_string_to_object(req, "url", globals.server_url);
+	ks_json_add_string_to_object(req, "url", (dest ? dest : globals.server_url));
 
 	if (!(vosk = (vosk_t *) switch_core_alloc(ah->memory_pool, sizeof(*vosk)))) {
 		return SWITCH_STATUS_MEMERR;
