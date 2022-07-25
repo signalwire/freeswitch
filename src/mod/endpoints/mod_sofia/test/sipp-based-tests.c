@@ -247,6 +247,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 
 		FST_TEARDOWN_BEGIN()
 		{
+				switch_sleep(200 * 1000);
 		}
 		FST_TEARDOWN_END()
 
@@ -681,15 +682,14 @@ skiptest:
 				fst_check(status == SWITCH_STATUS_SUCCESS);
 
 				/*test is considered PASSED if we get a session*/
-				if (!session) {
-					fst_requires(session);
+				fst_check(session);
+				if (session) {
+					switch_sleep(1000 * 1000);
+					channel = switch_core_session_get_channel(session);
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					switch_core_session_rwunlock(session);
 				}
 
-				switch_sleep(1000 * 1000);
-
-				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				switch_core_session_rwunlock(session);
 				switch_safe_free(to);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
