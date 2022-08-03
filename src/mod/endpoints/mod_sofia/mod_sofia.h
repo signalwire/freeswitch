@@ -727,6 +727,7 @@ struct sofia_profile {
 	uint32_t max_recv_requests_per_second;
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
+	uint32_t db_spin_up_wait_ms;
 	char *odbc_dsn;
 	char *pre_trans_execute;
 	char *post_trans_execute;
