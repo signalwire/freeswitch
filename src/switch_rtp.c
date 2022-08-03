@@ -552,6 +552,7 @@ typedef enum {
 
 static void do_2833(switch_rtp_t *rtp_session);
 
+static int check_recv_payload(switch_rtp_t *rtp_session);
 
 #define rtp_type(rtp_session) rtp_session->flags[SWITCH_RTP_FLAG_TEXT] ?  "text" : (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio")
 
