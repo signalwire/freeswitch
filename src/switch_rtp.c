@@ -648,6 +648,13 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 		in_digit_seq = ntohs((uint16_t) rtp_session->last_rtp_hdr.seq);
 		ts = htonl(rtp_session->last_rtp_hdr.ts);
 
+#ifdef DEBUG_2833
+		if (key == 0) {
+			if ((channel = switch_core_session_get_channel(rtp_session->session)) != NULL)
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid DTMF characters detected on Call-ID: %s, DTMF: 0x%02x (actual: 0x%02x) Duration: %u\n", switch_channel_get_variable(channel, "call_uuid"), key, packet[0], duration);
+		}
+#endif
+
 		if (rtp_session->flags[SWITCH_RTP_FLAG_PASS_RFC2833]) {
 
 			if (end) {
@@ -5881,6 +5888,91 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 			if (switch_rtp_ready(rtp_session)) {
 				bytes = sizeof(rtp_msg_t);
 				switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
+
+#ifdef ENABLE_SRTP
+
+            if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->has_rtp &&
+                (check_recv_payload(rtp_session) ||
+                 rtp_session->last_rtp_hdr.pt == rtp_session->recv_te ||
+                 rtp_session->last_rtp_hdr.pt == rtp_session->cng_pt)) {
+                int sbytes = (int) bytes;
+                srtp_err_status_t stat = 0;
+
+                if (rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
+
+#ifdef DEBUG_SRTP_FLUSH
+                    if (sbytes) {
+                        q = 0;
+                        bytes_buf[0] = 0;
+                        for(i = 0; sbytes && i < sbytes; i++) {
+                            sprintf(bytes_buf + q, "0x%02x ", ((u_char *)(&rtp_session->recv_msg))[i]);
+                            q = strlen(bytes_buf);
+                        }
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "do_flush loop BEFORE decryption: bytes = %d\nData: %s\n", sbytes, bytes_buf);
+                    }
+#endif
+
+                    if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+                        stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+                    } else {
+                        stat = srtp_unprotect_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes, 1);
+                    }
+
+#ifdef DEBUG_SRTP_FLUSH
+                    if (sbytes) {
+                        q = 0;
+                        bytes_buf[0] = 0;
+                        for(i = 0; sbytes && i < sbytes; i++) {
+                            sprintf(bytes_buf + q, "0x%02x ", ((u_char *)(&rtp_session->recv_msg))[i]);
+                            q = strlen(bytes_buf);
+                        }
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "do_flush loop AFTER decryption: bytes = %d\nData: %s\n", sbytes, bytes_buf);
+                    }
+#endif
+
+                    if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == srtp_err_status_replay_fail) {
+                        /* false alarm nack */
+                        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "REPLAY ERR, FALSE NACK\n");
+                        sbytes = 0;
+                        bytes = 0;
+                        if (rtp_session->stats.rtcp.pkt_count) {
+                            rtp_session->stats.rtcp.period_pkt_count--;
+                            rtp_session->stats.rtcp.pkt_count--;
+                        }
+                        goto done_srtp;
+                    }
+                }
+
+                if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
+                    int errs = ++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp];
+                    if (stat != 10) {
+                        char *msg;
+                        if (stat == srtp_err_status_replay_fail) msg="replay check failed (in do_flush)";
+                        else if (stat == srtp_err_status_auth_fail) msg="auth check failed (in do_flush)";
+                        else msg="";
+                        if (errs >= MAX_SRTP_ERRS) {
+                            switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+                                              "SRTP %s unprotect failed (in do_flush) with code %d (%s) %ld bytes %d errors\n",
+                                              rtp_type(rtp_session), stat, msg, (long)bytes, errs);
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+                                              "Ending call due to SRTP error (in do_flush)\n");
+                            switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
+                        } else if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {
+                            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+                                              "SRTP %s unprotect failed (in do_flush) with code %d (%s) %ld bytes %d errors\n",
+                                              rtp_type(rtp_session), stat, msg, (long)bytes, errs);
+                        }
+                    }
+                    sbytes = 0;
+                } else {
+                    rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
+                }
+
+                bytes = sbytes;
+            }
+done_srtp:
+#endif
 
 				if (bytes) {
 					int do_cng = 0;
