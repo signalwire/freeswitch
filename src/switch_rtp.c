@@ -5913,6 +5913,7 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
                     }
 #endif
 
+                    // Ensure we properly decrypt SRPT before reading DTMF
                     if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
                         stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
                     } else {
