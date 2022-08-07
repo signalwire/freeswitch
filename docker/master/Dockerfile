@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install ca-certificates lsb-release -y --no-instal
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 # Add anything else here
 
 ## Ports
