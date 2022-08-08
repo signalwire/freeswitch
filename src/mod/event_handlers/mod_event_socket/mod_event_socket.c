@@ -31,6 +31,7 @@
  *
  */
 #include <switch.h>
+#include "mod_event_socket_hash.h"
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
@@ -123,7 +124,7 @@ static struct {
 	switch_mutex_t *mutex;
 	char *ip;
 	uint16_t port;
-	char *password;
+	char *authentication_hash;
 	int done;
 	int threads;
 	char *acl[MAX_ACL];
@@ -162,7 +163,7 @@ static uint32_t next_id(void)
 }
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_auth_hash, prefs.authentication_hash);
 
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
 static switch_status_t launch_listener_thread(listener_t *listener);
@@ -596,7 +597,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 	switch_event_unbind(&globals.node);
 
 	switch_safe_free(prefs.ip);
-	switch_safe_free(prefs.password);
+	switch_safe_free(prefs.authentication_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1745,7 +1746,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			pass = cmd + 5;
 
-			if (!strcmp(prefs.password, pass)) {
+			if (validate_password(prefs.authentication_hash, pass)) {
 				switch_set_flag_locked(listener, LFLAG_AUTHED);
 				switch_snprintf(reply, reply_len, "+OK accepted");
 			} else {
@@ -2895,9 +2896,29 @@ static int config(void)
 					}
 				} else if (!strcmp(var, "listen-port")) {
 					prefs.port = (uint16_t) atoi(val);
-				} else if (!strcmp(var, "password")) {
-					set_pref_pass(val);
-				} else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
+				} else if (!strcmp(var, "authentication-hash")) {
+					if (validate_hash(val)) {
+						if (!zstr(prefs.authentication_hash)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Replacing authentication-hash '%s' with '%s'\n", prefs.authentication_hash, val);
+							switch_safe_free(prefs.authentication_hash);
+						}
+						set_pref_auth_hash(val);
+					}
+					else
+					{
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "authentication-hash '%s' is not valid\n", val);
+					}
+				}
+				else if (!strcmp(var, "password")) {
+					if (prefs.authentication_hash) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "The authentication-hash has already been established. Ignoring password entry\n");
+					}
+					else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Creating authentication hash from insecure cleartext password. Replacing the password entry with an authentication-hash entry is strongly recommended!\n");
+						set_pref_auth_hash(create_auth_hash(val));
+					}
+				}
+				else if (!strcasecmp(var, "apply-inbound-acl") && ! zstr(val)) {
 					if (prefs.acl_count < MAX_ACL) {
 						prefs.acl[prefs.acl_count++] = strdup(val);
 					} else {
@@ -2915,8 +2936,8 @@ static int config(void)
 		set_pref_ip("127.0.0.1");
 	}
 
-	if (zstr(prefs.password)) {
-		set_pref_pass("ClueCon");
+	if (zstr(prefs.authentication_hash)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No authentication credentials available - the process will NOT listen on the specified port\n");
 	}
 
 	if (!prefs.nat_map) {
@@ -2999,66 +3020,67 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	listen_list.ready = 1;
 
+	if (!zstr(prefs.authentication_hash)) {
+		while (!prefs.done) {
+			if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+				goto fail;
+			}
 
-	while (!prefs.done) {
-		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
-			goto fail;
-		}
 
-
-		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
-			if (prefs.done) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
-				goto end;
-			} else {
-				/* I wish we could use strerror_r here but its not defined everywhere =/ */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
-				if (++errs > 100) {
+			if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
+				if (prefs.done) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 					goto end;
+				} else {
+					/* I wish we could use strerror_r here but its not defined everywhere =/ */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error [%s]\n", strerror(errno));
+					if (++errs > 100) {
+						goto end;
+					}
+				}
+			} else {
+				errs = 0;
+			}
+
+
+			if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
+				break;
+			}
+
+			switch_thread_rwlock_create(&listener->rwlock, listener_pool);
+			switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener_pool);
+			switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener_pool);
+
+			listener->sock = inbound_socket;
+			listener->pool = listener_pool;
+			listener_pool = NULL;
+			listener->format = EVENT_FORMAT_PLAIN;
+			switch_set_flag(listener, LFLAG_FULL);
+			switch_set_flag(listener, LFLAG_ALLOW_LOG);
+
+			switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+			switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+
+			switch_core_hash_init(&listener->event_hash);
+			switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
+
+
+
+			if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
+				switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
+				if ((listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
+					if (launch_listener_thread(listener) == SWITCH_STATUS_SUCCESS)
+						continue;
 				}
 			}
-		} else {
-			errs = 0;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initilizing connection\n");
+			close_socket(&listener->sock);
+			expire_listener(&listener);
+
 		}
-
-
-		if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
-			break;
-		}
-
-		switch_thread_rwlock_create(&listener->rwlock, listener_pool);
-		switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener_pool);
-		switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener_pool);
-
-		listener->sock = inbound_socket;
-		listener->pool = listener_pool;
-		listener_pool = NULL;
-		listener->format = EVENT_FORMAT_PLAIN;
-		switch_set_flag(listener, LFLAG_FULL);
-		switch_set_flag(listener, LFLAG_ALLOW_LOG);
-
-		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
-		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
-
-		switch_core_hash_init(&listener->event_hash);
-		switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
-
-
-
-		if (switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock) == SWITCH_STATUS_SUCCESS && listener->sa) {
-			switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
-			if ((listener->remote_port = switch_sockaddr_get_port(listener->sa))) {
-				if (launch_listener_thread(listener) == SWITCH_STATUS_SUCCESS)
-					continue;
-			}
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initilizing connection\n");
-		close_socket(&listener->sock);
-		expire_listener(&listener);
-
 	}
 
   end:
