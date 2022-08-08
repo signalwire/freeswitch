@@ -4640,6 +4640,10 @@ SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, ch
 			}
 
 			(*digest_str)[i] = '\0';
+		} else {
+			switch_safe_free(digest);
+			*outputlen = 0;
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 
