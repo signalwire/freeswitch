@@ -4,14 +4,14 @@ name: unit-tests
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       commands:
       - cat /proc/sys/kernel/core_pattern
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       environment:
         REPOTOKEN:
@@ -33,7 +33,7 @@ steps:
       - ./configure --enable-address-sanitizer
 
     - name: build
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       environment:
         REPOTOKEN:
@@ -50,7 +50,7 @@ steps:
       - ./build.sh
 
     - name: run-tests
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       environment:
         REPOTOKEN:
@@ -97,13 +97,13 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       commands:
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       environment:
         REPOTOKEN:
@@ -140,7 +140,7 @@ steps:
       - ./configure
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base
+      image: signalwire/freeswitch-public-base:bullseye
       pull: always
       environment:
         REPOTOKEN:
@@ -152,7 +152,7 @@ steps:
       - export REPOTOKEN=''
       - rm -rf /etc/apt/auth.conf
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-7 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-11 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -178,6 +178,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 8fd652a876c5578617608e516c37c156219c62a29b2f14114e876745a1aab597
+hmac: 96f5b3ecee6a6b61fa39bc748bd68295be30eff4768dcfc53091dd448d3ee28d
 
 ...
