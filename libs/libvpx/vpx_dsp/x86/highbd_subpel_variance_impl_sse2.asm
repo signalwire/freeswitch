@@ -78,7 +78,7 @@ SECTION .text
 %endmacro
 
 %macro INC_SRC_BY_SRC_STRIDE  0
-%if ARCH_X86=1 && CONFIG_PIC=1
+%if VPX_ARCH_X86=1 && CONFIG_PIC=1
   add                srcq, src_stridemp
   add                srcq, src_stridemp
 %else
@@ -91,7 +91,7 @@ SECTION .text
 %define filter_idx_shift 5
 
 
-%if ARCH_X86_64
+%if VPX_ARCH_X86_64
   %if %2 == 1 ; avg
     cglobal highbd_sub_pixel_avg_variance%1xh, 9, 10, 13, src, src_stride, \
                                       x_offset, y_offset, \
@@ -268,11 +268,11 @@ SECTION .text
 
 .x_zero_y_nonhalf:
   ; x_offset == 0 && y_offset == bilin interpolation
-%if ARCH_X86_64
+%if VPX_ARCH_X86_64
   lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           y_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if VPX_ARCH_X86_64 && mmsize == 16
   mova                 m8, [bilin_filter+y_offsetq]
   mova                 m9, [bilin_filter+y_offsetq+16]
   mova                m10, [GLOBAL(pw_8)]
@@ -280,7 +280,7 @@ SECTION .text
 %define filter_y_b m9
 %define filter_rnd m10
 %else ; x86-32 or mmx
-%if ARCH_X86=1 && CONFIG_PIC=1
+%if VPX_ARCH_X86=1 && CONFIG_PIC=1
 ; x_offset == 0, reuse x_offset reg
 %define tempq x_offsetq
   add y_offsetq, g_bilin_filterm
@@ -495,11 +495,11 @@ SECTION .text
 
 .x_half_y_nonhalf:
   ; x_offset == 0.5 && y_offset == bilin interpolation
-%if ARCH_X86_64
+%if VPX_ARCH_X86_64
   lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           y_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if VPX_ARCH_X86_64 && mmsize == 16
   mova                 m8, [bilin_filter+y_offsetq]
   mova                 m9, [bilin_filter+y_offsetq+16]
   mova                m10, [GLOBAL(pw_8)]
@@ -507,7 +507,7 @@ SECTION .text
 %define filter_y_b m9
 %define filter_rnd m10
 %else  ; x86_32
-%if ARCH_X86=1 && CONFIG_PIC=1
+%if VPX_ARCH_X86=1 && CONFIG_PIC=1
 ; x_offset == 0.5. We can reuse x_offset reg
 %define tempq x_offsetq
   add y_offsetq, g_bilin_filterm
@@ -617,11 +617,11 @@ SECTION .text
   jnz .x_nonhalf_y_nonzero
 
   ; x_offset == bilin interpolation && y_offset == 0
-%if ARCH_X86_64
+%if VPX_ARCH_X86_64
   lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           x_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if VPX_ARCH_X86_64 && mmsize == 16
   mova                 m8, [bilin_filter+x_offsetq]
   mova                 m9, [bilin_filter+x_offsetq+16]
   mova                m10, [GLOBAL(pw_8)]
@@ -629,7 +629,7 @@ SECTION .text
 %define filter_x_b m9
 %define filter_rnd m10
 %else    ; x86-32
-%if ARCH_X86=1 && CONFIG_PIC=1
+%if VPX_ARCH_X86=1 && CONFIG_PIC=1
 ; y_offset == 0. We can reuse y_offset reg.
 %define tempq y_offsetq
   add x_offsetq, g_bilin_filterm
@@ -716,11 +716,11 @@ SECTION .text
   jne .x_nonhalf_y_nonhalf
 
   ; x_offset == bilin interpolation && y_offset == 0.5
-%if ARCH_X86_64
+%if VPX_ARCH_X86_64
   lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           x_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if VPX_ARCH_X86_64 && mmsize == 16
   mova                 m8, [bilin_filter+x_offsetq]
   mova                 m9, [bilin_filter+x_offsetq+16]
   mova                m10, [GLOBAL(pw_8)]
@@ -728,7 +728,7 @@ SECTION .text
 %define filter_x_b m9
 %define filter_rnd m10
 %else    ; x86-32
-%if ARCH_X86=1 && CONFIG_PIC=1
+%if VPX_ARCH_X86=1 && CONFIG_PIC=1
 ; y_offset == 0.5. We can reuse y_offset reg.
 %define tempq y_offsetq
   add x_offsetq, g_bilin_filterm
@@ -843,12 +843,12 @@ SECTION .text
 
 .x_nonhalf_y_nonhalf:
 ; loading filter - this is same as in 8-bit depth
-%if ARCH_X86_64
+%if VPX_ARCH_X86_64
   lea        bilin_filter, [GLOBAL(bilin_filter_m)]
 %endif
   shl           x_offsetd, filter_idx_shift ; filter_idx_shift = 5
   shl           y_offsetd, filter_idx_shift
-%if ARCH_X86_64 && mmsize == 16
+%if VPX_ARCH_X86_64 && mmsize == 16
   mova                 m8, [bilin_filter+x_offsetq]
   mova                 m9, [bilin_filter+x_offsetq+16]
   mova                m10, [bilin_filter+y_offsetq]
@@ -860,7 +860,7 @@ SECTION .text
 %define filter_y_b m11
 %define filter_rnd m12
 %else   ; x86-32
-%if ARCH_X86=1 && CONFIG_PIC=1
+%if VPX_ARCH_X86=1 && CONFIG_PIC=1
 ; In this case, there is NO unused register. Used src_stride register. Later,
 ; src_stride has to be loaded from stack when it is needed.
 %define tempq src_strideq

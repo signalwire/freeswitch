@@ -10,12 +10,16 @@
 
 #include "vpx_config.h"
 #include "vp8_rtcd.h"
-#if ARCH_ARM
+#if VPX_ARCH_ARM
 #include "vpx_ports/arm.h"
-#elif ARCH_X86 || ARCH_X86_64
+#elif VPX_ARCH_X86 || VPX_ARCH_X86_64
 #include "vpx_ports/x86.h"
-#elif ARCH_PPC
+#elif VPX_ARCH_PPC
 #include "vpx_ports/ppc.h"
+#elif VPX_ARCH_MIPS
+#include "vpx_ports/mips.h"
+#elif VPX_ARCH_LOONGARCH
+#include "vpx_ports/loongarch.h"
 #endif
 #include "vp8/common/onyxc_int.h"
 #include "vp8/common/systemdependent.h"
@@ -88,15 +92,20 @@ static int get_cpu_count() {
 void vp8_machine_specific_config(VP8_COMMON *ctx) {
 #if CONFIG_MULTITHREAD
   ctx->processor_core_count = get_cpu_count();
-#else
-  (void)ctx;
 #endif /* CONFIG_MULTITHREAD */
 
-#if ARCH_ARM
+#if VPX_ARCH_ARM
   ctx->cpu_caps = arm_cpu_caps();
-#elif ARCH_X86 || ARCH_X86_64
+#elif VPX_ARCH_X86 || VPX_ARCH_X86_64
   ctx->cpu_caps = x86_simd_caps();
-#elif ARCH_PPC
+#elif VPX_ARCH_PPC
   ctx->cpu_caps = ppc_simd_caps();
+#elif VPX_ARCH_MIPS
+  ctx->cpu_caps = mips_cpu_caps();
+#elif VPX_ARCH_LOONGARCH
+  ctx->cpu_caps = loongarch_cpu_caps();
+#else
+  // generic-gnu targets.
+  ctx->cpu_caps = 0;
 #endif
 }

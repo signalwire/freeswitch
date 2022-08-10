@@ -138,8 +138,8 @@ static INLINE void transpose_s16_4x4q(int16x8_t *a0, int16x8_t *a1) {
       vtrnq_s32(vreinterpretq_s32_s16(*a0), vreinterpretq_s32_s16(*a1));
 
   // Swap 64 bit elements resulting in:
-  // c0.val[0]: 00 01 20 21  02 03 22 23
-  // c0.val[1]: 10 11 30 31  12 13 32 33
+  // c0: 00 01 20 21  02 03 22 23
+  // c1: 10 11 30 31  12 13 32 33
 
   const int32x4_t c0 =
       vcombine_s32(vget_low_s32(b0.val[0]), vget_low_s32(b0.val[1]));
@@ -169,8 +169,8 @@ static INLINE void transpose_u16_4x4q(uint16x8_t *a0, uint16x8_t *a1) {
       vtrnq_u32(vreinterpretq_u32_u16(*a0), vreinterpretq_u32_u16(*a1));
 
   // Swap 64 bit elements resulting in:
-  // c0.val[0]: 00 01 20 21  02 03 22 23
-  // c0.val[1]: 10 11 30 31  12 13 32 33
+  // c0: 00 01 20 21  02 03 22 23
+  // c1: 10 11 30 31  12 13 32 33
 
   const uint32x4_t c0 =
       vcombine_u32(vget_low_u32(b0.val[0]), vget_low_u32(b0.val[1]));
@@ -1182,6 +1182,45 @@ static INLINE void transpose_u8_16x16(
   *o13 = e5.val[1];
   *o14 = e6.val[1];
   *o15 = e7.val[1];
+}
+
+static INLINE void transpose_s16_16x16(int16x8_t *in0, int16x8_t *in1) {
+  int16x8_t t[8];
+
+  // transpose the 4 8x8 quadrants separately but first swap quadrants 2 and 3.
+  t[0] = in0[8];
+  t[1] = in0[9];
+  t[2] = in0[10];
+  t[3] = in0[11];
+  t[4] = in0[12];
+  t[5] = in0[13];
+  t[6] = in0[14];
+  t[7] = in0[15];
+  in0[8] = in1[0];
+  in0[9] = in1[1];
+  in0[10] = in1[2];
+  in0[11] = in1[3];
+  in0[12] = in1[4];
+  in0[13] = in1[5];
+  in0[14] = in1[6];
+  in0[15] = in1[7];
+  in1[0] = t[0];
+  in1[1] = t[1];
+  in1[2] = t[2];
+  in1[3] = t[3];
+  in1[4] = t[4];
+  in1[5] = t[5];
+  in1[6] = t[6];
+  in1[7] = t[7];
+
+  transpose_s16_8x8(&in0[0], &in0[1], &in0[2], &in0[3], &in0[4], &in0[5],
+                    &in0[6], &in0[7]);
+  transpose_s16_8x8(&in0[8], &in0[9], &in0[10], &in0[11], &in0[12], &in0[13],
+                    &in0[14], &in0[15]);
+  transpose_s16_8x8(&in1[0], &in1[1], &in1[2], &in1[3], &in1[4], &in1[5],
+                    &in1[6], &in1[7]);
+  transpose_s16_8x8(&in1[8], &in1[9], &in1[10], &in1[11], &in1[12], &in1[13],
+                    &in1[14], &in1[15]);
 }
 
 static INLINE void load_and_transpose_u8_4x8(const uint8_t *a,

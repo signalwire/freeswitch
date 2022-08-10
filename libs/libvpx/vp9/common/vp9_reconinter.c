@@ -96,8 +96,8 @@ MV clamp_mv_to_umv_border_sb(const MACROBLOCKD *xd, const MV *src_mv, int bw,
   const int spel_right = spel_left - SUBPEL_SHIFTS;
   const int spel_top = (VP9_INTERP_EXTEND + bh) << SUBPEL_BITS;
   const int spel_bottom = spel_top - SUBPEL_SHIFTS;
-  MV clamped_mv = { src_mv->row * (1 << (1 - ss_y)),
-                    src_mv->col * (1 << (1 - ss_x)) };
+  MV clamped_mv = { (short)(src_mv->row * (1 << (1 - ss_y))),
+                    (short)(src_mv->col * (1 << (1 - ss_x))) };
   assert(ss_x <= 1);
   assert(ss_y <= 1);
 

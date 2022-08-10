@@ -41,8 +41,7 @@ void vp8dx_set_setting(struct VP8D_COMP *comp, VP8D_SETTING oxst, int x);
 
 int vp8dx_get_setting(struct VP8D_COMP *comp, VP8D_SETTING oxst);
 
-int vp8dx_receive_compressed_data(struct VP8D_COMP *pbi, size_t size,
-                                  const uint8_t *source, int64_t time_stamp);
+int vp8dx_receive_compressed_data(struct VP8D_COMP *pbi, int64_t time_stamp);
 int vp8dx_get_raw_frame(struct VP8D_COMP *pbi, YV12_BUFFER_CONFIG *sd,
                         int64_t *time_stamp, int64_t *time_end_stamp,
                         vp8_ppflags_t *flags);

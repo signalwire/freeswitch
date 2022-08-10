@@ -1,3 +1,12 @@
+##  Copyright (c) 2020 The WebM project authors. All Rights Reserved.
+##
+##  Use of this source code is governed by a BSD-style license
+##  that can be found in the LICENSE file in the root of the source
+##  tree. An additional intellectual property rights grant can be found
+##  in the file PATENTS.  All contributing project authors may
+##  be found in the AUTHORS file in the root of the source tree.
+##
+
 import argparse
 from os import listdir, path
 from PIL import Image
@@ -57,7 +66,7 @@ if __name__ == "__main__":
       else:
         frames.append((idx, img))
   if len(frames) == 0:
-    print "No frames in directory: " + args.frame_path
+    print("No frames in directory: " + args.frame_path)
     sys.exit()
   print("----------------------Y4M Info----------------------")
   print("width:  %d" % frames[0][1].width)

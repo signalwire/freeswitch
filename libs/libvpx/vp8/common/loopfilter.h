@@ -26,7 +26,7 @@ extern "C" {
 
 typedef enum { NORMAL_LOOPFILTER = 0, SIMPLE_LOOPFILTER = 1 } LOOPFILTERTYPE;
 
-#if ARCH_ARM
+#if VPX_ARCH_ARM
 #define SIMD_WIDTH 1
 #else
 #define SIMD_WIDTH 16
@@ -93,9 +93,7 @@ void vp8_loop_filter_row_normal(struct VP8Common *cm,
 
 void vp8_loop_filter_row_simple(struct VP8Common *cm,
                                 struct modeinfo *mode_info_context, int mb_row,
-                                int post_ystride, int post_uvstride,
-                                unsigned char *y_ptr, unsigned char *u_ptr,
-                                unsigned char *v_ptr);
+                                int post_ystride, unsigned char *y_ptr);
 #ifdef __cplusplus
 }  // extern "C"
 #endif

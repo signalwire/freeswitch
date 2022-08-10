@@ -82,17 +82,6 @@ if [ "${sanitizer}" = "cfi" ]; then
   export AR="llvm-ar"
 fi
 
-# TODO(http://crbug.com/webm/1615): -fsanitize=implicit-integer-truncation
-# causes conversion warnings in many of the x86 intrinsics and elsewhere.
-if [ "${sanitizer}" = "integer" ]; then
-  major_version=$(clang --version | head -n 1 \
-    | grep -o -E "[[:digit:]]\.[[:digit:]]\.[[:digit:]]" | cut -f1 -d.)
-  if [ ${major_version} -ge 7 ]; then
-    cflags="${cflags} -fno-sanitize=implicit-integer-truncation"
-    ldflags="${ldflags} -fno-sanitize=implicit-integer-truncation"
-  fi
-fi
-
 set -x
 export CC="clang"
 export CXX="clang++"

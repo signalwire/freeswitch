@@ -88,7 +88,7 @@ class VP8Decoder : public Decoder {
 #if CONFIG_VP8_DECODER
     return &vpx_codec_vp8_dx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
@@ -104,7 +104,7 @@ class VP8Encoder : public Encoder {
 #if CONFIG_VP8_ENCODER
     return &vpx_codec_vp8_cx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
@@ -124,7 +124,7 @@ class VP8CodecFactory : public CodecFactory {
 #else
     (void)cfg;
     (void)flags;
-    return NULL;
+    return nullptr;
 #endif
   }
 
@@ -139,7 +139,7 @@ class VP8CodecFactory : public CodecFactory {
     (void)deadline;
     (void)init_flags;
     (void)stats;
-    return NULL;
+    return nullptr;
 #endif
   }
 
@@ -157,15 +157,15 @@ class VP8CodecFactory : public CodecFactory {
 
 const libvpx_test::VP8CodecFactory kVP8;
 
-#define VP8_INSTANTIATE_TEST_CASE(test, ...)                                \
-  INSTANTIATE_TEST_CASE_P(                                                  \
+#define VP8_INSTANTIATE_TEST_SUITE(test, ...)                               \
+  INSTANTIATE_TEST_SUITE_P(                                                 \
       VP8, test,                                                            \
       ::testing::Combine(                                                   \
           ::testing::Values(static_cast<const libvpx_test::CodecFactory *>( \
               &libvpx_test::kVP8)),                                         \
           __VA_ARGS__))
 #else
-#define VP8_INSTANTIATE_TEST_CASE(test, ...)
+#define VP8_INSTANTIATE_TEST_SUITE(test, ...)
 #endif  // CONFIG_VP8
 
 /*
@@ -184,7 +184,7 @@ class VP9Decoder : public Decoder {
 #if CONFIG_VP9_DECODER
     return &vpx_codec_vp9_dx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
@@ -200,7 +200,7 @@ class VP9Encoder : public Encoder {
 #if CONFIG_VP9_ENCODER
     return &vpx_codec_vp9_cx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
@@ -220,7 +220,7 @@ class VP9CodecFactory : public CodecFactory {
 #else
     (void)cfg;
     (void)flags;
-    return NULL;
+    return nullptr;
 #endif
   }
 
@@ -235,7 +235,7 @@ class VP9CodecFactory : public CodecFactory {
     (void)deadline;
     (void)init_flags;
     (void)stats;
-    return NULL;
+    return nullptr;
 #endif
   }
 
@@ -253,15 +253,15 @@ class VP9CodecFactory : public CodecFactory {
 
 const libvpx_test::VP9CodecFactory kVP9;
 
-#define VP9_INSTANTIATE_TEST_CASE(test, ...)                                \
-  INSTANTIATE_TEST_CASE_P(                                                  \
+#define VP9_INSTANTIATE_TEST_SUITE(test, ...)                               \
+  INSTANTIATE_TEST_SUITE_P(                                                 \
       VP9, test,                                                            \
       ::testing::Combine(                                                   \
           ::testing::Values(static_cast<const libvpx_test::CodecFactory *>( \
               &libvpx_test::kVP9)),                                         \
           __VA_ARGS__))
 #else
-#define VP9_INSTANTIATE_TEST_CASE(test, ...)
+#define VP9_INSTANTIATE_TEST_SUITE(test, ...)
 #endif  // CONFIG_VP9
 
 }  // namespace libvpx_test
