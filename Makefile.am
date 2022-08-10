@@ -295,7 +295,6 @@ library_include_HEADERS = \
 	src/include/switch_json.h \
 	src/include/switch_utf8.h \
 	src/include/switch_msrp.h \
-	src/include/switch_vpx.h \
 	src/include/switch_vad.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
@@ -352,6 +351,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_rtp.c \
 	src/switch_jitterbuffer.c \
 	src/switch_estimators.c \
+	src/switch_image.c \
 	src/switch_ivr_bridge.c \
 	src/switch_ivr_originate.c \
 	src/switch_ivr_async.c \
