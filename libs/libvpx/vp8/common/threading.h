@@ -179,9 +179,9 @@ static inline int sem_destroy(sem_t *sem) {
 
 /* thread_sleep implementation: yield unless Linux/Unix. */
 #if defined(__unix__) || defined(__APPLE__)
-#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);}
+#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();nanosleep(&ts, NULL);} 
 #else
-#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);}
+#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);}
 #endif /* __unix__ || __APPLE__ */
 
 #endif
