@@ -1,16 +1,17 @@
 <configuration name="amrwb.conf">
-  <settings>
-    <!--param name="default-bitrate" value="2"/-->
-    <param name="volte" value="1"/>
-    <param name="adjust-bitrate" value="0"/>
-	<param name="mode-set-overwrite" value="0"/>
-	<param name="mode-set-overwrite-with-default-bitrate" value="0"/>
-	<param name="mode-set" value="0,1,2"/>
-	<param name="invite-prefer-oa" value="1"/>
-	<!--param name="invite-prefer-be" value="1"/-->
-	<!--param name="force-oa" value="0"/-->
-	<!--param name="force-be" value="0"/-->
-	<!--param name="debug" value="0"/-->
-	<!--param name="fmtp-extra" value="silenceSupp:off - - - -"/-->
-  </settings>
+	<settings>
+		<!--param name="default-bitrate" value="2"/-->
+		<param name="volte" value="1"/>
+		<param name="adjust-bitrate" value="0"/>
+		<param name="mode-set-overwrite" value="0"/>
+		<param name="mode-set-overwrite-with-default-bitrate" value="0"/>
+		<param name="mode-set" value="0,1,2"/>
+		<param name="invite-prefer-oa" value="1"/>
+			<!--param name="invite-prefer-be" value="1"/-->
+			<!--param name="force-oa" value="0"/-->
+			<!--param name="force-be" value="0"/-->
+			<!--param name="debug" value="0"/-->
+			<!--param name="fmtp-extra" value="silenceSupp:off - - - -"/-->
+		<param name="silence-supp-off" value="0"/>
+	</settings>
 </configuration>
