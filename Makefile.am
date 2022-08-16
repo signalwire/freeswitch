@@ -685,7 +685,7 @@ yesdepends:
 	rm .nodepends
 
 iksemel-dep:
-	make -C src/mod/endpoints/mod_dingaling deps
+	make -C src/mod/formats/mod_ssml deps
 
 core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
@@ -765,7 +765,7 @@ iks-reconf:
 	cd libs/iksemel && $(MAKE) clean
 	cd libs/iksemel && autoreconf -fi
 	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	$(MAKE) mod_dingaling-clean
+	$(MAKE) mod_ssml-clean
 
 cluecon:
 	@clear

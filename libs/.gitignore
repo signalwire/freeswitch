@@ -199,11 +199,6 @@ opal
 /libcodec2/unittest/vqtrainjnd
 /libcodec2/unittest/vqtrainph
 /libcodec2/unittest/vqtrainsp
-/libdingaling/build/compile
-/libdingaling/Makefile
-/libdingaling/Makefile.in
-/libdingaling/src/config.h
-/libdingaling/src/stamp-h1
 /libg722_1/config-h.in
 /libg722_1/doc/Makefile
 /libg722_1/doc/Makefile.in
@@ -702,12 +697,6 @@ opal
 
 # build products we should remove
 !/iksemel/ltmain.sh
-!/libdingaling/config.guess
-!/libdingaling/config.sub
-!/libdingaling/depcomp
-!/libdingaling/install-sh
-!/libdingaling/ltmain.sh
-!/libdingaling/missing
 !/libg722_1/config/depcomp
 !/libg722_1/config/missing
 !/tiff-*/config/depcomp
@@ -730,7 +719,6 @@ unimrcp/build/compile
 portaudio.*.log
 apr/configure
 iksemel/configure
-libdingaling/configure
 libyuv/Makefile
 libyuv/convert
 srtp/configure

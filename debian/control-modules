@@ -431,10 +431,6 @@ Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
 
-Module: endpoints/mod_dingaling
-Description: mod_dingaling
- Adds mod_dingaling.
-
 Module: endpoints/mod_gsmopen
 Description: mod_gsmopen
  Adds mod_gsmopen.

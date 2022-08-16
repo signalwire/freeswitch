@@ -1595,15 +1595,6 @@ Files: libs/silk/*
 Copyright: 2006-2011, Skype Limited.
 License: BSD-2-clause
 
-Files: libs/libdingaling/*
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2001-2003 Allan Saddi <allan@saddi.com>
-License: MPL-1.1
-
-Files: libs/libdingaling/src/sha1.[ch]
-Copyright: 2001-2003 Allan Saddi <allan@saddi.com>
-License: BSD-2-clause
-
 Files: libs/libcodec2/*
 Copyright: 1990-2010 David Rowe
  1990-2010 David Rowe 2009

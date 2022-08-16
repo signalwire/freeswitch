@@ -87,7 +87,6 @@ dialplans/mod_dialplan_asterisk
 dialplans/mod_dialplan_xml
 #directories/mod_ldap
 #endpoints/mod_alsa
-#endpoints/mod_dingaling
 #endpoints/mod_gsmopen
 #endpoints/mod_h323
 #endpoints/mod_khomp
