@@ -827,7 +827,6 @@ static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, d
         return;
     }
 
-    switch_core_session_queue_event(fs_s, &event_copy);
     switch_event_fire(&event_copy);
     return;
 }
