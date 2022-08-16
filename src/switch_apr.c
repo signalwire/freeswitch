@@ -36,6 +36,7 @@
 #include <switch_private.h>
 #endif
 #include "private/switch_core_pvt.h"
+#include "private/switch_apr_pvt.h"
 
 /* apr headers*/
 #include <apr.h>
@@ -70,16 +71,13 @@
 /* apr_vformatter_buff_t definition*/
 #include <apr_lib.h>
 
-/* apr-util headers */
-#include <apr_queue.h>
-#include <apr_uuid.h>
 #if (defined(HAVE_LIBMD5) || defined(HAVE_LIBMD) || defined(HAVE_MD5INIT))
 #include <md5.h>
 #elif defined(HAVE_LIBCRYPTO)
 #include <openssl/md5.h>
-#else
-#include <apr_md5.h>
 #endif
+
+#include <uuid/uuid.h>
 
 /* apr stubs */
 
@@ -1131,7 +1129,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollset(switch_pollfd_t ** 
 SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 {
 #ifndef WIN32
-	apr_uuid_format(buffer, (const apr_uuid_t *) uuid);
+	uuid_unparse_lower(uuid->data, buffer);
 #else
 	RPC_CSTR buf;
 	UuidToString((const UUID *) uuid, &buf);
@@ -1144,7 +1142,7 @@ SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
 	switch_mutex_lock(runtime.uuid_mutex);
 #ifndef WIN32
-	apr_uuid_get((apr_uuid_t *) uuid);
+	uuid_generate(uuid->data);
 #else
 	UuidCreate((UUID *) uuid);
 #endif
@@ -1154,7 +1152,10 @@ SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str)
 {
 #ifndef WIN32
-	return apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
+	if (uuid_parse(uuid_str, uuid->data)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	return SWITCH_STATUS_SUCCESS;
 #else
 	return UuidFromString((RPC_CSTR) uuid_str, (UUID *) uuid);
 #endif
@@ -1179,7 +1180,7 @@ SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGES
 
 	return SWITCH_STATUS_SUCCESS;
 #else
-	return apr_md5(digest, input, inputLen);
+	return SWITCH_STATUS_NOTIMPL;
 #endif
 }
 
@@ -1207,22 +1208,22 @@ SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIG
 
 SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, unsigned int queue_capacity, switch_memory_pool_t *pool)
 {
-	return apr_queue_create(queue, queue_capacity, pool);
+	return switch_apr_queue_create(queue, queue_capacity, pool);
 }
 
 SWITCH_DECLARE(unsigned int) switch_queue_size(switch_queue_t *queue)
 {
-	return apr_queue_size(queue);
+	return switch_apr_queue_size(queue);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t *queue, void **data)
 {
-	return apr_queue_pop(queue, data);
+	return switch_apr_queue_pop(queue, data);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_pop_timeout(switch_queue_t *queue, void **data, switch_interval_time_t timeout)
 {
-	return apr_queue_pop_timeout(queue, data, timeout);
+	return switch_apr_queue_pop_timeout(queue, data, timeout);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *data)
@@ -1230,7 +1231,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *d
 	apr_status_t s;
 
 	do {
-		s = apr_queue_push(queue, data);
+		s = switch_apr_queue_push(queue, data);
 	} while (s == APR_EINTR);
 
 	return s;
@@ -1238,17 +1239,17 @@ SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t *queue, void *d
 
 SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t *queue, void **data)
 {
-	return apr_queue_trypop(queue, data);
+	return switch_apr_queue_trypop(queue, data);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_interrupt_all(switch_queue_t *queue)
 {
-	return apr_queue_interrupt_all(queue);
+	return switch_apr_queue_interrupt_all(queue);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_term(switch_queue_t *queue)
 {
-	return apr_queue_term(queue);
+	return switch_apr_queue_term(queue);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void *data)
@@ -1256,7 +1257,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 	apr_status_t s;
 
 	do {
-		s = apr_queue_trypush(queue, data);
+		s = switch_apr_queue_trypush(queue, data);
 	} while (s == APR_EINTR);
 
 	return s;

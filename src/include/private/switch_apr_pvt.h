@@ -52,6 +52,17 @@
 
 #include <apr_portable.h>
 
+typedef struct switch_apr_queue_t switch_apr_queue_t;
+apr_status_t switch_apr_queue_create(switch_apr_queue_t **q, unsigned int queue_capacity, apr_pool_t *a);
+apr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data);
+apr_status_t switch_apr_queue_trypush(switch_apr_queue_t *queue, void *data);
+unsigned int switch_apr_queue_size(switch_apr_queue_t *queue);
+apr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data);
+apr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data, apr_interval_time_t timeout);
+apr_status_t switch_apr_queue_trypop(switch_apr_queue_t *queue, void **data);
+apr_status_t switch_apr_queue_interrupt_all(switch_apr_queue_t *queue);
+apr_status_t switch_apr_queue_term(switch_apr_queue_t *queue);
+
 #endif // __SWITCH_APR_PVT_H__
 
 /* For Emacs:

@@ -587,7 +587,7 @@ SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIG
  */
 
 /** Opaque structure used for queue API */
-	 typedef struct apr_queue_t switch_queue_t;
+	 typedef struct switch_apr_queue_t switch_queue_t;
 
 /**
  * create a FIFO queue

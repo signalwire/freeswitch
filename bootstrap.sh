@@ -170,9 +170,6 @@ bootstrap_apr() {
   # Remove autoconf 2.5x's cache directory
   rm -rf autom4te*.cache
 
-  echo "Entering directory ${LIBDIR}/apr-util"
-  cd ${LIBDIR}/apr-util
-  ./buildconf
 }
 
 bootstrap_libzrtp() {

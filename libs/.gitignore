@@ -41,33 +41,6 @@ opal
 /apr/Makefile
 /apr/test/internal/Makefile
 /apr/test/Makefile
-/apr-util/aprutil.exp
-/apr-util/apu-1-config
-/apr-util/build/apr_common.m4
-/apr-util/build/find_apr.m4
-/apr-util/build/get-version.sh
-/apr-util/build/install.sh
-/apr-util/build/pkg/pkginfo
-/apr-util/build/rules.mk
-/apr-util/exports.c
-/apr-util/export_vars.c
-/apr-util/export_vars.sh
-/apr-util/include/apr_ldap.h
-/apr-util/include/apu_config.h
-/apr-util/include/apu.h
-/apr-util/include/apu_select_dbm.h
-/apr-util/include/apu_want.h
-/apr-util/include/private/apu_config.h
-/apr-util/include/private/apu_config.h.in
-/apr-util/include/private/apu_select_dbm.h
-/apr-util/.make.dirs
-/apr-util/Makefile
-/apr-util/test/Makefile
-/apr-util/xml/expat/config.h
-/apr-util/xml/expat/lib/config.h
-/apr-util/xml/expat/lib/expat.h
-/apr-util/xml/expat/lib/Makefile
-/apr-util/xml/expat/Makefile
 /broadvoice/config-h.in
 /broadvoice/doc/Makefile
 /broadvoice/doc/Makefile.in
@@ -728,10 +701,6 @@ opal
 /v8-*.zip
 
 # build products we should remove
-!/apr-util/xml/expat/conftools/config.guess
-!/apr-util/xml/expat/conftools/config.sub
-!/apr-util/xml/expat/conftools/install-sh
-!/apr-util/xml/expat/conftools/missing
 !/iksemel/ltmain.sh
 !/libdingaling/config.guess
 !/libdingaling/config.sub
@@ -759,8 +728,6 @@ unimrcp/build/compile
 /ldns/
 /portaudio/
 portaudio.*.log
-apr-util/configure
-apr-util/xml/expat/configure
 apr/configure
 iksemel/configure
 libdingaling/configure
