@@ -188,9 +188,6 @@
  *	mod_pocketsphinx
  *		- PocketSphinx (http://www.speech.cs.cmu.edu/pocketsphinx/)
  *
- *	mod_unimrcp
- *		- MRCP (http://www.unimrcp.org/)
- *
  *
  *  Codecs
  *  mod_amr

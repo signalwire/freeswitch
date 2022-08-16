@@ -10,7 +10,7 @@ BGJOB=false
 VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="apr libzrtp iksemel srtp unimrcp fs";
+SUBDIRS="apr libzrtp iksemel srtp fs";
 
 while getopts 'jhd:v' o; do 
   case "$o" in

@@ -636,15 +636,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_tts_commandline, Run a command line and play the 
 output file.
 
-%package asrtts-unimrcp
-Summary:	FreeSWITCH mod_unimrcp
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description asrtts-unimrcp
-Provides FreeSWITCH mod_unimrcp, allows communication with Media Resource 
-Control Protocol (MRCP) servers
-
 ######################################################################################################################
 #				FreeSWITCH Codec Modules
 ######################################################################################################################
@@ -1435,7 +1426,7 @@ APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATI
 #				Automatic Speech Recognition and Text To Speech Modules
 #
 ######################################################################################################################
-ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline asr_tts/mod_unimrcp"
+ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline"
 
 ######################################################################################################################
 #
@@ -1962,7 +1953,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/translate.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unimrcp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
@@ -2162,9 +2152,6 @@ fi
 
 %files asrtts-tts-commandline
 %{MODINSTDIR}/mod_tts_commandline.so*
-
-%files asrtts-unimrcp
-%{MODINSTDIR}/mod_unimrcp.so*
 
 ######################################################################################################################
 #

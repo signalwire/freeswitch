@@ -9,7 +9,6 @@ check: $(OUR_CHECK_MODULES)
 
 mod_skypopen-all: mod_gsmopen-all
 mod_gsmopen-all: mod_spandsp-all
-mod_unimrcp-all: mod_sofia-all
 mod_rayo-all: mod_ssml-all
 mod_ssml-all: mod_rayo-all
 

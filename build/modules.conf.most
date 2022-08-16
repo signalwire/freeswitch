@@ -58,7 +58,6 @@ applications/mod_voicemail_ivr
 asr_tts/mod_flite
 asr_tts/mod_pocketsphinx
 asr_tts/mod_tts_commandline
-asr_tts/mod_unimrcp
 codecs/mod_amr
 codecs/mod_amrwb
 codecs/mod_b64

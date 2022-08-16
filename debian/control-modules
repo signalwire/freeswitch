@@ -291,10 +291,6 @@ Module: asr_tts/mod_tts_commandline
 Description: mod_tts_commandline
  Adds mod_tts_commandline.
 
-Module: asr_tts/mod_unimrcp
-Description: mod_unimrcp
- Adds mod_unimrcp.
-
 ## mod/codecs
 
 Module: codecs/mod_amr
