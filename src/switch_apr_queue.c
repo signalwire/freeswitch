@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <switch.h>
 #include <fspr.h>
 #include <fspr_thread_mutex.h>
 #include <fspr_thread_cond.h>

@@ -77,7 +77,9 @@
 #include <openssl/md5.h>
 #endif
 
+#ifndef WIN32
 #include <uuid/uuid.h>
+#endif
 
 /* apr stubs */
 
