@@ -5885,14 +5885,14 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 
 #ifdef ENABLE_SRTP
 			// Ensure we decrypt BEFORE attempting to decode DTMF payload
-			// (the following code was copied, verbatim (apart from the "goto" destination), from read_rtp_packet()
+			// ( the following code was largely copied from read_rtp_packet() )
 			switch_mutex_lock(rtp_session->ice_mutex);
 			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->has_rtp &&
 				(check_recv_payload(rtp_session) ||
 				 rtp_session->last_rtp_hdr.pt == rtp_session->recv_te ||
 				 rtp_session->last_rtp_hdr.pt == rtp_session->cng_pt)) {
 				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->has_rtp)) {
-				int sbytes = (int) *bytes;
+				int sbytes = bytes;
 				srtp_err_status_t stat = 0;
 
 				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET] || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
@@ -5914,25 +5914,10 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 					}
 				}
 
-				if (!(*flags & SFF_PLC) && rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
-					if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
-						stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
-					} else {
-						stat = srtp_unprotect_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes, 1);
-					}
-
-					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == srtp_err_status_replay_fail) {
-						/* false alarm nack */
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "REPLAY ERR, FALSE NACK\n");
-						sbytes = 0;
-						*bytes = 0;
-						if (rtp_session->stats.rtcp.pkt_count) {
-							rtp_session->stats.rtcp.period_pkt_count--;
-							rtp_session->stats.rtcp.pkt_count--;
-						}
-						switch_mutex_unlock(rtp_session->ice_mutex);
-						goto done_srtp;
-					}
+				if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+					stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+				} else {
+					stat = srtp_unprotect_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes, 1);
 				}
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
@@ -5944,14 +5929,14 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
-											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
+											  rtp_type(rtp_session), stat, msg, (long)bytes, errs);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "Ending call due to SRTP error\n");
 							switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
 						} else if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
-											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
+											  rtp_type(rtp_session), stat, msg, (long)bytes, errs);
 						}
 					}
 					sbytes = 0;
@@ -5959,10 +5944,9 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 					rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
 				}
 
-				*bytes = sbytes;
+				bytes = sbytes;
 			}
 			switch_mutex_unlock(rtp_session->ice_mutex);
-done_srtp:
 #endif
 
 				if (bytes) {
