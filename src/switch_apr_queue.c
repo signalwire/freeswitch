@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-#include <apr.h>
-#include <apr_thread_proc.h>
-#include <apr_thread_mutex.h>
-#include <apr_thread_cond.h>
+#include <fspr.h>
+#include <fspr_thread_mutex.h>
+#include <fspr_thread_cond.h>
 
 /* 
  * define this to get debug messages
@@ -33,9 +32,9 @@ struct switch_apr_queue_t {
     unsigned int        bounds;/**< max size of queue */
     unsigned int        full_waiters;
     unsigned int        empty_waiters;
-    apr_thread_mutex_t *one_big_mutex;
-    apr_thread_cond_t  *not_empty;
-    apr_thread_cond_t  *not_full;
+    fspr_thread_mutex_t *one_big_mutex;
+    fspr_thread_cond_t  *not_empty;
+    fspr_thread_cond_t  *not_full;
     int                 terminated;
 };
 
@@ -69,15 +68,15 @@ static void Q_DBG(char*msg, switch_apr_queue_t *q) {
  * Callback routine that is called to destroy this
  * switch_apr_queue_t when its pool is destroyed.
  */
-static apr_status_t queue_destroy(void *data) 
+static fspr_status_t queue_destroy(void *data) 
 {
     switch_apr_queue_t *queue = data;
 
     /* Ignore errors here, we can't do anything about them anyway. */
 
-    apr_thread_cond_destroy(queue->not_empty);
-    apr_thread_cond_destroy(queue->not_full);
-    apr_thread_mutex_destroy(queue->one_big_mutex);
+    fspr_thread_cond_destroy(queue->not_empty);
+    fspr_thread_cond_destroy(queue->not_full);
+    fspr_thread_mutex_destroy(queue->one_big_mutex);
 
     return APR_SUCCESS;
 }
@@ -85,33 +84,33 @@ static apr_status_t queue_destroy(void *data)
 /**
  * Initialize the switch_apr_queue_t.
  */
-apr_status_t switch_apr_queue_create(switch_apr_queue_t **q, unsigned int queue_capacity, apr_pool_t *a)
+fspr_status_t switch_apr_queue_create(switch_apr_queue_t **q, unsigned int queue_capacity, fspr_pool_t *a)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     switch_apr_queue_t *queue;
-    queue = apr_palloc(a, sizeof(switch_apr_queue_t));
+    queue = fspr_palloc(a, sizeof(switch_apr_queue_t));
     *q = queue;
 
     /* nested doesn't work ;( */
-    rv = apr_thread_mutex_create(&queue->one_big_mutex,
+    rv = fspr_thread_mutex_create(&queue->one_big_mutex,
                                  APR_THREAD_MUTEX_UNNESTED,
                                  a);
     if (rv != APR_SUCCESS) {
         return rv;
     }
 
-    rv = apr_thread_cond_create(&queue->not_empty, a);
+    rv = fspr_thread_cond_create(&queue->not_empty, a);
     if (rv != APR_SUCCESS) {
         return rv;
     }
 
-    rv = apr_thread_cond_create(&queue->not_full, a);
+    rv = fspr_thread_cond_create(&queue->not_full, a);
     if (rv != APR_SUCCESS) {
         return rv;
     }
 
     /* Set all the data in the queue to NULL */
-    queue->data = apr_palloc(a, queue_capacity * sizeof(void*));
+    queue->data = fspr_palloc(a, queue_capacity * sizeof(void*));
 	if (!queue->data) return APR_ENOMEM;
 	memset(queue->data, 0, queue_capacity * sizeof(void*));
     queue->bounds = queue_capacity;
@@ -122,7 +121,7 @@ apr_status_t switch_apr_queue_create(switch_apr_queue_t **q, unsigned int queue_
     queue->full_waiters = 0;
     queue->empty_waiters = 0;
 
-    apr_pool_cleanup_register(a, queue, queue_destroy, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(a, queue, queue_destroy, fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
@@ -132,15 +131,15 @@ apr_status_t switch_apr_queue_create(switch_apr_queue_t **q, unsigned int queue_
  * the push operation has completed, it signals other threads waiting
  * in apr_queue_pop() that they may continue consuming sockets.
  */
-apr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data)
+fspr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (queue->terminated) {
         return APR_EOF; /* no more elements ever again */
     }
 
-    rv = apr_thread_mutex_lock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_lock(queue->one_big_mutex);
     if (rv != APR_SUCCESS) {
         return rv;
     }
@@ -148,17 +147,17 @@ apr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data)
     if (apr_queue_full(queue)) {
         if (!queue->terminated) {
             queue->full_waiters++;
-            rv = apr_thread_cond_wait(queue->not_full, queue->one_big_mutex);
+            rv = fspr_thread_cond_wait(queue->not_full, queue->one_big_mutex);
             queue->full_waiters--;
             if (rv != APR_SUCCESS) {
-                apr_thread_mutex_unlock(queue->one_big_mutex);
+                fspr_thread_mutex_unlock(queue->one_big_mutex);
                 return rv;
             }
         }
         /* If we wake up and it's still empty, then we were interrupted */
         if (apr_queue_full(queue)) {
             Q_DBG("queue full (intr)", queue);
-            rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+            rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
             if (rv != APR_SUCCESS) {
                 return rv;
             }
@@ -177,14 +176,14 @@ apr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data)
 
     if (queue->empty_waiters) {
         Q_DBG("sig !empty", queue);
-        rv = apr_thread_cond_signal(queue->not_empty);
+        rv = fspr_thread_cond_signal(queue->not_empty);
         if (rv != APR_SUCCESS) {
-            apr_thread_mutex_unlock(queue->one_big_mutex);
+            fspr_thread_mutex_unlock(queue->one_big_mutex);
             return rv;
         }
     }
 
-    rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
     return rv;
 }
 
@@ -193,21 +192,21 @@ apr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data)
  * the push operation has completed, it signals other threads waiting
  * in apr_queue_pop() that they may continue consuming sockets.
  */
-apr_status_t switch_apr_queue_trypush(switch_apr_queue_t *queue, void *data)
+fspr_status_t switch_apr_queue_trypush(switch_apr_queue_t *queue, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (queue->terminated) {
         return APR_EOF; /* no more elements ever again */
     }
 
-    rv = apr_thread_mutex_lock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_lock(queue->one_big_mutex);
     if (rv != APR_SUCCESS) {
         return rv;
     }
 
     if (apr_queue_full(queue)) {
-        apr_thread_mutex_unlock(queue->one_big_mutex);
+        fspr_thread_mutex_unlock(queue->one_big_mutex);
         return APR_EAGAIN;
     }
     
@@ -217,14 +216,14 @@ apr_status_t switch_apr_queue_trypush(switch_apr_queue_t *queue, void *data)
 
     if (queue->empty_waiters) {
         Q_DBG("sig !empty", queue);
-        rv  = apr_thread_cond_signal(queue->not_empty);
+        rv  = fspr_thread_cond_signal(queue->not_empty);
         if (rv != APR_SUCCESS) {
-            apr_thread_mutex_unlock(queue->one_big_mutex);
+            fspr_thread_mutex_unlock(queue->one_big_mutex);
             return rv;
         }
     }
 
-    rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
     return rv;
 }
 
@@ -241,15 +240,15 @@ unsigned int switch_apr_queue_size(switch_apr_queue_t *queue) {
  * Once retrieved, the item is placed into the address specified by
  * 'data'.
  */
-apr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data)
+fspr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (queue->terminated) {
         return APR_EOF; /* no more elements ever again */
     }
 
-    rv = apr_thread_mutex_lock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_lock(queue->one_big_mutex);
     if (rv != APR_SUCCESS) {
         return rv;
     }
@@ -258,17 +257,17 @@ apr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data)
     if (apr_queue_empty(queue)) {
         if (!queue->terminated) {
             queue->empty_waiters++;
-            rv = apr_thread_cond_wait(queue->not_empty, queue->one_big_mutex);
+            rv = fspr_thread_cond_wait(queue->not_empty, queue->one_big_mutex);
             queue->empty_waiters--;
             if (rv != APR_SUCCESS) {
-                apr_thread_mutex_unlock(queue->one_big_mutex);
+                fspr_thread_mutex_unlock(queue->one_big_mutex);
                 return rv;
             }
         }
         /* If we wake up and it's still empty, then we were interrupted */
         if (apr_queue_empty(queue)) {
             Q_DBG("queue empty (intr)", queue);
-            rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+            rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
             if (rv != APR_SUCCESS) {
                 return rv;
             }
@@ -287,14 +286,14 @@ apr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data)
     queue->out = (queue->out + 1) % queue->bounds;
     if (queue->full_waiters) {
         Q_DBG("signal !full", queue);
-        rv = apr_thread_cond_signal(queue->not_full);
+        rv = fspr_thread_cond_signal(queue->not_full);
         if (rv != APR_SUCCESS) {
-            apr_thread_mutex_unlock(queue->one_big_mutex);
+            fspr_thread_mutex_unlock(queue->one_big_mutex);
             return rv;
         }
     }
 
-    rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
     return rv;
 }
 
@@ -304,15 +303,15 @@ apr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data)
  * until timeout is elapsed. Once retrieved, the item is placed into
  * the address specified by'data'.
  */
-apr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data, apr_interval_time_t timeout)
+fspr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data, fspr_interval_time_t timeout)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (queue->terminated) {
         return APR_EOF; /* no more elements ever again */
     }
 
-    rv = apr_thread_mutex_lock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_lock(queue->one_big_mutex);
     if (rv != APR_SUCCESS) {
         return rv;
     }
@@ -321,18 +320,18 @@ apr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data
     if (apr_queue_empty(queue)) {
         if (!queue->terminated) {
             queue->empty_waiters++;
-            rv = apr_thread_cond_timedwait(queue->not_empty, queue->one_big_mutex, timeout);
+            rv = fspr_thread_cond_timedwait(queue->not_empty, queue->one_big_mutex, timeout);
             queue->empty_waiters--;
 			/* In the event of a timemout, APR_TIMEUP will be returned */
             if (rv != APR_SUCCESS) {
-                apr_thread_mutex_unlock(queue->one_big_mutex);
+                fspr_thread_mutex_unlock(queue->one_big_mutex);
                 return rv;
             }
         }
         /* If we wake up and it's still empty, then we were interrupted */
         if (apr_queue_empty(queue)) {
             Q_DBG("queue empty (intr)", queue);
-            rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+            rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
             if (rv != APR_SUCCESS) {
                 return rv;
             }
@@ -351,14 +350,14 @@ apr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data
     queue->out = (queue->out + 1) % queue->bounds;
     if (queue->full_waiters) {
         Q_DBG("signal !full", queue);
-        rv = apr_thread_cond_signal(queue->not_full);
+        rv = fspr_thread_cond_signal(queue->not_full);
         if (rv != APR_SUCCESS) {
-            apr_thread_mutex_unlock(queue->one_big_mutex);
+            fspr_thread_mutex_unlock(queue->one_big_mutex);
             return rv;
         }
     }
 
-    rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
     return rv;
 }
 
@@ -368,21 +367,21 @@ apr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data
  * items available, return APR_EAGAIN.  Once retrieved,
  * the item is placed into the address specified by 'data'.
  */
-apr_status_t switch_apr_queue_trypop(switch_apr_queue_t *queue, void **data)
+fspr_status_t switch_apr_queue_trypop(switch_apr_queue_t *queue, void **data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (queue->terminated) {
         return APR_EOF; /* no more elements ever again */
     }
 
-    rv = apr_thread_mutex_lock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_lock(queue->one_big_mutex);
     if (rv != APR_SUCCESS) {
         return rv;
     }
 
     if (apr_queue_empty(queue)) {
-        apr_thread_mutex_unlock(queue->one_big_mutex);
+        fspr_thread_mutex_unlock(queue->one_big_mutex);
         return APR_EAGAIN;
     } 
 
@@ -392,39 +391,39 @@ apr_status_t switch_apr_queue_trypop(switch_apr_queue_t *queue, void **data)
     queue->out = (queue->out + 1) % queue->bounds;
     if (queue->full_waiters) {
         Q_DBG("signal !full", queue);
-        rv = apr_thread_cond_signal(queue->not_full);
+        rv = fspr_thread_cond_signal(queue->not_full);
         if (rv != APR_SUCCESS) {
-            apr_thread_mutex_unlock(queue->one_big_mutex);
+            fspr_thread_mutex_unlock(queue->one_big_mutex);
             return rv;
         }
     }
 
-    rv = apr_thread_mutex_unlock(queue->one_big_mutex);
+    rv = fspr_thread_mutex_unlock(queue->one_big_mutex);
     return rv;
 }
 
-apr_status_t switch_apr_queue_interrupt_all(switch_apr_queue_t *queue)
+fspr_status_t switch_apr_queue_interrupt_all(switch_apr_queue_t *queue)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     Q_DBG("intr all", queue);    
-    if ((rv = apr_thread_mutex_lock(queue->one_big_mutex)) != APR_SUCCESS) {
+    if ((rv = fspr_thread_mutex_lock(queue->one_big_mutex)) != APR_SUCCESS) {
         return rv;
     }
-    apr_thread_cond_broadcast(queue->not_empty);
-    apr_thread_cond_broadcast(queue->not_full);
+    fspr_thread_cond_broadcast(queue->not_empty);
+    fspr_thread_cond_broadcast(queue->not_full);
 
-    if ((rv = apr_thread_mutex_unlock(queue->one_big_mutex)) != APR_SUCCESS) {
+    if ((rv = fspr_thread_mutex_unlock(queue->one_big_mutex)) != APR_SUCCESS) {
         return rv;
     }
 
     return APR_SUCCESS;
 }
 
-apr_status_t switch_apr_queue_term(switch_apr_queue_t *queue)
+fspr_status_t switch_apr_queue_term(switch_apr_queue_t *queue)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    if ((rv = apr_thread_mutex_lock(queue->one_big_mutex)) != APR_SUCCESS) {
+    if ((rv = fspr_thread_mutex_lock(queue->one_big_mutex)) != APR_SUCCESS) {
         return rv;
     }
 
@@ -433,7 +432,7 @@ apr_status_t switch_apr_queue_term(switch_apr_queue_t *queue)
      * would-be popper checks it but right before they block
      */
     queue->terminated = 1;
-    if ((rv = apr_thread_mutex_unlock(queue->one_big_mutex)) != APR_SUCCESS) {
+    if ((rv = fspr_thread_mutex_unlock(queue->one_big_mutex)) != APR_SUCCESS) {
         return rv;
     }
     return switch_apr_queue_interrupt_all(queue);

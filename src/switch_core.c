@@ -1908,7 +1908,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 
 	/* INIT APR and Create the pool context */
-	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+	if (fspr_initialize() != SWITCH_STATUS_SUCCESS) {
 		*err = "FATAL ERROR! Could not initialize APR\n";
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -2003,7 +2003,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		/* allow missing configuration if MINIMAL */
 		if (!(flags & SCF_MINIMAL)) {
-			apr_terminate();
+			fspr_terminate();
 			return SWITCH_STATUS_MEMERR;
 		}
 	}
@@ -3160,8 +3160,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_core_media_deinit();
 
 	if (runtime.memory_pool) {
-		apr_pool_destroy(runtime.memory_pool);
-		apr_terminate();
+		fspr_pool_destroy(runtime.memory_pool);
+		fspr_terminate();
 	}
 
 	sqlite3_shutdown();
