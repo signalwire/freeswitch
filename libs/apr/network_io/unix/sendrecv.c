@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_support.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_support.h"
 
 #if APR_HAS_SENDFILE
-/* This file is needed to allow us access to the apr_file_t internals. */
-#include "apr_arch_file_io.h"
+/* This file is needed to allow us access to the fspr_file_t internals. */
+#include "fspr_arch_file_io.h"
 #endif /* APR_HAS_SENDFILE */
 
 /* osreldate.h is only needed on FreeBSD for sendfile detection */
@@ -29,10 +29,10 @@
 
 #include <assert.h>     /* assert() */
 
-apr_status_t apr_socket_send(apr_socket_t *sock, const char *buf, 
-                             apr_size_t *len)
+fspr_status_t fspr_socket_send(fspr_socket_t *sock, const char *buf, 
+                             fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     
     if (sock->options & APR_INCOMPLETE_WRITE) {
         sock->options &= ~APR_INCOMPLETE_WRITE;
@@ -45,9 +45,9 @@ apr_status_t apr_socket_send(apr_socket_t *sock, const char *buf,
 
     while (rv == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) 
                     && (sock->timeout > 0)) {
-        apr_status_t arv;
+        fspr_status_t arv;
 do_select:
-        arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -69,10 +69,10 @@ do_select:
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
+fspr_status_t fspr_socket_recv(fspr_socket_t *sock, char *buf, fspr_size_t *len)
 {
-    apr_ssize_t rv;
-    apr_status_t arv;
+    fspr_ssize_t rv;
+    fspr_status_t arv;
 
     if (sock->options & APR_INCOMPLETE_READ) {
         sock->options &= ~APR_INCOMPLETE_READ;
@@ -86,7 +86,7 @@ apr_status_t apr_socket_recv(apr_socket_t *sock, char *buf, apr_size_t *len)
     while ((rv == -1) && (errno == EAGAIN || errno == EWOULDBLOCK)
                       && (sock->timeout > 0)) {
 do_select:
-        arv = apr_wait_for_io_or_timeout(NULL, sock, 1);
+        arv = fspr_wait_for_io_or_timeout(NULL, sock, 1);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -111,11 +111,11 @@ do_select:
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_sendto(apr_socket_t *sock, apr_sockaddr_t *where,
-                               apr_int32_t flags, const char *buf,
-                               apr_size_t *len)
+fspr_status_t fspr_socket_sendto(fspr_socket_t *sock, fspr_sockaddr_t *where,
+                               fspr_int32_t flags, const char *buf,
+                               fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
 
     do {
         rv = sendto(sock->socketdes, buf, (*len), flags, 
@@ -125,7 +125,7 @@ apr_status_t apr_socket_sendto(apr_socket_t *sock, apr_sockaddr_t *where,
 
     while ((rv == -1) && (errno == EAGAIN || errno == EWOULDBLOCK)
                       && (sock->timeout > 0)) {
-        apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -145,11 +145,11 @@ apr_status_t apr_socket_sendto(apr_socket_t *sock, apr_sockaddr_t *where,
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
-                                 apr_int32_t flags, char *buf, 
-                                 apr_size_t *len)
+fspr_status_t fspr_socket_recvfrom(fspr_sockaddr_t *from, fspr_socket_t *sock,
+                                 fspr_int32_t flags, char *buf, 
+                                 fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     
     from->salen = sizeof(from->sa);
 
@@ -160,7 +160,7 @@ apr_status_t apr_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
 
     while ((rv == -1) && (errno == EAGAIN || errno == EWOULDBLOCK)
                       && (sock->timeout > 0)) {
-        apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 1);
+        fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 1);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -176,7 +176,7 @@ apr_status_t apr_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
         return errno;
     }
 
-    apr_sockaddr_vars_set(from, from->sa.sin.sin_family, ntohs(from->sa.sin.sin_port));
+    fspr_sockaddr_vars_set(from, from->sa.sin.sin_family, ntohs(from->sa.sin.sin_port));
 
     (*len) = rv;
     if (rv == 0 && sock->type == SOCK_STREAM) {
@@ -186,13 +186,13 @@ apr_status_t apr_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_sendv(apr_socket_t * sock, const struct iovec *vec,
-                              apr_int32_t nvec, apr_size_t *len)
+fspr_status_t fspr_socket_sendv(fspr_socket_t * sock, const struct iovec *vec,
+                              fspr_int32_t nvec, fspr_size_t *len)
 {
 #ifdef HAVE_WRITEV
-    apr_ssize_t rv;
-    apr_size_t requested_len = 0;
-    apr_int32_t i;
+    fspr_ssize_t rv;
+    fspr_size_t requested_len = 0;
+    fspr_int32_t i;
 
     for (i = 0; i < nvec; i++) {
         requested_len += vec[i].iov_len;
@@ -209,9 +209,9 @@ apr_status_t apr_socket_sendv(apr_socket_t * sock, const struct iovec *vec,
 
     while ((rv == -1) && (errno == EAGAIN || errno == EWOULDBLOCK) 
                       && (sock->timeout > 0)) {
-        apr_status_t arv;
+        fspr_status_t arv;
 do_select:
-        arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -233,7 +233,7 @@ do_select:
     return APR_SUCCESS;
 #else
     *len = vec[0].iov_len;
-    return apr_socket_send(sock, vec[0].iov_base, len);
+    return fspr_socket_send(sock, vec[0].iov_base, len);
 #endif
 }
 
@@ -245,27 +245,27 @@ do_select:
 /* TODO: what should flags be?  int_32? */
 
 /* Define a structure to pass in when we have a NULL header value */
-static apr_hdtr_t no_hdtr;
+static fspr_hdtr_t no_hdtr;
 
 #if defined(__linux__) && defined(HAVE_WRITEV)
 
-apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
-                                 apr_hdtr_t *hdtr, apr_off_t *offset,
-                                 apr_size_t *len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t *sock, fspr_file_t *file,
+                                 fspr_hdtr_t *hdtr, fspr_off_t *offset,
+                                 fspr_size_t *len, fspr_int32_t flags)
 {
     int rv, nbytes = 0, total_hdrbytes, i;
-    apr_status_t arv;
+    fspr_status_t arv;
 
 #if APR_HAS_LARGE_FILES && defined(HAVE_SENDFILE64)
-    apr_off_t off = *offset;
+    fspr_off_t off = *offset;
 #define sendfile sendfile64
 
 #elif APR_HAS_LARGE_FILES && SIZEOF_OFF_T == 4
-    /* 64-bit apr_off_t but no sendfile64(): fail if trying to send
+    /* 64-bit fspr_off_t but no sendfile64(): fail if trying to send
      * past the 2Gb limit. */
     off_t off;
     
-    if ((apr_int64_t)*offset + *len > INT_MAX) {
+    if ((fspr_int64_t)*offset + *len > INT_MAX) {
         return EINVAL;
     }
     
@@ -292,16 +292,16 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
     assert(flags==0);
 
     if (hdtr->numheaders > 0) {
-        apr_size_t hdrbytes;
+        fspr_size_t hdrbytes;
 
         /* cork before writing headers */
-        rv = apr_socket_opt_set(sock, APR_TCP_NOPUSH, 1);
+        rv = fspr_socket_opt_set(sock, APR_TCP_NOPUSH, 1);
         if (rv != APR_SUCCESS) {
             return rv;
         }
 
         /* Now write the headers */
-        arv = apr_socket_sendv(sock, hdtr->headers, hdtr->numheaders,
+        arv = fspr_socket_sendv(sock, hdtr->headers, hdtr->numheaders,
                                &hdrbytes);
         if (arv != APR_SUCCESS) {
             *len = 0;
@@ -319,7 +319,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
         }
         if (hdrbytes < total_hdrbytes) {
             *len = hdrbytes;
-            return apr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
+            return fspr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
         }
     }
 
@@ -338,7 +338,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
     while ((rv == -1) && (errno == EAGAIN || errno == EWOULDBLOCK) 
                       && (sock->timeout > 0)) {
 do_select:
-        arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -356,7 +356,7 @@ do_select:
     if (rv == -1) {
         *len = nbytes;
         rv = errno;
-        apr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
+        fspr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
         return rv;
     }
 
@@ -364,7 +364,7 @@ do_select:
 
     if (rv < *len) {
         *len = nbytes;
-        arv = apr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
+        arv = fspr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
         if (rv > 0) {
                 
             /* If this was a partial write, return now with the 
@@ -388,19 +388,19 @@ do_select:
 
     /* Now write the footers */
     if (hdtr->numtrailers > 0) {
-        apr_size_t trbytes;
-        arv = apr_socket_sendv(sock, hdtr->trailers, hdtr->numtrailers, 
+        fspr_size_t trbytes;
+        arv = fspr_socket_sendv(sock, hdtr->trailers, hdtr->numtrailers, 
                                &trbytes);
         nbytes += trbytes;
         if (arv != APR_SUCCESS) {
             *len = nbytes;
             rv = errno;
-            apr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
+            fspr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
             return rv;
         }
     }
 
-    apr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
+    fspr_socket_opt_set(sock, APR_TCP_NOPUSH, 0);
     
     (*len) = nbytes;
     return rv < 0 ? errno : APR_SUCCESS;
@@ -409,11 +409,11 @@ do_select:
 #elif defined(DARWIN)
 
 /* OS/X Release 10.5 or greater */
-apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
-                                 apr_hdtr_t * hdtr, apr_off_t * offset,
-                                 apr_size_t * len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t * sock, fspr_file_t * file,
+                                 fspr_hdtr_t * hdtr, fspr_off_t * offset,
+                                 fspr_size_t * len, fspr_int32_t flags)
 {
-    apr_off_t nbytes = *len;
+    fspr_off_t nbytes = *len;
     int rv;
     struct sf_hdtr headerstruct;
 
@@ -432,9 +432,9 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
     /* BSD can send the headers/footers as part of the system call */
     do {
         if (sock->options & APR_INCOMPLETE_WRITE) {
-            apr_status_t arv;
+            fspr_status_t arv;
             sock->options &= ~APR_INCOMPLETE_WRITE;
-            arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+            arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
             if (arv != APR_SUCCESS) {
                 *len = 0;
                 return arv;
@@ -494,7 +494,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
         }
         if ((rv == -1) && (errno == EAGAIN) 
                        && (sock->timeout > 0)) {
-            apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+            fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
             if (arv != APR_SUCCESS) {
                 *len = 0;
                 return arv;
@@ -512,9 +512,9 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
 
 /* Release 3.1 or greater */
-apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
-                                 apr_hdtr_t * hdtr, apr_off_t * offset,
-                                 apr_size_t * len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t * sock, fspr_file_t * file,
+                                 fspr_hdtr_t * hdtr, fspr_off_t * offset,
+                                 fspr_size_t * len, fspr_int32_t flags)
 {
     off_t nbytes = 0;
     int rv;
@@ -522,7 +522,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
     int i;
 #endif
     struct sf_hdtr headerstruct;
-    apr_size_t bytes_to_send = *len;
+    fspr_size_t bytes_to_send = *len;
 
     /* Ignore flags for now. */
     flags = 0;
@@ -555,9 +555,9 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
     /* FreeBSD can send the headers/footers as part of the system call */
     do {
         if (sock->options & APR_INCOMPLETE_WRITE) {
-            apr_status_t arv;
+            fspr_status_t arv;
             sock->options &= ~APR_INCOMPLETE_WRITE;
-            arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+            arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
             if (arv != APR_SUCCESS) {
                 *len = 0;
                 return arv;
@@ -618,7 +618,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
         }
         if ((rv == -1) && (errno == EAGAIN) 
                        && (sock->timeout > 0)) {
-            apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+            fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
             if (arv != APR_SUCCESS) {
                 *len = 0;
                 return arv;
@@ -639,13 +639,13 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
      sendfile(int fd, int s, off_t offset, off_t *len, struct sf_hdtr *hdtr,
          int flags);
 */
-apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
-                                 apr_hdtr_t * hdtr, apr_off_t * offset,
-                                 apr_size_t * len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t * sock, fspr_file_t * file,
+                                 fspr_hdtr_t * hdtr, fspr_off_t * offset,
+                                 fspr_size_t * len, fspr_int32_t flags)
 {
   int rv, i;
   struct sf_hdtr headerstruct;
-  apr_off_t bytes_to_send = *len;
+  fspr_off_t bytes_to_send = *len;
   
   /* Ignore flags for now. */
   flags = 0;
@@ -670,9 +670,9 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
 
   do {
     if (sock->options & APR_INCOMPLETE_WRITE) {
-      apr_status_t arv;
+      fspr_status_t arv;
       sock->options &= ~APR_INCOMPLETE_WRITE;
-      arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+      arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
       if (arv != APR_SUCCESS) {
       *len = 0;
       return arv;
@@ -736,7 +736,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
     }
     if ((rv == -1) && (errno == EAGAIN)
       && (sock->timeout > 0)) {
-      apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+      fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
       if (arv != APR_SUCCESS) {
       *len = 0;
       return arv;
@@ -767,32 +767,32 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
  * if nbytes == 0, the rest of the file (from offset) is sent
  */
 
-apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
-                                 apr_hdtr_t *hdtr, apr_off_t *offset,
-                                 apr_size_t *len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t *sock, fspr_file_t *file,
+                                 fspr_hdtr_t *hdtr, fspr_off_t *offset,
+                                 fspr_size_t *len, fspr_int32_t flags)
 {
     int i;
-    apr_ssize_t rc;
-    apr_size_t nbytes = *len, headerlen, trailerlen;
+    fspr_ssize_t rc;
+    fspr_size_t nbytes = *len, headerlen, trailerlen;
     struct iovec hdtrarray[2];
     char *headerbuf, *trailerbuf;
 
 #if APR_HAS_LARGE_FILES && defined(HAVE_SENDFILE64)
     /* later HP-UXes have a sendfile64() */
 #define sendfile sendfile64
-    apr_off_t off = *offset;
+    fspr_off_t off = *offset;
 
 #elif APR_HAS_LARGE_FILES && SIZEOF_OFF_T == 4
     /* HP-UX 11.00 doesn't have a sendfile64(): fail if trying to send
      * past the 2Gb limit */
     off_t off;
 
-    if ((apr_int64_t)*offset + *len > INT_MAX) {
+    if ((fspr_int64_t)*offset + *len > INT_MAX) {
         return EINVAL;
     }
     off = *offset;
 #else
-    apr_off_t off = *offset;
+    fspr_off_t off = *offset;
 #endif
 
     if (!hdtr) {
@@ -821,7 +821,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
         }  
 
         /* XXX:  BUHHH? wow, what a memory leak! */
-        headerbuf = hdtrarray[0].iov_base = apr_palloc(sock->pool, headerlen);
+        headerbuf = hdtrarray[0].iov_base = fspr_palloc(sock->pool, headerlen);
         hdtrarray[0].iov_len = headerlen;
 
         for (i = 0; i < hdtr->numheaders; i++) {
@@ -846,7 +846,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
         }
 
         /* XXX:  BUHHH? wow, what a memory leak! */
-        trailerbuf = hdtrarray[1].iov_base = apr_palloc(sock->pool, trailerlen);
+        trailerbuf = hdtrarray[1].iov_base = fspr_palloc(sock->pool, trailerlen);
         hdtrarray[1].iov_len = trailerlen;
 
         for (i = 0; i < hdtr->numtrailers; i++) {
@@ -872,7 +872,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
 
     while ((rc == -1) && (errno == EAGAIN || errno == EWOULDBLOCK) 
                       && (sock->timeout > 0)) {
-        apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
 
         if (arv != APR_SUCCESS) {
             *len = 0;
@@ -915,13 +915,13 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
  * AIX -  version 4.3.2 with APAR IX85388, or version 4.3.3 and above
  * OS/390 - V2R7 and above
  */
-apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
-                                 apr_hdtr_t * hdtr, apr_off_t * offset,
-                                 apr_size_t * len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t * sock, fspr_file_t * file,
+                                 fspr_hdtr_t * hdtr, fspr_off_t * offset,
+                                 fspr_size_t * len, fspr_int32_t flags)
 {
     int i, ptr, rv = 0;
     void * hbuf=NULL, * tbuf=NULL;
-    apr_status_t arv;
+    fspr_status_t arv;
     struct sf_parms parms;
 
     if (!hdtr) {
@@ -951,13 +951,13 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
                 parms.header_length += hdtr->headers[i].iov_len;
             }
 #if 0
-            /* Keepalives make apr_palloc a bad idea */
+            /* Keepalives make fspr_palloc a bad idea */
             hbuf = malloc(parms.header_length);
 #else
             /* but headers are small, so maybe we can hold on to the
              * memory for the life of the socket...
              */
-            hbuf = apr_palloc(sock->pool, parms.header_length);
+            hbuf = fspr_palloc(sock->pool, parms.header_length);
 #endif
             ptr = 0;
             for (i = 0; i < hdtr->numheaders; i++) {
@@ -980,10 +980,10 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
                 parms.trailer_length += hdtr->trailers[i].iov_len;
             }
 #if 0
-            /* Keepalives make apr_palloc a bad idea */
+            /* Keepalives make fspr_palloc a bad idea */
             tbuf = malloc(parms.trailer_length);
 #else
-            tbuf = apr_palloc(sock->pool, parms.trailer_length);
+            tbuf = fspr_palloc(sock->pool, parms.trailer_length);
 #endif
             ptr = 0;
             for (i = 0; i < hdtr->numtrailers; i++) {
@@ -1020,7 +1020,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t * sock, apr_file_t * file,
     while ((rv == -1) && (errno == EAGAIN || errno == EWOULDBLOCK) 
                       && (sock->timeout > 0)) {
 do_select:
-        arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -1077,15 +1077,15 @@ do_select:
 #define sendfilev sendfilev64
 #endif
 
-apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
-                                 apr_hdtr_t *hdtr, apr_off_t *offset,
-                                 apr_size_t *len, apr_int32_t flags)
+fspr_status_t fspr_socket_sendfile(fspr_socket_t *sock, fspr_file_t *file,
+                                 fspr_hdtr_t *hdtr, fspr_off_t *offset,
+                                 fspr_size_t *len, fspr_int32_t flags)
 {
-    apr_status_t rv, arv;
-    apr_size_t nbytes;
+    fspr_status_t rv, arv;
+    fspr_size_t nbytes;
     sendfilevec_t *sfv;
     int vecs, curvec, i, repeat;
-    apr_size_t requested_len = 0;
+    fspr_size_t requested_len = 0;
 
     if (!hdtr) {
         hdtr = &no_hdtr;
@@ -1096,7 +1096,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
 
     /* Calculate how much space we need. */
     vecs = hdtr->numheaders + hdtr->numtrailers + 1;
-    sfv = apr_palloc(sock->pool, sizeof(sendfilevec_t) * vecs);
+    sfv = fspr_palloc(sock->pool, sizeof(sendfilevec_t) * vecs);
 
     curvec = 0;
 
@@ -1140,7 +1140,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
      */
     if (sock->options & APR_INCOMPLETE_WRITE) {
         sock->options &= ~APR_INCOMPLETE_WRITE;
-        arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -1170,7 +1170,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
                 rv = 0;
             }
             else if (!arv && (sock->timeout > 0)) {
-                apr_status_t t = apr_wait_for_io_or_timeout(NULL, sock, 0);
+                fspr_status_t t = fspr_wait_for_io_or_timeout(NULL, sock, 0);
 
                 if (t != APR_SUCCESS) {
                     *len = 0;
@@ -1198,7 +1198,7 @@ apr_status_t apr_socket_sendfile(apr_socket_t *sock, apr_file_t *file,
 #else
 #error APR has detected sendfile on your system, but nobody has written a
 #error version of it for APR yet.  To get past this, either write 
-#error apr_socket_sendfile or change APR_HAS_SENDFILE in apr.h to 0.
+#error fspr_socket_sendfile or change APR_HAS_SENDFILE in apr.h to 0.
 #endif /* __linux__, __FreeBSD__, __DragonFly__, __HPUX__, _AIX, __MVS__,
 	  Tru64/OSF1 */
 

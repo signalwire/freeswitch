@@ -16,18 +16,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "apr_file_io.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
+#include "fspr_file_io.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
 #include "testutil.h"
 
-static apr_pool_t *pool;
+static fspr_pool_t *pool;
 static char *testdata;
 static int cleanup_called = 0;
 
-static apr_status_t string_cleanup(void *data)
+static fspr_status_t string_cleanup(void *data)
 {
     cleanup_called = 1;
     return APR_SUCCESS;
@@ -35,38 +35,38 @@ static apr_status_t string_cleanup(void *data)
 
 static void set_userdata(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_pool_userdata_set(testdata, "TEST", string_cleanup, pool);
+    rv = fspr_pool_userdata_set(testdata, "TEST", string_cleanup, pool);
     ABTS_INT_EQUAL(tc, rv, APR_SUCCESS);
 }
 
 static void get_userdata(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     void *retdata;
 
-    rv = apr_pool_userdata_get(&retdata, "TEST", pool);
+    rv = fspr_pool_userdata_get(&retdata, "TEST", pool);
     ABTS_INT_EQUAL(tc, rv, APR_SUCCESS);
     ABTS_STR_EQUAL(tc, retdata, testdata);
 }
 
 static void get_nonexistkey(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     void *retdata;
 
-    rv = apr_pool_userdata_get(&retdata, "DOESNTEXIST", pool);
+    rv = fspr_pool_userdata_get(&retdata, "DOESNTEXIST", pool);
     ABTS_INT_EQUAL(tc, rv, APR_SUCCESS);
     ABTS_PTR_EQUAL(tc, retdata, NULL);
 }
 
 static void post_pool_clear(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     void *retdata;
 
-    rv = apr_pool_userdata_get(&retdata, "DOESNTEXIST", pool);
+    rv = fspr_pool_userdata_get(&retdata, "DOESNTEXIST", pool);
     ABTS_INT_EQUAL(tc, rv, APR_SUCCESS);
     ABTS_PTR_EQUAL(tc, retdata, NULL);
 }
@@ -75,14 +75,14 @@ abts_suite *testud(abts_suite *suite)
 {
     suite = ADD_SUITE(suite)
 
-    apr_pool_create(&pool, p);
-    testdata = apr_pstrdup(pool, "This is a test\n");
+    fspr_pool_create(&pool, p);
+    testdata = fspr_pstrdup(pool, "This is a test\n");
 
     abts_run_test(suite, set_userdata, NULL);
     abts_run_test(suite, get_userdata, NULL);
     abts_run_test(suite, get_nonexistkey, NULL);
 
-    apr_pool_clear(pool);
+    fspr_pool_clear(pool);
 
     abts_run_test(suite, post_pool_clear, NULL);
 

@@ -14,46 +14,46 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_poll.h"
-#include "apr_arch_networkio.h"
+#include "fspr.h"
+#include "fspr_poll.h"
+#include "fspr_arch_networkio.h"
 
 
 
-struct apr_pollset_t {
-    apr_pool_t *pool;
-    apr_uint32_t nelts;
-    apr_uint32_t nalloc;
+struct fspr_pollset_t {
+    fspr_pool_t *pool;
+    fspr_uint32_t nelts;
+    fspr_uint32_t nalloc;
     int *pollset;
     int num_read;
     int num_write;
     int num_except;
     int num_total;
-    apr_pollfd_t *query_set;
-    apr_pollfd_t *result_set;
+    fspr_pollfd_t *query_set;
+    fspr_pollfd_t *result_set;
 };
 
 
 
-APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
-                                             apr_uint32_t size,
-                                             apr_pool_t *p,
-                                             apr_uint32_t flags)
+APR_DECLARE(fspr_status_t) fspr_pollset_create(fspr_pollset_t **pollset,
+                                             fspr_uint32_t size,
+                                             fspr_pool_t *p,
+                                             fspr_uint32_t flags)
 {
-    *pollset = apr_palloc(p, sizeof(**pollset));
+    *pollset = fspr_palloc(p, sizeof(**pollset));
     (*pollset)->pool = p;
     (*pollset)->nelts = 0;
     (*pollset)->nalloc = size;
-    (*pollset)->pollset = apr_palloc(p, size * sizeof(int) * 3);
-    (*pollset)->query_set = apr_palloc(p, size * sizeof(apr_pollfd_t));
-    (*pollset)->result_set = apr_palloc(p, size * sizeof(apr_pollfd_t));
+    (*pollset)->pollset = fspr_palloc(p, size * sizeof(int) * 3);
+    (*pollset)->query_set = fspr_palloc(p, size * sizeof(fspr_pollfd_t));
+    (*pollset)->result_set = fspr_palloc(p, size * sizeof(fspr_pollfd_t));
     (*pollset)->num_read = -1;
     return APR_SUCCESS;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_pollset_destroy(apr_pollset_t *pollset)
+APR_DECLARE(fspr_status_t) fspr_pollset_destroy(fspr_pollset_t *pollset)
 {
     /* A no-op function for now.  If we later implement /dev/poll
      * support, we'll need to close the /dev/poll fd here
@@ -63,8 +63,8 @@ APR_DECLARE(apr_status_t) apr_pollset_destroy(apr_pollset_t *pollset)
 
 
 
-APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
-                                          const apr_pollfd_t *descriptor)
+APR_DECLARE(fspr_status_t) fspr_pollset_add(fspr_pollset_t *pollset,
+                                          const fspr_pollfd_t *descriptor)
 {
     if (pollset->nelts == pollset->nalloc) {
         return APR_ENOMEM;
@@ -83,16 +83,16 @@ APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
 
 
 
-APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t *pollset,
-                                             const apr_pollfd_t *descriptor)
+APR_DECLARE(fspr_status_t) fspr_pollset_remove(fspr_pollset_t *pollset,
+                                             const fspr_pollfd_t *descriptor)
 {
-    apr_uint32_t i;
+    fspr_uint32_t i;
 
     for (i = 0; i < pollset->nelts; i++) {
         if (descriptor->desc.s == pollset->query_set[i].desc.s) {
             /* Found an instance of the fd: remove this and any other copies */
-            apr_uint32_t dst = i;
-            apr_uint32_t old_nelts = pollset->nelts;
+            fspr_uint32_t dst = i;
+            fspr_uint32_t old_nelts = pollset->nelts;
             pollset->nelts--;
 
             for (i++; i < old_nelts; i++) {
@@ -116,7 +116,7 @@ APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t *pollset,
 
 
 
-static void make_pollset(apr_pollset_t *pollset)
+static void make_pollset(fspr_pollset_t *pollset)
 {
     int i;
     int pos = 0;
@@ -151,13 +151,13 @@ static void make_pollset(apr_pollset_t *pollset)
 
 
 
-APR_DECLARE(apr_status_t) apr_pollset_poll(apr_pollset_t *pollset,
-                                           apr_interval_time_t timeout,
-                                           apr_int32_t *num,
-                                           const apr_pollfd_t **descriptors)
+APR_DECLARE(fspr_status_t) fspr_pollset_poll(fspr_pollset_t *pollset,
+                                           fspr_interval_time_t timeout,
+                                           fspr_int32_t *num,
+                                           const fspr_pollfd_t **descriptors)
 {
     int rv;
-    apr_uint32_t i;
+    fspr_uint32_t i;
     int *pollresult;
     int read_pos, write_pos, except_pos;
 

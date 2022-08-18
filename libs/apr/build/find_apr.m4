@@ -143,7 +143,7 @@ AC_DEFUN([APR_FIND_APR], [
     if test "$apr_found" = "no" && test -d "$1"; then
       apr_temp_abs_srcdir="`cd $1 && pwd`"
       apr_found="reconfig"
-      apr_bundled_major="`sed -n '/#define.*APR_MAJOR_VERSION/s/^[^0-9]*\([0-9]*\).*$/\1/p' \"$1/include/apr_version.h\"`"
+      apr_bundled_major="`sed -n '/#define.*APR_MAJOR_VERSION/s/^[^0-9]*\([0-9]*\).*$/\1/p' \"$1/include/fspr_version.h\"`"
       case $apr_bundled_major in
         "")
           AC_MSG_ERROR([failed to find major version of bundled APR])

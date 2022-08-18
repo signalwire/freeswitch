@@ -15,10 +15,10 @@
  */
 
 #define APR_WANT_MEMFUNC
-#include "apr_want.h"
-#include "apr_general.h"
+#include "fspr_want.h"
+#include "fspr_general.h"
 
-#include "apr_arch_misc.h"
+#include "fspr_arch_misc.h"
 #include <sys/stat.h>
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -51,7 +51,7 @@
 
 #if defined(HAVE_UUID_CREATE)
 
-APR_DECLARE(apr_status_t) apr_os_uuid_get(unsigned char *uuid_data)
+APR_DECLARE(fspr_status_t) fspr_os_uuid_get(unsigned char *uuid_data)
 {
     uint32_t rv;
     uuid_t g;
@@ -68,7 +68,7 @@ APR_DECLARE(apr_status_t) apr_os_uuid_get(unsigned char *uuid_data)
 
 #elif defined(HAVE_UUID_GENERATE)
 
-APR_DECLARE(apr_status_t) apr_os_uuid_get(unsigned char *uuid_data)
+APR_DECLARE(fspr_status_t) fspr_os_uuid_get(unsigned char *uuid_data)
 {
     uuid_t g;
 
@@ -84,8 +84,8 @@ APR_DECLARE(apr_status_t) apr_os_uuid_get(unsigned char *uuid_data)
 
 #if APR_HAS_RANDOM
 
-APR_DECLARE(apr_status_t) apr_generate_random_bytes(unsigned char *buf, 
-                                                    apr_size_t length)
+APR_DECLARE(fspr_status_t) fspr_generate_random_bytes(unsigned char *buf, 
+                                                    fspr_size_t length)
 {
 #ifdef DEV_RANDOM
 
@@ -95,7 +95,7 @@ APR_DECLARE(apr_status_t) apr_generate_random_bytes(unsigned char *buf,
      * gives EOF, so reading 'length' bytes may require opening the
      * device several times. */
     do {
-        apr_ssize_t rc;
+        fspr_ssize_t rc;
 
         if (fd == -1)
             if ((fd = open(DEV_RANDOM, O_RDONLY)) == -1)
@@ -145,8 +145,8 @@ APR_DECLARE(apr_status_t) apr_generate_random_bytes(unsigned char *buf,
 
     int egd_socket, egd_path_len, rv, bad_errno;
     struct sockaddr_un addr;
-    apr_socklen_t egd_addr_len;
-    apr_size_t resp_expected;
+    fspr_socklen_t egd_addr_len;
+    fspr_size_t resp_expected;
     unsigned char req[2], resp[255];
     unsigned char *curbuf = buf;
 
@@ -178,7 +178,7 @@ APR_DECLARE(apr_status_t) apr_generate_random_bytes(unsigned char *buf,
 
         /* EGD can only return 255 bytes of data at a time.  Silly.  */ 
         while (length > 0) {
-            apr_ssize_t srv;
+            fspr_ssize_t srv;
             req[0] = 2; /* We'll block for now. */
             req[1] = length > 255 ? 255: length;
 

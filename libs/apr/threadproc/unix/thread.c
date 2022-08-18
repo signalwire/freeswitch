@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_portable.h"
-#include "apr_arch_threadproc.h"
+#include "fspr.h"
+#include "fspr_portable.h"
+#include "fspr_arch_threadproc.h"
 
 #if APR_HAS_THREADS
 
 #if APR_HAVE_PTHREAD_H
 
 /* Destroy the threadattr object */
-static apr_status_t threadattr_cleanup(void *data)
+static fspr_status_t threadattr_cleanup(void *data)
 {
-    apr_threadattr_t *attr = data;
-    apr_status_t rv;
+    fspr_threadattr_t *attr = data;
+    fspr_status_t rv;
 
     rv = pthread_attr_destroy(&attr->attr);
 #ifdef PTHREAD_SETS_ERRNO
@@ -37,18 +37,18 @@ static apr_status_t threadattr_cleanup(void *data)
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_create(apr_threadattr_t **new,
-                                                apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_threadattr_create(fspr_threadattr_t **new,
+                                                fspr_pool_t *pool)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
-    (*new) = apr_palloc(pool, sizeof(apr_threadattr_t));
+    (*new) = fspr_palloc(pool, sizeof(fspr_threadattr_t));
     (*new)->pool = pool;
     stat = pthread_attr_init(&(*new)->attr);
 
     if (stat == 0) {
-        apr_pool_cleanup_register(pool, *new, threadattr_cleanup,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(pool, *new, threadattr_cleanup,
+                                  fspr_pool_cleanup_null);
         return APR_SUCCESS;
     }
 #ifdef PTHREAD_SETS_ERRNO
@@ -60,10 +60,10 @@ APR_DECLARE(apr_status_t) apr_threadattr_create(apr_threadattr_t **new,
 
 #define DETACH_ARG(v) ((v) ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE)
 
-APR_DECLARE(apr_status_t) apr_threadattr_detach_set(apr_threadattr_t *attr,
-                                                    apr_int32_t on)
+APR_DECLARE(fspr_status_t) fspr_threadattr_detach_set(fspr_threadattr_t *attr,
+                                                    fspr_int32_t on)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 #ifdef PTHREAD_ATTR_SETDETACHSTATE_ARG2_ADDR
     int arg = DETACH_ARG(v);
 
@@ -83,7 +83,7 @@ APR_DECLARE(apr_status_t) apr_threadattr_detach_set(apr_threadattr_t *attr,
     }
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_detach_get(apr_threadattr_t *attr)
+APR_DECLARE(fspr_status_t) fspr_threadattr_detach_get(fspr_threadattr_t *attr)
 {
     int state;
 
@@ -97,8 +97,8 @@ APR_DECLARE(apr_status_t) apr_threadattr_detach_get(apr_threadattr_t *attr)
     return APR_NOTDETACH;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_stacksize_set(apr_threadattr_t *attr,
-                                                       apr_size_t stacksize)
+APR_DECLARE(fspr_status_t) fspr_threadattr_stacksize_set(fspr_threadattr_t *attr,
+                                                       fspr_size_t stacksize)
 {
     int stat;
 
@@ -113,11 +113,11 @@ APR_DECLARE(apr_status_t) apr_threadattr_stacksize_set(apr_threadattr_t *attr,
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_guardsize_set(apr_threadattr_t *attr,
-                                                       apr_size_t size)
+APR_DECLARE(fspr_status_t) fspr_threadattr_guardsize_set(fspr_threadattr_t *attr,
+                                                       fspr_size_t size)
 {
 #ifdef HAVE_PTHREAD_ATTR_SETGUARDSIZE
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv = pthread_attr_setguardsize(&attr->attr, size);
     if (rv == 0) {
@@ -134,7 +134,7 @@ APR_DECLARE(apr_status_t) apr_threadattr_guardsize_set(apr_threadattr_t *attr,
 
 static void *dummy_worker(void *opaque)
 {
-    apr_thread_t *thread = (apr_thread_t*)opaque;
+    fspr_thread_t *thread = (fspr_thread_t*)opaque;
 
 #ifdef HAVE_PTHREAD_SETSCHEDPARAM
 	if (thread->priority) {
@@ -151,23 +151,23 @@ static void *dummy_worker(void *opaque)
     return thread->func(thread, thread->data);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
-                                            apr_threadattr_t *attr,
-                                            apr_thread_start_t func,
+APR_DECLARE(fspr_status_t) fspr_thread_create(fspr_thread_t **new,
+                                            fspr_threadattr_t *attr,
+                                            fspr_thread_start_t func,
                                             void *data,
-                                            apr_pool_t *pool)
+                                            fspr_pool_t *pool)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     pthread_attr_t *temp;
 	pthread_t tt;
 
-    (*new) = (apr_thread_t *)apr_pcalloc(pool, sizeof(apr_thread_t));
+    (*new) = (fspr_thread_t *)fspr_pcalloc(pool, sizeof(fspr_thread_t));
 
     if ((*new) == NULL) {
         return APR_ENOMEM;
     }
 
-    (*new)->td = (pthread_t *)apr_pcalloc(pool, sizeof(pthread_t));
+    (*new)->td = (pthread_t *)fspr_pcalloc(pool, sizeof(pthread_t));
 
     if ((*new)->td == NULL) {
         return APR_ENOMEM;
@@ -182,7 +182,7 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     else
         temp = NULL;
 
-    stat = apr_pool_create(&(*new)->pool, pool);
+    stat = fspr_pool_create(&(*new)->pool, pool);
     if (stat != APR_SUCCESS) {
         return stat;
     }
@@ -205,31 +205,31 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     }
 }
 
-APR_DECLARE(apr_os_thread_t) apr_os_thread_current(void)
+APR_DECLARE(fspr_os_thread_t) fspr_os_thread_current(void)
 {
     return pthread_self();
 }
 
-APR_DECLARE(int) apr_os_thread_equal(apr_os_thread_t tid1,
-                                     apr_os_thread_t tid2)
+APR_DECLARE(int) fspr_os_thread_equal(fspr_os_thread_t tid1,
+                                     fspr_os_thread_t tid2)
 {
     return pthread_equal(tid1, tid2);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_exit(apr_thread_t *thd,
-                                          apr_status_t retval)
+APR_DECLARE(fspr_status_t) fspr_thread_exit(fspr_thread_t *thd,
+                                          fspr_status_t retval)
 {
     thd->exitval = retval;
-    apr_pool_destroy(thd->pool);
+    fspr_pool_destroy(thd->pool);
     pthread_exit(NULL);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_join(apr_status_t *retval,
-                                          apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_thread_join(fspr_status_t *retval,
+                                          fspr_thread_t *thd)
 {
-    apr_status_t stat;
-    apr_status_t *thread_stat;
+    fspr_status_t stat;
+    fspr_status_t *thread_stat;
 
     if ((stat = pthread_join(*thd->td,(void *)&thread_stat)) == 0) {
         *retval = thd->exitval;
@@ -244,9 +244,9 @@ APR_DECLARE(apr_status_t) apr_thread_join(apr_status_t *retval,
     }
 }
 
-APR_DECLARE(apr_status_t) apr_thread_detach(apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_thread_detach(fspr_thread_t *thd)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
 #ifdef PTHREAD_DETACH_ARG1_ADDR
     if ((stat = pthread_detach(thd->td)) == 0) {
@@ -265,40 +265,40 @@ APR_DECLARE(apr_status_t) apr_thread_detach(apr_thread_t *thd)
     }
 }
 
-void apr_thread_yield()
+void fspr_thread_yield()
 {
 }
 
-APR_DECLARE(apr_status_t) apr_thread_data_get(void **data, const char *key,
-                                              apr_thread_t *thread)
+APR_DECLARE(fspr_status_t) fspr_thread_data_get(void **data, const char *key,
+                                              fspr_thread_t *thread)
 {
-    return apr_pool_userdata_get(data, key, thread->pool);
+    return fspr_pool_userdata_get(data, key, thread->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_data_set(void *data, const char *key,
-                              apr_status_t (*cleanup)(void *),
-                              apr_thread_t *thread)
+APR_DECLARE(fspr_status_t) fspr_thread_data_set(void *data, const char *key,
+                              fspr_status_t (*cleanup)(void *),
+                              fspr_thread_t *thread)
 {
-    return apr_pool_userdata_set(data, key, cleanup, thread->pool);
+    return fspr_pool_userdata_set(data, key, cleanup, thread->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_os_thread_get(apr_os_thread_t **thethd,
-                                            apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_os_thread_get(fspr_os_thread_t **thethd,
+                                            fspr_thread_t *thd)
 {
     *thethd = thd->td;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_thread_put(apr_thread_t **thd,
-                                            apr_os_thread_t *thethd,
-                                            apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_thread_put(fspr_thread_t **thd,
+                                            fspr_os_thread_t *thethd,
+                                            fspr_pool_t *pool)
 {
     if (pool == NULL) {
         return APR_ENOPOOL;
     }
 
     if ((*thd) == NULL) {
-        (*thd) = (apr_thread_t *)apr_pcalloc(pool, sizeof(apr_thread_t));
+        (*thd) = (fspr_thread_t *)fspr_pcalloc(pool, sizeof(fspr_thread_t));
         (*thd)->pool = pool;
     }
 
@@ -306,17 +306,17 @@ APR_DECLARE(apr_status_t) apr_os_thread_put(apr_thread_t **thd,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_once_init(apr_thread_once_t **control,
-                                               apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_thread_once_init(fspr_thread_once_t **control,
+                                               fspr_pool_t *p)
 {
     static const pthread_once_t once_init = PTHREAD_ONCE_INIT;
 
-    *control = apr_palloc(p, sizeof(**control));
+    *control = fspr_palloc(p, sizeof(**control));
     (*control)->once = once_init;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_once(apr_thread_once_t *control,
+APR_DECLARE(fspr_status_t) fspr_thread_once(fspr_thread_once_t *control,
                                           void (*func)(void))
 {
     return pthread_once(&control->once, func);
@@ -330,9 +330,9 @@ APR_POOL_IMPLEMENT_ACCESSOR(thread)
 #if !APR_HAS_THREADS
 
 /* avoid warning for no prototype */
-APR_DECLARE(apr_status_t) apr_os_thread_get(void);
+APR_DECLARE(fspr_status_t) fspr_os_thread_get(void);
 
-APR_DECLARE(apr_status_t) apr_os_thread_get(void)
+APR_DECLARE(fspr_status_t) fspr_os_thread_get(void)
 {
     return APR_ENOTIMPL;
 }

@@ -23,15 +23,15 @@
  *
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_mmap.h"
-#include "apr_errno.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_mmap.h"
+#include "fspr_errno.h"
 
 #if APR_HAS_MMAP || defined(BEOS)
 
-APR_DECLARE(apr_status_t) apr_mmap_offset(void **addr, apr_mmap_t *mmap,
-                                          apr_off_t offset)
+APR_DECLARE(fspr_status_t) fspr_mmap_offset(void **addr, fspr_mmap_t *mmap,
+                                          fspr_off_t offset)
 {  
     if (offset < 0 || offset > mmap->size)
         return APR_EINVAL;
