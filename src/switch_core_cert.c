@@ -410,7 +410,9 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 {
 	X509 *x;
 	EVP_PKEY *pk;
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	RSA *rsa;
+#endif
 	X509_NAME *name=NULL;
 
 	switch_assert(pkeyp);
@@ -432,7 +434,26 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 		x = *x509p;
 	}
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	{
+		EVP_PKEY_CTX *ctx;
+
+		ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+		/* Setup the key context */
+		if ((!ctx) || (EVP_PKEY_keygen_init(ctx) <= 0) || (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, bits) <= 0)) {
+			abort();
+			goto err;
+		}
+
+		/* Generate key */
+		if (EVP_PKEY_generate(ctx, &pk) <= 0) {
+			abort();
+			goto err;
+		}
+
+		EVP_PKEY_CTX_free(ctx);
+	}
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000
 	rsa = RSA_new();
 	{
 		static const BN_ULONG ULONG_RSA_F4 = RSA_F4;
@@ -449,11 +470,13 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	rsa = RSA_generate_key(bits, RSA_F4, NULL, NULL);
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	if (!EVP_PKEY_assign_RSA(pk, rsa)) {
 		abort();
 	}
 
 	rsa = NULL;
+#endif
 
 	X509_set_version(x, 2);
 	ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
