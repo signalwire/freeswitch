@@ -22,7 +22,7 @@
       s=-
       c=IN IP[local_ip_type] [local_ip]
       t=0 0
-      m=audio [auto_media_port] RTP/AVP 8 0 18 101
+      m=audio [media_port] RTP/AVP 8 0 18 101
       a=rtpmap:8 PCMA/8000
       a=rtpmap:0 PCMU/8000
       a=rtpmap:18 G729/8000
@@ -117,7 +117,7 @@
       s=
       c=IN IP[local_ip_type] [local_ip]
       t=0 0
-      m=audio [auto_media_port] RTP/AVP 8 0 101
+      m=audio [media_port] RTP/AVP 8 0 101
       a=rtpmap:8 PCMA/8000
       a=rtpmap:0 PCMU/8000
       a=rtpmap:101 telephone-event/8000
