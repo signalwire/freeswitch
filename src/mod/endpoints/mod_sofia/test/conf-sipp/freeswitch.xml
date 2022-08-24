@@ -596,7 +596,7 @@
 		<condition>
 		   <action application="info"/>
 		   <action application="answer" />
-		   <action application="voicemail" data="default $${domain} 1001"/>
+		   <!--action application="voicemail" data="default $${domain} 1001"/-->
        </condition>
     </extension>
 
