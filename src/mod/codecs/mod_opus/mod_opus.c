@@ -1342,7 +1342,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
 	switch_codec_interface_t *codec_interface;
 	switch_api_interface_t *commands_api_interface;
-	int samples = 480;
+	int samples = 480; /* start with 10 ms ptime */
 	int bytes = 960;
 	int mss = 10000;
 	int x = 0;
@@ -1443,7 +1443,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 
 	/* 16 khz */
-	samples = 480;
+	samples = 160;
 	bytes = 320;
 	mss = 10000;
 	rate = 16000;
@@ -1540,7 +1540,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 
 	/* 8 khz */
-	samples = 480;
+	samples = 80;
 	bytes = 160;
 	mss = 10000;
 	rate = 8000;
