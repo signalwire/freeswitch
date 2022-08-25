@@ -2172,6 +2172,10 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-db-handles must be between 5 and 5000\n");
 					}
+				} else if (!strcasecmp(var, "odbc-skip-autocommit-flip")) {
+					if (switch_true(val)) {
+						switch_odbc_skip_autocommit_flip();
+					}
 				} else if (!strcasecmp(var, "db-handle-timeout")) {
 					long tmp = atol(val);
 
