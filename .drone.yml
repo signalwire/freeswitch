@@ -30,7 +30,7 @@ steps:
       - sed -i '/formats\\/mod_opusfile/s/^#//g' modules.conf
       - sed -i '/languages\\/mod_lua/s/^#//g' modules.conf
       - export ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
-      - ./configure --enable-address-sanitizer
+      - ./configure --enable-address-sanitizer --enable-fake-dlclose
 
     - name: build
       image: signalwire/freeswitch-public-base:bullseye
@@ -178,6 +178,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 96f5b3ecee6a6b61fa39bc748bd68295be30eff4768dcfc53091dd448d3ee28d
+hmac: 780e4aaee61e3683ea4a8d6fe5131f7c9e62ebad727546013f18df0fca80d705
 
 ...
