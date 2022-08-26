@@ -4325,7 +4325,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_event_fire(&event);
 	}
 
- end:
 
 	if (strcasecmp(event, "call-info") && strcasecmp(event, "line-seize")) {
 
@@ -4406,6 +4405,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 	}
+
+ end:
 
 	if (event) {
 		su_free(nua_handle_get_home(nh), event);
