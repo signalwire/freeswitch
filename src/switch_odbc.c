@@ -64,7 +64,7 @@ struct switch_odbc_handle {
 
 uint8_t skip_autocommit_flip = 0;
 
-SWITCH_DECLARE(void) switch_odbc_skip_autocommit_flip()
+SWITCH_DECLARE(void) switch_odbc_skip_autocommit_flip(void)
 {
 	skip_autocommit_flip = 1;
 }
