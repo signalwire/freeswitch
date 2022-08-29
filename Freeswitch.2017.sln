@@ -69,7 +69,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 		conf\vanilla\autoload_configs\conference.conf.xml = conf\vanilla\autoload_configs\conference.conf.xml
 		conf\vanilla\autoload_configs\console.conf.xml = conf\vanilla\autoload_configs\console.conf.xml
 		conf\vanilla\autoload_configs\dialplan_directory.conf.xml = conf\vanilla\autoload_configs\dialplan_directory.conf.xml
-		conf\vanilla\autoload_configs\dingaling.conf.xml = conf\vanilla\autoload_configs\dingaling.conf.xml
 		conf\vanilla\autoload_configs\enum.conf.xml = conf\vanilla\autoload_configs\enum.conf.xml
 		conf\vanilla\autoload_configs\event_multicast.conf.xml = conf\vanilla\autoload_configs\event_multicast.conf.xml
 		conf\vanilla\autoload_configs\event_socket.conf.xml = conf\vanilla\autoload_configs\event_socket.conf.xml
