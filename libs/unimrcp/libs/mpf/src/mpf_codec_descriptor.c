@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_codec_descriptor.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_codec_descriptor.h"
@@ -272,6 +270,48 @@ MPF_DECLARE(apt_bool_t) mpf_codec_lists_intersect(mpf_codec_list_t *codec_list1,
 
 	/* if primary descriptor is disabled or not set, return FALSE */
 	if(!codec_list1->primary_descriptor || codec_list1->primary_descriptor->enabled == FALSE) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+MPF_DECLARE(apt_bool_t) mpf_codec_lists_compare(const mpf_codec_list_t *codec_list1, const mpf_codec_list_t *codec_list2)
+{
+	apt_bool_t exit = FALSE;
+	mpf_codec_descriptor_t *descriptor1 = NULL;
+	mpf_codec_descriptor_t *descriptor2 = NULL;
+	int i=0;
+	int j=0;
+
+	do {
+		while(i<codec_list1->descriptor_arr->nelts) {
+			descriptor1 = &APR_ARRAY_IDX(codec_list1->descriptor_arr,i,mpf_codec_descriptor_t);
+			if(descriptor1->enabled == TRUE)
+				break;
+			i++;
+		}
+		while(j<codec_list2->descriptor_arr->nelts) {
+			descriptor2 = &APR_ARRAY_IDX(codec_list2->descriptor_arr,j,mpf_codec_descriptor_t);
+			if(descriptor2->enabled == TRUE)
+				break;
+			j++;
+		}
+
+		if(i<codec_list1->descriptor_arr->nelts && j<codec_list2->descriptor_arr->nelts) {
+			if(mpf_codec_descriptors_match(descriptor1, descriptor2) == FALSE)
+				return FALSE;
+
+			i++;
+			j++;
+		}
+		else {
+			exit = TRUE;
+		}
+	}
+	while(!exit);
+
+	if(i!=codec_list1->descriptor_arr->nelts || j!=codec_list2->descriptor_arr->nelts) {
 		return FALSE;
 	}
 

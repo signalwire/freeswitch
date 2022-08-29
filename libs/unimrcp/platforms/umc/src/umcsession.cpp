@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,17 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: umcsession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "umcsession.h"
 #include "umcscenario.h"
 #include "mrcp_message.h"
+#include "apt_pool.h"
 
 UmcSession::UmcSession(const UmcScenario* pScenario) :
 	m_pScenario(pScenario),
 	m_pMrcpProfile(NULL),
+	m_pMethodProvider(NULL),
 	m_pMrcpApplication(NULL),
 	m_pMrcpSession(NULL),
 	m_pMrcpMessage(NULL),
@@ -34,12 +34,13 @@ UmcSession::UmcSession(const UmcScenario* pScenario) :
 		id = 0;
 	id++;
 
-	int size = apr_snprintf(m_Id,sizeof(m_Id)-1,"%d",id);
-	m_Id[size] = '\0';
+	m_Pool = apt_pool_create();
+	m_Id = apr_psprintf(m_Pool,"%d",id);
 }
 
 UmcSession::~UmcSession()
 {
+	apr_pool_destroy(m_Pool);
 }
 
 bool UmcSession::Run()
@@ -61,10 +62,10 @@ bool UmcSession::Run()
 	
 	bool ret = false;
 	if(m_pScenario->IsDiscoveryEnabled())
-		ret = ResourceDiscover();
+		ret = DiscoverResources();
 	else
 		ret = Start();
-	
+
 	if(!ret)
 	{
 		m_Running = false;
@@ -97,25 +98,28 @@ bool UmcSession::OnSessionTerminate(mrcp_sig_status_code_e status)
 		return false;
 
 	m_Terminating = false;
-	return DestroyMrcpSession();
+	DestroyMrcpSession();
+	if(m_pMethodProvider)
+		m_pMethodProvider->ExitSession(this);
+	return true;
 }
 
-bool UmcSession::OnSessionUpdate(mrcp_sig_status_code_e status) 
+bool UmcSession::OnSessionUpdate(mrcp_sig_status_code_e status)
 {
 	return m_Running;
 }
 
-bool UmcSession::OnChannelAdd(mrcp_channel_t *channel, mrcp_sig_status_code_e status) 
+bool UmcSession::OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_code_e status)
 {
 	return m_Running;
 }
 
-bool UmcSession::OnChannelRemove(mrcp_channel_t *channel, mrcp_sig_status_code_e status) 
+bool UmcSession::OnChannelRemove(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_code_e status)
 {
 	return m_Running;
 }
 
-bool UmcSession::OnMessageReceive(mrcp_channel_t *channel, mrcp_message_t *message) 
+bool UmcSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t* pMrcpMessage)
 {
 	if(!m_Running)
 		return false;
@@ -124,13 +128,13 @@ bool UmcSession::OnMessageReceive(mrcp_channel_t *channel, mrcp_message_t *messa
 		return false;
 
 	/* match request identifiers */
-	if(m_pMrcpMessage->start_line.request_id != message->start_line.request_id)
+	if(m_pMrcpMessage->start_line.request_id != pMrcpMessage->start_line.request_id)
 		return false;
 
 	return true;
 }
 
-bool UmcSession::OnTerminateEvent(mrcp_channel_t *channel)
+bool UmcSession::OnTerminateEvent(mrcp_channel_t* pMrcpChannel)
 {
 	if(!m_Running)
 		return false;
@@ -138,7 +142,7 @@ bool UmcSession::OnTerminateEvent(mrcp_channel_t *channel)
 	return Terminate();
 }
 
-bool UmcSession::OnResourceDiscover(mrcp_session_descriptor_t* descriptor, mrcp_sig_status_code_e status)
+bool UmcSession::OnResourceDiscover(mrcp_session_descriptor_t* pDescriptor, mrcp_sig_status_code_e status)
 {
 	if(!m_Running)
 		return false;
@@ -150,11 +154,13 @@ bool UmcSession::OnResourceDiscover(mrcp_session_descriptor_t* descriptor, mrcp_
 
 bool UmcSession::CreateMrcpSession(const char* pProfileName)
 {
-	m_pMrcpSession = mrcp_application_session_create(m_pMrcpApplication,pProfileName,this);
-	char name[32];
-	apr_snprintf(name,sizeof(name),"umc-%s",m_Id);
+	m_pMrcpSession = mrcp_application_session_create_ex(m_pMrcpApplication,pProfileName,this,FALSE,m_Pool);
+	if(!m_pMrcpSession)
+		return false;
+
+	const char* name = apr_psprintf(m_Pool,"umc-%s",m_Id);
 	mrcp_application_session_name_set(m_pMrcpSession,name);
-	return (m_pMrcpSession != NULL);
+	return true;
 }
 
 bool UmcSession::DestroyMrcpSession()
@@ -192,7 +198,7 @@ bool UmcSession::SendMrcpRequest(mrcp_channel_t* pMrcpChannel, mrcp_message_t* p
 	return (mrcp_application_message_send(m_pMrcpSession,pMrcpChannel,pMrcpMessage) == TRUE);
 }
 
-bool UmcSession::ResourceDiscover()
+bool UmcSession::DiscoverResources()
 {
 	if(!m_Running)
 		return false;
@@ -231,15 +237,6 @@ mrcp_message_t* UmcSession::CreateMrcpMessage(
 		mrcp_method_id method_id)
 {
 	return mrcp_application_message_create(m_pMrcpSession,pMrcpChannel,method_id);
-}
-
-
-
-apr_pool_t* UmcSession::GetSessionPool() const
-{
-	if(!m_pMrcpSession)
-		return NULL;
-	return mrcp_application_session_pool_get(m_pMrcpSession);
 }
 
 const char* UmcSession::GetMrcpSessionId() const

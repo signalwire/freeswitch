@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_application.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_APPLICATION_H
@@ -164,12 +162,28 @@ MRCP_DECLARE(const apt_dir_layout_t*) mrcp_application_dir_layout_get(const mrcp
 
 /**
  * Create session.
- * @param application the entire application
+ * @param application the application to use
  * @param profile the name of the profile to use
  * @param obj the external object
  * @return the created session instance
  */
 MRCP_DECLARE(mrcp_session_t*) mrcp_application_session_create(mrcp_application_t *application, const char *profile, void *obj);
+
+/**
+ * Create session using the provided memory pool.
+ * @param application the application to use
+ * @param profile the name of the profile to use
+ * @param obj the external object
+ * @param take_ownership whether the session takes ownership over the memory pool or not
+ * @param pool memory pool to use
+ * @return the created session instance
+ */
+MRCP_DECLARE(mrcp_session_t*) mrcp_application_session_create_ex(
+		mrcp_application_t *application,
+		const char *profile,
+		void *obj, 
+		apt_bool_t take_ownership,
+		apr_pool_t *pool);
 
 /**
  * Get memory pool the session object is created out of.
@@ -208,6 +222,13 @@ MRCP_DECLARE(void) mrcp_application_session_object_set(mrcp_session_t *session, 
  * @param name the name to set
  */
 MRCP_DECLARE(void) mrcp_application_session_name_set(mrcp_session_t *session, const char *name);
+
+/**
+ * Set session attributes.
+ * @param session the session to set attributes for
+ * @param attribs the attributes to set
+ */
+MRCP_DECLARE(void) mrcp_application_session_attribs_set(mrcp_session_t *session, mrcp_session_attribs_t *attribs);
 
 /** 
  * Send session update request.

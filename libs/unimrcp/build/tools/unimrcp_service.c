@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: unimrcp_service.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <windows.h>
@@ -60,8 +58,8 @@ static apt_bool_t uni_service_register(const char *root_dir_path, apr_pool_t *po
 {
 	apr_status_t status;
 	char buf[4096];
-	static const size_t len = sizeof(buf);
-	size_t pos = 0;
+	static const apr_size_t len = sizeof(buf);
+	apr_size_t pos = 0;
 	char *root_dir;
 	SERVICE_DESCRIPTION desc;
 	SC_HANDLE sch_service;

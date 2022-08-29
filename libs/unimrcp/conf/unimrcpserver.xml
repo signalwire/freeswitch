@@ -1,16 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- UniMRCP server document -->
-<unimrcpserver xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unimrcpserver.xsd" version="1.0">
+<unimrcpserver xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="unimrcpserver.xsd"
+               version="1.0">
   <properties>
-    <!-- If the attribute "type" is set to "auto", IP address is 
-    determined implicitly by the hostname. This is the default setting. -->
+    <!--
+      If the attribute "type" is set to "auto", IP address is determined implicitly by the hostname.
+      This is the default setting.
+    -->
     <ip type="auto"/>
 
-    <!-- If the attribute "type" is set to "iface", IP address is 
-    determined by the specified name of network interface/adapter. -->
+    <!--
+      If the attribute "type" is set to "iface", IP address is determined by the specified name of
+      network interface/adapter.
+    -->
     <!-- <ip type="iface">eth0</ip>-->
 
-    <!-- IP address can also be specified explicitly. -->
+    <!--
+      IP address can also be specified explicitly.
+    -->
     <!-- <ip>10.10.0.1</ip> -->
 
     <!-- <ext-ip>a.b.c.d</ext-ip> -->
@@ -27,28 +35,42 @@
 
     <!-- SofiaSIP MRCPv2 signaling agent -->
     <sip-uas id="SIP-Agent-1" type="SofiaSIP">
-      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
-           They still can be explicitly specified (overriden) here.
+      <!--
+        By default, "ip" and "ext-ip" addresses, set in the properties, are used. These parameters can
+        explicitly be specified per "sip-uas" by means of "sip-ip" and "sip-ext-ip" correspondingly.
       -->
       <!-- <sip-ip>10.10.0.1</sip-ip> -->
       <!-- <sip-ext-ip>a.b.c.d</sip-ext-ip> -->
       <sip-port>8060</sip-port>
       <sip-transport>udp,tcp</sip-transport>
       <!-- <force-destination>true</force-destination> -->
+      <!--
+        This parameter can be used to disable the Sofia SIP SDP Offer/Answer Engine Module (soa).
+        This should only be done when dynamic payload type negotiation is needed with MRCPv2 AND
+        the clients only use the 'Basic Call' SDP Offer/Answer scenario. More complex scenarions
+        will most probably not work with soa disabled.
+      -->
+      <!-- <disable-soa>true</disable-soa> -->
       <ua-name>UniMRCP SofiaSIP</ua-name>
       <sdp-origin>UniMRCPServer</sdp-origin>
       <!-- <sip-t1>500</sip-t1> -->
       <!-- <sip-t2>4000</sip-t2> -->
       <!-- <sip-t4>4000</sip-t4> -->
       <!-- <sip-t1x64>32000</sip-t1x64> -->
+      <sip-session-expires>600</sip-session-expires>
+      <sip-min-session-expires>120</sip-min-session-expires>
       <!-- <sip-message-output>true</sip-message-output> -->
       <!-- <sip-message-dump>sofia-sip-uas.log</sip-message-dump> -->
+      <!-- <extract-feature-tags>false</extract-feature-tags> -->
+      <!-- <extract-call-id>true</extract-call-id> -->
+      <!-- <extract-user-name>true</extract-user-name> -->
     </sip-uas>
 
     <!-- UniRTSP MRCPv1 signaling agent -->
     <rtsp-uas id="RTSP-Agent-1" type="UniRTSP">
-      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
-           They still can be explicitly specified (overriden) here.
+      <!--
+        By default, "ip" and "ext-ip" addresses, set in the properties, are used. These parameters can
+        explicitly be specified per "rtsp-uas" by means of "rtsp-ip" and "rtsp-ext-ip" correspondingly.
       -->
       <!-- <rtsp-ip>10.10.0.1</rtsp-ip> -->
       <!-- <rtsp-ext-ip>a.b.c.d</rtsp-ext-ip> -->
@@ -59,20 +81,25 @@
         <param name="speechrecog" value="speechrecognizer"/>
       </resource-map>
       <max-connection-count>100</max-connection-count>
+      <inactivity-timeout>600</inactivity-timeout>
       <sdp-origin>UniMRCPServer</sdp-origin>
     </rtsp-uas>
 
     <!-- MRCPv2 connection agent -->
     <mrcpv2-uas id="MRCPv2-Agent-1">
-      <!-- By default, "ip" set in the properties will be used. 
-           It still can be explicitly specified (overriden) here.
+      <!--
+        By default, "ip" address, set in the properties, is used. This parameter can explicitly be
+        specified per "mrcpv2-uas" by means of "mrcp-ip".
       -->
       <!-- <mrcp-ip>10.10.0.1</mrcp-ip> -->
       <mrcp-port>1544</mrcp-port>
       <max-connection-count>100</max-connection-count>
+      <max-shared-use-count>100</max-shared-use-count>
       <force-new-connection>false</force-new-connection>
       <rx-buffer-size>1024</rx-buffer-size>
       <tx-buffer-size>1024</tx-buffer-size>
+      <inactivity-timeout>600</inactivity-timeout>
+      <termination-timeout>3</termination-timeout>
     </mrcpv2-uas>
 
     <!-- Media processing engine -->
@@ -82,8 +109,9 @@
 
     <!-- Factory of RTP terminations -->
     <rtp-factory id="RTP-Factory-1">
-      <!-- By default, "ip" and "ext-ip" addresses set in the properties will be used. 
-           They still can be explicitly specified (overriden) here.
+      <!--
+        By default, "ip" and "ext-ip" addresses, set in the properties, are used. These parameters can
+        explicitly be specified per "rtp-factory" by means of "rtp-ip" and "rtp-ext-ip" correspondingly.
       -->
       <!-- <rtp-ip>10.10.0.1</rtp-ip> -->
       <!-- <rtp-ext-ip>a.b.c.d</rtp-ext-ip> -->
@@ -98,7 +126,11 @@
       <engine id="Demo-Verifier-1" name="demoverifier" enable="true"/>
       <engine id="Recorder-1" name="mrcprecorder" enable="true"/>
 
-      <!-- Engines may have additional named and generic params
+      <!--
+        Engines may have additional named ("max-channel-count") and generic (name/value) parameters.
+        For example:
+      -->
+      <!--
       <engine id="Your-Engine-1" name="yourengine" enable="false">
         <max-channel-count>100</max-channel-count>
         <param name="..." value="..."/>
@@ -119,22 +151,22 @@
       <ptime>20</ptime>
       <codecs own-preference="false">PCMU PCMA L16/96/8000 telephone-event/101/8000</codecs>
       <!-- <codecs own-preference="false">PCMU PCMA L16/96/8000 PCMU/97/16000 PCMA/98/16000 L16/99/16000</codecs> -->
-      <!-- enable/disable RTCP support -->
+      <!-- Enable/disable RTCP support -->
       <rtcp enable="false">
-        <!-- RTCP BYE policies (RTCP must be enabled first)
-              0 - disable RTCP BYE
-              1 - send RTCP BYE at the end of session
-              2 - send RTCP BYE also at the end of each talkspurt (input)
+        <!--
+          RTCP BYE policies (RTCP must be enabled first)
+            0 - disable RTCP BYE
+            1 - send RTCP BYE at the end of session
+            2 - send RTCP BYE also at the end of each talkspurt (input)
         -->
         <rtcp-bye>1</rtcp-bye>
-        <!-- rtcp transmission interval in msec (set 0 to disable) -->
+        <!-- RTCP transmission interval in msec (set 0 to disable) -->
         <tx-interval>5000</tx-interval>
-        <!-- period (timeout) to check for new rtcp messages in msec (set 0 to disable) -->
+        <!-- Period (timeout) to check for new RTCP messages in msec (set 0 to disable) -->
         <rx-resolution>1000</rx-resolution>
       </rtcp>
     </rtp-settings>
   </settings>
-
 
   <profiles>
     <!-- MRCPv2 default profile -->
@@ -145,10 +177,17 @@
       <rtp-factory>RTP-Factory-1</rtp-factory>
       <rtp-settings>RTP-Settings-1</rtp-settings>
 
-      <!-- It's possible to define profile based map of resources and engines.
+      <!--
+        Profile-based association of resources and engines with optional attributes.
+        For example:
+      -->
+      <!--
       <resource-engine-map>
-        <param name="speechsynth" value="Flite-1"/>
-        <param name="speechrecog" value="PocketSphinx-1"/>
+        <resource id="speechsynth" engine="Demo-Synth-1"/>
+        <resource id="speechrecog" engine="Demo-Recog-1">
+          <attrib name="n1" value="v1"/>
+          <attrib name="n2" value="v2"/>
+        </resource>
       </resource-engine-map>
       -->
     </mrcpv2-profile>
@@ -161,6 +200,6 @@
       <rtp-settings>RTP-Settings-1</rtp-settings>
     </mrcpv1-profile>
 
-    <!-- more profiles might be added here -->
+    <!-- More profiles may follow. -->
   </profiles>
 </unimrcpserver>

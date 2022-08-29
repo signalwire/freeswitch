@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * $Id: unimrcp_client.c 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -29,7 +27,9 @@
 #include "mpf_codec_manager.h"
 #include "mpf_rtp_termination_factory.h"
 #include "mrcp_sofiasip_client_agent.h"
+#include "mrcp_sofiasip_logger.h"
 #include "mrcp_unirtsp_client_agent.h"
+#include "mrcp_unirtsp_logger.h"
 #include "mrcp_client_connection.h"
 #include "mrcp_ca_factory.h"
 #include "apt_net.h"
@@ -75,6 +75,7 @@ struct unimrcp_client_loader_t {
 
 static apt_bool_t unimrcp_client_load(unimrcp_client_loader_t *loader, const char *dir_path, const char *file_name);
 static apt_bool_t unimrcp_client_load2(unimrcp_client_loader_t *loader, const char *xmlconfig);
+static void unimrcp_log_sources_setup();
 
 /** Initialize client -- common to unimrcp_client_create and unimrcp_client_create2 */
 static unimrcp_client_loader_t* unimrcp_client_init(apt_dir_layout_t *dir_layout)
@@ -83,7 +84,9 @@ static unimrcp_client_loader_t* unimrcp_client_init(apt_dir_layout_t *dir_layout
 	mrcp_client_t *client;
 	unimrcp_client_loader_t *loader;
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"UniMRCP Client ["UNI_VERSION_STRING"] [r"UNI_REVISION_STRING"]");
+	unimrcp_log_sources_setup();
+
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"UniMRCP Client [%s]", UNI_FULL_VERSION_STRING);
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"APR ["APR_VERSION_STRING"]");
 	client = mrcp_client_create(dir_layout);
 	if(!client) {
@@ -418,6 +421,11 @@ static apt_bool_t unimrcp_client_sip_uac_load(unimrcp_client_loader_t *loader, c
 				config->sip_t1x64 = atol(cdata_text_get(elem));
 			}
 		}
+		else if(strcasecmp(elem->name,"sip-timer-c") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->sip_timer_c = atol(cdata_text_get(elem));
+			}
+		}
 		else if(strcasecmp(elem->name,"sip-message-output") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
 				config->tport_log = cdata_bool_get(elem);
@@ -498,6 +506,7 @@ static apt_bool_t unimrcp_client_mrcpv2_uac_load(unimrcp_client_loader_t *loader
 	const apr_xml_elem *elem;
 	mrcp_connection_agent_t *agent;
 	apr_size_t max_connection_count = 100;
+	apr_size_t max_shared_use_count = 100;
 	apt_bool_t offer_new_connection = FALSE;
 	const char *rx_buffer_size = NULL;
 	const char *tx_buffer_size = NULL;
@@ -514,6 +523,11 @@ static apt_bool_t unimrcp_client_mrcpv2_uac_load(unimrcp_client_loader_t *loader
 		else if(strcasecmp(elem->name,"offer-new-connection") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
 				offer_new_connection = cdata_bool_get(elem);
+			}
+		}
+		else if(strcasecmp(elem->name,"max-shared-use-count") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				max_shared_use_count = atol(cdata_text_get(elem));
 			}
 		}
 		else if(strcasecmp(elem->name,"rx-buffer-size") == 0) {
@@ -547,6 +561,7 @@ static apt_bool_t unimrcp_client_mrcpv2_uac_load(unimrcp_client_loader_t *loader
 		if(request_timeout) {
 			mrcp_client_connection_timeout_set(agent,atol(request_timeout));
 		}
+		mrcp_client_connection_max_shared_use_set(agent,max_shared_use_count);
 	}
 	return mrcp_client_connection_agent_register(loader->client,agent);
 }
@@ -1236,7 +1251,7 @@ static apt_bool_t unimrcp_client_misc_load(unimrcp_client_loader_t *loader, cons
 			do {
 				logger_name = apr_strtok(logger_list_str, ",", &state);
 				if(logger_name) {
-					mrcp_sofiasip_client_logger_init(logger_name,loglevel_str,redirect);
+					mrcp_sofiasip_log_init(logger_name,loglevel_str,redirect);
 				}
 				logger_list_str = NULL; /* make sure we pass NULL on subsequent calls of apr_strtok() */
 			} 
@@ -1269,7 +1284,7 @@ static apr_xml_doc* unimrcp_client_doc_parse(const char *file_path, apr_pool_t *
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse Config File [%s]",file_path);
 		xml_doc = NULL;
 	}
-	
+
 	apr_file_close(fd);
 	return xml_doc;
 }
@@ -1413,4 +1428,17 @@ static apt_bool_t unimrcp_client_load2(unimrcp_client_loader_t *loader, const ch
 		return FALSE;
 	}
 	return unimrcp_client_doc_process(loader, NULL, xml_doc, pool);
+}
+
+/** Set up custom log sources */
+static void unimrcp_log_sources_setup()
+{
+	/* Initialize a log source used by the MPF library */
+	mpf_log_source_init();
+
+	/* Initialize a log source used by the Sofia-SIP module and also for redirected logs of the Sofia-SIP library */
+	mrcp_sofiasip_logsource_init();
+
+	/* Initialize a log source used by the UniRTSP library and module */
+	mrcp_unirtsp_logsource_init();
 }

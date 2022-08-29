@@ -20,6 +20,9 @@
     <ClInclude Include="include\mrcp_unirtsp_server_agent.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\mrcp_unirtsp_logger.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mrcp_unirtsp_client_agent.c">
@@ -29,6 +32,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\mrcp_unirtsp_server_agent.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_unirtsp_logger.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

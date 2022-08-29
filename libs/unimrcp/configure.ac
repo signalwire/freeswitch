@@ -6,7 +6,7 @@ dnl
 
 AC_PREREQ(2.59)
 
-AC_INIT([unimrcp],[1.2.0])
+AC_INIT([unimrcp],[1.7.0])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build/acmacros])
@@ -56,6 +56,9 @@ m4_undefine([AC_PROG_F77])
 m4_defun([AC_PROG_F77],[])
 AC_PROG_LIBTOOL
 
+dnl Suppress warning: ar: 'u' modifier ignored since 'D' is the default
+AC_SUBST(AR_FLAGS, [cr])
+
 dnl Do not use autoconf generated compiler DEFS.
 rm confdefs.h
 touch confdefs.h
@@ -64,7 +67,10 @@ dnl Check for C compiler vendor.
 AX_COMPILER_VENDOR
 
 dnl Search for pkg-config.
-AC_PATH_PROG(PKG_CONFIG, pkg-config)
+AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+if test "x$PKG_CONFIG" = "xno"; then
+    AC_MSG_ERROR([pkg-config is missing])
+fi
 
 dnl Get version information.
 get_version="$srcdir/build/get-version.sh"

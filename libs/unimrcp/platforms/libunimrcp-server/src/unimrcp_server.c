@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: unimrcp_server.c 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -27,7 +25,9 @@
 #include "mpf_codec_manager.h"
 #include "mpf_rtp_termination_factory.h"
 #include "mrcp_sofiasip_server_agent.h"
+#include "mrcp_sofiasip_logger.h"
 #include "mrcp_unirtsp_server_agent.h"
+#include "mrcp_unirtsp_logger.h"
 #include "mrcp_server_connection.h"
 #include "apt_net.h"
 #include "apt_log.h"
@@ -75,6 +75,7 @@ struct unimrcp_server_loader_t {
 };
 
 static apt_bool_t unimrcp_server_load(mrcp_server_t *mrcp_server, apt_dir_layout_t *dir_layout, apr_pool_t *pool);
+static void unimrcp_log_sources_setup();
 
 /** Start UniMRCP server */
 MRCP_DECLARE(mrcp_server_t*) unimrcp_server_start(apt_dir_layout_t *dir_layout)
@@ -86,7 +87,9 @@ MRCP_DECLARE(mrcp_server_t*) unimrcp_server_start(apt_dir_layout_t *dir_layout)
 		return NULL;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"UniMRCP Server ["UNI_VERSION_STRING"] [r"UNI_REVISION_STRING"]");
+	unimrcp_log_sources_setup();
+
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"UniMRCP Server [%s]", UNI_FULL_VERSION_STRING);
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"APR ["APR_VERSION_STRING"]");
 	server = mrcp_server_create(dir_layout);
 	if(!server) {
@@ -361,6 +364,16 @@ static apt_bool_t unimrcp_server_sip_uas_load(unimrcp_server_loader_t *loader, c
 				config->sip_t1x64 = atol(cdata_text_get(elem));
 			}
 		}
+		else if(strcasecmp(elem->name,"sip-session-expires") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->session_expires = atol(cdata_text_get(elem));
+			}
+		}
+		else if(strcasecmp(elem->name,"sip-min-session-expires") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->min_session_expires = atol(cdata_text_get(elem));
+			}
+		}
 		else if(strcasecmp(elem->name,"sip-message-output") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
 				config->tport_log = cdata_bool_get(elem);
@@ -378,6 +391,26 @@ static apt_bool_t unimrcp_server_sip_uas_load(unimrcp_server_loader_t *loader, c
 													loader->pool);
 				else
 					config->tport_dump_file = cdata_copy(elem,loader->pool);
+			}
+		}
+		else if(strcasecmp(elem->name,"disable-soa") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->disable_soa = cdata_bool_get(elem);
+			}
+		}
+		else if(strcasecmp(elem->name,"extract-feature-tags") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->extract_feature_tags = cdata_bool_get(elem);
+			}
+		}
+		else if(strcasecmp(elem->name,"extract-call-id") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->extract_call_id = cdata_bool_get(elem);
+			}
+		}
+		else if(strcasecmp(elem->name,"extract-user-name") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->extract_user_name = cdata_bool_get(elem);
 			}
 		}
 		else {
@@ -434,6 +467,11 @@ static apt_bool_t unimrcp_server_rtsp_uas_load(unimrcp_server_loader_t *loader, 
 				config->force_destination = cdata_bool_get(elem);
 			}
 		}
+		else if(strcasecmp(elem->name,"inactivity-timeout") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->inactivity_timeout = atol(cdata_text_get(elem));
+			}
+		}
 		else if(strcasecmp(elem->name,"resource-map") == 0) {
 			const apr_xml_attr *name_attr;
 			const apr_xml_attr *value_attr;
@@ -468,7 +506,10 @@ static apt_bool_t unimrcp_server_mrcpv2_uas_load(unimrcp_server_loader_t *loader
 	char *mrcp_ip = NULL;
 	apr_port_t mrcp_port = DEFAULT_MRCP_PORT;
 	apr_size_t max_connection_count = 100;
+	apr_size_t max_shared_use_count = 100;
 	apt_bool_t force_new_connection = FALSE;
+	apr_size_t inactivity_timeout = 600; /* sec */
+	apr_size_t termination_timeout = 3; /* sec */
 	apr_size_t rx_buffer_size = 0;
 	apr_size_t tx_buffer_size = 0;
 
@@ -491,6 +532,21 @@ static apt_bool_t unimrcp_server_mrcpv2_uas_load(unimrcp_server_loader_t *loader
 		else if(strcasecmp(elem->name,"force-new-connection") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
 				force_new_connection = cdata_bool_get(elem);
+			}
+		}
+		else if(strcasecmp(elem->name,"max-shared-use-count") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				max_shared_use_count = atol(cdata_text_get(elem));
+			}
+		}
+		else if(strcasecmp(elem->name,"inactivity-timeout") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				inactivity_timeout = atol(cdata_text_get(elem));
+			}
+		}
+		else if(strcasecmp(elem->name,"termination-timeout") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				termination_timeout = atol(cdata_text_get(elem));
 			}
 		}
 		else if(strcasecmp(elem->name,"rx-buffer-size") == 0) {
@@ -521,6 +577,9 @@ static apt_bool_t unimrcp_server_mrcpv2_uas_load(unimrcp_server_loader_t *loader
 		if(tx_buffer_size) {
 			mrcp_server_connection_tx_size_set(agent,tx_buffer_size);
 		}
+		mrcp_server_connection_max_shared_use_set(agent,max_shared_use_count);
+		mrcp_server_connection_timeout_set(agent,inactivity_timeout);
+		mrcp_server_connection_term_timeout_set(agent,termination_timeout);
 	}
 	return mrcp_server_connection_agent_register(loader->server,agent);
 }
@@ -544,7 +603,7 @@ static apt_bool_t unimrcp_server_media_engine_load(unimrcp_server_loader_t *load
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
 		}
 	}
-	
+
 	media_engine = mpf_engine_create(id,loader->pool);
 	if(media_engine) {
 		mpf_engine_scheduler_rate_set(media_engine,realtime_rate);
@@ -830,23 +889,80 @@ static apt_bool_t unimrcp_server_rtp_settings_load(unimrcp_server_loader_t *load
 	return mrcp_server_rtp_settings_register(loader->server,rtp_settings,id);
 }
 
-/** Load map of resources and engines */
-static apr_table_t* resource_engine_map_load(const apr_xml_elem *root, apr_pool_t *pool)
+/** Load engine attribs */
+static apr_table_t* resource_engine_attribs_load(const apr_xml_elem *root, apr_pool_t *pool)
 {
 	const apr_xml_attr *attr_name;
 	const apr_xml_attr *attr_value;
 	const apr_xml_elem *elem;
-	apr_table_t *plugin_map = apr_table_make(pool,2);
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Plugin Map");
+	apr_table_t *attribs = apr_table_make(pool,1);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Resource Engine Attribs");
 	for(elem = root->first_child; elem; elem = elem->next) {
-		if(strcasecmp(elem->name,"param") == 0) {
+		if(strcasecmp(elem->name,"attrib") == 0) {
 			if(name_value_attribs_get(elem,&attr_name,&attr_value) == TRUE) {
-				apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Param %s:%s",attr_name->value,attr_value->value);
-				apr_table_set(plugin_map,attr_name->value,attr_value->value);
+				apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Resource Engine Attrib <%s:%s>",attr_name->value,attr_value->value);
+				apr_table_set(attribs,attr_name->value,attr_value->value);
 			}
 		}
 	}
-	return plugin_map;
+	return attribs;
+}
+
+static mrcp_engine_settings_t* resource_engine_settings_load(const apr_xml_elem *elem, apr_pool_t *pool)
+{
+	mrcp_engine_settings_t *settings;
+	const apr_xml_attr *attr_resource = NULL;
+	const apr_xml_attr *attr_engine = NULL;
+	if(strcasecmp(elem->name,"param") == 0) {
+		/* this option remains for backward compatibility */
+		name_value_attribs_get(elem,&attr_resource,&attr_engine);
+	}
+	else if(strcasecmp(elem->name,"resource") == 0) {
+		const apr_xml_attr *attr;
+		for(attr = elem->attr; attr; attr = attr->next) {
+			if(strcasecmp(attr->name,"id") == 0) {
+				attr_resource = attr;
+			}
+			else if(strcasecmp(attr->name,"engine") == 0) {
+				attr_engine = attr;
+			}
+		}
+	}
+	else {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
+	}
+
+	if(!attr_resource) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Resource Id");
+		return NULL;
+	}
+
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Resource Engine Settings <%s:%s>",attr_resource->value, attr_engine ? attr_engine->value : "");
+	settings = mrcp_engine_settings_alloc(pool);
+	settings->resource_id = attr_resource->value;
+	if(attr_engine) {
+		settings->engine_id = attr_engine->value;
+	}
+	if(elem->first_child) {
+		settings->attribs = resource_engine_attribs_load(elem,pool);
+	}
+	return settings;
+}
+
+/** Load map of resources and engines */
+static apr_hash_t* resource_engine_map_load(const apr_xml_elem *root, apr_pool_t *pool)
+{
+	const apr_xml_elem *elem;
+	mrcp_engine_settings_t *settings;
+	apr_hash_t *resource_engine_map = apr_hash_make(pool);
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Resource Engine Map");
+	for(elem = root->first_child; elem; elem = elem->next) {
+		settings = resource_engine_settings_load(elem, pool);
+		if(settings) {
+			apr_hash_set(resource_engine_map,settings->resource_id,APR_HASH_KEY_STRING,settings);
+		}
+	}
+	return resource_engine_map;
 }
 
 /** Load MRCPv2 profile */
@@ -859,7 +975,7 @@ static apt_bool_t unimrcp_server_mrcpv2_profile_load(unimrcp_server_loader_t *lo
 	mpf_engine_t *media_engine = NULL;
 	mpf_termination_factory_t *rtp_factory = NULL;
 	mpf_rtp_settings_t *rtp_settings = NULL;
-	apr_table_t *resource_engine_map = NULL;
+	apr_hash_t *resource_engine_map = NULL;
 
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading MRCPv2 Profile <%s>",id);
 	for(elem = root->first_child; elem; elem = elem->next) {
@@ -915,7 +1031,7 @@ static apt_bool_t unimrcp_server_mrcpv1_profile_load(unimrcp_server_loader_t *lo
 	mpf_engine_t *media_engine = NULL;
 	mpf_termination_factory_t *rtp_factory = NULL;
 	mpf_rtp_settings_t *rtp_settings = NULL;
-	apr_table_t *resource_engine_map = NULL;
+	apr_hash_t *resource_engine_map = NULL;
 
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading MRCPv1 Profile <%s>",id);
 	for(elem = root->first_child; elem; elem = elem->next) {
@@ -1136,7 +1252,7 @@ static apt_bool_t unimrcp_server_misc_load(unimrcp_server_loader_t *loader, cons
 			do {
 				logger_name = apr_strtok(logger_list_str, ",", &state);
 				if(logger_name) {
-					mrcp_sofiasip_server_logger_init(logger_name,loglevel_str,redirect);
+					mrcp_sofiasip_log_init(logger_name,loglevel_str,redirect);
 				}
 				logger_list_str = NULL; /* make sure we pass NULL on subsequent calls of apr_strtok() */
 			}
@@ -1248,4 +1364,17 @@ static apt_bool_t unimrcp_server_load(mrcp_server_t *mrcp_server, apt_dir_layout
 		}
 	}
 	return TRUE;
+}
+
+/** Set up custom log sources */
+static void unimrcp_log_sources_setup()
+{
+	/* Initialize a log source used by the MPF library */
+	mpf_log_source_init();
+
+	/* Initialize a log source used by the Sofia-SIP module and also for redirected logs of the Sofia-SIP library */
+	mrcp_sofiasip_logsource_init();
+
+	/* Initialize a log source used by the UniRTSP library and module */
+	mrcp_unirtsp_logsource_init();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: demo_util.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "demo_util.h"
@@ -145,11 +143,9 @@ mpf_rtp_termination_descriptor_t* demo_rtp_descriptor_create(apr_pool_t *pool)
 	mpf_codec_descriptor_t *codec_descriptor;
 	mpf_rtp_media_descriptor_t *media;
 	/* create rtp descriptor */
-	mpf_rtp_termination_descriptor_t *rtp_descriptor = apr_palloc(pool,sizeof(mpf_rtp_termination_descriptor_t));
-	mpf_rtp_termination_descriptor_init(rtp_descriptor);
+	mpf_rtp_termination_descriptor_t *rtp_descriptor = mpf_rtp_termination_descriptor_alloc(pool);
 	/* create rtp local media */
-	media = apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
-	mpf_rtp_media_descriptor_init(media);
+	media = mpf_rtp_media_descriptor_alloc(pool);
 	apt_string_assign(&media->ip,"127.0.0.1",pool);
 	media->port = 6000;
 	media->state = MPF_MEDIA_ENABLED;

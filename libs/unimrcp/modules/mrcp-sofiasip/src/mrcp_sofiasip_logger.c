@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_sofiasip_logger.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
 #include <apr_general.h>
 #include <sofia-sip/su_log.h>
-#include "apt_log.h"
+#include "mrcp_sofiasip_logger.h"
+
+APT_LOG_SOURCE_IMPLEMENT(MRCP, sip_log_source, "SOFIASIP")
 
 SOFIAPUBVAR su_log_t tport_log[];      /* Transport event debug */
 SOFIAPUBVAR su_log_t nea_log[];        /* Event engine debug */
@@ -42,7 +42,7 @@ static void mrcp_sofiasip_log(void *stream, char const *format, va_list arg_ptr)
 			len--;
 			buf[len] = '\0';
 		}
-		apt_log(APT_LOG_MARK, APT_PRIO_DEBUG, "%.*s", len, buf);
+		apt_log(SIP_LOG_MARK, APT_PRIO_DEBUG, "%.*s", len, buf);
 	}
 }
 
@@ -63,15 +63,15 @@ static su_log_t* mrcp_sofiasip_logger_get(const char *name)
 	return NULL;
 }
 
-apt_bool_t mrcp_sofiasip_log_init(const char *name, const char *level_str, apt_bool_t redirect)
+MRCP_DECLARE(apt_bool_t) mrcp_sofiasip_log_init(const char *name, const char *level_str, apt_bool_t redirect)
 {
 	su_log_t *logger = mrcp_sofiasip_logger_get(name);
 	if(!logger) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown SofiaSIP Logger <%s>",name);
+		apt_log(SIP_LOG_MARK,APT_PRIO_WARNING,"Unknown SofiaSIP Logger <%s>",name);
 		return FALSE;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Init SofiaSIP Logger [%s] level:%s redirect:%d",
+	apt_log(SIP_LOG_MARK,APT_PRIO_DEBUG,"Init SofiaSIP Logger [%s] level:%s redirect:%d",
 			name, level_str, redirect);
 	su_log_init(logger);
 
@@ -85,8 +85,13 @@ apt_bool_t mrcp_sofiasip_log_init(const char *name, const char *level_str, apt_b
 			su_log_set_level(logger, level);
 		}
 		else {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown SofiaSIP Log Level [%s]: must be in range [0..9]",level_str);
+			apt_log(SIP_LOG_MARK,APT_PRIO_WARNING,"Unknown SofiaSIP Log Level [%s]: must be in range [0..9]",level_str);
 		}
 	}
 	return TRUE;
+}
+
+MRCP_DECLARE(void) mrcp_sofiasip_logsource_init()
+{
+	sip_log_source_init();
 }

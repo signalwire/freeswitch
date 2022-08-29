@@ -24,6 +24,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpf", "libs\mpf\mpf.vcproj"
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcp", "libs\mrcp\mrcp.vcproj", "{1C320193-46A6-4B34-9C56-8AB584FC1B56}"
+	ProjectSection(ProjectDependencies) = postProject
+		{13DEECA0-BDD4-4744-A1A2-8EB0A44DF3D2} = {13DEECA0-BDD4-4744-A1A2-8EB0A44DF3D2}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcpsignaling", "libs\mrcp-signaling\mrcpsignaling.vcproj", "{12A49562-BAB9-43A3-A21D-15B60BBB4C31}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -157,6 +160,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mrcprecorder", "plugins\mrc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conf", "conf", "{9155EBB8-E7DD-49AE-A86A-7B90B9F09888}"
 	ProjectSection(SolutionItems) = preProject
+		conf\logfile.xml = conf\logfile.xml
 		conf\logger.xml = conf\logger.xml
 		conf\unimrcpclient.xml = conf\unimrcpclient.xml
 		conf\unimrcpclient.xsd = conf\unimrcpclient.xsd

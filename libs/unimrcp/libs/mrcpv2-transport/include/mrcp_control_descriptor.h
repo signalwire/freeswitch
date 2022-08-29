@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_control_descriptor.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CONTROL_DESCRIPTOR_H
@@ -106,7 +104,13 @@ MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_descriptor_create(apr_pool
 MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_create(apr_pool_t *pool);
 
 /** Create MRCP control answer */
-MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(mrcp_control_descriptor_t *offer, apr_pool_t *pool);
+MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(const mrcp_control_descriptor_t *offer, apr_pool_t *pool);
+
+/** Copy MRCP control offer */
+MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_copy(const mrcp_control_descriptor_t *offer, apr_pool_t *pool);
+
+/** Compare MRCP control descriptors */
+MRCP_DECLARE(apt_bool_t) mrcp_control_descriptors_compare(const mrcp_control_descriptor_t *descriptor1, const mrcp_control_descriptor_t *descriptor2);
 
 /** Add cmid to cmid_arr */
 MRCP_DECLARE(void) mrcp_cmid_add(apr_array_header_t *cmid_arr, apr_size_t cmid);

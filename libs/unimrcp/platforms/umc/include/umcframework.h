@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: umcframework.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef UMC_FRAMEWORK_H
@@ -26,13 +24,12 @@
 
 #include <apr_xml.h>
 #include <apr_hash.h>
-#include "mrcp_application.h"
 #include "apt_consumer_task.h"
+#include "umcsession.h"
 
-class UmcSession;
 class UmcScenario;
 
-class UmcFramework
+class UmcFramework : public UmcSessionMethodProvider
 {
 public:
 /* ============================ CREATORS =================================== */
@@ -58,9 +55,9 @@ protected:
 	void DestroyTask();
 
 	UmcScenario* CreateScenario(const char* pType);
-	apr_xml_doc* LoadDocument();
 
 	bool LoadScenarios();
+	bool LoadScenario(const char* pFilePath);
 	void DestroyScenarios();
 
 	bool ProcessRunRequest(const char* pScenarioName, const char* pProfileName);
@@ -68,17 +65,19 @@ protected:
 	void ProcessKillRequest(const char* id);
 	void ProcessShowScenarios();
 	void ProcessShowSessions();
+	void ProcessSessionExit(UmcSession* pUmcSession);
 
 	bool AddSession(UmcSession* pSession);
 	bool RemoveSession(UmcSession* pSession);
 
+	void ExitSession(UmcSession* pUmcSession);
+
 /* ============================ HANDLERS =================================== */
+
 	friend apt_bool_t UmcProcessMsg(apt_task_t* pTask, apt_task_msg_t* pMsg);
 	friend void UmcOnStartComplete(apt_task_t* pTask);
 	friend void UmcOnTerminateComplete(apt_task_t* pTask);
-
 	friend apt_bool_t AppMessageHandler(const mrcp_app_message_t* pAppMessage);
-	friend apt_bool_t AppOnSessionTerminate(mrcp_application_t *application, mrcp_session_t *session, mrcp_sig_status_code_e status);
 
 private:
 /* ============================ DATA ======================================= */

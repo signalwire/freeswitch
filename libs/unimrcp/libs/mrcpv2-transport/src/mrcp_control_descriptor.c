@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_control_descriptor.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "apt_string_table.h"
@@ -117,7 +115,7 @@ MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_create(apr_pool_t *p
 }
 
 /** Create MRCP control answer */
-MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(mrcp_control_descriptor_t *offer, apr_pool_t *pool)
+MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(const mrcp_control_descriptor_t *offer, apr_pool_t *pool)
 {
 	mrcp_control_descriptor_t *answer = mrcp_control_descriptor_create(pool);
 	if(offer) {
@@ -126,6 +124,64 @@ MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_answer_create(mrcp_control
 	}
 	answer->setup_type = MRCP_SETUP_TYPE_PASSIVE;
 	return answer;
+}
+
+/** Copy MRCP control offer */
+MRCP_DECLARE(mrcp_control_descriptor_t*) mrcp_control_offer_copy(const mrcp_control_descriptor_t *offer, apr_pool_t *pool)
+{
+	mrcp_control_descriptor_t *descriptor = mrcp_control_descriptor_create(pool);
+	if(offer) {
+		*descriptor = *offer;
+		descriptor->cmid_arr = apr_array_copy(pool,offer->cmid_arr);
+		apt_string_copy(&descriptor->ip,&offer->ip,pool);
+		apt_string_copy(&descriptor->resource_name,&offer->resource_name,pool);
+		apt_string_copy(&descriptor->session_id,&offer->session_id,pool);
+	}
+	return descriptor;
+}
+
+MRCP_DECLARE(apt_bool_t) mrcp_control_descriptors_compare(const mrcp_control_descriptor_t *descriptor1, const mrcp_control_descriptor_t *descriptor2)
+{
+	int i;
+	if(!descriptor1 || !descriptor2)
+		return FALSE;
+
+	if(apt_strings_compare(&descriptor1->ip, &descriptor2->ip) == FALSE)
+		return FALSE;
+
+	if(descriptor1->port != descriptor2->port)
+		return FALSE;
+
+	if(descriptor1->proto != descriptor2->proto)
+		return FALSE;
+
+	if(descriptor1->setup_type != descriptor2->setup_type)
+		return FALSE;
+
+#if 0 // do not compare connection type and sesssion id
+	if(descriptor1->connection_type != descriptor2->connection_type)
+		return FALSE;
+
+	if(apt_strings_compare(&descriptor1->session_id, &descriptor2->session_id) == FALSE)
+		return FALSE;
+#endif
+
+	if(apt_strings_compare(&descriptor1->resource_name, &descriptor2->resource_name) == FALSE)
+		return FALSE;
+
+	if(descriptor1->cmid_arr->nelts != descriptor2->cmid_arr->nelts)
+		return FALSE;
+
+	for(i=0; i<descriptor1->cmid_arr->nelts; i++) {
+		if(APR_ARRAY_IDX(descriptor1->cmid_arr,i,apr_size_t) != APR_ARRAY_IDX(descriptor2->cmid_arr,i,apr_size_t)) {
+			return FALSE;
+		}
+	}
+
+	if(descriptor1->id != descriptor2->id)
+		return FALSE;
+
+	return TRUE;
 }
 
 /** Add cmid to cmid_arr */

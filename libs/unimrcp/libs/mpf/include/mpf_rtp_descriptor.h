@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_rtp_descriptor.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_RTP_DESCRIPTOR_H
@@ -53,9 +51,9 @@ typedef enum {
 struct mpf_rtp_media_descriptor_t {
 	/** Media state (disabled/enabled)*/
 	mpf_media_state_e      state;
-	/** Ip address */
+	/** IP address */
 	apt_str_t              ip;
-	/** External (NAT) Ip address */
+	/** External (NAT) IP address */
 	apt_str_t              ext_ip;
 	/** Port */
 	apr_port_t             port;
@@ -146,7 +144,7 @@ struct mpf_rtp_settings_t {
 	mpf_jb_config_t   jb_config;
 };
 
-/** Initialize media descriptor */
+/** Initialize RTP media descriptor */
 static APR_INLINE void mpf_rtp_media_descriptor_init(mpf_rtp_media_descriptor_t *media)
 {
 	media->state = MPF_MEDIA_DISABLED;
@@ -160,7 +158,7 @@ static APR_INLINE void mpf_rtp_media_descriptor_init(mpf_rtp_media_descriptor_t 
 	media->id = 0;
 }
 
-/** Initialize stream descriptor */
+/** Initialize RTP stream descriptor */
 static APR_INLINE void mpf_rtp_stream_descriptor_init(mpf_rtp_stream_descriptor_t *descriptor)
 {
 	descriptor->capabilities = NULL;
@@ -213,6 +211,69 @@ static APR_INLINE mpf_rtp_settings_t* mpf_rtp_settings_alloc(apr_pool_t *pool)
 	return rtp_settings;
 }
 
+/** Allocate RTP termination descriptor */
+static APR_INLINE mpf_rtp_termination_descriptor_t* mpf_rtp_termination_descriptor_alloc(apr_pool_t *pool)
+{
+	mpf_rtp_termination_descriptor_t *rtp_descriptor = (mpf_rtp_termination_descriptor_t*) apr_palloc(pool,sizeof(mpf_rtp_termination_descriptor_t));
+	mpf_rtp_termination_descriptor_init(rtp_descriptor);
+	return rtp_descriptor;
+}
+
+/** Allocate RTP media descriptor */
+static APR_INLINE mpf_rtp_media_descriptor_t* mpf_rtp_media_descriptor_alloc(apr_pool_t *pool)
+{
+	mpf_rtp_media_descriptor_t *media = (mpf_rtp_media_descriptor_t*) apr_palloc(pool,sizeof(mpf_rtp_media_descriptor_t));
+	mpf_rtp_media_descriptor_init(media);
+	return media;
+}
+
+/** Copy RTP media descriptor */
+static APR_INLINE mpf_rtp_media_descriptor_t* mpf_rtp_media_descriptor_copy(const mpf_rtp_media_descriptor_t *src_media, apr_pool_t *pool)
+{
+	mpf_rtp_media_descriptor_t *media = mpf_rtp_media_descriptor_alloc(pool);
+	if(src_media) {
+		*media = *src_media;
+		apt_string_copy(&media->ip,&src_media->ip,pool);
+		apt_string_copy(&media->ext_ip,&src_media->ext_ip,pool);
+	}
+	return media;
+}
+
+/** Compare RTP media descriptors (return TRUE, if identical) */
+static APR_INLINE apt_bool_t mpf_rtp_media_descriptors_compare(const mpf_rtp_media_descriptor_t *media1, const mpf_rtp_media_descriptor_t *media2)
+{
+	if(!media1 || !media2)
+		return FALSE;
+
+	if(media1->state != media2->state)
+		return FALSE;
+
+	if(apt_strings_compare(&media1->ip, &media2->ip) == FALSE)
+		return FALSE;
+
+	if(apt_strings_compare(&media1->ext_ip, &media2->ext_ip) == FALSE)
+		return FALSE;
+
+	if(media1->port != media2->port)
+		return FALSE;
+
+	if(media1->direction != media2->direction)
+		return FALSE;
+
+	if(media1->ptime != media2->ptime)
+		return FALSE;
+
+	if(mpf_codec_lists_compare(&media1->codec_list, &media2->codec_list) == FALSE)
+		return FALSE;
+
+	if(media1->mid != media2->mid)
+		return FALSE;
+
+	if(media1->id != media2->id)
+		return FALSE;
+
+	return TRUE;
+}
 
 APT_END_EXTERN_C
 

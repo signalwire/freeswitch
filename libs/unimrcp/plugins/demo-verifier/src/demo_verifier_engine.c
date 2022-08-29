@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: demo_verifier_engine.c 2193 2014-10-08 03:44:33Z achaloyan@gmail.com $
  */
 
 /* 
@@ -129,8 +127,15 @@ static apt_bool_t demo_verifier_result_load(demo_verifier_channel_t *verifier_ch
 /** Declare this macro to set plugin version */
 MRCP_PLUGIN_VERSION_DECLARE
 
-/** Declare this macro to use log routine of the server, plugin is loaded from */
-MRCP_PLUGIN_LOGGER_IMPLEMENT
+/**
+ * Declare this macro to use log routine of the server, plugin is loaded from.
+ * Enable/add the corresponding entry in logger.xml to set a cutsom log source priority.
+ *    <source name="VERIF-PLUGIN" priority="DEBUG" masking="NONE"/>
+ */
+MRCP_PLUGIN_LOG_SOURCE_IMPLEMENT(VERIF_PLUGIN,"VERIF-PLUGIN")
+
+/** Use custom log source mark */
+#define VERIF_LOG_MARK   APT_LOG_MARK_DECLARE(VERIF_PLUGIN)
 
 /** Create demo verification engine */
 MRCP_PLUGIN_DECLARE(mrcp_engine_t*) mrcp_plugin_create(apr_pool_t *pool)
@@ -265,7 +270,7 @@ static apt_bool_t demo_verifier_channel_verify(mrcp_engine_channel_t *channel, m
 	const mpf_codec_descriptor_t *descriptor = mrcp_engine_sink_stream_codec_get(channel);
 
 	if(!descriptor) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor "APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
+		apt_log(VERIF_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor " APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
 		response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
 		return FALSE;
 	}
@@ -293,10 +298,10 @@ static apt_bool_t demo_verifier_channel_verify(mrcp_engine_channel_t *channel, m
 							request->channel_id.session_id.buf);
 		char *file_path = apt_vardir_filepath_get(dir_layout,file_name,channel->pool);
 		if(file_path) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Utterance Output File [%s] for Writing",file_path);
+			apt_log(VERIF_LOG_MARK,APT_PRIO_INFO,"Open Utterance Output File [%s] for Writing",file_path);
 			verifier_channel->audio_out = fopen(file_path,"wb");
 			if(!verifier_channel->audio_out) {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Utterance Output File [%s] for Writing",file_path);
+				apt_log(VERIF_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Utterance Output File [%s] for Writing",file_path);
 			}
 		}
 	}
@@ -498,17 +503,17 @@ static apt_bool_t demo_verifier_stream_write(mpf_audio_stream_t *stream, const m
 		mpf_detector_event_e det_event = mpf_activity_detector_process(verifier_channel->detector,frame);
 		switch(det_event) {
 			case MPF_DETECTOR_EVENT_ACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity "APT_SIDRES_FMT,
+				apt_log(VERIF_LOG_MARK,APT_PRIO_INFO,"Detected Voice Activity " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request));
 				demo_verifier_start_of_input(verifier_channel);
 				break;
 			case MPF_DETECTOR_EVENT_INACTIVITY:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity "APT_SIDRES_FMT,
+				apt_log(VERIF_LOG_MARK,APT_PRIO_INFO,"Detected Voice Inactivity " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request));
 				demo_verifier_verification_complete(verifier_channel,VERIFIER_COMPLETION_CAUSE_SUCCESS);
 				break;
 			case MPF_DETECTOR_EVENT_NOINPUT:
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Noinput "APT_SIDRES_FMT,
+				apt_log(VERIF_LOG_MARK,APT_PRIO_INFO,"Detected Noinput " APT_SIDRES_FMT,
 					MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request));
 				if(verifier_channel->timers_started == TRUE) {
 					demo_verifier_verification_complete(verifier_channel,VERIFIER_COMPLETION_CAUSE_NO_INPUT_TIMEOUT);
@@ -518,17 +523,19 @@ static apt_bool_t demo_verifier_stream_write(mpf_audio_stream_t *stream, const m
 				break;
 		}
 
-		if((frame->type & MEDIA_FRAME_TYPE_EVENT) == MEDIA_FRAME_TYPE_EVENT) {
-			if(frame->marker == MPF_MARKER_START_OF_EVENT) {
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected Start of Event "APT_SIDRES_FMT" id:%d",
-					MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request),
-					frame->event_frame.event_id);
-			}
-			else if(frame->marker == MPF_MARKER_END_OF_EVENT) {
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Detected End of Event "APT_SIDRES_FMT" id:%d duration:%d ts",
-					MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request),
-					frame->event_frame.event_id,
-					frame->event_frame.duration);
+		if(verifier_channel->verifier_request) {
+			if((frame->type & MEDIA_FRAME_TYPE_EVENT) == MEDIA_FRAME_TYPE_EVENT) {
+				if(frame->marker == MPF_MARKER_START_OF_EVENT) {
+					apt_log(VERIF_LOG_MARK,APT_PRIO_INFO,"Detected Start of Event " APT_SIDRES_FMT " id:%d",
+						MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request),
+						frame->event_frame.event_id);
+				}
+				else if(frame->marker == MPF_MARKER_END_OF_EVENT) {
+					apt_log(VERIF_LOG_MARK,APT_PRIO_INFO,"Detected End of Event " APT_SIDRES_FMT " id:%d duration:%d ts",
+						MRCP_MESSAGE_SIDRES(verifier_channel->verifier_request),
+						frame->event_frame.event_id,
+						frame->event_frame.duration);
+				}
 			}
 		}
 

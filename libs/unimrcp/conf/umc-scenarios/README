@@ -1,0 +1,23 @@
+UniMRCP Client (UMC) Scenarios
+==============================
+
+This folder contains scenario files loaded by the sample client application umc.
+
+There are a number of scenarios to use. Each scenario is given an arbitrary but unique name and is
+associated to one of the predefined classes as follows:
+
+	<umcscenario name="synth" class="Synthesizer">
+	<umcscenario name="recog" class="Recognizer">
+	<umcscenario name="rec" class="Recorder">
+	<umcscenario name="verify" class="Verifier">
+	<umcscenario name="dtmf" class="DtmfRecognizer">
+	<umcscenario name="params" class="Params">
+
+More than one scenario of the same type (class) can be defined and loaded. The name but not the
+class of the scenario is used to run it from the umc console.
+
+For example:
+
+	> run synth
+or
+	> run recog

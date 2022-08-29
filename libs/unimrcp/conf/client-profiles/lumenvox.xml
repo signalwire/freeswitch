@@ -6,15 +6,21 @@
   <settings>
     <!-- SIP MRCPv2 settings -->
     <sip-settings id="LumenVox-SIP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+        Server IP address can explicitly be specified per "sip-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+      -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>5060</server-port>
       <!-- <force-destination>true</force-destination> -->
     </sip-settings>
-    
+
     <!-- RTSP MRCPv1 settings -->
     <rtsp-settings id="LumenVox-RTSP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+        Server IP address can explicitly be specified per "rtsp-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+      -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>554</server-port>
       <!-- <force-destination>true</force-destination> -->
@@ -24,7 +30,7 @@
       </resource-map>
     </rtsp-settings>
   </settings>
-  
+
   <profiles>
     <!-- LumenVox MRCPv2 profile -->
     <mrcpv2-profile id="lv2">
@@ -35,7 +41,7 @@
       <sip-settings>LumenVox-SIP-Settings</sip-settings>
       <rtp-settings>RTP-Settings-1</rtp-settings>
     </mrcpv2-profile>
-    
+
     <!-- LumenVox MRCPv1 profile -->
     <mrcpv1-profile id="lv1">
       <rtsp-uac>RTSP-Agent-1</rtsp-uac>
@@ -45,6 +51,6 @@
       <rtp-settings>RTP-Settings-1</rtp-settings>
     </mrcpv1-profile>
 
-    <!-- more profiles might be added here -->
+    <!-- More profiles may follow. -->
   </profiles>
 </unimrcpclient>

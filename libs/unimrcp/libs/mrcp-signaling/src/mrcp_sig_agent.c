@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_sig_agent.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_sig_agent.h"
@@ -98,12 +96,19 @@ MRCP_DECLARE(mrcp_sig_settings_t*) mrcp_signaling_settings_alloc(apr_pool_t *poo
 
 MRCP_DECLARE(mrcp_session_t*) mrcp_session_create(apr_size_t padding)
 {
-	mrcp_session_t *session;
 	apr_pool_t *pool = apt_pool_create();
 	if(!pool) {
 		return NULL;
 	}
+
+	return mrcp_session_create_ex(pool,TRUE,padding);
+}
+
+MRCP_DECLARE(mrcp_session_t*) mrcp_session_create_ex(apr_pool_t *pool, apt_bool_t take_ownership, apr_size_t padding)
+{
+	mrcp_session_t *session;
 	session = apr_palloc(pool,sizeof(mrcp_session_t)+padding);
+	session->self_owned = take_ownership;
 	session->pool = pool;
 	session->obj = NULL;
 	session->log_obj = NULL;
@@ -122,7 +127,7 @@ MRCP_DECLARE(mrcp_session_t*) mrcp_session_create(apr_size_t padding)
 
 MRCP_DECLARE(void) mrcp_session_destroy(mrcp_session_t *session)
 {
-	if(session->pool) {
+	if(session->pool && session->self_owned == TRUE) {
 		apr_pool_destroy(session->pool);
 	}
 }

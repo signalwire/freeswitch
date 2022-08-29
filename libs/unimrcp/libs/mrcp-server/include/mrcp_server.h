@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_server.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_H
@@ -43,6 +41,18 @@ MRCP_DECLARE(mrcp_server_t*) mrcp_server_create(apt_dir_layout_t *dir_layout);
  * @return the created server instance
  */
 MRCP_DECLARE(apt_bool_t) mrcp_server_start(mrcp_server_t *server);
+
+/**
+ * Take server offline.
+ * @param server the MRCP server to take offline
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_server_offline(mrcp_server_t *server);
+
+/**
+ * Bring server online.
+ * @param server the MRCP server to bring online
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_server_online(mrcp_server_t *server);
 
 /**
  * Shutdown message processing loop.
@@ -153,12 +163,12 @@ MRCP_DECLARE(mrcp_server_profile_t*) mrcp_server_profile_create(
  * Register MRCP profile.
  * @param server the MRCP server to set profile for
  * @param profile the profile to set
- * @param plugin_map the map of engines (plugins)
+ * @param resource_engine_map the map of resource ids and engine settings (resource id -> mrcp_engine_settings_t*)
  */
 MRCP_DECLARE(apt_bool_t) mrcp_server_profile_register(
 									mrcp_server_t *server, 
 									mrcp_server_profile_t *profile,
-									apr_table_t *plugin_map);
+									apr_hash_t *resource_engine_map);
 
 /**
  * Load MRCP engine as a plugin.
@@ -178,6 +188,13 @@ MRCP_DECLARE(mrcp_engine_t*) mrcp_server_engine_load(
  * @param server the MRCP server to get memory pool from
  */
 MRCP_DECLARE(apr_pool_t*) mrcp_server_memory_pool_get(const mrcp_server_t *server);
+
+/**
+* Get MRCP engine by name.
+* @param server the MRCP server to get media engine from
+* @param name the name of the media engine to lookup
+*/
+MRCP_DECLARE(mrcp_engine_t*) mrcp_server_engine_get(const mrcp_server_t *server, const char *name);
 
 /**
  * Get media engine by name.

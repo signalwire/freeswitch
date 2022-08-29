@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: recogsession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "recogsession.h"
@@ -236,6 +234,9 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 		return false;
 
 	RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
+	if(!pRecogChannel)
+		return false;
+
 	if(pMrcpMessage->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) 
 	{
 		/* received MRCP response */
@@ -257,13 +258,10 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 			/* received the response to RECOGNIZE request */
 			if(pMrcpMessage->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS)
 			{
-				RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-				if(pRecogChannel)
-					pRecogChannel->m_pRecogRequest = GetMrcpMessage();
+				pRecogChannel->m_pRecogRequest = GetMrcpMessage();
 
 				/* start to stream the speech to recognize */
-				if(pRecogChannel) 
-					pRecogChannel->m_Streaming = true;
+				pRecogChannel->m_Streaming = true;
 			}
 			else 
 			{
@@ -281,12 +279,9 @@ bool RecogSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t
 		if(pMrcpMessage->start_line.method_id == RECOGNIZER_RECOGNITION_COMPLETE) 
 		{
 			ParseNLSMLResult(pMrcpMessage);
-			if(pRecogChannel) 
-				pRecogChannel->m_Streaming = false;
 
-			RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-			if(pRecogChannel)
-				pRecogChannel->m_pRecogRequest = NULL;
+			pRecogChannel->m_Streaming = false;
+			pRecogChannel->m_pRecogRequest = NULL;
 
 			Terminate();
 		}
@@ -394,7 +389,7 @@ mrcp_message_t* RecogSession::CreateRecognizeRequest(mrcp_channel_t* pMrcpChanne
 			mrcp_generic_header_property_add(pMrcpMessage,GENERIC_HEADER_CONTENT_ID);
 			/* set message body */
 			if(pScenario->GetContent())
-				apt_string_assign(&pMrcpMessage->body,pScenario->GetContent(),pMrcpMessage->pool);
+				apt_string_assign_n(&pMrcpMessage->body,pScenario->GetContent(),pScenario->GetContentLength(),pMrcpMessage->pool);
 		}
 		mrcp_generic_header_property_add(pMrcpMessage,GENERIC_HEADER_CONTENT_TYPE);
 	}
@@ -414,7 +409,7 @@ mrcp_message_t* RecogSession::CreateRecognizeRequest(mrcp_channel_t* pMrcpChanne
 		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_RECOGNITION_TIMEOUT);
 		pRecogHeader->start_input_timers = TRUE;
 		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_START_INPUT_TIMERS);
-		pRecogHeader->confidence_threshold = 0.87f;
+		pRecogHeader->confidence_threshold = 0.5f;
 		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD);
 		pRecogHeader->save_waveform = TRUE;
 		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_SAVE_WAVEFORM);

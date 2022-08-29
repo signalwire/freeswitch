@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_string.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef APT_STRING_H
@@ -136,6 +134,23 @@ static APR_INLINE apt_bool_t apt_string_compare(const apt_str_t *str1, const apt
 {
 	if(str1->length != str2->length || !str1->length) {
 		return FALSE;
+	}
+	return (strncasecmp(str1->buf,str2->buf,str1->length) == 0) ? TRUE : FALSE;
+}
+
+/**
+ * Compare two strings (case insensitive).-
+ * @param str1 the string to compare
+ * @param str2 the string to compare
+ * @return TRUE if equal (including empty strings), FALSE otherwise
+ */
+static APR_INLINE apt_bool_t apt_strings_compare(const apt_str_t *str1, const apt_str_t *str2)
+{
+	if(str1->length != str2->length) {
+		return FALSE;
+	}
+ 	if(!str1->length) {
+		return TRUE;
 	}
 	return (strncasecmp(str1->buf,str2->buf,str1->length) == 0) ? TRUE : FALSE;
 }

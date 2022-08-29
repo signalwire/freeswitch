@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: rtsp_server.h 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #ifndef RTSP_SERVER_H
@@ -53,6 +51,7 @@ struct rtsp_server_vtable_t {
  * @param listen_ip the listen IP address
  * @param listen_port the listen port
  * @param max_connection_count the number of max RTSP connections
+ * @param connection_timeout the inactivity timeout for an RTSP connection [sec]
  * @param obj the external object to send events to
  * @param handler the request handler
  * @param pool the pool to allocate memory from
@@ -62,6 +61,7 @@ RTSP_DECLARE(rtsp_server_t*) rtsp_server_create(
 									const char *listen_ip,
 									apr_port_t listen_port,
 									apr_size_t max_connection_count,
+									apr_size_t connection_timeout,
 									void *obj,
 									const rtsp_server_vtable_t *handler,
 									apr_pool_t *pool);
@@ -110,6 +110,13 @@ RTSP_DECLARE(apt_bool_t) rtsp_server_session_respond(rtsp_server_t *server, rtsp
  * @param session the session to terminate
  */
 RTSP_DECLARE(apt_bool_t) rtsp_server_session_terminate(rtsp_server_t *server, rtsp_server_session_t *session);
+
+/**
+ * Release RTSP session (internal release event/request).
+ * @param server the server to use
+ * @param session the session to release
+ */
+RTSP_DECLARE(apt_bool_t) rtsp_server_session_release(rtsp_server_t *server, rtsp_server_session_t *session);
 
 /**
  * Get object associated with the session.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_engine_plugin.h 2139 2014-07-07 05:06:19Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_ENGINE_PLUGIN_H
@@ -50,6 +48,8 @@ APT_BEGIN_EXTERN_C
 #define MRCP_PLUGIN_VERSION_SYM_NAME "mrcp_plugin_version"
 /** [IMPLIED] Symbol name of the log accessor entry point in plugin DSO */
 #define MRCP_PLUGIN_LOGGER_SYM_NAME "mrcp_plugin_logger_set"
+/** [IMPLIED] Symbol name of the log source accessor entry point in plugin DSO */
+#define MRCP_PLUGIN_LOG_SOURCE_SYM_NAME "mrcp_plugin_log_source_set"
 
 /** Prototype of engine creator (entry point of plugin DSO) */
 typedef mrcp_engine_t* (*mrcp_plugin_creator_f)(apr_pool_t *pool);
@@ -57,10 +57,26 @@ typedef mrcp_engine_t* (*mrcp_plugin_creator_f)(apr_pool_t *pool);
 /** Prototype of log accessor (entry point of plugin DSO) */
 typedef apt_bool_t (*mrcp_plugin_log_accessor_f)(apt_logger_t *logger);
 
+/** Prototype of log source accessor (entry point of plugin DSO) */
+typedef apt_bool_t (*mrcp_plugin_log_source_accessor_f)(apt_log_source_t *log_source);
+
 /** Declare this macro in plugins to use log routine of the server */
 #define MRCP_PLUGIN_LOGGER_IMPLEMENT \
 	MRCP_PLUGIN_DECLARE(apt_bool_t) mrcp_plugin_logger_set(apt_logger_t *logger) \
-		{ return apt_log_instance_set(logger); }
+		{ apt_log_instance_set(logger); \
+		  return TRUE; } \
+	MRCP_PLUGIN_DECLARE(void) mrcp_plugin_log_source_set(apt_log_source_t *orig_log_source) \
+		{ apt_def_log_source_set(orig_log_source); }
+
+/** Declare this macro in plugins to use log routine of the server */
+#define MRCP_PLUGIN_LOG_SOURCE_IMPLEMENT(LOG_SOURCE, LOG_SOURCE_TAG) \
+	apt_log_source_t *LOG_SOURCE = &def_log_source; \
+	MRCP_PLUGIN_DECLARE(apt_bool_t) mrcp_plugin_logger_set(apt_logger_t *logger) \
+		{ apt_log_instance_set(logger); \
+		  return TRUE; } \
+	MRCP_PLUGIN_DECLARE(void) mrcp_plugin_log_source_set(apt_log_source_t *orig_log_source) \
+		{ apt_def_log_source_set(orig_log_source); \
+		  apt_log_source_assign(LOG_SOURCE_TAG,&LOG_SOURCE); }
 
 /** Declare this macro in plugins to set plugin version */
 #define MRCP_PLUGIN_VERSION_DECLARE \
@@ -80,7 +96,7 @@ typedef apt_bool_t (*mrcp_plugin_log_accessor_f)(apt_logger_t *logger);
  * Minor API changes that do not cause binary compatibility problems.
  * Reset to 0 when upgrading PLUGIN_MAJOR_VERSION
  */
-#define PLUGIN_MINOR_VERSION   2
+#define PLUGIN_MINOR_VERSION   7
 
 /** patch level 
  * The Patch Level never includes API changes, simply bug fixes.

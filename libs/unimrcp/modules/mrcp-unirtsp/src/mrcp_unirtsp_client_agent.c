@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_unirtsp_client_agent.c 2253 2014-11-21 02:57:19Z achaloyan@gmail.com $
  */
 
 #include <apr_general.h>
 #include <sofia-sip/sdp.h>
 
 #include "mrcp_unirtsp_client_agent.h"
+#include "mrcp_unirtsp_logger.h"
 #include "mrcp_session.h"
 #include "mrcp_session_descriptor.h"
 #include "mrcp_message.h"
@@ -74,7 +73,7 @@ static const rtsp_client_vtable_t session_response_vtable = {
 	mrcp_unirtsp_on_session_event
 };
 
-static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *session, const mrcp_sig_settings_t *settings);
+static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *session, const mrcp_sig_settings_t *settings, const mrcp_session_attribs_t *attribs);
 static apt_bool_t rtsp_config_validate(mrcp_unirtsp_agent_t *agent, rtsp_client_config_t *config, apr_pool_t *pool);
 static apt_bool_t mrcp_unirtsp_on_resource_discover(mrcp_unirtsp_agent_t *agent, mrcp_unirtsp_session_t *session, rtsp_message_t *request, rtsp_message_t *response);
 
@@ -133,7 +132,7 @@ static APR_INLINE mrcp_unirtsp_agent_t* client_agent_get(apt_task_t *task)
 	return agent;
 }
 
-static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *mrcp_session, const mrcp_sig_settings_t *settings)
+static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *mrcp_session, const mrcp_sig_settings_t *settings, const mrcp_session_attribs_t *attribs)
 {
 	mrcp_unirtsp_agent_t *agent = mrcp_session->signaling_agent->obj;
 	mrcp_unirtsp_session_t *session;
@@ -213,11 +212,12 @@ static apt_bool_t mrcp_unirtsp_on_announce_response(mrcp_unirtsp_agent_t *agent,
 		}
 		else {
 			/* error case */
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse MRCPv1 Message");
+			apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse MRCPv1 Message");
 		}
 	}
 	else {
 		/* error case */
+		apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Failed to Determine MRCPv1 Message Content");
 	}
 
 	if(!mrcp_message) {
@@ -228,7 +228,9 @@ static apt_bool_t mrcp_unirtsp_on_announce_response(mrcp_unirtsp_agent_t *agent,
 		mrcp_message->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
 	}
 
-	session->mrcp_message = NULL;
+	if(session->mrcp_message && mrcp_message->start_line.request_id == session->mrcp_message->start_line.request_id) {
+		session->mrcp_message = NULL;
+	}
 	mrcp_session_control_response(session->mrcp_session,mrcp_message);
 	return TRUE;
 }
@@ -291,7 +293,6 @@ static apt_bool_t mrcp_unirtsp_on_session_response(rtsp_client_t *rtsp_client, r
 		}
 		case RTSP_METHOD_ANNOUNCE:
 		{
-			mrcp_unirtsp_agent_t *agent = rtsp_client_object_get(rtsp_client);
 			const char *resource_name = mrcp_name_get_by_rtsp_name(
 				session->rtsp_settings->resource_map,
 				request->start_line.common.request_line.resource_name);
@@ -300,7 +301,6 @@ static apt_bool_t mrcp_unirtsp_on_session_response(rtsp_client_t *rtsp_client, r
 		}
 		case RTSP_METHOD_DESCRIBE:
 		{
-			mrcp_unirtsp_agent_t *agent = rtsp_client_object_get(rtsp_client);
 			mrcp_unirtsp_on_resource_discover(agent,session,request,response);
 			break;
 		}
@@ -368,7 +368,7 @@ static apt_bool_t mrcp_unirtsp_session_control(mrcp_session_t *mrcp_session, mrc
 
 	mrcp_message->start_line.version = MRCP_VERSION_1;
 	if(mrcp_message_generate(agent->sig_agent->resource_factory,mrcp_message,&stream) != TRUE) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate MRCPv1 Message");
+		apt_log(RTSP_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate MRCPv1 Message");
 		return FALSE;
 	}
 	stream.text.length = stream.pos - stream.text.buf;

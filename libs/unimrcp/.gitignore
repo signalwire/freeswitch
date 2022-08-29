@@ -1,1 +1,386 @@
-.svn
+*~
+*.o
+*.so
+*.lo
+*.a
+*.la
+*.loT
+*.orig
+*.rej
+*.dirstamp
+.libs
+.deps
+
+# /
+/debug
+/release
+/Debug
+/Release
+/x64
+/*.ncb
+/*.suo
+/*.sdf
+/*.opensdf
+/ipch
+/configure
+/config.log
+/config.nice
+/config.status
+/autom4te.cache
+/aclocal.m4
+/libtool
+/Makefile.in
+/Makefile
+/CHANGES-deps
+/README-deps
+/unimrcpdeps.sln
+/unimrcpdeps-2010.sln
+
+# /build/
+/build/ltmain.sh
+/build/depcomp
+/build/missing
+/build/compile
+/build/config.guess
+/build/config.sub
+/build/install-sh
+/build/Makefile.in
+/build/Makefile
+
+# /build/acmacros
+/build/acmacros/libtool.m4
+/build/acmacros/ltoptions.m4
+/build/acmacros/ltsugar.m4
+/build/acmacros/ltversion.m4
+/build/acmacros/lt~obsolete.m4
+
+# /build/pkgconfig/
+/build/pkgconfig/Makefile.in
+/build/pkgconfig/Makefile
+/build/pkgconfig/unimrcpclient.pc
+/build/pkgconfig/unimrcpserver.pc
+/build/pkgconfig/unimrcpplugin.pc
+
+# /build/props/
+
+# /build/tools/
+/build/tools/Debug
+/build/tools/Release
+/build/tools/x64
+/build/tools/*.user
+
+# /conf/
+/conf/Makefile.in
+/conf/Makefile
+
+# /data/
+/data/Makefile.in
+/data/Makefile
+
+# /docs/
+/docs/dox
+/docs/ea
+/docs/doxygen.conf
+
+# /libs/
+/libs/apr
+/libs/apr-iconv
+/libs/apr-util
+/libs/sofia-sip
+/libs/Makefile.in
+/libs/Makefile
+
+# /libs/apr-toolkit/
+/libs/apr-toolkit/Debug
+/libs/apr-toolkit/Release
+/libs/apr-toolkit/x64
+/libs/apr-toolkit/*.user
+/libs/apr-toolkit/.libs
+/libs/apr-toolkit/.deps
+/libs/apr-toolkit/Makefile.in
+/libs/apr-toolkit/Makefile
+
+# /libs/mpf/
+/libs/mpf/Debug
+/libs/mpf/Release
+/libs/mpf/x64
+/libs/mpf/*.user
+/libs/mpf/.libs
+/libs/mpf/.deps
+/libs/mpf/Makefile.in
+/libs/mpf/Makefile
+
+# /libs/mrcp/
+/libs/mrcp/Debug
+/libs/mrcp/Release
+/libs/mrcp/x64
+/libs/mrcp/*.user
+/libs/mrcp/.libs
+/libs/mrcp/.deps
+/libs/mrcp/Makefile.in
+/libs/mrcp/Makefile
+
+# /libs/mrcp-client/
+/libs/mrcp-client/Debug
+/libs/mrcp-client/Release
+/libs/mrcp-client/x64
+/libs/mrcp-client/*.user
+/libs/mrcp-client/.libs
+/libs/mrcp-client/.deps
+/libs/mrcp-client/Makefile.in
+/libs/mrcp-client/Makefile
+
+# /libs/mrcp-engine/
+/libs/mrcp-engine/Debug
+/libs/mrcp-engine/Release
+/libs/mrcp-engine/x64
+/libs/mrcp-engine/*.user
+/libs/mrcp-engine/.libs
+/libs/mrcp-engine/.deps
+/libs/mrcp-engine/Makefile.in
+/libs/mrcp-engine/Makefile
+
+# /libs/mrcp-server/
+/libs/mrcp-server/Debug
+/libs/mrcp-server/Release
+/libs/mrcp-server/x64
+/libs/mrcp-server/*.user
+/libs/mrcp-server/.libs
+/libs/mrcp-server/.deps
+/libs/mrcp-server/Makefile.in
+/libs/mrcp-server/Makefile
+
+# /libs/mrcp-signaling/
+/libs/mrcp-signaling/Debug
+/libs/mrcp-signaling/Release
+/libs/mrcp-signaling/x64
+/libs/mrcp-signaling/*.user
+/libs/mrcp-signaling/.libs
+/libs/mrcp-signaling/.deps
+/libs/mrcp-signaling/Makefile.in
+/libs/mrcp-signaling/Makefile
+
+# /libs/mrcpv2-transport/
+/libs/mrcpv2-transport/Debug
+/libs/mrcpv2-transport/Release
+/libs/mrcpv2-transport/x64
+/libs/mrcpv2-transport/*.user
+/libs/mrcpv2-transport/.libs
+/libs/mrcpv2-transport/.deps
+/libs/mrcpv2-transport/Makefile.in
+/libs/mrcpv2-transport/Makefile
+
+# /libs/uni-rtsp/
+/libs/uni-rtsp/Debug
+/libs/uni-rtsp/Release
+/libs/uni-rtsp/x64
+/libs/uni-rtsp/*.user
+/libs/uni-rtsp/.libs
+/libs/uni-rtsp/.deps
+/libs/uni-rtsp/Makefile.in
+/libs/uni-rtsp/Makefile
+
+# /modules/
+/modules/Makefile.in
+/modules/Makefile
+
+# /modules/mrcp-sofiasip/
+/modules/mrcp-sofiasip/Debug
+/modules/mrcp-sofiasip/Release
+/modules/mrcp-sofiasip/x64
+/modules/mrcp-sofiasip/*.user
+/modules/mrcp-sofiasip/.libs
+/modules/mrcp-sofiasip/.deps
+/modules/mrcp-sofiasip/Makefile.in
+/modules/mrcp-sofiasip/Makefile
+
+# /modules/mrcp-unirtsp/
+/modules/mrcp-unirtsp/Debug
+/modules/mrcp-unirtsp/Release
+/modules/mrcp-unirtsp/x64
+/modules/mrcp-unirtsp/*.user
+/modules/mrcp-unirtsp/.libs
+/modules/mrcp-unirtsp/.deps
+/modules/mrcp-unirtsp/Makefile.in
+/modules/mrcp-unirtsp/Makefile
+
+# /platforms/
+/platforms/Makefile.in
+/platforms/Makefile
+
+# /platforms/asr-client/
+/platforms/asr-client/Debug
+/platforms/asr-client/Release
+/platforms/asr-client/x64
+/platforms/asr-client/*.user
+/platforms/asr-client/.libs
+/platforms/asr-client/.deps
+/platforms/asr-client/Makefile.in
+/platforms/asr-client/Makefile
+/platforms/asr-client/asrclient
+
+# /platforms/libasr-client/
+/platforms/libasr-client/Debug
+/platforms/libasr-client/Release
+/platforms/libasr-client/x64
+/platforms/libasr-client/*.user
+/platforms/libasr-client/.libs
+/platforms/libasr-client/.deps
+/platforms/libasr-client/Makefile.in
+/platforms/libasr-client/Makefile
+
+# /platforms/libunimrcp-client/
+/platforms/libunimrcp-client/Debug
+/platforms/libunimrcp-client/Release
+/platforms/libunimrcp-client/x64
+/platforms/libunimrcp-client/*.user
+/platforms/libunimrcp-client/.libs
+/platforms/libunimrcp-client/.deps
+/platforms/libunimrcp-client/Makefile.in
+/platforms/libunimrcp-client/Makefile
+
+# /platforms/libunimrcp-server/
+/platforms/libunimrcp-server/Debug
+/platforms/libunimrcp-server/Release
+/platforms/libunimrcp-server/x64
+/platforms/libunimrcp-server/*.user
+/platforms/libunimrcp-server/.libs
+/platforms/libunimrcp-server/.deps
+/platforms/libunimrcp-server/Makefile.in
+/platforms/libunimrcp-server/Makefile
+
+# /platforms/umc/
+/platforms/umc/Debug
+/platforms/umc/Release
+/platforms/umc/x64
+/platforms/umc/*.user
+/platforms/umc/.libs
+/platforms/umc/.deps
+/platforms/umc/Makefile.in
+/platforms/umc/Makefile
+/platforms/umc/umc
+
+# /platforms/unimrcp-client/
+/platforms/unimrcp-client/Debug
+/platforms/unimrcp-client/Release
+/platforms/unimrcp-client/x64
+/platforms/unimrcp-client/*.user
+/platforms/unimrcp-client/.libs
+/platforms/unimrcp-client/.deps
+/platforms/unimrcp-client/Makefile.in
+/platforms/unimrcp-client/Makefile
+/platforms/unimrcp-client/unimrcpclient
+
+# /platforms/unimrcp-server/
+/platforms/unimrcp-server/Debug
+/platforms/unimrcp-server/Release
+/platforms/unimrcp-server/x64
+/platforms/unimrcp-server/*.user
+/platforms/unimrcp-server/.libs
+/platforms/unimrcp-server/.deps
+/platforms/unimrcp-server/Makefile.in
+/platforms/unimrcp-server/Makefile
+/platforms/unimrcp-server/unimrcpserver
+
+# /plugins/
+/plugins/Makefile.in
+/plugins/Makefile
+
+# /plugins/demo-recog/
+/plugins/demo-recog/Debug
+/plugins/demo-recog/Release
+/plugins/demo-recog/x64
+/plugins/demo-recog/*.user
+/plugins/demo-recog/.libs
+/plugins/demo-recog/.deps
+/plugins/demo-recog/Makefile.in
+/plugins/demo-recog/Makefile
+
+# /plugins/demo-synth/
+/plugins/demo-synth/Debug
+/plugins/demo-synth/Release
+/plugins/demo-synth/x64
+/plugins/demo-synth/*.user
+/plugins/demo-synth/.libs
+/plugins/demo-synth/.deps
+/plugins/demo-synth/Makefile.in
+/plugins/demo-synth/Makefile
+
+# /plugins/demo-verifier/
+/plugins/demo-verifier/Debug
+/plugins/demo-verifier/Release
+/plugins/demo-verifier/x64
+/plugins/demo-verifier/*.user
+/plugins/demo-verifier/.libs
+/plugins/demo-verifier/.deps
+/plugins/demo-verifier/Makefile.in
+/plugins/demo-verifier/Makefile
+
+# /plugins/mrcp-recorder/
+/plugins/mrcp-recorder/Debug
+/plugins/mrcp-recorder/Release
+/plugins/mrcp-recorder/x64
+/plugins/mrcp-recorder/*.user
+/plugins/mrcp-recorder/.libs
+/plugins/mrcp-recorder/.deps
+/plugins/mrcp-recorder/Makefile.in
+/plugins/mrcp-recorder/Makefile
+
+# /tests/
+/tests/Makefile.in
+/tests/Makefile
+
+# /tests/apttest/
+/tests/apttest/Debug
+/tests/apttest/Release
+/tests/apttest/x64
+/tests/apttest/*.user
+/tests/apttest/.libs
+/tests/apttest/.deps
+/tests/apttest/Makefile.in
+/tests/apttest/Makefile
+/tests/apttest/apttest
+
+# /tests/mpftest/
+/tests/mpftest/Debug
+/tests/mpftest/Release
+/tests/mpftest/x64
+/tests/mpftest/*.user
+/tests/mpftest/.libs
+/tests/mpftest/.deps
+/tests/mpftest/Makefile.in
+/tests/mpftest/Makefile
+/tests/mpftest/mpftest
+
+# /tests/mrcptest/
+/tests/mrcptest/Debug
+/tests/mrcptest/Release
+/tests/mrcptest/x64
+/tests/mrcptest/*.user
+/tests/mrcptest/.libs
+/tests/mrcptest/.deps
+/tests/mrcptest/Makefile.in
+/tests/mrcptest/Makefile
+/tests/mrcptest/mrcptest
+
+# /tests/rtsptest/
+/tests/rtsptest/Debug
+/tests/rtsptest/Release
+/tests/rtsptest/x64
+/tests/rtsptest/*.user
+/tests/rtsptest/.libs
+/tests/rtsptest/.deps
+/tests/rtsptest/Makefile.in
+/tests/rtsptest/Makefile
+/tests/rtsptest/rtsptest
+
+# /tests/strtablegen/
+/tests/strtablegen/Debug
+/tests/strtablegen/Release
+/tests/strtablegen/x64
+/tests/strtablegen/*.user
+/tests/strtablegen/.libs
+/tests/strtablegen/.deps
+/tests/strtablegen/Makefile.in
+/tests/strtablegen/Makefile
+/tests/strtablegen/strtablegen

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: umcconsole.cpp 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
 #include <stdio.h>
@@ -22,7 +20,7 @@
 #include "umcconsole.h"
 #include "umcframework.h"
 #include "apt_pool.h"
-#include "uni_version.h"
+#include "uni_revision.h"
 
 
 UmcConsole::UmcConsole() :
@@ -41,6 +39,7 @@ bool UmcConsole::Run(int argc, const char * const *argv)
 	apr_pool_t* pool = NULL;
 	apt_dir_layout_t* pDirLayout = NULL;
 	const char *logConfPath;
+	const char *logPrefix = "unimrcpclient";
 
 	/* APR global initialization */
 	if(apr_initialize() != APR_SUCCESS) 
@@ -106,7 +105,15 @@ bool UmcConsole::Run(int argc, const char * const *argv)
 	{
 		/* open the log file */
 		const char *logDirPath = apt_dir_layout_path_get(pDirLayout,APT_LAYOUT_LOG_DIR);
-		apt_log_file_open(logDirPath,"unimrcpclient",MAX_LOG_FILE_SIZE,MAX_LOG_FILE_COUNT,FALSE,pool);
+		const char *logfileConfPath = apt_confdir_filepath_get(pDirLayout,"logfile.xml",pool);
+		apt_log_file_open_ex(logDirPath,logPrefix,logfileConfPath,pool);
+	}
+
+	if(apt_log_output_mode_check(APT_LOG_OUTPUT_SYSLOG) == TRUE)
+	{
+		/* open the syslog */
+		const char *logfileConfPath = apt_confdir_filepath_get(pDirLayout,"syslog.xml",pool);
+		apt_syslog_open(logPrefix,logfileConfPath,pool);
 	}
 
 	/* create demo framework */
@@ -133,6 +140,8 @@ bool UmcConsole::ProcessCmdLine(char* pCmdLine)
 	char *name;
 	char *last;
 	name = apr_strtok(pCmdLine, " ", &last);
+	if(!name)
+		return running;
 
 	if(strcasecmp(name,"run") == 0)
 	{
@@ -140,10 +149,6 @@ bool UmcConsole::ProcessCmdLine(char* pCmdLine)
 		if(pScenarioName) 
 		{
 			const char* pProfileName = apr_strtok(NULL, " ", &last);
-			if(!pProfileName) 
-			{
-				pProfileName = "uni2";
-			}
 			m_pFramework->RunSession(pScenarioName,pProfileName);
 		}
 	}
@@ -246,9 +251,9 @@ void UmcConsole::Usage()
 {
 	printf(
 		"\n"
-		" * " UNI_COPYRIGHT"\n"
+		" * " UNI_COPYRIGHT "\n"
 		" *\n"
-		UNI_LICENSE"\n"
+		UNI_LICENSE "\n"
 		"\n"
 		"Usage:\n"
 		"\n"
@@ -315,7 +320,7 @@ bool UmcConsole::LoadOptions(int argc, const char * const *argv, apr_pool_t *poo
 				m_Options.m_LogOutput = optarg;
 				break;
 			case 'v':
-				printf(UNI_VERSION_STRING);
+				printf("%s", UNI_FULL_VERSION_STRING);
 				return FALSE;
 			case 'h':
 				Usage();

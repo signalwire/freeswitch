@@ -101,6 +101,10 @@ xcopy "$(SolutionDir)conf\*.xsd" "$(SolutionDir)$(Configuration)\conf\" /Y
 xcopy "$(SolutionDir)conf\client-profiles\*.xml" "$(SolutionDir)$(Configuration)\conf\client-profiles\" /Y
 )
 
+if not exist "$(SolutionDir)$(Configuration)\conf\umc-scenarios" (
+xcopy "$(SolutionDir)conf\umc-scenarios\*.xml" "$(SolutionDir)$(Configuration)\conf\umc-scenarios\" /Y
+)
+
 if not exist "$(SolutionDir)$(Configuration)\data" xcopy "$(SolutionDir)data\*" "$(SolutionDir)$(Configuration)\data\" /Y
 if not exist "$(SolutionDir)$(Configuration)\log" mkdir "$(SolutionDir)$(Configuration)\log\"
 if not exist "$(SolutionDir)$(Configuration)\var" mkdir "$(SolutionDir)$(Configuration)\var\"
@@ -127,6 +131,10 @@ if not exist "$(SolutionDir)$(Platform)\$(Configuration)\conf" (
 xcopy "$(SolutionDir)conf\*.xml" "$(SolutionDir)$(Platform)\$(Configuration)\conf\" /Y
 xcopy "$(SolutionDir)conf\*.xsd" "$(SolutionDir)$(Platform)\$(Configuration)\conf\" /Y
 xcopy "$(SolutionDir)conf\client-profiles\*.xml" "$(SolutionDir)$(Platform)\$(Configuration)\conf\client-profiles\" /Y
+)
+
+if not exist "$(SolutionDir)$(Platform)\$(Configuration)\conf\umc-scenarios" (
+xcopy "$(SolutionDir)conf\umc-scenarios\*.xml" "$(SolutionDir)$(Platform)\$(Configuration)\conf\umc-scenarios\" /Y
 )
 
 if not exist "$(SolutionDir)$(Platform)\$(Configuration)\data" xcopy "$(SolutionDir)data\*" "$(SolutionDir)$(Platform)\$(Configuration)\data\" /Y
@@ -160,6 +168,10 @@ xcopy "$(SolutionDir)conf\*.xsd" "$(SolutionDir)$(Configuration)\conf\" /Y
 xcopy "$(SolutionDir)conf\client-profiles\*.xml" "$(SolutionDir)$(Configuration)\conf\client-profiles\" /Y
 )
 
+if not exist "$(SolutionDir)$(Configuration)\conf\umc-scenarios" (
+xcopy "$(SolutionDir)conf\umc-scenarios\*.xml" "$(SolutionDir)$(Configuration)\conf\umc-scenarios\" /Y
+)
+
 if not exist "$(SolutionDir)$(Configuration)\data" xcopy "$(SolutionDir)data\*" "$(SolutionDir)$(Configuration)\data\" /Y
 if not exist "$(SolutionDir)$(Configuration)\log" mkdir "$(SolutionDir)$(Configuration)\log\"
 if not exist "$(SolutionDir)$(Configuration)\var" mkdir "$(SolutionDir)$(Configuration)\var\"
@@ -186,6 +198,10 @@ if not exist "$(SolutionDir)$(Platform)\$(Configuration)\conf" (
 xcopy "$(SolutionDir)conf\*.xml" "$(SolutionDir)$(Platform)\$(Configuration)\conf\" /Y
 xcopy "$(SolutionDir)conf\*.xsd" "$(SolutionDir)$(Platform)\$(Configuration)\conf\" /Y
 xcopy "$(SolutionDir)conf\client-profiles\*.xml" "$(SolutionDir)$(Platform)\$(Configuration)\conf\client-profiles\" /Y
+)
+
+if not exist "$(SolutionDir)$(Platform)\$(Configuration)\conf\umc-scenarios" (
+xcopy "$(SolutionDir)conf\umc-scenarios\*.xml" "$(SolutionDir)$(Platform)\$(Configuration)\conf\umc-scenarios\" /Y
 )
 
 if not exist "$(SolutionDir)$(Platform)\$(Configuration)\data" xcopy "$(SolutionDir)data\*" "$(SolutionDir)$(Platform)\$(Configuration)\data\" /Y

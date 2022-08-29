@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: verifiersession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "verifiersession.h"
@@ -208,6 +206,9 @@ bool VerifierSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 		return false;
 
 	VerifierChannel* pVerifierChannel = (VerifierChannel*) mrcp_application_channel_object_get(pMrcpChannel);
+	if (!pVerifierChannel)
+		return false;
+
 	if(pMrcpMessage->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) 
 	{
 		/* received MRCP response */
@@ -215,10 +216,10 @@ bool VerifierSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 		{
 			/* received the response to START-SESSION request */
 			/* create and send VERIFY request */
-			mrcp_message_t* pMrcpMessage = CreateVerificationRequest(pMrcpChannel);
-			if(pMrcpMessage)
+			mrcp_message_t* pMrcpRequest = CreateVerificationRequest(pMrcpChannel);
+			if(pMrcpRequest)
 			{
-				SendMrcpRequest(pVerifierChannel->m_pMrcpChannel,pMrcpMessage);
+				SendMrcpRequest(pVerifierChannel->m_pMrcpChannel, pMrcpRequest);
 			}
 		}
 		else if(pMrcpMessage->start_line.method_id == VERIFIER_END_SESSION)
@@ -231,21 +232,18 @@ bool VerifierSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 			/* received the response to VERIFY request */
 			if(pMrcpMessage->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS)
 			{
-				VerifierChannel* pVerifierChannel = (VerifierChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-				if(pVerifierChannel)
-					pVerifierChannel->m_pVerificationRequest = GetMrcpMessage();
+				pVerifierChannel->m_pVerificationRequest = GetMrcpMessage();
 
-				/* start to stream the speech to Verify */
-				if(pVerifierChannel) 
-					pVerifierChannel->m_Streaming = true;
+				/* start to stream the speech to verify */
+				pVerifierChannel->m_Streaming = true;
 			}
 			else
 			{
 				/* create and send END-SESSION request */
-				mrcp_message_t* pMrcpMessage = CreateEndSessionRequest(pMrcpChannel);
-				if(pMrcpMessage)
+				mrcp_message_t* pMrcpRequest = CreateEndSessionRequest(pMrcpChannel);
+				if(pMrcpRequest)
 				{
-					SendMrcpRequest(pVerifierChannel->m_pMrcpChannel,pMrcpMessage);
+					SendMrcpRequest(pVerifierChannel->m_pMrcpChannel, pMrcpRequest);
 				}
 			}
 		}
@@ -258,18 +256,14 @@ bool VerifierSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 	{
 		if(pMrcpMessage->start_line.method_id == VERIFIER_VERIFICATION_COMPLETE) 
 		{
-			if(pVerifierChannel) 
-				pVerifierChannel->m_Streaming = false;
-
-			VerifierChannel* pVerifierChannel = (VerifierChannel*) mrcp_application_channel_object_get(pMrcpChannel);
-			if(pVerifierChannel)
-				pVerifierChannel->m_pVerificationRequest = NULL;
+			pVerifierChannel->m_Streaming = false;
+			pVerifierChannel->m_pVerificationRequest = NULL;
 
 			/* create and send END-SESSION request */
-			mrcp_message_t* pMrcpMessage = CreateEndSessionRequest(pMrcpChannel);
-			if(pVerifierChannel && pMrcpMessage)
+			mrcp_message_t* pMrcpRequest = CreateEndSessionRequest(pMrcpChannel);
+			if(pMrcpRequest)
 			{
-				SendMrcpRequest(pVerifierChannel->m_pMrcpChannel,pMrcpMessage);
+				SendMrcpRequest(pVerifierChannel->m_pMrcpChannel, pMrcpRequest);
 			}
 		}
 		else if(pMrcpMessage->start_line.method_id == VERIFIER_START_OF_INPUT) 

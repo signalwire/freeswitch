@@ -6,16 +6,22 @@
   <settings>
     <!-- SIP MRCPv2 settings -->
     <sip-settings id="Nuance-SIP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+        Server IP address can explicitly be specified per "sip-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+      -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>5060</server-port>
       <!-- <force-destination>true</force-destination> -->
       <!-- <feature-tags>*;+mrcpv2.speechrecog;+mrcpv2.speechrecog.grammars="http://grammars.example.com/biggrammar.gram"</feature-tags> -->
     </sip-settings>
-    
+
     <!-- RTSP MRCPv1 settings -->
     <rtsp-settings id="Nuance-RTSP-Settings">
-      <!-- Server address should be explicitly specified, it defaults to "ip" address set in the properties. -->
+      <!--
+        Server IP address can explicitly be specified per "rtsp-settings". Otherwise, the server IP
+        address defaults to "server-ip" set in the properties, which in turn defaults to "ip".
+      -->
       <!-- <server-ip>10.10.0.1</server-ip> -->
       <server-port>4900</server-port>
       <!-- <force-destination>true</force-destination> -->
@@ -36,23 +42,24 @@
       </jitter-buffer>
       <ptime>20</ptime>
       <codecs>PCMU PCMA L16/96/8000 telephone-event/101/8000</codecs>
-      <!-- enable/disable RTCP support -->
+      <!-- Enable/disable RTCP support -->
       <rtcp enable="true">
-        <!-- RTCP BYE policies (RTCP must be enabled first)
-              0 - disable RTCP BYE
-              1 - send RTCP BYE at the end of session
-              2 - send RTCP BYE also at the end of each talkspurt (input)
+        <!--
+            RTCP BYE policies (RTCP must be enabled first)
+            0 - disable RTCP BYE
+            1 - send RTCP BYE at the end of session
+            2 - send RTCP BYE also at the end of each talkspurt (input)
         -->
         <rtcp-bye>2</rtcp-bye>
-        <!-- rtcp transmission interval in msec (set 0 to disable) -->
+        <!-- RTCP transmission interval in msec (set 0 to disable) -->
         <tx-interval>5000</tx-interval>
-        <!-- period (timeout) to check for new rtcp messages in msec (set 0 to disable) -->
+        <!-- Period (timeout) to check for new RTCP messages in msec (set 0 to disable) -->
         <rx-resolution>1000</rx-resolution>
       </rtcp>
     </rtp-settings>
 
   </settings>
-  
+
   <profiles>
     <!-- Nuance MRCPv2 profile -->
     <mrcpv2-profile id="nss2">
@@ -63,7 +70,7 @@
       <sip-settings>Nuance-SIP-Settings</sip-settings>
       <rtp-settings>Nuance-RTP-Settings</rtp-settings>
     </mrcpv2-profile>
-    
+
     <!-- Nuance MRCPv1 profile -->
     <mrcpv1-profile id="nss1">
       <rtsp-uac>RTSP-Agent-1</rtsp-uac>
@@ -73,6 +80,6 @@
       <rtp-settings>Nuance-RTP-Settings</rtp-settings>
     </mrcpv1-profile>
 
-    <!-- more profiles might be added here -->
+    <!-- More profiles may follow. -->
   </profiles>
 </unimrcpclient>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_recorder_state_machine.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "apt_obj_list.h"
@@ -81,7 +79,7 @@ static APR_INLINE apt_bool_t recorder_event_dispatch(mrcp_recorder_state_machine
 
 static APR_INLINE void recorder_state_change(mrcp_recorder_state_machine_t *state_machine, mrcp_recorder_state_e state, mrcp_message_t *message)
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"State Transition %s -> %s "APT_SIDRES_FMT,
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"State Transition %s -> %s " APT_SIDRES_FMT,
 		state_names[state_machine->state],
 		state_names[state],
 		MRCP_MESSAGE_SIDRES(message));
@@ -119,7 +117,7 @@ static apt_bool_t recorder_request_record(mrcp_recorder_state_machine_t *state_m
 	mrcp_header_fields_inherit(&message->header,state_machine->properties,message->pool);
 	if(state_machine->state == RECORDER_STATE_RECORDING) {
 		mrcp_message_t *response;
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Reject RECORD Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Reject RECORD Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		
@@ -202,21 +200,21 @@ static apt_bool_t recorder_event_start_of_input(mrcp_recorder_state_machine_t *s
 static apt_bool_t recorder_event_record_complete(mrcp_recorder_state_machine_t *state_machine, mrcp_message_t *message)
 {
 	if(!state_machine->record) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected RECORD-COMPLETE Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected RECORD-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		return FALSE;
 	}
 
 	if(state_machine->record->start_line.request_id != message->start_line.request_id) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected RECORD-COMPLETE Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected RECORD-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		return FALSE;
 	}
 
 	if(state_machine->active_request && state_machine->active_request->start_line.method_id == RECORDER_STOP) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Ignore RECORD-COMPLETE Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]: waiting for STOP response",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Ignore RECORD-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]: waiting for STOP response",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		return FALSE;
@@ -260,7 +258,7 @@ static apt_bool_t recorder_request_state_update(mrcp_recorder_state_machine_t *s
 		return FALSE;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		message->start_line.method_name.buf,
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
@@ -288,7 +286,7 @@ static apt_bool_t recorder_response_state_update(mrcp_recorder_state_machine_t *
 		return FALSE;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Response "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Response " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		message->start_line.method_name.buf,
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
@@ -307,7 +305,7 @@ static apt_bool_t recorder_event_state_update(mrcp_recorder_state_machine_t *sta
 		return FALSE;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		message->start_line.method_name.buf,
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
@@ -365,7 +363,7 @@ static apt_bool_t recorder_state_deactivate(mrcp_state_machine_t *base)
 	message->start_line.request_id = source->start_line.request_id + 1;
 	apt_string_set(&message->start_line.method_name,"DEACTIVATE"); /* informative only */
 	message->header = source->header;
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create and Process STOP Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create and Process STOP Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
 	return recorder_request_dispatch(state_machine,message);

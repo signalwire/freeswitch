@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_consumer_task.c 2224 2014-11-12 00:41:45Z achaloyan@gmail.com $
  */
 
 #include <apr_time.h>
@@ -156,6 +154,12 @@ static apt_bool_t apt_consumer_task_run(apt_task_t *task)
 			time_now = apr_time_now();
 			if(time_now > time_last) {
 				apt_timer_queue_advance(consumer_task->timer_queue,(apr_uint32_t)((time_now - time_last)/1000));
+			}
+			else {
+				/* If NTP has drifted the clock backwards, advance the queue based on the set timeout but not actual time difference */
+				if(rv == APR_TIMEUP) {
+					apt_timer_queue_advance(consumer_task->timer_queue,queue_timeout);
+				}
 			}
 		}
 #endif

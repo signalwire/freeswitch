@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_engine_iface.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_engine_iface.h"
@@ -63,7 +61,7 @@ void mrcp_engine_on_close(mrcp_engine_t *engine)
 }
 
 /** Create engine channel */
-mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine, mrcp_version_e mrcp_version, apr_pool_t *pool)
+mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine, apr_table_t *attribs, mrcp_version_e mrcp_version, apr_pool_t *pool)
 {
 	mrcp_engine_channel_t *channel;
 	if(engine->is_open != TRUE) {
@@ -77,6 +75,7 @@ mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine,
 	channel = engine->method_vtable->create_channel(engine,pool);
 	if(channel) {
 		channel->mrcp_version = mrcp_version;
+		channel->attribs = attribs;
 		engine->cur_channel_count++;
 	}
 	return channel;
@@ -99,4 +98,15 @@ mrcp_engine_config_t* mrcp_engine_config_alloc(apr_pool_t *pool)
 	config->max_channel_count = 0;
 	config->params = NULL;
 	return config;
+}
+
+/** Allocate engine profile settings */
+mrcp_engine_settings_t* mrcp_engine_settings_alloc(apr_pool_t *pool)
+{
+	mrcp_engine_settings_t *settings = apr_palloc(pool,sizeof(mrcp_engine_settings_t));
+	settings->resource_id = NULL;
+	settings->engine_id = NULL;
+	settings->attribs = NULL;
+	settings->engine = NULL;
+	return settings;
 }

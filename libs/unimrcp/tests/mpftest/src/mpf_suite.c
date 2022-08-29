@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mpf_suite.c 2214 2014-11-06 03:05:51Z achaloyan@gmail.com $
  */
 
 #include <apr_thread_cond.h>
@@ -474,8 +472,7 @@ static mpf_rtp_stream_descriptor_t* mpf_rtp_rx_local_descriptor_create(const mpf
 	mpf_rtp_media_descriptor_t *media_descriptor;
 	mpf_rtp_stream_descriptor_t *stream_descriptor;
 
-	media_descriptor = apr_palloc(session->pool,sizeof(mpf_rtp_media_descriptor_t));
-	mpf_rtp_media_descriptor_init(media_descriptor);
+	media_descriptor = mpf_rtp_media_descriptor_alloc(session->pool);
 	media_descriptor->state = MPF_MEDIA_ENABLED;
 	media_descriptor->direction = STREAM_DIRECTION_RECEIVE;
 	apt_string_set(&media_descriptor->ip,"127.0.0.1");
@@ -496,8 +493,7 @@ static mpf_rtp_stream_descriptor_t* mpf_rtp_rx_remote_descriptor_create(const mp
 	mpf_rtp_media_descriptor_t *media_descriptor;
 	mpf_rtp_stream_descriptor_t *stream_descriptor;
 
-	media_descriptor = apr_palloc(session->pool,sizeof(mpf_rtp_media_descriptor_t));
-	mpf_rtp_media_descriptor_init(media_descriptor);
+	media_descriptor = mpf_rtp_media_descriptor_alloc(session->pool);
 	media_descriptor->state = MPF_MEDIA_ENABLED;
 	media_descriptor->direction = STREAM_DIRECTION_SEND;
 	apt_string_set(&media_descriptor->ip,"127.0.0.1");
@@ -525,8 +521,7 @@ static mpf_rtp_stream_descriptor_t* mpf_rtp_tx_local_descriptor_create(const mpf
 	mpf_rtp_media_descriptor_t *media_descriptor;
 	mpf_rtp_stream_descriptor_t *stream_descriptor;
 
-	media_descriptor = apr_palloc(session->pool,sizeof(mpf_rtp_media_descriptor_t));
-	mpf_rtp_media_descriptor_init(media_descriptor);
+	media_descriptor = mpf_rtp_media_descriptor_alloc(session->pool);
 	media_descriptor->state = MPF_MEDIA_ENABLED;
 	media_descriptor->direction = STREAM_DIRECTION_SEND;
 	apt_string_set(&media_descriptor->ip,"127.0.0.1");
@@ -547,8 +542,7 @@ static mpf_rtp_stream_descriptor_t* mpf_rtp_tx_remote_descriptor_create(const mp
 	mpf_rtp_media_descriptor_t *media_descriptor;
 	mpf_rtp_stream_descriptor_t *stream_descriptor;
 
-	media_descriptor = apr_palloc(session->pool,sizeof(mpf_rtp_media_descriptor_t));
-	mpf_rtp_media_descriptor_init(media_descriptor);
+	media_descriptor = mpf_rtp_media_descriptor_alloc(session->pool);
 	media_descriptor->state = MPF_MEDIA_ENABLED;
 	media_descriptor->direction = STREAM_DIRECTION_RECEIVE;
 	apt_string_set(&media_descriptor->ip,"127.0.0.1");

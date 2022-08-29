@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_connection.h 2170 2014-09-09 05:19:48Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CONNECTION_H
@@ -64,6 +62,8 @@ struct mrcp_connection_t {
 
 	/** Reference count */
 	apr_size_t        access_count;
+	/** Usage count */
+	apr_size_t        use_count;
 	/** Opaque agent */
 	void             *agent;
 
@@ -76,15 +76,20 @@ struct mrcp_connection_t {
 	apr_size_t        rx_buffer_size;
 	/** Rx stream */
 	apt_text_stream_t rx_stream;
-	/** MRCP parser to parser MRCP messages out of rx stream */
+	/** MRCP parser */
 	mrcp_parser_t    *parser;
 
 	/** Tx buffer */
 	char             *tx_buffer;
 	/** Tx buffer size */
 	apr_size_t        tx_buffer_size;
-	/** MRCP generator to generate MRCP messages into tx stream */
+	/** MRCP generator */
 	mrcp_generator_t *generator;
+
+	/** Inactivity timer  */
+	apt_timer_t      *inactivity_timer;
+	/** Termination timer  */
+	apt_timer_t      *termination_timer;
 };
 
 /** Create MRCP connection. */

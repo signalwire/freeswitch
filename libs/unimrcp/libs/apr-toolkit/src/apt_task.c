@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: apt_task.c 2219 2014-11-11 02:35:14Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -262,7 +260,7 @@ APT_DECLARE(apt_task_msg_t*) apt_task_msg_get(apt_task_t *task)
 
 APT_DECLARE(apt_bool_t) apt_task_msg_signal(apt_task_t *task, apt_task_msg_t *msg)
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Signal Message to [%s] ["APT_PTR_FMT";%d;%d]",
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Signal Message to [%s] [" APT_PTR_FMT ";%d;%d]",
 		task->name, msg, msg->type, msg->sub_type);
 	if(task->vtable.signal_msg) {
 		if(task->vtable.signal_msg(task,msg) == TRUE) {
@@ -334,7 +332,7 @@ static apt_bool_t apt_core_task_msg_process(apt_task_t *task, apt_task_msg_t *ms
 APT_DECLARE(apt_bool_t) apt_task_msg_process(apt_task_t *task, apt_task_msg_t *msg)
 {
 	apt_bool_t status = FALSE;
-	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Process Message [%s] ["APT_PTR_FMT";%d;%d]",
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Process Message [%s] [" APT_PTR_FMT ";%d;%d]",
 		task->name, msg, msg->type, msg->sub_type);
 	if(msg->type == TASK_MSG_CORE) {
 		status = apt_core_task_msg_process(task,msg);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_engine_impl.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_engine_impl.h"
@@ -75,6 +73,7 @@ mrcp_engine_channel_t* mrcp_engine_channel_create(
 	channel->engine = engine;
 	channel->is_open = FALSE;
 	channel->pool = pool;
+	channel->attribs = NULL;
 	apt_string_reset(&channel->id);
 	return channel;
 }

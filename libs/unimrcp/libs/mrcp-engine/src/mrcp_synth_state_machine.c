@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_synth_state_machine.c 2228 2014-11-12 01:18:27Z achaloyan@gmail.com $
  */
 
 #include "apt_obj_list.h"
@@ -87,7 +85,7 @@ static APR_INLINE apt_bool_t synth_event_dispatch(mrcp_synth_state_machine_t *st
 
 static APR_INLINE void synth_state_change(mrcp_synth_state_machine_t *state_machine, mrcp_synth_state_e state, mrcp_message_t *message)
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"State Transition %s -> %s "APT_SIDRES_FMT,
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"State Transition %s -> %s " APT_SIDRES_FMT,
 		state_names[state_machine->state],
 		state_names[state],
 		MRCP_MESSAGE_SIDRES(message));
@@ -125,7 +123,7 @@ static apt_bool_t synth_request_speak(mrcp_synth_state_machine_t *state_machine,
 	mrcp_header_fields_inherit(&message->header,state_machine->properties,message->pool);
 	if(state_machine->speaker) {
 		mrcp_message_t *response;
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Queue Up SPEAK Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Queue Up SPEAK Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		message->start_line.request_state = MRCP_REQUEST_STATE_PENDING;
@@ -176,7 +174,7 @@ static apt_bool_t synth_pending_requests_remove(mrcp_synth_state_machine_t *stat
 	while(elem) {
 		pending_message = apt_list_elem_object_get(elem);
 		if(!request_id_list || active_request_id_list_find(generic_header,pending_message->start_line.request_id) == TRUE) {
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Remove Pending SPEAK Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Remove Pending SPEAK Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 				MRCP_MESSAGE_SIDRES(pending_message),
 				pending_message->start_line.request_id);
 			elem = apt_list_elem_remove(state_machine->queue,elem);
@@ -209,7 +207,7 @@ static apt_bool_t synth_request_stop(mrcp_synth_state_machine_t *state_machine, 
 
 		if(!request_id_list || active_request_id_list_find(generic_header,state_machine->speaker->start_line.request_id) == TRUE) {
 			/* found in-progress SPEAK request, stop it */
-			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Found IN-PROGRESS SPEAK Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Found IN-PROGRESS SPEAK Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 				MRCP_MESSAGE_SIDRES(message),
 				message->start_line.request_id);
 			return synth_request_dispatch(state_machine,message);
@@ -236,7 +234,7 @@ static apt_bool_t synth_response_stop(mrcp_synth_state_machine_t *state_machine,
 
 	/* process pending SPEAK requests / if any */
 	if(pending_request) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process Pending SPEAK Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process Pending SPEAK Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			pending_request->start_line.request_id);
 		state_machine->is_pending = TRUE;
@@ -407,24 +405,32 @@ static apt_bool_t synth_event_speak_complete(mrcp_synth_state_machine_t *state_m
 {
 	mrcp_message_t *pending_request;
 	if(!state_machine->speaker) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected SPEAK-COMPLETE Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected SPEAK-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		return FALSE;
 	}
 
 	if(state_machine->speaker->start_line.request_id != message->start_line.request_id) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected SPEAK-COMPLETE Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Unexpected SPEAK-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(message),
 			message->start_line.request_id);
 		return FALSE;
 	}
 
-	if(state_machine->active_request && state_machine->active_request->start_line.method_id == SYNTHESIZER_STOP) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Ignore SPEAK-COMPLETE Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]: waiting for STOP response",
-			MRCP_MESSAGE_SIDRES(message),
-			message->start_line.request_id);
-		return FALSE;
+	if(state_machine->active_request) {
+		if(state_machine->active_request->start_line.method_id == SYNTHESIZER_STOP) {
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Ignore SPEAK-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]: waiting for STOP response",
+				MRCP_MESSAGE_SIDRES(message),
+				message->start_line.request_id);
+			return FALSE;
+		}
+		if(state_machine->active_request->start_line.method_id == SYNTHESIZER_BARGE_IN_OCCURRED) {
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Ignore SPEAK-COMPLETE Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]: waiting for BARGE-IN-OCCURRED response",
+				MRCP_MESSAGE_SIDRES(message),
+				message->start_line.request_id);
+			return FALSE;
+		}
 	}
 
 	if(mrcp_resource_header_property_check(message,SYNTHESIZER_HEADER_COMPLETION_CAUSE) != TRUE) {
@@ -438,7 +444,7 @@ static apt_bool_t synth_event_speak_complete(mrcp_synth_state_machine_t *state_m
 	/* process pending SPEAK requests */
 	pending_request = apt_list_pop_front(state_machine->queue);
 	if(pending_request) {
-		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process Pending SPEAK Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process Pending SPEAK Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 			MRCP_MESSAGE_SIDRES(pending_request),
 			pending_request->start_line.request_id);
 		state_machine->is_pending = TRUE;
@@ -484,7 +490,7 @@ static apt_bool_t synth_request_state_update(mrcp_synth_state_machine_t *state_m
 		return FALSE;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		message->start_line.method_name.buf,
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
@@ -512,7 +518,7 @@ static apt_bool_t synth_response_state_update(mrcp_synth_state_machine_t *state_
 		return FALSE;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Response "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Response " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		message->start_line.method_name.buf,
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
@@ -531,7 +537,7 @@ static apt_bool_t synth_event_state_update(mrcp_synth_state_machine_t *state_mac
 		return FALSE;
 	}
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Event "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Process %s Event " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		message->start_line.method_name.buf,
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
@@ -586,7 +592,7 @@ static apt_bool_t synth_state_deactivate(mrcp_state_machine_t *base)
 	message->start_line.request_id = source->start_line.request_id + 1;
 	apt_string_set(&message->start_line.method_name,"DEACTIVATE"); /* informative only */
 	message->header = source->header;
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create and Process STOP Request "APT_SIDRES_FMT" [%"MRCP_REQUEST_ID_FMT"]",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Create and Process STOP Request " APT_SIDRES_FMT " [%" MRCP_REQUEST_ID_FMT "]",
 		MRCP_MESSAGE_SIDRES(message),
 		message->start_line.request_id);
 	return synth_request_dispatch(state_machine,message);

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Log File Document -->
+<aptlogfile>
+  <!--  Log File Settings
+    purge-existing   Indicates whether to delete existing log files on start-up.
+    max-age          Lifetime of log files in days. Outdated log files are determined and deleted upon start-up and next rotation. Set 0 for infinite.
+    max-count        Max number of log files to store. If reached, the oldest log file is deleted. Set 0 for infinite.
+    max-size         Max size of log files in Mb.
+  -->
+  <settings
+    purge-existing="false"
+    max-age="0"
+    max-count="100"
+    max-size="8"/>
+</aptlogfile>

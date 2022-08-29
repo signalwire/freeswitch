@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: recogsession.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef RECOG_SESSION_H
@@ -53,8 +51,8 @@ protected:
 
 /* ============================ HANDLERS =================================== */
 	virtual bool OnSessionTerminate(mrcp_sig_status_code_e status);
-	virtual bool OnChannelAdd(mrcp_channel_t* channel, mrcp_sig_status_code_e status);
-	virtual bool OnMessageReceive(mrcp_channel_t* channel, mrcp_message_t* message);
+	virtual bool OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_code_e status);
+	virtual bool OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_message_t* pMrcpMessage);
 
 /* ============================ ACCESSORS ================================== */
 	const RecogScenario* GetScenario() const;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: uni_daemon.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <apr_signal.h>
@@ -28,7 +26,7 @@ static void sigterm_handler(int signo)
 	daemon_running = FALSE;
 }
 
-apt_bool_t uni_daemon_run(apt_dir_layout_t *dir_layout, apr_pool_t *pool)
+apt_bool_t uni_daemon_run(apt_dir_layout_t *dir_layout, apt_bool_t detach, apr_pool_t *pool)
 {
 	mrcp_server_t *server;
 
@@ -36,7 +34,9 @@ apt_bool_t uni_daemon_run(apt_dir_layout_t *dir_layout, apr_pool_t *pool)
 	apr_signal(SIGTERM,sigterm_handler);
 
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Run as Daemon");
-	apr_proc_detach(APR_PROC_DETACH_DAEMONIZE);
+	if(detach == TRUE) {
+		apr_proc_detach(APR_PROC_DETACH_DAEMONIZE);
+	}
 
 	/* start server */
 	server = unimrcp_server_start(dir_layout);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: mrcp_connection.c 2170 2014-09-09 05:19:48Z achaloyan@gmail.com $
  */
 
 #include "mrcp_connection.h"
@@ -36,6 +34,7 @@ mrcp_connection_t* mrcp_connection_create(void)
 	connection->id = NULL;
 	connection->verbose = TRUE;
 	connection->access_count = 0;
+	connection->use_count = 0;
 	APR_RING_ELEM_INIT(connection,link);
 	connection->channel_table = apr_hash_make(pool);
 	connection->parser = NULL;
@@ -44,6 +43,8 @@ mrcp_connection_t* mrcp_connection_create(void)
 	connection->rx_buffer_size = 0;
 	connection->tx_buffer = NULL;
 	connection->tx_buffer_size = 0;
+	connection->inactivity_timer = NULL;
+	connection->termination_timer = NULL;
 
 	return connection;
 }
@@ -63,6 +64,7 @@ apt_bool_t mrcp_connection_channel_add(mrcp_connection_t *connection, mrcp_contr
 	apr_hash_set(connection->channel_table,channel->identifier.buf,channel->identifier.length,channel);
 	channel->connection = connection;
 	connection->access_count++;
+	connection->use_count++;
 	return TRUE;
 }
 

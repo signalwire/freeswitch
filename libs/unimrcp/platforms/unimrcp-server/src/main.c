@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2014 Arsen Chaloyan
+ * Copyright 2008-2015 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * $Id: main.c 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -22,12 +20,13 @@
 #include "apt_pool.h"
 #include "apt_dir_layout.h"
 #include "apt_log.h"
-#include "uni_version.h"
+#include "uni_revision.h"
 
 typedef struct {
 	const char   *root_dir_path;
 	const char   *dir_layout_conf;
 	apt_bool_t    foreground;
+	apt_bool_t    cmd_line;
 	const char   *log_priority;
 	const char   *log_output;
 #ifdef WIN32
@@ -37,10 +36,9 @@ typedef struct {
 
 #ifdef WIN32
 apt_bool_t uni_service_run(const char *name, apt_dir_layout_t *dir_layout, apr_pool_t *pool);
-#else
-apt_bool_t uni_daemon_run(apt_dir_layout_t *dir_layout, apr_pool_t *pool);
 #endif
 
+apt_bool_t uni_daemon_run(apt_dir_layout_t *dir_layout, apt_bool_t detach, apr_pool_t *pool);
 apt_bool_t uni_cmdline_run(apt_dir_layout_t *dir_layout, apr_pool_t *pool);
 
 
@@ -78,6 +76,8 @@ static void usage()
 		"   -d [--daemon]            : Run as a daemon.\n"
 		"\n"
 #endif
+		"   -w [--without-cmdline]   : Run without command-line.\n"
+		"\n"
 		"   -v [--version]           : Show the version.\n"
 		"\n"
 		"   -h [--help]              : Show the help.\n"
@@ -93,19 +93,20 @@ static apt_bool_t options_load(server_options_t *options, int argc, const char *
 
 	const apr_getopt_option_t opt_option[] = {
 		/* long-option, short-option, has-arg flag, description */
-		{ "root-dir",    'r', TRUE,  "path to root dir" },         /* -r arg or --root-dir arg */
-		{ "dir-layout",  'c', TRUE,  "path to dir layout conf" },  /* -c arg or --dir-layout arg */
-		{ "log-prio",    'l', TRUE,  "log priority" },             /* -l arg or --log-prio arg */
-		{ "log-output",  'o', TRUE,  "log output mode" },          /* -o arg or --log-output arg */
+		{ "root-dir",        'r', TRUE,  "path to root dir" },         /* -r arg or --root-dir arg */
+		{ "dir-layout",      'c', TRUE,  "path to dir layout conf" },  /* -c arg or --dir-layout arg */
+		{ "log-prio",        'l', TRUE,  "log priority" },             /* -l arg or --log-prio arg */
+		{ "log-output",      'o', TRUE,  "log output mode" },          /* -o arg or --log-output arg */
 #ifdef WIN32
-		{ "service",     's', FALSE, "run as service" },           /* -s or --service */
-		{ "name",        'n', TRUE,  "service name" },             /* -n or --name arg */
+		{ "service",         's', FALSE, "run as service" },           /* -s or --service */
+		{ "name",            'n', TRUE,  "service name" },             /* -n or --name arg */
 #else
-		{ "daemon",      'd', FALSE, "start as daemon" },          /* -d or --daemon */
+		{ "daemon",          'd', FALSE, "start as daemon" },          /* -d or --daemon */
 #endif
-		{ "version",     'v', FALSE, "show version" },             /* -v or --version */
-		{ "help",        'h', FALSE, "show help" },                /* -h or --help */
-		{ NULL, 0, 0, NULL },                                      /* end */
+		{ "without-cmdline", 'w', FALSE, "run without command-line" }, /* -w or --without-cmdline */
+		{ "version",         'v', FALSE, "show version" },             /* -v or --version */
+		{ "help",            'h', FALSE, "show help" },                /* -h or --help */
+		{ NULL, 0, 0, NULL },                                          /* end */
 	};
 
 	rv = apr_getopt_init(&opt, pool , argc, argv);
@@ -117,6 +118,7 @@ static apt_bool_t options_load(server_options_t *options, int argc, const char *
 	options->root_dir_path = NULL;
 	options->dir_layout_conf = NULL;
 	options->foreground = TRUE;
+	options->cmd_line = TRUE;
 	options->log_priority = NULL;
 	options->log_output = NULL;
 #ifdef WIN32
@@ -149,8 +151,11 @@ static apt_bool_t options_load(server_options_t *options, int argc, const char *
 				options->foreground = FALSE;
 				break;
 #endif
+			case 'w':
+				options->cmd_line = FALSE;
+				break;
 			case 'v':
-				printf(UNI_VERSION_STRING);
+				printf("%s", UNI_FULL_VERSION_STRING);
 				return FALSE;
 			case 'h':
 				usage();
@@ -172,6 +177,7 @@ int main(int argc, const char * const *argv)
 	server_options_t options;
 	const char *log_conf_path;
 	apt_dir_layout_t *dir_layout = NULL;
+	const char *log_prefix = "unimrcpserver";
 
 	/* APR global initialization */
 	if(apr_initialize() != APR_SUCCESS) {
@@ -228,12 +234,25 @@ int main(int argc, const char * const *argv)
 	if(apt_log_output_mode_check(APT_LOG_OUTPUT_FILE) == TRUE) {
 		/* open the log file */
 		const char *log_dir_path = apt_dir_layout_path_get(dir_layout,APT_LAYOUT_LOG_DIR);
-		apt_log_file_open(log_dir_path,"unimrcpserver",MAX_LOG_FILE_SIZE,MAX_LOG_FILE_COUNT,TRUE,pool);
+		const char *logfile_conf_path = apt_confdir_filepath_get(dir_layout,"logfile.xml",pool);
+		apt_log_file_open_ex(log_dir_path,log_prefix,logfile_conf_path,pool);
+	}
+
+	if(apt_log_output_mode_check(APT_LOG_OUTPUT_SYSLOG) == TRUE) {
+		/* open the syslog */
+		const char *logfile_conf_path = apt_confdir_filepath_get(dir_layout,"syslog.xml",pool);
+		apt_syslog_open(log_prefix,logfile_conf_path,pool);
 	}
 
 	if(options.foreground == TRUE) {
-		/* run command line */
-		uni_cmdline_run(dir_layout,pool);
+		if(options.cmd_line == TRUE) {
+			/* run command line */
+			uni_cmdline_run(dir_layout,pool);
+		}
+		else {
+			/* run as daemon */
+			uni_daemon_run(dir_layout,FALSE,pool);
+		}
 	}
 #ifdef WIN32
 	else {
@@ -243,7 +262,7 @@ int main(int argc, const char * const *argv)
 #else
 	else {
 		/* run as daemon */
-		uni_daemon_run(dir_layout,pool);
+		uni_daemon_run(dir_layout,TRUE,pool);
 	}
 #endif
 

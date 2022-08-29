@@ -4,7 +4,7 @@ AM_CPPFLAGS                 = -I$(top_srcdir)/platforms/libasr-client/include \
 
 lib_LTLIBRARIES             = libasrclient.la
 
-include_HEADERS             = include/asr_engine.h
+include_HEADERS             = include/asr_engine.h include/asr_engine_common.h
 libasrclient_la_SOURCES     = src/asr_engine.c
 libasrclient_la_LIBADD      = $(top_builddir)/platforms/libunimrcp-client/libunimrcpclient.la
 libasrclient_la_LDFLAGS     = $(UNIMRCP_CLIENTLIB_OPTS)
