@@ -106,7 +106,7 @@
 #endif /* !_WINDOWS_ */
 
 /**
- * @defgroup apr_platform Platform Definitions
+ * @defgroup fspr_platform Platform Definitions
  * @ingroup APR 
  * @{
  */
@@ -275,7 +275,7 @@ extern "C" {
 #endif
 
 /**
- * @addtogroup apr_platform
+ * @addtogroup fspr_platform
  * @ingroup APR 
  * @{
  */
@@ -322,29 +322,29 @@ extern "C" {
 
 /* Typedefs that APR needs. */
 
-typedef  unsigned char     apr_byte_t;
+typedef  unsigned char     fspr_byte_t;
 
-typedef  short             apr_int16_t;
-typedef  unsigned short    apr_uint16_t;
+typedef  short             fspr_int16_t;
+typedef  unsigned short    fspr_uint16_t;
                                                
-typedef  int               apr_int32_t;
-typedef  unsigned int      apr_uint32_t;
+typedef  int               fspr_int32_t;
+typedef  unsigned int      fspr_uint32_t;
                                                
-typedef  __int64           apr_int64_t;
-typedef  unsigned __int64  apr_uint64_t;
+typedef  __int64           fspr_int64_t;
+typedef  unsigned __int64  fspr_uint64_t;
 
-typedef  size_t      apr_size_t;
+typedef  size_t      fspr_size_t;
 #if APR_HAVE_STDDEF_H
-typedef  ptrdiff_t   apr_ssize_t;
+typedef  ptrdiff_t   fspr_ssize_t;
 #else
-typedef  int         apr_ssize_t;
+typedef  int         fspr_ssize_t;
 #endif
 #if APR_HAS_LARGE_FILES
-typedef  __int64     apr_off_t;
+typedef  __int64     fspr_off_t;
 #else
-typedef  int         apr_off_t;
+typedef  int         fspr_off_t;
 #endif
-typedef  int         apr_socklen_t;
+typedef  int         fspr_socklen_t;
 
 /* Are we big endian? */
 /* XXX: Fatal assumption on Alpha platforms */
@@ -356,7 +356,7 @@ typedef  int         apr_socklen_t;
 #define APR_SIZEOF_VOIDP   4
 #endif
 
-/* XXX These simply don't belong here, perhaps in apr_portable.h
+/* XXX These simply don't belong here, perhaps in fspr_portable.h
  * based on some APR_HAVE_PID/GID/UID?
  */
 typedef  int         pid_t;
@@ -378,8 +378,8 @@ typedef  int         gid_t;
 
 #ifndef WS2TCPIP_INLINE
 #define IN6_IS_ADDR_V4MAPPED(a) \
-    (   (*(const apr_uint64_t *)(const void *)(&(a)->s6_addr[0]) == 0) \
-     && (*(const apr_uint32_t *)(const void *)(&(a)->s6_addr[8]) == ntohl(0x0000ffff)))
+    (   (*(const fspr_uint64_t *)(const void *)(&(a)->s6_addr[0]) == 0) \
+     && (*(const fspr_uint32_t *)(const void *)(&(a)->s6_addr[8]) == ntohl(0x0000ffff)))
 #endif
 
 #endif /* APR_HAS_IPV6 */
@@ -391,7 +391,7 @@ typedef  int         gid_t;
  * so that they follow the platform's calling convention.
  * @example
  */
-/** void* APR_THREAD_FUNC my_thread_entry_fn(apr_thread_t *thd, void *data);
+/** void* APR_THREAD_FUNC my_thread_entry_fn(fspr_thread_t *thd, void *data);
  */
 #define APR_THREAD_FUNC  __stdcall
 
@@ -406,7 +406,7 @@ typedef  int         gid_t;
  * @remark Both the declaration and implementations must use the same macro.
  * @example
  */
-/** APR_DECLARE(rettype) apr_func(args)
+/** APR_DECLARE(rettype) fspr_func(args)
  * @see APR_DECLARE_NONSTD @see APR_DECLARE_DATA
  * @remark Note that when APR compiles the library itself, it passes the 
  * symbol -DAPR_DECLARE_EXPORT to the compiler on some platforms (e.g. Win32) 
@@ -427,7 +427,7 @@ typedef  int         gid_t;
  * @remark Both the declaration and implementations must use the same macro.
  * @example
  */
-/** APR_DECLARE_NONSTD(rettype) apr_func(args, ...);
+/** APR_DECLARE_NONSTD(rettype) fspr_func(args, ...);
  */
 #define APR_DECLARE_NONSTD(type)     type
 
@@ -439,8 +439,8 @@ typedef  int         gid_t;
  * but both must include the macro.
  * @example
  */
-/** extern APR_DECLARE_DATA type apr_variable;\n
- * APR_DECLARE_DATA type apr_variable = value;
+/** extern APR_DECLARE_DATA type fspr_variable;\n
+ * APR_DECLARE_DATA type fspr_variable = value;
  */
 #define APR_DECLARE_DATA
 
@@ -484,12 +484,12 @@ typedef  int         gid_t;
 /* No difference between PROC and GLOBAL mutex */
 #define APR_PROC_MUTEX_IS_GLOBAL      1
 
-typedef int apr_wait_t;
+typedef int fspr_wait_t;
 
 /* struct iovec is needed to emulate Unix writev */
 struct iovec {
     char*      iov_base;
-    apr_size_t iov_len;
+    fspr_size_t iov_len;
 };
 
 /* Nasty Win32 .h ommissions we really need */
