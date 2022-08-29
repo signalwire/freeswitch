@@ -36,7 +36,7 @@
 #include <switch_private.h>
 #endif
 #include <switch_stun.h>
-#include <apr_network_io.h>
+#include <fspr_network_io.h>
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME

@@ -45,9 +45,9 @@
  */
 
 /*** SHA-256/384/512 Machine Architecture Definitions *****************/
-typedef apr_byte_t   sha2_byte;         /* Exactly 1 byte */
-typedef apr_uint32_t sha2_word32;       /* Exactly 4 bytes */
-typedef apr_uint64_t sha2_word64;       /* Exactly 8 bytes */
+typedef fspr_byte_t   sha2_byte;         /* Exactly 1 byte */
+typedef fspr_uint32_t sha2_word32;       /* Exactly 4 bytes */
+typedef fspr_uint64_t sha2_word64;       /* Exactly 8 bytes */
 
 /*** SHA-256/384/512 Various Length Definitions ***********************/
 /* NOTE: Most of these are in sha2.h */
@@ -150,9 +150,9 @@ typedef apr_uint64_t sha2_word64;       /* Exactly 8 bytes */
  * library -- they are intended for private internal visibility/use
  * only.
  */
-void apr__SHA512_Last(SHA512_CTX*);
-void apr__SHA256_Transform(SHA256_CTX*, const sha2_word32*);
-void apr__SHA512_Transform(SHA512_CTX*, const sha2_word64*);
+void fspr__SHA512_Last(SHA512_CTX*);
+void fspr__SHA256_Transform(SHA256_CTX*, const sha2_word32*);
+void fspr__SHA512_Transform(SHA512_CTX*, const sha2_word64*);
 
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
@@ -264,7 +264,7 @@ static const char *sha2_hex_digits = "0123456789abcdef";
 
 
 /*** SHA-256: *********************************************************/
-void apr__SHA256_Init(SHA256_CTX* context) {
+void fspr__SHA256_Init(SHA256_CTX* context) {
         if (context == (SHA256_CTX*)0) {
                 return;
         }
@@ -310,7 +310,7 @@ void apr__SHA256_Init(SHA256_CTX* context) {
         (h) = T1 + Sigma0_256(a) + Maj((a), (b), (c)); \
         j++
 
-void apr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
+void fspr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
         sha2_word32     a, b, c, d, e, f, g, h, s0, s1;
         sha2_word32     T1, *W256;
         int             j;
@@ -368,7 +368,7 @@ void apr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-void apr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
+void fspr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
         sha2_word32     a, b, c, d, e, f, g, h, s0, s1;
         sha2_word32     T1, T2, *W256;
         int             j;
@@ -458,7 +458,7 @@ void apr__SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void apr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
+void fspr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
         unsigned int    freespace, usedspace;
 
         if (len == 0) {
@@ -481,7 +481,7 @@ void apr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) 
                         context->bitcount += freespace << 3;
                         len -= freespace;
                         data += freespace;
-                        apr__SHA256_Transform(context, (sha2_word32*)context->buffer);
+                        fspr__SHA256_Transform(context, (sha2_word32*)context->buffer);
                 } else {
                         /* The buffer is not yet full */
                         MEMCPY_BCOPY(&context->buffer[usedspace], data, len);
@@ -495,7 +495,7 @@ void apr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) 
         }
         while (len >= SHA256_BLOCK_LENGTH) {
                 /* Process as many complete blocks as we can */
-                apr__SHA256_Transform(context, (sha2_word32*)data);
+                fspr__SHA256_Transform(context, (sha2_word32*)data);
                 context->bitcount += SHA256_BLOCK_LENGTH << 3;
                 len -= SHA256_BLOCK_LENGTH;
                 data += SHA256_BLOCK_LENGTH;
@@ -511,7 +511,7 @@ void apr__SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) 
         assert(freespace==0);
 }
 
-void apr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
+void fspr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
         sha2_word32     *d = (sha2_word32*)digest;
         unsigned int    usedspace;
 
@@ -538,7 +538,7 @@ void apr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
                                         MEMSET_BZERO(&context->buffer[usedspace], SHA256_BLOCK_LENGTH - usedspace);
                                 }
                                 /* Do second-to-last transform: */
-                                apr__SHA256_Transform(context, (sha2_word32*)context->buffer);
+                                fspr__SHA256_Transform(context, (sha2_word32*)context->buffer);
 
                                 /* And set-up for the last transform: */
                                 MEMSET_BZERO(context->buffer, SHA256_SHORT_BLOCK_LENGTH);
@@ -554,7 +554,7 @@ void apr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
                 *(sha2_word64*)&context->buffer[SHA256_SHORT_BLOCK_LENGTH] = context->bitcount;
 
                 /* Final transform: */
-                apr__SHA256_Transform(context, (sha2_word32*)context->buffer);
+                fspr__SHA256_Transform(context, (sha2_word32*)context->buffer);
 
 #if !APR_IS_BIGENDIAN
                 {
@@ -576,7 +576,7 @@ void apr__SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
         assert(usedspace==0);
 }
 
-char *apr__SHA256_End(SHA256_CTX* context, char buffer[]) {
+char *fspr__SHA256_End(SHA256_CTX* context, char buffer[]) {
         sha2_byte       digest[SHA256_DIGEST_LENGTH], *d = digest;
         int             i;
 
@@ -584,7 +584,7 @@ char *apr__SHA256_End(SHA256_CTX* context, char buffer[]) {
         assert(context != (SHA256_CTX*)0);
 
         if (buffer != (char*)0) {
-                apr__SHA256_Final(digest, context);
+                fspr__SHA256_Final(digest, context);
 
                 for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
                         *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -599,17 +599,17 @@ char *apr__SHA256_End(SHA256_CTX* context, char buffer[]) {
         return buffer;
 }
 
-char* apr__SHA256_Data(const sha2_byte* data, size_t len, char digest[SHA256_DIGEST_STRING_LENGTH]) {
+char* fspr__SHA256_Data(const sha2_byte* data, size_t len, char digest[SHA256_DIGEST_STRING_LENGTH]) {
         SHA256_CTX      context;
 
-        apr__SHA256_Init(&context);
-        apr__SHA256_Update(&context, data, len);
-        return apr__SHA256_End(&context, digest);
+        fspr__SHA256_Init(&context);
+        fspr__SHA256_Update(&context, data, len);
+        return fspr__SHA256_End(&context, digest);
 }
 
 
 /*** SHA-512: *********************************************************/
-void apr__SHA512_Init(SHA512_CTX* context) {
+void fspr__SHA512_Init(SHA512_CTX* context) {
         if (context == (SHA512_CTX*)0) {
                 return;
         }
@@ -654,7 +654,7 @@ void apr__SHA512_Init(SHA512_CTX* context) {
         (h) = T1 + Sigma0_512(a) + Maj((a), (b), (c)); \
         j++
 
-void apr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
+void fspr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
         sha2_word64     a, b, c, d, e, f, g, h, s0, s1;
         sha2_word64     T1, *W512 = (sha2_word64*)context->buffer;
         int             j;
@@ -709,7 +709,7 @@ void apr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-void apr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
+void fspr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
         sha2_word64     a, b, c, d, e, f, g, h, s0, s1;
         sha2_word64     T1, T2, *W512 = (sha2_word64*)context->buffer;
         int             j;
@@ -797,7 +797,7 @@ void apr__SHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void apr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) {
+void fspr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) {
         unsigned int    freespace, usedspace;
 
         if (len == 0) {
@@ -820,7 +820,7 @@ void apr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) 
                         ADDINC128(context->bitcount, freespace << 3);
                         len -= freespace;
                         data += freespace;
-                        apr__SHA512_Transform(context, (sha2_word64*)context->buffer);
+                        fspr__SHA512_Transform(context, (sha2_word64*)context->buffer);
                 } else {
                         /* The buffer is not yet full */
                         MEMCPY_BCOPY(&context->buffer[usedspace], data, len);
@@ -834,7 +834,7 @@ void apr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) 
         }
         while (len >= SHA512_BLOCK_LENGTH) {
                 /* Process as many complete blocks as we can */
-                apr__SHA512_Transform(context, (sha2_word64*)data);
+                fspr__SHA512_Transform(context, (sha2_word64*)data);
                 ADDINC128(context->bitcount, SHA512_BLOCK_LENGTH << 3);
                 len -= SHA512_BLOCK_LENGTH;
                 data += SHA512_BLOCK_LENGTH;
@@ -850,7 +850,7 @@ void apr__SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) 
         assert(freespace==0);
 }
 
-void apr__SHA512_Last(SHA512_CTX* context) {
+void fspr__SHA512_Last(SHA512_CTX* context) {
         unsigned int    usedspace;
 
         usedspace = (unsigned int)((context->bitcount[0] >> 3) 
@@ -872,7 +872,7 @@ void apr__SHA512_Last(SHA512_CTX* context) {
                                 MEMSET_BZERO(&context->buffer[usedspace], SHA512_BLOCK_LENGTH - usedspace);
                         }
                         /* Do second-to-last transform: */
-                        apr__SHA512_Transform(context, (sha2_word64*)context->buffer);
+                        fspr__SHA512_Transform(context, (sha2_word64*)context->buffer);
 
                         /* And set-up for the last transform: */
                         MEMSET_BZERO(context->buffer, SHA512_BLOCK_LENGTH - 2);
@@ -889,10 +889,10 @@ void apr__SHA512_Last(SHA512_CTX* context) {
         *(sha2_word64*)&context->buffer[SHA512_SHORT_BLOCK_LENGTH+8] = context->bitcount[0];
 
         /* Final transform: */
-        apr__SHA512_Transform(context, (sha2_word64*)context->buffer);
+        fspr__SHA512_Transform(context, (sha2_word64*)context->buffer);
 }
 
-void apr__SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
+void fspr__SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
         sha2_word64     *d = (sha2_word64*)digest;
 
         /* Sanity check: */
@@ -900,7 +900,7 @@ void apr__SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
 
         /* If no digest buffer is passed, we don't bother doing this: */
         if (digest != (sha2_byte*)0) {
-                apr__SHA512_Last(context);
+                fspr__SHA512_Last(context);
 
                 /* Save the hash data for output: */
 #if !APR_IS_BIGENDIAN
@@ -921,7 +921,7 @@ void apr__SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
         MEMSET_BZERO(context, sizeof(*context));
 }
 
-char *apr__SHA512_End(SHA512_CTX* context, char buffer[]) {
+char *fspr__SHA512_End(SHA512_CTX* context, char buffer[]) {
         sha2_byte       digest[SHA512_DIGEST_LENGTH], *d = digest;
         int             i;
 
@@ -929,7 +929,7 @@ char *apr__SHA512_End(SHA512_CTX* context, char buffer[]) {
         assert(context != (SHA512_CTX*)0);
 
         if (buffer != (char*)0) {
-                apr__SHA512_Final(digest, context);
+                fspr__SHA512_Final(digest, context);
 
                 for (i = 0; i < SHA512_DIGEST_LENGTH; i++) {
                         *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -944,17 +944,17 @@ char *apr__SHA512_End(SHA512_CTX* context, char buffer[]) {
         return buffer;
 }
 
-char* apr__SHA512_Data(const sha2_byte* data, size_t len, char digest[SHA512_DIGEST_STRING_LENGTH]) {
+char* fspr__SHA512_Data(const sha2_byte* data, size_t len, char digest[SHA512_DIGEST_STRING_LENGTH]) {
         SHA512_CTX      context;
 
-        apr__SHA512_Init(&context);
-        apr__SHA512_Update(&context, data, len);
-        return apr__SHA512_End(&context, digest);
+        fspr__SHA512_Init(&context);
+        fspr__SHA512_Update(&context, data, len);
+        return fspr__SHA512_End(&context, digest);
 }
 
 
 /*** SHA-384: *********************************************************/
-void apr__SHA384_Init(SHA384_CTX* context) {
+void fspr__SHA384_Init(SHA384_CTX* context) {
         if (context == (SHA384_CTX*)0) {
                 return;
         }
@@ -963,11 +963,11 @@ void apr__SHA384_Init(SHA384_CTX* context) {
         context->bitcount[0] = context->bitcount[1] = 0;
 }
 
-void apr__SHA384_Update(SHA384_CTX* context, const sha2_byte* data, size_t len) {
-        apr__SHA512_Update((SHA512_CTX*)context, data, len);
+void fspr__SHA384_Update(SHA384_CTX* context, const sha2_byte* data, size_t len) {
+        fspr__SHA512_Update((SHA512_CTX*)context, data, len);
 }
 
-void apr__SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
+void fspr__SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
         sha2_word64     *d = (sha2_word64*)digest;
 
         /* Sanity check: */
@@ -975,7 +975,7 @@ void apr__SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
 
         /* If no digest buffer is passed, we don't bother doing this: */
         if (digest != (sha2_byte*)0) {
-                apr__SHA512_Last((SHA512_CTX*)context);
+                fspr__SHA512_Last((SHA512_CTX*)context);
 
                 /* Save the hash data for output: */
 #if !APR_IS_BIGENDIAN
@@ -996,7 +996,7 @@ void apr__SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
         MEMSET_BZERO(context, sizeof(*context));
 }
 
-char *apr__SHA384_End(SHA384_CTX* context, char buffer[]) {
+char *fspr__SHA384_End(SHA384_CTX* context, char buffer[]) {
         sha2_byte       digest[SHA384_DIGEST_LENGTH], *d = digest;
         int             i;
 
@@ -1004,7 +1004,7 @@ char *apr__SHA384_End(SHA384_CTX* context, char buffer[]) {
         assert(context != (SHA384_CTX*)0);
 
         if (buffer != (char*)0) {
-                apr__SHA384_Final(digest, context);
+                fspr__SHA384_Final(digest, context);
 
                 for (i = 0; i < SHA384_DIGEST_LENGTH; i++) {
                         *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -1019,11 +1019,11 @@ char *apr__SHA384_End(SHA384_CTX* context, char buffer[]) {
         return buffer;
 }
 
-char* apr__SHA384_Data(const sha2_byte* data, size_t len, char digest[SHA384_DIGEST_STRING_LENGTH]) {
+char* fspr__SHA384_Data(const sha2_byte* data, size_t len, char digest[SHA384_DIGEST_STRING_LENGTH]) {
         SHA384_CTX      context;
 
-        apr__SHA384_Init(&context);
-        apr__SHA384_Update(&context, data, len);
-        return apr__SHA384_End(&context, digest);
+        fspr__SHA384_Init(&context);
+        fspr__SHA384_Update(&context, data, len);
+        return fspr__SHA384_End(&context, digest);
 }
 

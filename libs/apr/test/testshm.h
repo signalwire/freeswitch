@@ -24,7 +24,7 @@ typedef struct mbox {
 mbox *boxes;
 
 #define N_BOXES 10
-#define SHARED_SIZE (apr_size_t)(N_BOXES * sizeof(mbox))
+#define SHARED_SIZE (fspr_size_t)(N_BOXES * sizeof(mbox))
 #define SHARED_FILENAME "data/apr.testshm.shm"
 #define N_MESSAGES 100
 #define MSG "Sending a message"

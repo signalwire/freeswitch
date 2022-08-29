@@ -162,7 +162,7 @@ static void do_sleep(switch_interval_time_t t)
 
 #if !defined(DARWIN)
 	if (t > 100000 || !NANO) {
-		apr_sleep(t);
+		fspr_sleep(t);
 		return;
 	}
 #endif
@@ -179,7 +179,7 @@ static void do_sleep(switch_interval_time_t t)
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 850;
 	nanosleep(&ts, NULL);
 #else
-	apr_sleep(t);
+	fspr_sleep(t);
 #endif
 
 #if defined(DARWIN)

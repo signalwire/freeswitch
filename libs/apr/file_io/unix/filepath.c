@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_strings.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_strings.h"
 #define APR_WANT_STRFUNC
-#include "apr_want.h"
+#include "fspr_want.h"
 #if APR_HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -34,8 +34,8 @@
 
 /* Any OS that requires/refuses trailing slashes should be dealt with here.
  */
-APR_DECLARE(apr_status_t) apr_filepath_get(char **defpath, apr_int32_t flags,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_get(char **defpath, fspr_int32_t flags,
+                                           fspr_pool_t *p)
 {
     char path[APR_PATH_MAX];
 
@@ -45,7 +45,7 @@ APR_DECLARE(apr_status_t) apr_filepath_get(char **defpath, apr_int32_t flags,
         else
             return errno;
     }
-    *defpath = apr_pstrdup(p, path);
+    *defpath = fspr_pstrdup(p, path);
 
     return APR_SUCCESS;
 }
@@ -53,7 +53,7 @@ APR_DECLARE(apr_status_t) apr_filepath_get(char **defpath, apr_int32_t flags,
 
 /* Any OS that requires/refuses trailing slashes should be dealt with here
  */
-APR_DECLARE(apr_status_t) apr_filepath_set(const char *path, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_set(const char *path, fspr_pool_t *p)
 {
     if (chdir(path) != 0)
         return errno;
@@ -61,13 +61,13 @@ APR_DECLARE(apr_status_t) apr_filepath_set(const char *path, apr_pool_t *p)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
+APR_DECLARE(fspr_status_t) fspr_filepath_root(const char **rootpath,
                                             const char **inpath,
-                                            apr_int32_t flags,
-                                            apr_pool_t *p)
+                                            fspr_int32_t flags,
+                                            fspr_pool_t *p)
 {
     if (**inpath == '/') {
-        *rootpath = apr_pstrdup(p, "/");
+        *rootpath = fspr_pstrdup(p, "/");
         do {
             ++(*inpath);
         } while (**inpath == '/');
@@ -78,19 +78,19 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
     return APR_ERELATIVE;
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
+APR_DECLARE(fspr_status_t) fspr_filepath_merge(char **newpath,
                                              const char *rootpath,
                                              const char *addpath,
-                                             apr_int32_t flags,
-                                             apr_pool_t *p)
+                                             fspr_int32_t flags,
+                                             fspr_pool_t *p)
 {
     char *path;
-    apr_size_t rootlen; /* is the length of the src rootpath */
-    apr_size_t maxlen;  /* maximum total path length */
-    apr_size_t keptlen; /* is the length of the retained rootpath */
-    apr_size_t pathlen; /* is the length of the result path */
-    apr_size_t seglen;  /* is the end of the current segment */
-    apr_status_t rv;
+    fspr_size_t rootlen; /* is the length of the src rootpath */
+    fspr_size_t maxlen;  /* maximum total path length */
+    fspr_size_t keptlen; /* is the length of the retained rootpath */
+    fspr_size_t pathlen; /* is the length of the result path */
+    fspr_size_t seglen;  /* is the end of the current segment */
+    fspr_status_t rv;
 
     /* Treat null as an empty path.
      */
@@ -134,7 +134,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
          * passing the address of a char const* for a char** arg.
          */
         char *getpath = NULL;
-        rv = apr_filepath_get(&getpath, flags, p);
+        rv = fspr_filepath_get(&getpath, flags, p);
         rootpath = getpath;
         if (rv != APR_SUCCESS)
             return errno;
@@ -144,7 +144,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
 
         /* XXX: Any kernel subject to goofy, uncanonical results
          * must run the rootpath against the user's given flags.
-         * Simplest would be a recursive call to apr_filepath_merge
+         * Simplest would be a recursive call to fspr_filepath_merge
          * with an empty (not null) rootpath and addpath of the cwd.
          */
     }
@@ -156,7 +156,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
     if (maxlen > APR_PATH_MAX) {
         return APR_ENAMETOOLONG;
     }
-    path = (char *)apr_palloc(p, maxlen);
+    path = (char *)fspr_palloc(p, maxlen);
 
     if (addpath[0] == '/') {
         /* Ignore the given root path, strip off leading
@@ -292,21 +292,21 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_list_split(apr_array_header_t **pathelts,
+APR_DECLARE(fspr_status_t) fspr_filepath_list_split(fspr_array_header_t **pathelts,
                                                   const char *liststr,
-                                                  apr_pool_t *p)
+                                                  fspr_pool_t *p)
 {
-    return apr_filepath_list_split_impl(pathelts, liststr, ':', p);
+    return fspr_filepath_list_split_impl(pathelts, liststr, ':', p);
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_list_merge(char **liststr,
-                                                  apr_array_header_t *pathelts,
-                                                  apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_list_merge(char **liststr,
+                                                  fspr_array_header_t *pathelts,
+                                                  fspr_pool_t *p)
 {
-    return apr_filepath_list_merge_impl(liststr, pathelts, ':', p);
+    return fspr_filepath_list_merge_impl(liststr, pathelts, ':', p);
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_encoding(int *style, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_encoding(int *style, fspr_pool_t *p)
 {
     *style = APR_FILEPATH_ENCODING_LOCALE;
     return APR_SUCCESS;

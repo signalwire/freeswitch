@@ -34,23 +34,34 @@
 #ifndef __SWITCH_APR_PVT_H__
 #define __SWITCH_APR_PVT_H__
 
-/* for apr_pool_create and apr_pool_destroy */
+/* for fspr_pool_create and fspr_pool_destroy */
 /* functions only used in this file so not exposed */
-#include <apr_pools.h>
+#include <fspr_pools.h>
 
-/* for apr_hash_make, apr_hash_pool_get, apr_hash_set */
+/* for fspr_hash_make, fspr_hash_pool_get, fspr_hash_set */
 /* functions only used in this file so not exposed */
-#include <apr_hash.h>
+#include <fspr_hash.h>
 
-/* for apr_pvsprintf */
+/* for fspr_pvsprintf */
 /* function only used in this file so not exposed */
-#include <apr_strings.h>
+#include <fspr_strings.h>
 
-/* for apr_initialize and apr_terminate */
+/* for fspr_initialize and fspr_terminate */
 /* function only used in this file so not exposed */
-#include <apr_general.h>
+#include <fspr_general.h>
 
-#include <apr_portable.h>
+#include <fspr_portable.h>
+
+typedef struct switch_apr_queue_t switch_apr_queue_t;
+fspr_status_t switch_apr_queue_create(switch_apr_queue_t **q, unsigned int queue_capacity, fspr_pool_t *a);
+fspr_status_t switch_apr_queue_push(switch_apr_queue_t *queue, void *data);
+fspr_status_t switch_apr_queue_trypush(switch_apr_queue_t *queue, void *data);
+unsigned int switch_apr_queue_size(switch_apr_queue_t *queue);
+fspr_status_t switch_apr_queue_pop(switch_apr_queue_t *queue, void **data);
+fspr_status_t switch_apr_queue_pop_timeout(switch_apr_queue_t *queue, void **data, fspr_interval_time_t timeout);
+fspr_status_t switch_apr_queue_trypop(switch_apr_queue_t *queue, void **data);
+fspr_status_t switch_apr_queue_interrupt_all(switch_apr_queue_t *queue);
+fspr_status_t switch_apr_queue_term(switch_apr_queue_t *queue);
 
 #endif // __SWITCH_APR_PVT_H__
 

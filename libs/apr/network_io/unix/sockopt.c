@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_strings.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_strings.h"
 
 
-static apr_status_t soblock(int sd)
+static fspr_status_t soblock(int sd)
 {
 /* BeOS uses setsockopt at present for non blocking... */
 #ifndef BEOS
@@ -45,7 +45,7 @@ static apr_status_t soblock(int sd)
     return APR_SUCCESS;
 }
 
-static apr_status_t sononblock(int sd)
+static fspr_status_t sononblock(int sd)
 {
 #ifndef BEOS
     int fd_flags;
@@ -72,9 +72,9 @@ static apr_status_t sononblock(int sd)
 }
 
 
-apr_status_t apr_socket_timeout_set(apr_socket_t *sock, apr_interval_time_t t)
+fspr_status_t fspr_socket_timeout_set(fspr_socket_t *sock, fspr_interval_time_t t)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     /* If our new timeout is non-negative and our old timeout was
      * negative, then we need to ensure that we are non-blocking.
@@ -84,19 +84,19 @@ apr_status_t apr_socket_timeout_set(apr_socket_t *sock, apr_interval_time_t t)
      * socket.
      */
     if (t >= 0 && sock->timeout < 0) {
-        if (apr_is_option_set(sock, APR_SO_NONBLOCK) != 1) {
+        if (fspr_is_option_set(sock, APR_SO_NONBLOCK) != 1) {
             if ((stat = sononblock(sock->socketdes)) != APR_SUCCESS) {
                 return stat;
             }
-            apr_set_option(sock, APR_SO_NONBLOCK, 1);
+            fspr_set_option(sock, APR_SO_NONBLOCK, 1);
         }
     } 
     else if (t < 0 && sock->timeout >= 0) {
-        if (apr_is_option_set(sock, APR_SO_NONBLOCK) != 0) { 
+        if (fspr_is_option_set(sock, APR_SO_NONBLOCK) != 0) { 
             if ((stat = soblock(sock->socketdes)) != APR_SUCCESS) { 
                 return stat; 
             }
-            apr_set_option(sock, APR_SO_NONBLOCK, 0);
+            fspr_set_option(sock, APR_SO_NONBLOCK, 0);
         } 
     }
     /* must disable the incomplete read support if we disable
@@ -110,11 +110,11 @@ apr_status_t apr_socket_timeout_set(apr_socket_t *sock, apr_interval_time_t t)
 }
 
 
-apr_status_t apr_socket_opt_set(apr_socket_t *sock, 
-                                apr_int32_t opt, apr_int32_t on)
+fspr_status_t fspr_socket_opt_set(fspr_socket_t *sock, 
+                                fspr_int32_t opt, fspr_int32_t on)
 {
     int one;
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (on)
         one = 1;
@@ -123,30 +123,30 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
     switch(opt) {
     case APR_SO_KEEPALIVE:
 #ifdef SO_KEEPALIVE
-        if (on != apr_is_option_set(sock, APR_SO_KEEPALIVE)) {
+        if (on != fspr_is_option_set(sock, APR_SO_KEEPALIVE)) {
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_KEEPALIVE, (void *)&one, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_SO_KEEPALIVE, on);
+            fspr_set_option(sock, APR_SO_KEEPALIVE, on);
         }
 #else
         return APR_ENOTIMPL;
 #endif
         break;
     case APR_SO_DEBUG:
-        if (on != apr_is_option_set(sock, APR_SO_DEBUG)) {
+        if (on != fspr_is_option_set(sock, APR_SO_DEBUG)) {
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_DEBUG, (void *)&one, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_SO_DEBUG, on);
+            fspr_set_option(sock, APR_SO_DEBUG, on);
         }
         break;
     case APR_SO_REUSEADDR:
-        if (on != apr_is_option_set(sock, APR_SO_REUSEADDR)) {
+        if (on != fspr_is_option_set(sock, APR_SO_REUSEADDR)) {
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_SO_REUSEADDR, on);
+            fspr_set_option(sock, APR_SO_REUSEADDR, on);
         }
         break;
     case APR_SO_SNDBUF:
@@ -168,7 +168,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
 #endif
         break;
     case APR_SO_NONBLOCK:
-        if (apr_is_option_set(sock, APR_SO_NONBLOCK) != on) {
+        if (fspr_is_option_set(sock, APR_SO_NONBLOCK) != on) {
             if (on) {
                 if ((rv = sononblock(sock->socketdes)) != APR_SUCCESS) 
                     return rv;
@@ -177,19 +177,19 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                 if ((rv = soblock(sock->socketdes)) != APR_SUCCESS)
                     return rv;
             }
-            apr_set_option(sock, APR_SO_NONBLOCK, on);
+            fspr_set_option(sock, APR_SO_NONBLOCK, on);
         }
         break;
     case APR_SO_LINGER:
 #ifdef SO_LINGER
-        if (apr_is_option_set(sock, APR_SO_LINGER) != on) {
+        if (fspr_is_option_set(sock, APR_SO_LINGER) != on) {
             struct linger li;
             li.l_onoff = on;
             li.l_linger = APR_MAX_SECS_TO_LINGER;
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_LINGER, (char *) &li, sizeof(struct linger)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_SO_LINGER, on);
+            fspr_set_option(sock, APR_SO_LINGER, on);
         }
 #else
         return APR_ENOTIMPL;
@@ -197,7 +197,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
         break;
     case APR_TCP_DEFER_ACCEPT:
 #if defined(TCP_DEFER_ACCEPT)
-        if (apr_is_option_set(sock, APR_TCP_DEFER_ACCEPT) != on) {
+        if (fspr_is_option_set(sock, APR_TCP_DEFER_ACCEPT) != on) {
             int optlevel = IPPROTO_TCP;
             int optname = TCP_DEFER_ACCEPT;
 
@@ -205,7 +205,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                            (void *)&on, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_TCP_DEFER_ACCEPT, on);
+            fspr_set_option(sock, APR_TCP_DEFER_ACCEPT, on);
         }
 #else
         return APR_ENOTIMPL;
@@ -213,7 +213,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
         break;
     case APR_TCP_NODELAY:
 #if defined(TCP_NODELAY)
-        if (apr_is_option_set(sock, APR_TCP_NODELAY) != on) {
+        if (fspr_is_option_set(sock, APR_TCP_NODELAY) != on) {
             int optlevel = IPPROTO_TCP;
             int optname = TCP_NODELAY;
 
@@ -226,7 +226,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
             if (setsockopt(sock->socketdes, optlevel, optname, (void *)&on, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_TCP_NODELAY, on);
+            fspr_set_option(sock, APR_TCP_NODELAY, on);
         }
 #else
         /* BeOS pre-BONE has TCP_NODELAY set by default.
@@ -248,7 +248,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
          * and TCP_CORK takes preference, which is the desired
          * behaviour.  On older kernels, TCP_NODELAY must be toggled
          * to "off" whilst TCP_CORK is in effect. */
-        if (apr_is_option_set(sock, APR_TCP_NOPUSH) != on) {
+        if (fspr_is_option_set(sock, APR_TCP_NOPUSH) != on) {
 #ifndef HAVE_TCP_NODELAY_WITH_CORK
             int optlevel = IPPROTO_TCP;
             int optname = TCP_NODELAY;
@@ -260,7 +260,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
             }
 #endif
             /* OK we're going to change some settings here... */
-            if (apr_is_option_set(sock, APR_TCP_NODELAY) == 1 && on) {
+            if (fspr_is_option_set(sock, APR_TCP_NODELAY) == 1 && on) {
                 /* Now toggle TCP_NODELAY to off, if TCP_CORK is being
                  * turned on: */
                 int tmpflag = 0;
@@ -268,10 +268,10 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                                (void*)&tmpflag, sizeof(int)) == -1) {
                     return errno;
                 }
-                apr_set_option(sock, APR_RESET_NODELAY, 1);
-                apr_set_option(sock, APR_TCP_NODELAY, 0);
+                fspr_set_option(sock, APR_RESET_NODELAY, 1);
+                fspr_set_option(sock, APR_TCP_NODELAY, 0);
             } else if (on) {
-                apr_set_option(sock, APR_RESET_NODELAY, 0);
+                fspr_set_option(sock, APR_RESET_NODELAY, 0);
             }
 #endif /* HAVE_TCP_NODELAY_WITH_CORK */
 
@@ -280,9 +280,9 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                            (void*)&on, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_TCP_NOPUSH, on);
+            fspr_set_option(sock, APR_TCP_NOPUSH, on);
 #ifndef HAVE_TCP_NODELAY_WITH_CORK
-            if (!on && apr_is_option_set(sock, APR_RESET_NODELAY)) {
+            if (!on && fspr_is_option_set(sock, APR_RESET_NODELAY)) {
                 /* Now, if TCP_CORK was just turned off, turn
                  * TCP_NODELAY back on again if it was earlier toggled
                  * to off: */
@@ -291,8 +291,8 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                                (void*)&tmpflag, sizeof(int)) == -1) {
                     return errno;
                 }
-                apr_set_option(sock, APR_RESET_NODELAY,0);
-                apr_set_option(sock, APR_TCP_NODELAY, 1);
+                fspr_set_option(sock, APR_RESET_NODELAY,0);
+                fspr_set_option(sock, APR_TCP_NODELAY, 1);
             }
 #endif /* HAVE_TCP_NODELAY_WITH_CORK */
         }
@@ -301,7 +301,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
 #endif
         break;
     case APR_INCOMPLETE_READ:
-        apr_set_option(sock, APR_INCOMPLETE_READ, on);
+        fspr_set_option(sock, APR_INCOMPLETE_READ, on);
         break;
     case APR_IPV6_V6ONLY:
 #if APR_HAVE_IPV6 && defined(IPV6_V6ONLY)
@@ -313,7 +313,7 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
                        (void *)&on, sizeof(int)) == -1) {
             return errno;
         }
-        apr_set_option(sock, APR_IPV6_V6ONLY, on);
+        fspr_set_option(sock, APR_IPV6_V6ONLY, on);
 #else
         return APR_ENOTIMPL;
 #endif
@@ -326,25 +326,25 @@ apr_status_t apr_socket_opt_set(apr_socket_t *sock,
 }         
 
 
-apr_status_t apr_socket_timeout_get(apr_socket_t *sock, apr_interval_time_t *t)
+fspr_status_t fspr_socket_timeout_get(fspr_socket_t *sock, fspr_interval_time_t *t)
 {
     *t = sock->timeout;
     return APR_SUCCESS;
 }
 
 
-apr_status_t apr_socket_opt_get(apr_socket_t *sock, 
-                                apr_int32_t opt, apr_int32_t *on)
+fspr_status_t fspr_socket_opt_get(fspr_socket_t *sock, 
+                                fspr_int32_t opt, fspr_int32_t *on)
 {
     switch(opt) {
         default:
-            *on = apr_is_option_set(sock, opt);
+            *on = fspr_is_option_set(sock, opt);
     }
     return APR_SUCCESS;
 }
 
 
-int apr_socket_fd_get(apr_socket_t *sock)
+int fspr_socket_fd_get(fspr_socket_t *sock)
 {
 	if (sock) {
 		return sock->socketdes;
@@ -354,13 +354,13 @@ int apr_socket_fd_get(apr_socket_t *sock)
 }
 
 
-apr_status_t apr_socket_atmark(apr_socket_t *sock, int *atmark)
+fspr_status_t fspr_socket_atmark(fspr_socket_t *sock, int *atmark)
 {
 #ifndef BEOS_R5
     int oobmark;
 
     if (ioctl(sock->socketdes, SIOCATMARK, (void*) &oobmark) < 0)
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
 
     *atmark = (oobmark != 0);
 
@@ -370,7 +370,7 @@ apr_status_t apr_socket_atmark(apr_socket_t *sock, int *atmark)
 #endif
 }
 
-apr_status_t apr_gethostname(char *buf, apr_int32_t len, apr_pool_t *cont)
+fspr_status_t fspr_gethostname(char *buf, fspr_int32_t len, fspr_pool_t *cont)
 {
 #ifdef BEOS_R5
     if (gethostname(buf, len) == 0) {
@@ -391,7 +391,7 @@ apr_status_t apr_gethostname(char *buf, apr_int32_t len, apr_pool_t *cont)
 }
 
 #if APR_HAS_SO_ACCEPTFILTER
-apr_status_t apr_socket_accept_filter(apr_socket_t *sock, char *name, 
+fspr_status_t fspr_socket_accept_filter(fspr_socket_t *sock, char *name, 
                                       char *args)
 {
     struct accept_filter_arg af;

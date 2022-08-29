@@ -1040,7 +1040,7 @@ int main(int argc, char *argv[])
 		return freeswitch_kill_background();
 	}
 
-	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+	if (fspr_initialize() != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "FATAL ERROR! Could not initialize APR\n");
 		return 255;
 	}
@@ -1067,7 +1067,7 @@ int main(int argc, char *argv[])
 			rlp.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
 
-			apr_terminate();
+			fspr_terminate();
 			if (argv) ret = (int) execv(argv[0], argv);
 
 			for (i = 0; i < argc; i++) {
@@ -1168,7 +1168,7 @@ int main(int argc, char *argv[])
 	switch_snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
 	pid_len = strlen(pid_buffer);
 
-	apr_pool_create(&pool, NULL);
+	fspr_pool_create(&pool, NULL);
 
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, pool);
 
@@ -1230,7 +1230,7 @@ int main(int argc, char *argv[])
 	destroy_status = switch_core_destroy();
 
 	switch_file_close(fd);
-	apr_pool_destroy(pool);
+	fspr_pool_destroy(pool);
 
 	if (unlink(pid_path) != 0) {
 		fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);
