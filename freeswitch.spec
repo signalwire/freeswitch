@@ -887,6 +887,16 @@ BuildRequires:	portaudio-devel
 %description endpoint-portaudio
 PortAudio endpoint support for FreeSWITCH open source telephony platform.
 
+%package endpoint-pulseaudio
+Summary:        Pulseaudio endpoint support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+Requires:	libpulse
+BuildRequires:	libpulse-dev
+
+%description endpoint-pulseaudio
+Pulseaudio endpoint support for FreeSWITCH open source telephony platform.
+
 %package endpoint-rtmp
 Summary:        RTPM Endpoint support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1486,7 +1496,7 @@ DIRECTORIES_MODULES=""
 #
 ######################################################################################################################
 ENDPOINTS_MODULES="endpoints/mod_dingaling \
-			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
+			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp endpoints/mod_pulseaudio \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
 ## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
@@ -1952,6 +1962,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/osp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pocketsphinx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/portaudio.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pulseaudio.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/post_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pre_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/presence_map.conf.xml
@@ -2272,6 +2283,9 @@ fi
 
 %files endpoint-portaudio
 %{MODINSTDIR}/mod_portaudio.so*
+
+%files endpoint-pulseaudio
+%{MODINSTDIR}/mod_pulseaudio.so*
 
 %files endpoint-rtmp
 %{MODINSTDIR}/mod_rtmp.so*

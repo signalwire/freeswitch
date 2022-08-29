@@ -1354,6 +1354,16 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
       AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])
     fi],[
     AM_CONDITIONAL([HAVE_LDNS],[true])])])])
+PKG_CHECK_MODULES([PULSEAUDIO], [libpulse-simple >= 0.1],[
+  AM_CONDITIONAL([HAVE_PULSEAUDIO],[true])],[
+  AC_CHECK_LIB([pulse-simple], [pa_simple_new], [PULSEAUDIO_LIBS="-lpulse-simple -lpulse"])
+  AS_IF([test -z "$PULSEAUDIO_LIBS"],[
+    if module_enabled mod_pulseaudio; then
+      AC_MSG_ERROR([You need to either install libpulse-dev or disable mod_pulseaudio in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PULSEAUDIO],[false])
+    fi],[
+    AM_CONDITIONAL([HAVE_PULSEAUDIO],[true])])])
 PKG_CHECK_MODULES([SNDFILE], [sndfile >= 1.0.20],[
   AM_CONDITIONAL([HAVE_SNDFILE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SNDFILE],[false])])
@@ -2182,6 +2192,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
 		src/mod/endpoints/mod_portaudio/Makefile
+		src/mod/endpoints/mod_pulseaudio/Makefile
 		src/mod/endpoints/mod_reference/Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
