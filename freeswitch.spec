@@ -1792,9 +1792,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/dialplan/skinny-patterns
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/directory
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/directory/default
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/jingle_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external-ipv6
@@ -1995,11 +1993,9 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/sip_profiles/external-ipv6/*.xml
 ######################################################################################################################
-#				Other Protocol Profiles (skinny, jingle, mrcp)
+#				Other Protocol Profiles (skinny)
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/skinny_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/jingle_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/mrcp_profiles/*.xml
 ######################################################################################################################
 #						Grammar Files
 ######################################################################################################################
