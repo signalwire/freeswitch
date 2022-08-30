@@ -223,7 +223,7 @@ void ei_encode_json(ei_x_buff *ebuf, cJSON *JObj)
 		ei_x_encode_tuple_header(ebuf, 1);
 		ei_x_encode_list_header(ebuf, count);
 	} else {
-		ei_x_encode_map_header(ebuf, count);
+		ei_x_encode_list_header(ebuf, count);
 	}
 
 	if (count == 0)
