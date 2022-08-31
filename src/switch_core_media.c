@@ -3474,7 +3474,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 
 	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
 		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
-
 		if (audio_flow != SWITCH_MEDIA_FLOW_SENDRECV && audio_flow != SWITCH_MEDIA_FLOW_SENDONLY) {
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -4884,13 +4883,13 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 	
 	engine->rmode = rmode;
 
-	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-
-		if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
-			switch_core_media_set_smode(other_session, type, rmode, sdp_type);
+	if (!switch_channel_var_true(session->channel, "rtp_ignore_pass_response_stream_media_mode")) {
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
+				switch_core_media_set_smode(other_session, type, rmode, sdp_type);
+			}
+			switch_core_session_rwunlock(other_session);
 		}
-
-		switch_core_session_rwunlock(other_session);
 	}
 
 	switch_channel_set_variable(session->channel, varname, rmode_str);
