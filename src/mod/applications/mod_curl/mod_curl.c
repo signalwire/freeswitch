@@ -50,7 +50,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]|insecure|secure|[proxy <http://proxy:port>]] [get|head|post|delete|put [data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>|append_headers <header_name:header_value>[|append_headers <header_name:header_value>]|insecure|secure|[proxy <http://proxy:port>]|ipv4|ipv6] [get|head|post|delete|put [data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -129,6 +129,8 @@ struct curl_options_obj {
 	long connect_timeout;
 	long timeout;
 	int insecure;
+	int ipv4;
+	int ipv6;
 	char *proxy;
 };
 typedef struct curl_options_obj curl_options_t;
@@ -206,6 +208,14 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 
 	if (options->timeout) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
+	}
+
+	if (options->ipv4) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+	}
+
+	if (options->ipv6) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
 	}
 
 	if (options->proxy) {
@@ -894,6 +904,10 @@ SWITCH_STANDARD_APP(curl_app_function)
 				if (++i < argc) {
 					options.proxy = argv[i];
 				}
+			} else if (!strcasecmp("ipv4", argv[i])) {
+				options.ipv4 = 1;
+			} else if (!strcasecmp("ipv6", argv[i])) {
+				options.ipv6 = 1;
 			}
 		}
 	}
@@ -1034,6 +1048,10 @@ SWITCH_STANDARD_API(curl_function)
 				if (++i < argc) {
 					options.proxy = argv[i];
 				}
+			} else if (!strcasecmp("ipv4", argv[i])) {
+				options.ipv4 = 1;
+			} else if (!strcasecmp("ipv6", argv[i])) {
+				options.ipv6 = 1;
 			}
 		}
 
