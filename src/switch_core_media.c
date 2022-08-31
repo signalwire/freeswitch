@@ -9922,6 +9922,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	if (switch_rtp_ready(a_engine->rtp_session)) {
 		uint8_t vad_in = (smh->mparams->vflags & VAD_IN);
 		uint8_t vad_out = (smh->mparams->vflags & VAD_OUT);
+		uint8_t ext_audio_level = 0;
 		uint8_t inb = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *ssrc;
 
@@ -9987,6 +9988,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 							  switch_channel_get_name(switch_core_session_get_channel(session)), vad_in ? "in" : "", vad_out ? "out" : "");
 		}
 
+		if ((val = switch_channel_get_variable(session->channel, "rtp_ext_audio_level_events")) && switch_true(val)) {
+			ext_audio_level = 1;
+		}
+
+		if (ext_audio_level) {
+			switch_rtp_enable_audio_level_extension(a_engine->rtp_session, session, &a_engine->read_codec);
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AUDIO RTP Engage EXT Audio Level for %s\n",
+							  switch_channel_get_name(switch_core_session_get_channel(session)));
+		}
 
 		if (a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].ready) {
 
@@ -12090,6 +12101,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 		}
 
+	}
+
+	if ((var_val = switch_channel_get_variable(session->channel, "rtp_ext_audio_level_events")) && switch_true(var_val)) {
+		switch_rtp_offer_audio_level_extension(session, buf, SDPBUFLEN);
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_IMAGE_SDP)) {
