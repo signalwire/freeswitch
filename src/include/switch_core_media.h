@@ -259,7 +259,7 @@ SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *al
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
 SWITCH_DECLARE(void) switch_core_media_reset_t38(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);
-SWITCH_DECLARE(uint8_t) switch_core_media_validate_common_audio_sdp(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type);
+SWITCH_DECLARE(int16_t) switch_core_media_validate_common_audio_sdp(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type);
 SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, uint8_t *proceed, switch_sdp_type_t sdp_type);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_session_t *session, int force);
 SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_t *session, int force, uint32_t codec_flags);
