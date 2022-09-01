@@ -815,7 +815,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "video thread start\n");
 		switch_assert(context->eh.video_queue);
 	for(;;) {
-		AVPacket pkt = { 0 };
+		AVPacket* pkt;
 		int got_packet;
 		int ret = -1;
 
@@ -877,7 +877,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		context->eh.in_callback = 1;
 
-		av_init_packet(&pkt);
+		pkt = av_packet_alloc();
 
 		if (context->eh.video_st->frame) {
 			ret = av_frame_make_writable(context->eh.video_st->frame);
@@ -943,7 +943,7 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		/* encode the image */
 GCC_DIAG_OFF(deprecated-declarations)
-		ret = avcodec_encode_video2(context->eh.video_st->st->codec, &pkt, context->eh.video_st->frame, &got_packet);
+		ret = avcodec_encode_video2(context->eh.video_st->st->codec, pkt, context->eh.video_st->frame, &got_packet);
 GCC_DIAG_ON(deprecated-declarations)
  
 		if (ret < 0) {
@@ -954,10 +954,10 @@ GCC_DIAG_ON(deprecated-declarations)
 		if (got_packet) {
 			switch_mutex_lock(context->eh.mutex);
 GCC_DIAG_OFF(deprecated-declarations)
-			write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
+			write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, pkt);
 GCC_DIAG_ON(deprecated-declarations) 
 			switch_mutex_unlock(context->eh.mutex);
-			av_packet_unref(&pkt);
+			av_packet_free(&pkt);
 		}
 
 		context->eh.in_callback = 0;
@@ -967,27 +967,30 @@ GCC_DIAG_ON(deprecated-declarations)
  endfor:
 
 	for(;;) {
-		AVPacket pkt = { 0 };
+		AVPacket *pkt;
 		int got_packet = 0;
 		int ret = 0;
+		
 
-		av_init_packet(&pkt);
+		pkt = av_packet_alloc();
 
 GCC_DIAG_OFF(deprecated-declarations)		
-		ret = avcodec_encode_video2(context->eh.video_st->st->codec, &pkt, NULL, &got_packet);
+		ret = avcodec_encode_video2(context->eh.video_st->st->codec, pkt, NULL, &got_packet);
 GCC_DIAG_ON(deprecated-declarations)
 
 		if (ret < 0) {
+			av_packet_free(&pkt);
 			break;
 		} else if (got_packet) {
 			switch_mutex_lock(context->eh.mutex);
 GCC_DIAG_OFF(deprecated-declarations)
-			ret = write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, &pkt);
+			ret = write_frame(context->eh.fc, &context->eh.video_st->st->codec->time_base, context->eh.video_st->st, pkt);
 GCC_DIAG_ON(deprecated-declarations)
 			switch_mutex_unlock(context->eh.mutex);
-			av_packet_unref(&pkt);
+			av_packet_free(&pkt);
 			if (ret < 0) break;
 		} else {
+			av_packet_free(&pkt);
 			break;
 		}
 	}
@@ -1368,7 +1371,7 @@ err:
 static void *SWITCH_THREAD_FUNC file_read_thread_run(switch_thread_t *thread, void *obj)
 {
 	av_file_context_t *context = (av_file_context_t *) obj;
-	AVPacket pkt = { 0 };
+	AVPacket* pkt;
 	int got_data = 0;
 	int error;
 	int sync  = 0;
@@ -1427,54 +1430,56 @@ GCC_DIAG_ON(deprecated-declarations)
 
 
 
-		av_init_packet(&pkt);
-		pkt.data = NULL;
-		pkt.size = 0;
+		pkt = av_packet_alloc();
+		pkt->data = NULL;
+		pkt->size = 0;
 
-		if ((error = av_read_frame(context->fc, &pkt)) < 0) {
+		if ((error = av_read_frame(context->fc, pkt)) < 0) {
 			if (error == AVERROR_EOF) {
 				if (!context->has_video) break;
 
 				eof = 1;
 				/* just make sure*/
-				pkt.data = NULL;
-				pkt.size = 0;
-				pkt.stream_index = context->video_st.st->index;
+				pkt->data = NULL;
+				pkt->size = 0;
+				pkt->stream_index = context->video_st.st->index;
 			} else {
 				char ebuf[255] = "";
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not read frame (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
+				av_packet_free(&pkt);
 				continue;
 			}
 		}
 
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "stream: %d, pkt size %d\n", pkt.stream_index, pkt.size);
-		if (context->has_video && pkt.stream_index == context->video_st.st->index) {
+		if (context->has_video && pkt->stream_index == context->video_st.st->index) {
 			AVFrame *vframe;
 			switch_image_t *img;
 
 			if (context->no_video_decode) {
 				if (eof) {
+					av_packet_free(&pkt);
 					break;
 				} else {
 					switch_status_t status;
-					AVPacket *new_pkt = malloc(sizeof(AVPacket));
+					AVPacket* new_pkt;
 
 					if (0) { // debug
-						uint8_t *p = pkt.data;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %u %x %x %x %x %x %x\n", pkt.size, *p, *(p+1), *(p+2), *(p+3), *(p+4), *(p+5));
+						uint8_t *p = pkt->data;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %u %x %x %x %x %x %x\n", pkt->size, *p, *(p+1), *(p+2), *(p+3), *(p+4), *(p+5));
 					}
 
-					av_init_packet(new_pkt);
-					av_packet_ref(new_pkt, &pkt);
+					new_pkt = av_packet_alloc();
+					av_packet_ref(new_pkt, pkt);
 					status = switch_queue_push(context->video_pkt_queue, new_pkt);
 					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %4u flag=%x pts=%" SWITCH_INT64_T_FMT " dts=%" SWITCH_INT64_T_FMT "\n", pkt.size, pkt.flags, pkt.pts, pkt.dts);
 
 					context->vid_ready = 1;
 					if (status != SWITCH_STATUS_SUCCESS) {
-						av_packet_unref(new_pkt);
+						av_packet_free(&new_pkt);
 						free(new_pkt);
 					}
-					av_packet_unref(&pkt);
+					av_packet_free(&pkt);
 					continue;
 				}
 			}
@@ -1489,17 +1494,17 @@ again:
 			switch_assert(vframe);
 
 GCC_DIAG_OFF(deprecated-declarations)
-			if ((error = avcodec_decode_video2(context->video_st.st->codec, vframe, &got_data, &pkt)) < 0) {
+			if ((error = avcodec_decode_video2(context->video_st.st->codec, vframe, &got_data, pkt)) < 0) {
 GCC_DIAG_ON(deprecated-declarations)
 				char ebuf[255] = "";
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not decode frame (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
-				av_packet_unref(&pkt);
+				av_packet_free(&pkt);
 				av_frame_free(&vframe);
 				continue;
 			}
 
 			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pkt: %d, pts: %lld dts: %lld\n", pkt.size, pkt.pts, pkt.dts);
-			av_packet_unref(&pkt);
+			av_packet_free(&pkt);
 
 			//if (switch_queue_size(context->eh.video_queue) > 300) {
 			//	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Dropping frames\n");
@@ -1605,20 +1610,20 @@ GCC_DIAG_ON(deprecated-declarations)
 				}
 			}
 			continue;
-		} else if (context->has_audio && pkt.stream_index == context->audio_st[0].st->index) {
+		} else if (context->has_audio && pkt->stream_index == context->audio_st[0].st->index) {
 			AVFrame in_frame = { { 0 } };
 
 GCC_DIAG_OFF(deprecated-declarations)
-			if ((error = avcodec_decode_audio4(context->audio_st[0].st->codec, &in_frame, &got_data, &pkt)) < 0) {
+			if ((error = avcodec_decode_audio4(context->audio_st[0].st->codec, &in_frame, &got_data, pkt)) < 0) {
 GCC_DIAG_ON(deprecated-declarations)
 				char ebuf[255] = "";
  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not decode frame (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
-				av_packet_unref(&pkt);
+				av_packet_free(&pkt);
 				continue;
 			}
 
 			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pkt: %d, decodedddd: %d pts: %lld dts: %lld\n", pkt.size, error, pkt.pts, pkt.dts);
-			av_packet_unref(&pkt);
+			av_packet_free(&pkt);
 
 			if (got_data) {
 				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got data frm->format: %d samples: %d\n", in_frame.format, in_frame.nb_samples);
@@ -1661,7 +1666,7 @@ GCC_DIAG_ON(deprecated-declarations)
 			}
 
 		} else {
-			av_packet_unref(&pkt);
+			av_packet_free(&pkt);
 		}
 	}
 
@@ -2095,14 +2100,13 @@ GCC_DIAG_ON(deprecated-declarations)
 	 }
  
 	while (switch_buffer_inuse(context->audio_buffer) >= bytes) {
-		AVPacket pkt[2] = { {0} };
+		AVPacket* pkt[2];
 		int got_packet[2] = {0};
 		int j = 0, ret = -1, audio_stream_count = 1;
 		AVFrame *use_frame = NULL;
 
-		av_init_packet(&pkt[0]);
-		av_init_packet(&pkt[1]);
-
+		pkt[0] = av_packet_alloc();
+		pkt[1] = av_packet_alloc();
 		if (context->audio_st[1].active) {
 			switch_size_t len = 0;
 			int i = 0, j = 0;
@@ -2159,7 +2163,7 @@ GCC_DIAG_ON(deprecated-declarations)
 			// context->audio_st[j].next_pts = use_frame->pts + use_frame->nb_samples;
 
 GCC_DIAG_OFF(deprecated-declarations)
-			ret = avcodec_encode_audio2(context->audio_st[j].st->codec, &pkt[j], use_frame, &got_packet[j]);
+			ret = avcodec_encode_audio2(context->audio_st[j].st->codec, pkt[j], use_frame, &got_packet[j]);
 GCC_DIAG_ON(deprecated-declarations)
 
 			context->audio_st[j].next_pts += use_frame->nb_samples;
@@ -2174,7 +2178,7 @@ GCC_DIAG_ON(deprecated-declarations)
 			if (got_packet[j]) {
 				if (context->mutex) switch_mutex_lock(context->mutex);
 GCC_DIAG_OFF(deprecated-declarations)
-				ret = write_frame(context->fc, &context->audio_st[j].st->codec->time_base, context->audio_st[j].st, &pkt[j]);
+				ret = write_frame(context->fc, &context->audio_st[j].st->codec->time_base, context->audio_st[j].st, pkt[j]);
 GCC_DIAG_ON(deprecated-declarations)
 				if (context->mutex) switch_mutex_unlock(context->mutex);
 

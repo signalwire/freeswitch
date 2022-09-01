@@ -1460,7 +1460,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	int ret;
 	int *got_output = &context->got_encoded_output;
 	AVFrame *avframe = NULL;
-	AVPacket *pkt = &context->encoder_avpacket;
+	AVPacket *pkt;
 	uint32_t width = 0;
 	uint32_t height = 0;
 	switch_image_t *img = frame->img;
@@ -1511,7 +1511,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
-	av_init_packet(pkt);
+	pkt = av_packet_alloc();
 	pkt->data = NULL;      // packet data will be allocated by the encoder
 	pkt->size = 0;
 
@@ -1702,22 +1702,22 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 	if (frame->m) {
 		uint32_t size = switch_buffer_inuse(context->nalu_buffer);
-		AVPacket pkt = { 0 };
+		AVPacket* pkt;
 		AVFrame *picture;
 		int got_picture = 0;
 		int decoded_len;
 
 		if (size > 0) {
-			av_init_packet(&pkt);
+			pkt = av_packet_alloc();
 			switch_buffer_zero_fill(context->nalu_buffer, AV_INPUT_BUFFER_PADDING_SIZE);
-			switch_buffer_peek_zerocopy(context->nalu_buffer, (const void **)&pkt.data);
-			pkt.size = size;
+			switch_buffer_peek_zerocopy(context->nalu_buffer, (const void **)pkt->data);
+			pkt->size = size;
 
 			if (!context->decoder_avframe) context->decoder_avframe = av_frame_alloc();
 			picture = context->decoder_avframe;
 			switch_assert(picture);
 GCC_DIAG_OFF(deprecated-declarations)
-			decoded_len = avcodec_decode_video2(avctx, picture, &got_picture, &pkt);
+			decoded_len = avcodec_decode_video2(avctx, picture, &got_picture, pkt);
 GCC_DIAG_ON(deprecated-declarations)
 
 			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer: %d got pic: %d len: %d [%dx%d]\n", size, got_picture, decoded_len, picture->width, picture->height);
@@ -1750,6 +1750,9 @@ GCC_DIAG_ON(deprecated-declarations)
 		switch_buffer_zero(context->nalu_buffer);
 		context->nalu_28_start = 0;
 		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
+		
+		av_packet_free(&pkt);
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 
