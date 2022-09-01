@@ -975,7 +975,8 @@ SQLite CDR Logger for FreeSWITCH.
 Summary:	Erlang Event Module for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	 %{name} = %{version}-%{release}
-Requires:	(erlang-erts or erlang)
+Requires:	erlang-erts
+Requires:	erlang
 BuildRequires:	erlang
 
 %description event-erlang-event
