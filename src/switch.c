@@ -49,6 +49,7 @@
 #endif
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
@@ -229,7 +230,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 static int check_fd(int fd, int ms)
 {
 	struct pollfd pfds[2] = { { 0 } };
-	int s, r = 0, i = 0;
+	int s, r = 0;
 
 	pfds[0].fd = fd;
 	pfds[0].events = POLLIN | POLLERR;
@@ -241,7 +242,7 @@ static int check_fd(int fd, int ms)
 		r = -1;
 
 		if ((pfds[0].revents & POLLIN)) {
-			if ((i = read(fd, &r, sizeof(r))) > -1) {
+			if (read(fd, &r, sizeof(r)) > -1) {
 				(void)write(fd, &r, sizeof(r));
 			}
 		}
@@ -390,13 +391,13 @@ static void reincarnate_protect(char **argv) {
 			sigaction(SIGTERM, &sa15_prev, NULL);
 			sigaction(SIGCHLD, &sa17_prev, NULL);
 			if (argv) {
-				if (execv(argv[0], argv) == -1) {
+				if (argv[0] && execv(argv[0], argv) == -1) {
 					char buf[256];
 					fprintf(stderr, "Reincarnate execv() failed: %d %s\n", errno,
 							switch_strerror_r(errno, buf, sizeof(buf)));
 				}
 				fprintf(stderr, "Trying reincarnate-reexec plan B...\n");
-				if (execvp(argv[0], argv) == -1) {
+				if (argv[0] && execvp(argv[0], argv) == -1) {
 					char buf[256];
 					fprintf(stderr, "Reincarnate execvp() failed: %d %s\n", errno,
 							switch_strerror_r(errno, buf, sizeof(buf)));
@@ -1039,7 +1040,7 @@ int main(int argc, char *argv[])
 		return freeswitch_kill_background();
 	}
 
-	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+	if (fspr_initialize() != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "FATAL ERROR! Could not initialize APR\n");
 		return 255;
 	}
@@ -1066,7 +1067,7 @@ int main(int argc, char *argv[])
 			rlp.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
 			setrlimit(RLIMIT_STACK, &rlp);
 
-			apr_terminate();
+			fspr_terminate();
 			if (argv) ret = (int) execv(argv[0], argv);
 
 			for (i = 0; i < argc; i++) {
@@ -1167,7 +1168,7 @@ int main(int argc, char *argv[])
 	switch_snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
 	pid_len = strlen(pid_buffer);
 
-	apr_pool_create(&pool, NULL);
+	fspr_pool_create(&pool, NULL);
 
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.run_dir, SWITCH_DEFAULT_DIR_PERMS, pool);
 
@@ -1205,9 +1206,9 @@ int main(int argc, char *argv[])
 #ifndef WIN32
 	if (do_wait) {
 		if (fds[1] > -1) {
-			int i, v = 1;
+			int v = 1;
 
-			if ((i = write(fds[1], &v, sizeof(v))) < 0) {
+			if (write(fds[1], &v, sizeof(v)) < 0) {
 				fprintf(stderr, "System Error [%s]\n", strerror(errno));
 			} else {
 				(void)read(fds[1], &v, sizeof(v));
@@ -1229,7 +1230,7 @@ int main(int argc, char *argv[])
 	destroy_status = switch_core_destroy();
 
 	switch_file_close(fd);
-	apr_pool_destroy(pool);
+	fspr_pool_destroy(pool);
 
 	if (unlink(pid_path) != 0) {
 		fprintf(stderr, "Failed to delete pid file [%s]\n", pid_path);

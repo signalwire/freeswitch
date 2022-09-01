@@ -220,6 +220,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	uint32_t x = 0;
 	int32_t z = 0;
 	conference_cdr_node_t *np;
+	switch_time_t last_heartbeat_time = switch_epoch_time_now(NULL);
 
 	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -239,6 +240,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference->record_count = 0;
 
 	while (conference_globals.running && !conference_utils_test_flag(conference, CFLAG_DESTRUCT)) {
+		switch_time_t now = switch_epoch_time_now(NULL);
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2 * conference->channels;
 		int has_file_data = 0, members_with_video = 0, members_with_avatar = 0, members_seeing_video = 0;
@@ -256,6 +258,15 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		has_file_data = ready = total = 0;
 
 		floor_holder = conference->floor_holder;
+
+		if (conference->heartbeat_period_sec > 0 && (now - last_heartbeat_time) >= conference->heartbeat_period_sec) {
+			switch_event_t *heartbeat_event = NULL;
+			last_heartbeat_time = now;
+			switch_event_create_subclass(&heartbeat_event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+			conference_event_add_data(conference, heartbeat_event);
+			switch_event_add_header_string(heartbeat_event, SWITCH_STACK_BOTTOM, "Action", "conference-heartbeat");
+			switch_event_fire(&heartbeat_event);
+		}
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			if (!zstr(imember->text_framedata)) {
@@ -479,7 +490,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 
 					} else {
-						file_sample_len = file_data_len = 0;
+						file_sample_len = 0;
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
@@ -1445,6 +1456,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		ADDBOOL(json_conference_member_flags, "has_floor", member->id == member->conference->floor_holder);
 		ADDBOOL(json_conference_member_flags, "is_moderator", conference_utils_member_test_flag(member, MFLAG_MOD));
 		ADDBOOL(json_conference_member_flags, "end_conference", conference_utils_member_test_flag(member, MFLAG_ENDCONF));
+		ADDBOOL(json_conference_member_flags, "pass_digits", conference_utils_member_test_flag(member, MFLAG_DIST_DTMF));
 	}
 	switch_mutex_unlock(conference->member_mutex);
 }
@@ -1879,7 +1891,6 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 SWITCH_STANDARD_APP(conference_function)
 {
-	switch_codec_t *read_codec = NULL;
 	//uint32_t flags = 0;
 	conference_member_t member = { 0 };
 	conference_obj_t *conference = NULL;
@@ -1919,7 +1930,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	/* Save the original read codec. */
-	if (!(read_codec = switch_core_session_get_read_codec(session))) {
+	if (!switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel has no media!\n");
 		goto end;
 	}
@@ -2463,20 +2474,34 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_set_video_read_callback(session, conference_video_thread_callback, (void *)&member);
 	switch_core_session_set_text_read_callback(session, conference_text_thread_callback, (void *)&member);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO_ONLY) || !switch_channel_test_flag(channel, CF_AUDIO)) {
-		while(conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
-			switch_frame_t *read_frame;
-			if (switch_channel_test_flag(channel, CF_AUDIO)) {
-				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-			}
-			switch_yield(100000);
-		}
-	} else {
-
-		/* Run the conference loop */
-		do {
+	/* Run the conference loop */
+	do {
+		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
+		
+		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_SENDONLY)) {
 			conference_loop_output(&member);
-		} while (member.loop_loop);
+		} else {
+			if (!conference_utils_member_test_flag(&member, MFLAG_ITHREAD)) {
+				conference_loop_launch_input(&member, switch_core_session_get_pool(member.session));
+			}
+
+			if (conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
+				switch_yield(100000);
+				member.loop_loop = 1;
+			} else {
+				break;
+			}
+		}
+	} while (member.loop_loop);
+
+	conference_utils_member_clear_flag_locked(&member, MFLAG_RUNNING);
+	
+	/* Wait for the input thread to end */
+	if (member.input_thread) {
+		switch_status_t st;
+
+		switch_thread_join(&st, member.input_thread);
+		member.input_thread = NULL;
 	}
 
 	switch_core_session_video_reset(session);
@@ -2644,24 +2669,44 @@ conference_obj_t *conference_find(char *name, char *domain)
 
 void conference_set_variable(conference_obj_t *conference, const char *var, const char *val)
 {
+	switch_assert(var);
 	switch_mutex_lock(conference->flag_mutex);
-	switch_event_add_header_string(conference->variables, SWITCH_STACK_BOTTOM, var, val);
+
+	if (!val) {
+		switch_event_del_header(conference->variables, var);
+	} else {
+		switch_event_add_header_string(conference->variables, SWITCH_STACK_BOTTOM, var, val);
+	}
 	switch_mutex_unlock(conference->flag_mutex);
 }
 
 const char *conference_get_variable(conference_obj_t *conference, const char *var)
 {
-	const char *val;
+	const char *val = NULL, *rval = NULL;
 
 	switch_mutex_lock(conference->flag_mutex);
-	val = switch_event_get_header(conference->variables, var);
+	if ((val = switch_event_get_header(conference->variables, var))) {
+		rval = switch_core_strdup(conference->pool, val);
+	}
 	switch_mutex_unlock(conference->flag_mutex);
 
-	if (val) {
-		return switch_core_strdup(conference->pool, val);
-	}
+	return rval;
+}
 
-	return NULL;
+static void check_var_event(conference_obj_t *conference, switch_event_t *var_event)
+{
+	switch_event_header_t *hi = NULL;
+
+	for (hi = var_event->headers; hi; hi = hi->next) {
+		char *vvar = hi->name;
+		char *vval = hi->value;
+		if (vvar && vval && !strncasecmp(vvar, "confvar_", 8)) {
+			vvar += 8;
+			if (vvar) {
+				conference_set_variable(conference, vvar, vval);
+			}
+		}
+	}
 }
 
 /* create a new conferene with a specific profile */
@@ -2767,6 +2812,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	char *scale_h264_canvas_bandwidth = NULL;
 	char *video_codec_config_profile_name = NULL;
 	int tmp;
+	int heartbeat_period_sec = 0;
+	switch_event_t *var_event = NULL;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -3130,6 +3177,8 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 				scale_h264_canvas_bandwidth = val;
 			} else if (!strcasecmp(var, "video-codec-config-profile-name") && !zstr(val)) {
 				video_codec_config_profile_name = val;
+			} else if (!strcasecmp(var, "heartbeat-period-sec") && !zstr(val)) {
+				heartbeat_period_sec = atoi(val);
 			}
 		}
 
@@ -3649,6 +3698,10 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		conference->verbose_events = 1;
 	}
 
+	if (heartbeat_period_sec >= 20 || heartbeat_period_sec == 0) {
+		conference->heartbeat_period_sec = heartbeat_period_sec;
+	}
+
 	/* Create the conference unique identifier */
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -3665,6 +3718,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_mutex_init(&conference->canvas_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+
+	switch_core_get_variables(&var_event);
+	check_var_event(conference, var_event);
+	switch_event_destroy(&var_event);
+
+	switch_channel_get_variables(channel, &var_event);
+	check_var_event(conference, var_event);
+	switch_event_destroy(&var_event);
 
 	switch_mutex_lock(conference_globals.hash_mutex);
 	conference_utils_set_flag(conference, CFLAG_INHASH);

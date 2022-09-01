@@ -3,8 +3,8 @@ Upstream-Name: freeswitch
 Source: https://freeswitch.org/
 
 Files: *
-Copyright: 2005-2014 Anthony Minessale II <anthm@freeswitch.org>
- 2005-2014 Anthony Minessale II
+Copyright: 2005-2022 Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2022 Anthony Minessale II
 License: MPL-1.1
                            MOZILLA PUBLIC LICENSE
                                  Version 1.1
@@ -1011,12 +1011,6 @@ License: MPL-1.1 or GPL-2+
       use the text of this Exhibit A rather than the text found in the
       Original Code Source Code for Your Modifications.]
 
-Files: libs/unimrcp/*
-Copyright: 2008-2010 Arsen Chaloyan
- 2009-2010 Tomas Valenta, Arsen Chaloyan
- 2001-2006 Steve Underwood
-License: Apache-2.0
-
 Files: */inet_pton.c
  libs/curl/lib/inet_ntop.c
  libs/curl/lib/mprintf.c
@@ -1593,15 +1587,6 @@ License: MPL-1.1
 
 Files: libs/silk/*
 Copyright: 2006-2011, Skype Limited.
-License: BSD-2-clause
-
-Files: libs/libdingaling/*
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2001-2003 Allan Saddi <allan@saddi.com>
-License: MPL-1.1
-
-Files: libs/libdingaling/src/sha1.[ch]
-Copyright: 2001-2003 Allan Saddi <allan@saddi.com>
 License: BSD-2-clause
 
 Files: libs/libcodec2/*

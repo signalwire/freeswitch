@@ -186,7 +186,7 @@ void conference_member_update_status_field(conference_member_t *member)
 				cJSON_AddItemToObject(video, "visible", cJSON_CreateFalse());
 			}
 
-			cJSON_AddItemToObject(video, "videoOnly", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)));
+			cJSON_AddItemToObject(video, "noRecover", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_NO_RECOVER)));
 			if (switch_true(switch_channel_get_variable_dup(member->channel, "video_screen_share", SWITCH_FALSE, -1))) {
 				cJSON_AddItemToObject(video, "screenShare", cJSON_CreateTrue());
 			}
@@ -442,6 +442,32 @@ conference_member_t *conference_member_get_by_var(conference_obj_t *conference, 
 	return member;
 }
 
+/* traverse the conference member list for the specified member id or variable and return its pointer */
+conference_member_t *conference_member_get_by_str(conference_obj_t *conference, const char *id_str)
+{
+	conference_member_t *member = NULL;
+
+	switch_assert(conference != NULL);
+	if (!id_str) {
+		return NULL;
+	}
+	if (strchr(id_str, '=')) {
+		char *var, *val;
+
+		var = strdup(id_str);
+		switch_assert(var);
+
+		if ((val = strchr(var, '='))) {
+			*val++ = '\0';
+		}
+		member = conference_member_get_by_var(conference, var, val);
+		free(var);
+	} else {
+		member = conference_member_get(conference, atoi(id_str));
+	}
+	return member;
+}
+
 
 /* traverse the conference member list for the specified member with role  and return it's pointer */
 conference_member_t *conference_member_get_by_role(conference_obj_t *conference, const char *role_id)
@@ -566,7 +592,7 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
 					file_sample_len = file_data_len / 2 / member->conference->channels;
 				} else {
-					file_sample_len = file_data_len = 0;
+					file_sample_len = 0;
 				}
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
@@ -1371,6 +1397,10 @@ void conference_member_send_all_dtmf(conference_member_t *member, conference_obj
 	for (imember = conference->members; imember; imember = imember->next) {
 		/* don't send to self */
 		if (imember->id == member->id) {
+			continue;
+		}
+		if (conference_utils_member_test_flag(imember, MFLAG_SKIP_DTMF)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Skipping dist-dtmf to member due to skip-dtmf flag.\n");
 			continue;
 		}
 		if (imember->session) {

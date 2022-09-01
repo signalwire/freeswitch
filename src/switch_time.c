@@ -33,6 +33,7 @@
 
 #include <switch.h>
 #include <stdio.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 #ifdef HAVE_TIMERFD_CREATE
@@ -161,7 +162,7 @@ static void do_sleep(switch_interval_time_t t)
 
 #if !defined(DARWIN)
 	if (t > 100000 || !NANO) {
-		apr_sleep(t);
+		fspr_sleep(t);
 		return;
 	}
 #endif
@@ -178,7 +179,7 @@ static void do_sleep(switch_interval_time_t t)
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 850;
 	nanosleep(&ts, NULL);
 #else
-	apr_sleep(t);
+	fspr_sleep(t);
 #endif
 
 #if defined(DARWIN)
@@ -412,7 +413,7 @@ typedef struct interval_timer interval_timer_t;
 static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval)
 {
 	struct itimerspec val;
-	int fd, r;
+	int fd;
 	uint64_t exp;
 
 	fd = timerfd_create(CLOCK_MONOTONIC, 0);
@@ -431,7 +432,7 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if ((r = read(fd, &exp, sizeof(exp))) < 0) {
+	if (read(fd, &exp, sizeof(exp)) < 0) {
 		close(fd);
 		return SWITCH_STATUS_GENERR;
 	}

@@ -15,26 +15,26 @@
  */
 
 #define APR_WANT_STRFUNC
-#include "apr_want.h"
-#include "apr.h"
-#include "apr_arch_misc.h"
-#include "apr_arch_utf8.h"
-#include "apr_env.h"
-#include "apr_errno.h"
-#include "apr_pools.h"
-#include "apr_strings.h"
+#include "fspr_want.h"
+#include "fspr.h"
+#include "fspr_arch_misc.h"
+#include "fspr_arch_utf8.h"
+#include "fspr_env.h"
+#include "fspr_errno.h"
+#include "fspr_pools.h"
+#include "fspr_strings.h"
 
 
 #if APR_HAS_UNICODE_FS
-static apr_status_t widen_envvar_name (apr_wchar_t *buffer,
-                                       apr_size_t bufflen,
+static fspr_status_t widen_envvar_name (fspr_wchar_t *buffer,
+                                       fspr_size_t bufflen,
                                        const char *envvar)
 {
-    apr_size_t inchars;
-    apr_status_t status;
+    fspr_size_t inchars;
+    fspr_status_t status;
 
     inchars = strlen(envvar) + 1;
-    status = apr_conv_utf8_to_ucs2(envvar, &inchars, buffer, &bufflen);
+    status = fspr_conv_utf8_to_ucs2(envvar, &inchars, buffer, &bufflen);
     if (status == APR_INCOMPLETE)
         status = APR_ENAMETOOLONG;
 
@@ -43,9 +43,9 @@ static apr_status_t widen_envvar_name (apr_wchar_t *buffer,
 #endif
 
 
-APR_DECLARE(apr_status_t) apr_env_get(char **value,
+APR_DECLARE(fspr_status_t) fspr_env_get(char **value,
                                       const char *envvar,
-                                      apr_pool_t *pool)
+                                      fspr_pool_t *pool)
 {
     char *val = NULL;
     DWORD size;
@@ -53,10 +53,10 @@ APR_DECLARE(apr_status_t) apr_env_get(char **value,
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wenvvar[APR_PATH_MAX];
-        apr_size_t inchars, outchars;
-        apr_wchar_t *wvalue, dummy;
-        apr_status_t status;
+        fspr_wchar_t wenvvar[APR_PATH_MAX];
+        fspr_size_t inchars, outchars;
+        fspr_wchar_t *wvalue, dummy;
+        fspr_status_t status;
 
         status = widen_envvar_name(wenvvar, APR_PATH_MAX, envvar);
         if (status)
@@ -70,11 +70,11 @@ APR_DECLARE(apr_status_t) apr_env_get(char **value,
 
         if (size == 0) {
             /* The environment value exists, but is zero-length. */
-            *value = apr_pstrdup(pool, "");
+            *value = fspr_pstrdup(pool, "");
             return APR_SUCCESS;
         }
 
-        wvalue = apr_palloc(pool, size * sizeof(*wvalue));
+        wvalue = fspr_palloc(pool, size * sizeof(*wvalue));
         size = GetEnvironmentVariableW(wenvvar, wvalue, size);
         if (size == 0)
             /* Mid-air collision?. Somebody must've changed the env. var. */
@@ -82,8 +82,8 @@ APR_DECLARE(apr_status_t) apr_env_get(char **value,
 
         inchars = wcslen(wvalue) + 1;
         outchars = 3 * inchars; /* Enougn for any UTF-8 representation */
-        val = apr_palloc(pool, outchars);
-        status = apr_conv_ucs2_to_utf8(wvalue, &inchars, val, &outchars);
+        val = fspr_palloc(pool, outchars);
+        status = fspr_conv_ucs2_to_utf8(wvalue, &inchars, val, &outchars);
         if (status)
             return status;
     }
@@ -101,11 +101,11 @@ APR_DECLARE(apr_status_t) apr_env_get(char **value,
 
         if (size == 0) {
             /* The environment value exists, but is zero-length. */
-            *value = apr_pstrdup(pool, "");
+            *value = fspr_pstrdup(pool, "");
             return APR_SUCCESS;
         }
 
-        val = apr_palloc(pool, size);
+        val = fspr_palloc(pool, size);
         size = GetEnvironmentVariableA(envvar, val, size);
         if (size == 0)
             /* Mid-air collision?. Somebody must've changed the env. var. */
@@ -118,37 +118,37 @@ APR_DECLARE(apr_status_t) apr_env_get(char **value,
 }
 
 
-APR_DECLARE(apr_status_t) apr_env_set(const char *envvar,
+APR_DECLARE(fspr_status_t) fspr_env_set(const char *envvar,
                                       const char *value,
-                                      apr_pool_t *pool)
+                                      fspr_pool_t *pool)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wenvvar[APR_PATH_MAX];
-        apr_wchar_t *wvalue;
-        apr_size_t inchars, outchars;
-        apr_status_t status;
+        fspr_wchar_t wenvvar[APR_PATH_MAX];
+        fspr_wchar_t *wvalue;
+        fspr_size_t inchars, outchars;
+        fspr_status_t status;
 
         status = widen_envvar_name(wenvvar, APR_PATH_MAX, envvar);
         if (status)
             return status;
 
         outchars = inchars = strlen(value) + 1;
-        wvalue = apr_palloc(pool, outchars * sizeof(*wvalue));
-        status = apr_conv_utf8_to_ucs2(value, &inchars, wvalue, &outchars);
+        wvalue = fspr_palloc(pool, outchars * sizeof(*wvalue));
+        status = fspr_conv_utf8_to_ucs2(value, &inchars, wvalue, &outchars);
         if (status)
             return status;
 
         if (!SetEnvironmentVariableW(wenvvar, wvalue))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
 #if APR_HAS_ANSI_FS
     ELSE_WIN_OS_IS_ANSI
     {
         if (!SetEnvironmentVariableA(envvar, value))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
 
@@ -156,27 +156,27 @@ APR_DECLARE(apr_status_t) apr_env_set(const char *envvar,
 }
 
 
-APR_DECLARE(apr_status_t) apr_env_delete(const char *envvar, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_env_delete(const char *envvar, fspr_pool_t *pool)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wenvvar[APR_PATH_MAX];
-        apr_status_t status;
+        fspr_wchar_t wenvvar[APR_PATH_MAX];
+        fspr_status_t status;
 
         status = widen_envvar_name(wenvvar, APR_PATH_MAX, envvar);
         if (status)
             return status;
 
         if (!SetEnvironmentVariableW(wenvvar, NULL))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
 #if APR_HAS_ANSI_FS
     ELSE_WIN_OS_IS_ANSI
     {
         if (!SetEnvironmentVariableA(envvar, NULL))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
 

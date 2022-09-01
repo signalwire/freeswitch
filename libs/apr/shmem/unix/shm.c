@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "apr_arch_shm.h"
+#include "fspr_arch_shm.h"
 
-#include "apr_general.h"
-#include "apr_errno.h"
-#include "apr_user.h"
-#include "apr_strings.h"
+#include "fspr_general.h"
+#include "fspr_errno.h"
+#include "fspr_user.h"
+#include "fspr_strings.h"
 
-static apr_status_t shm_cleanup_owner(void *m_)
+static fspr_status_t shm_cleanup_owner(void *m_)
 {
-    apr_shm_t *m = (apr_shm_t *)m_;
+    fspr_shm_t *m = (fspr_shm_t *)m_;
 
     /* anonymous shared memory */
     if (m->filename == NULL) {
@@ -49,7 +49,7 @@ static apr_status_t shm_cleanup_owner(void *m_)
         if (munmap(m->base, m->realsize) == -1) {
             return errno;
         }
-        return apr_file_remove(m->filename, m->pool);
+        return fspr_file_remove(m->filename, m->pool);
 #endif
 #if APR_USE_SHMEM_MMAP_SHM
         if (munmap(m->base, m->realsize) == -1) {
@@ -70,55 +70,55 @@ static apr_status_t shm_cleanup_owner(void *m_)
         if (shmdt(m->base) == -1) {
             return errno;
         }
-        return apr_file_remove(m->filename, m->pool);
+        return fspr_file_remove(m->filename, m->pool);
 #endif
     }
 
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
-                                         apr_size_t reqsize, 
+APR_DECLARE(fspr_status_t) fspr_shm_create(fspr_shm_t **m,
+                                         fspr_size_t reqsize, 
                                          const char *filename,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
-    apr_shm_t *new_m;
-    apr_status_t status;
+    fspr_shm_t *new_m;
+    fspr_status_t status;
 #if APR_USE_SHMEM_SHMGET || APR_USE_SHMEM_SHMGET_ANON
     struct shmid_ds shmbuf;
-    apr_uid_t uid;
-    apr_gid_t gid;
+    fspr_uid_t uid;
+    fspr_gid_t gid;
 #endif
 #if APR_USE_SHMEM_MMAP_TMP || APR_USE_SHMEM_MMAP_SHM || \
     APR_USE_SHMEM_MMAP_ZERO
     int tmpfd;
 #endif
 #if APR_USE_SHMEM_SHMGET
-    apr_size_t nbytes;
+    fspr_size_t nbytes;
     key_t shmkey;
 #endif
 #if APR_USE_SHMEM_MMAP_ZERO || APR_USE_SHMEM_SHMGET || \
     APR_USE_SHMEM_MMAP_TMP || APR_USE_SHMEM_MMAP_SHM
-    apr_file_t *file;   /* file where metadata is stored */
+    fspr_file_t *file;   /* file where metadata is stored */
 #endif
 
     /* Check if they want anonymous or name-based shared memory */
     if (filename == NULL) {
 #if APR_USE_SHMEM_MMAP_ZERO || APR_USE_SHMEM_MMAP_ANON
-        new_m = apr_palloc(pool, sizeof(apr_shm_t));
+        new_m = fspr_palloc(pool, sizeof(fspr_shm_t));
         new_m->pool = pool;
         new_m->reqsize = reqsize;
         new_m->realsize = reqsize + 
-            APR_ALIGN_DEFAULT(sizeof(apr_size_t)); /* room for metadata */
+            APR_ALIGN_DEFAULT(sizeof(fspr_size_t)); /* room for metadata */
         new_m->filename = NULL;
     
 #if APR_USE_SHMEM_MMAP_ZERO
-        status = apr_file_open(&file, "/dev/zero", APR_READ | APR_WRITE, 
+        status = fspr_file_open(&file, "/dev/zero", APR_READ | APR_WRITE, 
                                APR_OS_DEFAULT, pool);
         if (status != APR_SUCCESS) {
             return status;
         }
-        status = apr_os_file_get(&tmpfd, file);
+        status = fspr_os_file_get(&tmpfd, file);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -129,18 +129,18 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
             return errno;
         }
 
-        status = apr_file_close(file);
+        status = fspr_file_close(file);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         /* store the real size in the metadata */
-        *(apr_size_t*)(new_m->base) = new_m->realsize;
+        *(fspr_size_t*)(new_m->base) = new_m->realsize;
         /* metadata isn't usable */
-        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(apr_size_t));
+        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(fspr_size_t));
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
+                                  fspr_pool_cleanup_null);
         *m = new_m;
         return APR_SUCCESS;
 
@@ -152,12 +152,12 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         }
 
         /* store the real size in the metadata */
-        *(apr_size_t*)(new_m->base) = new_m->realsize;
+        *(fspr_size_t*)(new_m->base) = new_m->realsize;
         /* metadata isn't usable */
-        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(apr_size_t));
+        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(fspr_size_t));
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
+                                  fspr_pool_cleanup_null);
         *m = new_m;
         return APR_SUCCESS;
 
@@ -165,7 +165,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
 #endif /* APR_USE_SHMEM_MMAP_ZERO || APR_USE_SHMEM_MMAP_ANON */
 #if APR_USE_SHMEM_SHMGET_ANON
 
-        new_m = apr_palloc(pool, sizeof(apr_shm_t));
+        new_m = fspr_palloc(pool, sizeof(fspr_shm_t));
         new_m->pool = pool;
         new_m->reqsize = reqsize;
         new_m->realsize = reqsize;
@@ -184,7 +184,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         if (shmctl(new_m->shmid, IPC_STAT, &shmbuf) == -1) {
             return errno;
         }
-        apr_uid_current(&uid, &gid, pool);
+        fspr_uid_current(&uid, &gid, pool);
         shmbuf.shm_perm.uid = uid;
         shmbuf.shm_perm.gid = gid;
         if (shmctl(new_m->shmid, IPC_SET, &shmbuf) == -1) {
@@ -199,8 +199,8 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
             return errno;
         }
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
+                                  fspr_pool_cleanup_null);
         *m = new_m;
         return APR_SUCCESS;
 #endif /* APR_USE_SHMEM_SHMGET_ANON */
@@ -210,38 +210,38 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
 
     /* Name-based shared memory */
     else {
-        new_m = apr_palloc(pool, sizeof(apr_shm_t));
+        new_m = fspr_palloc(pool, sizeof(fspr_shm_t));
         new_m->pool = pool;
         new_m->reqsize = reqsize;
-        new_m->filename = apr_pstrdup(pool, filename);
+        new_m->filename = fspr_pstrdup(pool, filename);
 
 #if APR_USE_SHMEM_MMAP_TMP || APR_USE_SHMEM_MMAP_SHM
         new_m->realsize = reqsize + 
-            APR_ALIGN_DEFAULT(sizeof(apr_size_t)); /* room for metadata */
+            APR_ALIGN_DEFAULT(sizeof(fspr_size_t)); /* room for metadata */
         /* FIXME: Ignore error for now. *
-         * status = apr_file_remove(file, pool);*/
+         * status = fspr_file_remove(file, pool);*/
         status = APR_SUCCESS;
     
 #if APR_USE_SHMEM_MMAP_TMP
         /* FIXME: Is APR_OS_DEFAULT sufficient? */
-        status = apr_file_open(&file, filename, 
+        status = fspr_file_open(&file, filename, 
                                APR_READ | APR_WRITE | APR_CREATE | APR_EXCL,
                                APR_OS_DEFAULT, pool);
         if (status != APR_SUCCESS) {
             return status;
         }
 
-        status = apr_os_file_get(&tmpfd, file);
+        status = fspr_os_file_get(&tmpfd, file);
         if (status != APR_SUCCESS) {
-            apr_file_close(file); /* ignore errors, we're failing */
-            apr_file_remove(new_m->filename, new_m->pool);
+            fspr_file_close(file); /* ignore errors, we're failing */
+            fspr_file_remove(new_m->filename, new_m->pool);
             return status;
         }
 
-        status = apr_file_trunc(file, new_m->realsize);
+        status = fspr_file_trunc(file, new_m->realsize);
         if (status != APR_SUCCESS) {
-            apr_file_close(file); /* ignore errors, we're failing */
-            apr_file_remove(new_m->filename, new_m->pool);
+            fspr_file_close(file); /* ignore errors, we're failing */
+            fspr_file_remove(new_m->filename, new_m->pool);
             return status;
         }
 
@@ -249,7 +249,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
                            MAP_SHARED, tmpfd, 0);
         /* FIXME: check for errors */
 
-        status = apr_file_close(file);
+        status = fspr_file_close(file);
         if (status != APR_SUCCESS) {
             return status;
         }
@@ -260,14 +260,14 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
             return errno;
         }
 
-        status = apr_os_file_put(&file, &tmpfd,
+        status = fspr_os_file_put(&file, &tmpfd,
                                  APR_READ | APR_WRITE | APR_CREATE | APR_EXCL,
                                  pool); 
         if (status != APR_SUCCESS) {
             return status;
         }
 
-        status = apr_file_trunc(file, new_m->realsize);
+        status = fspr_file_trunc(file, new_m->realsize);
         if (status != APR_SUCCESS) {
             shm_unlink(filename); /* we're failing, remove the object */
             return status;
@@ -277,19 +277,19 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
 
         /* FIXME: check for errors */
 
-        status = apr_file_close(file);
+        status = fspr_file_close(file);
         if (status != APR_SUCCESS) {
             return status;
         }
 #endif /* APR_USE_SHMEM_MMAP_SHM */
 
         /* store the real size in the metadata */
-        *(apr_size_t*)(new_m->base) = new_m->realsize;
+        *(fspr_size_t*)(new_m->base) = new_m->realsize;
         /* metadata isn't usable */
-        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(apr_size_t));
+        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(fspr_size_t));
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
+                                  fspr_pool_cleanup_null);
         *m = new_m;
         return APR_SUCCESS;
 
@@ -299,7 +299,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         new_m->realsize = reqsize;
 
         /* FIXME: APR_OS_DEFAULT is too permissive, switch to 600 I think. */
-        status = apr_file_open(&file, filename, 
+        status = fspr_file_open(&file, filename, 
                                APR_WRITE | APR_CREATE | APR_EXCL,
                                APR_OS_DEFAULT, pool);
         if (status != APR_SUCCESS) {
@@ -326,7 +326,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         if (shmctl(new_m->shmid, IPC_STAT, &shmbuf) == -1) {
             return errno;
         }
-        apr_uid_current(&uid, &gid, pool);
+        fspr_uid_current(&uid, &gid, pool);
         shmbuf.shm_perm.uid = uid;
         shmbuf.shm_perm.gid = gid;
         if (shmctl(new_m->shmid, IPC_SET, &shmbuf) == -1) {
@@ -334,18 +334,18 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
         }
 
         nbytes = sizeof(reqsize);
-        status = apr_file_write(file, (const void *)&reqsize,
+        status = fspr_file_write(file, (const void *)&reqsize,
                                 &nbytes);
         if (status != APR_SUCCESS) {
             return status;
         }
-        status = apr_file_close(file);
+        status = fspr_file_close(file);
         if (status != APR_SUCCESS) {
             return status;
         }
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_owner,
+                                  fspr_pool_cleanup_null);
         *m = new_m; 
         return APR_SUCCESS;
 
@@ -355,18 +355,18 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_shm_remove(const char *filename,
+                                         fspr_pool_t *pool)
 {
 #if APR_USE_SHMEM_SHMGET
-    apr_status_t status;
-    apr_file_t *file;  
+    fspr_status_t status;
+    fspr_file_t *file;  
     key_t shmkey;
     int shmid;
 #endif
 
 #if APR_USE_SHMEM_MMAP_TMP
-    return apr_file_remove(filename, pool);
+    return fspr_file_remove(filename, pool);
 #endif
 #if APR_USE_SHMEM_MMAP_SHM
     if (shm_unlink(filename) == -1) {
@@ -376,7 +376,7 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
 #endif
 #if APR_USE_SHMEM_SHMGET
     /* Presume that the file already exists; just open for writing */    
-    status = apr_file_open(&file, filename, APR_WRITE,
+    status = fspr_file_open(&file, filename, APR_WRITE,
                            APR_OS_DEFAULT, pool);
     if (status) {
         return status;
@@ -389,7 +389,7 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
         goto shm_remove_failed;
     }
 
-    apr_file_close(file);
+    fspr_file_close(file);
 
     if ((shmid = shmget(shmkey, 0, SHM_R | SHM_W)) < 0) {
         goto shm_remove_failed;
@@ -401,12 +401,12 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
     if (shmctl(shmid, IPC_RMID, NULL) == -1) {
         goto shm_remove_failed;
     }
-    return apr_file_remove(filename, pool);
+    return fspr_file_remove(filename, pool);
 
 shm_remove_failed:
     status = errno;
     /* ensure the file has been removed anyway. */
-    apr_file_remove(filename, pool);
+    fspr_file_remove(filename, pool);
     return status;
 #endif
 
@@ -414,14 +414,14 @@ shm_remove_failed:
     return APR_ENOTIMPL;
 } 
 
-APR_DECLARE(apr_status_t) apr_shm_destroy(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_destroy(fspr_shm_t *m)
 {
-    return apr_pool_cleanup_run(m->pool, m, shm_cleanup_owner);
+    return fspr_pool_cleanup_run(m->pool, m, shm_cleanup_owner);
 }
 
-static apr_status_t shm_cleanup_attach(void *m_)
+static fspr_status_t shm_cleanup_attach(void *m_)
 {
-    apr_shm_t *m = (apr_shm_t *)m_;
+    fspr_shm_t *m = (fspr_shm_t *)m_;
 
     if (m->filename == NULL) {
         /* It doesn't make sense to detach from an anonymous memory segment. */
@@ -445,9 +445,9 @@ static apr_status_t shm_cleanup_attach(void *m_)
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
+APR_DECLARE(fspr_status_t) fspr_shm_attach(fspr_shm_t **m,
                                          const char *filename,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
     if (filename == NULL) {
         /* It doesn't make sense to attach to a segment if you don't know
@@ -456,88 +456,88 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
     }
     else {
 #if APR_USE_SHMEM_MMAP_TMP || APR_USE_SHMEM_MMAP_SHM
-        apr_shm_t *new_m;
-        apr_status_t status;
+        fspr_shm_t *new_m;
+        fspr_status_t status;
         int tmpfd;
-        apr_file_t *file;   /* file where metadata is stored */
-        apr_size_t nbytes;
+        fspr_file_t *file;   /* file where metadata is stored */
+        fspr_size_t nbytes;
 
-        new_m = apr_palloc(pool, sizeof(apr_shm_t));
+        new_m = fspr_palloc(pool, sizeof(fspr_shm_t));
         new_m->pool = pool;
-        new_m->filename = apr_pstrdup(pool, filename);
+        new_m->filename = fspr_pstrdup(pool, filename);
 
-        status = apr_file_open(&file, filename, 
+        status = fspr_file_open(&file, filename, 
                                APR_READ | APR_WRITE,
                                APR_OS_DEFAULT, pool);
         if (status != APR_SUCCESS) {
             return status;
         }
-        status = apr_os_file_get(&tmpfd, file);
+        status = fspr_os_file_get(&tmpfd, file);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         nbytes = sizeof(new_m->realsize);
-        status = apr_file_read(file, (void *)&(new_m->realsize),
+        status = fspr_file_read(file, (void *)&(new_m->realsize),
                                &nbytes);
         if (status != APR_SUCCESS) {
             return status;
         }
 
-        status = apr_os_file_get(&tmpfd, file);
+        status = fspr_os_file_get(&tmpfd, file);
         if (status != APR_SUCCESS) {
-            apr_file_close(file); /* ignore errors, we're failing */
-            apr_file_remove(new_m->filename, new_m->pool);
+            fspr_file_close(file); /* ignore errors, we're failing */
+            fspr_file_remove(new_m->filename, new_m->pool);
             return status;
         }
 
-        new_m->reqsize = new_m->realsize - sizeof(apr_size_t);
+        new_m->reqsize = new_m->realsize - sizeof(fspr_size_t);
 
         new_m->base = mmap(NULL, new_m->realsize, PROT_READ | PROT_WRITE,
                            MAP_SHARED, tmpfd, 0);
         /* FIXME: check for errors */
         
-        status = apr_file_close(file);
+        status = fspr_file_close(file);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         /* metadata isn't part of the usable segment */
-        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(apr_size_t));
+        new_m->usable = (char *)new_m->base + APR_ALIGN_DEFAULT(sizeof(fspr_size_t));
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_attach,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_attach,
+                                  fspr_pool_cleanup_null);
         *m = new_m;
         return APR_SUCCESS;
 
 #endif /* APR_USE_SHMEM_MMAP_TMP || APR_USE_SHMEM_MMAP_SHM */
 #if APR_USE_SHMEM_SHMGET
-        apr_shm_t *new_m;
-        apr_status_t status;
-        apr_file_t *file;   /* file where metadata is stored */
-        apr_size_t nbytes;
+        fspr_shm_t *new_m;
+        fspr_status_t status;
+        fspr_file_t *file;   /* file where metadata is stored */
+        fspr_size_t nbytes;
         key_t shmkey;
 
-        new_m = apr_palloc(pool, sizeof(apr_shm_t));
+        new_m = fspr_palloc(pool, sizeof(fspr_shm_t));
 
-        status = apr_file_open(&file, filename, 
+        status = fspr_file_open(&file, filename, 
                                APR_READ, APR_OS_DEFAULT, pool);
         if (status != APR_SUCCESS) {
             return status;
         }
 
         nbytes = sizeof(new_m->reqsize);
-        status = apr_file_read(file, (void *)&(new_m->reqsize),
+        status = fspr_file_read(file, (void *)&(new_m->reqsize),
                                &nbytes);
         if (status != APR_SUCCESS) {
             return status;
         }
-        status = apr_file_close(file);
+        status = fspr_file_close(file);
         if (status != APR_SUCCESS) {
             return status;
         }
 
-        new_m->filename = apr_pstrdup(pool, filename);
+        new_m->filename = fspr_pstrdup(pool, filename);
         new_m->pool = pool;
         shmkey = ftok(filename, 1);
         if (shmkey == (key_t)-1) {
@@ -552,8 +552,8 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
         new_m->usable = new_m->base;
         new_m->realsize = new_m->reqsize;
 
-        apr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_attach,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(new_m->pool, new_m, shm_cleanup_attach,
+                                  fspr_pool_cleanup_null);
         *m = new_m;
         return APR_SUCCESS;
 
@@ -563,34 +563,34 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_detach(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_detach(fspr_shm_t *m)
 {
-    apr_status_t rv = shm_cleanup_attach(m);
-    apr_pool_cleanup_kill(m->pool, m, shm_cleanup_attach);
+    fspr_status_t rv = shm_cleanup_attach(m);
+    fspr_pool_cleanup_kill(m->pool, m, shm_cleanup_attach);
     return rv;
 }
 
-APR_DECLARE(void *) apr_shm_baseaddr_get(const apr_shm_t *m)
+APR_DECLARE(void *) fspr_shm_baseaddr_get(const fspr_shm_t *m)
 {
     return m->usable;
 }
 
-APR_DECLARE(apr_size_t) apr_shm_size_get(const apr_shm_t *m)
+APR_DECLARE(fspr_size_t) fspr_shm_size_get(const fspr_shm_t *m)
 {
     return m->reqsize;
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(shm)
 
-APR_DECLARE(apr_status_t) apr_os_shm_get(apr_os_shm_t *osshm,
-                                         apr_shm_t *shm)
+APR_DECLARE(fspr_status_t) fspr_os_shm_get(fspr_os_shm_t *osshm,
+                                         fspr_shm_t *shm)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_os_shm_put(apr_shm_t **m,
-                                         apr_os_shm_t *osshm,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_shm_put(fspr_shm_t **m,
+                                         fspr_os_shm_t *osshm,
+                                         fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }    

@@ -24,15 +24,26 @@ The main index for documentation is available at:
 
   * https://freeswitch.org/confluence/
 
+
 ### Release notes:
 
   * https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes
 
-### Installation
+### Install from packages
 
-Step by step tutorials to install FreeSWITCH from packages or source code are available at:
+Step by step tutorials to install FreeSWITCH from packages:
 
-  * [Debian 10 Buster](https://freeswitch.org/confluence/display/FREESWITCH/Debian+10+Buster) [<b>Recommended</b>]
+  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian) [<b>Recommended</b>]
+  * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
+  * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
+
+### Build from source
+
+Example Dockerfiles to build FreeSWITCH and dependencies from source:
+  * https://github.com/signalwire/freeswitch/tree/dockerfile/docker/examples
+
+Step by step tutorials to build FreeSWITCH with provided dependency packages:
+  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian#Debian-buildfromsource) [<b>Recommended</b>]
   * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
   * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
 

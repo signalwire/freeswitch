@@ -160,6 +160,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 	switch_channel_set_cap(tech_pvt->channel, CC_RTP_RTT);
 	switch_channel_set_cap(tech_pvt->channel, CC_MSRP);
+	switch_channel_set_cap(tech_pvt->channel, CC_MUTE_VIA_MEDIA_STREAM);
 	switch_channel_set_cap(tech_pvt->channel, CC_QUEUEABLE_DTMF_DELAY);
 
 
@@ -907,7 +908,6 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	const char *exclude_regex = NULL;
 	switch_regex_t *re = NULL;
 	int ovector[30] = {0};
-	int proceed;
 
 	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
 	SWITCH_STANDARD_STREAM(stream);
@@ -921,7 +921,7 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ( !exclude_regex || !(/*proceed*/ switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 					const char *hname = name + strlen(prefix);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
 					switch_regex_safe_free(re);
@@ -1064,6 +1064,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	uint8_t is_t38 = 0;
 	const char *hold_char = "*";
 	const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+#ifdef NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT
+	const char *sip_call_tls_orq_connect_timeout_str = switch_channel_get_variable(tech_pvt->channel, "sip_call_tls_orq_connect_timeout");
+	uint32_t sip_call_tls_orq_connect_timeout = (sip_call_tls_orq_connect_timeout_str) ? atoi(sip_call_tls_orq_connect_timeout_str) : 0;
+#endif
 	const char *stir_shaken_attest = NULL;
 	char *identity_to_free = NULL;
 	const char *date = NULL;
@@ -1202,10 +1206,15 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (!zstr(invite_domain)) {
 				sipip = invite_domain;
 			}
-
-			format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
-
-			tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", sipip);
+			
+			if (zstr(tech_pvt->caller_profile->aniii)){
+				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s]>" : "\"%s\" <sip:%s%s%s>";
+				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", sipip);
+			} else {
+				format = strchr(sipip, ':') ? "\"%s\" <sip:%s%s[%s];isup-oli=%s>" : "\"%s\" <sip:%s%s%s;isup-oli=%s>";
+				tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, format, cid_name, use_cid_num, !zstr(cid_num) ? "@" : "", 
+						sipip, tech_pvt->caller_profile->aniii);
+			}
 		}
 
 		if (from_var) {
@@ -1312,7 +1321,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params, invite_tel_params);
-		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL);
+		if (switch_channel_var_true(tech_pvt->channel, "sip_caller_id_name_in_contact")) {
+			invite_contact = switch_core_session_sprintf(session, "\"%s\" %s", tech_pvt->caller_profile->caller_id_name, sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL));
+		} else {
+			invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL);
+		}
 		from_str = sofia_overcome_sip_uri_weakness(session, invite_from_uri ? invite_from_uri : use_from_str, 0, SWITCH_TRUE, invite_from_params, NULL);
 		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params, NULL);
 
@@ -1394,6 +1407,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 										NUTAG_URL(url_str),
 										TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
 										TAG_IF(!zstr(record_route), SIPTAG_HEADER_STR(record_route)),
+#ifdef NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT
+										/* Per call tls outgoing request connect timeout */
+										TAG_IF(sip_call_tls_orq_connect_timeout_str, NUTAG_CALL_TLS_ORQ_CONNECT_TIMEOUT(sip_call_tls_orq_connect_timeout)),
+#endif
 										SIPTAG_TO_STR(to_str), SIPTAG_FROM_STR(from_str), SIPTAG_CONTACT_STR(invite_contact), TAG_END()))) {
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT,
@@ -1802,8 +1819,10 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 	case 403:
 	case 407:
 	case 603:
-	case 607:
+	case 608:
 		return SWITCH_CAUSE_CALL_REJECTED;
+	case 607:
+		return SWITCH_CAUSE_UNWANTED;
 	case 404:
 		return SWITCH_CAUSE_UNALLOCATED_NUMBER;
 	case 485:
@@ -2522,7 +2541,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   expires         BIGINT,"
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
-		"   last_nc         INTEGER\n"
+		"   last_nc         INTEGER,\n"
+		"   algorithm       INTEGER DEFAULT 1 NOT NULL\n"
 		");\n";
 
 	/* should we move this glue to sofia_sla or keep it here where all db init happens? XXX MTK */
@@ -2689,7 +2709,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_presence", pres_sql);
 
 	free(test_sql);
-	test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0", mod_sofia_globals.hostname);
+	test_sql = switch_mprintf("delete from sip_authentication where hostname='%q' or last_nc >= 0 or algorithm >= 0", mod_sofia_globals.hostname);
 
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_authentication", auth_sql);
 
@@ -3273,6 +3293,44 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 }
 
 
+char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix)
+{
+	char *route = NULL;
+	int count = 0;
+	char route_buf[ROUTE_ENCODED_HEADER_MAX_CHARS] = {0};
+	sip_route_t *rrp;
+	switch_stream_handle_t rr_stream = { 0 };
+	SWITCH_STANDARD_STREAM(rr_stream);
+
+	if (add_fs_path_prefix) {
+		rr_stream.write_function(&rr_stream, ";fs_path=");
+	}
+
+	for(rrp = rt; rrp; rrp = rrp->r_next) {
+		char *sep = count == 0 ? "" : "%2C";
+		char *rr = sip_header_as_string(nua_handle_home(nh), (void *) rrp);
+		switch_url_encode(rr, route_buf, ROUTE_ENCODED_HEADER_MAX_CHARS);
+		rr_stream.write_function(&rr_stream, "%s%s", sep, route_buf);
+		su_free(nua_handle_home(nh), rr);
+
+		if (count >= ROUTE_MAX_HEADERS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ROUTE_MAX_HEADERS of %d reached\n", ROUTE_MAX_HEADERS);
+			break;
+		}
+		count++;
+	}
+
+	if (!zstr((char *) rr_stream.data)) {
+		route = rr_stream.data;
+	} else {
+		switch_safe_free(rr_stream.data);
+	}
+
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Route headers [%s]\n", count, route ? route : "");
+	return route;
+}
+
+
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
@@ -3367,19 +3425,16 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 	}
 
 	if (sip->sip_record_route) {
-		char *full_contact = sip_header_as_string(nua_handle_get_home(nh), (void *) contact);
-		char *route = sofia_glue_strip_uri(sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_record_route));
-		char *full_contact_dup;
-		char *route_encoded;
-		int route_encoded_len;
-		full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
-		route_encoded_len = (int)(strlen(route) * 3) + 1;
-		switch_zmalloc(route_encoded, route_encoded_len);
-		switch_url_encode(route, route_encoded, route_encoded_len);
-		contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, route_encoded);
-		free(route);
-		free(full_contact_dup);
-		free(route_encoded);
+		char *fs_path_str = sofia_glue_get_encoded_fs_path(nh, sip->sip_record_route, SWITCH_FALSE);
+		char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) contact);
+		char *full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
+		if (fs_path_str && full_contact_dup) {
+			contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, fs_path_str);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not get fs_path str.\n");
+		}
+		switch_safe_free(fs_path_str);
+		switch_safe_free(full_contact_dup);
 	}
 	else if (np->is_nat && np->fs_path) {
 		char *full_contact = sip_header_as_string(nua_handle_get_home(nh), (void *) contact);
@@ -3454,17 +3509,15 @@ char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool)
 {
 	char *s, *p;
 
+	switch_assert(pool != NULL);
+
 	if ((p = strchr(str, '@'))) {
 		p++;
 	} else {
 		return NULL;
 	}
 
-	if (pool) {
-		s = switch_core_strdup(pool, p);
-	} else {
-		s = strdup(p);
-	}
+	s = switch_core_strdup(pool, p);
 
 	for (p = s; p && *p; p++) {
 		if ((*p == ';') || (*p == '>')) {
@@ -3537,6 +3590,42 @@ char *sofia_glue_get_profile_url(sofia_profile_t *profile, char *remote_ip, cons
 	if (!url) url = profile->url;
 
 	return url;
+}
+
+/* gets the IP or HOST from a sip uri or from x.x.x.x:port format */
+char *sofia_glue_get_host_from_cfg(const char *uri, switch_memory_pool_t *pool)
+{
+	char *host = NULL;
+	const char *s;
+	char *p = NULL;
+
+	if (zstr(uri)) {
+		return NULL;
+	}
+
+	if ((s = switch_stristr("sip:", uri)) && s == uri) {
+		s += 4;
+	} else if ((s = switch_stristr("sips:", uri)) && s == uri) {
+		s += 5;
+	}
+
+	if (!s) {
+		s = uri;
+	}
+
+	host = switch_core_strdup(pool, s);
+
+	if ((p = strchr(host, ']'))) {
+		if (*(p + 1) == ':') {
+			*(p + 1) = '\0';
+		}
+	} else {
+		if ((p = strrchr(host, ':'))) {
+			*p = '\0';
+		}
+	}
+
+	return host;
 }
 
 /* For Emacs:

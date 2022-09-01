@@ -3820,8 +3820,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				cc_queue_t *queue = NULL;
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
+				if (load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL)) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -3845,9 +3844,8 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				cc_queue_t *queue = NULL;
 				destroy_queue(queue_name);
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
+				if (load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL)) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");

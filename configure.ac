@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.7-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.8-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [7-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -598,7 +598,7 @@ AC_ARG_ENABLE(srtp,
 AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
 
 have_openal=no
-AC_CHECK_LIB(openal, alMidiGainSOFT, [have_openal="yes"])
+AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
 AC_ARG_ENABLE(zrtp,
@@ -665,12 +665,13 @@ AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 case $host in
      *-darwin*)
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/libpq/lib/pkgconfig
+	path_push_unique PKG_CONFIG_PATH /usr/local/opt/openssl/lib/pkgconfig
      ;;
 esac
 
 if test "$PKG_CONFIG" = "no" \
 	|| test x"$enable_core_pgsql_pkgconfig" = x"no" \
-	|| ! pkg-config libpq; then
+	|| ! pkg-config --modversion libpq > /dev/null; then
 	if test "$PG_CONFIG" != "no"; then
 		AC_MSG_CHECKING([for PostgreSQL libraries via pg_config])
 		POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
@@ -682,7 +683,6 @@ if test "$PKG_CONFIG" = "no" \
 		POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $3 }'`
 	fi
 else
-
 	AC_MSG_CHECKING([for PostgreSQL libraries via pkg_config])
 	POSTGRESQL_CFLAGS="`$PKG_CONFIG --cflags libpq`"
 	POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
@@ -725,7 +725,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.4],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.6],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
@@ -844,8 +844,6 @@ PKG_CHECK_MODULES([STIRSHAKEN], [stirshaken],[
 
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
-AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
-AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
@@ -883,7 +881,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h sys/time.h])
 
 # Solaris 11 privilege management
 AS_CASE([$host],
@@ -1090,8 +1088,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp 
-#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
+#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1408,7 +1406,9 @@ PKG_CHECK_MODULES([VLC], [libvlc >= 2.1.0],[
 
 PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
+  PKG_CHECK_MODULES([OPENCV], [opencv4 >= 2.4.5],[
+    AM_CONDITIONAL([HAVE_OPENCV],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])])
 
 PKG_CHECK_MODULES([OPUSFILE_DECODE], [opusfile >= 0.5],[
    AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[true])],[
@@ -1529,11 +1529,25 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
 
 PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])])
+    if module_enabled mod_verto; then
+      AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
+    else
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install libks or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+      fi
+    fi
+])
 
 PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])])
+    if module_enabled mod_signalwire; then
+      AC_MSG_ERROR([You need to either install signalwire-client-c or disable mod_signalwire in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+    fi
+])
 
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
@@ -1575,6 +1589,17 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
       ])])])
+
+AC_ARG_ENABLE(systemd,
+  [AS_HELP_STRING([--enable-systemd], [Compile with systemd notify support])])
+
+AS_IF([test "x$enable_systemd" = "xyes"],[
+  PKG_CHECK_MODULES([SYSTEMD], [libsystemd >= 219], [
+    AC_DEFINE([HAVE_SYSTEMD], [1], [Define to 1 if systemd is available])])
+])
+
+AC_SUBST(SYSTEMD_LIBS)
+
 
 dnl ---------------------------------------------------------------------------
 dnl - OpenLDAP SDK
@@ -1702,7 +1727,7 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
 fi
 
 #
-# Python checks for mod_python
+# Python checks for mod_python (scroll down to see python3 checks for mod_python3)
 #
 AC_ARG_WITH(
 	[python],
@@ -1823,6 +1848,143 @@ else
 fi
 
 #
+# Python3 checks for mod_python3
+#
+AC_ARG_WITH(
+	[python3],
+	[AS_HELP_STRING([--with-python3], [Use system provided version of python3 (default: try)])],
+	[with_python3="$withval"],
+	[with_python3="try"]
+)
+
+if test "$with_python3" != "no"
+then
+	save_CFLAGS="$CFLAGS"
+	save_LIBS="$LIBS"
+
+	if test "$with_python3" != "yes" -a "$with_python3" != "try" ; then
+		AC_MSG_CHECKING([for python3])
+		if test ! -x "$with_python3" ; then
+			AC_MSG_ERROR([Specified python3 does not exist or is not executable: $with_python3])
+		fi
+		AC_MSG_RESULT([$with_python3])
+		AC_SUBST([PYTHON3], ["$with_python3"])
+	else
+		AC_PATH_PROG([PYTHON3], ["python3"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+	fi
+
+	if test "$PYTHON3" != "no" ; then
+		AC_MSG_CHECKING([python3 version])
+		PYTHON3_VER="`$PYTHON3 -V 2>&1 | cut -d' ' -f2`"
+
+		if test -z "$PYTHON3_VER" ; then
+			AC_MSG_ERROR([Unable to detect python3 version])
+		fi
+		AC_MSG_RESULT([$PYTHON3_VER])
+
+		AC_MSG_CHECKING([for python3 distutils])
+		python3_result="`$PYTHON3 -c 'import distutils;' 2>&1`"
+		if test -z "$python3_result" ; then
+			python3_has_distutils="yes"
+		else
+			python3_has_distutils="no"
+		fi
+		AC_MSG_RESULT([$python3_has_distutils])
+
+		if test "$python3_has_distutils" != "no" ; then
+			AC_MSG_CHECKING([location of python3 site-packages])
+
+			PYTHON3_SITE_DIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
+
+			if test -z "$PYTHON3_SITE_DIR" ; then
+				AC_MSG_ERROR([Unable to detect python3 site-packages path])
+			elif test ! -d "$PYTHON3_SITE_DIR" ; then
+				AC_MSG_ERROR([Path $PYTHON3_SITE_DIR returned by python3 does not exist!])
+			fi
+			AC_MSG_RESULT([$PYTHON3_SITE_DIR])
+			AC_SUBST([PYTHON3_SITE_DIR], [$PYTHON3_SITE_DIR])
+
+			#
+			# python3 distutils found, get settings from python3 directly
+			#
+			PYTHON3_CFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
+			PYTHON3_LDFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]); print(\" \".join(libs));'`"
+			PYTHON3_LIB="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); print(\"python\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]);'`"
+			PYTHON3_LIBDIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
+
+			# handle python3 being installed into /usr/local
+			AC_MSG_CHECKING([python3 libdir])
+			if test -z "`echo $PYTHON3_LIBDIR | grep "/usr/lib"`" ; then
+				PYTHON3_LDFLAGS="-L$PYTHON3_LIBDIR $PYTHON3_LDFLAGS"
+				LIBS="-L$PYTHON3_LIBDIR $LIBS"
+			fi
+			AC_MSG_RESULT([$PYTHON3_LIBDIR])
+
+			# check libpython3
+			AC_CHECK_LIB([$PYTHON3_LIB], [main], [has_libpython3="yes"], [has_libpython3="no"])
+
+			if test "$has_libpython3" = "no" ; then
+				AS_IF([test "$with_python3" = "try"],
+				 	[AC_MSG_WARN([$PYTHON3_LIB is unusable])],
+					[AC_MSG_ERROR([$PYTHON3_LIB is unusable])]
+				)
+			fi
+
+			# check whether system libpython3 is usable and has threads support
+			CFLAGS="$PYTHON3_CFLAGS"
+			LIBS="$PYTHON3_LDFLAGS"
+			AC_CHECK_FUNC([PyThread_init_thread], [python3_has_threads="yes"], [python3_has_threads="no"])
+
+			if test "$python3_has_threads" = "no"; then
+				AS_IF([test "$with_python3" = "try"],
+					[AC_MSG_WARN([Your python3 lacks threads support, can not build mod_python3])],
+					[AC_MSG_ERROR([Your python3 lacks threads support, can not build mod_python3])]
+				)
+			else
+				AC_MSG_NOTICE([Your python3 seems OK, do not forget to enable mod_python3 in modules.conf])
+				AC_SUBST([PYTHON3_CFLAGS],  [$PYTHON3_CFLAGS])
+				AC_SUBST([PYTHON3_LDFLAGS], [$PYTHON3_LDFLAGS])
+			fi
+		else
+			AS_IF([test "$with_python3" = "try"],
+				[AC_MSG_WARN([Could not find or use python3 distutils module: $python3_result])],
+				[AC_MSG_ERROR([Could not find or use python3 distutils module: $python3_result])]
+			)
+		fi
+
+		LIBS="$save_LIBS"
+		CFLAGS="$save_CFLAGS"
+
+		unset python3_has_threads
+		unset python3_has_distutils
+		unset python3_result
+	else
+		AS_IF([test "$with_python3" = "try"],
+			[AC_MSG_WARN([Could not find python3, mod_python3 will not build, use --with-python3 to specify the location])],
+			[AC_MSG_ERROR([Could not find python3, use --with-python3 to specify the location])]
+		)
+	fi
+else
+	AC_MSG_WARN([python3 support disabled, building mod_python3 will fail!])
+fi
+
+# pcap lib for unit-testing
+AC_MSG_CHECKING(libpcap)
+AC_CHECK_PROG(HAVE_PCAP_CONFIG,pcap-config,[true],[false])
+if test x"$HAVE_PCAP_CONFIG" = x"true"; then
+   AC_MSG_RESULT(yes)
+   PCAP_CONFIG=pcap-config
+   PCAP_LIBS="`$PCAP_CONFIG --libs`"
+   PCAP_CFLAGS="`$PCAP_CONFIG --cflags`"
+   AM_CONDITIONAL([HAVE_PCAP], [true])
+else
+   AC_MSG_RESULT(no)
+   AM_CONDITIONAL([HAVE_PCAP], [false])
+fi
+AC_SUBST([PCAP_CFLAGS])
+AC_SUBST([PCAP_LIBS])
+
+#
 # SNMP checks for mod_snmp
 #
 AC_PATH_PROG([NET_SNMP_CONFIG], [net-snmp-config], [no])
@@ -1850,6 +2012,55 @@ if test "${enable_address_sanitizer}" = "yes"; then
   APR_ADDTO(CFLAGS, -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong)
   APR_ADDTO(CXXFLAGS, -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong)
   APR_ADDTO(LDFLAGS, -fsanitize=address)
+fi
+
+#  Enable HEAP profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(heap_profiler,
+  [AC_HELP_STRING([--enable-heap-profiler],[build with google heap profiler])],
+  [enable_heap_profiler="$enable_heap_profiler"],
+  [enable_heap_profiler="no"])
+
+#  Enable CPU profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(cpu_profiler,
+  [AC_HELP_STRING([--enable-cpu-profiler],[build with google cpu profiler])],
+  [enable_cpu_profiler="$enable_cpu_profiler"],
+  [enable_cpu_profiler="no"])
+
+PKG_CHECK_MODULES([TCMALLOC], [libtcmalloc], [have_tcmalloc=yes], [have_tcmalloc=no])
+
+if test "${enable_heap_profiler}" = "yes" || test "${enable_cpu_profiler}" = "yes"; then
+  if test "x$have_tcmalloc" != "xyes" ; then
+    AC_MSG_ERROR([You must install libgoogle-perftools-dev in order to use heap or cpu profiler])
+  fi
+fi
+
+# WARNING: When both enabled you can NOT link them statically and MUST use the special library
+if test "${enable_heap_profiler}" = "yes" && test "${enable_cpu_profiler}" = "yes"; then
+  APR_ADDTO(CFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(CXXFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(LDFLAGS, -ltcmalloc_and_profiler)
+else
+  if test "${enable_heap_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -ltcmalloc)
+    APR_ADDTO(CXXFLAGS, -ltcmalloc)
+    APR_ADDTO(LDFLAGS, -ltcmalloc)
+  fi
+
+  if test "${enable_cpu_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -lprofiler)
+    APR_ADDTO(CXXFLAGS, -lprofiler)
+    APR_ADDTO(LDFLAGS, -lprofiler)
+  fi
+fi
+
+#  Enable fake dlclose
+AC_ARG_ENABLE(fake_dlclose,
+  [AC_HELP_STRING([--enable-fake-dlclose],[Do not unload dynamic libraries])],
+  [enable_fake_dlclose="$enable_fake_dlclose"],
+  [enable_fake_dlclose="no"])
+
+if test "${enable_fake_dlclose}" = "yes"; then
+  APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_FAKE_DLCLOSE)
 fi
 
 AC_ARG_ENABLE(,
@@ -1933,7 +2144,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
-		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
@@ -1962,7 +2172,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_dingaling/Makefile
 		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
 		src/mod/endpoints/mod_khomp/Makefile
@@ -2012,6 +2221,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_managed/Makefile
 		src/mod/languages/mod_perl/Makefile
 		src/mod/languages/mod_python/Makefile
+		src/mod/languages/mod_python3/Makefile
 		src/mod/languages/mod_v8/Makefile
 		src/mod/languages/mod_yaml/Makefile
 		src/mod/languages/mod_basic/Makefile
@@ -2078,7 +2288,7 @@ AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])
 LIBTOOL='$(SHELL) $(switch_builddir)/libtool'
 TOUCH_TARGET='if test -f "$@";then touch "$@";fi;'
 CONF_MODULES='$$(grep -v "\#" $(switch_builddir)/modules.conf | sed "s/|.*//" | sed -e "s|^.*/||" | sort | uniq )'
-CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed "s/|.*//" | sed -e "s|^.*/||" | sort | uniq )'
+CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed "s/|.*//" | sed "s/\#/\#\//"| sed -e "s|^.*/||" | sort | uniq )'
 OUR_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-all ; done )"; echo $$mods )'
 OUR_CLEAN_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-clean ; done )"; echo $$mods )'
 OUR_INSTALL_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-install ; done)"; echo $$mods )'
@@ -2119,13 +2329,7 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-if test "$use_system_aprutil" != "yes"; then
-   AC_CONFIG_SUBDIRS([libs/apr-util])
-fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/freetdm])
-AC_CONFIG_SUBDIRS([libs/unimrcp])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi

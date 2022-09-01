@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Seven Du <dujinfang@gmail.com>
+ * Noah Mehl - Open Telecom Foundation <https://opentelecom.foundation>
  *
  * switch_rtp.c -- RTP
  *
@@ -35,7 +36,7 @@
 #include <switch_private.h>
 #endif
 #include <switch_stun.h>
-#include <apr_network_io.h>
+#include <fspr_network_io.h>
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
@@ -64,9 +65,9 @@
 
 #define JITTER_LEAD_FRAMES 10
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
-#define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
-#define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
-#define WRITE_DEC(rtp_session) switch_mutex_unlock(rtp_session->write_mutex); rtp_session->writing--
+#define READ_DEC(rtp_session) rtp_session->reading--; switch_mutex_unlock(rtp_session->read_mutex)
+#define WRITE_INC(rtp_session) switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
+#define WRITE_DEC(rtp_session) rtp_session->writing--; switch_mutex_unlock(rtp_session->write_mutex)
 
 #define RTP_STUN_FREQ 1000000
 #define rtp_header_len 12
@@ -265,6 +266,7 @@ typedef struct {
 	uint8_t sending;
 	uint8_t ready;
 	uint8_t rready;
+	uint8_t init;
 	int missed_count;
 	char last_sent_id[13];
 	switch_time_t last_ok;
@@ -964,7 +966,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		rtp_session->first_stun = rtp_session->last_stun;
 	}
 
-	if (ice->last_ok) {
+	if (ice->last_ok && (!rtp_session->dtls || rtp_session->dtls->state == DS_READY)) {
 		ref_point = ice->last_ok;
 	} else {
 		ref_point = rtp_session->first_stun;
@@ -1150,8 +1152,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 							if (!host || !port) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
-								switch_mutex_unlock(rtp_session->ice_mutex);
-								return;
+								goto end;
 							}
 
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
@@ -1175,8 +1176,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 							if (switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS ||
 								!ice->addr) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error setting remote host!\n");
-								switch_mutex_unlock(rtp_session->ice_mutex);
-								return;
+								goto end;
 							}
 
 							if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
@@ -1255,21 +1255,31 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			port = switch_sockaddr_get_port(from_addr);
 			host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
 			port2 = switch_sockaddr_get_port(ice->addr);
-			cmp = switch_cmp_addr(from_addr, ice->addr);
+			cmp = switch_cmp_addr(from_addr, ice->addr, SWITCH_FALSE);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG4,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2,
 							  "STUN from %s:%d %s\n", host, port, cmp ? "EXPECTED" : "IGNORED");
 
+			if (ice->init && !cmp && switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE)) {
+				do_adj++;
+				rtp_session->ice_adj++;
+				rtp_session->wrong_addrs = 0;
+				ice->init = 0;
+			}
+			
 			if (cmp) {
 				ice->last_ok = now;
 				rtp_session->wrong_addrs = 0;
 			} else {
-				if (((rtp_session->dtls && rtp_session->dtls->state != DS_READY) || !ice->ready || !ice->rready) &&
-					rtp_session->wrong_addrs > 2 && rtp_session->ice_adj == 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10, "ICE %d dt:%d i:%d i2:%d w:%d cmp:%d adj:%d\n", elapsed, (rtp_session->dtls && rtp_session->dtls->state != DS_READY), !ice->ready, !ice->rready, rtp_session->wrong_addrs, switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE), rtp_session->ice_adj);
+
+				if ((rtp_session->dtls && rtp_session->dtls->state != DS_READY) ||
+					((!ice->ready || !ice->rready) && (rtp_session->wrong_addrs > 2 || switch_cmp_addr(from_addr, ice->addr, SWITCH_TRUE)) &&
+					 rtp_session->ice_adj < 10)) {
 					do_adj++;
-					rtp_session->ice_adj = 1;
+					rtp_session->ice_adj++;
 					rtp_session->wrong_addrs = 0;
-				} else if (rtp_session->wrong_addrs > 10 || elapsed >= 10000) {
+				} else if (rtp_session->wrong_addrs > 10 || elapsed >= 5000) {
 					do_adj++;
 				}
 
@@ -1491,6 +1501,41 @@ static void zrtp_logger(int level, const char *data, int len, int offset)
 }
 #endif
 
+#ifdef ENABLE_SRTP
+SWITCH_DECLARE(void) switch_srtp_err_to_txt(srtp_err_status_t stat, char **msg)
+{
+	if (stat == srtp_err_status_replay_fail) *msg="replay check failed";
+	else if (stat == srtp_err_status_auth_fail) *msg="auth check failed";
+	else if (stat == srtp_err_status_fail) *msg="unspecified failure";
+	else if (stat == srtp_err_status_bad_param) *msg="unsupported parameter";
+	else if (stat == srtp_err_status_alloc_fail) *msg="couldn't allocate memory";
+	else if (stat == srtp_err_status_dealloc_fail) *msg="couldn't deallocate properly";
+	else if (stat == srtp_err_status_init_fail) *msg="couldn't initialize";
+	else if (stat == srtp_err_status_terminus) *msg="can't process as much data as requested";
+	else if (stat == srtp_err_status_cipher_fail) *msg="cipher failure";
+	else if (stat == srtp_err_status_replay_old) *msg="replay check failed";
+	else if (stat == srtp_err_status_algo_fail) *msg="algorithm failed test routine";
+	else if (stat == srtp_err_status_no_such_op) *msg="unsupported operation";
+	else if (stat == srtp_err_status_no_ctx) *msg="no appropriate context found";
+	else if (stat == srtp_err_status_cant_check) *msg="auth check failed";
+	else if (stat == srtp_err_status_key_expired) *msg="can't use key any more";
+	else if (stat == srtp_err_status_socket_err) *msg="error in use of socket";
+	else if (stat == srtp_err_status_signal_err) *msg="error in use POSIX signals";
+	else if (stat == srtp_err_status_nonce_bad) *msg="nonce check failed";
+	else if (stat == srtp_err_status_read_fail) *msg="couldn't read data";
+	else if (stat == srtp_err_status_write_fail) *msg="couldn't write data";
+	else if (stat == srtp_err_status_parse_err) *msg="error parsing data";
+	else if (stat == srtp_err_status_write_fail) *msg="couldn't read data";
+	else if (stat == srtp_err_status_encode_err) *msg="error encoding data";
+	else if (stat == srtp_err_status_semaphore_err) *msg="error while using semaphores";
+	else if (stat == srtp_err_status_pfkey_err) *msg="error while using pfkey ";
+	else if (stat == srtp_err_status_bad_mki) *msg="error MKI present in packet is invalid";
+	else if (stat == srtp_err_status_pkt_idx_old) *msg="packet index is too old to consider";
+	else if (stat == srtp_err_status_pkt_idx_adv) *msg="packet index advanced, reset needed";
+	else *msg="";
+}
+#endif
+
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 #ifdef ENABLE_ZRTP
@@ -1533,7 +1578,14 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	}
 #endif
 #ifdef ENABLE_SRTP
-	srtp_init();
+	{
+		srtp_err_status_t stat = srtp_init();
+		if (stat == srtp_err_status_ok) { 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SRTP (%s) initialized.\n", srtp_get_version_string());
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing SRTP (%d).\n", stat);
+		}
+	}
 #endif
 	switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
 	switch_rtp_dtls_init();
@@ -1809,10 +1861,10 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t));
 
 	switch_time_exp_gmt(&now_hr,now);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u] packet_count[%u] OC[%u]\n",
 			1900 + now_hr.tm_year,  now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
 			(ntohl(sr->ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->ntp_msw)&0x0000ffff)<<16,
-			ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc
+			ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc, ntohl(sr->pc), ntohl(sr->oc)
 			);
 }
 
@@ -1888,7 +1940,13 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	}
 	rtcp_report_block->lsr = stats->last_recv_lsr_peer;
 	rtcp_report_block->dlsr = htonl(dlsr);
-	rtcp_report_block->ssrc = htonl(rtp_session->stats.rtcp.peer_ssrc);
+	if (rtp_session->stats.rtcp.peer_ssrc) {
+		rtcp_report_block->ssrc = htonl(rtp_session->stats.rtcp.peer_ssrc);
+	} else {
+		/* if remote is not sending rtcp reports, take ssrc as assigned from rtp */
+		rtcp_report_block->ssrc = htonl(rtp_session->remote_ssrc);
+	}
+	
 	stats->rtcp_rtp_count++;
 }
 
@@ -1939,7 +1997,7 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 			rtp_session->detectors[EST_RTT] = switch_core_alloc(rtp_session->pool, sizeof(*detectors[0]));
 			switch_kalman_cusum_init(rtp_session->detectors[EST_RTT],0.005,0.5);
 			rtp_session->detectors[EST_LOSS] = switch_core_alloc(rtp_session->pool, sizeof(*detectors[0]));
-			switch_kalman_cusum_init(rtp_session->detectors[EST_LOSS],0.005,0.5);
+			switch_kalman_cusum_init(rtp_session->detectors[EST_LOSS], 0.5, 1);
 	}
 }
 
@@ -2048,6 +2106,79 @@ static int using_ice(switch_rtp_t *rtp_session)
 	}
 
 	return 0;
+}
+
+static void switch_send_rtcp_event(switch_rtp_t *rtp_session ,struct switch_rtcp_sender_report *sr,struct switch_rtcp_report_block *rtcp_report_block)
+{
+	if (sr && rtcp_report_block) {
+		switch_event_t *event;
+
+		if (switch_event_create(&event, SWITCH_EVENT_SEND_RTCP_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				char value[30];
+				char header[50];
+				uint32_t tmpLost;
+				char *uuid = switch_core_session_get_uuid(rtp_session->session);
+				if (uuid) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(rtp_session->session));
+				}
+
+				snprintf(value, sizeof(value), "%.8x", rtp_session->stats.rtcp.ssrc);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SSRC", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ntp_msw));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ntp_lsw));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ts));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.pc));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.oc));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", value);
+
+				snprintf(value, sizeof(value), "%u", ntohl(sr->sender_info.ts));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", value);
+
+				snprintf(value, sizeof(value), "%" SWITCH_TIME_T_FMT, switch_time_now());
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", value);
+
+				/* Add sources info */
+				snprintf(header, sizeof(header), "Source-SSRC");
+				snprintf(value, sizeof(value), "%.8x", rtp_session->stats.rtcp.peer_ssrc);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Fraction");
+				snprintf(value, sizeof(value), "%u", (uint8_t)rtcp_report_block->fraction);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Lost");
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+				tmpLost = rtcp_report_block->lost; /* signed 24bit will extended signess to int32_t automatically */
+#else
+				tmpLost = ntohl(rtcp_report_block->lost)>>8;
+				tmpLost = tmpLost | ((tmpLost & 0x00800000) ? 0xff000000 : 0x00000000); /* ...and signess compensation */
+#endif
+				snprintf(value, sizeof(value), "%u", tmpLost);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Highest-Sequence-Number-Received");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->highest_sequence_number_received));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-Jitter");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->jitter));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-LSR");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->lsr));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+				snprintf(header, sizeof(header), "Source-DLSR");
+				snprintf(value, sizeof(value), "%u", ntohl(rtcp_report_block->dlsr));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+
+				switch_event_fire(&event);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10, "Dispatched RTCP SEND event\n");
+		}
+	}
 }
 
 #define MAX_NACK 10
@@ -2199,6 +2330,10 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 				rtcp_generate_report_block(rtp_session, rtcp_report_block, nack_dup);
 				rtp_session->rtcp_send_msg.header.count = 1; /* reception report block count */
 				stats->sent_pkt_count = 0;
+				if ((!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->flags[SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT]) ||
+					(rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->flags[SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT])) {
+ 					switch_send_rtcp_event(rtp_session, sr, rtcp_report_block);
+				}
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP SR (ssrc=%u)\n", rtp_session->ssrc);
 		}
@@ -2387,6 +2522,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 
 #ifdef ENABLE_SRTP
+		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 			int stat = 0;
 			int sbytes = (int) rtcp_bytes;
@@ -2399,12 +2535,13 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
+				switch_mutex_unlock(rtp_session->ice_mutex);
 				goto end;
 			} else {
 				rtcp_bytes = sbytes;
 			}
-
 		}
+		switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
 
 #ifdef ENABLE_ZRTP
@@ -2784,10 +2921,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		goto done;
 	}
 
-	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-	//	switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
-	//	switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
-	//}
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 1572864);
+		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 1572864);
+	} else {
+		switch_socket_opt_set(new_sock, SWITCH_SO_RCVBUF, 851968);
+		switch_socket_opt_set(new_sock, SWITCH_SO_SNDBUF, 851968);
+	}
 
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		char *em = switch_core_sprintf(rtp_session->pool, "Bind Error! %s:%d", host, port);
@@ -2902,7 +3042,7 @@ SWITCH_DECLARE(void) switch_rtp_set_media_timeout(switch_rtp_t *rtp_session, uin
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
-					  "%s MEDIA TIMEOUT %s set to %u", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session), ms);
+					  "%s MEDIA TIMEOUT %s set to %u\n", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session), ms);
 	rtp_session->media_timeout = ms;
 	switch_rtp_reset_media_timer(rtp_session);
 }
@@ -2950,8 +3090,8 @@ SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	rtp_session->seq = (uint16_t) rand();
-	rtp_session->ts = 0;
+	//rtp_session->seq = (uint16_t) rand();
+	//rtp_session->ts = 0;
 	memset(&rtp_session->ts_norm, 0, sizeof(rtp_session->ts_norm));
 
 	rtp_session->last_stun = rtp_session->first_stun = 0;
@@ -4949,6 +5089,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	ice->pass = "";
 	ice->rpass = "";
 	ice->next_run = switch_micro_time_now();
+	ice->init = 1;
 
 	if (password) {
 		ice->pass = switch_core_strdup(rtp_session->pool, password);
@@ -5972,7 +6113,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->last_rtp_hdr = rtp_session->recv_msg.header;
 
 
-			if (bytes && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 				rtp_session->last_rtp_hdr.pt != 13 &&
 				rtp_session->last_rtp_hdr.pt != rtp_session->recv_te &&
 				rtp_session->last_rtp_hdr.pt != rtp_session->cng_pt) {
@@ -6316,11 +6457,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 					int errs = ++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp];
-					if (stat != 10) {
+					if (rtp_session->flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] && stat != srtp_err_status_replay_old) {
 						char *msg;
-						if (stat == srtp_err_status_replay_fail) msg="replay check failed";
-						else if (stat == srtp_err_status_auth_fail) msg="auth check failed";
-						else msg="";
+						switch_srtp_err_to_txt(stat, &msg);
 						if (errs >= MAX_SRTP_ERRS) {
 							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
@@ -6470,11 +6609,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
-
-			if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
-				switch_core_timer_sync(&rtp_session->timer);
-				reset_jitter_seq(rtp_session);
-			}
 
 			status = switch_jb_put_packet(rtp_session->jb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);
 			if (status == SWITCH_STATUS_TOO_LATE) {
@@ -7099,9 +7233,6 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 			*bytes = 0;
 		}
 	}
-	switch_mutex_unlock(rtp_session->ice_mutex);
-
-
 
 #ifdef ENABLE_SRTP
 	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->rtcp_recv_msg_p->header.version == 2) {
@@ -7128,6 +7259,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	}
 #endif
 
+	switch_mutex_unlock(rtp_session->ice_mutex);
 
 #ifdef ENABLE_ZRTP
 	if (zrtp_on && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && rtp_session->rtcp_recv_msg_p->header.version == 2) {
@@ -7159,7 +7291,7 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 
 	/* RTCP Auto ADJ */
 	if (*bytes && rtp_session->flags[SWITCH_RTP_FLAG_RTCP_AUTOADJ] &&  switch_sockaddr_get_port(rtp_session->rtcp_from_addr)) {
-			if (!switch_cmp_addr(rtp_session->rtcp_from_addr, rtp_session->rtcp_remote_addr)) {
+		if (!switch_cmp_addr(rtp_session->rtcp_from_addr, rtp_session->rtcp_remote_addr, SWITCH_FALSE)) {
 				if (++rtp_session->rtcp_autoadj_tally >= rtp_session->rtcp_autoadj_threshold) {
 					const char *err;
 					uint32_t old = rtp_session->remote_rtcp_port;
@@ -7218,7 +7350,7 @@ static void check_timeout(switch_rtp_t *rtp_session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG10,
-					  "%s MEDIA TIMEOUT %s %d/%d", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session),
+					  "%s MEDIA TIMEOUT %s %d/%d\n", switch_core_session_get_name(rtp_session->session), rtp_type(rtp_session),
 					  elapsed, rtp_session->media_timeout);
 
 	if (elapsed > rtp_session->media_timeout) {
@@ -7606,6 +7738,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 									other_rtp_session->rtcp_send_msg = rtp_session->rtcp_recv_msg;
 
 #ifdef ENABLE_SRTP
+									switch_mutex_lock(other_rtp_session->ice_mutex);
 									if (switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 										int stat = 0;
 										int sbytes = (int) rtcp_bytes;
@@ -7620,8 +7753,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 											switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error: SRTP RTCP protection failed with code %d\n", stat);
 										}
 										rtcp_bytes = sbytes;
-
 									}
+									switch_mutex_unlock(other_rtp_session->ice_mutex);
 #endif
 
 #ifdef ENABLE_ZRTP
@@ -7667,11 +7800,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						process_rtcp_packet(rtp_session, &rtcp_bytes);
 						ret = 1;
 
-						if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-							switch_core_timer_sync(&rtp_session->timer);
-							reset_jitter_seq(rtp_session);
-						}
-						goto recvfrom;
+						continue;
 					}
 				}
 			}
@@ -7735,13 +7864,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					goto recvfrom;
 
 				}
-			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
+			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
 				goto recvfrom;
 			}
 		}
 
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
-			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr)) {
+			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
 				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
 					const char *err;
 					uint32_t old = rtp_session->remote_port;
@@ -8411,7 +8540,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 	if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
-		int external = (*flags & SFF_EXTERNAL);
+		int external = (flags && *flags & SFF_EXTERNAL);
 		/* Normalize the timestamps to our own base by generating a made up starting point then adding the measured deltas to that base
 		   so if the timestamps and ssrc of the source change, it will not break the other end's jitter bufffer / decoder etc *cough* CHROME *cough*
 		 */
@@ -8651,8 +8780,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
 				srtp_dealloc(rtp_session->send_ctx[rtp_session->srtp_idx_rtp]);
 				rtp_session->send_ctx[rtp_session->srtp_idx_rtp] = NULL;
-				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp],
-										&rtp_session->send_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
+				if (srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp],
+										&rtp_session->send_policy[rtp_session->srtp_idx_rtp]) || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
 									  "Error! RE-Activating %s Secure RTP SEND\n", rtp_type(rtp_session));
 					rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
@@ -9237,6 +9366,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 
 	if (process_encryption) {
 #ifdef ENABLE_SRTP
+		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 
 			int sbytes = (int) *bytes;
@@ -9246,11 +9376,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND_RESET);
 				srtp_dealloc(rtp_session->send_ctx[rtp_session->srtp_idx_rtp]);
 				rtp_session->send_ctx[rtp_session->srtp_idx_rtp] = NULL;
-				if ((stat = srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp],
-										&rtp_session->send_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
+				if (srtp_create(&rtp_session->send_ctx[rtp_session->srtp_idx_rtp],
+										&rtp_session->send_policy[rtp_session->srtp_idx_rtp]) || !rtp_session->send_ctx[rtp_session->srtp_idx_rtp]) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP SEND\n");
 					rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND] = 0;
 					status = SWITCH_STATUS_FALSE;
+					switch_mutex_unlock(rtp_session->ice_mutex);
 					goto end;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "RE-Activating Secure RTP SEND\n");
@@ -9268,6 +9399,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 			}
 			*bytes = sbytes;
 		}
+		switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
 #ifdef ENABLE_ZRTP
 		/* ZRTP Send */

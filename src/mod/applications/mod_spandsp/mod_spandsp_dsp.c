@@ -406,7 +406,12 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT: {
 		pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
-		span_log_set_message_handler(dtmf_rx_get_logging_state(pvt->dtmf_detect), mod_spandsp_log_message, pvt->session);
+		{
+			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+			log_data->session = pvt->session;
+			log_data->verbose_log_level = spandsp_globals.verbose_log_level;
+			span_log_set_message_handler(dtmf_rx_get_logging_state(pvt->dtmf_detect), mod_spandsp_log_message, log_data);
+		}
 		if (pvt->verbose) {
 			span_log_set_level(dtmf_rx_get_logging_state(pvt->dtmf_detect), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		}

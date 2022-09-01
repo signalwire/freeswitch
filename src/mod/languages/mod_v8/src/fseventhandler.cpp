@@ -389,10 +389,9 @@ JS_EVENTHANDLER_FUNCTION_IMPL(SendEvent)
 				if (session_uuid.length() > 0) {
 					/* This is a session event */
 					switch_core_session_t *session;
-					switch_status_t status = SWITCH_STATUS_FALSE;
 
 					if ((session = switch_core_session_locate(session_uuid.c_str()))) {
-						if ((status = switch_core_session_queue_private_event(session, event, SWITCH_FALSE)) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_session_queue_private_event(session, event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 							info.GetReturnValue().Set(true);
 						} else {
 							info.GetReturnValue().Set(false);

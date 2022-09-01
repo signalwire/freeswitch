@@ -193,6 +193,7 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate logging section for mod_amqp\n" );
 	}
 
+	switch_xml_free(xml);
 	return SWITCH_STATUS_SUCCESS;
 }
 

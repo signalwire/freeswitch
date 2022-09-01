@@ -15,10 +15,10 @@
  */
 
 #define APR_WANT_STRFUNC
-#include "apr_want.h"
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_env.h"
+#include "fspr_want.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_env.h"
 
 #if APR_HAVE_UNISTD_H
 #include <unistd.h>
@@ -27,9 +27,9 @@
 #include <stdlib.h>
 #endif
 
-APR_DECLARE(apr_status_t) apr_env_get(char **value,
+APR_DECLARE(fspr_status_t) fspr_env_get(char **value,
                                       const char *envvar,
-                                      apr_pool_t *pool)
+                                      fspr_pool_t *pool)
 {
 #ifdef HAVE_GETENV
 
@@ -45,9 +45,9 @@ APR_DECLARE(apr_status_t) apr_env_get(char **value,
 }
 
 
-APR_DECLARE(apr_status_t) apr_env_set(const char *envvar,
+APR_DECLARE(fspr_status_t) fspr_env_set(const char *envvar,
                                       const char *value,
-                                      apr_pool_t *pool)
+                                      fspr_pool_t *pool)
 {
 #if defined(HAVE_SETENV)
 
@@ -57,9 +57,9 @@ APR_DECLARE(apr_status_t) apr_env_set(const char *envvar,
 
 #elif defined(HAVE_PUTENV)
 
-    apr_size_t elen = strlen(envvar);
-    apr_size_t vlen = strlen(value);
-    char *env = apr_palloc(pool, elen + vlen + 2);
+    fspr_size_t elen = strlen(envvar);
+    fspr_size_t vlen = strlen(value);
+    char *env = fspr_palloc(pool, elen + vlen + 2);
     char *p = env + elen;
 
     memcpy(env, envvar, elen);
@@ -77,7 +77,7 @@ APR_DECLARE(apr_status_t) apr_env_set(const char *envvar,
 }
 
 
-APR_DECLARE(apr_status_t) apr_env_delete(const char *envvar, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_env_delete(const char *envvar, fspr_pool_t *pool)
 {
 #ifdef HAVE_UNSETENV
 

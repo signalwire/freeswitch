@@ -385,6 +385,7 @@ typedef struct h264_codec_context_s {
 	switch_image_t *img;
 	switch_image_t *encimg;
 	int need_key_frame;
+	switch_time_t last_keyframe_request;
 	switch_bool_t nalu_28_start;
 
 	int change_bandwidth;
@@ -404,8 +405,6 @@ typedef struct h264_codec_context_s {
 #define AV_INPUT_BUFFER_PADDING_SIZE FF_INPUT_BUFFER_PADDING_SIZE
 #endif
 
-static uint8_t ff_input_buffer_padding[AV_INPUT_BUFFER_PADDING_SIZE] = { 0 };
-
 #define MAX_PROFILES 100
 
 typedef struct avcodec_profile_s {
@@ -420,7 +419,7 @@ struct avcodec_globals {
 	int debug;
 	uint32_t max_bitrate;
 	uint32_t rtp_slice_size;
-	uint32_t key_frame_min_freq;
+	uint32_t key_frame_min_freq; // in ms
 	uint32_t enc_threads;
 	uint32_t dec_threads;
 
@@ -752,8 +751,7 @@ static switch_status_t buffer_h263_rfc4629_packets(h264_codec_context_t *context
 	if (len < 0) return SWITCH_STATUS_FALSE;
 
 	if (startcode) {
-		uint8_t zeros[2] = { 0 };
-		switch_buffer_write(context->nalu_buffer, zeros, 2);
+		switch_buffer_zero_fill(context->nalu_buffer, 2);
 	}
 
 	switch_buffer_write(context->nalu_buffer, data, len);
@@ -1567,10 +1565,14 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 
 	avframe->pts = context->pts++;
 
-	if (context->need_key_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG5, "Send AV KEYFRAME\n");
+	if (context->need_key_frame && (context->last_keyframe_request + avcodec_globals.key_frame_min_freq) < switch_time_now()) {
+		if (avcodec_globals.debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Generate/Send AV KEYFRAME\n");
+		}
+
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
 		 avframe->key_frame = 1;
+		 context->last_keyframe_request = switch_time_now();
 	}
 
 	/* encode the image */
@@ -1585,7 +1587,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		goto error;
 	}
 
-	if (context->need_key_frame) {
+	if (context->need_key_frame && avframe->key_frame == 1) {
 		avframe->pict_type = 0;
 		avframe->key_frame = 0;
 		context->need_key_frame = 0;
@@ -1633,8 +1635,12 @@ GCC_DIAG_ON(deprecated-declarations)
 				context->nalus[i].start = p;
 				context->nalus[i].eat = p;
 
-				if (mod_av_globals.debug && (*p & 0x1f) == 7) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "KEY FRAME GENERATED\n");
+				if ((*p & 0x1f) == 7) { // Got Keyframe
+					// prevent to generate key frame too frequently
+					context->last_keyframe_request = switch_time_now();
+					if (mod_av_globals.debug) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "KEY FRAME GENERATED\n");
+					}
 				}
 			} else {
 				context->nalus[i].len = p - context->nalus[i].start;
@@ -1703,7 +1709,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 		if (size > 0) {
 			av_init_packet(&pkt);
-			switch_buffer_write(context->nalu_buffer, ff_input_buffer_padding, sizeof(ff_input_buffer_padding));
+			switch_buffer_zero_fill(context->nalu_buffer, AV_INPUT_BUFFER_PADDING_SIZE);
 			switch_buffer_peek_zerocopy(context->nalu_buffer, (const void **)&pkt.data);
 			pkt.size = size;
 
@@ -1764,6 +1770,12 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 
 	switch(cmd) {
+	case SCC_DEBUG:
+		{
+			int32_t level = *((uint32_t *) cmd_data);
+			mod_av_globals.debug = level;
+		}
+		break;
 	case SCC_VIDEO_GEN_KEYFRAME:
 		context->need_key_frame = 1;
 		break;
@@ -1964,6 +1976,9 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 	ctx = &aprofile->ctx;
 
+	ctx->profile = FF_PROFILE_H264_BASELINE;
+	ctx->level = 31;
+
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
 		const char *name = switch_xml_attr(param, "name");
 		const char *value = switch_xml_attr(param, "value");
@@ -1974,9 +1989,6 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
 
 		val = atoi(value);
-
-		ctx->profile = FF_PROFILE_H264_BASELINE;
-		ctx->level = 31;
 
 		if (!strcmp(name, "dec-threads")) {
 			aprofile->decoder_thread_count = switch_parse_cpu_string(value);

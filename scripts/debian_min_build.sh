@@ -8,7 +8,7 @@ wget -O - https://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub
 
 echo "deb http://files.freeswitch.org/repo/deb/freeswitch-1.6/ jessie main" > /etc/apt/sources.list.d/freeswitch.list
 
-apt-get update && apt-get install -y libtool libjpeg62-turbo-dev ntpdate libfreetype6-dev git-buildpackage doxygen yasm gdb git build-essential automake autoconf wget uuid-dev zlib1g-dev libncurses5-dev libssl-dev libpcre3-dev libcurl4-openssl-dev libldns-dev libedit-dev libspeexdsp-dev libsqlite3-dev perl libgdbm-dev libdb-dev bison pkg-config ccache libpng16-dev libpng12-dev libopenal-dev libbroadvoice-dev libcodec2-dev libflite-dev libg7221-dev libilbc-dev libsilk-dev liblua5.2-dev libopus-dev libsndfile-dev libavformat-dev libavcodec-extra libx264-dev libperl-dev unixodbc-dev libpq-dev libsctp-dev
+apt-get update && apt-get install -y libtool libjpeg62-turbo-dev ntpdate libfreetype6-dev git-buildpackage doxygen yasm gdb git build-essential automake autoconf wget uuid-dev zlib1g-dev libncurses5-dev libssl-dev libpcre3-dev libcurl4-openssl-dev libldns-dev libedit-dev libspeexdsp-dev libsqlite3-dev perl libgdbm-dev libdb-dev bison pkg-config ccache libpng16-dev libpng12-dev libopenal-dev libbroadvoice-dev libcodec2-dev libflite-dev libg7221-dev libilbc-dev libsilk-dev liblua5.2-dev libopus-dev libsndfile-dev libavformat-dev libavcodec-extra libswscale-dev libx264-dev libperl-dev unixodbc-dev libpq-dev libsctp-dev
 
 cd /usr/src
 

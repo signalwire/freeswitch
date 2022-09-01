@@ -50,7 +50,7 @@ static fctcl_init_t my_cl_options[] = {
 
 FST_CORE_BEGIN("conf")
 {
-        const char *loop_;
+	const char *loop_;
 	fctcl_install(my_cl_options);
 
 	loop_ = fctcl_val("--loop");
@@ -73,7 +73,11 @@ FST_CORE_BEGIN("conf")
 			uint8_t buf[SWITCH_DEFAULT_VIDEO_SIZE + 12];
 			switch_frame_t frame = { 0 };
 			int packets = 0;
+			int frames = 0;
+			int last_key_frame = 0;
+			int key_frames = 0;
 			switch_status_t encode_status;
+			int debug_level = 9;
 
 			switch_set_string(codec_settings.video.config_profile_name, "conference");
 
@@ -105,6 +109,8 @@ FST_CORE_BEGIN("conf")
 			frame.timestamp = 0;
 			frame.img = img;
 
+			switch_core_codec_control(&codec, SCC_DEBUG, SCCT_NONE, &debug_level, SCCT_INT, NULL, NULL, NULL);
+
 			do {
 				frame.datalen = SWITCH_DEFAULT_VIDEO_SIZE;
 				encode_status = switch_core_codec_encode_video(&codec, &frame);
@@ -120,8 +126,21 @@ FST_CORE_BEGIN("conf")
 
 					if (frame.datalen == 0) break;
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%d]: %02x %02x | m=%d | %d\n", loop, buf[12], buf[13], frame.m, frame.datalen);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "[%d]: %02x %02x | m=%d | %d\n", frames, buf[12], buf[13], frame.m, frame.datalen);
 					packets++;
+
+					if (frame.m) frames++;
+
+					if (frames % 20 == 2) {
+						switch_core_codec_control(&codec, SCC_VIDEO_GEN_KEYFRAME, SCCT_NONE, NULL, SCCT_NONE, NULL, NULL, NULL);
+					}
+
+					if (buf[12] == 0x67) {
+						key_frames++;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Key Frame %d last=%d diff=%d\n",
+							key_frames, last_key_frame, frames - last_key_frame);
+						last_key_frame = frames;
+					}
 				}
 
 			} while(encode_status == SWITCH_STATUS_MORE_DATA || loop-- > 1);

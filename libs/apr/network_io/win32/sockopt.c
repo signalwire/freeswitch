@@ -14,36 +14,36 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_network_io.h"
-#include "apr_general.h"
-#include "apr_strings.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_network_io.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
 #include <string.h>
 
-apr_status_t soblock(SOCKET sd)
+fspr_status_t soblock(SOCKET sd)
 {
     u_long zero = 0;
 
     if (ioctlsocket(sd, FIONBIO, &zero) == SOCKET_ERROR) {
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     return APR_SUCCESS;
 }
 
-apr_status_t sononblock(SOCKET sd)
+fspr_status_t sononblock(SOCKET sd)
 {
     u_long one = 1;
 
     if (ioctlsocket(sd, FIONBIO, &one) == SOCKET_ERROR) {
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_timeout_set(apr_socket_t *sock, apr_interval_time_t t)
+APR_DECLARE(fspr_status_t) fspr_socket_timeout_set(fspr_socket_t *sock, fspr_interval_time_t t)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     if (t == 0) {
         /* Set the socket non-blocking if it was previously blocking */
@@ -62,7 +62,7 @@ APR_DECLARE(apr_status_t) apr_socket_timeout_set(apr_socket_t *sock, apr_interva
         if (sock->timeout != t) 
         {
             /* Win32 timeouts are in msec, represented as int */
-            sock->timeout_ms = (int)apr_time_as_msec(t);
+            sock->timeout_ms = (int)fspr_time_as_msec(t);
             setsockopt(sock->socketdes, SOL_SOCKET, SO_RCVTIMEO, 
                        (char *) &sock->timeout_ms, 
                        sizeof(sock->timeout_ms));
@@ -86,56 +86,56 @@ APR_DECLARE(apr_status_t) apr_socket_timeout_set(apr_socket_t *sock, apr_interva
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
-                                             apr_int32_t opt, apr_int32_t on)
+APR_DECLARE(fspr_status_t) fspr_socket_opt_set(fspr_socket_t *sock,
+                                             fspr_int32_t opt, fspr_int32_t on)
 {
     int one;
-    apr_status_t stat;
+    fspr_status_t stat;
 
     one = on ? 1 : 0;
 
     switch (opt) {
     case APR_SO_KEEPALIVE:
-        if (on != apr_is_option_set(sock, APR_SO_KEEPALIVE)) {
+        if (on != fspr_is_option_set(sock, APR_SO_KEEPALIVE)) {
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_KEEPALIVE, 
                            (void *)&one, sizeof(int)) == -1) {
-                return apr_get_netos_error();
+                return fspr_get_netos_error();
             }
-            apr_set_option(sock, APR_SO_KEEPALIVE, on);
+            fspr_set_option(sock, APR_SO_KEEPALIVE, on);
         }
         break;
     case APR_SO_DEBUG:
-        if (on != apr_is_option_set(sock, APR_SO_DEBUG)) {
+        if (on != fspr_is_option_set(sock, APR_SO_DEBUG)) {
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_DEBUG, 
                            (void *)&one, sizeof(int)) == -1) {
-                return apr_get_netos_error();
+                return fspr_get_netos_error();
             }
-            apr_set_option(sock, APR_SO_DEBUG, on);
+            fspr_set_option(sock, APR_SO_DEBUG, on);
         }
         break;
     case APR_SO_SNDBUF:
         if (setsockopt(sock->socketdes, SOL_SOCKET, SO_SNDBUF,
                        (void *)&on, sizeof(int)) == -1) {
-            return apr_get_netos_error();
+            return fspr_get_netos_error();
         }
         break;
     case APR_SO_RCVBUF:
         if (setsockopt(sock->socketdes, SOL_SOCKET, SO_RCVBUF,
                        (void *)&on, sizeof(int)) == -1) {
-            return apr_get_netos_error();
+            return fspr_get_netos_error();
         }
         break;
     case APR_SO_REUSEADDR:
-        if (on != apr_is_option_set(sock, APR_SO_REUSEADDR)) {
+        if (on != fspr_is_option_set(sock, APR_SO_REUSEADDR)) {
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_REUSEADDR, 
                            (void *)&one, sizeof(int)) == -1) {
-                return apr_get_netos_error();
+                return fspr_get_netos_error();
             }
-            apr_set_option(sock, APR_SO_REUSEADDR, on);
+            fspr_set_option(sock, APR_SO_REUSEADDR, on);
         }
         break;
     case APR_SO_NONBLOCK:
-        if (apr_is_option_set(sock, APR_SO_NONBLOCK) != on) {
+        if (fspr_is_option_set(sock, APR_SO_NONBLOCK) != on) {
             if (on) {
                 if ((stat = sononblock(sock->socketdes)) != APR_SUCCESS) 
                     return stat;
@@ -144,26 +144,26 @@ APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
                 if ((stat = soblock(sock->socketdes)) != APR_SUCCESS)
                     return stat;
             }
-            apr_set_option(sock, APR_SO_NONBLOCK, on);
+            fspr_set_option(sock, APR_SO_NONBLOCK, on);
         }
         break;
     case APR_SO_LINGER:
     {
-        if (apr_is_option_set(sock, APR_SO_LINGER) != on) {
+        if (fspr_is_option_set(sock, APR_SO_LINGER) != on) {
             struct linger li;
             li.l_onoff = on;
             li.l_linger = APR_MAX_SECS_TO_LINGER;
             if (setsockopt(sock->socketdes, SOL_SOCKET, SO_LINGER, 
                            (char *) &li, sizeof(struct linger)) == -1) {
-                return apr_get_netos_error();
+                return fspr_get_netos_error();
             }
-            apr_set_option(sock, APR_SO_LINGER, on);
+            fspr_set_option(sock, APR_SO_LINGER, on);
         }
         break;
     }
     case APR_TCP_DEFER_ACCEPT:
 #if defined(TCP_DEFER_ACCEPT)
-        if (apr_is_option_set(sock, APR_TCP_DEFER_ACCEPT) != on) {
+        if (fspr_is_option_set(sock, APR_TCP_DEFER_ACCEPT) != on) {
             int optlevel = IPPROTO_TCP;
             int optname = TCP_DEFER_ACCEPT;
 
@@ -171,13 +171,13 @@ APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
                            (void *)&on, sizeof(int)) == -1) {
                 return errno;
             }
-            apr_set_option(sock, APR_TCP_DEFER_ACCEPT, on);
+            fspr_set_option(sock, APR_TCP_DEFER_ACCEPT, on);
         }
 #else
         return APR_ENOTIMPL;
 #endif
     case APR_TCP_NODELAY:
-        if (apr_is_option_set(sock, APR_TCP_NODELAY) != on) {
+        if (fspr_is_option_set(sock, APR_TCP_NODELAY) != on) {
             int optlevel = IPPROTO_TCP;
             int optname = TCP_NODELAY;
 
@@ -189,9 +189,9 @@ APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
 #endif
             if (setsockopt(sock->socketdes, optlevel, optname,
                            (void *)&on, sizeof(int)) == -1) {
-                return apr_get_netos_error();
+                return fspr_get_netos_error();
             }
-            apr_set_option(sock, APR_TCP_NODELAY, on);
+            fspr_set_option(sock, APR_TCP_NODELAY, on);
         }
         break;
     case APR_IPV6_V6ONLY:
@@ -202,9 +202,9 @@ APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
          */
         if (setsockopt(sock->socketdes, IPPROTO_IPV6, IPV6_V6ONLY,
                        (void *)&on, sizeof(int)) == -1) {
-            return apr_get_netos_error();
+            return fspr_get_netos_error();
         }
-        apr_set_option(sock, APR_IPV6_V6ONLY, on);
+        fspr_set_option(sock, APR_IPV6_V6ONLY, on);
 #else
         return APR_ENOTIMPL;
 #endif
@@ -217,15 +217,15 @@ APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_timeout_get(apr_socket_t *sock, apr_interval_time_t *t)
+APR_DECLARE(fspr_status_t) fspr_socket_timeout_get(fspr_socket_t *sock, fspr_interval_time_t *t)
 {
     *t = sock->timeout;
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_opt_get(apr_socket_t *sock,
-                                             apr_int32_t opt, apr_int32_t *on)
+APR_DECLARE(fspr_status_t) fspr_socket_opt_get(fspr_socket_t *sock,
+                                             fspr_int32_t opt, fspr_int32_t *on)
 {
     switch (opt) {
     case APR_SO_DISCONNECTED:
@@ -237,14 +237,14 @@ APR_DECLARE(apr_status_t) apr_socket_opt_get(apr_socket_t *sock,
     case APR_SO_NONBLOCK:
     case APR_SO_LINGER:
     default:
-        *on = apr_is_option_set(sock, opt);
+        *on = fspr_is_option_set(sock, opt);
         break;
     }
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(int) apr_socket_fd_get(apr_socket_t *sock)
+APR_DECLARE(int) fspr_socket_fd_get(fspr_socket_t *sock)
 {
 	if (sock) {
 		return sock->socketdes;
@@ -254,12 +254,12 @@ APR_DECLARE(int) apr_socket_fd_get(apr_socket_t *sock)
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_atmark(apr_socket_t *sock, int *atmark)
+APR_DECLARE(fspr_status_t) fspr_socket_atmark(fspr_socket_t *sock, int *atmark)
 {
     u_long oobmark;
 
     if (ioctlsocket(sock->socketdes, SIOCATMARK, (void*) &oobmark) < 0)
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
 
     *atmark = (oobmark != 0);
 
@@ -267,12 +267,12 @@ APR_DECLARE(apr_status_t) apr_socket_atmark(apr_socket_t *sock, int *atmark)
 }
 
 
-APR_DECLARE(apr_status_t) apr_gethostname(char *buf, int len,
-                                          apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_gethostname(char *buf, int len,
+                                          fspr_pool_t *cont)
 {
     if (gethostname(buf, len) == -1) {
         buf[0] = '\0';
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     else if (!memchr(buf, '\0', len)) { /* buffer too small */
         buf[0] = '\0';

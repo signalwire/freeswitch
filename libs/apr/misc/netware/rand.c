@@ -15,9 +15,9 @@
  */
 
 #define APR_WANT_MEMFUNC
-#include "apr_want.h"
-#include "apr_general.h"
-#include "apr_private.h"
+#include "fspr_want.h"
+#include "fspr_general.h"
+#include "fspr_private.h"
 
 #if APR_HAS_RANDOM
 
@@ -56,8 +56,8 @@ static int NXSeedRandomInternal( size_t width, void *seed )
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_generate_random_bytes(unsigned char *buf, 
-                                                    apr_size_t length)
+APR_DECLARE(fspr_status_t) fspr_generate_random_bytes(unsigned char *buf, 
+                                                    fspr_size_t length)
 {
     if (NXSeedRandom(length, buf) != 0) {
         return NXSeedRandomInternal (length, buf);

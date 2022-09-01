@@ -14,42 +14,42 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_portable.h"
-#include "apr_arch_misc.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_portable.h"
+#include "fspr_arch_misc.h"
 #include <wincrypt.h>
 
 
-APR_DECLARE(apr_status_t) apr_generate_random_bytes(unsigned char * buf,
-                                                    apr_size_t length)
+APR_DECLARE(fspr_status_t) fspr_generate_random_bytes(unsigned char * buf,
+                                                    fspr_size_t length)
 {
     HCRYPTPROV hProv;
-    apr_status_t res = APR_SUCCESS;
+    fspr_status_t res = APR_SUCCESS;
 
     /* 0x40 bit = CRYPT_SILENT, only introduced in more recent PSDKs 
      * and will only work for Win2K and later.
      */
     DWORD flags = CRYPT_VERIFYCONTEXT
-                | ((apr_os_level >= APR_WIN_2000) ? 0x40 : 0);
+                | ((fspr_os_level >= APR_WIN_2000) ? 0x40 : 0);
 
     if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, flags)) {
-	return apr_get_os_error();
+	return fspr_get_os_error();
     }
     /* XXX: An ugly hack for Win64, randomness is such that noone should
      * ever expect > 2^31 bytes of data at once without the prng
      * coming to a complete halt.
      */
     if (!CryptGenRandom(hProv, (DWORD)length, buf)) {
-    	res = apr_get_os_error();
+    	res = fspr_get_os_error();
     }
     CryptReleaseContext(hProv, 0);
     return res;
 }
 
 
-APR_DECLARE(apr_status_t) apr_os_uuid_get(unsigned char *uuid_data)
+APR_DECLARE(fspr_status_t) fspr_os_uuid_get(unsigned char *uuid_data)
 {
     /* Note: this call doesn't actually require CoInitialize() first 
      *
@@ -59,7 +59,7 @@ APR_DECLARE(apr_status_t) apr_os_uuid_get(unsigned char *uuid_data)
      * be appropriate in all cases.
      *
      * Note that Win2000, XP and later no longer suffer from this problem,
-     * a scrambling fix is only needed for (apr_os_level < APR_WIN_2000)
+     * a scrambling fix is only needed for (fspr_os_level < APR_WIN_2000)
      */
     if (FAILED(UuidCreate((UUID *)uuid_data))) {
         return APR_EGENERAL;

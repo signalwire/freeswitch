@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_user.h"
-#include "apr_private.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_user.h"
+#include "fspr_private.h"
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -28,17 +28,17 @@
 #include <unistd.h> /* for _POSIX_THREAD_SAFE_FUNCTIONS */
 #endif
 #define APR_WANT_MEMFUNC
-#include "apr_want.h"
+#include "fspr_want.h"
 
 #define PWBUF_SIZE 512
 
-static apr_status_t getpwnam_safe(const char *username,
+static fspr_status_t getpwnam_safe(const char *username,
                                   struct passwd *pw,
                                   char pwbuf[PWBUF_SIZE])
 {
     struct passwd *pwptr;
 #if APR_HAS_THREADS && defined(_POSIX_THREAD_SAFE_FUNCTIONS) && defined(HAVE_GETPWNAM_R)
-    apr_status_t rv;
+    fspr_status_t rv;
 
     /* POSIX defines getpwnam_r() et al to return the error number
      * rather than set errno, and requires pwptr to be set to NULL if
@@ -66,31 +66,31 @@ static apr_status_t getpwnam_safe(const char *username,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname,
+APR_DECLARE(fspr_status_t) fspr_uid_homepath_get(char **dirname,
                                                const char *username,
-                                               apr_pool_t *p)
+                                               fspr_pool_t *p)
 {
     struct passwd pw;
     char pwbuf[PWBUF_SIZE];
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if ((rv = getpwnam_safe(username, &pw, pwbuf)) != APR_SUCCESS)
         return rv;
 
 #ifdef OS2
     /* Need to manually add user name for OS/2 */
-    *dirname = apr_pstrcat(p, pw.pw_dir, pw.pw_name, NULL);
+    *dirname = fspr_pstrcat(p, pw.pw_dir, pw.pw_name, NULL);
 #else
-    *dirname = apr_pstrdup(p, pw.pw_dir);
+    *dirname = fspr_pstrdup(p, pw.pw_dir);
 #endif
     return APR_SUCCESS;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_uid_current(apr_uid_t *uid,
-                                          apr_gid_t *gid,
-                                          apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_current(fspr_uid_t *uid,
+                                          fspr_gid_t *gid,
+                                          fspr_pool_t *p)
 {
     *uid = getuid();
     *gid = getgid();
@@ -101,12 +101,12 @@ APR_DECLARE(apr_status_t) apr_uid_current(apr_uid_t *uid,
 
 
 
-APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
-                                      const char *username, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_get(fspr_uid_t *uid, fspr_gid_t *gid,
+                                      const char *username, fspr_pool_t *p)
 {
     struct passwd pw;
     char pwbuf[PWBUF_SIZE];
-    apr_status_t rv;
+    fspr_status_t rv;
         
     if ((rv = getpwnam_safe(username, &pw, pwbuf)) != APR_SUCCESS)
         return rv;
@@ -117,14 +117,14 @@ APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_uid_name_get(char **username, apr_uid_t userid,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_name_get(char **username, fspr_uid_t userid,
+                                           fspr_pool_t *p)
 {
     struct passwd *pw;
 #if APR_HAS_THREADS && defined(_POSIX_THREAD_SAFE_FUNCTIONS) && defined(HAVE_GETPWUID_R)
     struct passwd pwd;
     char pwbuf[PWBUF_SIZE];
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv = getpwuid_r(userid, &pwd, pwbuf, sizeof(pwbuf), &pw);
     if (rv) {
@@ -141,6 +141,6 @@ APR_DECLARE(apr_status_t) apr_uid_name_get(char **username, apr_uid_t userid,
         return errno ? errno : APR_ENOENT;
     }
 #endif
-    *username = apr_pstrdup(p, pw->pw_name);
+    *username = fspr_pstrdup(p, pw->pw_name);
     return APR_SUCCESS;
 }

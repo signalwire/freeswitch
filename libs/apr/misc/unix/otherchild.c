@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_arch_misc.h"
-#include "apr_arch_threadproc.h"
-#include "apr_arch_file_io.h"
+#include "fspr.h"
+#include "fspr_arch_misc.h"
+#include "fspr_arch_threadproc.h"
+#include "fspr_arch_file_io.h"
 
 #if APR_HAS_OTHER_CHILD
 
@@ -34,11 +34,11 @@
 #include <sys/socket.h> /* for fd_set definition! */
 #endif
 
-static apr_other_child_rec_t *other_children = NULL;
+static fspr_other_child_rec_t *other_children = NULL;
 
-static apr_status_t other_child_cleanup(void *data)
+static fspr_status_t other_child_cleanup(void *data)
 {
-    apr_other_child_rec_t **pocr, *nocr;
+    fspr_other_child_rec_t **pocr, *nocr;
 
     for (pocr = &other_children; *pocr; pocr = &(*pocr)->next) {
         if ((*pocr)->data == data) {
@@ -52,24 +52,24 @@ static apr_status_t other_child_cleanup(void *data)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(void) apr_proc_other_child_register(apr_proc_t *proc,
+APR_DECLARE(void) fspr_proc_other_child_register(fspr_proc_t *proc,
                      void (*maintenance) (int reason, void *, int status),
-                     void *data, apr_file_t *write_fd, apr_pool_t *p)
+                     void *data, fspr_file_t *write_fd, fspr_pool_t *p)
 {
-    apr_other_child_rec_t *ocr;
+    fspr_other_child_rec_t *ocr;
 
-    ocr = apr_palloc(p, sizeof(*ocr));
+    ocr = fspr_palloc(p, sizeof(*ocr));
     ocr->p = p;
     ocr->proc = proc;
     ocr->maintenance = maintenance;
     ocr->data = data;
     if (write_fd == NULL) {
-        ocr->write_fd = (apr_os_file_t) -1;
+        ocr->write_fd = (fspr_os_file_t) -1;
     }
     else {
 #ifdef WIN32
-        /* This should either go away as part of eliminating apr_proc_probe_writable_fds
-         * or write_fd should point to an apr_file_t
+        /* This should either go away as part of eliminating fspr_proc_probe_writable_fds
+         * or write_fd should point to an fspr_file_t
          */
         ocr->write_fd = write_fd->filehand; 
 #else
@@ -79,13 +79,13 @@ APR_DECLARE(void) apr_proc_other_child_register(apr_proc_t *proc,
     }
     ocr->next = other_children;
     other_children = ocr;
-    apr_pool_cleanup_register(p, ocr->data, other_child_cleanup, 
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(p, ocr->data, other_child_cleanup, 
+                              fspr_pool_cleanup_null);
 }
 
-APR_DECLARE(void) apr_proc_other_child_unregister(void *data)
+APR_DECLARE(void) fspr_proc_other_child_unregister(void *data)
 {
-    apr_other_child_rec_t *cur;
+    fspr_other_child_rec_t *cur;
 
     cur = other_children;
     while (cur) {
@@ -96,15 +96,15 @@ APR_DECLARE(void) apr_proc_other_child_unregister(void *data)
     }
 
     /* segfault if this function called with invalid parm */
-    if (cur) apr_pool_cleanup_kill(cur->p, cur->data, other_child_cleanup);
+    if (cur) fspr_pool_cleanup_kill(cur->p, cur->data, other_child_cleanup);
     other_child_cleanup(data);
 }
 
-APR_DECLARE(apr_status_t) apr_proc_other_child_alert(apr_proc_t *proc,
+APR_DECLARE(fspr_status_t) fspr_proc_other_child_alert(fspr_proc_t *proc,
                                                      int reason,
                                                      int status)
 {
-    apr_other_child_rec_t *ocr, *nocr;
+    fspr_other_child_rec_t *ocr, *nocr;
 
     for (ocr = other_children; ocr; ocr = nocr) {
         nocr = ocr->next;
@@ -118,7 +118,7 @@ APR_DECLARE(apr_status_t) apr_proc_other_child_alert(apr_proc_t *proc,
     return APR_EPROC_UNKNOWN;
 }
 
-APR_DECLARE(void) apr_proc_other_child_refresh(apr_other_child_rec_t *ocr,
+APR_DECLARE(void) fspr_proc_other_child_refresh(fspr_other_child_rec_t *ocr,
                                                int reason)
 {
     /* Todo: 
@@ -131,7 +131,7 @@ APR_DECLARE(void) apr_proc_other_child_refresh(apr_other_child_rec_t *ocr,
         return;
 
     if (!ocr->proc->hproc) {
-        /* Already mopped up, perhaps we apr_proc_kill'ed it,
+        /* Already mopped up, perhaps we fspr_proc_kill'ed it,
          * they should have already unregistered!
          */
         ocr->proc = NULL;
@@ -176,44 +176,44 @@ APR_DECLARE(void) apr_proc_other_child_refresh(apr_other_child_rec_t *ocr,
 #endif
 }
 
-APR_DECLARE(void) apr_proc_other_child_refresh_all(int reason)
+APR_DECLARE(void) fspr_proc_other_child_refresh_all(int reason)
 {
-    apr_other_child_rec_t *ocr, *next_ocr;
+    fspr_other_child_rec_t *ocr, *next_ocr;
 
     for (ocr = other_children; ocr; ocr = next_ocr) {
         next_ocr = ocr->next;
-        apr_proc_other_child_refresh(ocr, reason);
+        fspr_proc_other_child_refresh(ocr, reason);
     }
 }
 
 #else /* !APR_HAS_OTHER_CHILD */
 
-APR_DECLARE(void) apr_proc_other_child_register(apr_proc_t *proc,
+APR_DECLARE(void) fspr_proc_other_child_register(fspr_proc_t *proc,
                      void (*maintenance) (int reason, void *, int status),
-                     void *data, apr_file_t *write_fd, apr_pool_t *p)
+                     void *data, fspr_file_t *write_fd, fspr_pool_t *p)
 {
     return;
 }
 
-APR_DECLARE(void) apr_proc_other_child_unregister(void *data)
+APR_DECLARE(void) fspr_proc_other_child_unregister(void *data)
 {
     return;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_other_child_alert(apr_proc_t *proc,
+APR_DECLARE(fspr_status_t) fspr_proc_other_child_alert(fspr_proc_t *proc,
                                                      int reason,
                                                      int status)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(void) apr_proc_other_child_refresh(apr_other_child_rec_t *ocr,
+APR_DECLARE(void) fspr_proc_other_child_refresh(fspr_other_child_rec_t *ocr,
                                                int reason)
 {
     return;
 }
 
-APR_DECLARE(void) apr_proc_other_child_refresh_all(int reason)
+APR_DECLARE(void) fspr_proc_other_child_refresh_all(int reason)
 {
     return;
 }

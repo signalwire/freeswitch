@@ -507,7 +507,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 
 	for (;;) {
-		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
 
@@ -543,7 +542,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 
-		if ((b_state = switch_channel_down_nosig(chan_b))) {
+		if (switch_channel_down_nosig(chan_b)) {
 			goto end_of_bridge_loop;
 		}
 
@@ -953,14 +952,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 static void transfer_after_bridge(switch_core_session_t *session, const char *where)
 {
-	int argc;
 	char *argv[4] = { 0 };
 	char *mydata;
 
 	switch_channel_set_variable(switch_core_session_get_channel(session), SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, NULL);
 
 	if (!zstr(where) && (mydata = switch_core_session_strdup(session, where))) {
-		if ((argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+		if (switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0]))) >= 1) {
 			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No extension specified.\n");

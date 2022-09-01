@@ -54,6 +54,7 @@ reswig:	swigclean
 	$(MAKE) -C php reswig
 	$(MAKE) -C lua reswig
 	$(MAKE) -C python reswig
+	$(MAKE) -C python3 reswig
 	$(MAKE) -C ruby reswig
 	$(MAKE) -C java reswig
 	$(MAKE) -C managed reswig
@@ -63,6 +64,7 @@ swigclean: clean
 	$(MAKE) -C php swigclean
 	$(MAKE) -C lua swigclean
 	$(MAKE) -C python swigclean
+	$(MAKE) -C python3 swigclean
 	$(MAKE) -C ruby swigclean
 	$(MAKE) -C java swigclean
 	$(MAKE) -C managed swigclean
@@ -77,7 +79,10 @@ luamod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" LUA_CFLAGS="$(LUA_CFLAGS)" LUA_LIBS="$(LUA_LIBS)" -C lua
 
 pymod: $(MYLIB)
-	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C python
+	$(MAKE) PYTHON=$(PYTHON) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C python
+
+py3mod: $(MYLIB)
+	$(MAKE) PYTHON3=$(PYTHON3) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C python3
 
 tclmod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C tcl
@@ -98,9 +103,12 @@ phpmod-install: phpmod
 	$(MAKE) -C php install
 
 pymod-install: pymod
-	$(MAKE) -C python install
+	$(MAKE) PYTHON=$(PYTHON) -C python install
+
+py3mod-install: py3mod
+	$(MAKE) PYTHON3=$(PYTHON3) -C python3 install
 
 rubymod-install: rubymod
 	$(MAKE) -C ruby install
 
-everymod: perlmod phpmod luamod pymod rubymod javamod managedmod
+everymod: perlmod phpmod luamod pymod py3mod rubymod javamod managedmod

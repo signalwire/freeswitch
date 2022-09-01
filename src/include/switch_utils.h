@@ -590,7 +590,7 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *s
 SWITCH_DECLARE(char *) get_addr6(char *buf, switch_size_t len, struct sockaddr_in6 *sa, socklen_t salen);
 
 SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa);
-SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
+SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2, switch_bool_t ip_only);
 SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2);
 
 /*!
@@ -831,14 +831,38 @@ static inline char *switch_clean_name_string(char *s)
 
 
 /*!
-  \brief Turn a string into a number (default if NULL)
+  \brief Turn a string into an integer (default if NULL)
   \param nptr the string
   \param dft the default
-  \return the number version of the string or the default
+  \return the integer version of the string or the default
 */
 static inline int switch_safe_atoi(const char *nptr, int dft)
 {
 	return nptr ? atoi(nptr) : dft;
+}
+
+
+/*!
+  \brief Turn a string into a long integer (default if NULL)
+  \param nptr the string
+  \param dft the default
+  \return the long integer version of the string or the default
+*/
+static inline long int switch_safe_atol(const char *nptr, long int dft)
+{
+	return nptr ? atol(nptr) : dft;
+}
+
+
+/*!
+  \brief Turn a string into a long long integer (default if NULL)
+  \param nptr the string
+  \param dft the default
+  \return the long long integer version of the string or the default
+*/
+static inline long long int switch_safe_atoll(const char *nptr, long long int dft)
+{
+	return nptr ? atoll(nptr) : dft;
 }
 
 
@@ -864,13 +888,10 @@ static inline char *switch_safe_strdup(const char *it)
 static inline char *switch_lc_strdup(const char *it)
 {
 	char *dup;
-	char *p;
 
 	if (it) {
 		dup = strdup(it);
-		for (p = dup; p && *p; p++) {
-			*p = (char) switch_tolower(*p);
-		}
+		switch_tolower_max(dup);
 		return dup;
 	}
 
@@ -881,13 +902,10 @@ static inline char *switch_lc_strdup(const char *it)
 static inline char *switch_uc_strdup(const char *it)
 {
 	char *dup;
-	char *p;
 
 	if (it) {
 		dup = strdup(it);
-		for (p = dup; p && *p; p++) {
-			*p = (char) switch_toupper(*p);
-		}
+		switch_toupper_max(dup);
 		return dup;
 	}
 
@@ -1126,10 +1144,7 @@ static inline uint32_t switch_parse_cpu_string(const char *cpu)
 	if (!cpu) return 1;
 
 	if (!strcasecmp(cpu, "auto")) {
-		if (cpu_count > 4) return 4;
-		if (cpu_count <= 2) return 1;
-
-		return (uint32_t)(cpu_count / 2);
+		return (uint32_t)((cpu_count * 3) / 2);
 	}
 
 	if (!strncasecmp(cpu, "cpu/", 4)) { /* cpu/2 or cpu/2/<max>  */
@@ -1263,6 +1278,31 @@ static inline switch_bool_t switch_is_file_path(const char *file)
 #endif
 
 	return r ? SWITCH_TRUE : SWITCH_FALSE;
+}
+
+static inline int switch_filecmp(const char *a, const char *b)
+{
+	const char *e;
+
+	if (zstr(a) || zstr(b)) {
+		return -1;
+	}
+
+	while(*a == '{') {
+		if ((e = switch_find_end_paren(a, '{', '}'))) {
+			a = e + 1;
+			while(*a == ' ') a++;
+		}
+	}
+
+	while(*b == '{') {
+		if ((e = switch_find_end_paren(b, '{', '}'))) {
+			b = e + 1;
+			while(*b == ' ') b++;
+		}
+	}
+
+	return strcmp(a, b);
 }
 
 
@@ -1462,6 +1502,9 @@ SWITCH_DECLARE(unsigned long) switch_getpid(void);
 
 SWITCH_DECLARE(switch_status_t) switch_digest(const char *digest_name, unsigned char **digest, const void *input, switch_size_t inputLen, unsigned int *outputlen);
 SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, char **digest_str, const void *input, switch_size_t inputLen, unsigned int *outputlen);
+
+SWITCH_DECLARE(char *) switch_must_strdup(const char *_s);
+SWITCH_DECLARE(const char *) switch_memory_usage_stream(switch_stream_handle_t *stream);
 
 SWITCH_END_EXTERN_C
 #endif

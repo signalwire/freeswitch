@@ -311,6 +311,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ClCompile>
     <ClCompile Include="..\..\src\switch_core_video.c" />
     <ClCompile Include="..\..\src\switch_apr.c" />
+    <ClCompile Include="..\..\src\switch_apr_queue.c" />
     <ClCompile Include="..\..\src\switch_buffer.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -400,12 +401,14 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClCompile Include="..\..\src\switch_odbc.c" />
     <ClCompile Include="..\..\src\switch_pcm.c" />
     <ClCompile Include="..\..\src\switch_speex.c" />
+    <ClCompile Include="..\..\src\switch_packetizer.c" />
     <ClCompile Include="..\..\src\switch_profile.c" />
     <ClCompile Include="..\..\src\switch_regex.c" />
     <ClCompile Include="..\..\src\switch_resample.c" />
     <ClCompile Include="..\..\src\switch_rtp.c" />
     <ClCompile Include="..\..\src\switch_scheduler.c" />
     <ClCompile Include="..\..\src\switch_sdp.c" />
+    <ClCompile Include="..\..\src\switch_spandsp.c" />
     <ClCompile Include="..\..\src\switch_stun.c" />
     <ClCompile Include="..\..\src\switch_time.c" />
     <ClCompile Include="..\..\src\switch_utils.c" />
@@ -735,11 +738,13 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClInclude Include="..\..\src\include\switch_module_interfaces.h" />
     <ClInclude Include="..\..\src\include\switch_mprintf.h" />
     <ClInclude Include="..\..\src\include\switch_odbc.h" />
+    <ClInclude Include="..\..\src\include\switch_packetizer.h" />
     <ClInclude Include="..\..\src\include\switch_platform.h" />
     <ClInclude Include="..\..\src\include\switch_regex.h" />
     <ClInclude Include="..\..\src\include\switch_resample.h" />
     <ClInclude Include="..\..\src\include\switch_rtp.h" />
     <ClInclude Include="..\..\src\include\switch_scheduler.h" />
+    <ClInclude Include="..\..\src\include\switch_spandsp.h" />
     <ClInclude Include="..\..\src\include\switch_stun.h" />
     <ClInclude Include="..\..\src\include\switch_types.h" />
     <ClInclude Include="..\..\src\include\switch_utils.h" />
@@ -793,10 +798,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <ProjectReference Include="..\..\libs\srtp\libsrtp.2017.vcxproj">
       <Project>{eef031cb-fed8-451e-a471-91ec8d4f6750}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\apr-util\libaprutil.2017.vcxproj">
-      <Project>{f057da7f-79e5-4b00-845c-ef446ef055e3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\apr\libapr.2017.vcxproj">

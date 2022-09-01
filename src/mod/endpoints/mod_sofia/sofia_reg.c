@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -38,6 +38,12 @@
  *
  */
 #include "mod_sofia.h"
+#include "sofia-sip/hostdomain.h"
+#include "sip-dig.h"
+/* This include defines OPENSSL_VERSION_NUMBER required for SHA-512-256 (RFC-8760)
+   Do NOT remove this line even if mod_sofia builds without it. 
+*/
+#include "switch_ssl.h"
 
 static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 {
@@ -201,12 +207,14 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 		if (gateway_ptr->state == REG_STATE_REGED) {
 			sofia_reg_kill_reg(gateway_ptr);
 		}
+		sofia_private_free(gateway_ptr->sofia_private);
 
 		for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
 
 			if (gw_sub_ptr->state == SUB_STATE_SUBED) {
 				sofia_reg_kill_sub(gw_sub_ptr);
 			}
+			sofia_private_free(gw_sub_ptr->sofia_private);
 		}
 
 		gateway_ptr->subscriptions = NULL;
@@ -1127,8 +1135,10 @@ static char * sofia_alg_to_str(sofia_auth_algs_t alg)
 {
 	if (alg == ALG_SHA256) 
 		return "SHA-256";
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	if (alg == ALG_SHA512) 
 		return "SHA-512-256";
+#endif 
 	return "MD5";
 }
 
@@ -1146,25 +1156,37 @@ void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_
 		msg = de->data->e_msg;
 	}
 
-	switch_uuid_get(&uuid);
-	switch_uuid_format(uuid_str, &uuid);
-
-	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
-						 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
-						 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + exptime,
-						 profile->name, mod_sofia_globals.hostname);
-	switch_assert(sql != NULL);
-	sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-
 	if (!profile->rfc8760_algs_count) {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(uuid_str, &uuid);
+
+		sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc) "
+							 "values('%q', %ld, '%q', '%q', 0)", uuid_str,
+							 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + profile->timer_t1x64 / 1000,
+							 profile->name, mod_sofia_globals.hostname);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+
 		auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "");
 	} else {
 		int i;
-		for (i = 0 ; i < profile->rfc8760_algs_count; i++) {
-			if (profile->auth_algs[i] != ALG_NONE) {
-				auth_str_rfc8760[i] = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=%s, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "", sofia_alg_to_str(profile->auth_algs[i]));
-			}
+		char *sql_build;
+		switch_stream_handle_t stream = { 0 };
+
+		SWITCH_STANDARD_STREAM(stream);
+		for (i = 0; i < profile->rfc8760_algs_count; i++) {
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
+			sql_build = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname, last_nc, algorithm) "
+								 "values('%s', %ld, '%q', '%q', 0, %d)", uuid_str,
+								 (long) switch_epoch_time_now(NULL) + (profile->nonce_ttl ? profile->nonce_ttl : DEFAULT_NONCE_TTL) + profile->timer_t1x64 / 1000,
+								 profile->name, mod_sofia_globals.hostname, profile->auth_algs[i]);
+
+			auth_str_rfc8760[i] = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=%s, qop=\"auth\"", realm, uuid_str, stale ? " stale=true," : "", sofia_alg_to_str(profile->auth_algs[i]));
+			stream.write_function(&stream, "%s%s", i ? ";" : "", sql_build);
+			switch_safe_free(sql_build);
 		}
+		sofia_glue_execute_sql_now(profile, (char **)&stream.data, SWITCH_TRUE);
 	}
 
 	if (regtype == REG_REGISTER) {
@@ -1502,30 +1524,11 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 
 		if (sip->sip_path) {
-			char *path_stripped = NULL;
-			char *path_val_to_encode = NULL;
-			su_strlst_t *path_list = su_strlst_create(nua_handle_home(nh));
-			sip_path_t *next_path = sip->sip_path;
-			for (; next_path; next_path = next_path->r_next) {
-				path_val = sip_header_as_string(nua_handle_home(nh), (void *) next_path);
-				if (path_val) {
-					path_stripped = sofia_glue_get_url_from_contact(path_val, SWITCH_TRUE);
-					su_free(nua_handle_home(nh), path_val);
-					su_strlst_dup_append(path_list, path_stripped);
-					switch_safe_free(path_stripped);
-				}
+			path_encoded = sofia_glue_get_encoded_fs_path(nh, sip->sip_path, SWITCH_TRUE);
+			if (!path_encoded) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not get fs_path str.\n");
 			}
 
-			path_val = su_strlst_join(path_list, nua_handle_home(nh), ",");
-			path_val_to_encode = su_strlst_join(path_list, nua_handle_home(nh), "%2C");
-			su_strlst_destroy(path_list);
-			if (path_val_to_encode) {
-				path_encoded_len = (int)(strlen(path_val_to_encode) * 3) + 1;
-				switch_zmalloc(path_encoded, path_encoded_len);
-				switch_copy_string(path_encoded, ";fs_path=", 10);
-				switch_url_encode(path_val_to_encode, path_encoded + 9, path_encoded_len - 9);
-				su_free(nua_handle_home(nh), path_val_to_encode);
-			}
 		} else if (is_nat) {
 			char my_contact_str[1024];
 			if (uparams) {
@@ -2432,6 +2435,144 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 
 }
 
+switch_bool_t sip_resolve_prepare_transport(struct dig *dig, sofia_transport_t tport)
+{
+	struct transport *tports = dig->tports;
+
+	if (tport == SOFIA_TRANSPORT_UDP) {
+		tports[0].name = "udp";
+		tports[0].service = "SIP+D2U";
+		tports[0].srv = "_sip._udp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_TCP) {
+		tports[0].name = "tcp";
+		tports[0].service = "SIP+D2T";
+		tports[0].srv = "_sip._tcp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_TCP_TLS) {
+		tports[0].name = "tls";
+		tports[0].service = "SIPS+D2T";
+		tports[0].srv = "_sips._tcp.";
+	}
+	else if (tport == SOFIA_TRANSPORT_SCTP) {
+		tports[0].name = "sctp";
+		tports[0].service = "SIP+D2S";
+		tports[0].srv = "_sip._sctp.";
+	} else {
+		return SWITCH_FALSE;
+	}
+	return SWITCH_TRUE;
+}
+
+/* resolve domain name (SRV + A + AAAA) and compare result with passed IP address */
+switch_bool_t sip_resolve_compare(const char *domainname, const char *ip, sofia_transport_t transport)
+{
+	url_t *uri = NULL;
+	char const *host;
+	char const *port;
+	struct dig dig[1] = {{ NULL }};
+	su_home_t *home = NULL;
+	sres_record_t **answers = NULL;
+	switch_bool_t ret = SWITCH_FALSE, ipv6 = SWITCH_FALSE;
+	
+	if (!host_is_domain(domainname)) {
+		return ret;
+	}
+
+	if (!sip_resolve_prepare_transport(dig, transport)) {
+		return ret;
+	}
+
+	home = su_home_new(sizeof(*home));
+
+	dig->sres = sres_resolver_new(getenv("SRESOLV_CONF"));
+
+	uri = url_hdup(home, (void *)domainname);
+
+	if (uri && uri->url_type == url_unknown)
+		url_sanitize(uri);
+
+	if (uri && uri->url_type == url_any) {
+		goto out;
+	}
+
+	if (!uri || (uri->url_type != url_sip && uri->url_type != url_sips)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid uri\n");
+		goto out;
+	}
+
+	port = url_port(uri);
+	if (port && !port[0]) port = NULL;
+
+	host = uri->url_host;
+
+	if (strchr(ip, ':')) {
+		ipv6 = SWITCH_TRUE;
+	}
+
+	ret = dig_all_srvs_simple(dig, domainname, ip, ipv6);
+
+	if (!ret) {
+		answers = dig_addr_simple(dig, host, ipv6?sres_type_aaaa:sres_type_a);
+		ret = verify_ip(answers, ip, ipv6);
+	}
+
+out:
+	su_home_unref(home);
+	sres_resolver_unref(dig->sres);
+
+	return ret;
+}
+
+static switch_bool_t is_host_from_gateway(const char *remote_ip, sofia_gateway_t *gateway) 
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	char *hosts[3]; /* check the 3 places where we keep IP/hostname */
+	int i;
+
+	hosts[0] = gateway->proxy_host_cfg;
+	hosts[1] = gateway->register_proxy_host_cfg;
+	hosts[2] = gateway->outbound_proxy_host_cfg;
+
+	for (i = 0; i < 3; i++) {
+		if (zstr(hosts[i])) {
+			continue;
+		}
+
+		if (host_is_ip_address(hosts[i])) {
+			if (!strcmp(hosts[i], remote_ip)) {
+				ret = SWITCH_TRUE;
+			}
+
+			if (ret) break;
+		} else {
+			ret = sip_resolve_compare(hosts[i], remote_ip, gateway->register_transport);
+			if (ret) break;
+		}
+	}
+
+	return ret;
+}
+
+static switch_bool_t is_legitimate_gateway(sofia_dispatch_event_t *de, sofia_gateway_t *gateway) 
+{
+	char remote_ip[80] = { 0 };
+	switch_bool_t ret = SWITCH_FALSE;
+
+	sofia_glue_get_addr(de->data->e_msg, remote_ip, sizeof(remote_ip), NULL);
+
+	/* setting param "gw-auth-acl" supersedes everything */
+	if (gateway->gw_auth_acl) {
+		ret = switch_check_network_list_ip(remote_ip, gateway->gw_auth_acl);
+		if (!ret) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Challange from [%s] denied by gw-auth-acl.\n", remote_ip);
+		}
+
+		return ret;
+	} else {
+		return is_host_from_gateway(remote_ip, gateway);
+	}
+}
 
 void sofia_reg_handle_sip_r_register(int status,
 									 char const *phrase,
@@ -2463,6 +2604,7 @@ void sofia_reg_handle_sip_r_register(int status,
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &gateway->register_network_port);
 			if (!zstr_buf(network_ip)) {
 				snprintf(gateway->register_network_ip, sizeof(gateway->register_network_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+
 			}
 		}
 
@@ -2668,9 +2810,11 @@ void sofia_reg_handle_sip_r_challenge(int status,
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
 					if (!strcasecmp(var, "reverse-auth-user")) {
+						switch_safe_free(dup_user);
 						dup_user = strdup(val);
 						sip_auth_username = dup_user;
 					} else if (!strcasecmp(var, "reverse-auth-pass")) {
+						switch_safe_free(dup_pass);
 						dup_pass = strdup(val);
 						sip_auth_password = dup_pass;
 					}
@@ -2684,11 +2828,22 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (sip_auth_username && sip_auth_password) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, sip_auth_username, sip_auth_password);
-	} else if (gateway) {
+	} else if (gateway && is_legitimate_gateway(de, gateway)) {
 		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 	} else {
+		if (gateway) {
+			switch_event_t *s_event;
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_INVALID_DIGEST_REQ) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", gateway->profile->name);
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
+				switch_event_fire(&s_event);
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-						  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+							  "Cannot locate any authentication credentials to complete an authentication request for realm '%s'\n", realm);
+
 		goto cancel;
 	}
 
@@ -2779,31 +2934,35 @@ sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive)
 	if (!strcasecmp(algorithm, "SHA-256") || (permissive && !strcasecmp(algorithm, "SHA256"))) {
 		return ALG_SHA256;
 	}
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	if (!strcasecmp(algorithm, "SHA-512-256") || (permissive && !strcasecmp(algorithm, "SHA512")) 
 			|| (permissive && !strcasecmp(algorithm, "SHA512-256")) || (permissive && !strcasecmp(algorithm, "SHA-512"))) {
 		return ALG_SHA512;
 	}
-
+#endif
 	return ALG_NONE;
 }
 
 switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen) 
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch (use_alg) 
 	{
 		case ALG_MD5:
-			switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
 			break;
 		case ALG_SHA256:
-			switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
 			break;
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		case ALG_SHA512:
-			switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
 			break;
+#endif
 		default:
 			return SWITCH_STATUS_FALSE;
 	}
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
@@ -3384,7 +3543,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
   end:
 
 
-	if (nc && cnonce && qop) {
+	if (nc && cnonce && qop && ret == AUTH_OK) {
+		ret = AUTH_RENEWED;
+	}
+
+	if (((ret == AUTH_OK) || (ret == AUTH_RENEWED)) && nc) {
 		ncl = strtoul(nc, 0, 16);
 
 		sql = switch_mprintf("update sip_authentication set expires='%ld',last_nc=%lu where nonce='%q'",
@@ -3393,8 +3556,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
-		if (ret == AUTH_OK)
-			ret = AUTH_RENEWED;
 	}
 
 	switch_event_destroy(&params);

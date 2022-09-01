@@ -144,7 +144,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.4
+BuildRequires: sofia-sip-devel >= 1.13.6
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -653,15 +653,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_tts_commandline, Run a command line and play the 
 output file.
 
-%package asrtts-unimrcp
-Summary:	FreeSWITCH mod_unimrcp
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description asrtts-unimrcp
-Provides FreeSWITCH mod_unimrcp, allows communication with Media Resource 
-Control Protocol (MRCP) servers
-
 ######################################################################################################################
 #				FreeSWITCH Codec Modules
 ######################################################################################################################
@@ -859,15 +850,6 @@ LDAP Directory support for FreeSWITCH open source telephony platform.
 ######################################################################################################################
 #				FreeSWITCH Endpoint Modules
 ######################################################################################################################
-
-%package endpoint-dingaling
-Summary:        Generic XMPP support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description endpoint-dingaling
-XMPP support for FreeSWITCH open source telephony platform. Allows FreeSWITCH
-to be used as a client for GoogleTalk or other XMPP Servers.
 
 #%package endpoint-gsmopen
 #Summary:        Generic GSM endpoint support for FreeSWITCH open source telephony platform
@@ -1487,7 +1469,7 @@ APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATI
 #				Automatic Speech Recognition and Text To Speech Modules
 #
 ######################################################################################################################
-ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline asr_tts/mod_unimrcp"
+ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline"
 
 ######################################################################################################################
 #
@@ -1528,7 +1510,7 @@ DIRECTORIES_MODULES="directories/mod_ldap"
 #						Endpoints
 #
 ######################################################################################################################
-ENDPOINTS_MODULES="endpoints/mod_dingaling \
+ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
@@ -1856,9 +1838,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/dialplan/skinny-patterns
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/directory
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/directory/default
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/jingle_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external-ipv6
@@ -1966,7 +1946,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dialplan_directory.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dingaling.conf.xml 
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/directory.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/distributor.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/easyroute.conf.xml
@@ -2018,7 +1997,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/translate.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unimrcp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
@@ -2061,11 +2039,9 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/sip_profiles/external-ipv6/*.xml
 ######################################################################################################################
-#				Other Protocol Profiles (skinny, jingle, mrcp)
+#				Other Protocol Profiles (skinny)
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/skinny_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/jingle_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/mrcp_profiles/*.xml
 ######################################################################################################################
 #						Grammar Files
 ######################################################################################################################
@@ -2224,9 +2200,6 @@ fi
 %files asrtts-tts-commandline
 %{MODINSTDIR}/mod_tts_commandline.so*
 
-%files asrtts-unimrcp
-%{MODINSTDIR}/mod_unimrcp.so*
-
 ######################################################################################################################
 #
 #						CODEC Packages
@@ -2308,9 +2281,6 @@ fi
 #						FreeSWITCH endpoint Modules
 #
 ######################################################################################################################
-
-%files endpoint-dingaling
-%{MODINSTDIR}/mod_dingaling.so*
 
 #%files endpoint-gsmopen
 #%{MODINSTDIR}/mod_gsmopen.so*
