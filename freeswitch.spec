@@ -1939,6 +1939,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/skinny.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/smpp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sms_flowroute.conf.xml
