@@ -464,7 +464,6 @@ done:
 #define SIGNALWIRE_SYNTAX "token | token-reset | adoption | adopted | reload | update | debug <level> | kslog <on|off|logfile e.g. /tmp/ks.log>"
 SWITCH_STANDARD_API(mod_signalwire_api_function)
 {
-	int argc = 0;
 	char *argv[2] = { 0 };
 	char *buf = NULL;
 
@@ -474,7 +473,7 @@ SWITCH_STANDARD_API(mod_signalwire_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-    if ((argc = switch_separate_string(buf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+    if (switch_separate_string(buf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		if (!strcmp(argv[0], "token")) {
 			if (globals.adoption_token[0]) {
 				stream->write_function(stream,

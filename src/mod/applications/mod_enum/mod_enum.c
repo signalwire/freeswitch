@@ -303,7 +303,6 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	char *argv[11] = { 0 };
 	int i, argc;
 	char *pack[4] = { 0 };
-	int packc;
 
 	char *p;
 	int order = 10;
@@ -351,7 +350,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	}
 
 
-	if ((packc = switch_split(packstr, '!', pack))) {
+	if (switch_split(packstr, '!', pack)) {
 		regex = pack[1];
 		replace = pack[2];
 	} else {
@@ -673,7 +672,6 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 
 SWITCH_STANDARD_APP(enum_app_function)
 {
-	int argc = 0;
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *dest = NULL, *root = NULL;
@@ -691,7 +689,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 		return;
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		dest = argv[0];
 		root = argv[1];
 		if (enum_lookup(root, dest, &results, channel, session) == SWITCH_STATUS_SUCCESS) {
@@ -737,7 +735,6 @@ SWITCH_STANDARD_APP(enum_app_function)
 
 SWITCH_STANDARD_API(enum_api)
 {
-	int argc = 0;
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *dest = NULL, *root = NULL;
@@ -758,7 +755,7 @@ SWITCH_STANDARD_API(enum_api)
 		abort();
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		dest = argv[0];
 		root = argv[1];
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Looking up %s@%s\n", dest, root);
@@ -814,7 +811,6 @@ static void do_load(void)
 
 SWITCH_STANDARD_API(enum_function)
 {
-	int argc = 0;
 	char *argv[4] = { 0 };
 	enum_record_t *results, *rp;
 	char *mydata = NULL;
@@ -830,7 +826,7 @@ SWITCH_STANDARD_API(enum_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		dest = argv[0];
 		root = argv[1];
 		switch_assert(dest);

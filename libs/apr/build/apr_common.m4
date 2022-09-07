@@ -338,7 +338,7 @@ AC_DEFUN([APR_CHECK_APR_DEFINE],[
 apr_old_cppflags=$CPPFLAGS
 CPPFLAGS="$CPPFLAGS $INCLUDES"
 AC_EGREP_CPP(YES_IS_DEFINED, [
-#include <apr.h>
+#include <fspr.h>
 #if $1
 YES_IS_DEFINED
 #endif
@@ -403,7 +403,7 @@ ac_decision=''
 
 
 AC_DEFUN([APR_DECIDE],[dnl
-dnl Define the flag (or not) in apr_private.h via autoheader
+dnl Define the flag (or not) in fspr_private.h via autoheader
 AH_TEMPLATE($1, [Define if $2 will be used])
 ac_decision='$1'
 ac_decision_msg='$2'

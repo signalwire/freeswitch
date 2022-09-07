@@ -178,7 +178,6 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
 	char *argv[2] = { 0 };
-	int argc;
 	char *script = NULL;
 	PyObject *module_o = NULL, *module = NULL, *sp = NULL, *stp = NULL, *eve = NULL;
 	PyObject *function = NULL;
@@ -198,7 +197,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
 	assert(dupargs != NULL);
 
-	if (!(argc = switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (!switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No module name specified!\n");
 		goto done;
 	}

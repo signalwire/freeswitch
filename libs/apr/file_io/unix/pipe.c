@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
-#include "apr_arch_inherit.h"
+#include "fspr_arch_inherit.h"
 
 /* Figure out how to get pipe block/nonblock on BeOS...
  * Basically, BONE7 changed things again so that ioctl didn't work,
@@ -33,7 +33,7 @@
 #endif
 #endif
 
-static apr_status_t pipeblock(apr_file_t *thepipe)
+static fspr_status_t pipeblock(fspr_file_t *thepipe)
 {
 #if !BEOS_BLOCKING
       int fd_flags;
@@ -69,7 +69,7 @@ static apr_status_t pipeblock(apr_file_t *thepipe)
     return APR_SUCCESS;
 }
 
-static apr_status_t pipenonblock(apr_file_t *thepipe)
+static fspr_status_t pipenonblock(fspr_file_t *thepipe)
 {
 #if !BEOS_BLOCKING
       int fd_flags = fcntl(thepipe->filedes, F_GETFL, 0);
@@ -105,7 +105,7 @@ static apr_status_t pipenonblock(apr_file_t *thepipe)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_timeout_set(fspr_file_t *thepipe, fspr_interval_time_t timeout)
 {
     if (thepipe->is_pipe == 1) {
         thepipe->timeout = timeout;
@@ -124,7 +124,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_int
     return APR_EINVAL;
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_interval_time_t *timeout)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_timeout_get(fspr_file_t *thepipe, fspr_interval_time_t *timeout)
 {
     if (thepipe->is_pipe == 1) {
         *timeout = thepipe->timeout;
@@ -133,14 +133,14 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_int
     return APR_EINVAL;
 }
 
-APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
-                                             apr_os_file_t *thefile,
+APR_DECLARE(fspr_status_t) fspr_os_pipe_put_ex(fspr_file_t **file,
+                                             fspr_os_file_t *thefile,
                                              int register_cleanup,
-                                             apr_pool_t *pool)
+                                             fspr_pool_t *pool)
 {
     int *dafile = thefile;
     
-    (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
+    (*file) = fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*file)->pool = pool;
     (*file)->eof_hit = 0;
     (*file)->is_pipe = 1;
@@ -156,12 +156,12 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
     (*file)->thlock = NULL;
 #endif
     if (register_cleanup) {
-        apr_pool_cleanup_register((*file)->pool, (void *)(*file),
-                                  apr_unix_file_cleanup,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register((*file)->pool, (void *)(*file),
+                                  fspr_unix_file_cleanup,
+                                  fspr_pool_cleanup_null);
     }
 #ifndef WAITIO_USES_POLL
-    /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
+    /* Start out with no pollset.  fspr_wait_for_io_or_timeout() will
      * initialize the pollset if needed.
      */
     (*file)->pollset = NULL;
@@ -169,14 +169,14 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_pipe_put(apr_file_t **file,
-                                          apr_os_file_t *thefile,
-                                          apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_pipe_put(fspr_file_t **file,
+                                          fspr_os_file_t *thefile,
+                                          fspr_pool_t *pool)
 {
-    return apr_os_pipe_put_ex(file, thefile, 0, pool);
+    return fspr_os_pipe_put_ex(file, thefile, 0, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_create(fspr_file_t **in, fspr_file_t **out, fspr_pool_t *pool)
 {
     int filedes[2];
 
@@ -184,7 +184,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
         return errno;
     }
     
-    (*in) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
+    (*in) = (fspr_file_t *)fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*in)->pool = pool;
     (*in)->filedes = filedes[0];
     (*in)->is_pipe = 1;
@@ -200,7 +200,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
 #ifndef WAITIO_USES_POLL
     (*in)->pollset = NULL;
 #endif
-    (*out) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
+    (*out) = (fspr_file_t *)fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*out)->pool = pool;
     (*out)->filedes = filedes[1];
     (*out)->is_pipe = 1;
@@ -215,17 +215,17 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
 #ifndef WAITIO_USES_POLL
     (*out)->pollset = NULL;
 #endif
-    apr_pool_cleanup_register((*in)->pool, (void *)(*in), apr_unix_file_cleanup,
-                         apr_pool_cleanup_null);
-    apr_pool_cleanup_register((*out)->pool, (void *)(*out), apr_unix_file_cleanup,
-                         apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*in)->pool, (void *)(*in), fspr_unix_file_cleanup,
+                         fspr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*out)->pool, (void *)(*out), fspr_unix_file_cleanup,
+                         fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename, 
-                                                    apr_fileperms_t perm, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_namedpipe_create(const char *filename, 
+                                                    fspr_fileperms_t perm, fspr_pool_t *pool)
 {
-    mode_t mode = apr_unix_perms2mode(perm);
+    mode_t mode = fspr_unix_perms2mode(perm);
 
     if (mkfifo(filename, mode) == -1) {
         return errno;

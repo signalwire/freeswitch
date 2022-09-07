@@ -440,7 +440,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	switch_codec_interface_t *codec_interface;
 	struct stat statbuf;
 	struct dahdi_transcoder_info info = { 0 };
-	int32_t fd, res;
+	int32_t fd;
 	int mpf = 20000;			/* Algorithmic delay of 15ms with 5ms of look-ahead delay */
 	int spf = 160;
 	int bpfd = 320;
@@ -472,7 +472,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	for (info.tcnum = 0; !(res = ioctl(fd, DAHDI_TC_GETINFO, &info)); info.tcnum++) {
+	for (info.tcnum = 0; !ioctl(fd, DAHDI_TC_GETINFO, &info); info.tcnum++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found dahdi transcoder name: %s\n", info.name);
 		if ((info.srcfmts & DAHDI_FORMAT_ULAW) && (info.dstfmts & (DAHDI_FORMAT_G729A | DAHDI_FORMAT_G723_1))) {
 			total_encoders += info.numchannels;

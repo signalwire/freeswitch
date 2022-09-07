@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_portable.h"
-#include "apr_strings.h"
-#include "apr_arch_threadproc.h"
+#include "fspr.h"
+#include "fspr_portable.h"
+#include "fspr_strings.h"
+#include "fspr_arch_threadproc.h"
 
 static int thread_count = 0;
 
-apr_status_t apr_threadattr_create(apr_threadattr_t **new,
-                                                apr_pool_t *pool)
+fspr_status_t fspr_threadattr_create(fspr_threadattr_t **new,
+                                                fspr_pool_t *pool)
 {
-    (*new) = (apr_threadattr_t *)apr_palloc(pool, 
-              sizeof(apr_threadattr_t));
+    (*new) = (fspr_threadattr_t *)fspr_palloc(pool, 
+              sizeof(fspr_threadattr_t));
 
     if ((*new) == NULL) {
         return APR_ENOMEM;
@@ -38,45 +38,45 @@ apr_status_t apr_threadattr_create(apr_threadattr_t **new,
     return APR_SUCCESS;
 }
 
-apr_status_t apr_threadattr_detach_set(apr_threadattr_t *attr,apr_int32_t on)
+fspr_status_t fspr_threadattr_detach_set(fspr_threadattr_t *attr,fspr_int32_t on)
 {
     attr->detach = on;
 	return APR_SUCCESS;   
 }
 
-apr_status_t apr_threadattr_detach_get(apr_threadattr_t *attr)
+fspr_status_t fspr_threadattr_detach_get(fspr_threadattr_t *attr)
 {
     if (attr->detach == 1)
         return APR_DETACH;
     return APR_NOTDETACH;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_stacksize_set(apr_threadattr_t *attr,
-                                                       apr_size_t stacksize)
+APR_DECLARE(fspr_status_t) fspr_threadattr_stacksize_set(fspr_threadattr_t *attr,
+                                                       fspr_size_t stacksize)
 {
     attr->stack_size = stacksize;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_guardsize_set(apr_threadattr_t *attr,
-                                                       apr_size_t size)
+APR_DECLARE(fspr_status_t) fspr_threadattr_guardsize_set(fspr_threadattr_t *attr,
+                                                       fspr_size_t size)
 {
     return APR_ENOTIMPL;
 }
 
 static void *dummy_worker(void *opaque)
 {
-    apr_thread_t *thd = (apr_thread_t *)opaque;
+    fspr_thread_t *thd = (fspr_thread_t *)opaque;
     return thd->func(thd, thd->data);
 }
 
-apr_status_t apr_thread_create(apr_thread_t **new,
- 											apr_threadattr_t *attr, 
-                             				apr_thread_start_t func,
+fspr_status_t fspr_thread_create(fspr_thread_t **new,
+ 											fspr_threadattr_t *attr, 
+                             				fspr_thread_start_t func,
  											void *data,
- 											apr_pool_t *pool)
+ 											fspr_pool_t *pool)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     long flags = NX_THR_BIND_CONTEXT;
   	char threadName[NX_MAX_OBJECT_NAME_LEN+1];
     size_t stack_size = APR_DEFAULT_STACK_SIZE;
@@ -97,7 +97,7 @@ apr_status_t apr_thread_create(apr_thread_t **new,
         stack_size = attr->stack_size;
     }
     
-    (*new) = (apr_thread_t *)apr_palloc(pool, sizeof(apr_thread_t));
+    (*new) = (fspr_thread_t *)fspr_palloc(pool, sizeof(fspr_thread_t));
 
     if ((*new) == NULL) {
         return APR_ENOMEM;
@@ -106,9 +106,9 @@ apr_status_t apr_thread_create(apr_thread_t **new,
     (*new)->pool = pool;
     (*new)->data = data;
     (*new)->func = func;
-    (*new)->thread_name = (char*)apr_pstrdup(pool, threadName);
+    (*new)->thread_name = (char*)fspr_pstrdup(pool, threadName);
     
-    stat = apr_pool_create(&(*new)->pool, pool);
+    stat = fspr_pool_create(&(*new)->pool, pool);
     if (stat != APR_SUCCESS) {
         return stat;
     }
@@ -141,34 +141,34 @@ apr_status_t apr_thread_create(apr_thread_t **new,
 	return(stat);// if error    
 }
 
-apr_os_thread_t apr_os_thread_current()
+fspr_os_thread_t fspr_os_thread_current()
 {
     return NXThreadGetId();
 }
 
-int apr_os_thread_equal(apr_os_thread_t tid1, apr_os_thread_t tid2)
+int fspr_os_thread_equal(fspr_os_thread_t tid1, fspr_os_thread_t tid2)
 {
     return (tid1 == tid2);
 }
 
-void apr_thread_yield()
+void fspr_thread_yield()
 {
     NXThreadYield();
 }
 
-apr_status_t apr_thread_exit(apr_thread_t *thd,
-                             apr_status_t retval)
+fspr_status_t fspr_thread_exit(fspr_thread_t *thd,
+                             fspr_status_t retval)
 {
     thd->exitval = retval;
-    apr_pool_destroy(thd->pool);
+    fspr_pool_destroy(thd->pool);
     NXThreadExit(NULL);
     return APR_SUCCESS;
 }
 
-apr_status_t apr_thread_join(apr_status_t *retval,
-                                          apr_thread_t *thd)
+fspr_status_t fspr_thread_join(fspr_status_t *retval,
+                                          fspr_thread_t *thd)
 {
-    apr_status_t  stat;    
+    fspr_status_t  stat;    
     NXThreadId_t dthr;
 
     if ((stat = NXThreadJoin(thd->td, &dthr, NULL)) == 0) {
@@ -180,16 +180,16 @@ apr_status_t apr_thread_join(apr_status_t *retval,
     }
 }
 
-apr_status_t apr_thread_detach(apr_thread_t *thd)
+fspr_status_t fspr_thread_detach(fspr_thread_t *thd)
 {
     return APR_SUCCESS;
 }
 
-apr_status_t apr_thread_data_get(void **data, const char *key,
-                                             apr_thread_t *thread)
+fspr_status_t fspr_thread_data_get(void **data, const char *key,
+                                             fspr_thread_t *thread)
 {
     if (thread != NULL) {
-            return apr_pool_userdata_get(data, key, thread->pool);
+            return fspr_pool_userdata_get(data, key, thread->pool);
     }
     else {
         data = NULL;
@@ -197,12 +197,12 @@ apr_status_t apr_thread_data_get(void **data, const char *key,
     }
 }
 
-apr_status_t apr_thread_data_set(void *data, const char *key,
-                              apr_status_t (*cleanup) (void *),
-                              apr_thread_t *thread)
+fspr_status_t fspr_thread_data_set(void *data, const char *key,
+                              fspr_status_t (*cleanup) (void *),
+                              fspr_thread_t *thread)
 {
     if (thread != NULL) {
-       return apr_pool_userdata_set(data, key, cleanup, thread->pool);
+       return fspr_pool_userdata_set(data, key, cleanup, thread->pool);
     }
     else {
         data = NULL;
@@ -210,8 +210,8 @@ apr_status_t apr_thread_data_set(void *data, const char *key,
     }
 }
 
-APR_DECLARE(apr_status_t) apr_os_thread_get(apr_os_thread_t **thethd,
-                                            apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_os_thread_get(fspr_os_thread_t **thethd,
+                                            fspr_thread_t *thd)
 {
     if (thd == NULL) {
         return APR_ENOTHREAD;
@@ -220,29 +220,29 @@ APR_DECLARE(apr_status_t) apr_os_thread_get(apr_os_thread_t **thethd,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_thread_put(apr_thread_t **thd,
-                                            apr_os_thread_t *thethd,
-                                            apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_thread_put(fspr_thread_t **thd,
+                                            fspr_os_thread_t *thethd,
+                                            fspr_pool_t *pool)
 {
     if (pool == NULL) {
         return APR_ENOPOOL;
     }
     if ((*thd) == NULL) {
-        (*thd) = (apr_thread_t *)apr_palloc(pool, sizeof(apr_thread_t));
+        (*thd) = (fspr_thread_t *)fspr_palloc(pool, sizeof(fspr_thread_t));
         (*thd)->pool = pool;
     }
     (*thd)->td = *thethd;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_once_init(apr_thread_once_t **control,
-                                               apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_thread_once_init(fspr_thread_once_t **control,
+                                               fspr_pool_t *p)
 {
-    (*control) = apr_pcalloc(p, sizeof(**control));
+    (*control) = fspr_pcalloc(p, sizeof(**control));
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_once(apr_thread_once_t *control,
+APR_DECLARE(fspr_status_t) fspr_thread_once(fspr_thread_once_t *control,
                                           void (*func)(void))
 {
     if (!atomic_xchg(&control->value, 1)) {

@@ -14,9 +14,9 @@
  * SOFTWARE.
  */
 
-#include "apr_private.h"
-#include "apr_arch_networkio.h"
-#include "apr_strings.h"
+#include "fspr_private.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_strings.h"
 
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -41,7 +41,7 @@
 #endif
 
 #ifndef INT16SZ
-#define INT16SZ sizeof(apr_int16_t)
+#define INT16SZ sizeof(fspr_int16_t)
 #endif
 
 #ifndef __P
@@ -57,9 +57,9 @@
  * sizeof(int) < 4.  sizeof(int) > 4 is fine; all the world's not a VAX.
  */
 
-static const char *inet_ntop4 __P((const unsigned char *src, char *dst, apr_size_t size));
+static const char *inet_ntop4 __P((const unsigned char *src, char *dst, fspr_size_t size));
 #if APR_HAVE_IPV6
-static const char *inet_ntop6 __P((const unsigned char *src, char *dst, apr_size_t size));
+static const char *inet_ntop6 __P((const unsigned char *src, char *dst, fspr_size_t size));
 #endif
 
 /* char *
@@ -71,7 +71,7 @@ static const char *inet_ntop6 __P((const unsigned char *src, char *dst, apr_size
  *	Paul Vixie, 1996.
  */
 const char *
-apr_inet_ntop(int af, const void *src, char *dst, apr_size_t size)
+fspr_inet_ntop(int af, const void *src, char *dst, fspr_size_t size)
 {
 	switch (af) {
 	case AF_INET:
@@ -99,9 +99,9 @@ apr_inet_ntop(int af, const void *src, char *dst, apr_size_t size)
  *	Paul Vixie, 1996.
  */
 static const char *
-inet_ntop4(const unsigned char *src, char *dst, apr_size_t size)
+inet_ntop4(const unsigned char *src, char *dst, fspr_size_t size)
 {
-	const apr_size_t MIN_SIZE = 16; /* space for 255.255.255.255\0 */
+	const fspr_size_t MIN_SIZE = 16; /* space for 255.255.255.255\0 */
 	int n = 0;
 	char *next = dst;
 
@@ -137,7 +137,7 @@ inet_ntop4(const unsigned char *src, char *dst, apr_size_t size)
  *	Paul Vixie, 1996.
  */
 static const char *
-inet_ntop6(const unsigned char *src, char *dst, apr_size_t size)
+inet_ntop6(const unsigned char *src, char *dst, fspr_size_t size)
 {
     /*
      * Note that int32_t and int16_t need only be "at least" large enough
@@ -224,7 +224,7 @@ inet_ntop6(const unsigned char *src, char *dst, apr_size_t size)
             tp += strlen(tp);
             break;
         }
-        tp += apr_snprintf(tp, sizeof tmp - (tp - tmp), "%x", words[i]);
+        tp += fspr_snprintf(tp, sizeof tmp - (tp - tmp), "%x", words[i]);
         i++;
     }
     /* Was it a trailing run of 0x00's? */
@@ -236,7 +236,7 @@ inet_ntop6(const unsigned char *src, char *dst, apr_size_t size)
     /*
      * Check for overflow, copy, and we're done.
      */
-    if ((apr_size_t)(tp - tmp) > size) {
+    if ((fspr_size_t)(tp - tmp) > size) {
         errno = ENOSPC;
         return (NULL);
     }

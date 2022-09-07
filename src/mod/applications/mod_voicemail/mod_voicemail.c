@@ -3165,7 +3165,6 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	char *dup = NULL, *user = NULL, *domain = NULL, *profile_name = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int isgroup = 0, isall = 0;
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *box, *path, *cid_num, *cid_name;
 	switch_memory_pool_t *pool = NULL;
@@ -3181,7 +3180,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	dup = strdup(data);
 	switch_assert(dup);
 
-	if ((argc = switch_separate_string(dup, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if (switch_separate_string(dup, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough args [%s]\n", data);
 		status = SWITCH_STATUS_FALSE;
 		goto end;
@@ -3338,7 +3337,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 		} else {
 			switch_xml_t x_group = NULL;
 
-			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
+			if (switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group) == SWITCH_STATUS_SUCCESS) {
 				switch_xml_merge_user(ut, x_domain, x_group);
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, read_flags,

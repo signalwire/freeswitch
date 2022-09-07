@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_arch_thread_mutex.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_portable.h"
 
-static apr_status_t thread_mutex_cleanup(void *data)
+static fspr_status_t thread_mutex_cleanup(void *data)
 {
-    apr_thread_mutex_t *mutex = (apr_thread_mutex_t *)data;
+    fspr_thread_mutex_t *mutex = (fspr_thread_mutex_t *)data;
 
     NXMutexFree(mutex->mutex);        
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_create(apr_thread_mutex_t **mutex,
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_create(fspr_thread_mutex_t **mutex,
                                                   unsigned int flags,
-                                                  apr_pool_t *pool)
+                                                  fspr_pool_t *pool)
 {
-    apr_thread_mutex_t *new_mutex = NULL;
+    fspr_thread_mutex_t *new_mutex = NULL;
 
     /* XXX: Implement _UNNESTED flavor and favor _DEFAULT for performance
      */
     if (flags & APR_THREAD_MUTEX_UNNESTED) {
         return APR_ENOTIMPL;
     }
-    new_mutex = (apr_thread_mutex_t *)apr_pcalloc(pool, sizeof(apr_thread_mutex_t));
+    new_mutex = (fspr_thread_mutex_t *)fspr_pcalloc(pool, sizeof(fspr_thread_mutex_t));
 	
 	if(new_mutex ==NULL) {
         return APR_ENOMEM;
@@ -52,37 +52,37 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_create(apr_thread_mutex_t **mutex,
     if(new_mutex->mutex == NULL)
         return APR_ENOMEM;
 
-    apr_pool_cleanup_register(new_mutex->pool, new_mutex, 
+    fspr_pool_cleanup_register(new_mutex->pool, new_mutex, 
                                 (void*)thread_mutex_cleanup,
-                                apr_pool_cleanup_null);
+                                fspr_pool_cleanup_null);
    *mutex = new_mutex;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_lock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_lock(fspr_thread_mutex_t *mutex)
 {
     NXLock(mutex->mutex);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_trylock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_trylock(fspr_thread_mutex_t *mutex)
 {
     if (!NXTryLock(mutex->mutex))
         return APR_EBUSY;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_unlock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_unlock(fspr_thread_mutex_t *mutex)
 {
     NXUnlock(mutex->mutex);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_destroy(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_destroy(fspr_thread_mutex_t *mutex)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     if ((stat = thread_mutex_cleanup(mutex)) == APR_SUCCESS) {
-        apr_pool_cleanup_kill(mutex->pool, mutex, thread_mutex_cleanup);
+        fspr_pool_cleanup_kill(mutex->pool, mutex, thread_mutex_cleanup);
         return APR_SUCCESS;
     }
     return stat;

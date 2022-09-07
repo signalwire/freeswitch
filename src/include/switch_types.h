@@ -2323,7 +2323,7 @@ typedef int switch_os_socket_t;
 #define SWITCH_SOCK_INVALID -1
 #endif
 
-typedef struct apr_pool_t switch_memory_pool_t;
+typedef struct fspr_pool_t switch_memory_pool_t;
 typedef void* switch_plc_state_t;
 typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
