@@ -747,6 +747,18 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 	esl_status_t status = ESL_SUCCESS;
 	struct thread_handler *handler = NULL;
 
+#ifndef WIN32
+	int fd_flags = 0;
+#else
+	WORD wVersionRequested = MAKEWORD(2, 0);
+	WSADATA wsaData;
+	int err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
+#endif
+
 	if ((server_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		return ESL_FAIL;
 	}
