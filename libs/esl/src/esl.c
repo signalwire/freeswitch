@@ -748,14 +748,12 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 	struct thread_handler *handler = NULL;
 
 #ifndef WIN32
-	int fd_flags = 0;
 #else
 	WORD wVersionRequested = MAKEWORD(2, 0);
 	WSADATA wsaData;
 	int err = WSAStartup(wVersionRequested, &wsaData);
 	if (err != 0) {
-		status = ESL_FAIL;
-		goto end;
+		return ESL_FAIL;
 	}
 #endif
 
