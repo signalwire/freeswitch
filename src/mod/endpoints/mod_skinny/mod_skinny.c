@@ -2056,7 +2056,7 @@ sock_fail:
 
 		assert(profile->sock);
 
-		if ((rv = switch_socket_accept(&inbound_socket, profile->sock, listener_pool))) {
+		if (switch_socket_accept(&inbound_socket, profile->sock, listener_pool)) {
 			if (!skinny_globals.running) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;

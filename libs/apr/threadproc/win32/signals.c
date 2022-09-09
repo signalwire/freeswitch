@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_threadproc.h"
-#include "win32/apr_arch_file_io.h"
-#include "apr_thread_proc.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
+#include "win32/fspr_arch_threadproc.h"
+#include "win32/fspr_arch_file_io.h"
+#include "fspr_thread_proc.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
 #if APR_HAVE_SIGNAL_H
 #include <signal.h>
 #endif
@@ -32,35 +32,35 @@
  * ### Actually, closing the input handle to the proc should also do fine 
  * for most console apps.  This definately needs improvement...
  */
-APR_DECLARE(apr_status_t) apr_proc_kill(apr_proc_t *proc, int signal)
+APR_DECLARE(fspr_status_t) fspr_proc_kill(fspr_proc_t *proc, int signal)
 {
     if (proc->hproc != NULL) {
         if (TerminateProcess(proc->hproc, signal) == 0) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
-        /* On unix, SIGKILL leaves a apr_proc_wait()able pid lying around, 
-         * so we will leave hproc alone until the app calls apr_proc_wait().
+        /* On unix, SIGKILL leaves a fspr_proc_wait()able pid lying around, 
+         * so we will leave hproc alone until the app calls fspr_proc_wait().
          */
         return APR_SUCCESS;
     }
     return APR_EPROC_UNKNOWN;
 }
 
-void apr_signal_init(apr_pool_t *pglobal)
+void fspr_signal_init(fspr_pool_t *pglobal)
 {
 }
 
-const char *apr_signal_description_get(int signum)
+const char *fspr_signal_description_get(int signum)
 {
     return "unknown signal (not supported)";
 }
 
-APR_DECLARE(apr_status_t) apr_signal_block(int signum)
+APR_DECLARE(fspr_status_t) fspr_signal_block(int signum)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_signal_unblock(int signum)
+APR_DECLARE(fspr_status_t) fspr_signal_unblock(int signum)
 {
     return APR_ENOTIMPL;
 }

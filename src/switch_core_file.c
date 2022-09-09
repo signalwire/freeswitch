@@ -949,10 +949,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 
 	if (fh->pre_buffer) {
 		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
-			switch_size_t rlen, blen;
+			switch_size_t blen;
 			int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
-			while ((rlen = switch_buffer_inuse(fh->pre_buffer))) {
+			while (switch_buffer_inuse(fh->pre_buffer)) {
 				if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
 					if (!asis)
 						blen /= 2;

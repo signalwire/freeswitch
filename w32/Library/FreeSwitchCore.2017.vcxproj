@@ -311,6 +311,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ClCompile>
     <ClCompile Include="..\..\src\switch_core_video.c" />
     <ClCompile Include="..\..\src\switch_apr.c" />
+    <ClCompile Include="..\..\src\switch_apr_queue.c" />
     <ClCompile Include="..\..\src\switch_buffer.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -797,10 +798,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <ProjectReference Include="..\..\libs\srtp\libsrtp.2017.vcxproj">
       <Project>{eef031cb-fed8-451e-a471-91ec8d4f6750}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\apr-util\libaprutil.2017.vcxproj">
-      <Project>{f057da7f-79e5-4b00-845c-ef446ef055e3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\apr\libapr.2017.vcxproj">

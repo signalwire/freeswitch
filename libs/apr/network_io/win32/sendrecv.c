@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_network_io.h"
-#include "apr_lib.h"
-#include "apr_arch_file_io.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_network_io.h"
+#include "fspr_lib.h"
+#include "fspr_arch_file_io.h"
 #if APR_HAVE_TIME_H
 #include <time.h>
 #endif
@@ -27,19 +27,19 @@
 /* MAX_SEGMENT_SIZE is the maximum amount of data that will be sent to a client
  * in one call of TransmitFile. This number must be small enough to give the 
  * slowest client time to receive the data before the socket timeout triggers.
- * The same problem can exist with apr_socket_send(). In that case, we rely on
+ * The same problem can exist with fspr_socket_send(). In that case, we rely on
  * the application to adjust socket timeouts and max send segment 
  * sizes appropriately.
- * For example, Apache will in most cases call apr_socket_send() with less
+ * For example, Apache will in most cases call fspr_socket_send() with less
  * than 8193 bytes.
  */
 #define MAX_SEGMENT_SIZE 65536
 #define WSABUF_ON_STACK 50
 
-APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
-                                          apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_send(fspr_socket_t *sock, const char *buf,
+                                          fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     WSABUF wsaData;
     int lasterror;
     DWORD dwBytes = 0;
@@ -54,7 +54,7 @@ APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
     dwBytes = rv;
 #endif
     if (rv == SOCKET_ERROR) {
-        lasterror = apr_get_netos_error();
+        lasterror = fspr_get_netos_error();
         *len = 0;
         return lasterror;
     }
@@ -65,10 +65,10 @@ APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf,
-                                          apr_size_t *len) 
+APR_DECLARE(fspr_status_t) fspr_socket_recv(fspr_socket_t *sock, char *buf,
+                                          fspr_size_t *len) 
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     WSABUF wsaData;
     int lasterror;
     DWORD dwBytes = 0;
@@ -84,7 +84,7 @@ APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf,
     dwBytes = rv;
 #endif
     if (rv == SOCKET_ERROR) {
-        lasterror = apr_get_netos_error();
+        lasterror = fspr_get_netos_error();
         *len = 0;
         return lasterror;
     }
@@ -94,14 +94,14 @@ APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf,
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_sendv(apr_socket_t *sock,
+APR_DECLARE(fspr_status_t) fspr_socket_sendv(fspr_socket_t *sock,
                                            const struct iovec *vec,
-                                           apr_int32_t in_vec, apr_size_t *nbytes)
+                                           fspr_int32_t in_vec, fspr_size_t *nbytes)
 {
-    apr_status_t rc = APR_SUCCESS;
-    apr_ssize_t rv;
-    apr_size_t cur_len;
-    apr_int32_t nvec = 0;
+    fspr_status_t rc = APR_SUCCESS;
+    fspr_ssize_t rv;
+    fspr_size_t cur_len;
+    fspr_int32_t nvec = 0;
     int i, j = 0;
     DWORD dwBytes = 0;
     WSABUF *pWsaBuf;
@@ -143,13 +143,13 @@ APR_DECLARE(apr_status_t) apr_socket_sendv(apr_socket_t *sock,
 #ifndef _WIN32_WCE
     rv = WSASend(sock->socketdes, pWsaBuf, nvec, &dwBytes, 0, NULL, NULL);
     if (rv == SOCKET_ERROR) {
-        rc = apr_get_netos_error();
+        rc = fspr_get_netos_error();
     }
 #else
     for (i = 0; i < nvec; i++) {
         rv = send(sock->socketdes, pWsaBuf[i].buf, pWsaBuf[i].len, 0);
         if (rv == SOCKET_ERROR) {
-            rc = apr_get_netos_error();
+            rc = fspr_get_netos_error();
             break;
         }
         dwBytes += rv;
@@ -163,19 +163,19 @@ APR_DECLARE(apr_status_t) apr_socket_sendv(apr_socket_t *sock,
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock,
-                                            apr_sockaddr_t *where,
-                                            apr_int32_t flags, const char *buf, 
-                                            apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_sendto(fspr_socket_t *sock,
+                                            fspr_sockaddr_t *where,
+                                            fspr_int32_t flags, const char *buf, 
+                                            fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
 
     rv = sendto(sock->socketdes, buf, (int)*len, flags, 
                 (const struct sockaddr*)&where->sa, 
                 where->salen);
     if (rv == SOCKET_ERROR) {
         *len = 0;
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
 
     *len = rv;
@@ -183,18 +183,18 @@ APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock,
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_recvfrom(apr_sockaddr_t *from, 
-                                              apr_socket_t *sock,
-                                              apr_int32_t flags, 
-                                              char *buf, apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_recvfrom(fspr_sockaddr_t *from, 
+                                              fspr_socket_t *sock,
+                                              fspr_int32_t flags, 
+                                              char *buf, fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
 
     rv = recvfrom(sock->socketdes, buf, (int)*len, flags, 
                   (struct sockaddr*)&from->sa, &from->salen);
     if (rv == SOCKET_ERROR) {
         (*len) = 0;
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     (*len) = rv;
     if (rv == 0 && sock->type == SOCK_STREAM)
@@ -204,9 +204,9 @@ APR_DECLARE(apr_status_t) apr_socket_recvfrom(apr_sockaddr_t *from,
 }
 
 
-static apr_status_t collapse_iovec(char **off, apr_size_t *len, 
+static fspr_status_t collapse_iovec(char **off, fspr_size_t *len, 
                                    struct iovec *iovec, int numvec, 
-                                   char *buf, apr_size_t buflen)
+                                   char *buf, fspr_size_t buflen)
 {
     if (numvec == 1) {
         *off = iovec[0].iov_base;
@@ -236,8 +236,8 @@ static apr_status_t collapse_iovec(char **off, apr_size_t *len,
 
 #if APR_HAS_SENDFILE
 /*
- * apr_status_t apr_socket_sendfile(apr_socket_t *, apr_file_t *, apr_hdtr_t *, 
- *                                 apr_off_t *, apr_size_t *, apr_int32_t flags)
+ * fspr_status_t fspr_socket_sendfile(fspr_socket_t *, fspr_file_t *, fspr_hdtr_t *, 
+ *                                 fspr_off_t *, fspr_size_t *, fspr_int32_t flags)
  *    Send a file from an open file descriptor to a socket, along with 
  *    optional headers and trailers
  * arg 1) The socket to which we're writing
@@ -247,26 +247,26 @@ static apr_status_t collapse_iovec(char **off, apr_size_t *len,
  * arg 5) Number of bytes to send out of the file
  * arg 6) APR flags that are mapped to OS specific flags
  */
-APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock, 
-                                              apr_file_t *file,
-                                              apr_hdtr_t *hdtr,
-                                              apr_off_t *offset,
-                                              apr_size_t *len,
-                                              apr_int32_t flags) 
+APR_DECLARE(fspr_status_t) fspr_socket_sendfile(fspr_socket_t *sock, 
+                                              fspr_file_t *file,
+                                              fspr_hdtr_t *hdtr,
+                                              fspr_off_t *offset,
+                                              fspr_size_t *len,
+                                              fspr_int32_t flags) 
 {
-    apr_status_t status = APR_SUCCESS;
-    apr_status_t rv;
-    apr_off_t curoff = *offset;
+    fspr_status_t status = APR_SUCCESS;
+    fspr_status_t rv;
+    fspr_off_t curoff = *offset;
     DWORD dwFlags = 0;
-    apr_size_t nbytes;
+    fspr_size_t nbytes;
     TRANSMIT_FILE_BUFFERS tfb, *ptfb = NULL;
     int ptr = 0;
-    apr_size_t bytes_to_send;   /* Bytes to send out of the file (not including headers) */
+    fspr_size_t bytes_to_send;   /* Bytes to send out of the file (not including headers) */
     int disconnected = 0;
     int sendv_trailers = 0;
     char hdtrbuf[4096];
 
-    if (apr_os_level < APR_WIN_NT) {
+    if (fspr_os_level < APR_WIN_NT) {
         return APR_ENOTIMPL;
     }
 
@@ -277,14 +277,14 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
     /* Handle the goofy case of sending headers/trailers and a zero byte file */
     if (!bytes_to_send && hdtr) {
         if (hdtr->numheaders) {
-            rv = apr_socket_sendv(sock, hdtr->headers, hdtr->numheaders, 
+            rv = fspr_socket_sendv(sock, hdtr->headers, hdtr->numheaders, 
                                   &nbytes);
             if (rv != APR_SUCCESS)
                 return rv;
             *len += nbytes;
         }
         if (hdtr->numtrailers) {
-            rv = apr_socket_sendv(sock, hdtr->trailers, hdtr->numtrailers,
+            rv = fspr_socket_sendv(sock, hdtr->trailers, hdtr->numtrailers,
                                   &nbytes);
             if (rv != APR_SUCCESS)
                 return rv;
@@ -297,7 +297,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
 
     /* Collapse the headers into a single buffer */
     if (hdtr && hdtr->numheaders) {
-        apr_size_t head_length = tfb.HeadLength;
+        fspr_size_t head_length = tfb.HeadLength;
         ptfb = &tfb;
         nbytes = 0;
         rv = collapse_iovec((char **)&ptfb->Head, &head_length, 
@@ -308,7 +308,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
 
         /* If not enough buffer, punt to sendv */
         if (rv == APR_INCOMPLETE) {
-            rv = apr_socket_sendv(sock, hdtr->headers, hdtr->numheaders, &nbytes);
+            rv = fspr_socket_sendv(sock, hdtr->headers, hdtr->numheaders, &nbytes);
             if (rv != APR_SUCCESS)
                 return rv;
             *len += nbytes;
@@ -319,7 +319,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
     /* Initialize the overlapped structure used on TransmitFile
      */
     if (!sock->overlapped) {
-        sock->overlapped = apr_pcalloc(sock->pool, sizeof(OVERLAPPED));
+        sock->overlapped = fspr_pcalloc(sock->pool, sizeof(OVERLAPPED));
         sock->overlapped->hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     }
     while (bytes_to_send) {
@@ -333,7 +333,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
             xmitbytes = (DWORD)bytes_to_send;
             /* Collapse the trailers into a single buffer */
             if (hdtr && hdtr->numtrailers) {
-                apr_size_t tail_length = tfb.TailLength;
+                fspr_size_t tail_length = tfb.TailLength;
                 ptfb = &tfb;
                 rv = collapse_iovec((char**) &ptfb->Tail, &tail_length,
                                     hdtr->trailers, hdtr->numtrailers,
@@ -369,7 +369,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
                           ptfb,           /* header and trailer buffers */
                           dwFlags);       /* flags to control various aspects of TransmitFile */
         if (!rv) {
-            status = apr_get_netos_error();
+            status = fspr_get_netos_error();
             if ((status == APR_FROM_OS_ERROR(ERROR_IO_PENDING)) ||
                 (status == APR_FROM_OS_ERROR(WSA_IO_PENDING))) 
             {
@@ -384,7 +384,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
                                                     &xmitbytes,
                                                     FALSE,
                                                     &dwFlags)) {
-                            status = apr_get_netos_error();
+                            status = fspr_get_netos_error();
                         }
                         /* Ugly code alert: WSAGetOverlappedResult returns
                          * a count of all bytes sent. This loop only
@@ -408,7 +408,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
                     status = APR_FROM_OS_ERROR(WAIT_TIMEOUT);
                 }
                 else
-                    status = apr_get_os_error();
+                    status = fspr_get_os_error();
             }
         }
         if (status != APR_SUCCESS)
@@ -427,7 +427,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
 
     if (status == APR_SUCCESS) {
         if (sendv_trailers) {
-            rv = apr_socket_sendv(sock, hdtr->trailers, hdtr->numtrailers, &nbytes);
+            rv = fspr_socket_sendv(sock, hdtr->trailers, hdtr->numtrailers, &nbytes);
             if (rv != APR_SUCCESS)
                 return rv;
             *len += nbytes;
@@ -436,7 +436,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendfile(apr_socket_t *sock,
     
         /* Mark the socket as disconnected, but do not close it.
          * Note: The application must have stored the socket prior to making
-         * the call to apr_socket_sendfile in order to either reuse it 
+         * the call to fspr_socket_sendfile in order to either reuse it 
          * or close it.
          */
         if (disconnected) {

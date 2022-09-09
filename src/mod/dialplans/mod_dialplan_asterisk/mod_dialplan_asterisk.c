@@ -103,12 +103,11 @@ SWITCH_STANDARD_APP(avoid_function)
 
 SWITCH_STANDARD_APP(goto_function)
 {
-	int argc;
 	char *argv[3] = { 0 };
 	char *mydata;
 
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
-		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
+		if (switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0]))) < 1) {
 			goto error;
 		}
 
@@ -352,23 +351,11 @@ static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
 	return switch_core_session_outgoing_channel(session, var_event, "iax", outbound_profile, new_session, pool, SOF_NONE, cancel_cause);
 }
 
-
-#define WE_DONT_NEED_NO_STINKIN_KEY "true"
-static char *key()
-{
-	return WE_DONT_NEED_NO_STINKIN_KEY;
-}
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 {
 	switch_dialplan_interface_t *dp_interface;
 	switch_application_interface_t *app_interface;
-	char *mykey = NULL;
 	int x = 0;
-
-	if ((mykey = key())) {
-		mykey = NULL;
-	}
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);

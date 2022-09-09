@@ -189,9 +189,6 @@
  *	mod_pocketsphinx
  *		- PocketSphinx (http://www.speech.cs.cmu.edu/pocketsphinx/)
  *
- *	mod_unimrcp
- *		- MRCP (http://www.unimrcp.org/)
- *
  *
  *  Codecs
  *  mod_amr
@@ -226,11 +223,6 @@
  *  Endpoints
  *	mod_portaudio
  *		- portaudio (http://www.portaudio.com/)
- *
- *	mod_dingaling
- *		- libdingaling (internal library distributed with freeswitch which depends on)
- *		- APR (http://apr.apache.org)
- *		- iksemel (http://iksemel.jabberstudio.org/)
  *
  *	mod_sofia
  *		- sofia-sip (http://opensource.nokia.com/projects/sofia-sip/)

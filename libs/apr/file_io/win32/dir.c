@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_arch_atime.h"
+#include "fspr.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_arch_atime.h"
 
 #if APR_HAVE_ERRNO_H
 #include <errno.h>
@@ -35,27 +35,27 @@
 #endif
 
 
-static apr_status_t dir_cleanup(void *thedir)
+static fspr_status_t dir_cleanup(void *thedir)
 {
-    apr_dir_t *dir = thedir;
+    fspr_dir_t *dir = thedir;
     if (dir->dirhand != INVALID_HANDLE_VALUE && !FindClose(dir->dirhand)) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     dir->dirhand = INVALID_HANDLE_VALUE;
     return APR_SUCCESS;
 } 
 
-APR_DECLARE(apr_status_t) apr_dir_open(apr_dir_t **new, const char *dirname,
-                                       apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_open(fspr_dir_t **new, const char *dirname,
+                                       fspr_pool_t *pool)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    apr_size_t len = strlen(dirname);
-    (*new) = apr_pcalloc(pool, sizeof(apr_dir_t));
+    fspr_size_t len = strlen(dirname);
+    (*new) = fspr_pcalloc(pool, sizeof(fspr_dir_t));
     /* Leave room here to add and pop the '*' wildcard for FindFirstFile 
      * and double-null terminate so we have one character to change.
      */
-    (*new)->dirname = apr_palloc(pool, len + 3);
+    (*new)->dirname = fspr_palloc(pool, len + 3);
     memcpy((*new)->dirname, dirname, len);
     if (len && (*new)->dirname[len - 1] != '/') {
     	(*new)->dirname[len++] = '/';
@@ -68,8 +68,8 @@ APR_DECLARE(apr_status_t) apr_dir_open(apr_dir_t **new, const char *dirname,
     {
         /* Create a buffer for the longest file name we will ever see 
          */
-        (*new)->w.entry = apr_pcalloc(pool, sizeof(WIN32_FIND_DATAW));
-        (*new)->name = apr_pcalloc(pool, APR_FILE_MAX * 3 + 1);        
+        (*new)->w.entry = fspr_pcalloc(pool, sizeof(WIN32_FIND_DATAW));
+        (*new)->name = fspr_pcalloc(pool, APR_FILE_MAX * 3 + 1);        
     }
 #endif
 #if APR_HAS_ANSI_FS
@@ -85,16 +85,16 @@ APR_DECLARE(apr_status_t) apr_dir_open(apr_dir_t **new, const char *dirname,
             (*new) = NULL;
             return APR_ENAMETOOLONG;
         }
-        (*new)->n.entry = apr_pcalloc(pool, sizeof(WIN32_FIND_DATAW));
+        (*new)->n.entry = fspr_pcalloc(pool, sizeof(WIN32_FIND_DATAW));
     }
 #endif
     (*new)->rootlen = len - 1;
     (*new)->pool = pool;
     (*new)->dirhand = INVALID_HANDLE_VALUE;
-    apr_pool_cleanup_register((*new)->pool, (void *)(*new), dir_cleanup,
-                        apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*new)->pool, (void *)(*new), dir_cleanup,
+                        fspr_pool_cleanup_null);
 
-    rv = apr_dir_read(NULL, 0, *new);
+    rv = fspr_dir_read(NULL, 0, *new);
     if (rv != APR_SUCCESS) {
         dir_cleanup(*new);
         *new = NULL;
@@ -103,33 +103,33 @@ APR_DECLARE(apr_status_t) apr_dir_open(apr_dir_t **new, const char *dirname,
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_dir_close(apr_dir_t *dir)
+APR_DECLARE(fspr_status_t) fspr_dir_close(fspr_dir_t *dir)
 {
-    apr_pool_cleanup_kill(dir->pool, dir, dir_cleanup);
+    fspr_pool_cleanup_kill(dir->pool, dir, dir_cleanup);
     return dir_cleanup(dir);
 }
 
-APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
-                                       apr_dir_t *thedir)
+APR_DECLARE(fspr_status_t) fspr_dir_read(fspr_finfo_t *finfo, fspr_int32_t wanted,
+                                       fspr_dir_t *thedir)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *fname;
     /* The while loops below allow us to skip all invalid file names, so that
      * we aren't reporting any files where their absolute paths are too long.
      */
 #if APR_HAS_UNICODE_FS
-    apr_wchar_t wdirname[APR_PATH_MAX];
-    apr_wchar_t *eos = NULL;
+    fspr_wchar_t wdirname[APR_PATH_MAX];
+    fspr_wchar_t *eos = NULL;
     IF_WIN_OS_IS_UNICODE
     {
-        /* This code path is always be invoked by apr_dir_open or
-         * apr_dir_rewind, so return without filling out the finfo.
+        /* This code path is always be invoked by fspr_dir_open or
+         * fspr_dir_rewind, so return without filling out the finfo.
          */
         if (thedir->dirhand == INVALID_HANDLE_VALUE) 
         {
-            apr_status_t rv;
+            fspr_status_t rv;
             if (rv = utf8_to_unicode_path(wdirname, sizeof(wdirname) 
-                                                     / sizeof(apr_wchar_t), 
+                                                     / sizeof(fspr_wchar_t), 
                                           thedir->dirname)) {
                 return rv;
             }
@@ -139,27 +139,27 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
             thedir->dirhand = FindFirstFileW(wdirname, thedir->w.entry);
             eos[0] = '\0';
             if (thedir->dirhand == INVALID_HANDLE_VALUE) {
-                return apr_get_os_error();
+                return fspr_get_os_error();
             }
             thedir->bof = 1;
             return APR_SUCCESS;
         }
         else if (thedir->bof) {
             /* Noop - we already called FindFirstFileW from
-             * either apr_dir_open or apr_dir_rewind ... use
+             * either fspr_dir_open or fspr_dir_rewind ... use
              * that first record.
              */
             thedir->bof = 0; 
         }
         else if (!FindNextFileW(thedir->dirhand, thedir->w.entry)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
 
         while (thedir->rootlen &&
                thedir->rootlen + wcslen(thedir->w.entry->cFileName) >= APR_PATH_MAX)
         {
             if (!FindNextFileW(thedir->dirhand, thedir->w.entry)) {
-                return apr_get_os_error();
+                return fspr_get_os_error();
             }
         }
         if (rv = unicode_to_utf8_path(thedir->name, APR_FILE_MAX * 3 + 1, 
@@ -171,8 +171,8 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
 #if APR_HAS_ANSI_FS
     ELSE_WIN_OS_IS_ANSI
     {
-        /* This code path is always be invoked by apr_dir_open or 
-         * apr_dir_rewind, so return without filling out the finfo.
+        /* This code path is always be invoked by fspr_dir_open or 
+         * fspr_dir_rewind, so return without filling out the finfo.
          */
         if (thedir->dirhand == INVALID_HANDLE_VALUE) {
             /* '/' terminated, so add the '*' and pop it when we finish */
@@ -183,26 +183,26 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
                                              thedir->n.entry);
             eop[0] = '\0';
             if (thedir->dirhand == INVALID_HANDLE_VALUE) {
-                return apr_get_os_error();
+                return fspr_get_os_error();
             }
             thedir->bof = 1;
             return APR_SUCCESS;
         }
         else if (thedir->bof) {
             /* Noop - we already called FindFirstFileW from
-             * either apr_dir_open or apr_dir_rewind ... use
+             * either fspr_dir_open or fspr_dir_rewind ... use
              * that first record.
              */
             thedir->bof = 0; 
         }
         else if (!FindNextFile(thedir->dirhand, thedir->n.entry)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
         while (thedir->rootlen &&
                thedir->rootlen + strlen(thedir->n.entry->cFileName) >= MAX_PATH)
         {
             if (!FindNextFileW(thedir->dirhand, thedir->w.entry)) {
-                return apr_get_os_error();
+                return fspr_get_os_error();
             }
         }
         fname = thedir->n.entry->cFileName;
@@ -244,11 +244,11 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
 #else
             char fspec[APR_PATH_MAX];
 #endif
-            apr_size_t dirlen = strlen(thedir->dirname);
+            fspr_size_t dirlen = strlen(thedir->dirname);
             if (dirlen >= sizeof(fspec))
                 dirlen = sizeof(fspec) - 1;
-            apr_cpystrn(fspec, thedir->dirname, sizeof(fspec));
-            apr_cpystrn(fspec + dirlen, fname, sizeof(fspec) - dirlen);
+            fspr_cpystrn(fspec, thedir->dirname, sizeof(fspec));
+            fspr_cpystrn(fspec + dirlen, fname, sizeof(fspec) - dirlen);
             return more_finfo(finfo, fspec, wanted, MORE_OF_FSPEC);
         }
 #endif
@@ -257,66 +257,66 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_dir_rewind(apr_dir_t *dir)
+APR_DECLARE(fspr_status_t) fspr_dir_rewind(fspr_dir_t *dir)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     /* this will mark the handle as invalid and we'll open it
-     * again if apr_dir_read() is subsequently called
+     * again if fspr_dir_read() is subsequently called
      */
     rv = dir_cleanup(dir);
 
     if (rv == APR_SUCCESS)
-        rv = apr_dir_read(NULL, 0, dir);
+        rv = fspr_dir_read(NULL, 0, dir);
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_dir_make(const char *path, apr_fileperms_t perm,
-                                       apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_make(const char *path, fspr_fileperms_t perm,
+                                       fspr_pool_t *pool)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
         if (rv = utf8_to_unicode_path(wpath, sizeof(wpath) 
-                                              / sizeof(apr_wchar_t), path)) {
+                                              / sizeof(fspr_wchar_t), path)) {
             return rv;
         }
         if (!CreateDirectoryW(wpath, NULL)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
     }
 #endif
 #if APR_HAS_ANSI_FS
     ELSE_WIN_OS_IS_ANSI
         if (!CreateDirectory(path, NULL)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
 #endif
     return APR_SUCCESS;
 }
 
 
-static apr_status_t dir_make_parent(char *path,
-                                    apr_fileperms_t perm,
-                                    apr_pool_t *pool)
+static fspr_status_t dir_make_parent(char *path,
+                                    fspr_fileperms_t perm,
+                                    fspr_pool_t *pool)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *ch = strrchr(path, '\\');
     if (!ch) {
         return APR_ENOENT;
     }
 
     *ch = '\0';
-    rv = apr_dir_make (path, perm, pool); /* Try to make straight off */
+    rv = fspr_dir_make (path, perm, pool); /* Try to make straight off */
     
     if (APR_STATUS_IS_ENOENT(rv)) { /* Missing an intermediate dir */
         rv = dir_make_parent(path, perm, pool);
 
         if (rv == APR_SUCCESS) {
-            rv = apr_dir_make (path, perm, pool); /* And complete the path */
+            rv = fspr_dir_make (path, perm, pool); /* And complete the path */
         }
     }
 
@@ -324,13 +324,13 @@ static apr_status_t dir_make_parent(char *path,
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_dir_make_recursive(const char *path,
-                                                 apr_fileperms_t perm,
-                                                 apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_make_recursive(const char *path,
+                                                 fspr_fileperms_t perm,
+                                                 fspr_pool_t *pool)
 {
-    apr_status_t rv = 0;
+    fspr_status_t rv = 0;
     
-    rv = apr_dir_make (path, perm, pool); /* Try to make PATH right out */
+    rv = fspr_dir_make (path, perm, pool); /* Try to make PATH right out */
     
     if (APR_STATUS_IS_EEXIST(rv)) /* It's OK if PATH exists */
         return APR_SUCCESS;
@@ -338,45 +338,45 @@ APR_DECLARE(apr_status_t) apr_dir_make_recursive(const char *path,
     if (APR_STATUS_IS_ENOENT(rv)) { /* Missing an intermediate dir */
         char *dir;
         
-        rv = apr_filepath_merge(&dir, "", path, APR_FILEPATH_NATIVE, pool);
+        rv = fspr_filepath_merge(&dir, "", path, APR_FILEPATH_NATIVE, pool);
 
         if (rv == APR_SUCCESS)
             rv = dir_make_parent(dir, perm, pool); /* Make intermediate dirs */
         
         if (rv == APR_SUCCESS)
-            rv = apr_dir_make (dir, perm, pool);   /* And complete the path */
+            rv = fspr_dir_make (dir, perm, pool);   /* And complete the path */
     }
     return rv;
 }
 
 
-APR_DECLARE(apr_status_t) apr_dir_remove(const char *path, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_remove(const char *path, fspr_pool_t *pool)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
         if (rv = utf8_to_unicode_path(wpath, sizeof(wpath) 
-                                              / sizeof(apr_wchar_t), path)) {
+                                              / sizeof(fspr_wchar_t), path)) {
             return rv;
         }
         if (!RemoveDirectoryW(wpath)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
     }
 #endif
 #if APR_HAS_ANSI_FS
     ELSE_WIN_OS_IS_ANSI
         if (!RemoveDirectory(path)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
 #endif
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_dir_get(apr_os_dir_t **thedir,
-                                         apr_dir_t *dir)
+APR_DECLARE(fspr_status_t) fspr_os_dir_get(fspr_os_dir_t **thedir,
+                                         fspr_dir_t *dir)
 {
     if (dir == NULL) {
         return APR_ENODIR;
@@ -385,9 +385,9 @@ APR_DECLARE(apr_status_t) apr_os_dir_get(apr_os_dir_t **thedir,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_dir_put(apr_dir_t **dir,
-                                         apr_os_dir_t *thedir,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_dir_put(fspr_dir_t **dir,
+                                         fspr_os_dir_t *thedir,
+                                         fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }

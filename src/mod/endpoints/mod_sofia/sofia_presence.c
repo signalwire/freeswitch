@@ -482,7 +482,7 @@ struct mwi_helper {
 
 static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 {
-	char *account, *dup_account, *yn, *host = NULL, *user;
+	char *account, *dup_account, *host = NULL, *user;
 	char *sql;
 	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -500,7 +500,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (!(yn = switch_event_get_header(event, "mwi-messages-waiting"))) {
+	if (!switch_event_get_header(event, "mwi-messages-waiting")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
 		return;
 	}
@@ -4325,7 +4325,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_event_fire(&event);
 	}
 
- end:
 
 	if (strcasecmp(event, "call-info") && strcasecmp(event, "line-seize")) {
 
@@ -4406,6 +4405,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 	}
+
+ end:
 
 	if (event) {
 		su_free(nua_handle_get_home(nh), event);
