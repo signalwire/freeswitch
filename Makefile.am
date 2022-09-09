@@ -364,8 +364,6 @@ nodist_libfreeswitch_la_SOURCES = \
 
 libfreeswitch_la_SOURCES = \
 	src/switch_apr.c \
-	src/switch_uc.c \
-	src/switch_usbkey.c \
 	src/switch_buffer.c \
 	src/switch_caller.c \
 	src/switch_channel.c \
