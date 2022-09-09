@@ -2993,6 +2993,28 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 
 			if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
+				ip_t extaddr;
+				char extip[256] = "";		
+				if (profile->extrtpip_tmp) {
+					if (switch_inet_pton(AF_INET, profile->extrtpip_tmp, &extaddr) <= 0) {
+						switch_resolve_host(profile->extrtpip_tmp,extip,sizeof(extip));
+						if (strlen(extip) != 0) {
+							profile->extrtpip = switch_core_strdup(profile->pool, extip);
+						}
+					}
+				}
+				if (profile->extsipip_tmp) {
+					if(strchr(profile->extsipip_tmp, ':')){
+						char * extsipport  = strchr(profile->extsipip_tmp, ':') + 1;
+						profile->extsipport = (switch_port_t)atoi(extsipport);
+					}
+					if (switch_inet_pton(AF_INET, profile->extsipip_tmp, &extaddr) <= 0) {
+						switch_resolve_host(profile->extsipip_tmp,extip,sizeof(extip));
+						if (strlen(extip) != 0) {
+							profile->extsipip = switch_core_strdup(profile->pool, extip);
+						}
+					}
+				} //end  by dsq for DS-100468 2022-08-30
 				if (++ireg_loops >= (uint32_t)profile->ireg_seconds) {
 					time_t now = switch_epoch_time_now(NULL);
 					sofia_reg_check_expire(profile, now, 0);
@@ -4583,6 +4605,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.stir_shaken_vs_cert_path_check = switch_true(val);
 			} else if (!strcasecmp(var, "stir-shaken-vs-require-date")) {
 				mod_sofia_globals.stir_shaken_vs_require_date = switch_true(val);
+			} else if (!strcasecmp(var, "re-invite-flag")) { /*DS-100468 No.3 Add globals reinvite flag, tianyi*/
+				mod_sofia_globals.re_invite_flag = switch_core_strdup(mod_sofia_globals.pool, val);
 			}
 		}
 	}
@@ -4708,7 +4732,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->mndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 					profile->te = 101;
 					profile->ireg_seconds = IREG_SECONDS;
-					profile->iping_seconds = IPING_SECONDS;
+					// profile->iping_seconds = IPING_SECONDS;
+					profile->iping_seconds = 0;
 					profile->iping_freq = IPING_FREQUENCY;
 					profile->paid_type = PAID_DEFAULT;
 					profile->bind_attempts = 2;
@@ -6208,6 +6233,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				}
 				//for extrtpip extsipip domain name added by yy DS-80287 //UC
 				if (profile->extrtpip) {
+					profile->extrtpip_tmp = switch_core_strdup(profile->pool, profile->extrtpip);
 					if (switch_inet_pton(AF_INET, profile->extrtpip, &extaddr) <= 0) {
 						switch_resolve_host(profile->extrtpip,extip,sizeof(extip));
 						if (strlen(extip) != 0) {
@@ -6219,6 +6245,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				}
 				//for extrtpip extsipip domain name added by yy DS-80287 //UC
 				if (profile->extsipip) {
+					profile->extsipip_tmp = switch_core_strdup(profile->pool, profile->extsipip);
+					if(strchr(profile->extsipip, ':')){
+						char * extsipport  = strchr(profile->extsipip, ':') + 1;
+						profile->extsipport = (switch_port_t)atoi(extsipport);
+					}
 					if (switch_inet_pton(AF_INET, profile->extsipip, &extaddr) <= 0) {
 						switch_resolve_host(profile->extsipip,extip,sizeof(extip));
 						if (strlen(extip) != 0) {
@@ -7186,6 +7217,21 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			if (status == 200) {
 				astate = "confirmed";
+				if ( !strcasecmp(mod_sofia_globals.re_invite_flag,"true")){
+					if ((uuid = switch_channel_get_partner_uuid(channel)) && (other_session = switch_core_session_locate(uuid))) {
+						switch_core_session_message_t *msg;
+						private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
+						if ( sofia_test_flag(other_tech_pvt, TFLAG_REINVITED) ){
+							msg = switch_core_session_alloc(other_session, sizeof(*msg));
+							msg->message_id = SWITCH_MESSAGE_INDICATE_REINVITE_RESPOND;
+							msg->from = __FILE__;
+							msg->numeric_arg = status;
+							msg->string_arg = switch_core_session_strdup(other_session, phrase);
+							switch_core_session_queue_message(other_session, msg);
+						}
+						switch_core_session_rwunlock(other_session);
+					}
+				}
 			}
 
 			if ((!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED) &&
@@ -7562,7 +7608,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
                 //if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 				//	switch_core_media_set_sdp_codec_string(session, r_sdp, status < 200 ? SDP_TYPE_REQUEST : SDP_TYPE_RESPONSE);
 				//}
-				switch_core_media_set_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST);
+				if(switch_stristr("m=video", tech_pvt->mparams.remote_sdp_str)){
+					if(switch_stristr("m=video 0", tech_pvt->mparams.remote_sdp_str)){
+						switch_channel_set_variable(channel, "sdp_take_video", "false");
+					} else {
+						switch_channel_set_variable(channel, "sdp_take_video", "true");
+					}
+				} else {
+					switch_channel_set_variable(channel, "sdp_take_video", "false");
+				}
 				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
 				sofia_set_flag(tech_pvt, TFLAG_NEW_SDP);
 
@@ -8470,6 +8524,26 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						goto done;
 					}
 
+					if(!strcasecmp(mod_sofia_globals.re_invite_flag,"true")){
+						if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+							switch_core_session_message_t *msg;
+							private_object_t *other_tech_pvt;
+							other_tech_pvt = switch_core_session_get_private(other_session);
+							if (sofia_test_flag(other_tech_pvt, TFLAG_REINVITED)) { 
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg already handling reinvite, so responding with 491\n"); 
+								nua_respond(tech_pvt->nh, SIP_491_REQUEST_PENDING, TAG_END()); 
+								switch_core_session_rwunlock(other_session); 
+								goto done; 
+							} 
+							sofia_set_flag(tech_pvt, TFLAG_REINVITED); 
+							msg = switch_core_session_alloc(other_session, sizeof(*msg));
+							msg->message_id = SWITCH_MESSAGE_INDICATE_REINVITE;
+							msg->from = __FILE__;
+							switch_core_session_queue_message(other_session, msg);
+							switch_core_session_rwunlock(other_session);
+							goto done;
+						}
+					}
 					switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 					if (tech_pvt->mparams.num_codecs) {

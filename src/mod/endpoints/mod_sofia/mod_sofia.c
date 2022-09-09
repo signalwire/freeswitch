@@ -1816,7 +1816,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_REINVITE:
+        {
+            switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
+            switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+			switch_core_media_check_video_codecs(tech_pvt->session);
+            sofia_glue_do_invite(session);
+        }
+        break;
 	case SWITCH_MESSAGE_INDICATE_PHONE_EVENT:
 		{
 			const char *event = "talk";
@@ -2436,6 +2444,60 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_REINVITE_RESPOND:
+        {
+            uint8_t match = 0, is_ok = 1;
+            const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+            sofia_clear_flag(tech_pvt, TFLAG_REINVITED);
+            if (tech_pvt->mparams.num_codecs) {
+                match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
+            }
+            if (match && sofia_test_flag(tech_pvt, TFLAG_NOREPLY)) {
+                sofia_clear_flag(tech_pvt, TFLAG_NOREPLY);
+                    goto end_lock;
+            }
+            if (match) {
+                if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
+                        goto end_lock;
+                }
+                switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+                if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+                    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
+                    is_ok = 0;
+                    switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+                }
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+            } else {
+                switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Reinvite 200ok resulted in codec negotiation failure.\n");
+                is_ok = 0;
+            }
+            if (is_ok) {
+                char *sticky = NULL;
+                sticky = tech_pvt->record_route;
+                if (switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+                    switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+                }
+                if (sofia_use_soa(tech_pvt)) {
+                    nua_respond(tech_pvt->nh, SIP_200_OK,
+                                SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+                                SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+                                SOATAG_REUSE_REJECTED(1),
+                                SOATAG_AUDIO_AUX("cn telephone-event"),
+                                TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+                                TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+                } else {
+                    nua_respond(tech_pvt->nh, SIP_200_OK,
+                                NUTAG_MEDIA_ENABLE(0),
+                                SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+                                TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+                                SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+                }
+            } else {
+                nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+            }
+        }
+        break;
 	case SWITCH_MESSAGE_INDICATE_ALERTING:
 		{
 			char *extra_header = sofia_glue_get_extra_headers(channel, SOFIA_SIP_PROGRESS_HEADER_PREFIX);

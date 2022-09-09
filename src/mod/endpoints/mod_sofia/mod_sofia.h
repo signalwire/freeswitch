@@ -418,6 +418,7 @@ struct mod_sofia_globals {
 	const char *stir_shaken_vs_ca_dir;
 	int stir_shaken_vs_cert_path_check;
 	int stir_shaken_vs_require_date;
+	char *re_invite_flag;/* DS-100468 No.3 Add globals reinvite flag, tianyi*/
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -824,6 +825,8 @@ struct sofia_profile {
 	char *acl_proxy_x_token_header;
 	uint8_t rfc8760_algs_count;
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
+	char *extrtpip_tmp;  //added  by dsq for DS-100468 2022-08-31 
+	char *extsipip_tmp;  //added  by dsq for DS-100468 2022-08-31 
 };
 
 

@@ -922,7 +922,7 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 	char buf[32] = "";
 	int count;
 
-	if (now) {
+	if (now && profile->iping_seconds) {
 		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 								 "expires,user_agent,server_user,server_host,profile_name "
@@ -974,7 +974,7 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 
 		/* only update if needed */
 		if (count) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s\n", profile->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s and interval %d\n", profile->name,interval);
 			irand = mean + sofia_reg_uniform_distribution(interval);
 			next = (long) now + irand;
 
@@ -3076,6 +3076,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *user_agent = NULL;
 	const char *user_agent_filter = profile->user_agent_filter;
 	uint32_t max_registrations_perext = profile->max_registrations_perext;
+	int  iping_seconds = profile->iping_seconds;
 	char client_port[16];
 	uint8_t use_alg;
 	unsigned int digest_outputlen;
@@ -3340,6 +3341,20 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			}
 			if (!strcasecmp(var, "max-registrations-per-extension")) {
 				max_registrations_perext = atoi(val);
+			}
+			if (!strcasecmp(var, "ping-mean-interval")) {
+				iping_seconds = atoi(val);
+				profile->iping_seconds  = iping_seconds;
+			}
+			if (!strcasecmp(var, "nat-options-ping")) {
+				if (val && !strcasecmp(val, "udp-only")) {
+					sofia_set_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING);
+				} else if (switch_true(val)) {
+					sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+				} else {
+					sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+					sofia_clear_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING);
+				}
 			}
 		}
 	}
