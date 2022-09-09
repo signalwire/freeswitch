@@ -7608,6 +7608,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
                 //if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 				//	switch_core_media_set_sdp_codec_string(session, r_sdp, status < 200 ? SDP_TYPE_REQUEST : SDP_TYPE_RESPONSE);
 				//}
+				switch_core_media_set_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST);
 				if(switch_stristr("m=video", tech_pvt->mparams.remote_sdp_str)){
 					if(switch_stristr("m=video 0", tech_pvt->mparams.remote_sdp_str)){
 						switch_channel_set_variable(channel, "sdp_take_video", "false");
