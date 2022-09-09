@@ -8576,7 +8576,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (!tech_pvt) goto done;
 
 				if (tech_pvt->mparams.num_codecs) {
-					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
+					if (sofia_test_flag(tech_pvt, TFLAG_GOT_ACK)) {
+						match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
+					} else {
+						match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
+					}
 				}
 
 				if (match) {
