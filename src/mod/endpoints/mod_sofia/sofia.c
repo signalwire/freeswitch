@@ -1567,6 +1567,11 @@ static void our_sofia_event_callback(nua_event_t event,
 			}
 			switch_core_session_rwunlock(other_session);
 		}
+
+		if (!strcasecmp(phrase, "ACK Timeout")) {
+			switch_channel_set_variable(channel, "sip_reason_phrase", phrase);
+			switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
+		}
 	}
 
 	if (session && tech_pvt && tech_pvt->watch_headers && sip) {
