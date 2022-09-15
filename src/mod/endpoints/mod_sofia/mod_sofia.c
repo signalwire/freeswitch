@@ -6304,6 +6304,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	mod_sofia_globals.auto_nat = (switch_nat_get_type() ? 1 : 0);
 
+	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
+	switch_queue_create(&mod_sofia_globals.reg_blf_notify_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.general_event_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 

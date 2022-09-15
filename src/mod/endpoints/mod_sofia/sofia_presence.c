@@ -1126,9 +1126,14 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 	struct presence_helper helper = { 0 };
 	int hup = 0;
 	switch_event_t *s_event = NULL;
+	int is_register = 0;
 
 	if (!mod_sofia_globals.running) {
 		goto done;
+	}
+
+	if(presence_source && !strcmp(presence_source, "register")) {
+		is_register = 1;	
 	}
 
 	if (zstr(proto) || !strcasecmp(proto, "any")) {
@@ -1446,7 +1451,9 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 					}
 
 					sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
-					usleep( 50000 ); 
+					if(is_register == 0) {
+						usleep( 50000 ); 
+					}
 
 
 
@@ -1598,6 +1605,14 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 static int EVENT_THREAD_RUNNING = 0;
 static int EVENT_THREAD_STARTED = 0;
 
+static int MWI_EVENT_THREAD_RUNNING = 0;
+static int MWI_EVENT_THREAD_STARTED = 0;
+
+static int REG_BLF_NOTIFY_EVENT_THREAD_RUNNING = 0;
+static int REG_BLF_NOTIFY_EVENT_THREAD_STARTED = 0;
+
+
+
 static void do_flush(void)
 {
 	void *pop = NULL;
@@ -1608,6 +1623,29 @@ static void do_flush(void)
 	}
 
 }
+
+static void do_mwi_flush(void)
+{
+	void *pop = NULL;
+
+	while (mod_sofia_globals.mwi_queue && switch_queue_trypop(mod_sofia_globals.mwi_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_destroy(&event);
+	}
+
+}
+
+static void do_reg_blf_notify_flush(void)
+{
+	void *pop = NULL;
+
+	while (mod_sofia_globals.reg_blf_notify_queue && switch_queue_trypop(mod_sofia_globals.reg_blf_notify_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		switch_event_t *event = (switch_event_t *) pop;
+		switch_event_destroy(&event);
+	}
+
+}
+
 
 void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread, void *obj)
 {
@@ -1648,6 +1686,7 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 				switch_mutex_unlock(mod_sofia_globals.mutex);
 			}
 
+			
 			switch(event->event_id) {
 			case SWITCH_EVENT_MESSAGE_WAITING:
 				actual_sofia_presence_mwi_event_handler(event);
@@ -1658,11 +1697,14 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 			default:
 				do {
 					switch_event_t *ievent = event;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got PRESENCE event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.presence_queue));
 					event = actual_sofia_presence_event_handler(ievent);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got PRESENCE Done event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.presence_queue));
 					switch_event_destroy(&ievent);
 				} while (event);
 				break;
 			}
+
 
 			switch_event_destroy(&event);
 			count++;
@@ -1680,6 +1722,162 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 
 	return NULL;
 }
+
+void *SWITCH_THREAD_FUNC sofia_mwi_event_thread_run(switch_thread_t *thread, void *obj)
+{
+	void *pop;
+	int done = 0;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	if (!MWI_EVENT_THREAD_RUNNING) {
+		MWI_EVENT_THREAD_RUNNING++;
+		mod_sofia_globals.threads++;
+	} else {
+		done = 1;
+	}
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	if (done) {
+		return NULL;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MWI Event Thread Started\n");
+
+	while (mod_sofia_globals.running == 1) {
+		int count = 0;
+
+		if (switch_queue_pop(mod_sofia_globals.mwi_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_event_t *event = (switch_event_t *) pop;
+
+			if (!pop) {
+				break;
+			}
+
+			if (mod_sofia_globals.mwi_flush) {
+				switch_mutex_lock(mod_sofia_globals.mutex);
+				if (mod_sofia_globals.mwi_flush) {
+					do_mwi_flush();
+					mod_sofia_globals.mwi_flush = 0;
+				}
+				switch_mutex_unlock(mod_sofia_globals.mutex);
+			}
+
+ 
+			switch(event->event_id) {
+			case SWITCH_EVENT_MESSAGE_WAITING:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got MWI Conference event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
+				actual_sofia_presence_mwi_event_handler(event);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "MWI Conference Done event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
+				break;
+			case SWITCH_EVENT_CONFERENCE_DATA:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got MWI Conference event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
+				conference_data_event_handler(event);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "MWI Conference Done event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
+				break;
+			default:
+				do {
+					switch_event_t *ievent = event;
+					event = actual_sofia_presence_event_handler(ievent);
+					switch_event_destroy(&ievent);
+				} while (event);
+				break;
+			}
+
+
+			switch_event_destroy(&event);
+			count++;
+		}
+	}
+
+	do_mwi_flush();
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MWI Event Thread Ended\n");
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.threads--;
+	MWI_EVENT_THREAD_RUNNING = MWI_EVENT_THREAD_STARTED = 0;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	return NULL;
+}
+
+void *SWITCH_THREAD_FUNC sofia_reg_blf_notify_event_thread_run(switch_thread_t *thread, void *obj)
+{
+	void *pop;
+	int done = 0;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	if (!REG_BLF_NOTIFY_EVENT_THREAD_RUNNING) {
+		REG_BLF_NOTIFY_EVENT_THREAD_RUNNING++;
+		mod_sofia_globals.threads++;
+	} else {
+		done = 1;
+	}
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	if (done) {
+		return NULL;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MWI Event Thread Started\n");
+
+	while (mod_sofia_globals.running == 1) {
+		int count = 0;
+
+		if (switch_queue_pop(mod_sofia_globals.reg_blf_notify_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			switch_event_t *event = (switch_event_t *) pop;
+
+			if (!pop) {
+				break;
+			}
+
+			if (mod_sofia_globals.reg_blf_notify_flush) {
+				switch_mutex_lock(mod_sofia_globals.mutex);
+				if (mod_sofia_globals.reg_blf_notify_flush) {
+					do_reg_blf_notify_flush();
+					mod_sofia_globals.reg_blf_notify_flush = 0;
+				}
+				switch_mutex_unlock(mod_sofia_globals.mutex);
+			}
+
+
+			switch(event->event_id) {
+			case SWITCH_EVENT_MESSAGE_WAITING:
+				actual_sofia_presence_mwi_event_handler(event);
+				break;
+			case SWITCH_EVENT_CONFERENCE_DATA:
+				conference_data_event_handler(event);
+				break;
+			default:
+				do {
+					switch_event_t *ievent = event;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got Reg BLF Notify event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.reg_blf_notify_queue));
+					event = actual_sofia_presence_event_handler(ievent);
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reg BLF Notify Done event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.reg_blf_notify_queue));
+					switch_event_destroy(&ievent);
+				} while (event);
+				break;
+			}
+
+			switch_event_destroy(&event);
+			count++;
+		}
+	}
+
+	do_reg_blf_notify_flush();
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "MWI Event Thread Ended\n");
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.threads--;
+	REG_BLF_NOTIFY_EVENT_THREAD_RUNNING = REG_BLF_NOTIFY_EVENT_THREAD_STARTED = 0;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	return NULL;
+}
+
+
 
 void sofia_presence_event_thread_start(void)
 {
@@ -1706,18 +1904,116 @@ void sofia_presence_event_thread_start(void)
 	switch_thread_create(&mod_sofia_globals.presence_thread, thd_attr, sofia_presence_event_thread_run, NULL, mod_sofia_globals.pool);
 }
 
+void sofia_mwi_event_thread_start(void)
+{
+	//switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	int done = 0;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	if (!MWI_EVENT_THREAD_STARTED) {
+		MWI_EVENT_THREAD_STARTED++;
+	} else {
+		done = 1;
+	}
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	if (done) {
+		return;
+	}
+
+	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
+	//switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_IMPORTANT);
+	switch_thread_create(&mod_sofia_globals.mwi_thread, thd_attr, sofia_mwi_event_thread_run, NULL, mod_sofia_globals.pool);
+}
+
+
+void sofia_reg_blf_notify_event_thread_start(void)
+{
+	//switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	int done = 0;
+
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	if (!REG_BLF_NOTIFY_EVENT_THREAD_STARTED) {
+		REG_BLF_NOTIFY_EVENT_THREAD_STARTED++;
+	} else {
+		done = 1;
+	}
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	if (done) {
+		return;
+	}
+
+	switch_threadattr_create(&thd_attr, mod_sofia_globals.pool);
+	//switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_threadattr_priority_set(thd_attr, SWITCH_PRI_IMPORTANT);
+	switch_thread_create(&mod_sofia_globals.reg_blf_notify_thread, thd_attr, sofia_reg_blf_notify_event_thread_run, NULL, mod_sofia_globals.pool);
+}
+
+
 
 void sofia_presence_event_handler(switch_event_t *event)
 {
 	switch_event_t *cloned_event;
+	char *presence_source = NULL;
 
 	if (!EVENT_THREAD_STARTED) {
 		sofia_presence_event_thread_start();
 		switch_yield(500000);
 	}
 
+	if (!MWI_EVENT_THREAD_STARTED) {
+		sofia_mwi_event_thread_start();
+		switch_yield(500000);
+	}
+
+	if (!REG_BLF_NOTIFY_EVENT_THREAD_STARTED) {
+		sofia_reg_blf_notify_event_thread_start();
+		switch_yield(500000);
+	}
+
+
 	switch_event_dup(&cloned_event, event);
 	switch_assert(cloned_event);
+
+	// Lets push the mwi to different queue
+	if(cloned_event->event_id == SWITCH_EVENT_MESSAGE_WAITING || cloned_event->event_id == SWITCH_EVENT_CONFERENCE_DATA) {
+		
+		if (switch_queue_trypush(mod_sofia_globals.mwi_queue, cloned_event) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MWI queue overloaded.... Flushing queue\n");
+			switch_mutex_lock(mod_sofia_globals.mutex);
+			mod_sofia_globals.mwi_flush = 1;
+			switch_mutex_unlock(mod_sofia_globals.mutex);
+			switch_event_destroy(&cloned_event);
+		}
+
+		return;
+
+	}	
+
+	presence_source = switch_event_get_header(cloned_event, "presence-source");
+	if(presence_source && !strcmp(presence_source, "register")) {
+
+		if (switch_queue_trypush(mod_sofia_globals.reg_blf_notify_queue, cloned_event) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BLF_NOTIFY queue overloaded.... Flushing queue\n");
+			switch_mutex_lock(mod_sofia_globals.mutex);
+			mod_sofia_globals.reg_blf_notify_flush = 1;
+			switch_mutex_unlock(mod_sofia_globals.mutex);
+			switch_event_destroy(&cloned_event);
+		}
+
+		return;
+
+	}
+
+
+
+	// lets push the reg initial blf notify to other queue
 
 	if (switch_queue_trypush(mod_sofia_globals.presence_queue, cloned_event) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Presence queue overloaded.... Flushing queue\n");

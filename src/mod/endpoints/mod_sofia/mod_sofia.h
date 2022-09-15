@@ -384,6 +384,8 @@ struct mod_sofia_globals {
 	char guess_ip[80];
 	char hostname[512];
 	switch_queue_t *presence_queue;
+	switch_queue_t *mwi_queue;
+	switch_queue_t *reg_blf_notify_queue;
 	switch_queue_t *msg_queue;
 	switch_queue_t *general_event_queue;
 	switch_thread_t *msg_queue_thread[SOFIA_MAX_MSG_QUEUE];
@@ -401,7 +403,11 @@ struct mod_sofia_globals {
 	char *capture_server;
 	int rewrite_multicasted_fs_path;
 	int presence_flush;
+	int mwi_flush;
+	int reg_blf_notify_flush;
 	switch_thread_t *presence_thread;
+	switch_thread_t *mwi_thread;
+	switch_thread_t *reg_blf_notify_thread;
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
 	int presence_year;
