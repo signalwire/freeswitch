@@ -1695,11 +1695,12 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 				conference_data_event_handler(event);
 				break;
 			default:
+
 				do {
 					switch_event_t *ievent = event;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got PRESENCE event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.presence_queue));
+				
+					
 					event = actual_sofia_presence_event_handler(ievent);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got PRESENCE Done event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.presence_queue));
 					switch_event_destroy(&ievent);
 				} while (event);
 				break;
@@ -1765,14 +1766,10 @@ void *SWITCH_THREAD_FUNC sofia_mwi_event_thread_run(switch_thread_t *thread, voi
  
 			switch(event->event_id) {
 			case SWITCH_EVENT_MESSAGE_WAITING:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got MWI Conference event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
 				actual_sofia_presence_mwi_event_handler(event);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "MWI Conference Done event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
 				break;
 			case SWITCH_EVENT_CONFERENCE_DATA:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got MWI Conference event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
 				conference_data_event_handler(event);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "MWI Conference Done event %d , queue size here Queue Size %d\n", event->event_id, switch_queue_size(mod_sofia_globals.mwi_queue));
 				break;
 			default:
 				do {
@@ -1849,12 +1846,12 @@ void *SWITCH_THREAD_FUNC sofia_reg_blf_notify_event_thread_run(switch_thread_t *
 				conference_data_event_handler(event);
 				break;
 			default:
+				
+
 				do {
 					switch_event_t *ievent = event;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got Reg BLF Notify event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.reg_blf_notify_queue));
 					event = actual_sofia_presence_event_handler(ievent);
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Reg BLF Notify Done event %d , queue size here Queue Size %d\n", ievent->event_id, switch_queue_size(mod_sofia_globals.reg_blf_notify_queue));
 					switch_event_destroy(&ievent);
 				} while (event);
 				break;

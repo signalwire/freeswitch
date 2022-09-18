@@ -147,6 +147,47 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 		nua_handle_destroy(nh);
 	}
 
+	else if((status >= 400 && status <= 499) || (status >= 600 && status <= 699)) {
+		if(sip && !sip->sip_retry_after && sip->sip_call_id && (!sofia_private || !sofia_private->is_call)) {
+			char *sql;
+
+			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
+			switch_assert(sql != NULL);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			nua_handle_destroy(nh);
+		}
+	}
+	
+
+}
+
+void sofia_handle_sip_r_notify_on_no_session(int status,
+							   char const *phrase,
+							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								sofia_dispatch_event_t *de, tagi_t tags[])
+{
+
+
+	if (status == 481 && sip && !sip->sip_retry_after && sip->sip_call_id && (!sofia_private || !sofia_private->is_call)) {
+		char *sql;
+
+		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		nua_handle_destroy(nh);
+	}
+	else if((status >= 400 && status <= 499) || (status >= 600 && status <= 699)) {
+		if(sip && !sip->sip_retry_after && sip->sip_call_id && (!sofia_private || !sofia_private->is_call)) {
+			char *sql;
+
+			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
+			switch_assert(sql != NULL);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			nua_handle_destroy(nh);
+		}
+	}
+	
+
 }
 
 #define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")
@@ -1642,6 +1683,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 	}
 
+
 	switch (event) {
 	case nua_r_get_params:
 	case nua_i_fork:
@@ -1794,6 +1836,9 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_r_notify:
 		if (session) {
 			sofia_handle_sip_r_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
+		}
+		else {
+			sofia_handle_sip_r_notify_on_no_session(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 		}
 		break;
 	case nua_i_notify:
