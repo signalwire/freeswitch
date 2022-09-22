@@ -3415,6 +3415,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 								  NTATAG_SERVER_RPORT(profile->server_rport_level),
 								  NTATAG_CLIENT_RPORT(profile->client_rport_level),
+								  SOATAG_SDP_MEDIA_STRICT_FMT(sofia_test_pflag(profile, PFLAG_SDP_MEDIA_STRICT_FMT)),
 								  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)),
 								  TPTAG_CAPT(sofia_test_flag(profile, TFLAG_CAPTURE) ? mod_sofia_globals.capture_server : NULL),
 								  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT),
@@ -4816,6 +4817,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_pflag(profile, PFLAG_ALLOW_UPDATE);
 					sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 					sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
+					sofia_set_pflag(profile, PFLAG_SDP_MEDIA_STRICT_FMT);
 					//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
 
 					sofia_clear_pflag(profile, PFLAG_CHANNEL_XML_FETCH_ON_NIGHTMARE_TRANSFER);
@@ -6261,6 +6263,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_TAGGED_ON_PRACK);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_TAGGED_ON_PRACK);
+						}
+					} else if (!strcasecmp(var, "telnyx-sdp-media-strict-fmt")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SDP_MEDIA_STRICT_FMT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SDP_MEDIA_STRICT_FMT);
 						}
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
