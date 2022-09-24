@@ -1732,12 +1732,6 @@ int main(int argc, char *argv[])
 	global_handle = &handle;
 	global_profile = profile;
 
-	if (esl_thread_create_detached(msg_thread_run, &handle) != ESL_SUCCESS) {
-		printf("Error starting thread!\n");
-		esl_disconnect(&handle);
-		return 0;
-	}
-
 	snprintf(cmd_str, sizeof(cmd_str), "api switchname\n\n");
 	esl_send_recv(global_handle, cmd_str);
 	if (global_handle->last_sr_event && global_handle->last_sr_event->body) {
@@ -1852,6 +1846,13 @@ int main(int argc, char *argv[])
 		snprintf(cmd_str, sizeof(cmd_str), "log %s\n\n", profile->loglevel);
 		esl_send_recv(&handle, cmd_str);
 	}
+
+	if (esl_thread_create_detached(msg_thread_run, &handle) != ESL_SUCCESS) {
+		printf("Error starting thread!\n");
+		esl_disconnect(&handle);
+		return 0;
+	}
+
 	if (global_profile->batch_mode) {
 		setvbuf(stdout, (char*)NULL, _IONBF, 0);
 	}
