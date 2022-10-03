@@ -2444,16 +2444,22 @@ void sofia_event_callback(nua_event_t event,
 	switch(event) {
 	case nua_i_active:
 		{
-			switch_core_session_t *session;
-			if ((session = switch_core_session_locate(sofia_private->uuid))) {
-				switch_channel_t *channel = switch_core_session_get_channel(session);
-				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND 
-					&& !switch_channel_var_true(channel, "prom_flag_call_active")) {
-					switch_channel_set_variable(channel, "prom_flag_call_active", "true");
-					prometheus_increment_call_counter();
-				}
-				switch_core_session_rwunlock(session);
-			}
+			if(sofia_private){
+                switch_core_session_t *session;
+                if ((session = switch_core_session_locate(sofia_private->uuid))) {
+                    switch_channel_t *channel = switch_core_session_get_channel(session);
+                    if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND 
+                        && !switch_channel_var_true(channel, "prom_flag_call_active")) {
+                        switch_channel_set_variable(channel, "prom_flag_call_active", "true");
+                        prometheus_increment_call_counter();
+                    }
+                    switch_core_session_rwunlock(session);
+                }
+            }
+            else{
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: Accessing an already deleted sofia_private struct\n");
+                goto end;
+            }
 		}
 		break;
 	case nua_i_terminated:
