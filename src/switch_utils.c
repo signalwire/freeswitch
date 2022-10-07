@@ -4529,6 +4529,7 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str)
 		if (*p == '\n') {
 			x++;
 			if (x == 2) {
+				p++;
 				break;
 			}
 		} else if (x && (*p != '\r')) {
