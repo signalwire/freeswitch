@@ -768,7 +768,7 @@ const char *sofia_glue_transport2str(const sofia_transport_t tp)
 char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport)
 {
 	return sofia_glue_create_via(session, profile->extsipip, (sofia_glue_transport_has_tls(transport))
-								 ? profile->tls_sip_port : profile->extsipport, transport);
+								 ? profile->ext_tls_sip_port : profile->extsipport, transport);
 }
 
 char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport)
@@ -1310,7 +1310,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
 					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact,
-																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->tls_sip_port);
+																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->ext_tls_sip_port);
 				} else {
 					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact,
 																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
