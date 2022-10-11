@@ -259,6 +259,31 @@ static char tiers_sql[] =
 "   level    INTEGER NOT NULL DEFAULT 1,\n"
 "   position INTEGER NOT NULL DEFAULT 1\n" ");\n";
 
+static char queues_sql[] =
+"CREATE TABLE queues (\n"
+"   name                                     VARCHAR(255) NOT NULL,\n"
+"   strategy                                 VARCHAR(255) NOT NULL DEFAULT 'round-robin',\n"
+"   moh_sound                                VARCHAR(255) NOT NULL DEFAULT '',\n"
+"   announce_sound                           VARCHAR(255) NOT NULL DEFAULT '',\n"
+"   announce_frequency                       VARCHAR(255) NOT NULL DEFAULT '',\n"
+"   record_template                          VARCHAR(255) NOT NULL DEFAULT '',\n"
+"   time_base_score                          VARCHAR(255) NOT NULL DEFAULT 'queue',\n"
+"   ring_progressively_delay                 INTEGER NOT NULL DEFAULT 0,\n"
+
+"   tier_rules_apply                         BOOLEAN NOT NULL DEFAULT TRUE,\n"
+"   tier_rule_wait_second                    INTEGER NOT NULL DEFAULT 0,\n"
+"   tier_rule_wait_multiply_level            BOOLEAN NOT NULL DEFAULT FALSE,\n"
+"   tier_rule_no_agent_no_wait               BOOLEAN NOT NULL DEFAULT TRUE,\n"
+"   discard_abandoned_after                  INTEGER NOT NULL DEFAULT 0,\n"
+"   abandoned_resume_allowed                 BOOLEAN NOT NULL DEFAULT FALSE,\n"
+
+"   max_wait_time                            INTEGER NOT NULL DEFAULT 0,\n"
+"   max_wait_time_with_no_agent              INTEGER NOT NULL DEFAULT 0,\n"
+"   max_wait_time_with_no_agent_time_reached INTEGER NOT NULL DEFAULT 5,\n"
+
+"   agent_no_answer_status                   VARCHAR(255) NOT NULL DEFAULT 'On Break',\n"
+"   skip_agents_with_external_calls          BOOLEAN NOT NULL DEFAULT FALSE);\n";
+
 static switch_xml_config_int_options_t config_int_0_86400 = { SWITCH_TRUE, 0, SWITCH_TRUE, 86400 };
 
 /* TODO This is temporary until we either move it to the core, or use it differently in the module */
@@ -437,6 +462,7 @@ static struct {
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
 	int agent_originate_timeout;
+	switch_bool_t cc_queue_db;
 } globals;
 
 #define CC_QUEUE_CONFIGITEM_COUNT 100
@@ -481,6 +507,7 @@ struct cc_queue {
 	switch_xml_config_item_t config[CC_QUEUE_CONFIGITEM_COUNT];
 	switch_xml_config_string_options_t config_str_pool;
 
+	switch_bool_t queue_found;
 };
 typedef struct cc_queue cc_queue_t;
 
@@ -713,6 +740,108 @@ end:
 	return ret;
 }
 
+struct queue_callback {
+       char *name;
+
+       char *strategy;
+       char *moh;
+       char *announce;
+       uint32_t announce_freq;
+       char *record_template;
+       char *time_base_score;
+       uint32_t ring_progressively_delay;
+
+       switch_bool_t tier_rules_apply;
+       uint32_t tier_rule_wait_second;
+       switch_bool_t tier_rule_wait_multiply_level;
+       switch_bool_t tier_rule_no_agent_no_wait;
+
+       uint32_t discard_abandoned_after;
+       switch_bool_t abandoned_resume_allowed;
+
+       uint32_t max_wait_time;
+       uint32_t max_wait_time_with_no_agent;
+       uint32_t max_wait_time_with_no_agent_time_reached;
+       char *agent_no_answer_status;
+
+       switch_bool_t skip_agents_with_external_calls;
+
+       switch_bool_t queue_found;
+};
+typedef struct queue_callback queue_callback_t;
+
+/* loading specific queue from db */
+static int queue_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	queue_callback_t *cbt = (queue_callback_t *)pArg;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "queue_callback for queue '%s' in database\n", argv[0]);
+
+	cbt->queue_found                     = SWITCH_TRUE;
+	cbt->tier_rules_apply                = SWITCH_TRUE;
+	cbt->tier_rule_wait_multiply_level   = SWITCH_FALSE;
+	cbt->tier_rule_no_agent_no_wait      = SWITCH_TRUE;
+	cbt->abandoned_resume_allowed        = SWITCH_FALSE;
+	cbt->skip_agents_with_external_calls = SWITCH_FALSE;
+
+	cbt->name = argv[0];
+	cbt->strategy = argv[1];
+	cbt->moh = argv[2];
+	cbt->time_base_score = argv[3];
+
+	if (!strcasecmp(argv[4], "f")) {
+			cbt->tier_rules_apply = SWITCH_FALSE;
+	}
+
+	cbt->tier_rule_wait_second = atoi(argv[5]);
+
+	if (!strcasecmp(argv[6], "t")) {
+			cbt->tier_rule_wait_multiply_level = SWITCH_TRUE;
+	}
+
+	if (!strcasecmp(argv[4], "f")) {
+			cbt->tier_rule_no_agent_no_wait = SWITCH_FALSE;
+	}
+
+	cbt->discard_abandoned_after = atoi(argv[8]);
+
+	if (!strcasecmp(argv[6], "t")) {
+			cbt->abandoned_resume_allowed = SWITCH_TRUE;
+	}
+
+	cbt->max_wait_time = atoi(argv[10]);
+	cbt->max_wait_time_with_no_agent = atoi(argv[11]);
+	cbt->max_wait_time_with_no_agent_time_reached = atoi(argv[12]);
+	cbt->record_template = argv[13];
+	cbt->ring_progressively_delay = atoi(argv[14]);
+
+	if (!strcasecmp(argv[15], "t")) {
+			cbt->skip_agents_with_external_calls = SWITCH_TRUE;
+	}
+
+	cbt->agent_no_answer_status = argv[16];
+
+	return 0;
+}
+
+static switch_bool_t queue_db_check(const char *queue_name) {
+	char *sql;
+	//switch_event_t *event;
+	char res[256];
+
+	/* Check to see if queue already exists */
+	sql = switch_mprintf("SELECT count(*) FROM queues WHERE name = '%q'", queue_name);
+	cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
+	switch_safe_free(sql);
+
+	if (atoi(res)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found queue '%s' in database\n", queue_name);
+			return SWITCH_TRUE;
+	}
+
+	return SWITCH_FALSE;
+}
+
 static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agents, switch_bool_t request_tiers, switch_xml_t x_queues_cfg)
 {
 	cc_queue_t *queue = NULL;
@@ -720,10 +849,17 @@ static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agen
 	switch_xml_t xml = NULL;
 	switch_event_t *event = NULL;
 	switch_event_t *params = NULL;
+	switch_bool_t db_queue_exists = SWITCH_FALSE;
+	queue_callback_t cbt;
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
+
+	if (globals.cc_queue_db) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cc_queue_db is 'true'. Checking for queue '%s' in database\n", queue_name);
+			db_queue_exists = queue_db_check(queue_name);
+	}
 
 	if (x_queues_cfg) {
 		x_queues = x_queues_cfg;
@@ -737,7 +873,83 @@ static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agen
 		}
 	}
 
-	if ((x_queue = switch_xml_find_child(x_queues, "queue", "name", queue_name))) {
+	if (db_queue_exists) {
+		char *sql = NULL;
+		switch_memory_pool_t *pool;
+
+		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+				goto end;
+		}
+
+		if (!(queue = switch_core_alloc(pool, sizeof(cc_queue_t)))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
+				switch_core_destroy_memory_pool(&pool);
+				goto end;
+		}
+
+		queue->pool = pool;
+
+		sql = switch_mprintf(
+				"SELECT name,strategy, moh_sound, time_base_score, tier_rules_apply, "
+				"tier_rule_wait_second, tier_rule_wait_multiply_level, "
+				"tier_rule_no_agent_no_wait, discard_abandoned_after, "
+				"abandoned_resume_allowed, max_wait_time, max_wait_time_with_no_agent, "
+				"max_wait_time_with_no_agent_time_reached, record_template, ring_progressively_delay, "
+				"skip_agents_with_external_calls, agent_no_answer_status "
+				"FROM queues "
+				"WHERE name = '%s'",
+				queue_name);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Querying for queue:\n%s\n", sql);
+
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, queue_callback, &cbt /* Call back variables */);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ran queue_callback\n");
+		switch_safe_free(sql);
+
+		if (!cbt.queue_found) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Queue not found");
+				goto end;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found queue '%s' in database", cbt.name);
+
+		switch_thread_rwlock_create(&queue->rwlock, pool);
+
+		queue->name = switch_core_strdup(pool, cbt.name);
+		queue->strategy = switch_core_strdup(pool, cbt.strategy);
+		queue->moh = switch_core_strdup(pool, cbt.moh);
+		queue->announce = switch_core_strdup(pool, cbt.announce);
+		queue->announce_freq = cbt.announce_freq;
+		queue->record_template = switch_core_strdup(pool, cbt.record_template);
+		queue->time_base_score = switch_core_strdup(pool, cbt.time_base_score);
+		queue->ring_progressively_delay = cbt.ring_progressively_delay;
+		queue->tier_rules_apply = cbt.tier_rules_apply;
+		queue->tier_rule_wait_second = cbt.tier_rule_wait_second;
+		queue->tier_rule_wait_multiply_level = cbt.tier_rule_wait_multiply_level;
+		queue->tier_rule_no_agent_no_wait = cbt.tier_rule_no_agent_no_wait;
+		queue->discard_abandoned_after = cbt.discard_abandoned_after;
+		queue->abandoned_resume_allowed = cbt.abandoned_resume_allowed;
+		queue->max_wait_time = cbt.max_wait_time;
+		queue->max_wait_time_with_no_agent = cbt.max_wait_time_with_no_agent;
+		queue->max_wait_time_with_no_agent_time_reached = cbt.max_wait_time_with_no_agent_time_reached;
+		queue->agent_no_answer_status = switch_core_strdup(pool, cbt.agent_no_answer_status);
+		queue->skip_agents_with_external_calls= cbt.skip_agents_with_external_calls;
+
+		queue->last_agent_exist = 0;
+		queue->last_agent_exist_check = 0;
+		queue->calls_answered = 0;
+		queue->calls_abandoned = 0;
+
+		switch_mutex_init(&queue->mutex, SWITCH_MUTEX_NESTED, queue->pool);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added queue %s\n", queue->name);
+		switch_core_hash_insert(globals.queue_hash, queue->name, queue);
+
+		goto end;
+       }
+       else if ((x_queue = switch_xml_find_child(x_queues, "queue", "name", queue_name))) {	
+
 		switch_memory_pool_t *pool;
 		int count;
 
@@ -809,6 +1021,26 @@ end:
 		switch_event_destroy(&params);
 	}
 	return queue;
+}
+
+/* loading all queues from db */
+static int queues_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	cc_queue_t *queue = NULL;
+
+	const char *queue_name = argv[0];
+
+	switch_mutex_lock(globals.mutex);
+	queue = load_queue(queue_name, SWITCH_FALSE, SWITCH_FALSE, NULL);
+
+	if (queue) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "[%s] rwlock\n", queue->name);
+
+		switch_thread_rwlock_rdlock(queue->rwlock);
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	return 0;
 }
 
 static cc_queue_t *get_queue(const char *queue_name)
@@ -1539,6 +1771,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 				globals.cc_instance_id = switch_core_strdup(pool, val);
 			} else if (!strcasecmp(var, "agent-originate-timeout")) {
 				globals.agent_originate_timeout = atoi(val);
+			} else if (!strcasecmp(var, "cc-queue-db")) {
+				globals.cc_queue_db = switch_true(val);
 			}
 		}
 	}
@@ -1574,6 +1808,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
 	switch_cache_db_test_reactive(dbh, "select count(external_calls_count) from agents", NULL, "alter table agents add external_calls_count integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
+	switch_cache_db_test_reactive(dbh, "select count(name) from queues", "drop table queues", queues_sql);
 	/* This will rename column system for SQLite */
 	if (switch_cache_db_get_type(dbh) == SCDB_TYPE_CORE_DB) {
 		char *errmsg = NULL;
@@ -1615,6 +1850,21 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	if (globals.truncate_agents) {
 		sql = switch_mprintf("delete from agents;");
 		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+	}
+
+	if (globals.cc_queue_db) {
+
+		char *sql = NULL;
+		sql = switch_mprintf(
+		"SELECT name "
+		"FROM queues ");
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Querying for queues to load:\n%s\n", sql);
+
+		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, queues_callback, NULL /* Call back variables */);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ran queues_callback\n");
 		switch_safe_free(sql);
 	}
 

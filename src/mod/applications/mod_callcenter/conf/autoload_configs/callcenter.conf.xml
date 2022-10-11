@@ -4,6 +4,8 @@
     <!--<param name="dbname" value="/dev/shm/callcenter.db"/>-->
     <!--<param name="reserve-agents" value="true"/>-->
     <!--<param name="cc-instance-id" value="single_box"/>-->
+    <!-- load queues from database as well as config -->
+    <!--<param name="cc-queue-db" value="true"/>-->
   </settings>
 
   <queues>
