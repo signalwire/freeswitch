@@ -908,7 +908,6 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	const char *exclude_regex = NULL;
 	switch_regex_t *re = NULL;
 	int ovector[30] = {0};
-	int proceed;
 
 	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
 	SWITCH_STANDARD_STREAM(stream);
@@ -922,7 +921,7 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ( !exclude_regex || !(/*proceed*/ switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 					const char *hname = name + strlen(prefix);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
 					switch_regex_safe_free(re);
@@ -1322,7 +1321,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params, invite_tel_params);
-		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL);
+		if (switch_channel_var_true(tech_pvt->channel, "sip_caller_id_name_in_contact")) {
+			invite_contact = switch_core_session_sprintf(session, "\"%s\" %s", tech_pvt->caller_profile->caller_id_name, sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL));
+		} else {
+			invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL);
+		}
 		from_str = sofia_overcome_sip_uri_weakness(session, invite_from_uri ? invite_from_uri : use_from_str, 0, SWITCH_TRUE, invite_from_params, NULL);
 		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params, NULL);
 
@@ -3290,6 +3293,44 @@ void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const 
 }
 
 
+char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix)
+{
+	char *route = NULL;
+	int count = 0;
+	char route_buf[ROUTE_ENCODED_HEADER_MAX_CHARS] = {0};
+	sip_route_t *rrp;
+	switch_stream_handle_t rr_stream = { 0 };
+	SWITCH_STANDARD_STREAM(rr_stream);
+
+	if (add_fs_path_prefix) {
+		rr_stream.write_function(&rr_stream, ";fs_path=");
+	}
+
+	for(rrp = rt; rrp; rrp = rrp->r_next) {
+		char *sep = count == 0 ? "" : "%2C";
+		char *rr = sip_header_as_string(nua_handle_home(nh), (void *) rrp);
+		switch_url_encode(rr, route_buf, ROUTE_ENCODED_HEADER_MAX_CHARS);
+		rr_stream.write_function(&rr_stream, "%s%s", sep, route_buf);
+		su_free(nua_handle_home(nh), rr);
+
+		if (count >= ROUTE_MAX_HEADERS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ROUTE_MAX_HEADERS of %d reached\n", ROUTE_MAX_HEADERS);
+			break;
+		}
+		count++;
+	}
+
+	if (!zstr((char *) rr_stream.data)) {
+		route = rr_stream.data;
+	} else {
+		switch_safe_free(rr_stream.data);
+	}
+
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fs_path with %d Route headers [%s]\n", count, route ? route : "");
+	return route;
+}
+
+
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np)
 {
 	char *contact_str = NULL;
@@ -3384,19 +3425,16 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 	}
 
 	if (sip->sip_record_route) {
-		char *full_contact = sip_header_as_string(nua_handle_get_home(nh), (void *) contact);
-		char *route = sofia_glue_strip_uri(sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_record_route));
-		char *full_contact_dup;
-		char *route_encoded;
-		int route_encoded_len;
-		full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
-		route_encoded_len = (int)(strlen(route) * 3) + 1;
-		switch_zmalloc(route_encoded, route_encoded_len);
-		switch_url_encode(route, route_encoded, route_encoded_len);
-		contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, route_encoded);
-		free(route);
-		free(full_contact_dup);
-		free(route_encoded);
+		char *fs_path_str = sofia_glue_get_encoded_fs_path(nh, sip->sip_record_route, SWITCH_FALSE);
+		char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) contact);
+		char *full_contact_dup = sofia_glue_get_url_from_contact(full_contact, 1);
+		if (fs_path_str && full_contact_dup) {
+			contact_str = switch_mprintf("%s <%s;fs_path=%s>", display, full_contact_dup, fs_path_str);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not get fs_path str.\n");
+		}
+		switch_safe_free(fs_path_str);
+		switch_safe_free(full_contact_dup);
 	}
 	else if (np->is_nat && np->fs_path) {
 		char *full_contact = sip_header_as_string(nua_handle_get_home(nh), (void *) contact);

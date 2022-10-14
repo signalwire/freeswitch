@@ -188,7 +188,7 @@ $(MODNAME).o: $(MODDIR)/$(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch_event.h $(switch_srcdir)/src/include/switch_resample.h \
   $(switch_srcdir)/src/include/switch_ivr.h $(switch_srcdir)/src/include/switch_rtp.h \
   $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
-  $(switch_srcdir)/src/include/switch_xml.h
+  $(switch_srcdir)/src/include/switch_xml.h $(switch_srcdir)/src/include/switch_spandsp.h
 	@echo Compiling $<...
 	if test -f "$(CSOURCEFILE)" -o -f "$(MODDIR)/$(CSOURCEFILE)"; then \
 		if test ! -z $(VERBOSE) ; then echo $(COMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
@@ -211,7 +211,7 @@ $(MODNAME).lo: $(MODDIR)/$(SOURCEFILE) \
   $(switch_srcdir)/src/include/switch_event.h $(switch_srcdir)/src/include/switch_resample.h \
   $(switch_srcdir)/src/include/switch_ivr.h $(switch_srcdir)/src/include/switch_rtp.h \
   $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
-  $(switch_srcdir)/src/include/switch_xml.h
+  $(switch_srcdir)/src/include/switch_xml.h $(switch_srcdir)/src/include/switch_spandsp.h
 	@echo Compiling $<...
 	if test -f "$(CSOURCEFILE)" -o -f "$(MODDIR)/$(CSOURCEFILE)"; then \
 		if test ! -z $(VERBOSE) ; then echo $(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(MODDIR)/'`$< ; fi ;\
@@ -260,6 +260,8 @@ $(switch_srcdir)/src/include/switch_resample.h:
 $(switch_srcdir)/src/include/switch_ivr.h:
 
 $(switch_srcdir)/src/include/switch_rtp.h:
+
+$(switch_srcdir)/src/include/switch_spandsp.h:
 
 $(switch_srcdir)/src/include/switch_stun.h:
 

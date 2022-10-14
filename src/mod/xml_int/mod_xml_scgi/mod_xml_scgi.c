@@ -406,7 +406,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_scgi_shutdown)
 		if (bp->thread) {
 			switch_status_t st;
 			scgi_handle_t handle = { 0 };
-			unsigned char buf[16336] = "";
+			unsigned char buf[16336];
 			int x = 3;
 
 			scgi_add_param(&handle, "REQUEST_METHOD", "POST");

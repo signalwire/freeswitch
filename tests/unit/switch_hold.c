@@ -1,12 +1,21 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+int timeout_sec = 10;
+switch_interval_time_t delay_start_ms = 5000;
+
 FST_CORE_DB_BEGIN("./conf_test")
 {
 FST_SUITE_BEGIN(switch_hold)
 {
 	FST_SETUP_BEGIN()
 	{
+		/* Give mod_sofia time to spinup profile threads */
+		if (delay_start_ms) {
+			switch_sleep(delay_start_ms * 1000);
+			delay_start_ms = 0;
+		}
+
 		fst_requires_module("mod_sofia");
 		fst_requires_module("mod_commands");
 	}
@@ -23,7 +32,7 @@ FST_SUITE_BEGIN(switch_hold)
 		switch_status_t status;
 		switch_call_cause_t cause;
 
-		status = switch_ivr_originate(NULL, &session, &cause, "{ignore_early_media=true}sofia/gateway/test_gateway/+15553332900", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+		status = switch_ivr_originate(NULL, &session, &cause, "{ignore_early_media=true}sofia/gateway/test_gateway/+15553332900", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 		fst_requires(session);
 		fst_check(status == SWITCH_STATUS_SUCCESS);
 

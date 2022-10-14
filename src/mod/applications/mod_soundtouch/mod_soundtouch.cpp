@@ -246,7 +246,6 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 SWITCH_STANDARD_APP(soundtouch_start_function)
 {
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct soundtouch_helper *sth;
 	char *argv[6];
@@ -311,14 +310,13 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 
 	sth->session = session;
 
-	if ((status = switch_core_media_bug_add(session, "soundtouch", NULL, soundtouch_callback, sth, 0,
-											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(session, "soundtouch", NULL, soundtouch_callback, sth, 0,
+											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}
 
 	switch_channel_set_private(channel, "_soundtouch_", bug);
-
 }
 
 /* API Interface Function */
@@ -327,12 +325,11 @@ SWITCH_STANDARD_API(soundtouch_api_function)
 {
 	switch_core_session_t *rsession = NULL;
 	switch_channel_t *channel = NULL;
-        switch_media_bug_t *bug;
-        switch_status_t status;
-        struct soundtouch_helper *sth;
+	switch_media_bug_t *bug;
+	struct soundtouch_helper *sth;
 	char *mycmd = NULL;
-        int argc = 0;
-        char *argv[10] = { 0 };
+	int argc = 0;
+	char *argv[10] = { 0 };
 	char *uuid = NULL;
 	char *action = NULL;
 	int x, n;
@@ -420,8 +417,8 @@ SWITCH_STANDARD_API(soundtouch_api_function)
 
 	sth->session = rsession;
 
-	if ((status = switch_core_media_bug_add(rsession, "soundtouch", NULL, soundtouch_callback, sth, 0,
-											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(rsession, "soundtouch", NULL, soundtouch_callback, sth, 0,
+											sth->send_not_recv ? SMBF_WRITE_REPLACE : SMBF_READ_REPLACE, &bug) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Failure!\n");
 		goto done;
 	} else {

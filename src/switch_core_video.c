@@ -3116,6 +3116,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, cha
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char* file_name, switch_img_fmt_t img_fmt)
 {
+#ifdef SWITCH_HAVE_YUV
 	int width = 0, height = 0, channels = 0;
 	int comp = STBI_rgb;
 	unsigned char *data = NULL;
@@ -3155,12 +3156,16 @@ SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char* file_name
 	} else if (data) {
 		stbi_image_free(data);
 	}
+#endif
 
 	return NULL;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_img_write_to_file(switch_image_t *img, const char* file_name, int quality)
 {
+#ifndef SWITCH_HAVE_YUV
+	return SWITCH_STATUS_FALSE;
+#else
 	int comp = STBI_rgb;
 	unsigned char *data = NULL;
 	const char *ext = strrchr(file_name, '.');
@@ -3217,6 +3222,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_write_to_file(switch_image_t *img, co
 	free(data);
 
 	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#endif
 }
 
 typedef struct data_url_context_s {
@@ -3224,14 +3230,19 @@ typedef struct data_url_context_s {
 	char **urlP;
 } data_url_context_t;
 
+#ifdef SWITCH_HAVE_YUV
 static void data_url_write_func(void *context, void *data, int size)
 {
 	switch_buffer_t *buffer = (switch_buffer_t *)context;
 	switch_buffer_write(buffer, data, size);
 }
+#endif
 
 SWITCH_DECLARE(switch_status_t) switch_img_data_url(switch_image_t *img, char **urlP, const char *type, int quality)
 {
+#ifndef SWITCH_HAVE_YUV
+	return SWITCH_STATUS_FALSE;
+#else
 	int comp = STBI_rgb;
 	unsigned char *data = NULL;
 	int stride_in_bytes = 0;
@@ -3300,6 +3311,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_data_url(switch_image_t *img, char **
 	switch_buffer_destroy(&buffer);
 
 	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+#endif /* SWITCH_HAVE_YUV */
 }
 
 

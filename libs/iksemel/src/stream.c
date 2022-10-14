@@ -879,11 +879,11 @@ iks_send_raw (iksparser *prs, const char *xmlstr)
 	} else
 #elif HAVE_SSL
 	if (data->flags & SF_SECURE) {
-		int r, err;
+		int r;
 
 		do {
 			r = SSL_write(data->ssl, xmlstr, strlen (xmlstr));
-		} while (r == -1 && (err = SSL_get_error(data->ssl, r)) == SSL_ERROR_WANT_WRITE);
+		} while (r == -1 && SSL_get_error(data->ssl, r) == SSL_ERROR_WANT_WRITE);
 		
 		if (r < 0) {
 			return IKS_NET_RWERR;

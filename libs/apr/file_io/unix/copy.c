@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
 
-static apr_status_t apr_file_transfer_contents(const char *from_path,
+static fspr_status_t fspr_file_transfer_contents(const char *from_path,
                                                const char *to_path,
-                                               apr_int32_t flags,
-                                               apr_fileperms_t to_perms,
-                                               apr_pool_t *pool)
+                                               fspr_int32_t flags,
+                                               fspr_fileperms_t to_perms,
+                                               fspr_pool_t *pool)
 {
-    apr_file_t *s, *d;
-    apr_status_t status;
-    apr_finfo_t finfo;
-    apr_fileperms_t perms;
+    fspr_file_t *s, *d;
+    fspr_status_t status;
+    fspr_finfo_t finfo;
+    fspr_fileperms_t perms;
 
     /* Open source file. */
-    status = apr_file_open(&s, from_path, APR_READ, APR_OS_DEFAULT, pool);
+    status = fspr_file_open(&s, from_path, APR_READ, APR_OS_DEFAULT, pool);
     if (status)
         return status;
 
     /* Maybe get its permissions. */
     if (to_perms == APR_FILE_SOURCE_PERMS) {
-        status = apr_file_info_get(&finfo, APR_FINFO_PROT, s);
+        status = fspr_file_info_get(&finfo, APR_FINFO_PROT, s);
         if (status != APR_SUCCESS && status != APR_INCOMPLETE) {
-            apr_file_close(s);  /* toss any error */
+            fspr_file_close(s);  /* toss any error */
             return status;
         }
         perms = finfo.protection;
@@ -46,66 +46,66 @@ static apr_status_t apr_file_transfer_contents(const char *from_path,
         perms = to_perms;
 
     /* Open dest file. */
-    status = apr_file_open(&d, to_path, flags, perms, pool);
+    status = fspr_file_open(&d, to_path, flags, perms, pool);
     if (status) {
-        apr_file_close(s);  /* toss any error */
+        fspr_file_close(s);  /* toss any error */
         return status;
     }
 
     /* Copy bytes till the cows come home. */
     while (1) {
         char buf[BUFSIZ];
-        apr_size_t bytes_this_time = sizeof(buf);
-        apr_status_t read_err;
-        apr_status_t write_err;
+        fspr_size_t bytes_this_time = sizeof(buf);
+        fspr_status_t read_err;
+        fspr_status_t write_err;
 
         /* Read 'em. */
-        read_err = apr_file_read(s, buf, &bytes_this_time);
+        read_err = fspr_file_read(s, buf, &bytes_this_time);
         if (read_err && !APR_STATUS_IS_EOF(read_err)) {
-            apr_file_close(s);  /* toss any error */
-            apr_file_close(d);  /* toss any error */
+            fspr_file_close(s);  /* toss any error */
+            fspr_file_close(d);  /* toss any error */
             return read_err;
         }
 
         /* Write 'em. */
-        write_err = apr_file_write_full(d, buf, bytes_this_time, NULL);
+        write_err = fspr_file_write_full(d, buf, bytes_this_time, NULL);
         if (write_err) {
-            apr_file_close(s);  /* toss any error */
-            apr_file_close(d);  /* toss any error */
+            fspr_file_close(s);  /* toss any error */
+            fspr_file_close(d);  /* toss any error */
             return write_err;
         }
 
         if (read_err && APR_STATUS_IS_EOF(read_err)) {
-            status = apr_file_close(s);
+            status = fspr_file_close(s);
             if (status) {
-                apr_file_close(d);  /* toss any error */
+                fspr_file_close(d);  /* toss any error */
                 return status;
             }
 
             /* return the results of this close: an error, or success */
-            return apr_file_close(d);
+            return fspr_file_close(d);
         }
     }
     /* NOTREACHED */
 }
 
-APR_DECLARE(apr_status_t) apr_file_copy(const char *from_path,
+APR_DECLARE(fspr_status_t) fspr_file_copy(const char *from_path,
                                         const char *to_path,
-                                        apr_fileperms_t perms,
-                                        apr_pool_t *pool)
+                                        fspr_fileperms_t perms,
+                                        fspr_pool_t *pool)
 {
-    return apr_file_transfer_contents(from_path, to_path,
+    return fspr_file_transfer_contents(from_path, to_path,
                                       (APR_WRITE | APR_CREATE | APR_TRUNCATE),
                                       perms,
                                       pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_append(const char *from_path,
+APR_DECLARE(fspr_status_t) fspr_file_append(const char *from_path,
                                           const char *to_path,
-                                          apr_fileperms_t perms,
-                                          apr_pool_t *pool)
+                                          fspr_fileperms_t perms,
+                                          fspr_pool_t *pool)
 {
-    return apr_file_transfer_contents(from_path, to_path,
+    return fspr_file_transfer_contents(from_path, to_path,
                                       (APR_WRITE | APR_CREATE | APR_APPEND),
                                       perms,
                                       pool);

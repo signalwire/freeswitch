@@ -15,16 +15,6 @@ AM_LIBAPR_CPPFLAGS := $(shell ./libs/apr/apr-1-config --cppflags --includes)
 AM_LIBAPR_LDFLAGS := $(shell ./libs/apr/apr-1-config --ldflags)
 AM_LIBAPR_LIBS := $(subst $(switch_builddir)/,,$(shell ./libs/apr/apr-1-config \--libs))
 endif
-if SYSTEM_APRUTIL
-AM_LIBAPU_CPPFLAGS := $(shell apu-1-config --includes)
-AM_LIBAPU_LDFLAGS := $(shell apu-1-config --ldflags)
-AM_LIBAPU_LIBS := $(shell apu-1-config \--libs)
-AM_LIBAPU_LINKLIBTOOL := $(shell apu-1-config \--link-libtool)
-else
-AM_LIBAPU_CPPFLAGS := $(shell ./libs/apr-util/apu-1-config --includes)
-AM_LIBAPU_LDFLAGS := $(shell ./libs/apr-util/apu-1-config --ldflags)
-AM_LIBAPU_LIBS := $(subst $(switch_builddir)/,,$(shell ./libs/apr-util/apu-1-config \--libs))
-endif
 
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
@@ -140,11 +130,6 @@ CORE_LIBS=
 
 if ENABLE_LIBVPX
 CORE_LIBS += libs/libvpx/libvpx.a
-endif
-if SYSTEM_APRUTIL
-CORE_LIBS += $(AM_LIBAPU_LINKLIBTOOL)
-else
-CORE_LIBS +=  libs/apr-util/libaprutil-1.la
 endif
 if SYSTEM_APR
 CORE_LIBS += $(AM_LIBAPR_LINKLIBTOOL)
@@ -310,6 +295,7 @@ library_include_HEADERS = \
 	src/include/switch_jitterbuffer.h \
 	src/include/switch_estimators.h \
 	src/include/switch_rtcp_frame.h \
+	src/include/switch_spandsp.h \
 	src/include/switch_stun.h \
 	src/include/switch_nat.h \
 	src/include/switch_log.h \
@@ -339,6 +325,7 @@ nodist_libfreeswitch_la_SOURCES = \
 
 libfreeswitch_la_SOURCES = \
 	src/switch_apr.c \
+	src/switch_apr_queue.c \
 	src/switch_buffer.c \
 	src/switch_caller.c \
 	src/switch_channel.c \
@@ -385,6 +372,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_ivr_say.c \
 	src/switch_ivr_menu.c \
 	src/switch_ivr.c \
+	src/switch_spandsp.c \
 	src/switch_stun.c \
 	src/switch_nat.c \
 	src/switch_log.c \
@@ -598,9 +586,6 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
 
-libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
-	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
-
 SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
 		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
 		libs/srtp/crypto/hash/null_auth.c libs/srtp/crypto/hash/sha1.c \
@@ -700,7 +685,7 @@ yesdepends:
 	rm .nodepends
 
 iksemel-dep:
-	make -C src/mod/endpoints/mod_dingaling deps
+	make -C src/mod/formats/mod_ssml deps
 
 core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
@@ -780,7 +765,7 @@ iks-reconf:
 	cd libs/iksemel && $(MAKE) clean
 	cd libs/iksemel && autoreconf -fi
 	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	$(MAKE) mod_dingaling-clean
+	$(MAKE) mod_ssml-clean
 
 cluecon:
 	@clear

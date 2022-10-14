@@ -184,6 +184,9 @@
     <!-- <param name="core-db-dsn" value="postgresql://freeswitch:@127.0.0.1/freeswitch?options=-c%20client_min_messages%3DNOTICE" /> -->
     <!-- <param name="core-db-dsn" value="mariadb://Server=localhost;Database=freeswitch;Uid=freeswitch;Pwd=pass;" /> -->
     <!-- <param name="core-db-dsn" value="dsn:username:password" /> -->
+
+    <!-- <param name="odbc-skip-autocommit-flip" value="true" /> -->
+
     <!-- 
 	 Allow to specify the sqlite db at a different location (In this example, move it to ramdrive for
 	 better performance on most linux distro (note, you loose the data if you reboot))

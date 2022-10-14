@@ -583,10 +583,9 @@ SWITCH_STANDARD_APP(oreka_start_function)
 	oreka_session_t *oreka = NULL;
 	switch_media_bug_t *bug = NULL;
 	char *argv[6];
-	int argc;
-    int flags = 0;
+	int flags = 0;
 	char *lbuf = NULL;
-    const char *var;
+	const char *var;
 
 	if ((oreka = (oreka_session_t *) switch_channel_get_private(channel, OREKA_PRIVATE))) {
 		if (!zstr(data) && !strcasecmp(data, "stop")) {
@@ -606,14 +605,14 @@ SWITCH_STANDARD_APP(oreka_start_function)
 	switch_assert(oreka);
 	memset(oreka, 0, sizeof(*oreka));
 
-    oreka->mux_streams = globals.mux_streams;
+	oreka->mux_streams = globals.mux_streams;
 
-    if ((var = switch_channel_get_variable(channel, "oreka_mux_streams"))) {
-        oreka->mux_streams = switch_true(var);
-    }
+	if ((var = switch_channel_get_variable(channel, "oreka_mux_streams"))) {
+		oreka->mux_streams = switch_true(var);
+	}
 
 	if (data && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		&& switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 #if 0
 		if (!strncasecmp(argv[x], "server", sizeof("server"))) {
 			/* parse server=192.168.1.144 string */
@@ -623,11 +622,11 @@ SWITCH_STANDARD_APP(oreka_start_function)
 
 	oreka->session = session;
 
-    if (oreka->mux_streams) {
-        flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING | SMBF_ANSWER_REQ;
-    } else {
-        flags = SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_ANSWER_REQ;
-    }
+	if (oreka->mux_streams) {
+		flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING | SMBF_ANSWER_REQ;
+	} else {
+		flags = SMBF_READ_REPLACE | SMBF_WRITE_REPLACE | SMBF_ANSWER_REQ;
+	}
 
 	status = switch_core_media_bug_add(session, OREKA_BUG_NAME_READ, NULL, oreka_audio_callback, oreka, 0, flags, &bug);
 

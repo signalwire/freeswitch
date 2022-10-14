@@ -589,7 +589,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 			if (rstatus == SWITCH_STATUS_SUCCESS) {
 				for (ptr = session->event_hooks.state_run; ptr; ptr = ptr->next) {
-					if ((rstatus = ptr->state_run(session)) != SWITCH_STATUS_SUCCESS) {
+					if (ptr->state_run(session) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
 				}

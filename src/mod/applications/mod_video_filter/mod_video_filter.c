@@ -687,7 +687,6 @@ static switch_bool_t chromakey_bug_callback(switch_media_bug_t *bug, void *user_
 SWITCH_STANDARD_APP(chromakey_start_function)
 {
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *argv[4] = { 0 };
 	int argc;
@@ -721,7 +720,7 @@ SWITCH_STANDARD_APP(chromakey_start_function)
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-	if ((status = switch_core_media_bug_add(session, function, NULL, chromakey_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(session, function, NULL, chromakey_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		return;
@@ -737,7 +736,6 @@ SWITCH_STANDARD_API(chromakey_api_function)
 	switch_core_session_t *rsession = NULL;
 	switch_channel_t *channel = NULL;
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	chromakey_context_t *context;
 	char *mycmd = NULL;
 	int argc = 0;
@@ -800,8 +798,8 @@ SWITCH_STANDARD_API(chromakey_api_function)
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-	if ((status = switch_core_media_bug_add(rsession, function, NULL,
-											chromakey_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(rsession, function, NULL,
+											chromakey_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Failure!\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		goto done;
@@ -970,7 +968,6 @@ static switch_bool_t video_replace_bug_callback(switch_media_bug_t *bug, void *u
 SWITCH_STANDARD_APP(video_replace_start_function)
 {
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_bug_flag_t flags = 0;
 	const char *function = "video_replace";
@@ -1034,7 +1031,7 @@ SWITCH_STANDARD_APP(video_replace_start_function)
 		return;
 	}
 
-	if ((status = switch_core_media_bug_add(session, function, NULL, video_replace_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(session, function, NULL, video_replace_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		return;
@@ -1050,7 +1047,6 @@ SWITCH_STANDARD_API(video_replace_api_function)
 	switch_core_session_t *rsession = NULL;
 	switch_channel_t *channel = NULL;
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	video_replace_context_t *context;
 	char *mycmd = NULL;
 	int argc = 0;
@@ -1150,8 +1146,8 @@ SWITCH_STANDARD_API(video_replace_api_function)
 		goto done;
 	}
 
-	if ((status = switch_core_media_bug_add(rsession, function, NULL,
-											video_replace_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(rsession, function, NULL,
+											video_replace_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Failure!\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		goto done;

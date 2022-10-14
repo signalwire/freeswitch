@@ -1062,11 +1062,14 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 							exists = 1;
 						}
 
+						FREE(data);
 						goto redraw;
 					}
 				} else if (tmp_header) {
 					free_header(&tmp_header);
 				}
+
+				FREE(data);
 				goto end;
 			} else {
 				if ((stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
@@ -1720,10 +1723,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 			int x = 0;
 			for (x = 0; x < var_count; x++) {
 				char *inner_var_array[2] = { 0 };
-				int inner_var_count;
 
-				if ((inner_var_count = switch_separate_string(var_array[x], '=',
-															  inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+				if (switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0]))) == 2) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
 					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}

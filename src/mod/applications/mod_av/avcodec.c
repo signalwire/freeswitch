@@ -405,8 +405,6 @@ typedef struct h264_codec_context_s {
 #define AV_INPUT_BUFFER_PADDING_SIZE FF_INPUT_BUFFER_PADDING_SIZE
 #endif
 
-static uint8_t ff_input_buffer_padding[AV_INPUT_BUFFER_PADDING_SIZE] = { 0 };
-
 #define MAX_PROFILES 100
 
 typedef struct avcodec_profile_s {
@@ -753,8 +751,7 @@ static switch_status_t buffer_h263_rfc4629_packets(h264_codec_context_t *context
 	if (len < 0) return SWITCH_STATUS_FALSE;
 
 	if (startcode) {
-		uint8_t zeros[2] = { 0 };
-		switch_buffer_write(context->nalu_buffer, zeros, 2);
+		switch_buffer_zero_fill(context->nalu_buffer, 2);
 	}
 
 	switch_buffer_write(context->nalu_buffer, data, len);
@@ -1712,7 +1709,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 		if (size > 0) {
 			av_init_packet(&pkt);
-			switch_buffer_write(context->nalu_buffer, ff_input_buffer_padding, sizeof(ff_input_buffer_padding));
+			switch_buffer_zero_fill(context->nalu_buffer, AV_INPUT_BUFFER_PADDING_SIZE);
 			switch_buffer_peek_zerocopy(context->nalu_buffer, (const void **)&pkt.data);
 			pkt.size = size;
 
@@ -1979,6 +1976,9 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 	ctx = &aprofile->ctx;
 
+	ctx->profile = FF_PROFILE_H264_BASELINE;
+	ctx->level = 31;
+
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
 		const char *name = switch_xml_attr(param, "name");
 		const char *value = switch_xml_attr(param, "value");
@@ -1989,9 +1989,6 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s = %s\n", profile_name, name, value);
 
 		val = atoi(value);
-
-		ctx->profile = FF_PROFILE_H264_BASELINE;
-		ctx->level = 31;
 
 		if (!strcmp(name, "dec-threads")) {
 			aprofile->decoder_thread_count = switch_parse_cpu_string(value);

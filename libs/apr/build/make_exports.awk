@@ -100,21 +100,21 @@ function add_symbol(symbol) {
 /^[ \t]*APR_POOL_DECLARE_ACCESSOR[^(]*[(][^)]*[)]/ {
     sub("[ \t]*APR_POOL_DECLARE_ACCESSOR[^(]*[(]", "", $0)
     sub("[)].*$", "", $0)
-    add_symbol("apr_" $0 "_pool_get")
+    add_symbol("fspr_" $0 "_pool_get")
     next
 }
 
 /^[ \t]*APR_DECLARE_INHERIT_SET[^(]*[(][^)]*[)]/ {
     sub("[ \t]*APR_DECLARE_INHERIT_SET[^(]*[(]", "", $0)
     sub("[)].*$", "", $0)
-    add_symbol("apr_" $0 "_inherit_set")
+    add_symbol("fspr_" $0 "_inherit_set")
     next
 }
 
 /^[ \t]*APR_DECLARE_INHERIT_UNSET[^(]*[(][^)]*[)]/ {
     sub("[ \t]*APR_DECLARE_INHERIT_UNSET[^(]*[(]", "", $0)
     sub("[)].*$", "", $0)
-    add_symbol("apr_" $0 "_inherit_unset")
+    add_symbol("fspr_" $0 "_inherit_unset")
     next
 }
 

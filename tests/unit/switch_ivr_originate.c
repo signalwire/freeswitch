@@ -482,7 +482,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_handle_destroy(&dh);
 
-			fst_check_duration(3000, 500);
+			fst_check_duration(3000, 600);
 		}
 		FST_TEST_END()
 
@@ -513,7 +513,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_handle_destroy(&dh);
 
-			fst_check_duration(3000, 500);
+			fst_check_duration(3000, 600);
 		}
 		FST_TEST_END()
 

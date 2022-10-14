@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.7-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.8-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [7-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [8-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -665,12 +665,13 @@ AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 case $host in
      *-darwin*)
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/libpq/lib/pkgconfig
+	path_push_unique PKG_CONFIG_PATH /usr/local/opt/openssl/lib/pkgconfig
      ;;
 esac
 
 if test "$PKG_CONFIG" = "no" \
 	|| test x"$enable_core_pgsql_pkgconfig" = x"no" \
-	|| ! pkg-config libpq; then
+	|| ! pkg-config --modversion libpq > /dev/null; then
 	if test "$PG_CONFIG" != "no"; then
 		AC_MSG_CHECKING([for PostgreSQL libraries via pg_config])
 		POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
@@ -682,7 +683,6 @@ if test "$PKG_CONFIG" = "no" \
 		POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $3 }'`
 	fi
 else
-
 	AC_MSG_CHECKING([for PostgreSQL libraries via pkg_config])
 	POSTGRESQL_CFLAGS="`$PKG_CONFIG --cflags libpq`"
 	POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
@@ -844,8 +844,6 @@ PKG_CHECK_MODULES([STIRSHAKEN], [stirshaken],[
 
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
-AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
-AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
@@ -883,7 +881,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h sys/time.h])
 
 # Solaris 11 privilege management
 AS_CASE([$host],
@@ -1090,8 +1088,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp 
-#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
+#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1531,11 +1529,25 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
 
 PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])])
+    if module_enabled mod_verto; then
+      AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
+    else
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install libks or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+      fi
+    fi
+])
 
 PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])])
+    if module_enabled mod_signalwire; then
+      AC_MSG_ERROR([You need to either install signalwire-client-c or disable mod_signalwire in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+    fi
+])
 
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
@@ -1956,6 +1968,22 @@ else
 	AC_MSG_WARN([python3 support disabled, building mod_python3 will fail!])
 fi
 
+# pcap lib for unit-testing
+AC_MSG_CHECKING(libpcap)
+AC_CHECK_PROG(HAVE_PCAP_CONFIG,pcap-config,[true],[false])
+if test x"$HAVE_PCAP_CONFIG" = x"true"; then
+   AC_MSG_RESULT(yes)
+   PCAP_CONFIG=pcap-config
+   PCAP_LIBS="`$PCAP_CONFIG --libs`"
+   PCAP_CFLAGS="`$PCAP_CONFIG --cflags`"
+   AM_CONDITIONAL([HAVE_PCAP], [true])
+else
+   AC_MSG_RESULT(no)
+   AM_CONDITIONAL([HAVE_PCAP], [false])
+fi
+AC_SUBST([PCAP_CFLAGS])
+AC_SUBST([PCAP_LIBS])
+
 #
 # SNMP checks for mod_snmp
 #
@@ -2116,7 +2144,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
-		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
@@ -2145,7 +2172,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_dingaling/Makefile
 		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
 		src/mod/endpoints/mod_khomp/Makefile
@@ -2303,12 +2329,7 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-if test "$use_system_aprutil" != "yes"; then
-   AC_CONFIG_SUBDIRS([libs/apr-util])
-fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/unimrcp])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi

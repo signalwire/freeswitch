@@ -299,6 +299,7 @@ main (int argc, char *argv[])
 				strtok (to_pw, "\r\n");
 				break;
 			case 'f':
+				if (file) free(file);
 				file = strdup (optarg);
 				break;
 			case 't':

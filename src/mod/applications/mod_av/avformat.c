@@ -742,7 +742,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		av_opt_set_int(mst->resample_ctx, "out_sample_fmt",     c->sample_fmt,     0);
 		av_opt_set_int(mst->resample_ctx, "out_channel_layout", c->channel_layout, 0);
 
-		if ((ret = swr_init(mst->resample_ctx)) < 0) {
+		if (swr_init(mst->resample_ctx) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to initialize the resampling context\n");
 			av_free(mst->resample_ctx);
 			mst->resample_ctx = NULL;
@@ -2003,7 +2003,6 @@ static switch_status_t av_file_truncate(switch_file_handle_t *handle, int64_t of
 
 static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
-
 	uint32_t datalen = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	// uint8_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 }, *bp = buf;
@@ -2037,13 +2036,12 @@ static switch_status_t av_file_write(switch_file_handle_t *handle, void *data, s
 		datalen = *len * 2 * handle->channels;
 
 		if (context->offset) {
-			char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 			switch_size_t samples = *len;
 			int fps = handle->samplerate / samples;
 			int lead_frames = (context->offset * fps) / 1000;
 
 			for (int x = 0; x < lead_frames; x++) {
-				switch_buffer_write(context->audio_buffer, buf, datalen);
+				switch_buffer_zero_fill(context->audio_buffer, datalen);
 			}
 			context->offset = 0;
 		}
@@ -2063,8 +2061,7 @@ GCC_DIAG_ON(deprecated-declarations)
 	if (context->closed) {
 		inuse = switch_buffer_inuse(context->audio_buffer);
 		if (inuse < bytes) {
-			char buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
-			switch_buffer_write(context->audio_buffer, buf, bytes - inuse);
+			switch_buffer_zero_fill(context->audio_buffer, bytes - inuse);
 		}
 	}
 
@@ -2097,7 +2094,7 @@ GCC_DIAG_ON(deprecated-declarations)
 		 }
 	 }
  
-	while ((inuse = switch_buffer_inuse(context->audio_buffer)) >= bytes) {
+	while (switch_buffer_inuse(context->audio_buffer) >= bytes) {
 		AVPacket pkt[2] = { {0} };
 		int got_packet[2] = {0};
 		int j = 0, ret = -1, audio_stream_count = 1;

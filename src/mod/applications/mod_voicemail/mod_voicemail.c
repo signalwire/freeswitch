@@ -1196,7 +1196,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	switch_cc_t cc = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	int got_file = 0;
-	switch_bool_t skip_record_check = switch_true(switch_channel_get_variable(channel, "skip_record_check"));
+	switch_bool_t skip_record_check = switch_channel_var_true(channel, "skip_record_check");
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1605,7 +1605,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 						  cid_buf, switch_channel_get_name(channel));
 		switch_core_session_receive_message(session, &msg);
 
-		if (!zstr(cbt->cid_number) && (switch_true(switch_channel_get_variable(channel, "vm_announce_cid")))) {
+		if (!zstr(cbt->cid_number) && (switch_channel_var_true(channel, "vm_announce_cid"))) {
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_PHONE_NUMBER_MACRO, cbt->cid_number, NULL, NULL));
 		}
 
@@ -2002,7 +2002,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		auth_only = 1;
 		auth = 0;
 	} else {
-		auth_only = switch_true(switch_channel_get_variable(channel, "vm_auth_only"));
+		auth_only = switch_channel_var_true(channel, "vm_auth_only");
 	}
 
 	timeout = profile->digit_timeout;
@@ -2583,7 +2583,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				if (!auth) {
 					if (!zstr(cbt.password) && !strcmp(cbt.password, mypass)) {
 						auth++;
-					} else if (!thepass && profile->allow_empty_password_auth) {
+					} else if (!thehash && !thepass && profile->allow_empty_password_auth) {
 						auth++;
 					}
 
@@ -3165,7 +3165,6 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	char *dup = NULL, *user = NULL, *domain = NULL, *profile_name = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int isgroup = 0, isall = 0;
-	int argc = 0;
 	char *argv[6] = { 0 };
 	char *box, *path, *cid_num, *cid_name;
 	switch_memory_pool_t *pool = NULL;
@@ -3181,7 +3180,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	dup = strdup(data);
 	switch_assert(dup);
 
-	if ((argc = switch_separate_string(dup, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if (switch_separate_string(dup, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not enough args [%s]\n", data);
 		status = SWITCH_STATUS_FALSE;
 		goto end;
@@ -3338,7 +3337,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 		} else {
 			switch_xml_t x_group = NULL;
 
-			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
+			if (switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group) == SWITCH_STATUS_SUCCESS) {
 				switch_xml_merge_user(ut, x_domain, x_group);
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, read_flags,
@@ -3399,14 +3398,16 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_event_t *vars = NULL;
 	const char *vtmp, *vm_ext = NULL;
 	int disk_quota = 0;
-	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
-	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
-	switch_bool_t skip_record_urgent_check = switch_true(switch_channel_get_variable(channel, "skip_record_urgent_check"));
+	switch_bool_t skip_greeting = switch_channel_var_true(channel, "skip_greeting");
+	switch_bool_t skip_instructions = switch_channel_var_true(channel, "skip_instructions");
+	switch_bool_t skip_record_urgent_check = switch_channel_var_true(channel, "skip_record_urgent_check");
+	switch_bool_t voicemail_skip_goodbye = switch_channel_var_true(channel, "voicemail_skip_goodbye");
 	switch_bool_t vm_enabled = SWITCH_TRUE;
 
 	switch_channel_set_variable(channel, "skip_greeting", NULL);
 	switch_channel_set_variable(channel, "skip_instructions", NULL);
 	switch_channel_set_variable(channel, "skip_record_urgent_check", NULL);
+	switch_channel_set_variable(channel, "voicemail_skip_goodbye", NULL);
 
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -3700,7 +3701,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_safe_free(file_path);
 
 	if (switch_channel_ready(channel) && vm_enabled) {
-		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
+		if (!voicemail_skip_goodbye) {
+			status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
+		}
 	}
 
 	return status;
@@ -5426,7 +5429,7 @@ SWITCH_STANDARD_API(vm_fsdb_msg_list_function)
 
 	if (!msg_order) {
 		msg_order = "ASC";
-	} else if (strcasecmp(msg_order, "ASC") || strcasecmp(msg_order, "DESC")) {
+	} else if (strcasecmp(msg_order, "ASC") && strcasecmp(msg_order, "DESC")) {
 		stream->write_function(stream, "-ERR Bad Argument: '%s'\n", msg_order);
 		goto done;
 	}

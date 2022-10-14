@@ -15,11 +15,11 @@
  */
 
 #define INCL_DOSEXCEPTIONS      /* for OS2 */
-#include "apr_arch_threadproc.h"
-#include "apr_private.h"
-#include "apr_pools.h"
-#include "apr_signal.h"
-#include "apr_strings.h"
+#include "fspr_arch_threadproc.h"
+#include "fspr_private.h"
+#include "fspr_pools.h"
+#include "fspr_signal.h"
+#include "fspr_strings.h"
 
 #include <assert.h>
 #if APR_HAS_THREADS && APR_HAVE_PTHREAD_H
@@ -27,12 +27,12 @@
 #endif
 
 #ifdef SIGWAIT_TAKES_ONE_ARG
-#define apr_sigwait(a,b) ((*(b)=sigwait((a)))<0?-1:0)
+#define fspr_sigwait(a,b) ((*(b)=sigwait((a)))<0?-1:0)
 #else
-#define apr_sigwait(a,b) sigwait((a),(b))
+#define fspr_sigwait(a,b) sigwait((a),(b))
 #endif
 
-APR_DECLARE(apr_status_t) apr_proc_kill(apr_proc_t *proc, int signum)
+APR_DECLARE(fspr_status_t) fspr_proc_kill(fspr_proc_t *proc, int signum)
 {
 #ifdef OS2
     /* SIGTERM's don't work too well in OS/2 (only affects other EMX
@@ -71,7 +71,7 @@ static void avoid_zombies(int signo)
  * from W. Richard Stevens' "Advanced Programming in the UNIX Environment"
  * (the version that does not automatically restart system calls).
  */
-APR_DECLARE(apr_sigfunc_t *) apr_signal(int signo, apr_sigfunc_t * func)
+APR_DECLARE(fspr_sigfunc_t *) fspr_signal(int signo, fspr_sigfunc_t * func)
 {
     struct sigaction act, oact;
 
@@ -111,10 +111,10 @@ APR_DECLARE(apr_sigfunc_t *) apr_signal(int signo, apr_sigfunc_t * func)
  * on the version of autoconf used. */
 #if defined(SYS_SIGLIST_DECLARED) || HAVE_DECL_SYS_SIGLIST
 
-void apr_signal_init(apr_pool_t *pglobal)
+void fspr_signal_init(fspr_pool_t *pglobal)
 {
 }
-const char *apr_signal_description_get(int signum)
+const char *fspr_signal_description_get(int signum)
 {
     return sys_siglist[signum];
 }
@@ -145,7 +145,7 @@ static const char *signal_description[APR_NUMSIG];
             } \
         } while (0)
 
-void apr_signal_init(apr_pool_t *pglobal)
+void fspr_signal_init(fspr_pool_t *pglobal)
 {
     int sig;
 
@@ -256,10 +256,10 @@ void apr_signal_init(apr_pool_t *pglobal)
 
     for (sig = 0; sig < APR_NUMSIG; ++sig)
         if (signal_description[sig] == NULL)
-            signal_description[sig] = apr_psprintf(pglobal, "signal #%d", sig);
+            signal_description[sig] = fspr_psprintf(pglobal, "signal #%d", sig);
 }
 
-const char *apr_signal_description_get(int signum)
+const char *fspr_signal_description_get(int signum)
 {
     return
         signum < APR_NUMSIG
@@ -316,7 +316,7 @@ static void remove_sync_sigs(sigset_t *sig_mask)
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_signal_thread(int(*signal_handler)(int signum))
+APR_DECLARE(fspr_status_t) fspr_signal_thread(int(*signal_handler)(int signum))
 {
     sigset_t sig_mask;
 #if APR_HAVE_SIGWAIT
@@ -380,7 +380,7 @@ APR_DECLARE(apr_status_t) apr_signal_thread(int(*signal_handler)(int signum))
 #if APR_HAVE_SIGWAIT
         int signal_received;
 
-        if (apr_sigwait(&sig_mask, &signal_received) != 0)
+        if (fspr_sigwait(&sig_mask, &signal_received) != 0)
         {
             /* handle sigwait() error here */
         }
@@ -391,12 +391,12 @@ APR_DECLARE(apr_status_t) apr_signal_thread(int(*signal_handler)(int signum))
 #elif HAVE_SIGSUSPEND
 	sigsuspend(&sig_mask);
 #else
-#error No apr_sigwait() and no sigsuspend()
+#error No fspr_sigwait() and no sigsuspend()
 #endif
     }
 }
 
-APR_DECLARE(apr_status_t) apr_setup_signal_thread(void)
+APR_DECLARE(fspr_status_t) fspr_setup_signal_thread(void)
 {
     sigset_t sig_mask;
     int rv;
@@ -432,7 +432,7 @@ APR_DECLARE(apr_status_t) apr_setup_signal_thread(void)
 
 #endif /* APR_HAS_THREADS && ... */
 
-APR_DECLARE(apr_status_t) apr_signal_block(int signum)
+APR_DECLARE(fspr_status_t) fspr_signal_block(int signum)
 {
 #if APR_HAVE_SIGACTION
     sigset_t sig_mask;
@@ -459,7 +459,7 @@ APR_DECLARE(apr_status_t) apr_signal_block(int signum)
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_signal_unblock(int signum)
+APR_DECLARE(fspr_status_t) fspr_signal_unblock(int signum)
 {
 #if APR_HAVE_SIGACTION
     sigset_t sig_mask;

@@ -363,6 +363,7 @@ static switch_status_t switch_opusfile_close(switch_file_handle_t *handle)
 	}
 #ifdef HAVE_OPUSFILE_ENCODE
 	if (context->enc) {
+		ope_encoder_drain(context->enc);
 		ope_encoder_destroy(context->enc);
 	}
 	if (context->comments) {
@@ -930,7 +931,7 @@ static int decode_stream_cb(void *dcontext, unsigned char *data, int nbytes)
 	if (globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS Stream Decode] decode CB called: context: %p data: %p packet_len: %d\n", 
 				(void *)context, data, nbytes);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS Stream Decode] decode_stream_cb(): switch_thread_self(): %lx\n",  switch_thread_self());
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS Stream Decode] decode_stream_cb(): switch_thread_self(): %lx\n", (unsigned long)(intptr_t)switch_thread_self());
 	}
 
 	switch_mutex_lock(context->ogg_mutex);
@@ -973,7 +974,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	int buffered_ogg_bytes;
 
 	if (globals.debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS Stream Decode] read_stream_thread(): switch_thread_self(): 0x%lx\n",  switch_thread_self());
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[OGG/OPUS Stream Decode] read_stream_thread(): switch_thread_self(): 0x%lx\n", (unsigned long)(intptr_t)switch_thread_self());
 	}
 	switch_thread_rwlock_rdlock(context->rwlock);
 	switch_mutex_lock(context->ogg_mutex);
