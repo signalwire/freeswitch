@@ -1428,6 +1428,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_events(sw
 				switch_event_t *interrupt_event = NULL;
 				switch_event_t *command_event = (switch_event_t *) pop;
 				if (switch_event_create(&interrupt_event, SWITCH_EVENT_COMMAND_INTERRUPTED) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(session->channel, interrupt_event);
 					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "Unique-ID", session->uuid_str);
 					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-name", switch_event_get_header(command_event, "execute-app-name"));
 					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-arg", switch_event_get_header(command_event, "execute-app-arg"));
@@ -1442,6 +1443,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_events(sw
 				switch_event_t *interrupt_event = NULL;
 				switch_event_t *command_event = (switch_event_t *) pop;
 				if (switch_event_create(&interrupt_event, SWITCH_EVENT_COMMAND_INTERRUPTED) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(session->channel, interrupt_event);
 					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "Unique-ID", session->uuid_str);
 					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-name", switch_event_get_header(command_event, "execute-app-name"));
 					switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-arg", switch_event_get_header(command_event, "execute-app-arg"));
