@@ -33,6 +33,7 @@
 #include <switch.h>
 #include <sys/stat.h>
 #include <switch_curl.h>
+#include "prometheus_metrics.h"
 
 #define MAX_URLS 20
 #define MAX_ERR_DIRS 20
@@ -241,6 +242,9 @@ static void backup_cdr(cdr_data_t *data)
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 						if (0 > unlink(path))
 							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error unlinking [%s]\n",path);
+						prometheus_increment_backup_cdr_error();
+					} else {
+						prometheus_increment_backup_cdr_success();
 					}
 					switch_safe_free(path);
 					break;
@@ -248,9 +252,13 @@ static void backup_cdr(cdr_data_t *data)
 					char ebuf[512] = { 0 };
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Can't open %s! [%s]\n",
 									  path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
+					prometheus_increment_backup_cdr_error();
 
 				}
 				switch_safe_free(path);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "No CDR directory path\n");
+				prometheus_increment_backup_cdr_error();
 			}
 		}
 	} else {
@@ -286,6 +294,7 @@ static void process_cdr(cdr_data_t *data)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Process [%s]\n", data->filename);
+	prometheus_increment_cdr_counter();
 
 	if (!zstr(data->logdir) && (globals.log_http_and_disk || !globals.url_count)) {
 		char *path = switch_mprintf("%s%s%s", !zstr(data->tmpdir) ? data->tmpdir : data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
@@ -305,15 +314,18 @@ static void process_cdr(cdr_data_t *data)
 				close(fd);
 				if (x < 0) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+					prometheus_increment_cdr_error();
 					if (0 > unlink(path))
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error unlinking [%s]\n",path);
 					backup_cdr(data);
 				} else {
+					prometheus_increment_cdr_success();
 					if(!zstr(data->tmpdir)) {
 						char *move_path = switch_mprintf("%s%s%s", data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
 						if(move_path) {
 							if (rename(path, move_path) == 0) {
 								switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
+								prometheus_increment_tmpcdr_move_success();
 							} else {
 								// Lets fallback to copy and delete file
 								switch_memory_pool_t *pool = NULL;
@@ -321,8 +333,10 @@ static void process_cdr(cdr_data_t *data)
 								if(pool && switch_file_copy(path, move_path, SWITCH_FPROT_FILE_SOURCE_PERMS, pool) == SWITCH_STATUS_SUCCESS) {
 									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
 									switch_file_remove(path, pool);
+									prometheus_increment_tmpcdr_move_success();
 								} else {
 									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Fail to move CDR [%s] to [%s] - %s\n", data->filename, data->logdir, strerror(errno));
+									prometheus_increment_cdr_error();
 									backup_cdr(data);
 								}
 
@@ -338,8 +352,12 @@ static void process_cdr(cdr_data_t *data)
 				char ebuf[512] = { 0 };
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
 								  path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
+				prometheus_increment_cdr_error();
 			}
 			switch_safe_free(path);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "No CDR directory path\n");
+			prometheus_increment_cdr_error();
 		}
 	}
 
@@ -549,6 +567,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	if (globals.queue) {
 		if (switch_queue_trypush(globals.queue, cdr_data) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unable to push cdr to queue\n");
+			prometheus_increment_cdr_error();
 			backup_cdr(cdr_data);
 			destroy_cdr_data(cdr_data);
 		}
