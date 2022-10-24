@@ -23,9 +23,10 @@ public:
 		_module_interface(module_interface),
 		_cdr_counter(0),
 		_cdr_success(0),
-		_tmpcdr_success(0),
-		_backup_cdr_success(0),
 		_cdr_error(0),
+		_tmpcdr_success(0),
+		_tmpcdr_error(0),
+		_backup_cdr_success(0),
 		_backup_cdr_error(0)
 	{
 		switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
@@ -48,22 +49,28 @@ public:
 		_cdr_success++;
 	}
 
+	void increment_cdr_error()
+	{
+		auto_lock lock(_mutex);
+		_cdr_error++;
+	}
+
 	void increment_tmpcdr_move_success()
 	{
 		auto_lock lock(_mutex);
 		_tmpcdr_success++;
+	}
+	
+	void increment_tmpcdr_move_error()
+	{
+		auto_lock lock(_mutex);
+		_tmpcdr_error++;
 	}
 
 	void increment_backup_cdr_success()
 	{
 		auto_lock lock(_mutex);
 		_backup_cdr_success++;
-	}
-
-	void increment_cdr_error()
-	{
-		auto_lock lock(_mutex);
-		_cdr_error++;
 	}
 
 	void increment_backup_cdr_error()
@@ -84,17 +91,21 @@ public:
 		stream->write_function(stream, "# TYPE mod_json_cdr_success counter\n");
 		stream->write_function(stream, "mod_json_cdr_success %u\n", _cdr_success);
 
+		stream->write_function(stream, "# HELP mod_json_cdr_error CDR errors\n");
+		stream->write_function(stream, "# TYPE mod_json_cdr_error counter\n");
+		stream->write_function(stream, "mod_json_cdr_error %u\n", _cdr_error);
+
 		stream->write_function(stream, "# HELP mod_json_tmpcdr_success CDRs moved from tmpdir folder\n");
 		stream->write_function(stream, "# TYPE mod_json_tmpcdr_success counter\n");
 		stream->write_function(stream, "mod_json_tmpcdr_success %u\n", _tmpcdr_success);
 
+		stream->write_function(stream, "# HELP mod_json_tmpcdr_error CDRs not moved from tmpdir folder\n");
+		stream->write_function(stream, "# TYPE mod_json_tmpcdr_error counter\n");
+		stream->write_function(stream, "mod_json_tmpcdr_error %u\n", _tmpcdr_error);
+
 		stream->write_function(stream, "# HELP mod_json_backup_cdr_success Successful CDRs backup\n");
 		stream->write_function(stream, "# TYPE mod_json_backup_cdr_success counter\n");
 		stream->write_function(stream, "mod_json_backup_cdr_success %u\n", _backup_cdr_success);
-
-		stream->write_function(stream, "# HELP mod_json_cdr_error CDR errors\n");
-		stream->write_function(stream, "# TYPE mod_json_cdr_error counter\n");
-		stream->write_function(stream, "mod_json_cdr_error %u\n", _cdr_error);
 
 		stream->write_function(stream, "# HELP mod_json_backup_cdr_error Backup CDR errors\n");
 		stream->write_function(stream, "# TYPE mod_json_backup_cdr_error counter\n");
@@ -109,9 +120,10 @@ private:
 
 	ssize_t _cdr_counter;
 	ssize_t _cdr_success;
-	ssize_t _tmpcdr_success;
-	ssize_t _backup_cdr_success;
 	ssize_t _cdr_error;
+	ssize_t _tmpcdr_success;
+	ssize_t _tmpcdr_error;
+	ssize_t _backup_cdr_success;
 	ssize_t _backup_cdr_error;
 };
 
@@ -126,8 +138,9 @@ SWITCH_STANDARD_API(json_cdr_prometheus_metrics)
 
 SWITCH_BEGIN_EXTERN_C
 
-void prometheus_init(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface, switch_memory_pool_t* pool)
+void prometheus_init(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t* pool)
 {
+	switch_api_interface_t *api_interface;
 	SWITCH_ADD_API(api_interface, "json_cdr_prometheus_metrics", "json_cdr_prometheus_metrics", json_cdr_prometheus_metrics, "");
 	
 	delete instance;
@@ -150,19 +163,24 @@ void prometheus_increment_cdr_success()
 	instance->increment_cdr_success();
 }
 
+void prometheus_increment_cdr_error()
+{
+	instance->increment_cdr_error();
+}
+
 void prometheus_increment_tmpcdr_move_success()
 {
 	instance->increment_tmpcdr_move_success();
 }
 
+void prometheus_increment_tmpcdr_move_error()
+{
+	instance->increment_tmpcdr_move_error();
+}
+
 void prometheus_increment_backup_cdr_success()
 {
 	instance->increment_backup_cdr_success();
-}
-
-void prometheus_increment_cdr_error()
-{
-	instance->increment_cdr_error();
 }
 
 void prometheus_increment_backup_cdr_error()

@@ -319,12 +319,12 @@ static void process_cdr(cdr_data_t *data)
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error unlinking [%s]\n",path);
 					backup_cdr(data);
 				} else {
-					prometheus_increment_cdr_success();
 					if(!zstr(data->tmpdir)) {
 						char *move_path = switch_mprintf("%s%s%s", data->logdir, SWITCH_PATH_SEPARATOR, data->filename);
 						if(move_path) {
 							if (rename(path, move_path) == 0) {
 								switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
+								prometheus_increment_cdr_success();
 								prometheus_increment_tmpcdr_move_success();
 							} else {
 								// Lets fallback to copy and delete file
@@ -333,10 +333,12 @@ static void process_cdr(cdr_data_t *data)
 								if(pool && switch_file_copy(path, move_path, SWITCH_FPROT_FILE_SOURCE_PERMS, pool) == SWITCH_STATUS_SUCCESS) {
 									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Move CDR [%s] to [%s]\n", data->filename, data->logdir);
 									switch_file_remove(path, pool);
+									prometheus_increment_cdr_success();
 									prometheus_increment_tmpcdr_move_success();
 								} else {
 									switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Fail to move CDR [%s] to [%s] - %s\n", data->filename, data->logdir, strerror(errno));
 									prometheus_increment_cdr_error();
+									prometheus_increment_tmpcdr_move_error();
 									backup_cdr(data);
 								}
 
@@ -800,6 +802,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	switch_core_add_state_handler(&state_handlers);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	prometheus_init(module_interface, pool);
 
 	switch_xml_free(xml);
 	return status;
@@ -829,6 +832,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 	switch_core_remove_state_handler(&state_handlers);
 
 	switch_thread_rwlock_destroy(globals.log_path_lock);
+	prometheus_destroy();
 
 	return SWITCH_STATUS_SUCCESS;
 }
