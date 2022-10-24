@@ -348,6 +348,8 @@ static void process_cdr(cdr_data_t *data)
 							}
 							switch_safe_free(move_path);
 						}
+					} else {
+						prometheus_increment_cdr_success();
 					}
 				}
 			} else {
