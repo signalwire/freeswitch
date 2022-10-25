@@ -1796,7 +1796,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			handles[i].cancel_cause = *cancel_cause;
 		} else {
 			/* Was this call taken by another destination? */
-			if ((hp!=NULL) && (hp->cause==SWITCH_CAUSE_SUCCESS)) {
+			if (hp != NULL && hp->cause == SWITCH_CAUSE_SUCCESS) {
 				/* Yes, the race was lost */
 				handles[i].cancel_cause = SWITCH_CAUSE_LOSE_RACE;
 			} else {
