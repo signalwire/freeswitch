@@ -57,6 +57,8 @@
 #define HAVE_FUNC 1
 #endif
 
+#define ROUTE_MAX_HEADERS 20
+#define ROUTE_ENCODED_HEADER_MAX_CHARS (1024 * 3)
 #define MAX_CODEC_CHECK_FRAMES 50
 #define MAX_MISMATCH_FRAMES 5
 #define MODNAME "mod_sofia"
@@ -725,6 +727,7 @@ struct sofia_profile {
 	uint32_t max_recv_requests_per_second;
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
+	uint32_t db_spin_up_wait_ms;
 	char *odbc_dsn;
 	char *pre_trans_execute;
 	char *post_trans_execute;
@@ -1260,6 +1263,7 @@ void sofia_glue_global_watchdog(switch_bool_t on);
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile);
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
+char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);

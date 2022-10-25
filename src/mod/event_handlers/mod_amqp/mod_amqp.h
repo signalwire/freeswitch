@@ -43,6 +43,7 @@
 #include <amqp.h>
 #include <amqp_framing.h>
 #include <amqp_tcp_socket.h>
+#include <amqp_ssl_socket.h>
 
 #ifndef _MSC_VER
 #include <strings.h>
@@ -74,6 +75,8 @@ typedef struct mod_amqp_connection_s {
   char *password;
   unsigned int port;
   unsigned int heartbeat; /* in seconds */
+  amqp_boolean_t ssl_on;
+  amqp_boolean_t ssl_verify_peer;
   amqp_connection_state_t state;
 
   struct mod_amqp_connection_s *next;

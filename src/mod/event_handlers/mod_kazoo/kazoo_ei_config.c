@@ -53,7 +53,6 @@ static int read_cookie_from_file(char *filename) {
 	char cookie[MAXATOMLEN + 1];
 	char *end;
 	struct stat buf;
-	ssize_t res;
 
 	if (!stat(filename, &buf)) {
 		if ((buf.st_mode & S_IRWXG) || (buf.st_mode & S_IRWXO)) {
@@ -70,7 +69,7 @@ static int read_cookie_from_file(char *filename) {
 			return 2;
 		}
 
-		if ((res = read(fd, cookie, MAXATOMLEN)) < 1) {
+		if (read(fd, cookie, MAXATOMLEN) < 1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie file %s : %d.\n", filename, errno);
 		}
 

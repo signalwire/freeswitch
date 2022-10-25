@@ -2962,7 +2962,6 @@ static switch_status_t list_calls(char **argv, int argc, switch_stream_handle_t 
 static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *dest = NULL;
 
 	if (zstr(argv[0])) {
@@ -3025,7 +3024,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 		tech_pvt->session = session;
-		if ((status = validate_main_audio_stream()) == SWITCH_STATUS_SUCCESS) {
+		if (validate_main_audio_stream() == SWITCH_STATUS_SUCCESS) {
 			switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 			switch_channel_mark_answered(channel);
 			switch_channel_set_state(channel, CS_INIT);

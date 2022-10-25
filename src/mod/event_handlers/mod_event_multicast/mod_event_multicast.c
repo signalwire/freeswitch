@@ -290,7 +290,7 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 	dst_host_count = switch_separate_string(globals.dst_addrs, ',', dst_hosts, MAX_DST_HOSTS);
 	for (i = 0; i < dst_host_count; i++) {
 		char *ip_addr_groups[8] = { 0 };
-		char host_string[sizeof(dst_hosts[i])];
+		char *host_string;
 		char ipv6_first_octet[3];
 
 		memset(&globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr, 0, sizeof(dst_sockaddr_t));
@@ -315,7 +315,8 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 		}
 
 		/* flag this address with the address type */
-		strcpy(host_string, dst_hosts[i]);
+		host_string = strdup(dst_hosts[i]);
+
 		if (switch_sockaddr_get_family(globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr) == SWITCH_INET) {
 			globals.has_udp = 1;
 			switch_separate_string(host_string, '.', ip_addr_groups, sizeof(ip_addr_groups) / sizeof(ip_addr_groups[0]));
@@ -347,6 +348,7 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added %s peer: %s", addr_type_names[globals.dst_sockaddrs[globals.num_dst_addrs].addrtype], dst_hosts[i]);
 		globals.dst_sockaddrs[globals.num_dst_addrs].ipaddr = switch_core_strdup(module_pool, dst_hosts[i]);
 		globals.num_dst_addrs++;
+		switch_safe_free(host_string);
 	}
 
 	/* create IPv4 source socket */

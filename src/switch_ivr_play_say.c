@@ -251,7 +251,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 								  module_name);
 
 				if (!strcasecmp(func, "play-file")) {
-					status = switch_ivr_play_file(session, NULL, odata, args);
+					char *volume_str = (char *) switch_xml_attr_soft(action, "volume");
+					switch_file_handle_t pfh = { 0 };
+					if (volume_str && switch_is_number(volume_str)) {
+						int32_t volume = atoi(volume_str);
+
+						switch_normalize_volume_granular(volume)
+						pfh.volgranular = volume;
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting playback volume to %d\n", pfh.volgranular);
+					}
+					status = switch_ivr_play_file(session, &pfh, odata, args);
 				} else if (!strcasecmp(func, "phrase")) {
 					char *name = (char *) switch_xml_attr_soft(action, "phrase");
 					status = switch_ivr_phrase_macro(session, name, odata, chan_lang, args);
@@ -1365,7 +1375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		if ((alt = strchr(file, ':'))) {
+		if (strchr(file, ':')) {
 			char *dup;
 
 			if (!strncasecmp(file, "phrase:", 7)) {
@@ -1957,8 +1967,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 #endif
 #endif
-			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->vol) {
-				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
+			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
+				if (fh->volgranular) {
+					switch_change_sln_volume_granular(write_frame.data, write_frame.datalen / 2, fh->volgranular);
+				} else if (fh->vol) { /* deprecated 2022-Q1 */
+					switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
+				}
 			}
 
 			/* write silence while dmachine is in reading state */

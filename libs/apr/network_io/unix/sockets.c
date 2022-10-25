@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_network_io.h"
-#include "apr_strings.h"
-#include "apr_support.h"
-#include "apr_portable.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_network_io.h"
+#include "fspr_strings.h"
+#include "fspr_support.h"
+#include "fspr_portable.h"
+#include "fspr_arch_inherit.h"
 
 #ifdef BEOS_R5
 #undef close
@@ -28,9 +28,9 @@
 
 static char generic_inaddr_any[16] = {0}; /* big enough for IPv4 or IPv6 */
 
-static apr_status_t socket_cleanup(void *sock)
+static fspr_status_t socket_cleanup(void *sock)
 {
-    apr_socket_t *thesocket = sock;
+    fspr_socket_t *thesocket = sock;
 
 	if (!thesocket) {
 		return APR_ENOTSOCK;
@@ -49,12 +49,12 @@ static apr_status_t socket_cleanup(void *sock)
     }
 }
 
-static void set_socket_vars(apr_socket_t *sock, int family, int type, int protocol)
+static void set_socket_vars(fspr_socket_t *sock, int family, int type, int protocol)
 {
     sock->type = type;
     sock->protocol = protocol;
-    apr_sockaddr_vars_set(sock->local_addr, family, 0);
-    apr_sockaddr_vars_set(sock->remote_addr, family, 0);
+    fspr_sockaddr_vars_set(sock->local_addr, family, 0);
+    fspr_sockaddr_vars_set(sock->remote_addr, family, 0);
     sock->options = 0;
 #if defined(BEOS) && !defined(BEOS_BONE)
     /* BeOS pre-BONE has TCP_NODELAY on by default and it can't be
@@ -64,32 +64,32 @@ static void set_socket_vars(apr_socket_t *sock, int family, int type, int protoc
 #endif
 }
 
-static void alloc_socket(apr_socket_t **new, apr_pool_t *p)
+static void alloc_socket(fspr_socket_t **new, fspr_pool_t *p)
 {
-    *new = (apr_socket_t *)apr_pcalloc(p, sizeof(apr_socket_t));
+    *new = (fspr_socket_t *)fspr_pcalloc(p, sizeof(fspr_socket_t));
     (*new)->pool = p;
-    (*new)->local_addr = (apr_sockaddr_t *)apr_pcalloc((*new)->pool,
-                                                       sizeof(apr_sockaddr_t));
+    (*new)->local_addr = (fspr_sockaddr_t *)fspr_pcalloc((*new)->pool,
+                                                       sizeof(fspr_sockaddr_t));
     (*new)->local_addr->pool = p;
-    (*new)->remote_addr = (apr_sockaddr_t *)apr_pcalloc((*new)->pool,
-                                                        sizeof(apr_sockaddr_t));
+    (*new)->remote_addr = (fspr_sockaddr_t *)fspr_pcalloc((*new)->pool,
+                                                        sizeof(fspr_sockaddr_t));
     (*new)->remote_addr->pool = p;
     (*new)->remote_addr_unknown = 1;
 #ifndef WAITIO_USES_POLL
     /* Create a pollset with room for one descriptor. */
     /* ### check return codes */
-    (void) apr_pollset_create(&(*new)->pollset, 1, p, 0);
+    (void) fspr_pollset_create(&(*new)->pollset, 1, p, 0);
 #endif
 }
 
-apr_status_t apr_socket_protocol_get(apr_socket_t *sock, int *protocol)
+fspr_status_t fspr_socket_protocol_get(fspr_socket_t *sock, int *protocol)
 {
     *protocol = sock->protocol;
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_create(apr_socket_t **new, int ofamily, int type,
-                               int protocol, apr_pool_t *cont)
+fspr_status_t fspr_socket_create(fspr_socket_t **new, int ofamily, int type,
+                               int protocol, fspr_pool_t *cont)
 {
     int family = ofamily;
 
@@ -140,24 +140,24 @@ apr_status_t apr_socket_create(apr_socket_t **new, int ofamily, int type,
 
     (*new)->timeout = -1;
     (*new)->inherit = 0;
-    apr_pool_cleanup_register((*new)->pool, (void *)(*new), socket_cleanup,
+    fspr_pool_cleanup_register((*new)->pool, (void *)(*new), socket_cleanup,
                               socket_cleanup);
 
     return APR_SUCCESS;
 } 
 
-apr_status_t apr_socket_shutdown(apr_socket_t *thesocket, 
-                                 apr_shutdown_how_e how)
+fspr_status_t fspr_socket_shutdown(fspr_socket_t *thesocket, 
+                                 fspr_shutdown_how_e how)
 {
     return (shutdown(thesocket->socketdes, how) == -1) ? errno : APR_SUCCESS;
 }
 
-apr_status_t apr_socket_close(apr_socket_t *thesocket)
+fspr_status_t fspr_socket_close(fspr_socket_t *thesocket)
 {
-    return apr_pool_cleanup_run(thesocket->pool, thesocket, socket_cleanup);
+    return fspr_pool_cleanup_run(thesocket->pool, thesocket, socket_cleanup);
 }
 
-apr_status_t apr_socket_bind(apr_socket_t *sock, apr_sockaddr_t *sa)
+fspr_status_t fspr_socket_bind(fspr_socket_t *sock, fspr_sockaddr_t *sa)
 {
     if (bind(sock->socketdes, 
              (struct sockaddr *)&sa->sa, sa->salen) == -1) {
@@ -173,7 +173,7 @@ apr_status_t apr_socket_bind(apr_socket_t *sock, apr_sockaddr_t *sa)
     }
 }
 
-apr_status_t apr_socket_listen(apr_socket_t *sock, apr_int32_t backlog)
+fspr_status_t fspr_socket_listen(fspr_socket_t *sock, fspr_int32_t backlog)
 {
     if (listen(sock->socketdes, backlog) == -1)
         return errno;
@@ -181,8 +181,8 @@ apr_status_t apr_socket_listen(apr_socket_t *sock, apr_int32_t backlog)
         return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_accept(apr_socket_t **new, apr_socket_t *sock,
-                               apr_pool_t *connection_context)
+fspr_status_t fspr_socket_accept(fspr_socket_t **new, fspr_socket_t *sock,
+                               fspr_pool_t *connection_context)
 {
     alloc_socket(new, connection_context);
     set_socket_vars(*new, sock->local_addr->sa.sin.sin_family, SOCK_STREAM, sock->protocol);
@@ -232,13 +232,13 @@ apr_status_t apr_socket_accept(apr_socket_t **new, apr_socket_t *sock,
     }
 
 #if APR_TCP_NODELAY_INHERITED
-    if (apr_is_option_set(sock, APR_TCP_NODELAY) == 1) {
-        apr_set_option(*new, APR_TCP_NODELAY, 1);
+    if (fspr_is_option_set(sock, APR_TCP_NODELAY) == 1) {
+        fspr_set_option(*new, APR_TCP_NODELAY, 1);
     }
 #endif /* TCP_NODELAY_INHERITED */
 #if APR_O_NONBLOCK_INHERITED
-    if (apr_is_option_set(sock, APR_SO_NONBLOCK) == 1) {
-        apr_set_option(*new, APR_SO_NONBLOCK, 1);
+    if (fspr_is_option_set(sock, APR_SO_NONBLOCK) == 1) {
+        fspr_set_option(*new, APR_SO_NONBLOCK, 1);
     }
 #endif /* APR_O_NONBLOCK_INHERITED */
 
@@ -256,12 +256,12 @@ apr_status_t apr_socket_accept(apr_socket_t **new, apr_socket_t *sock,
     }
 
     (*new)->inherit = 0;
-    apr_pool_cleanup_register((*new)->pool, (void *)(*new), socket_cleanup,
+    fspr_pool_cleanup_register((*new)->pool, (void *)(*new), socket_cleanup,
                               socket_cleanup);
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_connect(apr_socket_t *sock, apr_sockaddr_t *sa)
+fspr_status_t fspr_socket_connect(fspr_socket_t *sock, fspr_sockaddr_t *sa)
 {
     int rc;        
 
@@ -276,7 +276,7 @@ apr_status_t apr_socket_connect(apr_socket_t *sock, apr_sockaddr_t *sa)
      */
     if ((rc == -1) && (errno == EINPROGRESS || errno == EALREADY)
                    && (sock->timeout > 0)) {
-        rc = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        rc = fspr_wait_for_io_or_timeout(NULL, sock, 0);
         if (rc != APR_SUCCESS) {
             return rc;
         }
@@ -284,7 +284,7 @@ apr_status_t apr_socket_connect(apr_socket_t *sock, apr_sockaddr_t *sa)
 #ifdef SO_ERROR
         {
             int error;
-            apr_socklen_t len = sizeof(error);
+            fspr_socklen_t len = sizeof(error);
             if ((rc = getsockopt(sock->socketdes, SOL_SOCKET, SO_ERROR, 
                                  (char *)&error, &len)) < 0) {
                 return errno;
@@ -328,13 +328,13 @@ apr_status_t apr_socket_connect(apr_socket_t *sock, apr_sockaddr_t *sa)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_type_get(apr_socket_t *sock, int *type)
+fspr_status_t fspr_socket_type_get(fspr_socket_t *sock, int *type)
 {
     *type = sock->type;
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_data_get(void **data, const char *key, apr_socket_t *sock)
+fspr_status_t fspr_socket_data_get(void **data, const char *key, fspr_socket_t *sock)
 {
     sock_userdata_t *cur = sock->userdata;
 
@@ -351,76 +351,76 @@ apr_status_t apr_socket_data_get(void **data, const char *key, apr_socket_t *soc
     return APR_SUCCESS;
 }
 
-apr_status_t apr_socket_data_set(apr_socket_t *sock, void *data, const char *key,
-                                 apr_status_t (*cleanup) (void *))
+fspr_status_t fspr_socket_data_set(fspr_socket_t *sock, void *data, const char *key,
+                                 fspr_status_t (*cleanup) (void *))
 {
-    sock_userdata_t *new = apr_palloc(sock->pool, sizeof(sock_userdata_t));
+    sock_userdata_t *new = fspr_palloc(sock->pool, sizeof(sock_userdata_t));
 
-    new->key = apr_pstrdup(sock->pool, key);
+    new->key = fspr_pstrdup(sock->pool, key);
     new->data = data;
     new->next = sock->userdata;
     sock->userdata = new;
 
     if (cleanup) {
-        apr_pool_cleanup_register(sock->pool, data, cleanup, cleanup);
+        fspr_pool_cleanup_register(sock->pool, data, cleanup, cleanup);
     }
 
     return APR_SUCCESS;
 }
 
-apr_status_t apr_os_sock_get(apr_os_sock_t *thesock, apr_socket_t *sock)
+fspr_status_t fspr_os_sock_get(fspr_os_sock_t *thesock, fspr_socket_t *sock)
 {
     *thesock = sock->socketdes;
     return APR_SUCCESS;
 }
 
-apr_status_t apr_os_sock_make(apr_socket_t **apr_sock, 
-                              apr_os_sock_info_t *os_sock_info, 
-                              apr_pool_t *cont)
+fspr_status_t fspr_os_sock_make(fspr_socket_t **fspr_sock, 
+                              fspr_os_sock_info_t *os_sock_info, 
+                              fspr_pool_t *cont)
 {
-    alloc_socket(apr_sock, cont);
-    set_socket_vars(*apr_sock, os_sock_info->family, os_sock_info->type, os_sock_info->protocol);
-    (*apr_sock)->timeout = -1;
-    (*apr_sock)->socketdes = *os_sock_info->os_sock;
+    alloc_socket(fspr_sock, cont);
+    set_socket_vars(*fspr_sock, os_sock_info->family, os_sock_info->type, os_sock_info->protocol);
+    (*fspr_sock)->timeout = -1;
+    (*fspr_sock)->socketdes = *os_sock_info->os_sock;
     if (os_sock_info->local) {
-        memcpy(&(*apr_sock)->local_addr->sa.sin, 
+        memcpy(&(*fspr_sock)->local_addr->sa.sin, 
                os_sock_info->local, 
-               (*apr_sock)->local_addr->salen);
+               (*fspr_sock)->local_addr->salen);
         /* XXX IPv6 - this assumes sin_port and sin6_port at same offset */
-        (*apr_sock)->local_addr->port = ntohs((*apr_sock)->local_addr->sa.sin.sin_port);
+        (*fspr_sock)->local_addr->port = ntohs((*fspr_sock)->local_addr->sa.sin.sin_port);
     }
     else {
-        (*apr_sock)->local_port_unknown = (*apr_sock)->local_interface_unknown = 1;
+        (*fspr_sock)->local_port_unknown = (*fspr_sock)->local_interface_unknown = 1;
     }
     if (os_sock_info->remote) {
 #ifndef HAVE_POLL
-        (*apr_sock)->connected = 1;
+        (*fspr_sock)->connected = 1;
 #endif
-        memcpy(&(*apr_sock)->remote_addr->sa.sin, 
+        memcpy(&(*fspr_sock)->remote_addr->sa.sin, 
                os_sock_info->remote,
-               (*apr_sock)->remote_addr->salen);
+               (*fspr_sock)->remote_addr->salen);
         /* XXX IPv6 - this assumes sin_port and sin6_port at same offset */
-        (*apr_sock)->remote_addr->port = ntohs((*apr_sock)->remote_addr->sa.sin.sin_port);
+        (*fspr_sock)->remote_addr->port = ntohs((*fspr_sock)->remote_addr->sa.sin.sin_port);
     }
     else {
-        (*apr_sock)->remote_addr_unknown = 1;
+        (*fspr_sock)->remote_addr_unknown = 1;
     }
         
-    (*apr_sock)->inherit = 0;
-    apr_pool_cleanup_register((*apr_sock)->pool, (void *)(*apr_sock), 
+    (*fspr_sock)->inherit = 0;
+    fspr_pool_cleanup_register((*fspr_sock)->pool, (void *)(*fspr_sock), 
                               socket_cleanup, socket_cleanup);
     return APR_SUCCESS;
 }
 
-apr_status_t apr_os_sock_put(apr_socket_t **sock, apr_os_sock_t *thesock, 
-                           apr_pool_t *cont)
+fspr_status_t fspr_os_sock_put(fspr_socket_t **sock, fspr_os_sock_t *thesock, 
+                           fspr_pool_t *cont)
 {
     /* XXX Bogus assumption that *sock points at anything legit */
     if ((*sock) == NULL) {
         alloc_socket(sock, cont);
         /* XXX IPv6 figure out the family here! */
         /* XXX figure out the actual socket type here */
-        /* *or* just decide that apr_os_sock_put() has to be told the family and type */
+        /* *or* just decide that fspr_os_sock_put() has to be told the family and type */
         set_socket_vars(*sock, APR_INET, SOCK_STREAM, 0);
         (*sock)->timeout = -1;
     }

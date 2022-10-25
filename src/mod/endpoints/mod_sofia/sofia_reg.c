@@ -1524,30 +1524,11 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 
 		if (sip->sip_path) {
-			char *path_stripped = NULL;
-			char *path_val_to_encode = NULL;
-			su_strlst_t *path_list = su_strlst_create(nua_handle_home(nh));
-			sip_path_t *next_path = sip->sip_path;
-			for (; next_path; next_path = next_path->r_next) {
-				path_val = sip_header_as_string(nua_handle_home(nh), (void *) next_path);
-				if (path_val) {
-					path_stripped = sofia_glue_get_url_from_contact(path_val, SWITCH_TRUE);
-					su_free(nua_handle_home(nh), path_val);
-					su_strlst_dup_append(path_list, path_stripped);
-					switch_safe_free(path_stripped);
-				}
+			path_encoded = sofia_glue_get_encoded_fs_path(nh, sip->sip_path, SWITCH_TRUE);
+			if (!path_encoded) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not get fs_path str.\n");
 			}
 
-			path_val = su_strlst_join(path_list, nua_handle_home(nh), ",");
-			path_val_to_encode = su_strlst_join(path_list, nua_handle_home(nh), "%2C");
-			su_strlst_destroy(path_list);
-			if (path_val_to_encode) {
-				path_encoded_len = (int)(strlen(path_val_to_encode) * 3) + 1;
-				switch_zmalloc(path_encoded, path_encoded_len);
-				switch_copy_string(path_encoded, ";fs_path=", 10);
-				switch_url_encode(path_val_to_encode, path_encoded + 9, path_encoded_len - 9);
-				su_free(nua_handle_home(nh), path_val_to_encode);
-			}
 		} else if (is_nat) {
 			char my_contact_str[1024];
 			if (uparams) {
@@ -2829,9 +2810,11 @@ void sofia_reg_handle_sip_r_challenge(int status,
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
 					if (!strcasecmp(var, "reverse-auth-user")) {
+						switch_safe_free(dup_user);
 						dup_user = strdup(val);
 						sip_auth_username = dup_user;
 					} else if (!strcasecmp(var, "reverse-auth-pass")) {
+						switch_safe_free(dup_pass);
 						dup_pass = strdup(val);
 						sip_auth_password = dup_pass;
 					}
@@ -2962,23 +2945,24 @@ sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive)
 
 switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen) 
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch (use_alg) 
 	{
 		case ALG_MD5:
-			switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
 			break;
 		case ALG_SHA256:
-			switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
 			break;
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		case ALG_SHA512:
-			switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
 			break;
 #endif
 		default:
 			return SWITCH_STATUS_FALSE;
 	}
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,

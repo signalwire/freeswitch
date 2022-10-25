@@ -490,7 +490,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 
 					} else {
-						file_sample_len = file_data_len = 0;
+						file_sample_len = 0;
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
@@ -1891,7 +1891,6 @@ switch_status_t conference_text_thread_callback(switch_core_session_t *session, 
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 SWITCH_STANDARD_APP(conference_function)
 {
-	switch_codec_t *read_codec = NULL;
 	//uint32_t flags = 0;
 	conference_member_t member = { 0 };
 	conference_obj_t *conference = NULL;
@@ -1931,7 +1930,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	/* Save the original read codec. */
-	if (!(read_codec = switch_core_session_get_read_codec(session))) {
+	if (!switch_core_session_get_read_codec(session)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel has no media!\n");
 		goto end;
 	}
@@ -2479,9 +2478,13 @@ SWITCH_STANDARD_APP(conference_function)
 	do {
 		switch_media_flow_t audio_flow = switch_core_session_media_flow(session, SWITCH_MEDIA_TYPE_AUDIO);
 		
-		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_RECVONLY)) {
+		if (switch_channel_test_flag(channel, CF_AUDIO) && (audio_flow == SWITCH_MEDIA_FLOW_SENDRECV || audio_flow == SWITCH_MEDIA_FLOW_SENDONLY)) {
 			conference_loop_output(&member);
 		} else {
+			if (!conference_utils_member_test_flag(&member, MFLAG_ITHREAD)) {
+				conference_loop_launch_input(&member, switch_core_session_get_pool(member.session));
+			}
+
 			if (conference_utils_member_test_flag((&member), MFLAG_RUNNING) && switch_channel_ready(channel)) {
 				switch_yield(100000);
 				member.loop_loop = 1;
@@ -2490,6 +2493,16 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 		}
 	} while (member.loop_loop);
+
+	conference_utils_member_clear_flag_locked(&member, MFLAG_RUNNING);
+	
+	/* Wait for the input thread to end */
+	if (member.input_thread) {
+		switch_status_t st;
+
+		switch_thread_join(&st, member.input_thread);
+		member.input_thread = NULL;
+	}
 
 	switch_core_session_video_reset(session);
 	switch_channel_clear_flag_recursive(channel, CF_VIDEO_DECODED_READ);

@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_atime.h"
-#include "apr_portable.h"
-#include "apr_strings.h"
+#include "win32/fspr_arch_atime.h"
+#include "fspr_portable.h"
+#include "fspr_strings.h"
 
-APR_DECLARE_DATA const char apr_month_snames[12][4] =
+APR_DECLARE_DATA const char fspr_month_snames[12][4] =
 {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
-APR_DECLARE_DATA const char apr_day_snames[7][4] =
+APR_DECLARE_DATA const char fspr_day_snames[7][4] =
 {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
-APR_DECLARE(apr_status_t) apr_rfc822_date(char *date_str, apr_time_t t)
+APR_DECLARE(fspr_status_t) fspr_rfc822_date(char *date_str, fspr_time_t t)
 {
-    apr_time_exp_t xt;
+    fspr_time_exp_t xt;
     const char *s;
     int real_year;
 
-    apr_time_exp_gmt(&xt, t);
+    fspr_time_exp_gmt(&xt, t);
 
     /* example: "Sat, 08 Jan 2000 18:31:41 GMT" */
     /*           12345678901234567890123456789  */
 
-    s = &apr_day_snames[xt.tm_wday][0];
+    s = &fspr_day_snames[xt.tm_wday][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
@@ -47,7 +47,7 @@ APR_DECLARE(apr_status_t) apr_rfc822_date(char *date_str, apr_time_t t)
     *date_str++ = xt.tm_mday / 10 + '0';
     *date_str++ = xt.tm_mday % 10 + '0';
     *date_str++ = ' ';
-    s = &apr_month_snames[xt.tm_mon][0];
+    s = &fspr_month_snames[xt.tm_mon][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
@@ -75,22 +75,22 @@ APR_DECLARE(apr_status_t) apr_rfc822_date(char *date_str, apr_time_t t)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_ctime(char *date_str, apr_time_t t)
+APR_DECLARE(fspr_status_t) fspr_ctime(char *date_str, fspr_time_t t)
 {
-    apr_time_exp_t xt;
+    fspr_time_exp_t xt;
     const char *s;
     int real_year;
 
     /* example: "Wed Jun 30 21:49:08 1993" */
     /*           123456789012345678901234  */
 
-    apr_time_exp_lt(&xt, t);
-    s = &apr_day_snames[xt.tm_wday][0];
+    fspr_time_exp_lt(&xt, t);
+    s = &fspr_day_snames[xt.tm_wday][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = ' ';
-    s = &apr_month_snames[xt.tm_mon][0];
+    s = &fspr_month_snames[xt.tm_mon][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
@@ -120,7 +120,7 @@ APR_DECLARE(apr_status_t) apr_ctime(char *date_str, apr_time_t t)
 
 #ifndef _WIN32_WCE
 
-apr_size_t win32_strftime_extra(char *s, size_t max, const char *format,
+fspr_size_t win32_strftime_extra(char *s, size_t max, const char *format,
                                 const struct tm *tm) 
 {
    /* If the new format string is bigger than max, the result string won't fit
@@ -128,7 +128,7 @@ apr_size_t win32_strftime_extra(char *s, size_t max, const char *format,
     * enough */
     char *new_format = (char *) malloc(max + 11);
     size_t i, j, format_length = strlen(format);
-    apr_size_t return_value;
+    fspr_size_t return_value;
     int length_written;
 
     for (i = 0, j = 0; (i < format_length && j < max);) {
@@ -138,7 +138,7 @@ apr_size_t win32_strftime_extra(char *s, size_t max, const char *format,
         }
         switch (format[i+1]) {
             case 'C':
-                length_written = apr_snprintf(new_format + j, max - j, "%2d",
+                length_written = fspr_snprintf(new_format + j, max - j, "%2d",
                     (tm->tm_year + 1970)/100);
                 j = (length_written == -1) ? max : (j + length_written);
                 i += 2;
@@ -166,7 +166,7 @@ apr_size_t win32_strftime_extra(char *s, size_t max, const char *format,
                 j += 8;
                 break;
             case 'e':
-                length_written = apr_snprintf(new_format + j, max - j, "%2d",
+                length_written = fspr_snprintf(new_format + j, max - j, "%2d",
                     tm->tm_mday);
                 j = (length_written == -1) ? max : (j + length_written);
                 i += 2;
@@ -192,9 +192,9 @@ apr_size_t win32_strftime_extra(char *s, size_t max, const char *format,
 #endif
 
 
-APR_DECLARE(apr_status_t) apr_strftime(char *s, apr_size_t *retsize,
-                                       apr_size_t max, const char *format,
-                                       apr_time_exp_t *xt)
+APR_DECLARE(fspr_status_t) fspr_strftime(char *s, fspr_size_t *retsize,
+                                       fspr_size_t max, const char *format,
+                                       fspr_time_exp_t *xt)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "apr_arch_thread_rwlock.h"
-#include "apr_private.h"
+#include "fspr_arch_thread_rwlock.h"
+#include "fspr_private.h"
 
 #if APR_HAS_THREADS
 
@@ -23,10 +23,10 @@
 
 /* The rwlock must be initialized but not locked by any thread when
  * cleanup is called. */
-static apr_status_t thread_rwlock_cleanup(void *data)
+static fspr_status_t thread_rwlock_cleanup(void *data)
 {
-    apr_thread_rwlock_t *rwlock = (apr_thread_rwlock_t *)data;
-    apr_status_t stat;
+    fspr_thread_rwlock_t *rwlock = (fspr_thread_rwlock_t *)data;
+    fspr_status_t stat;
 
     stat = pthread_rwlock_destroy(&rwlock->rwlock);
 #ifdef PTHREAD_SETS_ERRNO
@@ -37,13 +37,13 @@ static apr_status_t thread_rwlock_cleanup(void *data)
     return stat;
 } 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
-                                                   apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_create(fspr_thread_rwlock_t **rwlock,
+                                                   fspr_pool_t *pool)
 {
-    apr_thread_rwlock_t *new_rwlock;
-    apr_status_t stat;
+    fspr_thread_rwlock_t *new_rwlock;
+    fspr_status_t stat;
 
-    new_rwlock = apr_palloc(pool, sizeof(apr_thread_rwlock_t));
+    new_rwlock = fspr_palloc(pool, sizeof(fspr_thread_rwlock_t));
     new_rwlock->pool = pool;
 
     if ((stat = pthread_rwlock_init(&new_rwlock->rwlock, NULL))) {
@@ -53,17 +53,17 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
         return stat;
     }
 
-    apr_pool_cleanup_register(new_rwlock->pool,
+    fspr_pool_cleanup_register(new_rwlock->pool,
                               (void *)new_rwlock, thread_rwlock_cleanup,
-                              apr_pool_cleanup_null);
+                              fspr_pool_cleanup_null);
 
     *rwlock = new_rwlock;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_rdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_rdlock(fspr_thread_rwlock_t *rwlock)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     stat = pthread_rwlock_rdlock(&rwlock->rwlock);
 #ifdef PTHREAD_SETS_ERRNO
@@ -74,9 +74,9 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_rdlock(apr_thread_rwlock_t *rwlock)
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_tryrdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_tryrdlock(fspr_thread_rwlock_t *rwlock)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     stat = pthread_rwlock_tryrdlock(&rwlock->rwlock);
 #ifdef PTHREAD_SETS_ERRNO
@@ -90,9 +90,9 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_tryrdlock(apr_thread_rwlock_t *rwloc
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_wrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_wrlock(fspr_thread_rwlock_t *rwlock)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     stat = pthread_rwlock_wrlock(&rwlock->rwlock);
 #ifdef PTHREAD_SETS_ERRNO
@@ -103,9 +103,9 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_wrlock(apr_thread_rwlock_t *rwlock)
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_trywrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_trywrlock(fspr_thread_rwlock_t *rwlock)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     stat = pthread_rwlock_trywrlock(&rwlock->rwlock);
 #ifdef PTHREAD_SETS_ERRNO
@@ -119,9 +119,9 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_trywrlock(apr_thread_rwlock_t *rwloc
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_unlock(fspr_thread_rwlock_t *rwlock)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 
     stat = pthread_rwlock_unlock(&rwlock->rwlock);
 #ifdef PTHREAD_SETS_ERRNO
@@ -132,45 +132,45 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_destroy(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_destroy(fspr_thread_rwlock_t *rwlock)
 {
-    return apr_pool_cleanup_run(rwlock->pool, rwlock, thread_rwlock_cleanup);
+    return fspr_pool_cleanup_run(rwlock->pool, rwlock, thread_rwlock_cleanup);
 }
 
 #else  /* HAVE_PTHREAD_RWLOCKS */
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
-                                                   apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_create(fspr_thread_rwlock_t **rwlock,
+                                                   fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_rdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_rdlock(fspr_thread_rwlock_t *rwlock)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_tryrdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_tryrdlock(fspr_thread_rwlock_t *rwlock)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_wrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_wrlock(fspr_thread_rwlock_t *rwlock)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_trywrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_trywrlock(fspr_thread_rwlock_t *rwlock)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_unlock(fspr_thread_rwlock_t *rwlock)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_destroy(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_destroy(fspr_thread_rwlock_t *rwlock)
 {
     return APR_ENOTIMPL;
 }

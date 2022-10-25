@@ -144,7 +144,7 @@ void Session::check_hangup_hook()
 
 void Session::do_hangup_hook()
 {
-	PyObject *result, *arglist;
+	PyObject *arglist;
 	const char *what = hook_state == CS_HANGUP ? "hangup" : "transfer";
 
 	if (hh && !mark) {
@@ -167,7 +167,7 @@ void Session::do_hangup_hook()
 				arglist = Py_BuildValue("(Os)", Self, what);
 			}
 
-			if (!(result = PyEval_CallObject(hangup_func, arglist))) {
+			if (!PyEval_CallObject(hangup_func, arglist)) {
 				PyErr_Print();
 			}
 

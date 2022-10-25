@@ -744,7 +744,6 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *p, *s, *e;
-	switch_size_t chunk_count;
 	switch_size_t len;
 
 	switch_assert(chunk_size);
@@ -758,7 +757,7 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 		return switch_cache_db_execute_sql_real(dbh, sql, err);
 	}
 
-	if (!(chunk_count = strlen(sql) / chunk_size)) {
+	if (!(strlen(sql) / chunk_size)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -878,14 +877,13 @@ SWITCH_DECLARE(char *) switch_cache_db_execute_sql2str(switch_cache_db_handle_t 
 				goto end;
 			} else {
 				int running = 1;
-				int colcount;
 
 				while (running < 5000) {
 					int result = switch_core_db_step(stmt);
 					const unsigned char *txt;
 
 					if (result == SWITCH_CORE_DB_ROW) {
-						if ((colcount = switch_core_db_column_count(stmt)) > 0) {
+						if (switch_core_db_column_count(stmt) > 0) {
 							if ((txt = switch_core_db_column_text(stmt, 0))) {
 								switch_copy_string(str, (char *) txt, len);
 								status = SWITCH_STATUS_SUCCESS;
@@ -2244,7 +2242,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 	qm->thread_running = 1;
 
 	while (qm->thread_running == 1) {
-		uint32_t i, lc;
+		uint32_t i;
 		uint32_t written = 0, iterations = 0;
 
 		if (qm->paused) {
@@ -2286,7 +2284,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 	check:
 
-		if ((lc = qm_ttl(qm)) == 0) {
+		if (qm_ttl(qm) == 0) {
 			switch_mutex_lock(qm->cond2_mutex);
 			if (qm->skip_wait > 0) {
 				qm->skip_wait--;
@@ -2299,7 +2297,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 
 		i = 40;
 
-		while (--i > 0 && (lc = qm_ttl(qm)) < 500) {
+		while (--i > 0 && qm_ttl(qm) < 500) {
 			switch_yield(5000);
 		}
 

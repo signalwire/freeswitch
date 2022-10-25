@@ -14,56 +14,56 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "win32/apr_arch_thread_rwlock.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "win32/fspr_arch_thread_rwlock.h"
+#include "fspr_portable.h"
 
-static apr_status_t thread_rwlock_cleanup(void *data)
+static fspr_status_t thread_rwlock_cleanup(void *data)
 {
-    apr_thread_rwlock_t *rwlock = data;
+    fspr_thread_rwlock_t *rwlock = data;
     
     if (! CloseHandle(rwlock->read_event))
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
 	DeleteCriticalSection(&rwlock->read_section);
 
     if (! CloseHandle(rwlock->write_mutex))
-        return apr_get_os_error();
+        return fspr_get_os_error();
     
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t)apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
-                                                  apr_pool_t *pool)
+APR_DECLARE(fspr_status_t)fspr_thread_rwlock_create(fspr_thread_rwlock_t **rwlock,
+                                                  fspr_pool_t *pool)
 {
-    *rwlock = apr_palloc(pool, sizeof(**rwlock));
+    *rwlock = fspr_palloc(pool, sizeof(**rwlock));
 
     (*rwlock)->pool        = pool;
     (*rwlock)->readers     = 0;
 
     if (! ((*rwlock)->read_event = CreateEvent(NULL, TRUE, FALSE, NULL))) {
         *rwlock = NULL;
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
     if (! ((*rwlock)->write_mutex = CreateMutex(NULL, FALSE, NULL))) {
         CloseHandle((*rwlock)->read_event);
         *rwlock = NULL;
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
 	InitializeCriticalSection(&(*rwlock)->read_section);
 
-    apr_pool_cleanup_register(pool, *rwlock, thread_rwlock_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(pool, *rwlock, thread_rwlock_cleanup,
+                              fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
 
-static apr_status_t apr_thread_rwlock_rdlock_core(apr_thread_rwlock_t *rwlock,
+static fspr_status_t fspr_thread_rwlock_rdlock_core(fspr_thread_rwlock_t *rwlock,
                                                   DWORD  milliseconds)
 {
 	DWORD   code;
@@ -83,31 +83,31 @@ static apr_status_t apr_thread_rwlock_rdlock_core(apr_thread_rwlock_t *rwlock,
     
 	if (! ResetEvent(rwlock->read_event)) {
 		LeaveCriticalSection(&rwlock->read_section);
-        return apr_get_os_error();
+        return fspr_get_os_error();
 	}
     
 	if (! ReleaseMutex(rwlock->write_mutex)) {
 		LeaveCriticalSection(&rwlock->read_section);
-        return apr_get_os_error();
+        return fspr_get_os_error();
 	}
 
 	LeaveCriticalSection(&rwlock->read_section);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_rdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_rdlock(fspr_thread_rwlock_t *rwlock)
 {
-    return apr_thread_rwlock_rdlock_core(rwlock, INFINITE);
+    return fspr_thread_rwlock_rdlock_core(rwlock, INFINITE);
 }
 
-APR_DECLARE(apr_status_t) 
-apr_thread_rwlock_tryrdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) 
+fspr_thread_rwlock_tryrdlock(fspr_thread_rwlock_t *rwlock)
 {
-    return apr_thread_rwlock_rdlock_core(rwlock, 0);
+    return fspr_thread_rwlock_rdlock_core(rwlock, 0);
 }
 
-static apr_status_t 
-apr_thread_rwlock_wrlock_core(apr_thread_rwlock_t *rwlock, DWORD milliseconds)
+static fspr_status_t 
+fspr_thread_rwlock_wrlock_core(fspr_thread_rwlock_t *rwlock, DWORD milliseconds)
 {
     DWORD   code = WaitForSingleObject(rwlock->write_mutex, milliseconds);
 
@@ -128,7 +128,7 @@ apr_thread_rwlock_wrlock_core(apr_thread_rwlock_t *rwlock, DWORD milliseconds)
         if (code == WAIT_FAILED || code == WAIT_TIMEOUT) {
             /* Unable to wait for readers to finish, release write lock: */
             if (! ReleaseMutex(rwlock->write_mutex))
-                return apr_get_os_error();
+                return fspr_get_os_error();
             
             return APR_FROM_OS_ERROR(code);
         }
@@ -137,30 +137,30 @@ apr_thread_rwlock_wrlock_core(apr_thread_rwlock_t *rwlock, DWORD milliseconds)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_wrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_wrlock(fspr_thread_rwlock_t *rwlock)
 {
-    return apr_thread_rwlock_wrlock_core(rwlock, INFINITE);
+    return fspr_thread_rwlock_wrlock_core(rwlock, INFINITE);
 }
 
-APR_DECLARE(apr_status_t)apr_thread_rwlock_trywrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t)fspr_thread_rwlock_trywrlock(fspr_thread_rwlock_t *rwlock)
 {
-    return apr_thread_rwlock_wrlock_core(rwlock, 0);
+    return fspr_thread_rwlock_wrlock_core(rwlock, 0);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_unlock(fspr_thread_rwlock_t *rwlock)
 {
-    apr_status_t rv = 0;
+    fspr_status_t rv = 0;
 
     /* First, guess that we're unlocking a writer */
     if (! ReleaseMutex(rwlock->write_mutex))
-        rv = apr_get_os_error();
+        rv = fspr_get_os_error();
     
     if (rv == APR_FROM_OS_ERROR(ERROR_NOT_OWNER)) {
         /* Nope, we must have a read lock */
         if (rwlock->readers &&
             ! InterlockedDecrement(&rwlock->readers) &&
             ! SetEvent(rwlock->read_event)) {
-            rv = apr_get_os_error();
+            rv = fspr_get_os_error();
         }
         else {
             rv = 0;
@@ -170,9 +170,9 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_destroy(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_destroy(fspr_thread_rwlock_t *rwlock)
 {
-    return apr_pool_cleanup_run(rwlock->pool, rwlock, thread_rwlock_cleanup);
+    return fspr_pool_cleanup_run(rwlock->pool, rwlock, thread_rwlock_cleanup);
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(thread_rwlock)
