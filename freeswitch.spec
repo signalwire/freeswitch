@@ -1755,6 +1755,8 @@ cd ../..
 %{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_isdn*
 %endif
 
+%{__rm} -f %{buildroot}/%{LIBDIR}/*.la
+%{__rm} -f %{buildroot}/%{MODINSTDIR}/*.la
 
 
 ######################################################################################################################
@@ -1907,10 +1909,8 @@ fi
 #
 ######################################################################################################################
 %files devel
-%{LIBDIR}/*.a
-%{LIBDIR}/*.la
+%{LIBDIR}/*.so*
 %{PKGCONFIGDIR}/*
-%{MODINSTDIR}/*.*a
 %{INCLUDEDIR}/*.h
 %{INCLUDEDIR}/test/*.h
 
