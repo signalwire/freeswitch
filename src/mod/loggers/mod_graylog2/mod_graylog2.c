@@ -299,7 +299,7 @@ static switch_status_t do_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring empty channel variable for session field \"%s\"\n", name);
 					continue;
 				}
-				switch_event_add_header_string(globals.session_fields, SWITCH_STACK_BOTTOM,
+				switch_event_add_header_string_dup(globals.session_fields, SWITCH_STACK_BOTTOM,
 					switch_core_strdup(globals.pool, name), switch_core_strdup(globals.pool, variable));
 			}
 		}

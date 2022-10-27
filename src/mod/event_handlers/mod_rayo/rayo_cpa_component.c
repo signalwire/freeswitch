@@ -137,7 +137,7 @@ static void subscriber_execute(const char *uuid, const char *signal_type, subscr
 				const void *jid;
 				void *dont_care;
 				switch_core_hash_this(hi, &jid, NULL, &dont_care);
-				switch_event_add_header_string(subscriber_list, SWITCH_STACK_BOTTOM, "execute", (const char *)jid);
+				switch_event_add_header_string_dup(subscriber_list, SWITCH_STACK_BOTTOM, "execute", (const char *)jid);
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "No subscribers for %s\n", signal_type);

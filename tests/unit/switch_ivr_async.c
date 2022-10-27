@@ -135,12 +135,12 @@ FST_CORE_BEGIN("./conf_async")
 			// record READ stream only- should be complete silence which will trigger the initial timeout.
 			// Min seconds set to 2, which will cause the recording to be discarded.
 			// Expect the record_start_test_pass and record_stop_test_pass variables set to true
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_start", "set record_start_test_pass=true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_stop", "set record_stop_test_pass=true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE, "set record_post_process_test_pass=true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "RECORD_READ_ONLY", "true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "RECORD_INITIAL_TIMEOUT_MS", "500");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "RECORD_MIN_SEC", "2");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_start", "set record_start_test_pass=true");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_stop", "set record_stop_test_pass=true");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE, "set record_post_process_test_pass=true");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "RECORD_READ_ONLY", "true");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "RECORD_INITIAL_TIMEOUT_MS", "500");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "RECORD_MIN_SEC", "2");
 
 			status = switch_ivr_record_session_event(fst_session, record_filename, 0, NULL, rec_vars);
 			fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Expect switch_ivr_record_session() to return SWITCH_STATUS_SUCCESS");

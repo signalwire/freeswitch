@@ -280,7 +280,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char 
 		return r;
 
 	switch_event_create(&vars, SWITCH_EVENT_CLONE);
-	switch_event_add_header_string(vars, SWITCH_STACK_BOTTOM, var_name, var_val);
+	switch_event_add_header_string_dup(vars, SWITCH_STACK_BOTTOM, var_name, var_val);
 	r = switch_core_session_hupall_matching_vars_ans(vars, cause, type);
 	switch_event_destroy(&vars);
 	return r;
@@ -2048,7 +2048,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	switch_channel_set_variable(session->channel, "call_uuid", use_uuid);
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
 	switch_core_hash_delete(session_manager.session_table, session->uuid_str);
 	switch_set_string(session->uuid_str, use_uuid);
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
@@ -2684,18 +2684,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(sw
 	}
 
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
 
 		if (arg) {
-			switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", arg);
+			switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", arg);
 		}
 
 		if (!switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
 			switch_channel_set_flag(session->channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		}
 
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
 		switch_core_session_queue_private_event(session, &execute_event, SWITCH_FALSE);
 
 		return SWITCH_STATUS_SUCCESS;
@@ -2937,10 +2937,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID-Name", app_uuid_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-UUID-Name", app_uuid_name);
 		switch_event_fire(&event);
 	}
 
@@ -2961,11 +2961,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		const char *resp = switch_channel_get_variable(session->channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE);
 		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Response", resp ? resp : "_none_");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID-Name", app_uuid_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Response", resp ? resp : "_none_");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-UUID-Name", app_uuid_name);
 		switch_event_fire(&event);
 	}
 

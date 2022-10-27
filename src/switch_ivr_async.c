@@ -1215,7 +1215,7 @@ static void merge_recording_variables(struct record_helper *rh, switch_event_t *
 
 			switch_assert(vvar && vval);
 			switch_snprintf(buf, sizeof(buf), "Recording-Variable-%s", vvar);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, buf, vval);
 		}
 	}
 }
@@ -1238,10 +1238,10 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
 		merge_recording_variables(rh, event);
 		if (!zstr(rh->completion_cause)) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Completion-Cause", rh->completion_cause);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Record-Completion-Cause", rh->completion_cause);
 		}
 		switch_event_fire(&event);
 	}
@@ -1479,7 +1479,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				rh->start_event_sent = 1;
 				if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
 					merge_recording_variables(rh, event);
 					switch_event_fire(&event);
 				}
@@ -3929,8 +3929,8 @@ static switch_status_t generate_on_dtmf(switch_core_session_t *session, const sw
 						switch_channel_event_set_data(channel, event);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Source", "APP");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Conversion", "native:inband");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "DTMF-Source", "APP");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "DTMF-Conversion", "native:inband");
 						if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
 							switch_core_session_queue_event(session, &event);
 						} else {
@@ -4267,7 +4267,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 
 						if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 							switch_event_t *dup;
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", cont->list[i].key);
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detected-Tone", cont->list[i].key);
 
 							if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
 								switch_event_fire(&dup);
@@ -4276,7 +4276,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 							if (switch_core_session_queue_event(cont->session, &event) != SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR,
 												  "Event queue failed!\n");
-								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+								switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 								switch_event_fire(&event);
 							}
 						}
@@ -5067,7 +5067,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
 
 					if (headers) {
 						switch_event_merge(event, headers);
@@ -5075,7 +5075,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 					switch_event_add_body(event, "%s", xmlstr);
 				} else if (status == SWITCH_STATUS_MORE_DATA) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-partial-speech");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-partial-speech");
 
 					if (headers) {
 						switch_event_merge(event, headers);
@@ -5083,7 +5083,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 					switch_event_add_body(event, "%s", xmlstr);
 				} else {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "begin-speaking");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Speech-Type", "begin-speaking");
 				}
 
 				if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS)) {
@@ -5098,7 +5098,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 				if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 					switch_event_fire(&event);
 				}
 			}
@@ -5113,7 +5113,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
   done:
 
 	if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "closed");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Speech-Type", "closed");
 		if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS)) {
 			switch_event_t *dup;
 
@@ -5126,7 +5126,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 		if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 			switch_event_fire(&event);
 		}
 	}
@@ -5695,10 +5695,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		} else {
 			switch_core_session_get_app_flags(app, &app_flags);
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, (flags & SMF_PRIORITY) ? "event-lock-pri" : "event-lock", "true");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, (flags & SMF_PRIORITY) ? "event-lock-pri" : "event-lock", "true");
 
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
 
@@ -5707,7 +5707,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 				}
 
 				if ((flags & SMF_HOLD_BLEG)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
 				}
 
 				switch_core_session_queue_private_event(other_session, &event, (flags & SMF_PRIORITY));
@@ -5727,17 +5727,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 			switch_core_session_execute_application(session, app, path);
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, (flags & SMF_PRIORITY) ? "event-lock-pri" : "event-lock", "true");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-arg", path);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, (flags & SMF_PRIORITY) ? "event-lock-pri" : "event-lock", "true");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
 
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
 				if ((flags & SMF_HOLD_BLEG)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
 				}
 
 				switch_core_session_queue_private_event(session, &event, (flags & SMF_PRIORITY));
@@ -5750,10 +5750,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 
 	if (cause) {
 		if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cause);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, (flags & SMF_PRIORITY) ? "event-lock-pri" : "event-lock", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cause);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, (flags & SMF_PRIORITY) ? "event-lock-pri" : "event-lock", "true");
 			switch_core_session_queue_private_event(session, &event, (flags & SMF_PRIORITY));
 		}
 	}

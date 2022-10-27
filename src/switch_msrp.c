@@ -664,7 +664,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_msg_add_header(switch_msrp_msg_t *ms
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	status = switch_event_add_header_string(msrp_msg->headers, SWITCH_STACK_BOTTOM, switch_msrp_msg_header_name(htype), data);
+	status = switch_event_add_header_string_dup(msrp_msg->headers, SWITCH_STACK_BOTTOM, switch_msrp_msg_header_name(htype), data);
 
 	switch (htype) {
 	case MSRP_H_TRASACTION_ID:

@@ -2952,65 +2952,65 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 				char *uuid = switch_core_session_get_uuid(session);
 				if (uuid) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
 				}
 
 				snprintf(value, sizeof(value), "%.8x", rtcp_frame.ssrc);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SSRC", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "SSRC", value);
 
 				snprintf(value, sizeof(value), "%u", rtcp_frame.ntp_msw);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "NTP-Most-Significant-Word", value);
 
 				snprintf(value, sizeof(value), "%u", rtcp_frame.ntp_lsw);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "NTP-Least-Significant-Word", value);
 
 				snprintf(value, sizeof(value), "%u", rtcp_frame.timestamp);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTP-Timestamp", value);
 
 				snprintf(value, sizeof(value), "%u", rtcp_frame.packet_count);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Sender-Packet-Count", value);
 
 				snprintf(value, sizeof(value), "%u", rtcp_frame.octect_count);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", value);
 
 				snprintf(value, sizeof(value), "%u", engine->read_frame.timestamp);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", value);
 
 				snprintf(value, sizeof(value), "%u", engine->read_frame.rate);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTP-Rate", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTP-Rate", value);
 
 				snprintf(value, sizeof(value), "%" SWITCH_TIME_T_FMT, switch_time_now());
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Capture-Time", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Capture-Time", value);
 
 				// Add sources info
 				for (i = 0; i < rtcp_frame.report_count; i++) {
 					snprintf(header, sizeof(header), "Source%u-SSRC", i);
 					snprintf(value, sizeof(value), "%.8x", rtcp_frame.reports[i].ssrc);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-Fraction", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].fraction);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-Lost", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].lost);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-Loss-Avg", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].loss_avg);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-Highest-Sequence-Number-Received", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].highest_sequence_number_received);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-Jitter", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].jitter);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-LSR", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].lsr);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Source%u-DLSR", i);
 					snprintf(value, sizeof(value), "%u", rtcp_frame.reports[i].dlsr);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 					snprintf(header, sizeof(header), "Rtt%u-Avg", i);
 					snprintf(value, sizeof(value), "%f", rtcp_frame.reports[i].rtt_avg);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header, value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header, value);
 				}
 
 				switch_event_fire(&event);
@@ -10145,10 +10145,10 @@ switch_status_t switch_core_media_sdp_map(const char *r_sdp, switch_event_t **fm
 						switch_snprintf(key, sizeof(key), "%s", map->rm_encoding);
 					}
 
-					switch_event_add_header_string(*pt, SWITCH_STACK_BOTTOM, key, buf);
+					switch_event_add_header_string_dup(*pt, SWITCH_STACK_BOTTOM, key, buf);
 
 					if (map->rm_fmtp) {
-						switch_event_add_header_string(*fmtp, SWITCH_STACK_BOTTOM, key, map->rm_fmtp);
+						switch_event_add_header_string_dup(*fmtp, SWITCH_STACK_BOTTOM, key, map->rm_fmtp);
 					}
 				}
 			}

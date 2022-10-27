@@ -331,38 +331,38 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 
 	if (count > 0) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "active");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
 		}
 	} else {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
 		}
 	}
@@ -371,34 +371,34 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 
 	if (in) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", token->ext);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", token->ext);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", token->ext, domain_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", token->bridged == 0 ? "Holding" : "Active");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", token->bridged == 0 ? "Holding" : "Active");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "active");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", token->ext);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", token->ext);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 	} else {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", token->ext);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", token->ext);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", token->ext, domain_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", token->ext);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", token->ext);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 			switch_event_fire(&event);
 		}
 	}
@@ -577,10 +577,10 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 				if (!zstr(token->uuid) && (b_session = switch_core_session_locate(token->uuid))) {
 					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bridge");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-To-UUID", switch_core_session_get_uuid(session));
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "bridge");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-To-UUID", switch_core_session_get_uuid(session));
 						switch_channel_event_set_data(switch_core_session_get_channel(b_session), event);
 						switch_event_fire(&event);
 						switch_core_session_rwunlock(b_session);
@@ -682,9 +682,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hold");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "hold");
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
@@ -747,9 +747,9 @@ SWITCH_STANDARD_APP(valet_parking_function)
 
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VALET_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Valet-Lot-Name", lot_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Valet-Extension", ext);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "exit");
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
@@ -847,41 +847,41 @@ static void pres_event_handler(switch_event_t *event)
 
 		if (count) {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "active");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 				if (call_id) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 				}
 				switch_event_fire(&event);
 			}
 			found++;
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 				if (call_id) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 				}
 				switch_event_fire(&event);
 			}
@@ -916,20 +916,20 @@ static void pres_event_handler(switch_event_t *event)
 					found++;
 
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", token->bridged == 0 ? "Holding" : "Active");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", token->bridged == 0 ? "Holding" : "Active");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", token->bridged == 0 ? "outbound" : "inbound");
 						if (call_id) {
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 						}
 						switch_event_fire(&event);
 					}
@@ -943,21 +943,21 @@ static void pres_event_handler(switch_event_t *event)
 
 
 	if (!found && switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", lot_name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Empty");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 		if (call_id) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 		}
 		switch_event_fire(&event);
 	}

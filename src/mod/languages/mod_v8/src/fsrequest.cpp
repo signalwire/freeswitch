@@ -81,7 +81,7 @@ JS_REQUEST_FUNCTION_IMPL(AddHeader)
 		String::Utf8Value str2(info[1]);
 		const char *hname = js_safe_str(*str1);
 		const char *hval = js_safe_str(*str2);
-		switch_event_add_header_string(this->_stream->param_event, SWITCH_STACK_BOTTOM, hname, hval);
+		switch_event_add_header_string_dup(this->_stream->param_event, SWITCH_STACK_BOTTOM, hname, hval);
 		info.GetReturnValue().Set(true);
 		return;
 	}

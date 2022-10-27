@@ -162,7 +162,7 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		}
 	}
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	/* prepare the reply collector */
 	switch_uuid_get(&uuid);
@@ -188,16 +188,16 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		}
 	}
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Fetch-UUID", reply.uuid_str);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Fetch-Section", section);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Fetch-Tag", tag_name);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Fetch-Key-Name", key_name);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Fetch-Key-Value", key_value);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Fetch-UUID", reply.uuid_str);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Fetch-Section", section);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Fetch-Tag", tag_name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Fetch-Key-Name", key_name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Fetch-Key-Value", key_value);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Fetch-Timeout", "%u", profile->fetch_timeout);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Fetch-Timestamp-Micro", "%" SWITCH_UINT64_T_FMT, (uint64_t)now);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Kazoo-Version", VERSION);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Kazoo-Bundle", BUNDLE);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Kazoo-Release", RELEASE);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Kazoo-Version", VERSION);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Kazoo-Bundle", BUNDLE);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Kazoo-Release", RELEASE);
 
 	kz_event_decode(event);
 

@@ -173,15 +173,15 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
                 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "Stress %0.2f\n", sth->stress);
 
                 if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
-                    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "stress-level");
+                    switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Speech-Type", "stress-level");
                     switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Stress-Level", "%0.2f", sth->stress);
-		    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(sth->session));
+		    switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(sth->session));
                     if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
                         switch_event_fire(&dup);
                     }
                     if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
                         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR, "Event queue failed!\n");
-                        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+                        switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
                         switch_event_fire(&event);
                     }
                 }

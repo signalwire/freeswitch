@@ -72,8 +72,8 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
 		tp->executed = 0;
 		if (switch_event_create(&event, SWITCH_EVENT_RE_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 			switch_queue_push(globals.event_queue, event);
 			event = NULL;
@@ -150,8 +150,8 @@ static int task_thread_loop(int done)
 
 			if (switch_event_create(&event, SWITCH_EVENT_DEL_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tofree->task.task_id);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tofree->desc);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tofree->task.group));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Task-Desc", tofree->desc);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tofree->task.group));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tofree->task.runtime);
 				switch_queue_push(globals.event_queue, event);
 				event = NULL;
@@ -265,8 +265,8 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
 
 	if (switch_event_create(&event, SWITCH_EVENT_ADD_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Task-Desc", tp->desc);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Task-Group", switch_str_nil(tp->task.group));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 		switch_queue_push(globals.event_queue, event);
 		event = NULL;

@@ -408,9 +408,9 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_requires(rec_vars);
 			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_START, SWITCH_EVENT_SUBCLASS_ANY, on_record_start, NULL);
 			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_STOP, SWITCH_EVENT_SUBCLASS_ANY, on_record_stop, NULL);
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_start", "set record_start_test_pass=true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_stop", "set record_stop_test_pass=true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "ID", "foo");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_start", "set record_start_test_pass=true");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "execute_on_record_stop", "set record_stop_test_pass=true");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "ID", "foo");
 			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
 			status = switch_ivr_record_file_event(fst_session, NULL, record_filename, NULL, 4, rec_vars);
 			fst_check(status == SWITCH_STATUS_SUCCESS);
@@ -438,7 +438,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			switch_event_bind("record_file_event", SWITCH_EVENT_RECORD_STOP, SWITCH_EVENT_SUBCLASS_ANY, on_record_stop, NULL);
 			switch_channel_set_variable(fst_channel, "execute_on_record_start_1", "set record_start_test_pass=true");
 			switch_channel_set_variable(fst_channel, "execute_on_record_stop_1", "set record_stop_test_pass=true");
-			switch_event_add_header_string(rec_vars, SWITCH_STACK_BOTTOM, "ID", "foo");
+			switch_event_add_header_string_dup(rec_vars, SWITCH_STACK_BOTTOM, "ID", "foo");
 			switch_ivr_displace_session(fst_session, "file_string://silence_stream://500,0!tone_stream://%%(2000,0,350,440)", 0, "r");
 			status = switch_ivr_record_file_event(fst_session, NULL, record_filename, NULL, 4, rec_vars);
 			fst_check(status == SWITCH_STATUS_SUCCESS);

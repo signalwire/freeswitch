@@ -663,8 +663,8 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	switch_channel_event_set_data(channel, call_event);
 	switch_core_session_rwunlock(session);
 	/* TODO reply? sure? */
-	switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
-	switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
+	switch_event_add_header_string_dup(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
+	switch_event_add_header_string_dup(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
 
 	ei_x_new_with_version(&lbuf);
 	ei_x_encode_tuple_header(&lbuf, 2);
@@ -721,7 +721,7 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 			if (status != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(sp->uuid_str), SWITCH_LOG_DEBUG, "Notifying new session failed\n");
 				/* mark this session for removal */
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 				continue;
 			}
 			switch_set_flag_locked(sp, LFLAG_OUTBOUND_INIT);
@@ -767,7 +767,7 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 			switch_mutex_unlock(listener->sock_mutex);
 			ei_x_free(&ebuf);
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 			continue;
 		} else if (switch_queue_trypop(sp->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 

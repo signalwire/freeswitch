@@ -103,10 +103,10 @@ static switch_status_t kazoo_event_dup(switch_event_t **clone, switch_event_t *e
         if (header->idx) {
             int i;
             for (i = 0; i < header->idx; i++) {
-                switch_event_add_header_string(*clone, SWITCH_STACK_PUSH, header->name, header->array[i]);
+                switch_event_add_header_string_dup(*clone, SWITCH_STACK_PUSH, header->name, header->array[i]);
             }
         } else {
-            switch_event_add_header_string(*clone, SWITCH_STACK_BOTTOM, header->name, header->value);
+            switch_event_add_header_string_dup(*clone, SWITCH_STACK_BOTTOM, header->name, header->value);
         }
     }
 
@@ -201,8 +201,8 @@ static void event_handler(switch_event_t *event) {
 
 	ei_x_encode_version(ebuf);
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Target-Node", event_binding->stream->node->peer_nodename);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Target-Node", event_binding->stream->node->peer_nodename);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	if(event_stream->node->legacy) {
 		res = encode_event_old(event, ebuf);

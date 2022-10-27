@@ -84,16 +84,16 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
 			ei_x_buff ebuf;
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
 
 			ei_x_new_with_version(&ebuf);
 
 			if (acs->arg) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
 			}
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Successful", r ? "true" : "false");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Successful", r ? "true" : "false");
 			switch_event_add_body(event, "%s", reply);
 
 			switch_event_fire(&event);
@@ -373,7 +373,7 @@ static switch_status_t handle_msg_filter(listener_t *listener, int arity, ei_x_b
 							*header_val++ = '\0';
 						}
 					}
-					switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
+					switch_event_add_header_string_dup(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "+OK filter added. [%s]=[%s]", header_name, header_val);
 					ei_x_encode_tuple_header(rbuf, 3);
 					_ei_x_encode_string(rbuf, "added");

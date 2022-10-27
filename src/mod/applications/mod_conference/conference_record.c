@@ -279,9 +279,9 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 		if (test_eflag(conference, EFLAG_RECORD) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Error", "File could not be opened for recording");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Error", "File could not be opened for recording");
 			switch_event_fire(&event);
 		}
 
@@ -318,8 +318,8 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 	if (test_eflag(conference, EFLAG_RECORD) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "start-recording");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
 		switch_event_fire(&event);
 	}
 
@@ -426,9 +426,9 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samples-Out", "%ld", (long) member->rec->fh.samples_out);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samplerate", "%ld", (long) member->rec->fh.samplerate);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Milliseconds-Elapsed", "%ld", (long) member->rec->fh.samples_out / (member->rec->fh.samplerate / 1000));

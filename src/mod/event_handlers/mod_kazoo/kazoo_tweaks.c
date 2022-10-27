@@ -67,8 +67,8 @@ static switch_status_t kz_tweaks_signal_bridge_on_hangup(switch_core_session_t *
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "tweak signal bridge on hangup: %s , %s\n", switch_core_session_get_uuid(session), peer_uuid);
 
 	if (switch_event_create(&my_event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(my_event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-		switch_event_add_header_string(my_event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
+		switch_event_add_header_string_dup(my_event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(my_event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
 		switch_channel_event_set_data(channel, my_event);
 		switch_event_fire(&my_event);
 	}
@@ -148,9 +148,9 @@ static void kz_tweaks_handle_bridge_replaces_call_id(switch_event_t *event)
 		if (call_id && (call_session = switch_core_session_locate(call_id)) != NULL) {
 			switch_channel_t *call_channel = switch_core_session_get_channel(call_session);
 			if (switch_event_create(&my_event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(my_event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(call_session));
-				switch_event_add_header_string(my_event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
-				switch_event_add_header_string(my_event, SWITCH_STACK_BOTTOM, "Bridge-Event-Processed", "true");
+				switch_event_add_header_string_dup(my_event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(call_session));
+				switch_event_add_header_string_dup(my_event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
+				switch_event_add_header_string_dup(my_event, SWITCH_STACK_BOTTOM, "Bridge-Event-Processed", "true");
 				switch_channel_event_set_data(call_channel, my_event);
 				switch_event_fire(&my_event);
 			}
@@ -317,7 +317,7 @@ static switch_status_t kz_tweaks_handle_loopback(switch_core_session_t *session)
 		} else if(!strncmp(header->name, "sip_loopback_", 13)) {
 			kz_switch_event_add_variable_name_printf(to_add, SWITCH_STACK_BOTTOM, header->value, "sip_%s", header->name+13);
 		} else if(!strncmp(header->name, "ecallmgr_", 9)) {
-			switch_event_add_header_string(to_remove, SWITCH_STACK_BOTTOM, header->name, header->value);
+			switch_event_add_header_string_dup(to_remove, SWITCH_STACK_BOTTOM, header->name, header->value);
 		}
 	}
 	if(n) {

@@ -204,9 +204,9 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 
 	/* execute txfax APP */
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "txfax");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", fax_document);
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "txfax");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", fax_document);
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_channel_set_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		}
@@ -307,9 +307,9 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 
 	/* execute rxfax APP */
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "rxfax");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", receivefax_component->local_filename);
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "rxfax");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", receivefax_component->local_filename);
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_channel_set_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		}

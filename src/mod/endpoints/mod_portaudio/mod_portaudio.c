@@ -383,8 +383,8 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				switch_snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_info", buf);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", tech_pvt->call_id); /* left behind for backwards compatability */
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_info", buf);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call_id", tech_pvt->call_id); /* left behind for backwards compatability */
 					switch_channel_set_variable(channel, SWITCH_PA_CALL_ID_VARIABLE, tech_pvt->call_id);
 					switch_channel_event_set_data(channel, event);
 					switch_event_fire(&event);
@@ -2370,7 +2370,7 @@ static int create_shared_audio_stream(shared_audio_stream_t *shstream)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device (indev = %d, outdev = %d, error = %s)\n",
 				inputParameters.device, outputParameters.device, Pa_GetErrorText(err));
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR_AUDIO_DEV) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Reason", Pa_GetErrorText(err));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Reason", Pa_GetErrorText(err));
 			switch_event_fire(&event);
 		}
 		return -1;
@@ -2442,7 +2442,7 @@ static audio_stream_t *create_audio_stream(int indev, int outdev)
 		switch_safe_free(stream);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device\n");
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR_AUDIO_DEV) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Reason", Pa_GetErrorText(err));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Reason", Pa_GetErrorText(err));
 			switch_event_fire(&event);
 		}
 		return NULL;
@@ -3037,8 +3037,8 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 					char buf[512];
 					switch_channel_event_set_data(channel, event);
 					switch_snprintf(buf, sizeof(buf), "Thread error!.\n");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "error", buf);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fail", "true");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "error", buf);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fail", "true");
 					switch_event_fire(&event);
 				}
 			} else {
@@ -3047,7 +3047,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "SUCCESS:%s:%s\n", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_MAKE_CALL) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fail", "false");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fail", "false");
 					switch_event_fire(&event);
 				}
 			}
@@ -3059,8 +3059,8 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 				char buf[512];
 				switch_channel_event_set_data(channel, event);
 				switch_snprintf(buf, sizeof(buf), "Device fail.\n");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "error", buf);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fail", "true");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "error", buf);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fail", "true");
 				switch_event_fire(&event);
 			}
 		}

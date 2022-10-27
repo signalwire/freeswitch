@@ -351,9 +351,9 @@ SWITCH_STANDARD_API(translate_function)
 
 			if (zstr(areacode)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no default_areacode set, using default of 777\n");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "areacode", "777");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "areacode", "777");
 			} else {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "areacode", areacode);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "areacode", areacode);
 			}
 		}
 		translate_number(argv[0], argv[1], &translated, session, event, pool);

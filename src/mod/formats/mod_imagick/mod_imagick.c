@@ -119,11 +119,11 @@ static void *SWITCH_THREAD_FUNC open_pdf_thread_run(switch_thread_t *thread, voi
 			switch_event_t *event = NULL;
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "imagick::info") == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "loaded");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", context->path);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "loaded");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", context->path);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "pagecount", "%d", context->pagecount);
 				if (context->lazy_cookie) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cookie", context->lazy_cookie);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "cookie", context->lazy_cookie);
 				}
 				switch_event_fire(&event);
 			}

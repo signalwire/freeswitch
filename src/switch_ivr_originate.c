@@ -1608,7 +1608,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 
 	if (session) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ent_originate_aleg_uuid", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "ent_originate_aleg_uuid", switch_core_session_get_uuid(session));
 	}
 
 	if (channel) {
@@ -1617,19 +1617,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 
 		if ((tmp_var = switch_channel_get_variable(channel, "effective_ani"))) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_ani", tmp_var);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_ani", tmp_var);
 		}
 
 		if ((tmp_var = switch_channel_get_variable(channel, "effective_aniii"))) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_aniii", tmp_var);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_aniii", tmp_var);
 		}
 
 		if ((tmp_var = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", tmp_var);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", tmp_var);
 		}
 
 		if ((tmp_var = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", tmp_var);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", tmp_var);
 		}
 	}
 
@@ -1661,11 +1661,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 	if (ovars && ovars != var_event) {
 		for (hi = ovars->headers; hi; hi = hi->next) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hi->name, hi->value);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, hi->name, hi->value);
 		}
 	}
 
-	switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
+	switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
 	if (data) {
 		if (!(x_argc = switch_separate_string_string(data, SWITCH_ENT_ORIGINATE_DELIM, x_argv, MAX_PEERS))) {
@@ -2395,7 +2395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (ok && !switch_event_get_header(var_event, hi->name)) {
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, (char *) hi->name, (char *) hi->value);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, (char *) hi->name, (char *) hi->value);
 				}
 			}
 			switch_channel_variable_last(caller_channel);
@@ -2405,7 +2405,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		   for (; hi; hi = switch_core_hash_next(&hi)) {
 		   switch_core_hash_this(hi, &vvar, NULL, &vval);
 		   if (vvar && vval) {
-		   switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, (char *) vval);
+		   switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, (char *) vval);
 		   }
 		   }
 		   switch_channel_variable_last(caller_channel);
@@ -2621,7 +2621,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (cid_name_override) {
 		if (!cid_tmp) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid_name_override);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid_name_override);
 		}
 	} else {
 		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
@@ -2633,7 +2633,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (cid_num_override) {
 		if (!cid_tmp) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num_override);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid_num_override);
 		}
 	} else {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
@@ -3018,14 +3018,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				}
 
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
+				switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 
 
 				if (caller_channel && switch_true(switch_channel_get_variable(caller_channel, "push_channel_name"))) {
 					char *new_name = switch_core_session_sprintf(session, "%s__B", switch_channel_get_name(caller_channel));
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_channel_name", new_name);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "origination_channel_name", new_name);
 					new_name = switch_core_session_sprintf(session, "_%s", switch_channel_get_name(caller_channel));
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Channel-Name", new_name);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "sip_h_X-FS-Channel-Name", new_name);
 				}
 
 
@@ -4331,7 +4331,7 @@ SWITCH_DECLARE(void) switch_dial_handle_list_add_global_var(switch_dial_handle_l
 		switch_event_create_plain(&hl->global_vars, SWITCH_EVENT_CHANNEL_DATA);
 	}
 
-	switch_event_add_header_string(hl->global_vars, SWITCH_STACK_BOTTOM, var, val);
+	switch_event_add_header_string_dup(hl->global_vars, SWITCH_STACK_BOTTOM, var, val);
 }
 
 SWITCH_DECLARE(void) switch_dial_handle_list_add_global_var_printf(switch_dial_handle_list_t *hl, const char *var, const char *fmt, ...)
@@ -4490,7 +4490,7 @@ SWITCH_DECLARE(void) switch_dial_handle_add_global_var(switch_dial_handle_t *han
 		switch_event_create_plain(&handle->global_vars, SWITCH_EVENT_CHANNEL_DATA);
 	}
 
-	switch_event_add_header_string(handle->global_vars, SWITCH_STACK_BOTTOM, var, val);
+	switch_event_add_header_string_dup(handle->global_vars, SWITCH_STACK_BOTTOM, var, val);
 }
 
 SWITCH_DECLARE(void) switch_dial_handle_add_global_var_printf(switch_dial_handle_t *handle, const char *var, const char *fmt, ...)
@@ -4519,7 +4519,7 @@ SWITCH_DECLARE(switch_status_t) switch_dial_handle_add_leg_var(switch_dial_leg_t
 		switch_event_create_plain(&leg->leg_vars, SWITCH_EVENT_CHANNEL_DATA);
 	}
 
-	switch_event_add_header_string(leg->leg_vars, SWITCH_STACK_BOTTOM, var, val);
+	switch_event_add_header_string_dup(leg->leg_vars, SWITCH_STACK_BOTTOM, var, val);
 
 	return SWITCH_STATUS_SUCCESS;
 	

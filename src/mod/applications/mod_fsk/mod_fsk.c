@@ -262,7 +262,7 @@ static switch_bool_t fsk_detect_callback(switch_media_bug_t *bug, void *user_dat
 										  switch_channel_get_name(channel), varname, val);
 						switch_channel_set_variable(channel, varname, val);
 						if (event) {
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, varname, val);
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, varname, val);
 						}
 					}
 				}

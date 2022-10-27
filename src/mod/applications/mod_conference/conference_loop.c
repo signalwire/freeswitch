@@ -230,7 +230,7 @@ void conference_loop_lock_toggle(conference_member_t *member, caller_control_act
 		if (test_eflag(member->conference, EFLAG_LOCK) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(member->conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "lock");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "lock");
 			switch_event_fire(&event);
 		}
 	} else {
@@ -242,7 +242,7 @@ void conference_loop_lock_toggle(conference_member_t *member, caller_control_act
 		if (test_eflag(member->conference, EFLAG_UNLOCK) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(member->conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
 			switch_event_fire(&event);
 		}
 	}
@@ -328,7 +328,7 @@ void conference_loop_energy_up(conference_member_t *member, caller_control_actio
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -369,7 +369,7 @@ void conference_loop_energy_equ_conf(conference_member_t *member, caller_control
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -409,7 +409,7 @@ void conference_loop_energy_dn(conference_member_t *member, caller_control_actio
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -439,7 +439,7 @@ void conference_loop_volume_talk_up(conference_member_t *member, caller_control_
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -470,7 +470,7 @@ void conference_loop_volume_talk_zero(conference_member_t *member, caller_contro
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -502,7 +502,7 @@ void conference_loop_volume_talk_dn(conference_member_t *member, caller_control_
 	if (test_eflag(member->conference, EFLAG_VOLUME_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -533,7 +533,7 @@ void conference_loop_volume_listen_up(conference_member_t *member, caller_contro
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -564,7 +564,7 @@ void conference_loop_volume_listen_zero(conference_member_t *member, caller_cont
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -596,7 +596,7 @@ void conference_loop_volume_listen_dn(conference_member_t *member, caller_contro
 	if (test_eflag(member->conference, EFLAG_GAIN_LEVEL) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -618,9 +618,9 @@ void conference_loop_event(conference_member_t *member, caller_control_action_t 
 	switch_event_t *event;
 	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Key", action->binded_dtmf);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Data", action->expanded_data);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "DTMF-Key", action->binded_dtmf);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Data", action->expanded_data);
 		switch_event_fire(&event);
 	}
 }
@@ -638,8 +638,8 @@ void conference_loop_transfer(conference_member_t *member, caller_control_action
 
 	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Dialplan", action->expanded_data);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Dialplan", action->expanded_data);
 		switch_event_fire(&event);
 	}
 	conference_utils_member_clear_flag_locked(member, MFLAG_RUNNING);
@@ -687,8 +687,8 @@ void conference_loop_exec_app(conference_member_t *member, caller_control_action
 
 	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "execute_app");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", action->expanded_data);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "execute_app");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", action->expanded_data);
 		switch_event_fire(&event);
 	}
 
@@ -793,7 +793,7 @@ static void stop_talking_handler(conference_member_t *member)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "talking-hit-off-percent", "%f", ngcp);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "talking-hit-off-differential", "%f", gcp - ngcp);
 		}
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
 		switch_event_fire(&event);
 	}
 
@@ -1101,7 +1101,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 							}
 
 					
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "talk-report");
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "talk-report");
 							switch_event_fire(&event);
 						}
 
@@ -1153,7 +1153,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 							!conference_utils_member_test_flag(member, MFLAG_HOLD) &&
 							switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							conference_member_add_event_data(member, event);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
 							switch_event_fire(&event);
 						}
 
@@ -1166,7 +1166,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 							if (test_eflag(member->conference, EFLAG_MUTE_DETECT) &&
 								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								conference_member_add_event_data(member, event);
-								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "mute-detect");
+								switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "mute-detect");
 								switch_event_fire(&event);
 							}
 						}

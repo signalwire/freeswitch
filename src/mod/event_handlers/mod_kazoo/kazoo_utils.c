@@ -600,7 +600,7 @@ void kz_expand_headers(switch_event_t *resolver, switch_event_t *event) {
 	for(header = event->headers; header; header = header->next) {
 		char *expanded = kz_event_expand_headers(resolver, header->value);
 		if (expanded != header->value) {
-			switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, header->name, expanded);
+			switch_event_add_header_string_dup(clone, SWITCH_STACK_BOTTOM, header->name, expanded);
 			switch_safe_free(expanded);
 		}
 	}

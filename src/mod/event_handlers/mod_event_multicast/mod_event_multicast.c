@@ -496,13 +496,13 @@ static void event_handler(switch_event_t *event)
 				switch_event_t *local_event;
 				if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_PEERUP) == SWITCH_STATUS_SUCCESS) {
 					char lastseen[21];
-					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", sender);
+					switch_event_add_header_string_dup(local_event, SWITCH_STACK_BOTTOM, "Peer", sender);
 					if (p->lastseen) {
 						switch_snprintf(lastseen, sizeof(lastseen), "%d", (int) p->lastseen);
 					} else {
 						switch_snprintf(lastseen, sizeof(lastseen), "%s", "Never");
 					}
-					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
+					switch_event_add_header_string_dup(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Peer %s has come up; last seen: %s\n", sender, lastseen);
 
 					switch_event_fire(&local_event);
@@ -576,9 +576,9 @@ static void event_handler(switch_event_t *event)
 				last->active = SWITCH_FALSE;
 				if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_PEERDOWN) == SWITCH_STATUS_SUCCESS) {
 					char lastseen[21];
-					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Peer", host);
+					switch_event_add_header_string_dup(local_event, SWITCH_STACK_BOTTOM, "Peer", host);
 					switch_snprintf(lastseen, sizeof(lastseen), "%d", (int) last->lastseen);
-					switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
+					switch_event_add_header_string_dup(local_event, SWITCH_STACK_BOTTOM, "Lastseen", lastseen);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Peer %s has gone down; last seen: %s\n", host, lastseen);
 
 					switch_event_fire(&local_event);
@@ -604,7 +604,7 @@ static void event_handler(switch_event_t *event)
 			case SWITCH_EVENT_LOG:
 				return;
 			default:
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", switch_core_get_switchname());
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", switch_core_get_switchname());
 				if (switch_event_serialize(event, &packet, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 					size_t len;
 					char *buf;
@@ -760,7 +760,7 @@ static switch_status_t process_packet(char* packet, size_t len)
 	/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet); */
 	if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 		char *var, *val, *term = NULL, tmpname[128];
-		switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
+		switch_event_add_header_string_dup(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
 		var = packet;
 		while (var && *var) {
 			if ((val = strchr(var, ':')) != 0) {
@@ -776,7 +776,7 @@ static switch_status_t process_packet(char* packet, size_t len)
 				}
 				switch_url_decode(val);
 				switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
-				switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
+				switch_event_add_header_string_dup(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
 				var = term + 1;
 			} else {
 				/* This should be our magic packet, done processing incoming headers */

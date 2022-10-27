@@ -701,91 +701,91 @@ static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, d
 	if (status != SWITCH_STATUS_SUCCESS) {
 		return;
 	}
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(fs_s));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-command", "avmd");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(fs_s));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Call-command", "avmd");
 	switch (type)
 	{
 		case AVMD_EVENT_BEEP:
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", "DETECTED");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Beep-Status", "DETECTED");
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", freq);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Frequency truncated [%s], [%d] attempted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Frequency", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Frequency", buf);
 
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v_freq);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency-variance", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Frequency-variance", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Frequency-variance", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Frequency-variance", buf);
 
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", amp);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Amplitude truncated [%s], [%d] attempted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Amplitude", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Amplitude", buf);
 
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%f", v_amp);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Amplitude-variance", buf);
 
 			detection_time = detection_stop_time - detection_start_time;
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%" PRId64 "", detection_time);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Detection time truncated [%s], [%d] attempted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detection-time", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detection-time", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detection-time", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detection-time", buf);
 
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%u", resolution);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-resolution", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detector-resolution", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-resolution", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detector-resolution", buf);
 
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%u", offset);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-offset", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detector-offset", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-offset", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detector-offset", buf);
 
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%u", idx);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Error, truncated [%s], [%d] attempeted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-index", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detector-index", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detector-index", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detector-index", buf);
 			break;
 
 		case AVMD_EVENT_SESSION_START:
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%" PRId64 "", start_time);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Start time truncated [%s], [%d] attempted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Start-time", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Start-time", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Start-time", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Start-time", buf);
 			break;
 
 		case AVMD_EVENT_SESSION_STOP:
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", beep_status == BEEP_DETECTED ? "DETECTED" : "NOTDETECTED");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Beep-Status", beep_status == BEEP_DETECTED ? "DETECTED" : "NOTDETECTED");
 			if (info == 0) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Stop-status", "ERROR (AVMD SESSION OBJECT NOT FOUND IN MEDIA BUG)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Stop-status", "ERROR (AVMD SESSION OBJECT NOT FOUND IN MEDIA BUG)");
 			}
 			total_time = stop_time - start_time;
 			res = snprintf(buf, AVMD_CHAR_BUF_LEN, "%" PRId64 "", total_time);
 			if (res < 0 || res > AVMD_CHAR_BUF_LEN - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(fs_s), SWITCH_LOG_ERROR, "Total time truncated [%s], [%d] attempted!\n", buf, res);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Total-time", "ERROR (TRUNCATED)");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Total-time", "ERROR (TRUNCATED)");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Total-time", buf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Total-time", buf);
 			break;
 
 		default:

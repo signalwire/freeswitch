@@ -246,7 +246,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 		void *val;
 		switch_core_hash_this(hi, &key, NULL, &val);
 		if (!callback || callback(key, val, pData)) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 		}
 	}
 

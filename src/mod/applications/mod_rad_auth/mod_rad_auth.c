@@ -752,7 +752,7 @@ switch_status_t load_config()
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile",
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "profile",
 		"profile_rad_auth");
 
 	//vsas

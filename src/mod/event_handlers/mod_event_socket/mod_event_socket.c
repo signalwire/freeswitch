@@ -800,7 +800,7 @@ SWITCH_STANDARD_API(event_sink_function)
 				stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
 				goto filter_end;
 			}
-			switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
+			switch_event_add_header_string_dup(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
 			stream->write_function(stream, "<data>\n <reply type=\"success\">filter added.</reply>\n<api-command>\n");
 		} else {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
@@ -1297,7 +1297,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					count++;
 					if (count == 1) {
 						switch_event_create(event, SWITCH_EVENT_CLONE);
-						switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Command", mbuf);
+						switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, "Command", mbuf);
 					} else if (cur) {
 						char *var, *val;
 						var = cur;
@@ -1310,7 +1310,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								}
 							}
 							if (val) {
-								switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, var, val);
+								switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, var, val);
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
 
@@ -1570,11 +1570,11 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		switch_event_t *event;
 
 		if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Owner-UUID", acs->bg_owner_uuid_str);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Owner-UUID", acs->bg_owner_uuid_str);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->api_cmd);
 			if (acs->arg) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
 			}
 			switch_event_add_body(event, "%s", reply);
 			switch_event_fire(&event);
@@ -1807,7 +1807,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 			switch_assert(params);
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "event_socket_auth");
+			switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "action", "event_socket_auth");
 
 			if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, &x_group, params) == SWITCH_STATUS_SUCCESS) {
 				switch_xml_t list[3];
@@ -1990,7 +1990,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 					*header_val++ = '\0';
 				}
 			}
-			switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
+			switch_event_add_header_string_dup(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
 			switch_snprintf(reply, reply_len, "+OK filter added. [%s]=[%s]", header_name, header_val);
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR invalid syntax");
@@ -2026,10 +2026,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
 				switch_channel_event_set_data(channel, call_event);
 			}
-			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
-			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
-			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
-			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
+			switch_event_add_header_string_dup(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
+			switch_event_add_header_string_dup(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
+			switch_event_add_header_string_dup(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
+			switch_event_add_header_string_dup(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
 
 			switch_event_serialize(call_event, &event_str, SWITCH_TRUE);
 			switch_assert(event_str);
@@ -2238,7 +2238,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 		switch_uuid_str(uuid_str, sizeof(uuid_str));
 
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-UUID", uuid_str);
+		switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, "Event-UUID", uuid_str);
 
 		strip_cr(cmd);
 

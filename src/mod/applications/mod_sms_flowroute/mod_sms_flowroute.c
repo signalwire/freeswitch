@@ -164,12 +164,12 @@ static int mod_sms_flowroute_profile_request_handler(h2o_handler_t *handler, h2o
 	}
 
 	switch_event_create(&evt, SWITCH_EVENT_MESSAGE);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "to", cJSON_GetObjectCstr(parsed, "to"));
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "body", cJSON_GetObjectCstr(parsed, "body"));
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "from", cJSON_GetObjectCstr(parsed, "from"));
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "record_id", cJSON_GetObjectCstr(parsed, "id"));
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "context", "default");
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "proto", "sms_flowroute");
+	switch_event_add_header_string_dup(evt, SWITCH_STACK_BOTTOM, "to", cJSON_GetObjectCstr(parsed, "to"));
+	switch_event_add_header_string_dup(evt, SWITCH_STACK_BOTTOM, "body", cJSON_GetObjectCstr(parsed, "body"));
+	switch_event_add_header_string_dup(evt, SWITCH_STACK_BOTTOM, "from", cJSON_GetObjectCstr(parsed, "from"));
+	switch_event_add_header_string_dup(evt, SWITCH_STACK_BOTTOM, "record_id", cJSON_GetObjectCstr(parsed, "id"));
+	switch_event_add_header_string_dup(evt, SWITCH_STACK_BOTTOM, "context", "default");
+	switch_event_add_header_string_dup(evt, SWITCH_STACK_BOTTOM, "proto", "sms_flowroute");
 
     switch_core_chat_send("GLOBAL_SMS", evt);
 	switch_event_destroy(&evt);
@@ -486,7 +486,7 @@ SWITCH_STANDARD_APP(mod_sms_flowroute_app_send_function)
 	/* Cycle through all of the channel headers, and ones with 'sms_flowroute_' prefix copy over without the prefix */
 	for ( chan_var = switch_channel_variable_first(channel); chan_var; chan_var = chan_var->next) {
 		if ( !strncmp(chan_var->name, "sms_flowroute_", 14) ) {
-			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, chan_var->name + 14, chan_var->value);
+			switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, chan_var->name + 14, chan_var->value);
 		}
 	}
 
@@ -531,8 +531,8 @@ SWITCH_STANDARD_API(mod_sms_flowroute_send_api)
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "destination_addr", argv[1]);
-	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "source_addr", argv[2]);
+	switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, "destination_addr", argv[1]);
+	switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, "source_addr", argv[2]);
 	switch_event_set_body(message, argv[3]);
 
 	if (mod_sms_flowroute_profile_send_message(profile, message) != SWITCH_STATUS_SUCCESS) {

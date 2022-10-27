@@ -779,7 +779,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	if (subclass_name) {
 		(*event)->subclass_name = DUP(subclass_name);
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
+		switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -788,7 +788,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event, switch_priority_t priority)
 {
 	event->priority = priority;
-	switch_event_add_header_string(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -992,7 +992,7 @@ SWITCH_DECLARE(int) switch_event_add_array(switch_event_t *event, const char *va
 	switch_separate_string_string(data, "|:", array, max);
 
 	for(i = 0; i < max; i++) {
-		switch_event_add_header_string(event, SWITCH_STACK_PUSH, var, array[i]);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_PUSH, var, array[i]);
 	}
 
 	free(array);
@@ -1231,7 +1231,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *e
 	switch_safe_free(event->subclass_name);
 	event->subclass_name = DUP(subclass_name);
 	switch_event_del_header(event, "Event-Subclass");
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Subclass", event->subclass_name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Event-Subclass", event->subclass_name);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1239,6 +1239,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *e
 {
 	if (data) {
 		return switch_event_base_add_header(event, stack, header_name, (stack & SWITCH_STACK_NODUP) ? (char *)data : DUP(data));
+	}
+	return SWITCH_STATUS_GENERR;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_event_add_header_string_dup(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data)
+{
+	if (data) {
+		return switch_event_base_add_header(event, stack, header_name, DUP(data));
 	}
 	return SWITCH_STATUS_GENERR;
 }
@@ -1314,10 +1322,10 @@ SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *t
 			int i;
 
 			for(i = 0; i < hp->idx; i++) {
-				switch_event_add_header_string(event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
 			}
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
 		}
 	}
 }
@@ -1342,10 +1350,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 		if (hp->idx) {
 			int i;
 			for (i = 0; i < hp->idx; i++) {
-				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+				switch_event_add_header_string_dup(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
 			}
 		} else {
-			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+			switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
 		}
 	}
 
@@ -1398,17 +1406,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup_reply(switch_event_t **event, s
 		if (hp->idx) {
 			int i;
 			for (i = 0; i < hp->idx; i++) {
-				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, name, hp->array[i]);
+				switch_event_add_header_string_dup(*event, SWITCH_STACK_PUSH, name, hp->array[i]);
 			}
 		} else {
-			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, value);
+			switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, name, value);
 		}
 	}
 
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "replying", "true");
+	switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, "replying", "true");
 
 	if (todup->body) {
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "orig_body", todup->body);
+		switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, "orig_body", todup->body);
 	}
 
 	(*event)->key = todup->key;
@@ -1450,7 +1458,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t *
 
 
 	while (tpl_unpack(tn, 1)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, sh.name, sh.value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, sh.name, sh.value);
 	}
 
 	*eventp = event;
@@ -1645,7 +1653,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **
 			name = "Unknown";
 		}
 
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, val);
+		switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, name, val);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1726,7 +1734,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 
 				if (switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0]))) == 2) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
-					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+					switch_event_add_header_string_dup(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}
 			}
 		}
@@ -1783,7 +1791,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event,
 					switch_name_event(value, &new_event->event_id);
 				}
 
-				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, name, value);
+				switch_event_add_header_string_dup(new_event, SWITCH_STACK_BOTTOM, name, value);
 			}
 
 		} else if (name) {
@@ -1794,7 +1802,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event,
 					cJSON *item = cJSON_GetArrayItem(cjp, i);
 
 					if (item && item->type == cJSON_String && item->valuestring) {
-						switch_event_add_header_string(new_event, SWITCH_STACK_PUSH, name, item->valuestring);
+						switch_event_add_header_string_dup(new_event, SWITCH_STACK_PUSH, name, item->valuestring);
 					}
 				}
 			}
@@ -1969,21 +1977,21 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
 
 	switch_time_exp_lt(&tm, ts);
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
 	switch_rfc822_date(date, ts);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Date-Timestamp", "%" SWITCH_UINT64_T_FMT, (uint64_t) ts);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Sequence", "%" SWITCH_UINT64_T_FMT, seq);
 
@@ -2204,17 +2212,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(char *file,
 	switch_event_t *pres_event;
 
 	if (switch_event_create_subclass(&pres_event, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "proto", proto);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "login", login);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "proto", proto);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "login", login);
 		switch_event_add_header(pres_event, SWITCH_STACK_TOP, "from", "%s@%s", from, from_domain);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "status", status);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "event_type", event_type);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "alt_event_type", alt_event_type);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "status", status);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "event_type", event_type);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "alt_event_type", alt_event_type);
 		switch_event_add_header(pres_event, SWITCH_STACK_TOP, "event_count", "%d", event_count);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "unique-id", alt_event_type);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "channel-state", channel_state);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "answer-state", answer_state);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "presence-call-direction", call_direction);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "unique-id", alt_event_type);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "channel-state", channel_state);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "answer-state", answer_state);
+		switch_event_add_header_string_dup(pres_event, SWITCH_STACK_TOP, "presence-call-direction", call_direction);
 		switch_event_fire_detailed(file, func, line, &pres_event, NULL);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -2695,7 +2703,7 @@ SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *chann
 			switch_snprintf(header_name, sizeof(header_name), "%s%s", prefix, cols[i]);
 
 			val = switch_channel_get_variable(channel, cols[i]);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, val);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, val);
 		}
 
 		switch_safe_free(data_copy);
@@ -3147,7 +3155,7 @@ SWITCH_DECLARE(void) switch_event_channel_permission_modify(const char *cookie, 
 	}
 
 	if (set) {
-		switch_event_add_header_string(vals, SWITCH_STACK_BOTTOM, event_channel, "true");
+		switch_event_add_header_string_dup(vals, SWITCH_STACK_BOTTOM, event_channel, "true");
 	} else {
 		switch_event_del_header(vals, event_channel);
 	}

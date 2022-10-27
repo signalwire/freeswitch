@@ -349,7 +349,7 @@ switch_status_t FSManager::ReadConfig(int reload)
     switch_event_t *request_params = NULL;
     switch_event_create(&request_params, SWITCH_EVENT_REQUEST_PARAMS);
     switch_assert(request_params);
-    switch_event_add_header_string(request_params, SWITCH_STACK_BOTTOM, "profile", switch_str_nil(""));
+	switch_event_add_header_string_dup(request_params, SWITCH_STACK_BOTTOM, "profile", switch_str_nil(""));
 
     switch_xml_t cfg;
     switch_xml_t xml = switch_xml_open_cfg(ConfigFile, &cfg, request_params);

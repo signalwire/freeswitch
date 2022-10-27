@@ -314,7 +314,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(AddFilter)
 			switch_event_create_plain(&_filters, SWITCH_EVENT_CLONE);
 		}
 
-		switch_event_add_header_string(_filters, SWITCH_STACK_BOTTOM, headerName, headerVal);
+		switch_event_add_header_string_dup(_filters, SWITCH_STACK_BOTTOM, headerName, headerVal);
 
 		info.GetReturnValue().Set(true);
 
@@ -470,10 +470,10 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->cmd);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command", acs->cmd);
 		if (acs->arg) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", acs->arg);
 		}
 		switch_event_add_body(event, "%s", reply);
 		switch_event_fire(&event);

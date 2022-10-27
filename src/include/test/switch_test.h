@@ -512,7 +512,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 		fst_requires_module("mod_sndfile"); \
 		fst_requires(switch_core_running()); \
 		fst_requires(switch_event_create_plain(&fst_originate_vars, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS); \
-		switch_event_add_header_string(fst_originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", "+15551112222"); \
+		switch_event_add_header_string_dup(fst_originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", "+15551112222"); \
 		switch_event_add_header(fst_originate_vars, SWITCH_STACK_BOTTOM, "rate", "%d", rate); \
 		if (switch_ivr_originate(NULL, &fst_session, &fst_cause, "{null_video_codec=" video_codec "}null/+15553334444", 2, NULL, NULL, NULL, NULL, fst_originate_vars, SOF_NONE, NULL, NULL) == SWITCH_STATUS_SUCCESS && fst_session) { \
 			switch_memory_pool_t *fst_session_pool = switch_core_session_get_pool(fst_session); \

@@ -182,7 +182,7 @@ JS_EVENT_FUNCTION_IMPL(AddHeader)
 			stack_kind = SWITCH_STACK_PUSH;
 		}
 
-		switch_event_add_header_string(_event, stack_kind, hname, hval);
+		switch_event_add_header_string_dup(_event, stack_kind, hname, hval);
 		info.GetReturnValue().Set(true);
 		return;
 	}

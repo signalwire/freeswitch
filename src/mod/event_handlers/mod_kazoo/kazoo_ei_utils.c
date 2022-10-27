@@ -862,7 +862,7 @@ static void fetch_config_filters(switch_memory_pool_t *pool)
 	switch_event_t *params;
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-filter");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Action", "request-filter");
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);
@@ -898,7 +898,7 @@ static void fetch_config_handlers(switch_memory_pool_t *pool)
 	switch_event_t *params;
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-handlers");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Action", "request-handlers");
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open configuration file %s\n", cf);

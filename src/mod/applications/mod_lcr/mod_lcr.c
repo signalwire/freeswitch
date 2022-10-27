@@ -676,7 +676,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 		}
 
 		/* add all fields to the fields event */
-		switch_event_add_header_string(additional->fields, SWITCH_STACK_BOTTOM, columnNames[i], argv[i]);
+		switch_event_add_header_string_dup(additional->fields, SWITCH_STACK_BOTTOM, columnNames[i], argv[i]);
 	}
 
 	cbt->matches++;
@@ -968,15 +968,15 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	}
 	if (cb_struct->event) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_DEBUG, "we have an event\n");
-		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_rate_field", rate_field);
-		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_user_rate_field", user_rate_field);
-		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_digits", digits_copy);
+		switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_rate_field", rate_field);
+		switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_user_rate_field", user_rate_field);
+		switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_digits", digits_copy);
 		id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
-		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_profile", id_str);
-		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_expanded_digits", digits_expanded);
-		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_expanded_lrn_digits", lrn_digits_expanded);
+		switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_profile", id_str);
+		switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_expanded_digits", digits_expanded);
+		switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_expanded_lrn_digits", lrn_digits_expanded);
 		if ( cb_struct->lrn_number ) {
-			switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_lrn", cb_struct->lrn_number);
+			switch_event_add_header_string_dup(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_lrn", cb_struct->lrn_number);
 		}
 	}
 

@@ -229,13 +229,13 @@ SWITCH_DECLARE(switch_status_t) kazoo_api_execute(const char *cmd, const char *a
 
 	if (stream->param_event) {
 		if (cmd_used && *cmd_used) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
+			switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
 		}
 		if (arg_used && *arg_used) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
+			switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
 		}
 		if (arg_expanded && *arg_expanded) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument-Expanded", arg_expanded);
+			switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument-Expanded", arg_expanded);
 		}
 	}
 
@@ -706,7 +706,7 @@ static switch_status_t handle_request_command(ei_node_t *ei_node, erlang_pid *pi
 	}
 
 	log_sendmsg_request(uuid_str, event);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-uuid", cmd_uuid_str);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event-uuid", cmd_uuid_str);
 
 	switch_core_session_queue_private_event(session, &event, SWITCH_FALSE);
 	switch_core_session_rwunlock(session);
@@ -746,9 +746,9 @@ static switch_status_t handle_request_commands(ei_node_t *ei_node, erlang_pid *p
 		}
 		log_sendmsg_request(uuid_str, event);
 		if(n == (propslist_length - 1)) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-uuid", cmd_uuid_str);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event-uuid", cmd_uuid_str);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-uuid", "null");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event-uuid", "null");
 //			switch_event_del_header_val(event, "event-uuid-name", NULL);
 		}
 		switch_core_session_queue_private_event(session, &event, SWITCH_FALSE);

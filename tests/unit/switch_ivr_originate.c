@@ -121,7 +121,7 @@ FST_CORE_BEGIN("./conf")
 			switch_call_cause_t cause;
 			switch_event_t *ovars = NULL;
 			switch_event_create(&ovars, SWITCH_EVENT_CLONE);
-			switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_external_id", "zzzz");
+			switch_event_add_header_string_dup(ovars, SWITCH_STACK_BOTTOM, "origination_external_id", "zzzz");
 			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL, NULL);
 			fst_requires(session);
 			fst_check(status == SWITCH_STATUS_SUCCESS);

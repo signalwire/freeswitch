@@ -325,88 +325,88 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	switch_channel_timetable_t *times = NULL;
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Direction", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ?
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ?
 								   "inbound" : "outbound");
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Logical-Direction", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ?
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ?
 								   "inbound" : "outbound");
 
 	if (!zstr(caller_profile->username)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->username);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->username);
 	}
 	if (!zstr(caller_profile->dialplan)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Dialplan", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->dialplan);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->dialplan);
 	}
 	if (!zstr(caller_profile->caller_id_name)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Name", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_name);
 	}
 	if (!zstr(caller_profile->caller_id_number)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Number", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_number);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_number);
 	}
 	if (!zstr(caller_profile->caller_id_name)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Orig-Caller-ID-Name", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->orig_caller_id_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->orig_caller_id_name);
 	}
 	if (!zstr(caller_profile->caller_id_number)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Orig-Caller-ID-Number", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->orig_caller_id_number);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->orig_caller_id_number);
 	}
 	if (!zstr(caller_profile->callee_id_name)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Callee-ID-Name", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->callee_id_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->callee_id_name);
 	}
 	if (!zstr(caller_profile->callee_id_number)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Callee-ID-Number", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->callee_id_number);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->callee_id_number);
 	}
 	if (!zstr(caller_profile->network_addr)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Network-Addr", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->network_addr);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->network_addr);
 	}
 	if (!zstr(caller_profile->ani)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-ANI", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->ani);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->ani);
 	}
 	if (!zstr(caller_profile->aniii)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-ANI-II", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->aniii);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->aniii);
 	}
 	if (!zstr(caller_profile->destination_number)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->destination_number);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->destination_number);
 	}
 	if (!zstr(caller_profile->uuid)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
 	}
 	if (!zstr(caller_profile->source)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
 	}
 	if (!zstr(caller_profile->transfer_source)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Transfer-Source", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->transfer_source);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->transfer_source);
 	}
 	if (!zstr(caller_profile->context)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->context);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->context);
 	}
 	if (!zstr(caller_profile->rdnis)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->rdnis);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->rdnis);
 	}
 	if (!zstr(caller_profile->chan_name)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->chan_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->chan_name);
 	}
 	if (!zstr(caller_profile->profile_index)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Index", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->profile_index);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->profile_index);
 	}
 
 	if (caller_profile->soft) {
@@ -415,9 +415,9 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		for (pn = caller_profile->soft; pn; pn = pn->next) {
 			if (switch_test_flag(caller_profile, SWITCH_CPF_SOFT_PREFIX)) {
 				switch_snprintf(header_name, sizeof(header_name), "%s-%s", prefix, pn->var);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, pn->val);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, pn->val);
 			} else {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pn->var, pn->val);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, pn->var, pn->val);
 			}
 		}
 
@@ -454,13 +454,13 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	}
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "true" : "false");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "true" : "false");
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Name", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "true" : "false");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "true" : "false");
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false");
 }
 
 SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig,

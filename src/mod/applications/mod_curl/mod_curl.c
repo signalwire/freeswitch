@@ -506,9 +506,9 @@ static switch_status_t http_sendfile_test_file_open(http_sendfile_data_t *http_d
 		{
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, HTTP_SENDFILE_ACK_EVENT) == SWITCH_STATUS_SUCCESS)
 			{
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command-Execution-Identifier", http_data->identifier_str);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Filename", http_data->filename_element);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File-Access", "Failure");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Command-Execution-Identifier", http_data->identifier_str);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Filename", http_data->filename_element);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File-Access", "Failure");
 				switch_event_fire(&event);
 				switch_event_destroy(&event);
 			}
@@ -536,10 +536,10 @@ static void http_sendfile_success_report(http_sendfile_data_t *http_data, switch
 			memset(code_as_string, 0, 16);
 			switch_snprintf(code_as_string, 16, "%d", http_data->http_response_code);
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command-Execution-Identifier", http_data->identifier_str);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Filename", http_data->filename_element);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File-Access", "Success");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "REST-HTTP-Code", code_as_string);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Command-Execution-Identifier", http_data->identifier_str);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Filename", http_data->filename_element);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File-Access", "Success");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "REST-HTTP-Code", code_as_string);
 			switch_event_add_body(event, "%s", http_data->sendfile_response);
 
 			switch_event_fire(&event);

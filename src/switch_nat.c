@@ -330,9 +330,9 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t * t
 			do_repub = SWITCH_TRUE;
 
 			switch_event_create(&event, SWITCH_EVENT_TRAP);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "condition", "network-external-address-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-external-address-previous-v4", nat_globals.pub_addr);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-external-address-change-v4", newip);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "condition", "network-external-address-change");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-external-address-previous-v4", nat_globals.pub_addr);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-external-address-change-v4", newip);
 			switch_event_fire(&event);
 
 			switch_set_string(nat_globals.pub_addr, newip);
@@ -606,10 +606,10 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 
 	if (publish && status == SWITCH_STATUS_SUCCESS) {
 		switch_event_create(&event, SWITCH_EVENT_NAT);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "op", "add");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "op", "add");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "port", "%d", port);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%d", proto);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sticky", (sticky ? "true" : "false"));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "sticky", (sticky ? "true" : "false"));
 		switch_event_fire(&event);
 	}
 
@@ -640,7 +640,7 @@ SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switc
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_event_create(&event, SWITCH_EVENT_NAT);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "op", "del");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "op", "del");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "port", "%d", port);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%d", proto);
 		switch_event_fire(&event);

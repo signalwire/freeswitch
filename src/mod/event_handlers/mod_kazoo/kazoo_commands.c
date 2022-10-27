@@ -267,7 +267,7 @@ static size_t header_callback(char *buffer, size_t size, size_t nitems, void *us
 	char buf[1024];
 	if(len > 2 && len < 1024) {
 		snprintf(buf, sizeof(buf), "%s", buffer);
-		switch_event_add_header_string(event, SWITCH_STACK_PUSH | SWITCH_STACK_BOTTOM, "Reply-Headers", buf);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_PUSH | SWITCH_STACK_BOTTOM, "Reply-Headers", buf);
 	}
 	return nitems * size;
 }
@@ -538,8 +538,8 @@ SWITCH_STANDARD_API(kz_contact_fun)
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "call");
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Exclude-Cache", "true");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "action", "call");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Fetch-Exclude-Cache", "true");
 
 	/*
 	if (stream->param_event) {
@@ -549,9 +549,9 @@ SWITCH_STANDARD_API(kz_contact_fun)
 
 	/*
 	if (session) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
 	} else if (stream->param_event && (var = switch_event_get_header(stream->param_event, "ent_originate_aleg_uuid")) != NULL) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", var);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", var);
 	}
 	*/
 

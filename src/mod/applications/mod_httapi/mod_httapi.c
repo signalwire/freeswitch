@@ -344,7 +344,7 @@ static switch_status_t parse_get_var(const char *tag_name, client_t *client, swi
 		(!client->profile->var_params.get_var_list || switch_event_check_permission_list(client->profile->var_params.get_var_list, var))) {
 		const char *vval = switch_channel_get_variable(client->channel, var);
 		if (vval) {
-			switch_event_add_header_string(switch_true(perm) ? client->params : client->one_time_params, SWITCH_STACK_BOTTOM, var, vval);
+			switch_event_add_header_string_dup(switch_true(perm) ? client->params : client->one_time_params, SWITCH_STACK_BOTTOM, var, vval);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "variable %s permission denied!\n", var);
@@ -600,8 +600,8 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 			status = switch_ivr_play_and_detect_speech(client->session, file, sp_engine, sp_grammar, &result, input_timeout, args);
 
 			if (!zstr(result)) {
-				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, result);
-				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "detected_speech");
+				switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, name, result);
+				switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "detected_speech");
 				submit = 1;
 				break;
 			}
@@ -631,8 +631,8 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 		if (status == SWITCH_STATUS_BREAK) {
 			if (error_file) {
 				switch_ivr_play_file(client->session, NULL, error_file, &nullargs);
-				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, "invalid");
-				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "invalid");
+				switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, name, "invalid");
+				switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "invalid");
 			}
 			status = SWITCH_STATUS_SUCCESS;
 		} else if (status == SWITCH_STATUS_FOUND) {
@@ -658,8 +658,8 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 						}
 					}
 				}
-				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, name, client->matching_action_binding->match_digits);
-				switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "dtmf");
+				switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, name, client->matching_action_binding->match_digits);
+				switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "input_type", "dtmf");
 			}
 
 			if (client->matching_action_binding->action) {
@@ -693,7 +693,7 @@ static switch_status_t parse_playback(const char *tag_name, client_t *client, sw
 				status = SWITCH_STATUS_FALSE;
 
 			} else {
-				switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
+				switch_event_add_header_string_dup(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
 			}
 		}
 	}
@@ -807,12 +807,12 @@ static switch_status_t parse_sms(const char *tag_name, client_t *client, switch_
 	const char *to = switch_xml_attr(tag, "to");
 
 	if (to && switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", from_proto);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", to_proto);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", from_proto);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to_proto", to_proto);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", switch_channel_get_variable(client->channel, "caller_id_number"));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", switch_channel_get_variable(client->channel, "caller_id_number"));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to", to);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
 
 		if (body) {
 			switch_event_add_body(event, "%s", body);
@@ -1105,12 +1105,12 @@ static switch_status_t parse_record(const char *tag_name, client_t *client, swit
 	}
 
 	if (sub_action) {
-		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
+		switch_event_add_header_string_dup(client->params, SWITCH_STACK_BOTTOM, "url", sub_action);
 	}
 
 	if (!http && !zstr(tmp_record_path) && switch_file_exists(tmp_record_path, client->pool) == SWITCH_STATUS_SUCCESS) {
 		char *key = switch_core_sprintf(client->pool, "attach_file:%s:%s.%s", name, fname, ext);
-		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, key, tmp_record_path);
+		switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, key, tmp_record_path);
 	}
 
  end:
@@ -1128,11 +1128,11 @@ static switch_status_t parse_common(const char *tag_name, client_t *client, swit
 	const char *tmp_action = switch_xml_attr(tag, "temp-action");
 
 	if (action) {
-		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", action);
+		switch_event_add_header_string_dup(client->params, SWITCH_STACK_BOTTOM, "url", action);
 	}
 
 	if (tmp_action) {
-		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "url", tmp_action);
+		switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "url", tmp_action);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1164,7 +1164,7 @@ static switch_status_t parse_xml(client_t *client)
 							if (zstr(val)) {
 								val = NULL;
 							}
-							switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, tag->name, val);
+							switch_event_add_header_string_dup(client->params, SWITCH_STACK_BOTTOM, tag->name, val);
 						}
 						tag = tag->ordered;
 					}
@@ -1275,7 +1275,7 @@ static size_t get_header_callback(void *ptr, size_t size, size_t nmemb, void *us
 			*cr = '\0';
 		}
 
-		switch_event_add_header_string(client->headers, SWITCH_STACK_BOTTOM, header, val);
+		switch_event_add_header_string_dup(client->headers, SWITCH_STACK_BOTTOM, header, val);
 	}
 
 	switch_safe_free(header);
@@ -1383,7 +1383,7 @@ static client_t *client_create(switch_core_session_t *session, const char *profi
 	switch_event_create(&client->one_time_params, SWITCH_EVENT_CLONE);
 	client->one_time_params->flags |= EF_UNIQ_HEADERS;
 
-	switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "hostname", switch_core_get_switchname());
+	switch_event_add_header_string_dup(client->params, SWITCH_STACK_BOTTOM, "hostname", switch_core_get_switchname());
 
 	return client;
 }
@@ -1459,12 +1459,12 @@ static switch_status_t httapi_sync(client_t *client)
 
 	if (!(url = switch_event_get_header(client->params, "url"))) {
 		url = client->profile->url;
-		switch_event_add_header_string(client->params, SWITCH_STACK_BOTTOM, "url", url);
+		switch_event_add_header_string_dup(client->params, SWITCH_STACK_BOTTOM, "url", url);
 	}
 
 	get_style_method = method ? strcasecmp(method, "post") : 1;
 
-	switch_event_add_header_string(client->params, SWITCH_STACK_TOP, "session_id", session_id);
+	switch_event_add_header_string_dup(client->params, SWITCH_STACK_TOP, "session_id", session_id);
 
 	dynamic_url = switch_event_expand_headers(client->params, url);
 
@@ -1958,7 +1958,7 @@ static switch_status_t do_config(void)
 								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
 
 								if (name) {
-									switch_event_add_header_string(profile->var_params.set_var_list, SWITCH_STACK_BOTTOM, name, type);
+									switch_event_add_header_string_dup(profile->var_params.set_var_list, SWITCH_STACK_BOTTOM, name, type);
 								}
 							}
 						}
@@ -1986,7 +1986,7 @@ static switch_status_t do_config(void)
 								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
 
 								if (name) {
-									switch_event_add_header_string(profile->var_params.get_var_list, SWITCH_STACK_BOTTOM, name, type);
+									switch_event_add_header_string_dup(profile->var_params.get_var_list, SWITCH_STACK_BOTTOM, name, type);
 								}
 							}
 						}
@@ -2016,7 +2016,7 @@ static switch_status_t do_config(void)
 								if (zstr(type)) type = profile->dial_params.default_allow ? "deny" : "allow";
 
 								if (name) {
-									switch_event_add_header_string(profile->dial_params.app_list, SWITCH_STACK_BOTTOM, name, type);
+									switch_event_add_header_string_dup(profile->dial_params.app_list, SWITCH_STACK_BOTTOM, name, type);
 								}
 							}
 						}
@@ -2045,7 +2045,7 @@ static switch_status_t do_config(void)
 								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
 
 								if (name) {
-									switch_event_add_header_string(profile->var_params.expand_var_list, SWITCH_STACK_BOTTOM, name, type);
+									switch_event_add_header_string_dup(profile->var_params.expand_var_list, SWITCH_STACK_BOTTOM, name, type);
 								}
 							}
 						}
@@ -2068,7 +2068,7 @@ static switch_status_t do_config(void)
 								if (zstr(type)) type = profile->var_params.default_allow ? "deny" : "allow";
 
 								if (name) {
-									switch_event_add_header_string(profile->var_params.api_list, SWITCH_STACK_BOTTOM, name, type);
+									switch_event_add_header_string_dup(profile->var_params.api_list, SWITCH_STACK_BOTTOM, name, type);
 								}
 							}
 						}
@@ -2207,24 +2207,24 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		switch_channel_event_set_extended_data(channel, client->one_time_params);
 	}
 
-	switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "exiting", "true");
+	switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "exiting", "true");
 
 	if (client->record.file) {
 		char *key = switch_core_sprintf(client->pool, "attach_file:%s:%s.wav", client->record.name, switch_core_session_get_uuid(session));
 		switch_ivr_stop_record_session(client->session, client->record.file);
-		switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, key, client->record.file);
+		switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, key, client->record.file);
 	}
 
 	var = switch_event_get_header(client->params, "url");
 
 	if (var && client->record.action) {
 		if (strcmp(var, client->record.action)) {
-			switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "url", client->record.action);
+			switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "url", client->record.action);
 			httapi_sync(client);
 			if (client->profile->perms.extended_data) {
 				switch_channel_event_set_extended_data(channel, client->one_time_params);
 			}
-			switch_event_add_header_string(client->one_time_params, SWITCH_STACK_BOTTOM, "exiting", "true");
+			switch_event_add_header_string_dup(client->one_time_params, SWITCH_STACK_BOTTOM, "exiting", "true");
 		}
 	}
 
@@ -2276,7 +2276,7 @@ SWITCH_STANDARD_APP(httapi_function)
 				switch_event_create(&params, SWITCH_EVENT_CLONE);
 				params->flags |= EF_UNIQ_HEADERS;
 			}
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "url", url);
+			switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "url", url);
 		}
 	}
 

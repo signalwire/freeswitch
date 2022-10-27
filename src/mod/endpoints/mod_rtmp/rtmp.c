@@ -218,7 +218,7 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
 
 	switch_event_create(&locate_params, SWITCH_EVENT_GENERAL);
 	switch_assert(locate_params);
-	switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "source", "mod_rtmp");
+	switch_event_add_header_string_dup(locate_params, SWITCH_STACK_BOTTOM, "source", "mod_rtmp");
 
 	/* Locate user */
 	if (switch_xml_locate_user_merged("id", user, domain, NULL, &xml, locate_params) != SWITCH_STATUS_SUCCESS) {
@@ -313,7 +313,7 @@ switch_status_t amf_object_to_event(amf0_data *obj, switch_event_t **event)
 				if (!strcmp(name, "_body")) {
 					switch_event_add_body(*event, "%s", value);
 				} else {
-					switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, value);
+					switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, name, value);
 				}
 			}
 		}
@@ -372,7 +372,7 @@ void rtmp_get_user_variables(switch_event_t **event, switch_core_session_t *sess
 	if ((he = switch_channel_variable_first(channel))) {
 		for (; he; he = he->next) {
 			if (!strncmp(he->name, RTMP_USER_VARIABLE_PREFIX, strlen(RTMP_USER_VARIABLE_PREFIX))) {
-				switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, he->name, he->value);
+				switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, he->name, he->value);
 			}
 		}
 		switch_channel_variable_last(channel);
@@ -391,7 +391,7 @@ void rtmp_get_user_variables_event(switch_event_t **event, switch_event_t *var_e
 	if ((he = var_event->headers)) {
 		for (; he; he = he->next) {
 			if (!strncmp(he->name, RTMP_USER_VARIABLE_PREFIX, strlen(RTMP_USER_VARIABLE_PREFIX))) {
-				switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, he->name, he->value);
+				switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, he->name, he->value);
 			}
 		}
 	}
@@ -445,7 +445,7 @@ void rtmp_send_incoming_call(switch_core_session_t *session, switch_event_t *var
 
 	if (event) {
 		if (tech_pvt->has_video) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "want_video", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "want_video", "true");
 		}
 		amf_event_to_object(&obj, event);
 		switch_event_destroy(&event);

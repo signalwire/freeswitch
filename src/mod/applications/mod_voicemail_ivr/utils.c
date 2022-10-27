@@ -155,7 +155,7 @@ void append_event_message(switch_core_session_t *session, vmivr_profile_t *profi
 	switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-Message-Type", "%s", "new");
 	switch_event_add_header(phrase_params, SWITCH_STACK_BOTTOM, "VM-Message-Number", "%"SWITCH_SIZE_T_FMT, current_msg);
 
-	switch_event_add_header_string(phrase_params, SWITCH_STACK_BOTTOM, "VM-Message-Private-Local-Copy", "False");
+	switch_event_add_header_string_dup(phrase_params, SWITCH_STACK_BOTTOM, "VM-Message-Private-Local-Copy", "False");
 
 	switch_safe_free(apicmd);
 }

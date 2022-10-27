@@ -72,11 +72,11 @@ void conference_member_bind_controls(conference_member_t *member, const char *co
 	int i;
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Name", member->conference->name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Conf-Profile", member->conference->profile_name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Action", "request-controls");
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Controls", controls);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(member->session));
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Conf-Name", member->conference->name);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Conf-Profile", member->conference->profile_name);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Action", "request-controls");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Controls", controls);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(member->session));
 
 	if (!(cxml = switch_xml_open_cfg(mod_conference_cf_name, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", mod_conference_cf_name);
@@ -956,7 +956,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 		if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
 			switch_event_fire(&event);
 		}
 
@@ -1152,18 +1152,18 @@ void conference_member_set_floor_holder(conference_obj_t *conference, conference
 	if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "floor-change");
 		if (old_id) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", old_id);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-ID", "none");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Old-ID", "none");
 		}
 
 		if (conference->floor_holder) {
 			conference_member_add_event_data(member, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", conference->floor_holder);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
 		}
 
 		switch_event_fire(&event);
@@ -1344,7 +1344,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 		if (test_eflag(conference, EFLAG_DEL_MEMBER) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
 			switch_event_fire(&event);
 		}
 	}

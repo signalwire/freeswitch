@@ -290,7 +290,7 @@ static switch_status_t input_handler_on_dtmf(switch_core_session_t *session, con
 				if (!components_to_remove) {
 					switch_event_create_subclass(&components_to_remove, SWITCH_EVENT_CLONE, NULL);
 				}
-				switch_event_add_header_string(components_to_remove, SWITCH_STACK_BOTTOM, "done", RAYO_JID(component));
+				switch_event_add_header_string_dup(components_to_remove, SWITCH_STACK_BOTTOM, "done", RAYO_JID(component));
 			}
 		}
 
@@ -338,7 +338,7 @@ static switch_bool_t input_handler_bug_callback(switch_media_bug_t *bug, void *u
 					if (!components_to_remove) {
 						switch_event_create_subclass(&components_to_remove, SWITCH_EVENT_CLONE, NULL);
 					}
-					switch_event_add_header_string(components_to_remove, SWITCH_STACK_BOTTOM, "done", RAYO_JID(component));
+					switch_event_add_header_string_dup(components_to_remove, SWITCH_STACK_BOTTOM, "done", RAYO_JID(component));
 				}
 			}
 

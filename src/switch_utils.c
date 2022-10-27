@@ -4218,7 +4218,7 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 		name = q;
 		if ((val = strchr(name, '='))) {
 			*val++ = '\0';
-			switch_event_add_header_string(request->headers, SWITCH_STACK_BOTTOM, name, val);
+			switch_event_add_header_string_dup(request->headers, SWITCH_STACK_BOTTOM, name, val);
 		}
 		q = next;
 	} while (q);
@@ -4366,7 +4366,7 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 
 		if (len && *(value + len - 1) == '\r') *(value + len - 1) = '\0';
 
-		switch_event_add_header_string(request->headers, SWITCH_STACK_BOTTOM, header, value);
+		switch_event_add_header_string_dup(request->headers, SWITCH_STACK_BOTTOM, header, value);
 
 		if (!strncasecmp(header, "User-Agent", 10)) {
 			request->user_agent = value;

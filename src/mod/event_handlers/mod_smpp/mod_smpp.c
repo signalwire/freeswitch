@@ -91,9 +91,9 @@ SWITCH_STANDARD_APP(mod_smpp_app_send_function)
 	/* Cycle through all of the channel headers, and ones with 'smpp_' prefix copy over without the prefix */
 	for ( chan_var = switch_channel_variable_first(channel); chan_var; chan_var = chan_var->next) {
 		if ( !strncmp(chan_var->name, "smpp_", 5) ) {
-			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, chan_var->name + 5, chan_var->value);
+			switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, chan_var->name + 5, chan_var->value);
 		} else {
-			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, chan_var->name, chan_var->value);
+			switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, chan_var->name, chan_var->value);
 		}
 	}
 
@@ -138,8 +138,8 @@ SWITCH_STANDARD_API(mod_smpp_send_api)
 		switch_goto_status(SWITCH_STATUS_GENERR, done);
 	}
 
-	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "to_user", argv[1]);
-	switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, "from_user", argv[2]);
+	switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, "to_user", argv[1]);
+	switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, "from_user", argv[2]);
 	switch_event_set_body(message, argv[3]);
 
 	if (mod_smpp_gateway_send_message(gateway, message) != SWITCH_STATUS_SUCCESS) {

@@ -241,7 +241,7 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	}
 
 	if (!strcasecmp(argv[i], "xml")) {
-		switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "xml", "true");
+		switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "xml", "true");
 		i++;
 		xml++;
 	}

@@ -1842,12 +1842,12 @@ static switch_status_t compat_chat_send(const char *proto, const char *from, con
 	switch_status_t status;
 
 	if (switch_event_create(&message_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "from", from);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "to", to);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "from", from);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "to", to);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "type", type);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
 
 		if (body) {
 			switch_event_add_body(message_event, "%s", body);
@@ -2836,67 +2836,67 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 	if (status == SWITCH_STATUS_SUCCESS) {
 		if (is_alarm) {
 			snprintf(value, sizeof(value) - 1, "%d", alarm_code);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm_code", value);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alarm_message", alarm_message);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alarm_code", value);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alarm_message", alarm_message);
 		}
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "interface_name", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "interface_id", tech_pvt->id);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "interface_name", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "interface_id", tech_pvt->id);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->active);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "active", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "active", value);
 		if (!tech_pvt->network_creg_not_supported) {
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->not_registered);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "not_registered", value);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "not_registered", value);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->home_network_registered);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "home_network_registered", value);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "home_network_registered", value);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->roaming_registered);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "roaming_registered", value);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "roaming_registered", value);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "not_registered", "N/A");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "home_network_registered", "N/A");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "roaming_registered", "N/A");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "not_registered", "N/A");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "home_network_registered", "N/A");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "roaming_registered", "N/A");
 		}
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "got_signal", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "got_signal", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "signal_strength", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "signal_strength", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "running", value);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subscriber_number", tech_pvt->subscriber_number);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_manufacturer", tech_pvt->device_mfg);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_model", tech_pvt->device_model);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_firmware", tech_pvt->device_firmware);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "operator", tech_pvt->operator_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imei", tech_pvt->imei);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imsi", tech_pvt->imsi);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "running", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "subscriber_number", tech_pvt->subscriber_number);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "device_manufacturer", tech_pvt->device_mfg);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "device_model", tech_pvt->device_model);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "device_firmware", tech_pvt->device_firmware);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "operator", tech_pvt->operator_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "imei", tech_pvt->imei);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "imsi", tech_pvt->imsi);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "controldev_dead", value);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "controldevice_name", tech_pvt->controldevice_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "controldev_dead", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "controldevice_name", tech_pvt->controldevice_name);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->no_sound);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "no_sound", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "no_sound", value);
 		snprintf(value, sizeof(value) - 1, "%f", tech_pvt->playback_boost);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "playback_boost", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "playback_boost", value);
 		snprintf(value, sizeof(value) - 1, "%f", tech_pvt->capture_boost);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "capture_boost", value);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialplan", tech_pvt->dialplan);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "context", tech_pvt->context);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "destination", tech_pvt->destination);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "capture_boost", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "dialplan", tech_pvt->dialplan);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "context", tech_pvt->context);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "destination", tech_pvt->destination);
 		snprintf(value, sizeof(value) - 1, "%lu", tech_pvt->ib_calls);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ib_calls", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "ib_calls", value);
 		snprintf(value, sizeof(value) - 1, "%lu", tech_pvt->ob_calls);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ob_calls", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "ob_calls", value);
 		snprintf(value, sizeof(value) - 1, "%lu", tech_pvt->ib_failed_calls);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ib_failed_calls", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "ib_failed_calls", value);
 		snprintf(value, sizeof(value) - 1, "%lu", tech_pvt->ob_failed_calls);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ob_failed_calls", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "ob_failed_calls", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->interface_state);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "interface_state", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "interface_state", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->phone_callflow);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "phone_callflow", value);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "session_uuid_str", tech_pvt->session_uuid_str);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "phone_callflow", value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "session_uuid_str", tech_pvt->session_uuid_str);
 		if (strlen(tech_pvt->session_uuid_str)) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "during-call", "true");
 		} else {				//no session
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "during-call", "false");
 		}
 		if (channel) {
 			switch_channel_event_set_data(channel, event);
@@ -2932,20 +2932,20 @@ int sms_incoming(private_t *tech_pvt)
 	NOTICA("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=|%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
 					tech_pvt->sms_body);
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "userdataheader", tech_pvt->sms_userdataheader);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "userdataheader", tech_pvt->sms_userdataheader);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
 		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
 		switch_core_chat_send("GLOBAL", event);	/* mod_sms */
 	} else {
@@ -2972,21 +2972,21 @@ int ussd_incoming(private_t *tech_pvt)
 
 /* mod_sms begin */
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", "ussd");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", "ussd");
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->ussd_dcs);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->ussd_dcs);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
 		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "USSD MESSAGE");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", "ussd");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "subject", "USSD MESSAGE");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from_user", "ussd");
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ussd_status", "%d", tech_pvt->ussd_status);
 		switch_event_add_body(event, "%s\n", tech_pvt->ussd_message);

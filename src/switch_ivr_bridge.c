@@ -1235,15 +1235,15 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		/* fire events that will change the data table from "show channels" */
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(other_session));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(other_session));
 			switch_event_fire(&event);
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(other_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", "uuid_bridge");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 			switch_event_fire(&event);
 		}
 
@@ -1377,8 +1377,8 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_t *other_session;
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", msg.string_arg);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", msg.string_arg);
 			switch_channel_event_set_data(channel, event);
 			if ((other_session = switch_core_session_locate(msg.string_arg))) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
@@ -1479,8 +1479,8 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
 				switch_event_add_presence_data_cols(other_channel, event, "Bridge-B-PD-");
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
@@ -1492,8 +1492,8 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", uuid);
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
 			}
@@ -1569,15 +1569,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	/* fire events that will change the data table from "show channels" */
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(caller_channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(peer_session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(peer_session));
 		switch_event_fire(&event);
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(peer_channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application", "signal_bridge");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Application-Data", switch_core_session_get_uuid(session));
 		switch_event_fire(&event);
 	}
 
@@ -1687,8 +1687,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_channel_set_bridge_time(peer_channel);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_add_presence_data_cols(peer_channel, event, "Bridge-B-PD-");
 			switch_event_fire(&event);
@@ -1877,8 +1877,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(peer_session));
 
 	if (br && switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", switch_core_session_get_uuid(peer_session));
 		switch_channel_event_set_data(caller_channel, event);
 		switch_event_add_presence_data_cols(peer_channel, event, "Bridge-B-PD-");
 		switch_event_fire(&event);

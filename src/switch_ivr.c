@@ -3709,8 +3709,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session,
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(hint_data);
 
-	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "macro_name", "say_app");
-	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
+	switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "macro_name", "say_app");
+	switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
 	switch_channel_event_set_data(channel, hint_data);
 
 	if (switch_xml_locate_language(&xml, &cfg, hint_data, &language, &phrases, &macros, chan_lang) != SWITCH_STATUS_SUCCESS) {
@@ -3817,8 +3817,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_string(switch_core_session_t *ses
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(hint_data);
 
-	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "macro_name", "say_app");
-	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
+	switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "macro_name", "say_app");
+	switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
 
 	if (channel) {
 		switch_channel_event_set_data(channel, hint_data);
@@ -4322,7 +4322,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_create_message_reply(switch_event_t *
 		abort();
 	}
 
-	switch_event_add_header_string(*reply, SWITCH_STACK_BOTTOM, "proto", new_proto);
+	switch_event_add_header_string_dup(*reply, SWITCH_STACK_BOTTOM, "proto", new_proto);
 
 	return status;
 }
@@ -4340,11 +4340,11 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 	switch_assert(params);
 
 	if ( !zstr(domain_name) ) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
 	}
 
 	if ( !zstr(exten_name) ) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "exten", exten_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "exten", exten_name);
 	}
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {

@@ -185,13 +185,13 @@ void conference_send_notify(conference_obj_t *conference, const char *status, co
 	if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
 		event->flags |= EF_UNIQ_HEADERS;
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-name", name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
 
 		if (final) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "final", "true");
 		}
 
 
@@ -264,7 +264,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			last_heartbeat_time = now;
 			switch_event_create_subclass(&heartbeat_event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 			conference_event_add_data(conference, heartbeat_event);
-			switch_event_add_header_string(heartbeat_event, SWITCH_STACK_BOTTOM, "Action", "conference-heartbeat");
+			switch_event_add_header_string_dup(heartbeat_event, SWITCH_STACK_BOTTOM, "Action", "conference-heartbeat");
 			switch_event_fire(&heartbeat_event);
 		}
 
@@ -862,7 +862,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 	switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 	conference_event_add_data(conference, event);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-destroy");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "conference-destroy");
 	switch_event_fire(&event);
 	
 	switch_mutex_lock(conference->member_mutex);
@@ -1703,10 +1703,10 @@ void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *o
 		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(call->conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Peer-UUID", peer_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-UUID", call->uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Peer-UUID", peer_uuid);
 			switch_event_fire(&event);
 		}
 
@@ -1783,7 +1783,7 @@ switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	if (call_uuid) {
 		call->uuid = strdup(call_uuid);
 		if (call->var_event) {
-			switch_event_add_header_string(call->var_event, SWITCH_STACK_BOTTOM, "conference_bgdial_jobid", call->uuid);
+			switch_event_add_header_string_dup(call->var_event, SWITCH_STACK_BOTTOM, "conference_bgdial_jobid", call->uuid);
 		}
 	}
 
@@ -2026,9 +2026,9 @@ SWITCH_STANDARD_APP(conference_function)
 
 	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conference_name", conference_name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "conference_name", conference_name);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
 
 	/* Open the config from the xml registry */
 	if (!(cxml = switch_xml_open_cfg(mod_conference_cf_name, &cfg, params))) {
@@ -2124,9 +2124,9 @@ SWITCH_STANDARD_APP(conference_function)
 					/* send event */
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 					switch_channel_event_set_basic_data(channel, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", profile_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "rejected-join-only");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", profile_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "rejected-join-only");
 					switch_event_fire(&event);
 					/* check what sound file to play */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Cannot create a conference since join-only flag is set\n");
@@ -2675,7 +2675,7 @@ void conference_set_variable(conference_obj_t *conference, const char *var, cons
 	if (!val) {
 		switch_event_del_header(conference->variables, var);
 	} else {
-		switch_event_add_header_string(conference->variables, SWITCH_STACK_BOTTOM, var, val);
+		switch_event_add_header_string_dup(conference->variables, SWITCH_STACK_BOTTOM, var, val);
 	}
 	switch_mutex_unlock(conference->flag_mutex);
 }
@@ -3846,7 +3846,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	if (conference->verbose_events && channel) {
 		switch_channel_event_set_data(channel, event);
 	}
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
 	switch_event_fire(&event);
 
  end:
@@ -3864,29 +3864,29 @@ void conference_send_presence(conference_obj_t *conference)
 	switch_event_t *event;
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 		if (strchr(conference->name, '@')) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", conference->name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", conference->name);
 		} else {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
 
 		if (conference->count) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", conference->count == 1 ? "outbound" : "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction", conference->count == 1 ? "outbound" : "inbound");
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Inactive");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Inactive");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 		}
 
 
@@ -3938,7 +3938,7 @@ void send_presence(switch_event_types_t id)
 
 	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "presence", "true");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "presence", "true");
 
 
 	/* Open the config from the xml registry */
@@ -3954,12 +3954,12 @@ void send_presence(switch_event_types_t id)
 			switch_event_t *event;
 
 			if (name && switch_event_create(&event, id) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", status ? status : "Available");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", status ? status : "Available");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 				switch_event_fire(&event);
 			}
 		}

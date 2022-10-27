@@ -147,8 +147,8 @@ static void check_ip(void)
 	} else if (strcmp(hostname, runtime.hostname)) {
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "hostname-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname ? hostname : "nil");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "new-hostname", runtime.hostname);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname ? hostname : "nil");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "new-hostname", runtime.hostname);
 			switch_event_fire(&event);
 		}
 
@@ -194,12 +194,12 @@ static void check_ip(void)
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "network-address-change");
 			if (!ok4) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-previous-v4", old_ip4);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", main_ip4);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-address-previous-v4", old_ip4);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", main_ip4);
 			}
 			if (!ok6) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-previous-v6", old_ip6);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v6", main_ip6);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-address-previous-v6", old_ip6);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-address-change-v6", main_ip6);
 			}
 			switch_event_fire(&event);
 		}
@@ -209,11 +209,11 @@ static void check_ip(void)
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "network-outage");
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-status-v4", ok4 == 2 ? "disconnected" : "active");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-v4", main_ip4);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-status-v4", ok4 == 2 ? "disconnected" : "active");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-address-v4", main_ip4);
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-status-v6", ok6 == 2 ? "disconnected" : "active");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-v6", main_ip6);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-status-v6", ok6 == 2 ? "disconnected" : "active");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "network-address-v6", main_ip6);
 
 			switch_event_fire(&event);
 		}
@@ -451,7 +451,7 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
+			switch_event_add_header_string_dup(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
 			free(v);
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
@@ -1637,8 +1637,8 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 						switch_event_create(&my_params, SWITCH_EVENT_GENERAL);
 						switch_assert(my_params);
-						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
-						switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "network-list");
+						switch_event_add_header_string_dup(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
+						switch_event_add_header_string_dup(my_params, SWITCH_STACK_BOTTOM, "purpose", "network-list");
 
 						if (switch_xml_locate_domain(domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate domain %s\n", domain);

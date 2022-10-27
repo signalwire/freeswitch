@@ -61,7 +61,7 @@ SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const ch
 		const char *key = switch_xml_attr_soft(node, keyname);
 		const char *value = switch_xml_attr_soft(node, valuename);
 		if (key && value) {
-			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, key, value);
+			switch_event_add_header_string_dup(*event, SWITCH_STACK_BOTTOM, key, value);
 			count++;
 		}
 	}

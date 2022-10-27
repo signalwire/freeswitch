@@ -197,9 +197,9 @@ SWITCH_STANDARD_APP(sonar_app)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_recv", "%d", ph.received);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_lost", "%d", lost);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lost_rate", "%2.2f%%", lost * 1.0 / loops);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "destination_number",
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "destination_number",
 			switch_channel_get_variable(channel, "ping_destination_number"));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sonar_ping_ref",
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "sonar_ping_ref",
 			switch_channel_get_variable(channel, "sonar_ping_ref"));
 
 		verbose_event = switch_channel_get_variable(channel, "sonar_channel_event");

@@ -45,13 +45,13 @@ FST_TEST_BEGIN(benchmark)
 
 #ifndef BENCHMARK
   for ( x = 0; x < loops; x++) {
-    status = switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, index[x], index[x]);
+    status = switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, index[x], index[x]);
     fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Failed to add header to event");
   }
 #else 
   small_start_ts = switch_time_now();
   for ( x = 0; x < loops; x++) {
-    if ( switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, index[x], index[x]) != SWITCH_STATUS_SUCCESS) {
+    if ( switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, index[x], index[x]) != SWITCH_STATUS_SUCCESS) {
       fst_fail("Failed to add header to event");
     }
   }

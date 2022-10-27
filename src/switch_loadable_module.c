@@ -172,10 +172,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Endpoint '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.endpoint_hash, ptr->interface_name, (const void *) ptr);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "endpoint");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "endpoint");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 					
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -243,11 +243,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					}
 
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "codec");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "codec");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
 
 						if (!event_hash) {
 							switch_event_fire(&event);
@@ -272,10 +272,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Dialplan '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -300,10 +300,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Timer '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "timer");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "timer");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -328,12 +328,12 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -358,12 +358,12 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -388,12 +388,12 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "api");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -418,12 +418,12 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding JSON API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "json_api");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "json_api");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -454,11 +454,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				for (i = 0; ptr->extens[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "file");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->extens[i]);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "file");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->extens[i]);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
 
 						if (!event_hash) {
 							switch_event_fire(&event);
@@ -499,11 +499,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				for (i = 0; ptr->prefixes[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding dsn prefix '%s'\n", ptr->prefixes[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "database");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->prefixes[i]);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "database");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->prefixes[i]);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "module", new_module->module_interface->module_name);
 
 						if (!event_hash) {
 							switch_event_fire(&event);
@@ -536,10 +536,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "speech");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "speech");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -564,10 +564,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding ASR interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "asr");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "asr");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -592,10 +592,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "directory");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "directory");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -620,10 +620,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "chat");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "chat");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -648,10 +648,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "say");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "say");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 					if (!event_hash) {
 						switch_event_fire(&event);
@@ -682,10 +682,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 									  "Adding Management interface '%s' OID[%s.%s]\n", key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
 					switch_core_hash_insert(loadable_modules.management_hash, ptr->relative_oid, (const void *) ptr);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "management");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->relative_oid);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "management");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->relative_oid);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 						if (!event_hash) {
 							switch_event_fire(&event);
@@ -716,10 +716,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 									  "Adding Limit interface '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.limit_hash, ptr->interface_name, (const void *) ptr);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "limit");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "limit");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 						if (!event_hash) {
 							switch_event_fire(&event);
@@ -738,10 +738,10 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 	if (!added) {
 		if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "generic");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", new_module->key);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "generic");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", new_module->key);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
 
 			if (!event_hash) {
 				switch_event_fire(&event);
@@ -816,7 +816,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 
 	if (!(proto = switch_event_get_header(message_event, "proto"))) {
 		proto = "global";
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
 	}
 
 	replying = switch_event_get_header(message_event, "replying");
@@ -871,12 +871,12 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 
 	if ( switch_true(switch_event_get_header(message_event, "blocking")) ) {
 		if (status == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "false");
+			switch_event_add_header_string_dup(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "false");
 		} else {
-			switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
+			switch_event_add_header_string_dup(dup, SWITCH_STACK_BOTTOM, "Delivery-Failure", "true");
 		}
 	} else {
-		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "Nonblocking-Delivery", "true");
+		switch_event_add_header_string_dup(dup, SWITCH_STACK_BOTTOM, "Nonblocking-Delivery", "true");
 	}
 
 	switch_event_fire(&dup);
@@ -1035,15 +1035,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 	switch_status_t status;
 
 	if (switch_event_create(&message_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "from", from);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "to", to);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "type", type);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "from", from);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "to", to);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "subject", subject);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "type", type);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "hint", hint);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "skip_global_process", "true");
 		if (blocking) {
-			switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "blocking", "true");
+			switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "blocking", "true");
 		}
 
 		if (body) {
@@ -1054,7 +1054,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send_args(const char *dest_prot
 	}
 
 	if (dest_proto) {
-		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
+		switch_event_add_header_string_dup(message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
 	}
 
 
@@ -1077,7 +1077,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_send(const char *dest_proto, sw
 	switch_event_dup(&dup, message_event);
 
 	if (dest_proto) {
-		switch_event_add_header_string(dup, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
+		switch_event_add_header_string_dup(dup, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
 	}
 
 	chat_queue_message(&dup);
@@ -1089,7 +1089,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_chat_deliver(const char *dest_proto,
 {
 
 	if (dest_proto) {
-		switch_event_add_header_string(*message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
+		switch_event_add_header_string_dup(*message_event, SWITCH_STACK_BOTTOM, "dest_proto", dest_proto);
 	}
 
 	chat_queue_message(message_event);
@@ -1122,8 +1122,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "endpoint");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "endpoint");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1176,9 +1176,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 						}
 					}
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "codec");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "codec");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
 						switch_event_fire(&event);
 						removed++;
 					}
@@ -1194,8 +1194,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Dialplan '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1211,8 +1211,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Timer '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "timer");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "timer");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1236,10 +1236,10 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				}
 
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1263,10 +1263,10 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				}
 
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "application");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->short_desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1293,12 +1293,12 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "api");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", old_module->key);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", old_module->filename);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", old_module->key);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "filename", old_module->filename);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1325,10 +1325,10 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "json_api");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "json_api");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1357,9 +1357,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				for (i = 0; ptr->extens[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "file");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->extens[i]);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "file");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->extens[i]);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
 						switch_event_fire(&event);
 						removed++;
 					}
@@ -1409,9 +1409,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				for (i = 0; ptr->prefixes[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting dsn prefix '%s'\n", ptr->prefixes[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "database");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->prefixes[i]);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "database");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->prefixes[i]);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "module", old_module->module_interface->module_name);
 						switch_event_fire(&event);
 						removed++;
 					}
@@ -1462,8 +1462,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Speech interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "speech");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "speech");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1489,8 +1489,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Asr interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "asr");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "asr");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1516,8 +1516,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Directory interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "directory");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "directory");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1543,8 +1543,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "chat");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "chat");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1568,8 +1568,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "say");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "say");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1587,8 +1587,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 								  "Deleting Management interface '%s' OID[%s.%s]\n", old_module->key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
 				switch_core_hash_delete(loadable_modules.management_hash, ptr->relative_oid);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "management");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->relative_oid);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "management");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->relative_oid);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1605,8 +1605,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 								  "Deleting Limit interface '%s'\n", ptr->interface_name);
 				switch_core_hash_delete(loadable_modules.limit_hash, ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "limit");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "limit");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
 					switch_event_fire(&event);
 					removed++;
 				}
@@ -1616,8 +1616,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 	if (!removed) {
 		if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "generic");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", old_module->key);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "type", "generic");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "name", old_module->key);
 			switch_event_fire(&event);
 			removed++;
 		}
@@ -2951,10 +2951,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 
 	if (stream->param_event) {
 		if (cmd_used && *cmd_used) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
+			switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command", cmd_used);
 		}
 		if (arg_used && *arg_used) {
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
+			switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg_used);
 		}
 	}
 

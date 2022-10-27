@@ -447,8 +447,8 @@ static cid_data_t *do_whitepages_lookup(switch_memory_pool_t *pool, switch_event
 		goto done;
 	}
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-cid", num);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "whitepages-api-key", globals.whitepages_apikey);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "whitepages-cid", num);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "whitepages-api-key", globals.whitepages_apikey);
 
 	query = switch_event_expand_headers(event, "http://api.whitepages.com/reverse_phone/1.0/?phone=${whitepages-cid};api_key=${whitepages-api-key}");
 	do_lookup_url(pool, event, &xml_s, query, NULL, NULL, 0);
@@ -546,7 +546,7 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	switch_bool_t save_cache = SWITCH_FALSE;
 
 	number = string_digitsonly(pool, num);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
 	/* database always wins */
 	if (globals.odbc_dsn && globals.sql) {
@@ -705,10 +705,10 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 
 		if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 			const char *uuid = switch_channel_get_partner_uuid(channel);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
 
 			if (uuid) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
 			}
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);

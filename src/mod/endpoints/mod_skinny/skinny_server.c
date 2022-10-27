@@ -1166,7 +1166,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 
 	/* Check directory */
 	skinny_device_event(listener, &params, SWITCH_EVENT_REQUEST_PARAMS, SWITCH_EVENT_SUBCLASS_ANY);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
 
 	/* clean up all traces before adding to database */
 	skinny_lock_device_name(listener, request->data.reg.device_name);
@@ -1321,7 +1321,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 						switch_event_t *message_query_event = NULL;
 						if (switch_event_create(&message_query_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 							switch_event_add_header(message_query_event, SWITCH_STACK_BOTTOM, "Message-Account", "skinny:%s@%s", value, profile->domain);
-							switch_event_add_header_string(message_query_event, SWITCH_STACK_BOTTOM, "VM-Skinny-Profile", profile->name);
+							switch_event_add_header_string_dup(message_query_event, SWITCH_STACK_BOTTOM, "VM-Skinny-Profile", profile->name);
 							switch_event_fire(&message_query_event);
 						}
 					}

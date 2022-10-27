@@ -1034,9 +1034,9 @@ SWITCH_STANDARD_API(group_call_function)
 		switch_event_t *params;
 
 		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "group", group_name);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "group_call");
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "group", group_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "action", "group_call");
 
 		if (switch_xml_locate_group(group_name, domain, &xml, &x_domain, &x_group, params) == SWITCH_STATUS_SUCCESS) {
 			switch_xml_t x_user, x_users, x_param, x_params, my_x_user;
@@ -1119,9 +1119,9 @@ SWITCH_STANDARD_API(group_call_function)
 							switch_event_del_header(params, "dialed_user");
 							switch_event_del_header(params, "dialed_group");
 							switch_event_del_header(params, "dialed_domain");
-							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "dialed_user", id);
-							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "dialed_group", group_name);
-							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+							switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "dialed_user", id);
+							switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "dialed_group", group_name);
+							switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 							d_dest = switch_event_expand_headers(params, dest);
 						}
 					} else {
@@ -1201,8 +1201,8 @@ SWITCH_STANDARD_API(in_group_function)
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "user", user);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain);
 
 	if (switch_xml_locate_group(group, domain, &xml, &x_domain, &x_group, params) == SWITCH_STATUS_SUCCESS) {
 		switch_xml_t x_users;
@@ -1255,8 +1255,8 @@ SWITCH_STANDARD_API(domain_data_function)
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "type", type);
 
 	if (key && type && switch_xml_locate_domain(domain, params, &xml_root, &x_domain) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
@@ -1326,9 +1326,9 @@ SWITCH_STANDARD_API(user_data_function)
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "user", user);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "type", type);
 
 	if (key && type && switch_xml_locate_user_merged("id:number-alias", user, domain, NULL, &x_user, params) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
@@ -1870,18 +1870,18 @@ SWITCH_STANDARD_API(xml_locate_function)
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "section", section);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "section", section);
 
 	if (tag) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag", tag);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "tag", tag);
 	}
 
 	if (tag_attr_name) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_name", tag_attr_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "tag_attr_name", tag_attr_name);
 	}
 
 	if (tag_attr_val) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_val", tag_attr_val);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "tag_attr_val", tag_attr_val);
 	}
 
 	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
@@ -2336,7 +2336,7 @@ SWITCH_STANDARD_API(status_function)
 
 	if (format.html) {
 		/* set flag to allow refresh of webpage if web request contained kv-pair refresh=xx  */
-		switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "HTTP-REFRESH", "true");
+		switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "HTTP-REFRESH", "true");
 		if (format.api) {
 			/* "Overwrite" default "api" Content-Type: text/plain */
 			stream->write_function(stream, "Content-Type: text/html\r\n\r\n");
@@ -5393,10 +5393,10 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-UUID", job->uuid_str);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command", job->cmd);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-UUID", job->uuid_str);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command", job->cmd);
 		if (arg) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", arg);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Job-Command-Arg", arg);
 		}
 
 		switch_event_add_body(event, "%s", reply);
@@ -5800,7 +5800,7 @@ SWITCH_STANDARD_API(show_function)
 		html = holder.format->html;
 		if (html) {
 			/* set flag to allow refresh of webpage if web request contained kv-pair refresh=xx  */
-			switch_event_add_header_string(stream->param_event, SWITCH_STACK_BOTTOM, "HTTP-REFRESH", "true");
+			switch_event_add_header_string_dup(stream->param_event, SWITCH_STACK_BOTTOM, "HTTP-REFRESH", "true");
 			if (holder.format->api) {
 				/* "Overwrite" default "api" Content-Type: text/plain */
 				stream->write_function(stream, "Content-Type: text/html\r\n\r\n");
@@ -6691,7 +6691,7 @@ SWITCH_STANDARD_API(hupall_api_function)
 				if (!vars) {
 					switch_event_create(&vars, SWITCH_EVENT_CLONE);
 				}
-				switch_event_add_header_string(vars, SWITCH_STACK_BOTTOM, var, val);
+				switch_event_add_header_string_dup(vars, SWITCH_STACK_BOTTOM, var, val);
 				vars_count++;
 			}
 		}

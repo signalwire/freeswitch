@@ -81,7 +81,7 @@ void conference_video_parse_layouts(conference_obj_t *conference, int WIDTH, int
 
 	switch_event_create(&params, SWITCH_EVENT_COMMAND);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
 
 	if (!(cxml = switch_xml_open_cfg(conference->video_layout_conf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", conference->video_layout_conf);
@@ -577,7 +577,7 @@ void conference_video_scale_and_patch(mcu_layer_t *layer, switch_image_t *ximg, 
 			switch_event_t *event;
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "action", "movement-detection");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "action", "movement-detection");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "member_id", "%d", layer->member_id);
 
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "last_x", "%d", layer->manual_geometry.x);
@@ -2514,7 +2514,7 @@ void conference_video_check_avatar(conference_member_t *member, switch_bool_t fo
         switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
         conference_event_add_data(member->conference, event);
         conference_member_add_event_data(member, event);
-        switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vfi-triggered-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "vfi-triggered-member");
         switch_event_fire(&event);
 
 		switch_img_copy(member->video_mute_img, &member->avatar_png_img);
@@ -4814,16 +4814,16 @@ void conference_video_set_floor_holder(conference_obj_t *conference, conference_
 	if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "video-floor-change");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "video-floor-change");
 		if (old_id) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-ID", "%d", old_id);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-ID", "none");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Old-ID", "none");
 		}
 		if (conference->video_floor_holder) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-ID", "%d", conference->video_floor_holder);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "New-ID", "none");
 		}
 		switch_event_fire(&event);
 	}

@@ -453,7 +453,7 @@ SWITCH_DECLARE(bool) Event::addHeader(const char *header_name, const char *value
 	this_check(false);
 
 	if (event) {
-		return switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, value) == SWITCH_STATUS_SUCCESS ? true : false;
+		return switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, header_name, value) == SWITCH_STATUS_SUCCESS ? true : false;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Trying to addHeader an event that does not exist!\n");
 	}

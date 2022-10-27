@@ -132,7 +132,7 @@ static switch_status_t digit_nomatch_action_callback(switch_ivr_dmachine_match_t
 					  switch_channel_get_name(channel), match->match_digits);
 
 	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
 		if (switch_core_session_queue_event(use_session, &event) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
@@ -209,11 +209,11 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 			api = 1;
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, string, act->value);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "digits", match->match_digits);
 
 		if (exec) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute", exec == 1 ? "non-blocking" : "blocking");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute", exec == 1 ? "non-blocking" : "blocking");
 		}
 
 		if (switch_core_session_queue_event(use_session, &event) != SWITCH_STATUS_SUCCESS) {
@@ -1929,16 +1929,16 @@ SWITCH_STANDARD_APP(event_function)
 						if (!strcasecmp(var, "Event-Name")) {
 							switch_name_event(val, &event->event_id);
 							switch_event_del_header(event, var);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, var, val);
 						} else if (!strcasecmp(var, "Event-Subclass")) {
 							size_t len = strlen(val) + 1;
 							void *new = malloc(len);
 							switch_assert(new);
 							memcpy(new, val, len);
 							event->subclass_name = new;
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, var, val);
 						} else {
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, var, val);
 						}
 					}
 				}
@@ -2087,21 +2087,21 @@ SWITCH_STANDARD_API(presence_api_function)
 		}
 
 		if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "dp");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", argv[1]);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", argv[2]);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", argv[3]);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", "dp");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", argv[1]);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", argv[2]);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "status", argv[3]);
 			if (type == SWITCH_EVENT_PRESENCE_IN) {
 				if (!strncasecmp(argv[3], "cs_", 3) || switch_stristr("hangup", argv[3])) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "CS_HANGUP");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "status", "CS_HANGUP");
 				}
 			} else {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "CS_HANGUP");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "status", "CS_HANGUP");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 			switch_event_fire(&event);
 		}
@@ -2167,7 +2167,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 		/* Open the config from the xml registry */
 		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(params);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Menu-Name", name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Menu-Name", name);
 		switch_channel_event_set_data(channel, params);
 
 		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, params)) != NULL) {
@@ -3749,38 +3749,38 @@ static void pickup_send_presence(const char *key_name)
 
 	if (count > 0) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", dup_id);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", dup_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", dup_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", dup_id);
 
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d call%s)", count, count == 1 ? "" : "s");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "active");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", key_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", key_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 			switch_event_fire(&event);
 		}
 	} else {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", dup_id);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", dup_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", dup_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", dup_id);
 
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", dup_id);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", dup_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 			switch_event_fire(&event);
 		}
 	}
@@ -3826,33 +3826,33 @@ static void pickup_pres_event_handler(switch_event_t *event)
 	switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN);
 
 	if (count) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", key_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", key_name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", key_name, domain_name);
 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d call%s)", count, count == 1 ? "" : "s");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "active");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", key_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", key_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 	} else {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", key_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", PICKUP_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", key_name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", key_name, domain_name);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", key_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", key_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 
 	}
 
@@ -4148,10 +4148,10 @@ SWITCH_STANDARD_APP(pickup_function)
 
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 				const char *partner_uuid = switch_channel_get_partner_uuid(channel);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
 
 				if (partner_uuid) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", partner_uuid);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridged-To", partner_uuid);
 				}
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
@@ -4367,8 +4367,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "user_call");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "action", "user_call");
 
 	if (var_event) {
 		switch_event_merge(params, var_event);
@@ -4400,7 +4400,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				} else {
 					switch_event_del_header(var_event, pvar + 9);
 				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
+				switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
 			}
 		}
 	}
@@ -4408,8 +4408,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	dialed_user = (char *)switch_xml_attr(x_user, "id");
 
 	if (var_event) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+		switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
+		switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 		if (!zstr(dest) && !strstr(dest, "presence_id=")) {
 			switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "presence_id", "%s@%s", dialed_user, domain);
 		}
@@ -4459,8 +4459,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_assert(event);
 			}
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 			d_dest = switch_event_expand_headers(event, dest);
 			switch_event_destroy(&event);
 		}
@@ -4652,7 +4652,7 @@ static switch_status_t event_chat_send(switch_event_t *message_event)
 	if ((to = switch_event_get_header(event, "to"))) {
 		char *v;
 		if ((v = switch_core_get_variable_dup(to))) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Command", v);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Command", v);
 			free(v);
 		}
 	}
@@ -4972,7 +4972,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_OPEN)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_CLOSE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[(context->index - 1)]);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", context->argv[(context->index - 1)]);
 			switch_event_fire(&event);
 		}
 
@@ -5004,7 +5004,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 			*p = '\0';
 			if (switch_dir_make_recursive(path, SWITCH_DEFAULT_DIR_PERMS, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_FAIL) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
 					switch_event_fire(&event);
 				}
 
@@ -5019,7 +5019,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 
 	if (switch_core_file_open(&context->fh, file, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_FAIL) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
 			switch_event_fire(&event);
 		}
 
@@ -5031,7 +5031,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	}
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FILE_STRING_OPEN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", context->argv[context->index]);
 		switch_event_fire(&event);
 	}
 

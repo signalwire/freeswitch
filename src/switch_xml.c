@@ -1818,7 +1818,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 	if (!params) {
 		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(my_params);
-		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+		switch_event_add_header_string_dup(my_params, SWITCH_STACK_BOTTOM, "domain", domain_name);
 		params = my_params;
 	}
 
@@ -1848,11 +1848,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
 	}
 
 	if (group_name) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "group_name", group_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "group_name", group_name);
 	}
 
 	if (domain_name) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
 	}
 
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
@@ -2195,18 +2195,18 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 		params = my_params;
 	}
 
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "key", key);
 
 	if (user_name) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "user", user_name);
 	}
 
 	if (domain_name) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
 	}
 
 	if (ip) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "ip", ip);
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "ip", ip);
 	}
 
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
@@ -3337,7 +3337,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_language(switch_xml_t *root, s
 			*secondary++ = '\0';
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							  "language %s not found. trying %s by removing %s\n", str_language, str_language_dup, secondary);
-			switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "lang", str_language_dup);
+			switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "lang", str_language_dup);
 			status = switch_xml_locate_language_ex(root, node, params, language, phrases, macros, str_language_dup);
 		}
 		switch_safe_free(str_language_dup);

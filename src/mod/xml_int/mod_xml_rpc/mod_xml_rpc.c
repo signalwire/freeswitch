@@ -211,7 +211,7 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 				ret = HTTPWrite(r, val, (uint32_t) strlen(val));
 			}
 			/* flag to prevent running this more than once per http reply  */
-			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", strstr(val,":")+2);
+			switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "Content-Type", strstr(val,":")+2);
 			ct = switch_event_get_header(evnt, "Content-Type");
 		}
 
@@ -269,7 +269,7 @@ static abyss_bool user_attributes(const char *user, const char *domain_name,
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "number_alias", "check");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "number_alias", "check");
 
 
 	if (switch_xml_locate_user_merged("id", user, domain_name, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
@@ -883,25 +883,25 @@ abyss_bool handler_hook(TSession * r)
 		evnt = stream.param_event;
 
 		if (html) {
-			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/html");
+			switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/html");
 		} else if (text) {
-			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/plain");
+			switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/plain");
 		} else if (xml) {
-			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/xml");
+			switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "Content-Type", "text/xml");
 		}
 		if (api) {
-			switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-API", "api");
+			switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-API", "api");
 		}
-		if (fs_user)   switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
-		if (fs_domain) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
-		if (path_info) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
+		if (fs_user)   switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
+		if (fs_domain) switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
+		if (path_info) switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
 
-		if (info->host)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-HOST", info->host);
-		if (info->from)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-FROM", info->from);
-		if (info->useragent)   switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", info->useragent);
-		if (info->referer)     switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-REFERER", info->referer);
-		if (info->requestline) switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", info->requestline);
-		if (info->user)        switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-USER", info->user);
+		if (info->host)        switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-HOST", info->host);
+		if (info->from)        switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-FROM", info->from);
+		if (info->useragent)   switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", info->useragent);
+		if (info->referer)     switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-REFERER", info->referer);
+		if (info->requestline) switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", info->requestline);
+		if (info->user)        switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-USER", info->user);
 		if (info->port)        switch_event_add_header(evnt, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", info->port);
 
 		{
@@ -956,7 +956,7 @@ abyss_bool handler_hook(TSession * r)
 			/* parse query and add kv-pairs as event headers  */
 			/* a kv pair starts with '&', '+' or \0 mark the end */
 			if (query) {
-				switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-QUERY", query);
+				switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-QUERY", query);
 				qd = strdup(query);
 			} else {
 				qd = strdup(uri);
@@ -976,7 +976,7 @@ abyss_bool handler_hook(TSession * r)
 			            /* "?" is absent in url so parse uri     */
 						*((char *)uri + (next - q - 1)) = '\0';
 						query = next;
-						switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-QUERY", next);
+						switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-QUERY", next);
 						/* and strip uri                                     */
 						/* the start of first kv pair marks the end of uri   */
 						/* to prevent kv-pairs confusing fs api commands     */
@@ -996,7 +996,7 @@ abyss_bool handler_hook(TSession * r)
 				name = q;
 				if ((val = strchr(name, '='))) {
 					*val++ = '\0';
-					switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, name, val);
+					switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, name, val);
 				}
 				q = next;
 			} while (q != NULL);
@@ -1005,7 +1005,7 @@ abyss_bool handler_hook(TSession * r)
 		}
 	}
 
-	switch_event_add_header_string(evnt, SWITCH_STACK_BOTTOM, "HTTP-URI", uri);
+	switch_event_add_header_string_dup(evnt, SWITCH_STACK_BOTTOM, "HTTP-URI", uri);
 
 	/* We made it this far, always OK */
 	if (!HTTPWrite(r, "HTTP/1.1 200 OK\r\n", (uint32_t) strlen("HTTP/1.1 200 OK\r\n"))) {
@@ -1273,7 +1273,7 @@ void stop_all_websockets()
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "websocket::stophook") != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to create event!\n");
 	}
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "stop", "now");
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "stop", "now");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "stopping all websockets ...\n");
 	if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to fire the event!\n");

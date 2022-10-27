@@ -193,7 +193,7 @@ SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, i
 					if (!log_fields) {
 						switch_event_create_plain(&log_fields, SWITCH_EVENT_CHANNEL_DATA);
 					}
-					switch_event_add_header_string(log_fields, SWITCH_STACK_BOTTOM, hp->name, val);
+					switch_event_add_header_string_dup(log_fields, SWITCH_STACK_BOTTOM, hp->name, val);
 				}
 			}
 		}
@@ -650,13 +650,13 @@ SWITCH_DECLARE(void) switch_log_meta_vprintf(switch_text_channel_t channel, cons
 	if (channel == SWITCH_CHANNEL_ID_EVENT) {
 		switch_event_t *event;
 		if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-Data", data);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-File", filep);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Log-Function", funcp);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Log-Data", data);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Log-File", filep);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Log-Function", funcp);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
 			if (!zstr(userdata)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User-Data", userdata);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "User-Data", userdata);
 			}
 			switch_event_fire(&event);
 			data = NULL;

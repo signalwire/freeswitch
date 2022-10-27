@@ -820,7 +820,7 @@ switch_status_t rtmp_receive_event(switch_core_session_t *session, switch_event_
 	switch_assert(tech_pvt != NULL);
 
 	/* Deliver the event as a custom message to the target rtmp session */
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Session", switch_core_session_get_uuid(session));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Session", switch_core_session_get_uuid(session));
 
 	rtmp_send_event(rsession, event);
 
@@ -867,15 +867,15 @@ void rtmp_session_rwunlock(rtmp_session_t *rsession)
 
 void rtmp_event_fill(rtmp_session_t *rsession, switch_event_t *event)
 {
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Session-ID", rsession->uuid);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Flash-Version", rsession->flashVer);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-SWF-URL", rsession->swfUrl);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-TC-URL", rsession->tcUrl);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Page-URL", rsession->pageUrl);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Profile", rsession->profile->name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-Session-ID", rsession->uuid);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-Flash-Version", rsession->flashVer);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-SWF-URL", rsession->swfUrl);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-TC-URL", rsession->tcUrl);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-Page-URL", rsession->pageUrl);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-Profile", rsession->profile->name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Network-Port", "%d", rsession->remote_port);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Network-IP", rsession->remote_address);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "RTMP-Profile", rsession->profile->name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Network-IP", rsession->remote_address);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "RTMP-Profile", rsession->profile->name);
 }
 
 switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **newsession)
@@ -1302,9 +1302,9 @@ void rtmp_add_registration(rtmp_session_t *rsession, const char *auth, const cha
 		reg->user = switch_core_strdup(rsession->pool, user);
 		reg->domain = switch_core_strdup(rsession->pool, domain);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Nickname", switch_str_nil(nickname));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "User", user);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Domain", domain);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Nickname", switch_str_nil(nickname));
 		switch_event_fire(&event);
 		switch_core_add_registration(user, domain, token, url, 0, rsession->remote_address, network_port_c, "tcp", "");
 		free(dup);
@@ -1331,9 +1331,9 @@ static void rtmp_clear_reg_auth(rtmp_session_t *rsession, const char *auth, cons
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
 					rtmp_event_fill(rsession, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", reg->user);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", reg->domain);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Nickname", switch_str_nil(reg->nickname));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "User", reg->user);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Domain", reg->domain);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Nickname", switch_str_nil(reg->nickname));
 					switch_event_fire(&event);
 				}
 			}
@@ -1390,8 +1390,8 @@ switch_status_t rtmp_session_login(rtmp_session_t *rsession, const char *user, c
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_LOGIN) == SWITCH_STATUS_SUCCESS) {
 		rtmp_event_fill(rsession, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "User", user);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Domain", domain);
 		switch_event_fire(&event);
 	}
 
@@ -1422,8 +1422,8 @@ switch_status_t rtmp_session_logout(rtmp_session_t *rsession, const char *user, 
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_LOGOUT) == SWITCH_STATUS_SUCCESS) {
 		rtmp_event_fill(rsession, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "User", user);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Domain", domain);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "User", user);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Domain", domain);
 		switch_event_fire(&event);
 	}
 
@@ -1464,7 +1464,7 @@ void rtmp_attach_private(rtmp_session_t *rsession, rtmp_private_t *tech_pvt)
 #endif
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_DETACH) == SWITCH_STATUS_SUCCESS) {
 			rtmp_event_fill(rsession, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID",
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Call-ID",
 				switch_core_session_get_uuid(rsession->tech_pvt->session));
 			switch_event_fire(&event);
 		}
@@ -1496,7 +1496,7 @@ void rtmp_attach_private(rtmp_session_t *rsession, rtmp_private_t *tech_pvt)
 #endif
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, RTMP_EVENT_ATTACH) == SWITCH_STATUS_SUCCESS) {
 			rtmp_event_fill(rsession, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-ID", switch_core_session_get_uuid(tech_pvt->session));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Call-ID", switch_core_session_get_uuid(tech_pvt->session));
 			switch_event_fire(&event);
 		}
 	}

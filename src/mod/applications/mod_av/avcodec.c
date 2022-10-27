@@ -2173,7 +2173,7 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: %s\n", name, value);
 
-			switch_event_add_header_string(aprofile->options, SWITCH_STACK_BOTTOM, name, value);
+			switch_event_add_header_string_dup(aprofile->options, SWITCH_STACK_BOTTOM, name, value);
 		}
 	} // for options
 }
@@ -2203,7 +2203,7 @@ static void parse_codecs(avcodec_profile_t *aprofile, switch_xml_t codecs)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec: %s, profile: %s\n", codec_name, profile_name);
 
-		switch_event_add_header_string(aprofile->codecs, SWITCH_STACK_BOTTOM, codec_name, profile_name);
+		switch_event_add_header_string_dup(aprofile->codecs, SWITCH_STACK_BOTTOM, codec_name, profile_name);
 	}
 }
 

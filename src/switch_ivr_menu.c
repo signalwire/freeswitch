@@ -83,7 +83,7 @@ static void ivr_send_event(switch_core_session_t *session, char *event_type, swi
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_t *event = NULL;
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, event_type) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Menu-Name", menu->name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Menu-Name", menu->name);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}

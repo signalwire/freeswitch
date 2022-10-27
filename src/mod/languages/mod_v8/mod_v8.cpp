@@ -1146,7 +1146,7 @@ SWITCH_STANDARD_JSON_API(json_function)
 
 	json_text = cJSON_PrintUnformatted(data);
 	switch_event_create(&stream.param_event, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "JSON", json_text);
+	switch_event_add_header_string_dup(stream.param_event, SWITCH_STACK_BOTTOM, "JSON", json_text);
 	switch_safe_free(json_text);
 
 	v8_parse_and_execute(session, (char *) path->valuestring, &stream, NULL, NULL);

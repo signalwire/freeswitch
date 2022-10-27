@@ -189,7 +189,7 @@ static void save_extra_headers(switch_event_t *extra_headers, switch_channel_t *
 		const char *name = ei->name;
 		char *value = ei->value;
 		if (!strncasecmp(name, SIP_OREKA_HEADER_PREFIX, SIP_OREKA_HEADER_PREFIX_LEN)) {
-			switch_event_add_header_string(extra_headers, SWITCH_STACK_BOTTOM, name, value);
+			switch_event_add_header_string_dup(extra_headers, SWITCH_STACK_BOTTOM, name, value);
 		}
 	}
 	switch_channel_variable_last(channel);

@@ -62,9 +62,9 @@ SWITCH_DECLARE(void) switch_limit_fire_event(const char *backend, const char *re
 	switch_event_t *event;
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, LIMIT_EVENT_USAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "backend", backend);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "realm", realm);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", key);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "backend", backend);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "realm", realm);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "key", key);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "usage", "%d", usage);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rate", "%d", rate);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "max", "%d", max);

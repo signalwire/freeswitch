@@ -56,12 +56,12 @@ FST_CORE_BEGIN("./conf")
 			switch_event_t* event;
 
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[0]", "1");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[0]", "1");
 				switch_event_fire(&event);
 			}
 
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[5000]", "12");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[5000]", "12");
 				switch_event_fire(&event);
 			}
 		}

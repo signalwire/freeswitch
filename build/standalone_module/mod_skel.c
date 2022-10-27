@@ -180,8 +180,8 @@ SWITCH_STANDARD_API(skel_function)
 
 		/* populate the event with some headers */
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "testing", "true");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "foo", "bar");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "testing", "true");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "foo", "bar");
 
 		for (x = 0; x < 10; x++) {
 			char name[128];

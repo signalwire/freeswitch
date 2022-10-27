@@ -1856,9 +1856,9 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 			if (!zstr(body)) {
 				switch_event_t *event;
 				if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "text/plain");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", rayo_call_get_uuid(RAYO_CALL(call)));
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", iks_find_cdata(stanza, "subject"));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "content-type", "text/plain");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "uuid", rayo_call_get_uuid(RAYO_CALL(call)));
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "subject", iks_find_cdata(stanza, "subject"));
 					switch_event_add_body(event, "%s", body);
 					switch_event_fire(&event);
 				}
@@ -2242,11 +2242,11 @@ static iks *exec_conference_app(switch_core_session_t *session, const char *comm
 
 	/* send execute conference event to session */
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "conference");
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", command);
-		//switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event_uuid", uuid);
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "conference");
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", command);
+		//switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "event_uuid", uuid);
+		switch_event_add_header_string_dup(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_channel_set_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		}
@@ -2703,9 +2703,9 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	}
 
 	/* set originate channel variables */
-	switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_uuid", rayo_call_get_uuid(call));
-	switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "rayo_dcp_jid", dcp_jid);
-	switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "rayo_call_jid", RAYO_JID(call));
+	switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "origination_uuid", rayo_call_get_uuid(call));
+	switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "rayo_dcp_jid", dcp_jid);
+	switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "rayo_call_jid", RAYO_JID(call));
 
 	if (!zstr(dial_from)) {
 		char *from_uri = NULL;
@@ -2717,24 +2717,24 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 		} else if (scheme == RAYO_URI_SCHEME_SIP) {
 			/* SIP URI */
 			if (!zstr(from_uri)) {
-				switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "sip_from_uri", from_uri);
+				switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "sip_from_uri", from_uri);
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: sip_from_uri=%s\n", from_uri);
 			}
 			if (!zstr(from_display)) {
-				switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "sip_from_display", from_display);
+				switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "sip_from_display", from_display);
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: sip_from_display=%s\n", from_display);
 			}
 		}
 		if (!zstr(from_uri)) {
-			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", from_uri);
+			switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", from_uri);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_number=%s\n", from_uri);
 		}
 		if (!zstr(from_display)) {
-			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_display);
+			switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_display);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_name=%s\n", from_display);
 		} else if (scheme == RAYO_URI_SCHEME_TEL && !zstr(from_uri)) {
 			/* set caller ID name to same as number if telephone number and a name wasn't specified */
-			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_uri);
+			switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_uri);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_name=%s\n", from_uri);
 		}
 	}
@@ -2752,7 +2752,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 				if (!zstr(name) && !zstr(value)) {
 					char *header_name = switch_core_sprintf(dtdata->pool, "%s%s", RAYO_SIP_REQUEST_HEADER, name);
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: Adding SIP header: %s: %s\n", name, value);
-					switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, header_name, value);
+					switch_event_add_header_string_dup(originate_vars, SWITCH_STACK_BOTTOM, header_name, value);
 				}
 			}
 		}

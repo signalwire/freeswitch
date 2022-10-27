@@ -75,12 +75,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(hint_data);
 
-	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "macro_name", macro_name);
-	switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
+	switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "macro_name", macro_name);
+	switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "lang", chan_lang);
 	if (data) {
-		switch_event_add_header_string(hint_data, SWITCH_STACK_BOTTOM, "data", data);
+		switch_event_add_header_string_dup(hint_data, SWITCH_STACK_BOTTOM, "data", data);
 		if (event) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "data", data);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "data", data);
 		}
 	} else {
 		data = "";
@@ -376,7 +376,7 @@ static void merge_recording_variables(switch_event_t *vars, switch_event_t *even
 
 			switch_assert(vvar && vval);
 			switch_snprintf(buf, sizeof(buf), "Recording-Variable-%s", vvar);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, buf, vval);
 		}
 	}
 }
@@ -766,7 +766,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file_event(switch_core_session
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
 		merge_recording_variables(vars, event);
 		switch_event_fire(&event);
 	}
@@ -1029,7 +1029,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file_event(switch_core_session
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
 		merge_recording_variables(vars, event);
 		switch_event_fire(&event);
 	}
@@ -1651,12 +1651,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_START) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			if (!strncasecmp(file, "local_stream:", 13)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "local_stream");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "local_stream");
 			}
 			if (!strncasecmp(file, "tone_stream:", 12)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
 			if (fh->params) {
 				switch_event_merge(event, fh->params);
 			}
@@ -2025,16 +2025,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (switch_event_create(&event, SWITCH_EVENT_PLAYBACK_STOP) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			if (!strncasecmp(file, "local_stream:", 13)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "local_stream");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "local_stream");
 			}
 			if (!strncasecmp(file, "tone_stream:", 12)) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-File-Type", "tone_stream");
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-File-Path", file);
 			if (status == SWITCH_STATUS_BREAK) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "break");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-Status", "break");
 			} else {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Playback-Status", "done");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Playback-Status", "done");
 			}
 			if (fh->params) {
 				switch_event_merge(event, fh->params);

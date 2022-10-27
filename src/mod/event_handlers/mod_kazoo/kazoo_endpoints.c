@@ -52,7 +52,7 @@ static void kz_tweaks_variables_to_event(switch_core_session_t *session, switch_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	for(i = 0; x_bridge_variables[i] != NULL; i++) {
 		const char *val = switch_channel_get_variable_dup(channel, x_bridge_variables[i], SWITCH_FALSE, -1);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, x_bridge_variables[i], val);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, x_bridge_variables[i], val);
 	}
 }
 
@@ -113,10 +113,10 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "user_call");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "action", "user_call");
 	if (session) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
 	}
 
 	if (var_event) {
@@ -156,7 +156,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 			} else {
 				switch_event_del_header(var_event, pvar);
 			}
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar, val);
+			switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, pvar, val);
 		}
 	}
 
@@ -178,7 +178,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 					switch_event_del_header(var_event, pvar + 9);
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "adding dialog var to var_event => %s = %s\n", pvar + 9, val);
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
+				switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
 			}
 		}
 	}
@@ -241,8 +241,8 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 	dialed_user = (char *)switch_xml_attr(x_user, "id");
 
 	if (var_event) {
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+		switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
+		switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 	}
 
 	if (!dest) {
@@ -293,8 +293,8 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 			switch_assert(event);
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "dialed_user", dialed_user);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 	}
 
 	if ((x_params = switch_xml_child(x_user, "profile-variables"))) {
@@ -302,7 +302,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 			const char *pvar = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "adding profile variable to event => %s = %s\n", pvar, val);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pvar, val);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, pvar, val);
 		}
 	}
 
@@ -311,7 +311,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 			const char *pvar = switch_xml_attr_soft(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "adding variable to event => %s = %s\n", pvar, val);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pvar, val);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, pvar, val);
 		}
 	}
 
@@ -323,7 +323,7 @@ static switch_call_cause_t kz_endpoint_outgoing_channel(switch_core_session_t *s
 			if (!strncasecmp(pvar, "dial-var-", 9)) {
 				switch_event_del_header(event, pvar + 9);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "adding dialog var to event => %s = %s\n", pvar + 9, val);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, pvar + 9, val);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, pvar + 9, val);
 			}
 		}
 	}

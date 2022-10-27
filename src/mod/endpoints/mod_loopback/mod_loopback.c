@@ -489,9 +489,9 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 							  switch_channel_get_name(other_channel));
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "loopback::bowout") == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(channel));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Acquired-UUID", switch_channel_get_uuid(other_channel));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(channel));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Acquired-UUID", switch_channel_get_uuid(other_channel));
 				switch_event_fire(&event);
 			}
 
@@ -922,19 +922,19 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 						switch_event_t *event = NULL;
 						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "loopback::direct") == SWITCH_STATUS_SUCCESS) {
 							switch_channel_event_set_data(tech_pvt->channel, event);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->channel));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_a));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_b));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->channel));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_a));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_b));
 							switch_event_fire(&event);
 						}
 
 						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "loopback::direct") == SWITCH_STATUS_SUCCESS) {
 							switch_channel_event_set_data(tech_pvt->other_channel, event);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->channel));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_b));
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_a));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Resigning-UUID", switch_channel_get_uuid(tech_pvt->other_channel));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Resigning-Peer-UUID", switch_channel_get_uuid(tech_pvt->channel));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-A-UUID", switch_channel_get_uuid(ch_b));
+							switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Connecting-Leg-B-UUID", switch_channel_get_uuid(ch_a));
 							switch_event_fire(&event);
 						}
 					}
@@ -1209,13 +1209,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				switch_channel_set_variable(channel, "loopback_app", app);
 
 				if (clone) {
-					switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, "loopback_app", app);
+					switch_event_add_header_string_dup(clone, SWITCH_STACK_BOTTOM, "loopback_app", app);
 				}
 
 				if (arg) {
 					switch_channel_set_variable(channel, "loopback_app_arg", arg);
 					if (clone) {
-						switch_event_add_header_string(clone, SWITCH_STACK_BOTTOM, "loopback_app_arg", arg);
+						switch_event_add_header_string_dup(clone, SWITCH_STACK_BOTTOM, "loopback_app_arg", arg);
 					}
 				}
 

@@ -183,7 +183,7 @@ SWITCH_STANDARD_APP(prefix_unset_function)
 		const char *name = ei->name;
 		char *value = ei->value;
 		if (!strncasecmp(name, arg, strlen(arg))) {
-			switch_event_add_header_string(clear, SWITCH_STACK_BOTTOM, name, value);
+			switch_event_add_header_string_dup(clear, SWITCH_STACK_BOTTOM, name, value);
 		}
 	}
 
@@ -885,7 +885,7 @@ void *SWITCH_THREAD_FUNC kz_att_thread_run(switch_thread_t *thread, void *obj)
 	b_channel = switch_core_session_get_channel(b_session);
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sofia::transferee") == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(b_channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "att_xfer_replaced_call_id", switch_core_session_get_uuid(peer_session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "att_xfer_replaced_call_id", switch_core_session_get_uuid(peer_session));
 		switch_event_fire(&event);
 	}
 

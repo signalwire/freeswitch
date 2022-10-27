@@ -47,7 +47,7 @@ static void send_report(switch_event_t *event, const char * Status) {
 
 	if (switch_event_create_subclass(&report, SWITCH_EVENT_CUSTOM, MY_EVENT_DELIVERY_REPORT) == SWITCH_STATUS_SUCCESS) {
 
-		switch_event_add_header_string(report, SWITCH_STACK_BOTTOM, "Status", Status);
+		switch_event_add_header_string_dup(report, SWITCH_STACK_BOTTOM, "Status", Status);
 
 
 		for (header = event->headers; header; header = header->next) {
@@ -60,10 +60,10 @@ static void send_report(switch_event_t *event, const char * Status) {
 	        if (header->idx) {
 	            int i;
 	            for (i = 0; i < header->idx; i++) {
-	                switch_event_add_header_string(report, SWITCH_STACK_PUSH, header->name, header->array[i]);
+					switch_event_add_header_string_dup(report, SWITCH_STACK_PUSH, header->name, header->array[i]);
 	            }
 	        } else {
-	            switch_event_add_header_string(report, SWITCH_STACK_BOTTOM, header->name, header->value);
+				switch_event_add_header_string_dup(report, SWITCH_STACK_BOTTOM, header->name, header->value);
 	        }
 		}
 		switch_event_fire(&report);
@@ -263,14 +263,14 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 					if (xinline) {
 						switch_core_execute_chat_app(event, application, data);
 					} else {
-						switch_event_add_header_string(*extension, SWITCH_STACK_BOTTOM, application, zstr(data) ? "__undef" : data);
+						switch_event_add_header_string_dup(*extension, SWITCH_STACK_BOTTOM, application, zstr(data) ? "__undef" : data);
 					}
 				}
 				proceed = 1;
 			}
 		} else {
 			if (field && strchr(expression, '(')) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DP_MATCH", NULL);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "DP_MATCH", NULL);
 				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", switch_regex_set_event_header_callback, event);
 			}
 
@@ -320,7 +320,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 					if (xinline) {
 						switch_core_execute_chat_app(event, application, app_data);
 					} else {
-						switch_event_add_header_string(*extension, SWITCH_STACK_BOTTOM, application, zstr(app_data) ? "__undef" : app_data);
+						switch_event_add_header_string_dup(*extension, SWITCH_STACK_BOTTOM, application, zstr(app_data) ? "__undef" : app_data);
 					}
 				}
 				switch_safe_free(substituted);
@@ -553,7 +553,7 @@ SWITCH_STANDARD_CHAT_APP(set_function)
 	if (zstr(val)) {
 		switch_event_del_header(message, var);
 	} else {
-		switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, var, val);
+		switch_event_add_header_string_dup(message, SWITCH_STACK_BOTTOM, var, val);
 	}
 
 	free(var);

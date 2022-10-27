@@ -724,8 +724,8 @@ void conference_event_send_rfc(conference_obj_t *conference)
 	if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
 		event->flags |= EF_UNIQ_HEADERS;
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-name", name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
 
 		body = conference_cdr_rfc4579_render(conference, NULL, event);
 		switch_event_add_body(event, "%s", body);
@@ -742,12 +742,12 @@ switch_status_t conference_event_add_data(conference_obj_t *conference, switch_e
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Ghosts", "%u", conference->count_ghosts);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Unique-ID", conference->uuid_str);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Conference-Unique-ID", conference->uuid_str);
 	switch_event_merge(event, conference->variables);
 
 	return status;
@@ -774,14 +774,14 @@ void conference_event_chat_message_broadcast(conference_obj_t *conference, switc
 					continue;
 				}
 				switch_event_dup(&reply, event);
-				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "to", presence_id);
-				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
-				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_domain", conference->domain);
+				switch_event_add_header_string_dup(reply, SWITCH_STACK_BOTTOM, "to", presence_id);
+				switch_event_add_header_string_dup(reply, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
+				switch_event_add_header_string_dup(reply, SWITCH_STACK_BOTTOM, "conference_domain", conference->domain);
 
 				switch_event_set_body(reply, switch_event_get_body(event));
 
 				switch_core_chat_deliver(chat_proto, &reply);
-				switch_event_add_header_string(processed, SWITCH_STACK_BOTTOM, presence_id, "true");
+				switch_event_add_header_string_dup(processed, SWITCH_STACK_BOTTOM, presence_id, "true");
 			}
 		}
 	}
@@ -824,19 +824,19 @@ void conference_event_call_setup_handler(switch_event_t *event)
 
 					for(hp = event->headers; hp; hp = hp->next) {
 						if (!strncasecmp(hp->name, "var_", 4)) {
-							switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
+							switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, hp->name + 4, hp->value);
 						}
 					}
 
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_call_key", key);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "conference_call_key", key);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "conference_destination_number", ext);
 
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "conference_invite_uri", dial_uri);
 
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "conference_track_call_id", call_id);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_invite_domain", domain);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "sip_invite_contact_params", "~isfocus");
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "conference_track_status", "true");
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "conference_track_call_id", call_id);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "sip_invite_domain", domain);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, "sip_invite_contact_params", "~isfocus");
 
 					if (!strncasecmp(ostr, "url+", 4)) {
 						ostr += 4;
@@ -878,11 +878,11 @@ void conference_event_call_setup_handler(switch_event_t *event)
 		if (switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA) == SWITCH_STATUS_SUCCESS) {
 			event->flags |= EF_UNIQ_HEADERS;
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", conf);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "final", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-name", conf);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "final", "true");
 			switch_event_add_body(event, "%s", "SIP/2.0 481 Failure\r\n");
 			switch_event_fire(&event);
 		}
@@ -942,35 +942,35 @@ void conference_event_pres_handler(switch_event_t *event)
 
 	if ((conference = conference_find(conference_name, NULL)) || (conference = conference_find(dup_conference_name, NULL))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
 
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", conference_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 		switch_thread_rwlock_unlock(conference->rwlock);
 	} else if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", conference_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", to);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "unique-id", conference_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
 		switch_event_fire(&event);
 	}
 

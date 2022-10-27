@@ -386,17 +386,17 @@ static int phase_b_handler(void *user_data, int result)
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXNEGOCIATERESULT : SPANDSP_EVENT_RXFAXNEGOCIATERESULT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t30_stats.error_correcting_mode) ? "on" : "off");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-t38-status", get_t38_status(pvt->t38_mode));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(pvt->t30)));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-vendor", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-model", switch_str_nil(t30_get_rx_model(pvt->t30)));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t30_stats.error_correcting_mode) ? "on" : "off");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-t38-status", get_t38_status(pvt->t38_mode));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(pvt->t30)));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-remote-vendor", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-remote-model", switch_str_nil(t30_get_rx_model(pvt->t30)));
 		if (pvt->app_mode == FUNCTION_TX) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
 		}
 		switch_event_fire(&event);
 	}
@@ -521,20 +521,20 @@ static int phase_d_handler(void *user_data, int msg)
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXPAGERESULT : SPANDSP_EVENT_RXFAXPAGERESULT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "uuid", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
 		if (pvt->app_mode == FUNCTION_TX) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
 		}
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_line_image_resolution);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-file-image-resolution", fax_file_image_resolution);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-pixel-size", fax_line_image_pixel_size);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-file-image-pixel-size", fax_file_image_pixel_size);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-longest-bad-row-run", fax_longest_bad_row_run);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding", fax_encoding);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-encoding-name", t4_compression_to_str(t30_stats.compression));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_line_image_resolution);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-file-image-resolution", fax_file_image_resolution);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-image-pixel-size", fax_line_image_pixel_size);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-file-image-pixel-size", fax_file_image_pixel_size);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-longest-bad-row-run", fax_longest_bad_row_run);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-encoding", fax_encoding);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-encoding-name", t4_compression_to_str(t30_stats.compression));
 		switch_event_fire(&event);
 	}
 
@@ -676,19 +676,19 @@ static void phase_e_handler(void *user_data, int result)
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, pvt->app_mode == FUNCTION_TX ? SPANDSP_EVENT_TXFAXRESULT : SPANDSP_EVENT_RXFAXRESULT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-success", (result == T30_ERR_OK) ? "1" : "0");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_image_resolution);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t.error_correcting_mode) ? "on" : "off");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-t38-status", get_t38_status(pvt->t38_mode));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-success", (result == T30_ERR_OK) ? "1" : "0");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-result-code", fax_result_code);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-result-text", t30_completion_code_to_str(result));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-document-transferred-pages", fax_document_transferred_pages);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-document-total-pages", fax_document_total_pages);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-image-resolution", fax_image_resolution);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-image-size", fax_image_size);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-bad-rows", fax_bad_rows);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-transfer-rate", fax_transfer_rate);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t.error_correcting_mode) ? "on" : "off");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-t38-status", get_t38_status(pvt->t38_mode));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
 		switch_event_fire(&event);
 	}
 
@@ -2021,8 +2021,8 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 	switch_core_session_receive_message(session, &msg);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridge-B-Unique-ID", peer_uuid);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
@@ -2410,7 +2410,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					switch_core_session_t *session = NULL;
 					switch_channel_t *channel = NULL;
 
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Fax-Tone", "true");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detected-Fax-Tone", "true");
 
 					session = switch_core_media_bug_get_session(bug);
 					if (session) {
@@ -2425,7 +2425,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					if (switch_core_session_queue_event(cont->session, &event) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR,
 										  "Event queue failed!\n");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 						switch_event_fire(&event);
 					}
 				}

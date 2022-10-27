@@ -338,7 +338,7 @@ switch_status_t conference_api_sub_mute(conference_member_t *member, switch_stre
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
 		switch_event_fire(&event);
 	}
 
@@ -388,7 +388,7 @@ switch_status_t conference_api_sub_unhold(conference_member_t *member, switch_st
 	if (test_eflag(member->conference, EFLAG_HOLD_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unhold-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "unhold-member");
 		switch_event_fire(&event);
 	}
 
@@ -439,7 +439,7 @@ switch_status_t conference_api_sub_hold(conference_member_t *member, switch_stre
 	if (test_eflag(member->conference, EFLAG_HOLD_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hold-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "hold-member");
 		switch_event_fire(&event);
 	}
 
@@ -491,7 +491,7 @@ switch_status_t conference_api_sub_unmute(conference_member_t *member, switch_st
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
 		switch_event_fire(&event);
 	}
 
@@ -616,7 +616,7 @@ switch_status_t conference_api_sub_vmute(conference_member_t *member, switch_str
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vmute-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "vmute-member");
 		switch_event_fire(&event);
 	}
 
@@ -686,7 +686,7 @@ switch_status_t conference_api_sub_unvmute(conference_member_t *member, switch_s
 	if (test_eflag(member->conference, EFLAG_MUTE_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unvmute-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "unvmute-member");
 		switch_event_fire(&event);
 	}
 
@@ -719,7 +719,7 @@ switch_status_t conference_api_sub_vblind(conference_member_t *member, switch_st
 	if (test_eflag(member->conference, EFLAG_BLIND_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "vblind-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "vblind-member");
 		switch_event_fire(&event);
 	}
 
@@ -768,7 +768,7 @@ switch_status_t conference_api_sub_unvblind(conference_member_t *member, switch_
 	if (test_eflag(member->conference, EFLAG_BLIND_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unvblind-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "unvblind-member");
 		switch_event_fire(&event);
 	}
 
@@ -796,7 +796,7 @@ switch_status_t conference_api_sub_deaf(conference_member_t *member, switch_stre
 	}
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "deaf-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "deaf-member");
 		switch_event_fire(&event);
 	}
 
@@ -838,7 +838,7 @@ switch_status_t conference_api_sub_undeaf(conference_member_t *member, switch_st
 	}
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
 		switch_event_fire(&event);
 	}
 
@@ -870,7 +870,7 @@ switch_status_t conference_api_sub_hup(conference_member_t *member, switch_strea
 	if (member->conference && test_eflag(member->conference, EFLAG_HUP_MEMBER)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "hup-member");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "hup-member");
 			switch_event_fire(&event);
 		}
 	}
@@ -901,7 +901,7 @@ switch_status_t conference_api_sub_kick(conference_member_t *member, switch_stre
 	if (member->conference && test_eflag(member->conference, EFLAG_KICK_MEMBER)) {
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
 			switch_event_fire(&event);
 		}
 	}
@@ -1048,8 +1048,8 @@ switch_status_t conference_api_sub_dtmf(conference_member_t *member, switch_stre
 	if (test_eflag(member->conference, EFLAG_DTMF_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Digits", dtmf);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Digits", dtmf);
 		switch_event_fire(&event);
 	}
 
@@ -1227,7 +1227,7 @@ switch_status_t conference_api_sub_energy(conference_member_t *member, switch_st
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
@@ -1323,7 +1323,7 @@ switch_status_t conference_api_sub_agc(conference_member_t *member, switch_strea
 	//	if (test_eflag(member->conference, EFLAG_AGC_LEVEL_MEMBER) &&
 	if (data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "agc-level-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "agc-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Agc-Level", "%d", member->agc_level);
 		switch_event_fire(&event);
 	}
@@ -1369,7 +1369,7 @@ switch_status_t conference_api_sub_auto_energy(conference_member_t *member, swit
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "auto-energy-level-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "auto-energy-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Auto-Energy-Level", "%d", member->auto_energy_level);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
@@ -1441,7 +1441,7 @@ switch_status_t conference_api_sub_max_energy(conference_member_t *member, switc
 	if (test_eflag(member->conference, EFLAG_ENERGY_LEVEL_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "max-energy-level-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "max-energy-level-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Energy-Level", "%d", member->max_energy_level);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Energy-Mute", "%d", member->burst_mute_count * member->conference->interval);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Energy-Hit-Trigger", "%d", member->max_energy_hit_trigger);
@@ -1535,7 +1535,7 @@ switch_status_t conference_api_sub_position(conference_member_t *member, switch_
 	if (test_eflag(member->conference, EFLAG_SET_POSITION_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "set-position-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "set-position-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Position", "%0.2f:%0.2f:%0.2f", member->al->pos_x, member->al->pos_y, member->al->pos_z);
 		switch_event_fire(&event);
 	}
@@ -1573,7 +1573,7 @@ switch_status_t conference_api_sub_volume_in(conference_member_t *member, switch
 	if (test_eflag(member->conference, EFLAG_VOLUME_IN_MEMBER) &&
 		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%d", member->volume_in_level);
 		switch_event_fire(&event);
 	}
@@ -1608,7 +1608,7 @@ switch_status_t conference_api_sub_volume_out(conference_member_t *member, switc
 	if (test_eflag(member->conference, EFLAG_VOLUME_OUT_MEMBER) && data &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%d", member->volume_out_level);
 		switch_event_fire(&event);
 	}
@@ -2821,9 +2821,9 @@ switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_str
 					switch_event_merge(event, conference->fnode->fh.params);
 				}
 
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
 				switch_event_fire(&event);
 			}
 		} else {
@@ -2850,8 +2850,8 @@ switch_status_t conference_api_sub_play(conference_obj_t *conference, switch_str
 						switch_event_merge(event, member->fnode->fh.params);
 					}
 
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
 					switch_event_fire(&event);
 				}
 			} else {
@@ -2884,8 +2884,8 @@ switch_status_t conference_api_sub_say(conference_obj_t *conference, switch_stre
 	stream->write_function(stream, "+OK (say) OK\n");
 	if (test_eflag(conference, EFLAG_SPEAK_TEXT) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Text", text);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "speak-text");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Text", text);
 		switch_event_fire(&event);
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -2943,8 +2943,8 @@ switch_status_t conference_api_sub_saymember(conference_obj_t *conference, switc
 	if (test_eflag(member->conference, EFLAG_SPEAK_TEXT_MEMBER) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_member_add_event_data(member, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-member");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Text", text);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-member");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Text", text);
 		switch_event_fire(&event);
 	}
 	ret_status = SWITCH_STATUS_SUCCESS;
@@ -3473,7 +3473,7 @@ switch_status_t conference_api_sub_lock(conference_obj_t *conference, switch_str
 	stream->write_function(stream, "+OK %s locked\n", argv[0]);
 	if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "lock");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "lock");
 		switch_event_fire(&event);
 	}
 
@@ -3495,7 +3495,7 @@ switch_status_t conference_api_sub_unlock(conference_obj_t *conference, switch_s
 	stream->write_function(stream, "+OK %s unlocked\n", argv[0]);
 	if (test_eflag(conference, EFLAG_UNLOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 		conference_event_add_data(conference, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
 		switch_event_fire(&event);
 	}
 
@@ -3519,7 +3519,7 @@ switch_status_t conference_api_sub_exit_sound(conference_obj_t *conference, swit
 		stream->write_function(stream, "+OK %s exit sounds on (%s)\n", argv[0], conference->exit_sound);
 		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit-sounds-on");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "exit-sounds-on");
 			switch_event_fire(&event);
 		}
 	} else if ( !strcasecmp(argv[2], "off") || !strcasecmp(argv[2], "none") ) {
@@ -3527,7 +3527,7 @@ switch_status_t conference_api_sub_exit_sound(conference_obj_t *conference, swit
 		stream->write_function(stream, "+OK %s exit sounds off (%s)\n", argv[0], conference->exit_sound);
 		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit-sounds-off");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "exit-sounds-off");
 			switch_event_fire(&event);
 		}
 	} else if ( !strcasecmp(argv[2], "file") ) {
@@ -3540,7 +3540,7 @@ switch_status_t conference_api_sub_exit_sound(conference_obj_t *conference, swit
 			stream->write_function(stream, "+OK %s exit sound file set to %s\n", argv[0], conference->exit_sound);
 			if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_event_add_data(conference, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "exit-sound-file-changed");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "exit-sound-file-changed");
 				switch_event_fire(&event);
 			}
 		}
@@ -3570,7 +3570,7 @@ switch_status_t conference_api_sub_enter_sound(conference_obj_t *conference, swi
 		stream->write_function(stream, "+OK %s enter sounds on (%s)\n", argv[0], conference->enter_sound);
 		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "enter-sounds-on");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "enter-sounds-on");
 			switch_event_fire(&event);
 		}
 	} else if ( !strcasecmp(argv[2], "off") || !strcasecmp(argv[2], "none") ) {
@@ -3578,7 +3578,7 @@ switch_status_t conference_api_sub_enter_sound(conference_obj_t *conference, swi
 		stream->write_function(stream, "+OK %s enter sounds off (%s)\n", argv[0], conference->enter_sound);
 		if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_event_add_data(conference, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "enter-sounds-off");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "enter-sounds-off");
 			switch_event_fire(&event);
 		}
 	} else if ( !strcasecmp(argv[2], "file") ) {
@@ -3590,7 +3590,7 @@ switch_status_t conference_api_sub_enter_sound(conference_obj_t *conference, swi
 			stream->write_function(stream, "+OK %s enter sound file set to %s\n", argv[0], conference->enter_sound);
 			if (test_eflag(conference, EFLAG_LOCK) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_event_add_data(conference, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "enter-sound-file-changed");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "enter-sound-file-changed");
 				switch_event_fire(&event);
 			}
 		}
@@ -3703,9 +3703,9 @@ switch_status_t conference_api_sub_transfer(conference_obj_t *conference, switch
 			if (test_eflag(conference, EFLAG_TRANSFER) &&
 				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_member_add_event_data(member, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[2]);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[2]);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
 				switch_event_fire(&event);
 			}
 
@@ -3861,12 +3861,12 @@ switch_status_t conference_api_sub_pauserec(conference_obj_t *conference, switch
 			{
 				conference_event_add_data(conference, event);
 				if (action == REC_ACTION_PAUSE) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "pause-recording");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "pause-recording");
 				} else {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "resume-recording");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "resume-recording");
 				}
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", argv[2]);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Path", argv[2]);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Other-Recordings", conference->record_count ? "true" : "false");
 				switch_event_fire(&event);
 			}
 	}

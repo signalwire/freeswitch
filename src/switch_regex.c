@@ -314,7 +314,7 @@ SWITCH_DECLARE_NONSTD(void) switch_regex_set_event_header_callback(const char *v
 {
 
 	switch_event_t *event = (switch_event_t *) user_data;
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, var, val);
 }
 
 

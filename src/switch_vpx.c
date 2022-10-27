@@ -1849,7 +1849,7 @@ static void parse_codecs(my_vpx_cfg_t *my_cfg, switch_xml_t codecs)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec: %s, profile: %s\n", name, profile);
 
-		switch_event_add_header_string(my_cfg->codecs, SWITCH_STACK_BOTTOM, name, profile);
+		switch_event_add_header_string_dup(my_cfg->codecs, SWITCH_STACK_BOTTOM, name, profile);
 	}
 }
 

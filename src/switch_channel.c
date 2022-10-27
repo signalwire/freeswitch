@@ -298,7 +298,7 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 	switch_channel_check_device_state(channel, channel->callstate);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number", "%d", callstate);
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
@@ -803,18 +803,18 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 
 	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "any");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", id);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", "any");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "from", id);
 		if (type == SWITCH_EVENT_PRESENCE_IN) {
 			if (!rpid) {
 				rpid = "unknown";
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "status", status);
 		}
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 
 
 		if (!strcasecmp(status, "idle") || !switch_channel_up_nosig(channel)) {
@@ -835,22 +835,22 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 			}
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info-state", call_info_state);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-info-state", call_info_state);
 
 		if (call_info) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-info", call_info);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-info", call_info);
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction",
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "presence-call-direction",
 									   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", channel->event_count++);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-File", file);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Presence-Calling-File", file);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Line", "%d", line);
 
 		if (switch_true(switch_channel_get_variable(channel, "presence_privacy"))) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Privacy", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Presence-Privacy", "true");
 		}
 
 		switch_event_fire(&event);
@@ -959,7 +959,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channe
 		for (ep = channel->scope_variables; ep; ep = ep->next) {
 			for (hp = ep->headers; hp; hp = hp->next) {
 				if (!switch_event_get_header(new_event, hp->value)) {
-					switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+					switch_event_add_header_string_dup(new_event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
 				}
 			}
 		}
@@ -1244,7 +1244,7 @@ SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, sw
 
 	if (var_event) {
 		switch_event_del_header(var_event, export_varname);
-		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, export_varname, export_vars);
+		switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, export_varname, export_vars);
 	}
 
 	if (peer_channel) {
@@ -1265,7 +1265,7 @@ SWITCH_DECLARE(void) switch_channel_process_export(switch_channel_t *channel, sw
 				}
 				if (var_event) {
 					switch_event_del_header(var_event, vvar);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
+					switch_event_add_header_string_dup(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(channel->session), SWITCH_LOG_DEBUG,
 									  "%s EXPORTING[%s] [%s]=[%s] to event\n",
 									  switch_channel_get_name(channel),
@@ -1443,7 +1443,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_log_tag(switch_channel_t *cha
 		if (zstr(tagvalue)) {
 			switch_event_del_header(channel->log_tags, tagname);
 		} else {
-			switch_event_add_header_string(channel->log_tags, SWITCH_STACK_BOTTOM, tagname, tagvalue);
+			switch_event_add_header_string_dup(channel->log_tags, SWITCH_STACK_BOTTOM, tagname, tagvalue);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -1484,7 +1484,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 				ok = !switch_string_var_check_const(value);
 			}
 			if (ok) {
-				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
+				switch_event_add_header_string_dup(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
@@ -1526,7 +1526,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_strip_quotes_var_che
 				ok = !switch_string_var_check_const(r);
 			}
 			if (ok) {
-				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, r);
+				switch_event_add_header_string_dup(channel->variables, SWITCH_STACK_BOTTOM, varname, r);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
@@ -2649,63 +2649,63 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		originatee_caller_profile = caller_profile->originatee_caller_profile;
 	}
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(channel->running_state));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", switch_channel_callstate2str(channel->callstate));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(channel->running_state));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", switch_channel_callstate2str(channel->callstate));
 	switch_snprintf(state_num, sizeof(state_num), "%d", channel->state);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", state_num);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Session-External-ID", switch_core_session_get_external_id(channel->session));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", state_num);
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Session-External-ID", switch_core_session_get_external_id(channel->session));
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Direction",
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Call-Direction",
 								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
 								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-HIT-Dialplan",
+	switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-HIT-Dialplan",
 								   switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND ||
 								   switch_channel_test_flag(channel, CF_DIALPLAN) ? "true" : "false");
 
 
 	if ((v = switch_channel_get_variable_dup(channel, "presence_id", SWITCH_FALSE, -1))) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Presence-ID", v);
 	}
 
 	if ((v = switch_channel_get_variable_dup(channel, "presence_data", SWITCH_FALSE, -1))) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Presence-Data", v);
 	}
 
 
 	if ((v = switch_channel_get_variable_dup(channel, "presence_data_cols", SWITCH_FALSE, -1))) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Data-Cols", v);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Presence-Data-Cols", v);
 		switch_event_add_presence_data_cols(channel, event, "PD-");
 	}
 
 	if ((v = switch_channel_get_variable_dup(channel, "call_uuid", SWITCH_FALSE, -1))) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", v);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", v);
 	} else {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));
 	}
 
 	if (switch_channel_down_nosig(channel)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 	} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
 	} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
 	} else {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
 	}
 
 	if (channel->hangup_cause) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
 	}
 
 
 	switch_core_session_get_read_impl(channel->session, &impl);
 
 	if (impl.iananame) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", impl.iananame);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", impl.iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", impl.actual_samples_per_second);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Bit-Rate", "%d", impl.bits_per_second);
 	}
@@ -2713,7 +2713,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	switch_core_session_get_write_impl(channel->session, &impl);
 
 	if (impl.iananame) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", impl.iananame);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", impl.iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", impl.actual_samples_per_second);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Bit-Rate", "%d", impl.bits_per_second);
 	}
@@ -2725,10 +2725,10 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 
 	/* Index Originator/ee's Profile */
 	if (originator_caller_profile && channel->last_profile_type == LP_ORIGINATOR) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Type", "originator");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Other-Type", "originator");
 		switch_caller_profile_event_set_data(originator_caller_profile, "Other-Leg", event);
 	} else if (originatee_caller_profile && channel->last_profile_type == LP_ORIGINATEE) {	/* Index Originatee's Profile */
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Other-Type", "originatee");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Other-Type", "originatee");
 		switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
 	}
 
@@ -2796,7 +2796,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 					switch_snprintf(buf, sizeof(buf), "scope_variable_%s", vvar);
 
 					if (!switch_event_get_header(event, buf)) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, buf, vval);
 					}
 				}
 			}
@@ -2812,7 +2812,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 
 				switch_assert(vvar && vval);
 				switch_snprintf(buf, sizeof(buf), "variable_%s", vvar);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, buf, vval);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, buf, vval);
 			}
 		}
 	}
@@ -3257,10 +3257,10 @@ SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 
 	if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 		const char *uuid = switch_channel_get_partner_uuid(channel);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
 
 		if (uuid) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Bridged-To", uuid);
 		}
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
@@ -4450,7 +4450,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_variables_prefix(switch_chann
 
 		for (hi = channel->variables->headers; hi; hi = hi->next) {
 			if (!strncmp(hi->name, prefix, strlen(prefix))) {
-				switch_event_add_header_string(vars, SWITCH_STACK_BOTTOM, hi->name, hi->value);
+				switch_event_add_header_string_dup(vars, SWITCH_STACK_BOTTOM, hi->name, hi->value);
 			}
 		}
 	}
@@ -5116,8 +5116,8 @@ SWITCH_DECLARE(void) switch_channel_clear_device_record(switch_channel_t *channe
 		int x = 0;
 		char prefix[80] = "";
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Type", "device");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-ID", channel->device_node->parent->device_id);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Type", "device");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Device-ID", channel->device_node->parent->device_id);
 
 		switch_mutex_lock(channel->device_node->parent->mutex);
 		for(np = channel->device_node->parent->uuid_list; np; np = np->next) {
@@ -5303,10 +5303,10 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 
 
 	if (switch_event_create(&event, SWITCH_EVENT_DEVICE_STATE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-ID", drec->device_id);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-Device-State", switch_channel_device_state2str(drec->last_state));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-State", switch_channel_device_state2str(drec->state));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-Call-State", switch_channel_callstate2str(callstate));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Device-ID", drec->device_id);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Last-Device-State", switch_channel_device_state2str(drec->last_state));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Device-State", switch_channel_device_state2str(drec->state));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Device-Call-State", switch_channel_callstate2str(callstate));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Total-Legs", "%u", drec->stats.total);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Offhook", "%u", drec->stats.offhook);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Ringing", "%u", drec->stats.ringing);

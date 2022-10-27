@@ -67,7 +67,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 		}
 
 		if (node->member_id) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
 
 			if ((member = conference_member_get(conference, node->member_id))) {
 				conference_member_add_event_data(member, event);
@@ -75,13 +75,13 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 			}
 
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
 		}
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", node->file);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", node->file);
 
 		if (node->async) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Async", "true");
 		}
 
 		switch_event_fire(&event);
@@ -272,10 +272,10 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 				switch_event_merge(event, conference->fnode->fh.params);
 			}
 
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", file);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Error", "File could not be played");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "File", file);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Error", "File could not be played");
 			switch_event_fire(&event);
 		}
 

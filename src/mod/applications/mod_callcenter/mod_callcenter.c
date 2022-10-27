@@ -723,7 +723,7 @@ static cc_queue_t *load_queue(const char *queue_name, switch_bool_t request_agen
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 
 	if (x_queues_cfg) {
 		x_queues = x_queues_cfg;
@@ -876,10 +876,10 @@ int cc_queue_count(const char *queue)
 		count = atoi(res);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "members-count");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Count", res);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Selection", event_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "members-count");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Count", res);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Selection", event_name);
 			switch_event_fire(&event);
 		}
 	}
@@ -913,9 +913,9 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 		switch_safe_free(sql);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", type);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-add");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", type);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-add");
 			switch_event_fire(&event);
 		}
 
@@ -974,9 +974,9 @@ cc_status_t cc_agent_get(const char *key, const char *agent, char *ret_result, s
 			} else {
 				switch_snprintf(tmpname, sizeof(tmpname), "CC-Agent-%c%s", (char) switch_toupper(key[0]), key+1);
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-%s-get", key);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, tmpname, res);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, tmpname, res);
 			switch_event_fire(&event);
 		}
 
@@ -1041,9 +1041,9 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			result = CC_STATUS_SUCCESS;
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-status-change");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Status", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-status-change");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-Status", value);
 				switch_event_fire(&event);
 			}
 
@@ -1065,9 +1065,9 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			result = CC_STATUS_SUCCESS;
 
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
 				switch_event_fire(&event);
 			}
 
@@ -1089,9 +1089,9 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		result = CC_STATUS_SUCCESS;
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-contact-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Contact", value);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-contact-change");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-Contact", value);
 			switch_event_fire(&event);
 		}
 	} else if (!strcasecmp(key, "ready_time")) {
@@ -1158,9 +1158,9 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			if (cc_execute_sql_affected_rows(sql) > 0) {
 				result = CC_STATUS_SUCCESS;
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
+					switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
 					switch_event_fire(&event);
 				}
 			} else {
@@ -1719,16 +1719,16 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_caller_profile_t *member_profile = switch_channel_get_caller_profile(member_channel);
 		const char *member_dnis = member_profile->rdnis;
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-offering");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", h->agent_type);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-DNIS", member_dnis);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-offering");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", h->agent_type);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-DNIS", member_dnis);
 		switch_event_fire(&event);
 	}
 
@@ -1936,19 +1936,19 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			const char *member_dnis = member_profile->rdnis;
 
 			switch_channel_event_set_data(agent_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-start");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-start");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT, t_agent_called);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" SWITCH_TIME_T_FMT, t_agent_answered);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT, t_member_called);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-DNIS", member_dnis);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-DNIS", member_dnis);
 			switch_event_fire(&event);
 		}
 
@@ -2048,21 +2048,21 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(agent_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-end");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Bridged", bridged ? "true" : "false");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-end");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-Bridged", bridged ? "true" : "false");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT, t_agent_called);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" SWITCH_TIME_T_FMT, t_agent_answered);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT,  t_member_called);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Bridge-Terminated-Time", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
 			switch_event_fire(&event);
 		}
 		if (bridged) {
@@ -2084,14 +2084,14 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			/* Caller off event */
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_event_set_data(member_channel, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause",
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause",
 											   switch_channel_cause2str(cause));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Terminated");
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-UUID", agent_uuid);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT,
 										t_agent_called);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Answered-Time", "%" SWITCH_TIME_T_FMT,
@@ -2100,11 +2100,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 										local_epoch_time_now(NULL));
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT,
 										t_member_called);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID",
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID",
 											   h->member_session_uuid);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number",
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number",
 											   h->member_cid_number);
 				switch_event_fire(&event);
 			}
@@ -2161,12 +2161,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 							h->agent_name, h->max_no_answer, cc_agent_status2str(h->agent_no_answer_status));
 
 					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-max-no-answer");
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-max-no-answer");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-No-Answer-Count", "%d", h->max_no_answer);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-No-Answer-Status", cc_agent_status2str(h->agent_no_answer_status));
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-No-Answer-Status", cc_agent_status2str(h->agent_no_answer_status));
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+						switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
 						switch_event_fire(&event);
 					}
 
@@ -2185,17 +2185,17 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		/* Fire up event when contact agent fails */
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-fail");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", h->queue_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "bridge-agent-fail");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Hangup-Cause", switch_channel_cause2str(cause));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent", h->agent_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Agent-System", h->agent_system);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Called-Time", "%" SWITCH_TIME_T_FMT, t_agent_called);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Agent-Aborted-Time", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", h->member_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", h->member_session_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", h->member_cid_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", h->member_cid_number);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT, t_member_called);
 			switch_event_fire(&event);
 		}
@@ -2898,9 +2898,9 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 		   switch_event_t *event;
 		   if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-		   switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-		   switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", "playback");
-		   switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "tone_stream://%(200,0,500,600,700)");
+		   switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+		   switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-name", "playback");
+		   switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "tone_stream://%(200,0,500,600,700)");
 		   switch_core_session_queue_private_event(member_session, &event, SWITCH_TRUE);
 		   }
 		 */
@@ -3095,12 +3095,12 @@ SWITCH_STANDARD_APP(callcenter_function)
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(member_channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-%s", (abandoned_epoch==0?"start":"resume"));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", member_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", member_session_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", member_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", member_session_uuid);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 		switch_event_fire(&event);
 	}
 
@@ -3252,16 +3252,16 @@ SWITCH_STANDARD_APP(callcenter_function)
 		/* Generate an event */
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(member_channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Action", "member-queue-end");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Leaving-Time", "%" SWITCH_TIME_T_FMT, local_epoch_time_now(NULL));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "CC-Member-Joined-Time", "%" SWITCH_TIME_T_FMT, t_member_called);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Cancel");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Cancel-Reason", cc_member_cancel_reason2str(h->member_cancel_reason));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", member_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", member_session_uuid);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Cause", "Cancel");
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Cancel-Reason", cc_member_cancel_reason2str(h->member_cancel_reason));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-UUID", member_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-Session-UUID", member_session_uuid);
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Name", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")));
+			switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "CC-Member-CID-Number", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")));
 			switch_event_fire(&event);
 		}
 
@@ -3375,25 +3375,25 @@ static void cc_send_presence(const char *queue_name) {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Queue has %d waiting calls.\n", count);
 
 	if (switch_event_create(&send_event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "proto", "callcenter");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "proto", "callcenter");
 		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "login", "%s", queue_name);
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "from", queue_name);
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "from", queue_name);
 
 		if (count > 0) {
 			switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d waiting)", count);
 		} else {
-			switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
+			switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
 		}
 
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 		switch_event_add_header(send_event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "channel-state", count > 0 ? "CS_ROUTING" : "CS_HANGUP");
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "unique-id", queue_name);
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "answer-state", count > 0 ? "confirmed" : "terminated");
-		switch_event_add_header_string(send_event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "channel-state", count > 0 ? "CS_ROUTING" : "CS_HANGUP");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "unique-id", queue_name);
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "answer-state", count > 0 ? "confirmed" : "terminated");
+		switch_event_add_header_string_dup(send_event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 		switch_event_fire(&send_event);
 
 	} else {

@@ -117,11 +117,11 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_TDD_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "tdd");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "TDD MESSAGE");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "TDD-Data", (char *)msg);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(pvt->session));
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "login", "mod_spandsp");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "proto", "tdd");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "subject", "TDD MESSAGE");
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "TDD-Data", (char *)msg);
+		switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(pvt->session));
 		switch_event_add_body(event, "%s\n\n", (char *)msg);
 
 		if (switch_core_session_get_partner(pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
@@ -927,8 +927,8 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 			switch_channel_execute_on(channel, execute_on_tone_var);
 			switch_channel_api_on(channel, api_on_tone_var);
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", detected_tone);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Detected-Tone", detected_tone);
+				switch_event_add_header_string_dup(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(session));
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
 			}

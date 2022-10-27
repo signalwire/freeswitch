@@ -477,7 +477,7 @@ switch_status_t FSH323EndPoint::ReadConfig(int reload)
 	switch_event_t *params = NULL;
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile", switch_str_nil(""));
+	switch_event_add_header_string_dup(params, SWITCH_STACK_BOTTOM, "profile", switch_str_nil(""));
 	switch_xml_t cfg;
 	switch_xml_t xml = switch_xml_open_cfg(cf, &cfg, params);
 
