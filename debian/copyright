@@ -1709,27 +1709,6 @@ License: LGPL-2.1
 Files: libs/broadvoice/autogen.sh
 License: GPL-2
 
-Files: libs/libzrtp/*
-Copyright: 2006-2012 Philip R. Zimmermann.
- 1993-2005 Colin Plumb
- 1998-2006, Dr Brian Gladman, Worcester, UK.
- 2002, Bryce "Zooko" Wilcox-O'Hearn
- 2010 Soft Industry
-License: AGPL-3 or MPL-1.1
-
-Files: libs/libzrtp/test/cmockery/cmockery.c
-Copyright: 2008 Google Inc
-License: Apache-2.0
-
-Files: libs/libzrtp/third_party/bnlib/legal.c
- libs/libzrtp/third_party/bnlib/*
-Copyright: 1993-2005 Colin Plumb
-License: GPL-2 or GPL-3 or MPL-1.1
-
-Files: libs/libzrtp/third_party/bnlib/test/md5.c
-Copyright: 1995 Abandoned Colin Plumb
-License: public-domain
-
 Files: libs/win32/sqlite/sqlite3.[ch]
  libs/win32/sqlite/parse.c
 Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>

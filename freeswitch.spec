@@ -1616,7 +1616,6 @@ autoreconf --force --install
 --with-odbc \
 --with-erlang \
 --with-openssl \
---enable-zrtp \
 %{?configure_options}
 
 unset MODULES

@@ -743,10 +743,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				}
 			}
 
-			if (switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)) {
-				switch_channel_set_flag(peer_channel, CF_ZRTP_PASSTHRU_REQ);
-			}
-
 			if (profile) {
 				if ((cloned_profile = switch_caller_profile_clone(*new_session, profile)) != 0) {
 					switch_channel_set_originator_caller_profile(peer_channel, cloned_profile);
