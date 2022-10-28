@@ -39,7 +39,6 @@
      <param name="loglevel" value="debug"/>
      <param name="rtp-start-port" value="1234"/>
      <param name="rtp-end-port" value="1234"/>
-     <param name="rtp-enable-zrtp" value="false"/>
  
    </settings>
  </configuration>

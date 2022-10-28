@@ -22,14 +22,14 @@ cd freeswitch.git
 ./configure -C --enable-portable-binary --enable-sctp\
 	   --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
 	   --with-gnu-ld --with-openssl \
-	   --enable-core-odbc-support --enable-zrtp \
+	   --enable-core-odbc-support \
 	   --enable-core-pgsql-support \
 	   --enable-static-v8 --disable-parallel-build-v8 --enable-amr $@
 
 #CC=clang-3.6 CXX=clang++-3.6 ./configure -C --enable-portable-binary \
 #           --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
 #           --with-gnu-ld --with-openssl \
-#           --enable-core-odbc-support --enable-zrtp \
+#           --enable-core-odbc-support \
 #           --enable-core-pgsql-support \
 #           --enable-static-v8 --disable-parallel-build-v8 --enable-address-sanitizer
 
