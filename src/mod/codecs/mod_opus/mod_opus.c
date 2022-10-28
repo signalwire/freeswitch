@@ -817,6 +817,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	int fec = 0, plc = 0;
 	int32_t frame_size = 0, last_frame_size = 0;
 	uint32_t frame_samples;
+	uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -842,7 +843,6 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 			}
 			if (codec->cur_frame && (jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO))) {
 				switch_frame_t frame = { 0 };
-				uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
 				uint32_t ts = 0;
 				uint16_t seq = 0;
 
