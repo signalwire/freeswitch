@@ -1203,9 +1203,8 @@ SWITCH_STACK_TOP	- Stack on the top
 typedef enum {
 	SWITCH_STACK_BOTTOM = (1 << 0),
 	SWITCH_STACK_TOP = (1 << 1),
-	SWITCH_STACK_NODUP = (1 << 2),
-	SWITCH_STACK_UNSHIFT = (1 << 3),
-	SWITCH_STACK_PUSH = (1 << 4),
+	SWITCH_STACK_UNSHIFT = (1 << 2),
+	SWITCH_STACK_PUSH = (1 << 3)
 } switch_stack_t;
 
 /*!
