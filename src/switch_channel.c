@@ -867,8 +867,12 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 
 	if (on) {
 		switch_channel_set_flag(channel, CF_LEG_HOLDING);
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_HOLD_VARIABLE);
+		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_HOLD_VARIABLE);
 	} else {
 		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
+		switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_UNHOLD_VARIABLE);
+		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_UNHOLD_VARIABLE);
 	}
 
 	if (switch_event_create(&event, on ? SWITCH_EVENT_CHANNEL_HOLD : SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
