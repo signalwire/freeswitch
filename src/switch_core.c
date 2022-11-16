@@ -482,7 +482,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_set_var_conditional(const char *varnam
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
+			switch_event_add_header_string_nodup(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
@@ -1788,54 +1788,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
 }
 
 
-#ifdef ENABLE_ZRTP
-static void switch_core_set_serial(void)
-{
-	char buf[13] = "";
-	char path[256];
-
-	int fd = -1, write_fd = -1;
-	switch_ssize_t bytes = 0;
-
-	switch_snprintf(path, sizeof(path), "%s%sfreeswitch.serial", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR);
-
-
-	if ((fd = open(path, O_RDONLY, 0)) < 0) {
-		char *ip = switch_core_get_variable_dup("local_ip_v4");
-		uint32_t ipi = 0;
-		switch_byte_t *byte;
-		int i = 0;
-
-		if (ip) {
-			switch_inet_pton(AF_INET, ip, &ipi);
-			free(ip);
-			ip = NULL;
-		}
-
-
-		byte = (switch_byte_t *) & ipi;
-
-		for (i = 0; i < 8; i += 2) {
-			switch_snprintf(buf + i, sizeof(buf) - i, "%0.2x", *byte);
-			byte++;
-		}
-
-		switch_stun_random_string(buf + 8, 4, "0123456789abcdef");
-
-		if ((write_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) >= 0) {
-			bytes = write(write_fd, buf, sizeof(buf));
-			bytes++;
-			close(write_fd);
-		}
-	} else {
-		bytes = read(fd, buf, sizeof(buf) - 1);
-		close(fd);
-	}
-
-	switch_core_set_variable("switch_serial", buf);
-}
-#endif
-
 SWITCH_DECLARE(int) switch_core_test_flag(int flag)
 {
 	return switch_test_flag((&runtime), flag);
@@ -1993,9 +1945,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("cache_dir", SWITCH_GLOBAL_dirs.cache_dir);
 	switch_core_set_variable("data_dir", SWITCH_GLOBAL_dirs.data_dir);
 	switch_core_set_variable("localstate_dir", SWITCH_GLOBAL_dirs.localstate_dir);
-#ifdef ENABLE_ZRTP
-	switch_core_set_serial();
-#endif
 	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 	switch_channel_global_init(runtime.memory_pool);
@@ -2381,10 +2330,6 @@ static void switch_load_core_config(const char *file)
 					} else {
 						runtime.odbc_dbtype = DBTYPE_DEFAULT;
 					}
-#ifdef ENABLE_ZRTP
-				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
-					switch_core_set_variable("zrtp_enabled", val);
-#endif
 				} else if (!strcasecmp(var, "switchname") && !zstr(val)) {
 					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);

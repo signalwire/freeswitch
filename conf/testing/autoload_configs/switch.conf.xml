@@ -150,8 +150,6 @@
     <!-- Test each port to make sure it is not in use by some other process before allocating it to RTP -->
     <!-- <param name="rtp-port-usage-robustness" value="true"/> -->
 
-    <param name="rtp-enable-zrtp" value="true"/>
-
     <!--
 	 Native PostgreSQL support was removed from the FreeSWITCH Core!
 	 =================================

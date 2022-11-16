@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.8-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.9-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [9-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -248,7 +248,7 @@ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT([disable-static])
 
 #Check for compiler vendor
 AX_COMPILER_VENDOR
@@ -601,13 +601,6 @@ have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
-AC_ARG_ENABLE(zrtp,
-	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
-if test "x$enable_zrtp" = "xyes" ; then
-   LIBS="-lpthread $LIBS"
-   APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
-fi
-
 PA_LIBS=
 
 PKG_CHECK_MODULES(JACK, jack, have_jack=yes, have_jack=no)
@@ -621,8 +614,6 @@ PA_LIBS+=-lasound
 fi
 
 AC_SUBST(PA_LIBS)
-
-AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
@@ -2330,9 +2321,6 @@ if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
-if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp])
-fi
 
 case $host in
    *-openbsd*|*-netbsd*)
