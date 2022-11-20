@@ -61,7 +61,6 @@ int main(int argc, char **argv) {
 #if !CONFIG_SHARED
 // Shared library builds don't support whitebox tests
 // that exercise internal symbols.
-
 #if CONFIG_VP8
   vp8_rtcd();
 #endif  // CONFIG_VP8

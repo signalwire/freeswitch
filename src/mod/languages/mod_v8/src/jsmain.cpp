@@ -443,7 +443,7 @@ Isolate *JSMain::GetIsolate()
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 void JSMain::Initialize(v8::Platform **platform)
 {
-	bool res = V8::InitializeICUDefaultLocation(SWITCH_GLOBAL_dirs.mod_dir);
+	V8::InitializeICUDefaultLocation(SWITCH_GLOBAL_dirs.mod_dir);
 	V8::InitializeExternalStartupData(SWITCH_GLOBAL_dirs.mod_dir);
 
 	*platform = v8::platform::CreateDefaultPlatform();

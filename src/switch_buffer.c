@@ -344,7 +344,12 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 		return 0;
 	}
 
-	memcpy(buffer->head + buffer->used, data, datalen);
+	if (data) {
+		memcpy(buffer->head + buffer->used, data, datalen);
+	} else {
+		memset(buffer->head + buffer->used, 0, datalen);
+	}
+
 	buffer->used += datalen;
 	buffer->actually_used += datalen;
 	return buffer->used;

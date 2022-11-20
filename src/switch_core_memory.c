@@ -33,6 +33,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 //#define DEBUG_ALLOC
@@ -85,10 +86,14 @@ SWITCH_DECLARE(void *) switch_core_perform_session_alloc(switch_core_session_t *
 #ifdef DEBUG_ALLOC
 	if (memory > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p %p Session Allocate %s %d\n",
-						  (void *) session->pool, (void *) session, apr_pool_tag(session->pool, NULL), (int) memory);
+						  (void *) session->pool, (void *) session, fspr_pool_tag(session->pool, NULL), (int) memory);
 #endif
 
-	ptr = apr_palloc(session->pool, memory);
+#if APR_POOL_DEBUG
+	ptr = fspr_palloc_debug(session->pool, memory, func);
+#else
+	ptr = fspr_palloc(session->pool, memory);
+#endif
 	switch_assert(ptr != NULL);
 
 	memset(ptr, 0, memory);
@@ -118,10 +123,10 @@ SWITCH_DECLARE(void *) switch_core_perform_permanent_alloc(switch_size_t memory,
 
 #ifdef DEBUG_ALLOC
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Perm Allocate %s %d\n",
-					  (void *)memory_manager.memory_pool, apr_pool_tag(memory_manager.memory_pool, NULL), (int) memory);
+					  (void *)memory_manager.memory_pool, fspr_pool_tag(memory_manager.memory_pool, NULL), (int) memory);
 #endif
 
-	ptr = apr_palloc(memory_manager.memory_pool, memory);
+	ptr = fspr_palloc(memory_manager.memory_pool, memory);
 
 	switch_assert(ptr != NULL);
 	memset(ptr, 0, memory);
@@ -155,12 +160,12 @@ SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(const char *todup, c
 #endif
 
 	len = strlen(todup) + 1;
-	duped = apr_pstrmemdup(memory_manager.memory_pool, todup, len);
+	duped = fspr_pstrmemdup(memory_manager.memory_pool, todup, len);
 	switch_assert(duped != NULL);
 
 #ifdef DEBUG_ALLOC
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Perm Allocate %s %d\n",
-					  (void *) memory_manager.memory_pool, apr_pool_tag(memory_manager.memory_pool, NULL), (int) len);
+					  (void *) memory_manager.memory_pool, fspr_pool_tag(memory_manager.memory_pool, NULL), (int) len);
 #endif
 
 #ifdef LOCK_MORE
@@ -201,7 +206,7 @@ SWITCH_DECLARE(char *) switch_core_vsprintf(switch_memory_pool_t *pool, const ch
 #endif
 #endif
 
-	result = apr_pvsprintf(pool, fmt, ap);
+	result = fspr_pvsprintf(pool, fmt, ap);
 	switch_assert(result != NULL);
 
 #ifdef LOCK_MORE
@@ -253,10 +258,10 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 	len = strlen(todup);
 	if (len > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p %p Sess Strdup Allocate %s %ld\n",
-						  (void *) session->pool, (void *)session, apr_pool_tag(session->pool, NULL), strlen(todup));
+						  (void *) session->pool, (void *)session, fspr_pool_tag(session->pool, NULL), strlen(todup));
 #endif
 
-	duped = apr_pstrdup(session->pool, todup);
+	duped = fspr_pstrdup(session->pool, todup);
 	switch_assert(duped != NULL);
 
 #ifdef LOCK_MORE
@@ -294,10 +299,10 @@ SWITCH_DECLARE(char *) switch_core_perform_strndup(switch_memory_pool_t *pool, c
 #ifdef DEBUG_ALLOC
 	if (len > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Core Strdup Allocate %s %d\n",
-						  (void *) pool, apr_pool_tag(pool, NULL), (int)len);
+						  (void *) pool, fspr_pool_tag(pool, NULL), (int)len);
 #endif
 
-	duped = apr_pstrmemdup(pool, todup, len);
+	duped = fspr_pstrmemdup(pool, todup, len);
 	switch_assert(duped != NULL);
 
 #ifdef LOCK_MORE
@@ -311,57 +316,89 @@ SWITCH_DECLARE(char *) switch_core_perform_strndup(switch_memory_pool_t *pool, c
 
 SWITCH_DECLARE(void) switch_core_memory_pool_set_data(switch_memory_pool_t *pool, const char *key, void *data)
 {
-	apr_pool_userdata_set(data, key, NULL, pool);
+	fspr_pool_userdata_set(data, key, NULL, pool);
 }
 
 SWITCH_DECLARE(void *) switch_core_memory_pool_get_data(switch_memory_pool_t *pool, const char *key)
 {
 	void *data = NULL;
 
-	apr_pool_userdata_get(&data, key, pool);
+	fspr_pool_userdata_get(&data, key, pool);
 
 	return data;
 }
 
 SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, const char *tag)
 {
-	apr_pool_tag(pool, tag);
+	fspr_pool_tag(pool, tag);
 }
 
 SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 {
 #ifdef PER_POOL_LOCK
-	apr_thread_mutex_t *my_mutex;
-	apr_pool_mutex_set(p, NULL);
+	fspr_thread_mutex_t *my_mutex;
+	fspr_pool_mutex_set(p, NULL);
 #endif
 
-	apr_pool_clear(p);
+	fspr_pool_clear(p);
 
 #ifdef PER_POOL_LOCK
 
-	if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, p)) != APR_SUCCESS) {
+	if ((fspr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, p)) != APR_SUCCESS) {
 		abort();
 	}
 
-	apr_pool_mutex_set(p, my_mutex);
+	fspr_pool_mutex_set(p, my_mutex);
 
 #endif
 
 }
 
+#if APR_POOL_DEBUG
+static int switch_core_pool_stats_callback(fspr_pool_t *pool, void *data) {
+	switch_stream_handle_t *stream = (switch_stream_handle_t *)data;
+	size_t size = (size_t)fspr_pool_num_bytes(pool, 1);
+	unsigned int alloc = 0, total_alloc = 0, clear = 0;
+	char *line = NULL;
 
+	fspr_pool_userdata_get((void**)&line, "line", pool);
+	fspr_pool_get_stats(pool, &alloc, &total_alloc, &clear);
+
+	if (stream) {
+		stream->write_function(stream, "Pool '%s' size: %" SWITCH_SIZE_T_FMT ", alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : fspr_pool_tag(pool, NULL)), size, alloc, total_alloc, clear);
+	} else {
+		printf("Pool '%s' size: %" SWITCH_SIZE_T_FMT ", alloc:%d, total_alloc:%d, clear:%d\n", (line ? line : fspr_pool_tag(pool, NULL)), size, alloc, total_alloc, clear);
+	}
+	return 0;
+}
+#endif
+
+SWITCH_DECLARE(void) switch_core_pool_stats(switch_stream_handle_t *stream)
+{
+#if APR_POOL_DEBUG
+	if (runtime.memory_pool) {
+		fspr_pool_walk_tree_debug(runtime.memory_pool, switch_core_pool_stats_callback, (void *)stream);
+	}
+#else
+	if (stream) {
+		stream->write_function(stream, "Unable to get core pool statictics. Please rebuild FreeSWITCH with --enable-pool-debug");
+	} else {
+		printf("Unable to get core pool statictics. Please rebuild FreeSWITCH with --enable-pool-debug");
+	}
+#endif
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
 	char *tmp;
 #ifdef INSTANTLY_DESTROY_POOLS
-	apr_pool_create(pool, NULL);
+	fspr_pool_create(pool, NULL);
 	switch_assert(*pool != NULL);
 #else
 
 #ifdef PER_POOL_LOCK
-	apr_allocator_t *my_allocator = NULL;
-	apr_thread_mutex_t *my_mutex;
+	fspr_allocator_t *my_allocator = NULL;
+	fspr_thread_mutex_t *my_mutex;
 #else
 	void *pop = NULL;
 #endif
@@ -378,35 +415,43 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 #endif
 
 #ifdef PER_POOL_LOCK
-		if ((apr_allocator_create(&my_allocator)) != APR_SUCCESS) {
+		if ((fspr_allocator_create(&my_allocator)) != APR_SUCCESS) {
 			abort();
 		}
 
-		if ((apr_pool_create_ex(pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+#if APR_POOL_DEBUG
+		if ((fspr_pool_create_ex_debug(pool, memory_manager.memory_pool, NULL, my_allocator, func)) != APR_SUCCESS) {
+#else
+		if ((fspr_pool_create_ex(pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+#endif
 			abort();
 		}
 
-		if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, *pool)) != APR_SUCCESS) {
+		if ((fspr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, *pool)) != APR_SUCCESS) {
 			abort();
 		}
 
-		apr_allocator_mutex_set(my_allocator, my_mutex);
-		apr_allocator_owner_set(my_allocator, *pool);
+		fspr_allocator_mutex_set(my_allocator, my_mutex);
+		fspr_allocator_owner_set(my_allocator, *pool);
 
-		apr_pool_mutex_set(*pool, my_mutex);
+		fspr_pool_mutex_set(*pool, my_mutex);
 
 #else
-		apr_pool_create(pool, NULL);
+		fspr_pool_create(pool, NULL);
 		switch_assert(*pool != NULL);
 	}
 #endif
 #endif
 
 	tmp = switch_core_sprintf(*pool, "%s:%d", file, line);
-	apr_pool_tag(*pool, tmp);
+	fspr_pool_tag(*pool, tmp);
+
+#if APR_POOL_DEBUG
+	fspr_pool_userdata_set(tmp, "line", NULL, *pool);
+#endif
 
 #ifdef DEBUG_ALLOC2
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p New Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p New Pool %s\n", (void *) *pool, fspr_pool_tag(*pool, NULL));
 #endif
 
 
@@ -419,33 +464,50 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 
 SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
+	char *tmp;
+	const char *tag;
+	switch_memory_pool_t *tmp_pool = NULL;
 	switch_assert(pool != NULL);
+	
+	/* In tag we store who calls the pool creation.
+	   Now we append it with who calls the pool destroy.
+	*/
+	if (*pool) {
+		tmp_pool = *pool;
+		*pool = NULL;
+
+		tag = fspr_pool_tag(tmp_pool, NULL);
+		tmp = switch_core_sprintf(tmp_pool, "%s,%s:%d", (tag ? tag : ""), file, line);
+		fspr_pool_tag(tmp_pool, tmp);
+	}
 
 #ifdef DEBUG_ALLOC2
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) *pool, apr_pool_tag(*pool, NULL));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Free Pool %s\n", (void *) tmp_pool, fspr_pool_tag(tmp_pool, NULL));
 #endif
 
 #ifdef INSTANTLY_DESTROY_POOLS
 #ifdef USE_MEM_LOCK
 	switch_mutex_lock(memory_manager.mem_lock);
 #endif
-	apr_pool_destroy(*pool);
+	fspr_pool_destroy(tmp_pool);
 #ifdef USE_MEM_LOCK
 	switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 #else
-	if ((memory_manager.pool_thread_running != 1) || (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS)) {
+	if ((memory_manager.pool_thread_running != 1) || (switch_queue_push(memory_manager.pool_queue, tmp_pool) != SWITCH_STATUS_SUCCESS)) {
 #ifdef USE_MEM_LOCK
 		switch_mutex_lock(memory_manager.mem_lock);
 #endif
-		apr_pool_destroy(*pool);
+#if APR_POOL_DEBUG
+		fspr_pool_destroy_debug(tmp_pool, func);
+#else
+		fspr_pool_destroy(tmp_pool);
+#endif
 #ifdef USE_MEM_LOCK
 		switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 	}
 #endif
-
-	*pool = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -465,11 +527,15 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 #ifdef DEBUG_ALLOC
 	if (memory > DEBUG_ALLOC_CUTOFF)
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%p Core Allocate %s %d\n",
-						  (void *) pool, apr_pool_tag(pool, NULL), (int) memory);
+						  (void *) pool, fspr_pool_tag(pool, NULL), (int) memory);
 	/*switch_assert(memory < 20000); */
 #endif
 
-	ptr = apr_palloc(pool, memory);
+#if APR_POOL_DEBUG
+	ptr = fspr_palloc_debug(pool, memory, func);
+#else
+	ptr = fspr_palloc(pool, memory);
+#endif
 	switch_assert(ptr != NULL);
 	memset(ptr, 0, memory);
 
@@ -498,7 +564,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 #ifdef USE_MEM_LOCK
 		switch_mutex_lock(memory_manager.mem_lock);
 #endif
-		apr_pool_destroy(pool);
+		fspr_pool_destroy(pool);
 #ifdef USE_MEM_LOCK
 		switch_mutex_unlock(memory_manager.mem_lock);
 #endif
@@ -535,16 +601,16 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 #ifdef DEBUG_ALLOC
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%p DESTROY POOL\n", (void *) pop);
 #endif
-				apr_pool_destroy(pop);
+				fspr_pool_destroy(pop);
 #ifdef USE_MEM_LOCK
 				switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 #else
-				apr_pool_mutex_set(pop, NULL);
+				fspr_pool_mutex_set(pop, NULL);
 #ifdef DEBUG_ALLOC
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%p DESTROY POOL\n", (void *) pop);
 #endif
-				apr_pool_clear(pop);
+				fspr_pool_clear(pop);
 				if (switch_queue_trypush(memory_manager.pool_recycle_queue, pop) != SWITCH_STATUS_SUCCESS) {
 #ifdef USE_MEM_LOCK
 					switch_mutex_lock(memory_manager.mem_lock);
@@ -552,7 +618,7 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 #ifdef DEBUG_ALLOC
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%p DESTROY POOL\n", (void *) pop);
 #endif
-					apr_pool_destroy(pop);
+					fspr_pool_destroy(pop);
 #ifdef USE_MEM_LOCK
 					switch_mutex_unlock(memory_manager.mem_lock);
 #endif
@@ -581,7 +647,7 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 #ifdef USE_MEM_LOCK
 			switch_mutex_lock(memory_manager.mem_lock);
 #endif
-			apr_pool_destroy(pop);
+			fspr_pool_destroy(pop);
 			pop = NULL;
 #ifdef USE_MEM_LOCK
 			switch_mutex_unlock(memory_manager.mem_lock);
@@ -612,7 +678,7 @@ void switch_core_memory_stop(void)
 
 
 	while (switch_queue_trypop(memory_manager.pool_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-		apr_pool_destroy(pop);
+		fspr_pool_destroy(pop);
 	}
 #endif
 }
@@ -623,33 +689,33 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	switch_threadattr_t *thd_attr;
 #endif
 #ifdef PER_POOL_LOCK
-	apr_allocator_t *my_allocator = NULL;
-	apr_thread_mutex_t *my_mutex;
+	fspr_allocator_t *my_allocator = NULL;
+	fspr_thread_mutex_t *my_mutex;
 #endif
 
 	memset(&memory_manager, 0, sizeof(memory_manager));
 
 #ifdef PER_POOL_LOCK
-	if ((apr_allocator_create(&my_allocator)) != APR_SUCCESS) {
+	if ((fspr_allocator_create(&my_allocator)) != APR_SUCCESS) {
 		abort();
 	}
 
-	if ((apr_pool_create_ex(&memory_manager.memory_pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
-		apr_allocator_destroy(my_allocator);
+	if ((fspr_pool_create_ex(&memory_manager.memory_pool, NULL, NULL, my_allocator)) != APR_SUCCESS) {
+		fspr_allocator_destroy(my_allocator);
 		my_allocator = NULL;
 		abort();
 	}
 
-	if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, memory_manager.memory_pool)) != APR_SUCCESS) {
+	if ((fspr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, memory_manager.memory_pool)) != APR_SUCCESS) {
 		abort();
 	}
 
-	apr_allocator_mutex_set(my_allocator, my_mutex);
-	apr_pool_mutex_set(memory_manager.memory_pool, my_mutex);
-	apr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
-	apr_pool_tag(memory_manager.memory_pool, "core_pool");
+	fspr_allocator_mutex_set(my_allocator, my_mutex);
+	fspr_pool_mutex_set(memory_manager.memory_pool, my_mutex);
+	fspr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
+	fspr_pool_tag(memory_manager.memory_pool, "core_pool");
 #else
-	apr_pool_create(&memory_manager.memory_pool, NULL);
+	fspr_pool_create(&memory_manager.memory_pool, NULL);
 	switch_assert(memory_manager.memory_pool != NULL);
 #endif
 

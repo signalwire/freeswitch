@@ -71,7 +71,8 @@ static int remap_prob(int v, int m) {
   else
     i = recenter_nonneg(MAX_PROB - 1 - v, MAX_PROB - 1 - m) - 1;
 
-  i = map_table[i];
+  assert(i >= 0 && (size_t)i < sizeof(map_table));
+  if (i >= 0 && (size_t)i < sizeof(map_table)) i = map_table[i];
   return i;
 }
 

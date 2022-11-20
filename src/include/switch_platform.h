@@ -270,7 +270,11 @@ typedef intptr_t switch_ssize_t;
 #if defined(__FreeBSD__) && SIZEOF_VOIDP == 4
 #define TIME_T_FMT "d"
 #else
+#if __USE_TIME_BITS64
+#define TIME_T_FMT SWITCH_INT64_T_FMT
+#else
 #define TIME_T_FMT "ld"
+#endif
 #endif
 #endif
 

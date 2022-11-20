@@ -2,6 +2,7 @@
 
   <global_settings>
     <param name="log-level" value="0"/>
+    <!-- <param name="abort-on-empty-external-ip" value="true"/> -->
     <!-- <param name="auto-restart" value="false"/> -->
     <param name="debug-presence" value="0"/>
     <!-- <param name="capture-server" value="udp:homer.domain.com:5060"/> -->

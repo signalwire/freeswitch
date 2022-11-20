@@ -323,7 +323,6 @@ static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm
         	{
         		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find 'org.freeswitch.Launcher' class!\n");
         		(*env)->ExceptionDescribe(env);
-        		status = SWITCH_STATUS_FALSE;
         	}
 
         	// store a global reference for use in the launch_java() function

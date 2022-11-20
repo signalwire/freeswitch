@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_shm.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_time.h"
+#include "fspr_shm.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_time.h"
 #include "testshm.h"
-#include "apr.h"
+#include "fspr.h"
 
 #if APR_HAVE_STDLIB_H
 #include <stdlib.h>
@@ -34,9 +34,9 @@ static int msgwait(int sleep_sec, int first_box, int last_box)
 {
     int i;
     int recvd = 0;
-    apr_time_t start = apr_time_now();
-    apr_interval_time_t sleep_duration = apr_time_from_sec(sleep_sec);
-    while (apr_time_now() - start < sleep_duration) {
+    fspr_time_t start = fspr_time_now();
+    fspr_interval_time_t sleep_duration = fspr_time_from_sec(sleep_sec);
+    while (fspr_time_now() - start < sleep_duration) {
         for (i = first_box; i < last_box; i++) {
             if (boxes[i].msgavail && !strcmp(boxes[i].msg, MSG)) {
                 recvd++;
@@ -44,35 +44,35 @@ static int msgwait(int sleep_sec, int first_box, int last_box)
                 memset(boxes[i].msg, 0, 1024);
             }
         }
-        apr_sleep(apr_time_from_sec(1));
+        fspr_sleep(fspr_time_from_sec(1));
     }
     return recvd;
 }
 
 int main(void)
 {
-    apr_status_t rv;
-    apr_pool_t *pool;
-    apr_shm_t *shm;
+    fspr_status_t rv;
+    fspr_pool_t *pool;
+    fspr_shm_t *shm;
     int recvd;
 
-    apr_initialize();
+    fspr_initialize();
     
-    if (apr_pool_create(&pool, NULL) != APR_SUCCESS) {
+    if (fspr_pool_create(&pool, NULL) != APR_SUCCESS) {
         exit(-1);
     }
 
-    rv = apr_shm_attach(&shm, SHARED_FILENAME, pool);
+    rv = fspr_shm_attach(&shm, SHARED_FILENAME, pool);
     if (rv != APR_SUCCESS) {
         exit(-2);
     }
 
-    boxes = apr_shm_baseaddr_get(shm);
+    boxes = fspr_shm_baseaddr_get(shm);
 
     /* consume messages on all of the boxes */
     recvd = msgwait(30, 0, N_BOXES); /* wait for 30 seconds for messages */
 
-    rv = apr_shm_detach(shm);
+    rv = fspr_shm_detach(shm);
     if (rv != APR_SUCCESS) {
         exit(-3);
     }

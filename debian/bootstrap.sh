@@ -29,7 +29,7 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_debian_distros="wheezy jessie stretch buster sid"
+supported_debian_distros="wheezy jessie stretch buster bullseye sid"
 supported_ubuntu_distros="trusty utopic xenial"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
@@ -44,7 +44,6 @@ avoid_mods=(
   applications/mod_cluechoo
   asr_tts/mod_cepstral
   codecs/mod_com_g729
-  codecs/mod_ilbc
   codecs/mod_openh264
   codecs/mod_siren
   codecs/mod_sangoma_codec
@@ -300,13 +299,13 @@ print_source_control () {
   esac
   local debhelper_dep="debhelper (>= 8.0.0)"
   if [ ${use_sysvinit} = "false" ]; then
-      debhelper_dep=${debhelper_dep}", dh-systemd"
+      debhelper_dep=${debhelper_dep}", dh-systemd | debhelper (>= 8.0.0)"
   fi
   cat <<EOF
 Source: freeswitch
 Section: comm
 Priority: optional
-Maintainer: FreeSWITCH Solutions, LLC <support@freeswitch.com>
+Maintainer: SignalWire, Inc <support@signalwire.com>
 Build-Depends:
 # for debian
  ${debhelper_dep},
@@ -326,14 +325,17 @@ Build-Depends:
 # configure options
  libssl1.0-dev | libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-turbo-dev | libjpeg-turbo8-dev | libjpeg62-dev | libjpeg8-dev,
- python-dev, python-all-dev, python-support (>= 0.90) | dh-python, erlang-dev, libtpl-dev (>= 1.5),
+ python-dev | python-dev-is-python2, python3-dev, python-all-dev, python-support (>= 0.90) | dh-python, erlang-dev, libtpl-dev (>= 1.5),
 # documentation
  doxygen,
 # for APR (not essential for build)
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev,
+ bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.6),
+ libspandsp3-dev,
+# used to format the private freeswitch apt-repo key properly
+ gnupg,
 # module build-depends
  $(debian_wrap "${mod_build_depends}")
 Standards-Version: 3.9.3
@@ -369,7 +371,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: amd64 armhf
-Depends: \${shlibs:Depends}, \${misc:Depends}
+Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.6)
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)
@@ -651,11 +653,9 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-flite (= \${binary:Version}),
  freeswitch-mod-pocketsphinx (= \${binary:Version}),
  freeswitch-mod-tts-commandline (= \${binary:Version}),
- freeswitch-mod-unimrcp (= \${binary:Version}),
  freeswitch-mod-dialplan-asterisk (= \${binary:Version}),
  freeswitch-mod-dialplan-directory (= \${binary:Version}),
  freeswitch-mod-dialplan-xml (= \${binary:Version}),
- freeswitch-mod-dingaling (= \${binary:Version}),
  freeswitch-mod-loopback (= \${binary:Version}),
  freeswitch-mod-portaudio (= \${binary:Version}),
  freeswitch-mod-rtc (= \${binary:Version}),
@@ -681,7 +681,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-java (= \${binary:Version}),
  freeswitch-mod-lua (= \${binary:Version}),
  freeswitch-mod-perl (= \${binary:Version}),
- freeswitch-mod-python (= \${binary:Version}),
+ freeswitch-mod-python3 (= \${binary:Version}),
  freeswitch-mod-yaml (= \${binary:Version}),
  freeswitch-mod-console (= \${binary:Version}),
  freeswitch-mod-logfile (= \${binary:Version}),
@@ -890,11 +890,9 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-flite-dbg (= \${binary:Version}),
  freeswitch-mod-pocketsphinx-dbg (= \${binary:Version}),
  freeswitch-mod-tts-commandline-dbg (= \${binary:Version}),
- freeswitch-mod-unimrcp-dbg (= \${binary:Version}),
  freeswitch-mod-dialplan-asterisk-dbg (= \${binary:Version}),
  freeswitch-mod-dialplan-directory-dbg (= \${binary:Version}),
  freeswitch-mod-dialplan-xml-dbg (= \${binary:Version}),
- freeswitch-mod-dingaling-dbg (= \${binary:Version}),
  freeswitch-mod-loopback-dbg (= \${binary:Version}),
  freeswitch-mod-portaudio-dbg (= \${binary:Version}),
  freeswitch-mod-rtc-dbg (= \${binary:Version}),
@@ -920,7 +918,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-java-dbg (= \${binary:Version}),
  freeswitch-mod-lua-dbg (= \${binary:Version}),
  freeswitch-mod-perl-dbg (= \${binary:Version}),
- freeswitch-mod-python-dbg (= \${binary:Version}),
+ freeswitch-mod-python3-dbg (= \${binary:Version}),
  freeswitch-mod-yaml-dbg (= \${binary:Version}),
  freeswitch-mod-console-dbg (= \${binary:Version}),
  freeswitch-mod-logfile-dbg (= \${binary:Version}),
@@ -943,7 +941,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: freeswitch-all-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, freeswitch-meta-all (= \${binary:Version}), freeswitch-meta-all-dbg (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -953,7 +951,7 @@ Description: debugging symbols for FreeSWITCH
 
 Package: freeswitch-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -963,7 +961,7 @@ Description: debugging symbols for FreeSWITCH
 
 Package: libfreeswitch1-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends}, libfreeswitch1 (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
@@ -1066,7 +1064,7 @@ Description: ${description} for FreeSWITCH
 
 Package: freeswitch-${module_name//_/-}-dbg
 Section: debug
-Priority: extra
+Priority: optional
 Architecture: amd64 armhf
 Depends: \${misc:Depends},
  freeswitch-${module_name//_/-} (= \${binary:Version})

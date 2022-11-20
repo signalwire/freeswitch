@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_DSP_ARM_TRANSPOSE_NEON_H_
-#define VPX_DSP_ARM_TRANSPOSE_NEON_H_
+#ifndef VPX_VPX_DSP_ARM_TRANSPOSE_NEON_H_
+#define VPX_VPX_DSP_ARM_TRANSPOSE_NEON_H_
 
 #include <arm_neon.h>
 
@@ -1313,4 +1313,4 @@ static INLINE void load_and_transpose_s32_8x8(
 
   transpose_s32_8x8(a0, a1, a2, a3, a4, a5, a6, a7);
 }
-#endif  // VPX_DSP_ARM_TRANSPOSE_NEON_H_
+#endif  // VPX_VPX_DSP_ARM_TRANSPOSE_NEON_H_

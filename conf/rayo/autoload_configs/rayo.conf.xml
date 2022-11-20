@@ -277,36 +277,6 @@
 				</input>
 			]]>
 		</alias>
-		<alias name="input_voice_yesno_unimrcp" target="call">
-			<![CDATA[
-				<input xmlns="urn:xmpp:rayo:input:1" mode="voice" recognizer="unimrcp">
-					<grammar content-type="application/srgs+xml>
-					<![CDATA[
-						<grammar xmlns="http://www.w3.org/2001/06/grammar"
-							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-							xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
-							xml:lang="en-US" version="1.0">
-								<rule id="yesno"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>
-					]]]]><![CDATA[>
-					</grammar>
-				</input>
-			]]>
-		</alias>
-		<alias name="input_voice_yesno_unimrcp_timeout" target="call">
-			<![CDATA[
-				<input xmlns="urn:xmpp:rayo:input:1" mode="voice" recognizer="unimrcp" max-silence="5000" initial-timeout="5000">
-					<grammar content-type="application/srgs+xml>
-					<![CDATA[
-						<grammar xmlns="http://www.w3.org/2001/06/grammar"
-							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-							xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
-							xml:lang="en-US" version="1.0">
-								<rule id="yesno"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>
-					]]]]><![CDATA[>
-					</grammar>
-				</input>
-			]]>
-		</alias>
 
 		<alias name="input_voice_yesno_pocketsphinx" target="call">
 			<![CDATA[

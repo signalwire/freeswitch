@@ -52,16 +52,19 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(member_test)
 		{
-			const char *logo = "{position=left-bot,text_x=center,"
-				"center_offset=190,text=#000000:transparent:font/AEH.ttf:50:"
-				"'FREESWITCH ROCKS',alt_text_x=center,alt_center_offset=190,"
-				"alt_text_y=88,alt_text=#ffffff:transparent:font/AEH.ttf:40:"
-				"'freeswitch'}images/signalwire.png";
+			char path[4096];
+			char logo[1024];
 			conference_member_t smember = { 0 };
 			conference_member_t *member = &smember;
 			switch_image_t *img;
 			int i;
 
+			sprintf(logo, "%s%s%s%s%s%s%s", "{position=left-bot,text_x=center,"
+			"center_offset=190,text=#000000:transparent:", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "font/AEH.ttf:50:"
+			"'FREESWITCH ROCKS',alt_text_x=center,alt_center_offset=190,"
+			"alt_text_y=88,alt_text=#ffffff:transparent:", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "font/AEH.ttf:40:"
+			"'freeswitch'}");
+			sprintf(path, "%s%s%s%s", logo, SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../images/signalwire.png");
 			switch_mutex_init(&member->write_mutex, SWITCH_MUTEX_NESTED, fst_pool);
 			switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, fst_pool);
 			switch_mutex_init(&member->fnode_mutex, SWITCH_MUTEX_NESTED, fst_pool);
@@ -70,17 +73,18 @@ FST_CORE_BEGIN("./conf")
 			switch_mutex_init(&member->read_mutex, SWITCH_MUTEX_NESTED, fst_pool);
 			switch_thread_rwlock_create(&member->rwlock, fst_pool);
 
-			conference_member_set_logo(member, logo);
+			conference_member_set_logo(member, path);
 			img = member->video_logo;
 
 			for(i = 2; i <= 10; i += 2) {
 				switch_image_t *scaled_img = NULL;
 				char name[1024];
 
-				switch_snprintf(name, sizeof(name), "images/logo-signalwire-scaled-%d.png", i);
+				switch_snprintf(name, sizeof(name), "../images/logo-signalwire-scaled-%d.png", i);
+				sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, name);
 				switch_img_scale(img, &scaled_img, img->d_w / i, img->d_h / i);
 				fst_requires(scaled_img);
-				switch_img_write_png(scaled_img, name);
+				switch_img_write_png(scaled_img, path);
 				switch_img_free(&scaled_img);
 			}
 

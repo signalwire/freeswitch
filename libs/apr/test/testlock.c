@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_thread_proc.h"
-#include "apr_file_io.h"
-#include "apr_thread_mutex.h"
-#include "apr_thread_rwlock.h"
-#include "apr_thread_cond.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_getopt.h"
+#include "fspr_thread_proc.h"
+#include "fspr_file_io.h"
+#include "fspr_thread_mutex.h"
+#include "fspr_thread_rwlock.h"
+#include "fspr_thread_cond.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_getopt.h"
 #include "testutil.h"
 
 #if APR_HAS_THREADS
@@ -30,67 +30,67 @@
 #define MAX_COUNTER 100000
 #define MAX_RETRY 5
 
-static void *APR_THREAD_FUNC thread_rwlock_func(apr_thread_t *thd, void *data);
-static void *APR_THREAD_FUNC thread_mutex_function(apr_thread_t *thd, void *data);
-static void *APR_THREAD_FUNC thread_cond_producer(apr_thread_t *thd, void *data);
-static void *APR_THREAD_FUNC thread_cond_consumer(apr_thread_t *thd, void *data);
+static void *APR_THREAD_FUNC thread_rwlock_func(fspr_thread_t *thd, void *data);
+static void *APR_THREAD_FUNC thread_mutex_function(fspr_thread_t *thd, void *data);
+static void *APR_THREAD_FUNC thread_cond_producer(fspr_thread_t *thd, void *data);
+static void *APR_THREAD_FUNC thread_cond_consumer(fspr_thread_t *thd, void *data);
 
-static apr_thread_mutex_t *thread_mutex;
-static apr_thread_rwlock_t *rwlock;
+static fspr_thread_mutex_t *thread_mutex;
+static fspr_thread_rwlock_t *rwlock;
 static int i = 0, x = 0;
 
 static int buff[MAX_COUNTER];
 
 struct {
-    apr_thread_mutex_t *mutex;
+    fspr_thread_mutex_t *mutex;
     int                nput;
     int                nval;
 } put;
 
 struct {
-    apr_thread_mutex_t *mutex;
-    apr_thread_cond_t  *cond;
+    fspr_thread_mutex_t *mutex;
+    fspr_thread_cond_t  *cond;
     int                nready;
 } nready;
 
-static apr_thread_mutex_t *timeout_mutex;
-static apr_thread_cond_t *timeout_cond;
+static fspr_thread_mutex_t *timeout_mutex;
+static fspr_thread_cond_t *timeout_cond;
 
-static void *APR_THREAD_FUNC thread_rwlock_func(apr_thread_t *thd, void *data)
+static void *APR_THREAD_FUNC thread_rwlock_func(fspr_thread_t *thd, void *data)
 {
     int exitLoop = 1;
 
     while (1)
     {
-        apr_thread_rwlock_rdlock(rwlock);
+        fspr_thread_rwlock_rdlock(rwlock);
         if (i == MAX_ITER)
             exitLoop = 0;
-        apr_thread_rwlock_unlock(rwlock);
+        fspr_thread_rwlock_unlock(rwlock);
 
         if (!exitLoop)
             break;
 
-        apr_thread_rwlock_wrlock(rwlock);
+        fspr_thread_rwlock_wrlock(rwlock);
         if (i != MAX_ITER)
         {
             i++;
             x++;
         }
-        apr_thread_rwlock_unlock(rwlock);
+        fspr_thread_rwlock_unlock(rwlock);
     }
     return NULL;
 } 
 
-static void *APR_THREAD_FUNC thread_mutex_function(apr_thread_t *thd, void *data)
+static void *APR_THREAD_FUNC thread_mutex_function(fspr_thread_t *thd, void *data)
 {
     int exitLoop = 1;
 
     /* slight delay to allow things to settle */
-    apr_sleep (1);
+    fspr_sleep (1);
     
     while (1)
     {
-        apr_thread_mutex_lock(thread_mutex);
+        fspr_thread_mutex_lock(thread_mutex);
         if (i == MAX_ITER)
             exitLoop = 0;
         else 
@@ -98,7 +98,7 @@ static void *APR_THREAD_FUNC thread_mutex_function(apr_thread_t *thd, void *data
             i++;
             x++;
         }
-        apr_thread_mutex_unlock(thread_mutex);
+        fspr_thread_mutex_unlock(thread_mutex);
 
         if (!exitLoop)
             break;
@@ -106,24 +106,24 @@ static void *APR_THREAD_FUNC thread_mutex_function(apr_thread_t *thd, void *data
     return NULL;
 } 
 
-static void *APR_THREAD_FUNC thread_cond_producer(apr_thread_t *thd, void *data)
+static void *APR_THREAD_FUNC thread_cond_producer(fspr_thread_t *thd, void *data)
 {
     for (;;) {
-        apr_thread_mutex_lock(put.mutex);
+        fspr_thread_mutex_lock(put.mutex);
         if (put.nput >= MAX_COUNTER) {
-            apr_thread_mutex_unlock(put.mutex);
+            fspr_thread_mutex_unlock(put.mutex);
             return NULL;
         }
         buff[put.nput] = put.nval;
         put.nput++;
         put.nval++;
-        apr_thread_mutex_unlock(put.mutex);
+        fspr_thread_mutex_unlock(put.mutex);
 
-        apr_thread_mutex_lock(nready.mutex);
+        fspr_thread_mutex_lock(nready.mutex);
         if (nready.nready == 0)
-            apr_thread_cond_signal(nready.cond);
+            fspr_thread_cond_signal(nready.cond);
         nready.nready++;
-        apr_thread_mutex_unlock(nready.mutex);
+        fspr_thread_mutex_unlock(nready.mutex);
 
         *((int *) data) += 1;
     }
@@ -131,16 +131,16 @@ static void *APR_THREAD_FUNC thread_cond_producer(apr_thread_t *thd, void *data)
     return NULL;
 }
 
-static void *APR_THREAD_FUNC thread_cond_consumer(apr_thread_t *thd, void *data)
+static void *APR_THREAD_FUNC thread_cond_consumer(fspr_thread_t *thd, void *data)
 {
     int i;
 
     for (i = 0; i < MAX_COUNTER; i++) {
-        apr_thread_mutex_lock(nready.mutex);
+        fspr_thread_mutex_lock(nready.mutex);
         while (nready.nready == 0)
-            apr_thread_cond_wait(nready.cond, nready.mutex);
+            fspr_thread_cond_wait(nready.cond, nready.mutex);
         nready.nready--;
-        apr_thread_mutex_unlock(nready.mutex);
+        fspr_thread_mutex_unlock(nready.mutex);
 
         if (buff[i] != i)
             printf("buff[%d] = %d\n", i, buff[i]);
@@ -151,39 +151,39 @@ static void *APR_THREAD_FUNC thread_cond_consumer(apr_thread_t *thd, void *data)
 
 static void test_thread_mutex(abts_case *tc, void *data)
 {
-    apr_thread_t *t1, *t2, *t3, *t4;
-    apr_status_t s1, s2, s3, s4;
+    fspr_thread_t *t1, *t2, *t3, *t4;
+    fspr_status_t s1, s2, s3, s4;
 
-    s1 = apr_thread_mutex_create(&thread_mutex, APR_THREAD_MUTEX_DEFAULT, p);
+    s1 = fspr_thread_mutex_create(&thread_mutex, APR_THREAD_MUTEX_DEFAULT, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s1);
     ABTS_PTR_NOTNULL(tc, thread_mutex);
 
     i = 0;
     x = 0;
 
-    s1 = apr_thread_create(&t1, NULL, thread_mutex_function, NULL, p);
+    s1 = fspr_thread_create(&t1, NULL, thread_mutex_function, NULL, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s1);
-    s2 = apr_thread_create(&t2, NULL, thread_mutex_function, NULL, p);
+    s2 = fspr_thread_create(&t2, NULL, thread_mutex_function, NULL, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s2);
-    s3 = apr_thread_create(&t3, NULL, thread_mutex_function, NULL, p);
+    s3 = fspr_thread_create(&t3, NULL, thread_mutex_function, NULL, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s3);
-    s4 = apr_thread_create(&t4, NULL, thread_mutex_function, NULL, p);
+    s4 = fspr_thread_create(&t4, NULL, thread_mutex_function, NULL, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s4);
 
-    apr_thread_join(&s1, t1);
-    apr_thread_join(&s2, t2);
-    apr_thread_join(&s3, t3);
-    apr_thread_join(&s4, t4);
+    fspr_thread_join(&s1, t1);
+    fspr_thread_join(&s2, t2);
+    fspr_thread_join(&s3, t3);
+    fspr_thread_join(&s4, t4);
 
     ABTS_INT_EQUAL(tc, MAX_ITER, x);
 }
 
 static void test_thread_rwlock(abts_case *tc, void *data)
 {
-    apr_thread_t *t1, *t2, *t3, *t4;
-    apr_status_t s1, s2, s3, s4;
+    fspr_thread_t *t1, *t2, *t3, *t4;
+    fspr_status_t s1, s2, s3, s4;
 
-    s1 = apr_thread_rwlock_create(&rwlock, p);
+    s1 = fspr_thread_rwlock_create(&rwlock, p);
     if (s1 == APR_ENOTIMPL) {
         ABTS_NOT_IMPL(tc, "rwlocks not implemented");
         return;
@@ -194,44 +194,44 @@ static void test_thread_rwlock(abts_case *tc, void *data)
     i = 0;
     x = 0;
 
-    s1 = apr_thread_create(&t1, NULL, thread_rwlock_func, NULL, p);
+    s1 = fspr_thread_create(&t1, NULL, thread_rwlock_func, NULL, p);
     APR_ASSERT_SUCCESS(tc, "create thread 1", s1);
-    s2 = apr_thread_create(&t2, NULL, thread_rwlock_func, NULL, p);
+    s2 = fspr_thread_create(&t2, NULL, thread_rwlock_func, NULL, p);
     APR_ASSERT_SUCCESS(tc, "create thread 2", s2);
-    s3 = apr_thread_create(&t3, NULL, thread_rwlock_func, NULL, p);
+    s3 = fspr_thread_create(&t3, NULL, thread_rwlock_func, NULL, p);
     APR_ASSERT_SUCCESS(tc, "create thread 3", s3);
-    s4 = apr_thread_create(&t4, NULL, thread_rwlock_func, NULL, p);
+    s4 = fspr_thread_create(&t4, NULL, thread_rwlock_func, NULL, p);
     APR_ASSERT_SUCCESS(tc, "create thread 4", s4);
 
-    apr_thread_join(&s1, t1);
-    apr_thread_join(&s2, t2);
-    apr_thread_join(&s3, t3);
-    apr_thread_join(&s4, t4);
+    fspr_thread_join(&s1, t1);
+    fspr_thread_join(&s2, t2);
+    fspr_thread_join(&s3, t3);
+    fspr_thread_join(&s4, t4);
 
     ABTS_INT_EQUAL(tc, MAX_ITER, x);
 
-    apr_thread_rwlock_destroy(rwlock);
+    fspr_thread_rwlock_destroy(rwlock);
 }
 
 static void test_cond(abts_case *tc, void *data)
 {
-    apr_thread_t *p1, *p2, *p3, *p4, *c1;
-    apr_status_t s0, s1, s2, s3, s4;
+    fspr_thread_t *p1, *p2, *p3, *p4, *c1;
+    fspr_status_t s0, s1, s2, s3, s4;
     int count1, count2, count3, count4;
     int sum;
     
     APR_ASSERT_SUCCESS(tc, "create put mutex",
-                       apr_thread_mutex_create(&put.mutex, 
+                       fspr_thread_mutex_create(&put.mutex, 
                                                APR_THREAD_MUTEX_DEFAULT, p));
     ABTS_PTR_NOTNULL(tc, put.mutex);
 
     APR_ASSERT_SUCCESS(tc, "create nready mutex",
-                       apr_thread_mutex_create(&nready.mutex, 
+                       fspr_thread_mutex_create(&nready.mutex, 
                                                APR_THREAD_MUTEX_DEFAULT, p));
     ABTS_PTR_NOTNULL(tc, nready.mutex);
 
     APR_ASSERT_SUCCESS(tc, "create condvar",
-                       apr_thread_cond_create(&nready.cond, p));
+                       fspr_thread_cond_create(&nready.cond, p));
     ABTS_PTR_NOTNULL(tc, nready.cond);
 
     count1 = count2 = count3 = count4 = 0;
@@ -240,25 +240,25 @@ static void test_cond(abts_case *tc, void *data)
     i = 0;
     x = 0;
 
-    s0 = apr_thread_create(&p1, NULL, thread_cond_producer, &count1, p);
+    s0 = fspr_thread_create(&p1, NULL, thread_cond_producer, &count1, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s0);
-    s1 = apr_thread_create(&p2, NULL, thread_cond_producer, &count2, p);
+    s1 = fspr_thread_create(&p2, NULL, thread_cond_producer, &count2, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s1);
-    s2 = apr_thread_create(&p3, NULL, thread_cond_producer, &count3, p);
+    s2 = fspr_thread_create(&p3, NULL, thread_cond_producer, &count3, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s2);
-    s3 = apr_thread_create(&p4, NULL, thread_cond_producer, &count4, p);
+    s3 = fspr_thread_create(&p4, NULL, thread_cond_producer, &count4, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s3);
-    s4 = apr_thread_create(&c1, NULL, thread_cond_consumer, NULL, p);
+    s4 = fspr_thread_create(&c1, NULL, thread_cond_consumer, NULL, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s4);
 
-    apr_thread_join(&s0, p1);
-    apr_thread_join(&s1, p2);
-    apr_thread_join(&s2, p3);
-    apr_thread_join(&s3, p4);
-    apr_thread_join(&s4, c1);
+    fspr_thread_join(&s0, p1);
+    fspr_thread_join(&s1, p2);
+    fspr_thread_join(&s2, p3);
+    fspr_thread_join(&s3, p4);
+    fspr_thread_join(&s4, c1);
 
     APR_ASSERT_SUCCESS(tc, "destroy condvar", 
-                       apr_thread_cond_destroy(nready.cond));
+                       fspr_thread_cond_destroy(nready.cond));
 
     sum = count1 + count2 + count3 + count4;
     /*
@@ -270,28 +270,28 @@ static void test_cond(abts_case *tc, void *data)
 
 static void test_timeoutcond(abts_case *tc, void *data)
 {
-    apr_status_t s;
-    apr_interval_time_t timeout;
-    apr_time_t begin, end;
+    fspr_status_t s;
+    fspr_interval_time_t timeout;
+    fspr_time_t begin, end;
     int i;
 
-    s = apr_thread_mutex_create(&timeout_mutex, APR_THREAD_MUTEX_DEFAULT, p);
+    s = fspr_thread_mutex_create(&timeout_mutex, APR_THREAD_MUTEX_DEFAULT, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s);
     ABTS_PTR_NOTNULL(tc, timeout_mutex);
 
-    s = apr_thread_cond_create(&timeout_cond, p);
+    s = fspr_thread_cond_create(&timeout_cond, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, s);
     ABTS_PTR_NOTNULL(tc, timeout_cond);
 
-    timeout = apr_time_from_sec(5);
+    timeout = fspr_time_from_sec(5);
 
     for (i = 0; i < MAX_RETRY; i++) {
-        apr_thread_mutex_lock(timeout_mutex);
+        fspr_thread_mutex_lock(timeout_mutex);
 
-        begin = apr_time_now();
-        s = apr_thread_cond_timedwait(timeout_cond, timeout_mutex, timeout);
-        end = apr_time_now();
-        apr_thread_mutex_unlock(timeout_mutex);
+        begin = fspr_time_now();
+        s = fspr_thread_cond_timedwait(timeout_cond, timeout_mutex, timeout);
+        end = fspr_time_now();
+        fspr_thread_mutex_unlock(timeout_mutex);
         
         if (s != APR_SUCCESS && !APR_STATUS_IS_TIMEUP(s)) {
             continue;
@@ -302,7 +302,7 @@ static void test_timeoutcond(abts_case *tc, void *data)
     }
     ABTS_ASSERT(tc, "Too many retries", i < MAX_RETRY);
     APR_ASSERT_SUCCESS(tc, "Unable to destroy the conditional",
-                       apr_thread_cond_destroy(timeout_cond));
+                       fspr_thread_cond_destroy(timeout_cond));
 }
 
 #endif /* !APR_HAS_THREADS */

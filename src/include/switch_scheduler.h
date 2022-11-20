@@ -67,6 +67,23 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 												   const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags);
 
 /*!
+  \brief Schedule a task in the future
+  \param task_runtime the time in epoch seconds to execute the task.
+  \param func the callback function to execute when the task is executed.
+  \param desc an arbitrary description of the task.
+  \param group a group id tag to link multiple tasks to a single entity.
+  \param cmd_id an arbitrary index number be used in the callback.
+  \param cmd_arg user data to be passed to the callback.
+  \param flags flags to alter behaviour
+  \param task_id pointer to put the id of the task to
+  \return the id of the task
+*/
+
+SWITCH_DECLARE(uint32_t) switch_scheduler_add_task_ex(time_t task_runtime,
+	switch_scheduler_func_t func,
+	const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags, uint32_t *task_id);
+
+/*!
   \brief Delete a scheduled task
   \param task_id the id of the task
   \return the number of jobs deleted

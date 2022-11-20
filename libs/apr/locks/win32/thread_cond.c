@@ -14,59 +14,59 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_arch_thread_mutex.h"
-#include "apr_arch_thread_cond.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_arch_thread_cond.h"
+#include "fspr_portable.h"
 
 #include <limits.h>
 
-static apr_status_t thread_cond_cleanup(void *data)
+static fspr_status_t thread_cond_cleanup(void *data)
 {
-    apr_thread_cond_t *cond = data;
+    fspr_thread_cond_t *cond = data;
     CloseHandle(cond->semaphore);
     DeleteCriticalSection(&cond->csection);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
-                                                 apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_create(fspr_thread_cond_t **cond,
+                                                 fspr_pool_t *pool)
 {
-    apr_thread_cond_t *cv;
+    fspr_thread_cond_t *cv;
 
-    cv = apr_pcalloc(pool, sizeof(**cond));
+    cv = fspr_pcalloc(pool, sizeof(**cond));
     if (cv == NULL) {
         return APR_ENOMEM;
     }
 
     cv->semaphore = CreateSemaphore(NULL, 0, LONG_MAX, NULL);
     if (cv->semaphore == NULL) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
     *cond = cv;
     cv->pool = pool;
     InitializeCriticalSection(&cv->csection);
-    apr_pool_cleanup_register(cv->pool, cv, thread_cond_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(cv->pool, cv, thread_cond_cleanup,
+                              fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_destroy(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_destroy(fspr_thread_cond_t *cond)
 {
-    return apr_pool_cleanup_run(cond->pool, cond, thread_cond_cleanup);
+    return fspr_pool_cleanup_run(cond->pool, cond, thread_cond_cleanup);
 }
 
-static APR_INLINE apr_status_t _thread_cond_timedwait(apr_thread_cond_t *cond,
-                                                      apr_thread_mutex_t *mutex,
+static APR_INLINE fspr_status_t _thread_cond_timedwait(fspr_thread_cond_t *cond,
+                                                      fspr_thread_mutex_t *mutex,
                                                       DWORD timeout_ms )
 {
     DWORD res;
-    apr_status_t rv;
+    fspr_status_t rv;
     unsigned int wake = 0;
     unsigned long generation;
 
@@ -75,7 +75,7 @@ static APR_INLINE apr_status_t _thread_cond_timedwait(apr_thread_cond_t *cond,
     generation = cond->generation;
     LeaveCriticalSection(&cond->csection);
 
-    apr_thread_mutex_unlock(mutex);
+    fspr_thread_mutex_unlock(mutex);
 
     do {
         res = WaitForSingleObject(cond->semaphore, timeout_ms);
@@ -107,27 +107,27 @@ static APR_INLINE apr_status_t _thread_cond_timedwait(apr_thread_cond_t *cond,
     } while (1);
 
     LeaveCriticalSection(&cond->csection);
-    apr_thread_mutex_lock(mutex);
+    fspr_thread_mutex_lock(mutex);
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_wait(apr_thread_cond_t *cond,
-                                               apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_wait(fspr_thread_cond_t *cond,
+                                               fspr_thread_mutex_t *mutex)
 {
     return _thread_cond_timedwait(cond, mutex, INFINITE);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
-                                                    apr_thread_mutex_t *mutex,
-                                                    apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_timedwait(fspr_thread_cond_t *cond,
+                                                    fspr_thread_mutex_t *mutex,
+                                                    fspr_interval_time_t timeout)
 {
-    DWORD timeout_ms = (DWORD) apr_time_as_msec(timeout);
+    DWORD timeout_ms = (DWORD) fspr_time_as_msec(timeout);
 
     return _thread_cond_timedwait(cond, mutex, timeout_ms);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_signal(fspr_thread_cond_t *cond)
 {
     unsigned int wake = 0;
 
@@ -146,7 +146,7 @@ APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_broadcast(fspr_thread_cond_t *cond)
 {
     unsigned long num_wake = 0;
 

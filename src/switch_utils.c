@@ -26,24 +26,39 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Juan Jose Comellas <juanjo@comellas.org>
  * Seven Du <dujinfang@gmail.com>
- *
+ * Windy Wang <xiaofengcanyuexp@163.com>
  *
  * switch_utils.c -- Compatibility and Helper Code
  *
  */
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #ifndef WIN32
 #include <arpa/inet.h>
 #if defined(HAVE_SYS_TIME_H) && defined(HAVE_SYS_RESOURCE_H)
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
+#include <sys/types.h>
+#include <unistd.h>
+#else
+#include <intsafe.h> /* SIZETMult() */
+ /* process.h is required for _getpid() */
+#include <process.h>
 #endif
 #include "private/switch_core_pvt.h"
 #define ESCAPE_META '\\'
 #ifdef SWITCH_HAVE_GUMBO
 #include "gumbo.h"
+#endif
+
+#if defined(HAVE_OPENSSL)
+#include <openssl/evp.h>
+#endif
+
+#ifdef __GLIBC__
+#include <malloc.h> /* mallinfo() */
 #endif
 
 struct switch_network_node {
@@ -65,6 +80,11 @@ struct switch_network_list {
 	switch_memory_pool_t *pool;
 	char *name;
 };
+
+SWITCH_DECLARE(void *) switch_calloc(size_t nmemb, size_t size)
+{
+	return calloc(nmemb, size);
+}
 
 #ifndef WIN32
 SWITCH_DECLARE(int) switch_inet_pton(int af, const char *src, void *dst)
@@ -1071,7 +1091,7 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 
 		while (l >= 8) {
 			op[ol++] = (char) ((b >> (l -= 8)) % 256);
-			if (ol >= olen - 2) {
+			if (ol >= olen - 1) {
 				goto end;
 			}
 		}
@@ -1114,13 +1134,15 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	switch_bool_t rval = SWITCH_FALSE;
 	const char *err = NULL;
 
+	filename[0] = '\0';
+
 	if (zstr(to)) {
 		err = "No to address specified";
 		goto end;
 	}
 
 	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
-		if ((ext = strrchr(file, '.'))) {
+		if (strrchr(file, '.')) {
 			dupfile = strdup(file);
 			if ((ext = strrchr(dupfile, '.'))) {
 				*ext++ = '\0';
@@ -1309,7 +1331,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		close(fd);
 	}
 
-	if (unlink(filename) != 0) {
+	if (!zstr_buf(filename) && unlink(filename) != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", filename);
 	}
 
@@ -1798,9 +1820,8 @@ SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf,
 {
 
 	struct addrinfo *ai;
-	int err;
 
-	if ((err = getaddrinfo(host, 0, 0, &ai))) {
+	if (getaddrinfo(host, 0, 0, &ai)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2328,7 +2349,7 @@ SWITCH_DECLARE(int) get_addr_int(switch_sockaddr_t *sa)
 	return ntohs((unsigned short) s->sin_addr.s_addr);
 }
 
-SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2)
+SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa2, switch_bool_t ip_only)
 {
 	struct sockaddr_in *s1;
 	struct sockaddr_in *s2;
@@ -2356,17 +2377,21 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 
 	switch (ss1->sa_family) {
 	case AF_INET:
-		return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
+		if (ip_only) {
+			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr);
+		} else {
+			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
+		}
 	case AF_INET6:
 		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
 			int i;
 
-			if (s16->sin6_port != s26->sin6_port)
-				return 0;
+			if (!ip_only) {
+				if (s16->sin6_port != s26->sin6_port) return 0;
+			}
 
 			for (i = 0; i < 4; i++) {
-				if (*((int32_t *) s16->sin6_addr.s6_addr + i) != *((int32_t *) s26->sin6_addr.s6_addr + i))
-					return 0;
+				if (*((int32_t *) s16->sin6_addr.s6_addr + i) != *((int32_t *) s26->sin6_addr.s6_addr + i)) return 0;
 			}
 
 			return 1;
@@ -3483,7 +3508,7 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	char *o;
 	unsigned int tmp;
 
-	if (zstr(s)) {
+	if (zstr(s) || !strchr(s, '%')) {
 		return s;
 	}
 
@@ -4166,11 +4191,12 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 	char *q;
 	char *next;
 	char *name, *val;
+	char *dup = NULL;
 
 	if (qs) {
 		q = qs;
 	} else { /*parse our own qs, dup to avoid modify the original string */
-		q = strdup(request->qs);
+		dup = q = strdup(request->qs);
 	}
 
 	switch_assert(q);
@@ -4197,9 +4223,7 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 		q = next;
 	} while (q);
 
-	if (!qs) {
-		switch_safe_free(q);
-	}
+	switch_safe_free(dup);
 }
 
 /* clean the uri to protect us from vulnerability attack */
@@ -4523,13 +4547,249 @@ SWITCH_DECLARE(char *)switch_html_strip(const char *str)
 	text = (char *)stream.data;
 #else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Support for html parser is not compiled.\n");
-	text = strdup(html);
+	text = switch_safe_strdup(html);
 #endif
 
 	return text;
 }
 
+SWITCH_DECLARE(unsigned long) switch_getpid(void)
+{
+#ifndef WIN32
+	pid_t pid = getpid();
+#else
+	int pid = _getpid();
+#endif
 
+	return (unsigned long)pid;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_digest(const char *digest_name, unsigned char **digest, const void *input, switch_size_t inputLen, unsigned int *outputlen)
+{
+#if defined(HAVE_OPENSSL)
+	EVP_MD_CTX *mdctx;
+	const EVP_MD *md;
+	int size;
+
+	switch_assert(digest);
+
+	if (!digest_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Message digest is not set\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	md = EVP_get_digestbyname(digest_name);
+
+	if (!md) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown message digest %s\n", digest_name);			
+		return SWITCH_STATUS_FALSE;
+	}
+
+	size = EVP_MD_size(md);
+	if (!size || !(*digest = malloc(size))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Zero digest size or can't allocate memory to store results %s\n", digest_name);
+		return SWITCH_STATUS_FALSE;
+	}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	mdctx = EVP_MD_CTX_new();
+#else
+	mdctx = EVP_MD_CTX_create();
+#endif
+
+	if (!mdctx) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EVP_MD_CTX_new error\n");
+		switch_safe_free(*digest);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	EVP_MD_CTX_init(mdctx);
+	EVP_DigestInit_ex(mdctx, md, NULL);
+	EVP_DigestUpdate(mdctx, input, inputLen);
+	EVP_DigestFinal_ex(mdctx, *digest, outputlen);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	EVP_MD_CTX_free(mdctx);
+#else
+	EVP_MD_CTX_destroy(mdctx);
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+#else
+	return SWITCH_STATUS_FALSE;
+#endif
+}
+
+SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, char **digest_str, const void *input, switch_size_t inputLen, unsigned int *outputlen)
+{
+	unsigned char *digest = NULL;
+	switch_status_t status;
+	short i = 0, x;
+	uint8_t b;
+
+	status = switch_digest(digest_name, &digest, input, inputLen, outputlen);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		if ((*digest_str = malloc(*outputlen * 2 + 1))) {
+			for (x = i = 0; x < *outputlen; x++) {
+				b = (digest[x] >> 4) & 15;
+				(*digest_str)[i++] = b + (b > 9 ? 'a' - 10 : '0');
+				b = digest[x] & 15;
+				(*digest_str)[i++] = b + (b > 9 ? 'a' - 10 : '0');
+			}
+
+			(*digest_str)[i] = '\0';
+		} else {
+			switch_safe_free(digest);
+			*outputlen = 0;
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	switch_safe_free(digest);
+	*outputlen = i;
+
+	return status;
+}
+
+SWITCH_DECLARE(char *) switch_must_strdup(const char *_s)
+{
+	char *s = strdup(_s);
+	switch_assert(s);
+	return s;
+}
+
+SWITCH_DECLARE(const char *) switch_memory_usage_stream(switch_stream_handle_t *stream)
+{
+	const char *status = NULL;
+#ifdef __GLIBC__
+/*
+ *  The mallinfo2() function was added in glibc 2.33.
+ *  https://man7.org/linux/man-pages/man3/mallinfo.3.html
+ */
+#if defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 33)
+	struct mallinfo2 mi;
+
+	mi = mallinfo2();
+
+	stream->write_function(stream, "Total non-mmapped bytes (arena):       %" SWITCH_SIZE_T_FMT "\n", mi.arena);
+	stream->write_function(stream, "# of free chunks (ordblks):            %" SWITCH_SIZE_T_FMT "\n", mi.ordblks);
+	stream->write_function(stream, "# of free fastbin blocks (smblks):     %" SWITCH_SIZE_T_FMT "\n", mi.smblks);
+	stream->write_function(stream, "# of mapped regions (hblks):           %" SWITCH_SIZE_T_FMT "\n", mi.hblks);
+	stream->write_function(stream, "Bytes in mapped regions (hblkhd):      %" SWITCH_SIZE_T_FMT "\n", mi.hblkhd);
+	stream->write_function(stream, "Max. total allocated space (usmblks):  %" SWITCH_SIZE_T_FMT "\n", mi.usmblks);
+	stream->write_function(stream, "Free bytes held in fastbins (fsmblks): %" SWITCH_SIZE_T_FMT "\n", mi.fsmblks);
+	stream->write_function(stream, "Total allocated space (uordblks):      %" SWITCH_SIZE_T_FMT "\n", mi.uordblks);
+	stream->write_function(stream, "Total free space (fordblks):           %" SWITCH_SIZE_T_FMT "\n", mi.fordblks);
+	stream->write_function(stream, "Topmost releasable block (keepcost):   %" SWITCH_SIZE_T_FMT "\n", mi.keepcost);
+#else
+	struct mallinfo mi;
+
+	mi = mallinfo();
+
+	stream->write_function(stream, "Total non-mmapped bytes (arena):       %u\n", mi.arena);
+	stream->write_function(stream, "# of free chunks (ordblks):            %u\n", mi.ordblks);
+	stream->write_function(stream, "# of free fastbin blocks (smblks):     %u\n", mi.smblks);
+	stream->write_function(stream, "# of mapped regions (hblks):           %u\n", mi.hblks);
+	stream->write_function(stream, "Bytes in mapped regions (hblkhd):      %u\n", mi.hblkhd);
+	stream->write_function(stream, "Max. total allocated space (usmblks):  %u\n", mi.usmblks);
+	stream->write_function(stream, "Free bytes held in fastbins (fsmblks): %u\n", mi.fsmblks);
+	stream->write_function(stream, "Total allocated space (uordblks):      %u\n", mi.uordblks);
+	stream->write_function(stream, "Total free space (fordblks):           %u\n", mi.fordblks);
+	stream->write_function(stream, "Topmost releasable block (keepcost):   %u\n", mi.keepcost);
+
+#endif
+
+	switch_goto_status(NULL, done);
+#else
+#ifdef WIN32
+	/* Based on: https://docs.microsoft.com/en-us/windows/win32/memory/enumerating-a-heap and https://docs.microsoft.com/en-us/windows/win32/memory/getting-process-heaps */
+	PHANDLE aHeaps;
+	SIZE_T BytesToAllocate;
+	DWORD HeapsIndex;
+	DWORD HeapsLength;
+	DWORD NumberOfHeaps;
+	HRESULT Result;
+	HANDLE hDefaultProcessHeap;
+	size_t CommittedSizeTotal = 0;
+	size_t UnCommittedSizeTotal = 0;
+	size_t SizeTotal = 0;
+	size_t OverheadTotal = 0;
+
+	NumberOfHeaps = GetProcessHeaps(0, NULL);
+	Result = SIZETMult(NumberOfHeaps, sizeof(*aHeaps), &BytesToAllocate);
+	if (Result != S_OK) {
+		switch_goto_status("SIZETMult failed.", done);
+	}
+
+	hDefaultProcessHeap = GetProcessHeap();
+	if (hDefaultProcessHeap == NULL) {
+		switch_goto_status("Failed to retrieve the default process heap", done);
+	}
+
+	aHeaps = (PHANDLE)HeapAlloc(hDefaultProcessHeap, 0, BytesToAllocate);
+	if (aHeaps == NULL) {
+		switch_goto_status("HeapAlloc failed to allocate space for heaps", done);
+	}
+
+	HeapsLength = NumberOfHeaps;
+	NumberOfHeaps = GetProcessHeaps(HeapsLength, aHeaps);
+
+	if (NumberOfHeaps == 0) {
+		switch_goto_status("Failed to retrieve heaps", cleanup);
+	} else if (NumberOfHeaps > HeapsLength) {
+		/*
+		 * Compare the latest number of heaps with the original number of heaps.
+		 * If the latest number is larger than the original number, another
+		 * component has created a new heap and the buffer is too small.
+		 */
+		switch_goto_status("Another component created a heap between calls.", cleanup);
+	}
+
+	stream->write_function(stream, "Process has %d heaps.\n", HeapsLength);
+	for (HeapsIndex = 0; HeapsIndex < HeapsLength; ++HeapsIndex) {
+		PROCESS_HEAP_ENTRY Entry;
+		HANDLE hHeap = aHeaps[HeapsIndex];
+
+		stream->write_function(stream, "Heap %d at address: %#p.\n", HeapsIndex, aHeaps[HeapsIndex]);
+
+		/* Lock the heap to prevent other threads from accessing the heap during enumeration. */
+		if (HeapLock(hHeap) == FALSE) {
+			switch_goto_status("Failed to lock heap.", cleanup);
+		}
+
+		Entry.lpData = NULL;
+		while (HeapWalk(hHeap, &Entry) != FALSE) {
+			if ((Entry.wFlags & PROCESS_HEAP_ENTRY_BUSY) != 0) {
+			} else if ((Entry.wFlags & PROCESS_HEAP_REGION) != 0) {
+				CommittedSizeTotal += Entry.Region.dwCommittedSize;
+				UnCommittedSizeTotal += Entry.Region.dwUnCommittedSize;
+			}
+
+			SizeTotal += Entry.cbData;
+			OverheadTotal += Entry.cbOverhead;
+		}
+
+		/* Unlock the heap to allow other threads to access the heap after enumeration has completed. */
+		if (HeapUnlock(hHeap) == FALSE) {
+			abort();
+		}
+	}
+
+	stream->write_function(stream, "Committed bytes:   %" SWITCH_SIZE_T_FMT "\n", CommittedSizeTotal);
+	stream->write_function(stream, "Uncommited bytes:  %" SWITCH_SIZE_T_FMT "\n", UnCommittedSizeTotal);
+	stream->write_function(stream, "Size:              %" SWITCH_SIZE_T_FMT "\n", SizeTotal);
+	stream->write_function(stream, "Overhead:          %" SWITCH_SIZE_T_FMT"\n", OverheadTotal);
+
+cleanup:
+	HeapFree(hDefaultProcessHeap, 0, aHeaps);
+#else
+	switch_goto_status("Memory usage statistics is not implemented on the current platform.", done);
+#endif
+#endif
+done:
+	return status;
+}
 
 /* For Emacs:
  * Local Variables:

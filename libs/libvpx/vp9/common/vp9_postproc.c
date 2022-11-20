@@ -293,7 +293,7 @@ static void swap_mi_and_prev_mi(VP9_COMMON *cm) {
 }
 
 int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
-                        vp9_ppflags_t *ppflags) {
+                        vp9_ppflags_t *ppflags, int unscaled_width) {
   const int q = VPXMIN(105, cm->lf.filter_level * 2);
   const int flags = ppflags->post_proc_flag;
   YV12_BUFFER_CONFIG *const ppbuf = &cm->post_proc_buffer;
@@ -359,7 +359,7 @@ int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
   if (flags & (VP9D_DEMACROBLOCK | VP9D_DEBLOCK)) {
     if (!cm->postproc_state.limits) {
       cm->postproc_state.limits =
-          vpx_calloc(cm->width, sizeof(*cm->postproc_state.limits));
+          vpx_calloc(unscaled_width, sizeof(*cm->postproc_state.limits));
     }
   }
 

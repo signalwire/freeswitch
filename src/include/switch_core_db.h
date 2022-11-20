@@ -51,6 +51,12 @@ SWITCH_BEGIN_EXTERN_C
  * following opaque structure.
 */
 	typedef struct sqlite3 switch_core_db_t;
+
+struct switch_coredb_handle {
+	switch_bool_t in_memory;
+	switch_core_db_t *handle;
+};
+
 typedef struct sqlite3_stmt switch_core_db_stmt_t;
 
 typedef int (*switch_core_db_callback_func_t) (void *pArg, int argc, char **argv, char **columnNames);
@@ -103,41 +109,47 @@ SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db);
 SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t **ppDb);
 
 /**
- * The next group of routines returns information about the information
- * in a single column of the current result row of a query.  In every
- * case the first parameter is a pointer to the SQL statement that is being
- * executed (the switch_core_db_stmt_t* that was returned from switch_core_db_prepare()) and
- * the second argument is the index of the column for which information
- * should be returned.  iCol is zero-indexed.  The left-most column as an
- * index of 0.
+	Same as switch_core_db_open() but additionally allows SQLITE_OPEN_URI
+ */
+SWITCH_DECLARE(int) switch_core_db_open_v2(const char *filename, switch_core_db_t **ppDb);
+
+/**
+ * ^Strings returned by sqlite3_column_text() and sqlite3_column_text16(),
+ * even empty strings, are always zero-terminated.  ^The return
+ * value from sqlite3_column_blob() for a zero-length BLOB is a NULL pointer.
  *
- * If the SQL statement is not currently point to a valid row, or if the
- * the colulmn index is out of range, the result is undefined.
+ * ^The object returned by [sqlite3_column_value()] is an
+ * [unprotected sqlite3_value] object.  An unprotected sqlite3_value object
+ * may only be used with [sqlite3_bind_value()] and [sqlite3_result_value()].
+ * If the [unprotected sqlite3_value] object returned by
+ * [sqlite3_column_value()] is used in any other way, including calls
+ * to routines like [sqlite3_value_int()], [sqlite3_value_text()],
+ * or [sqlite3_value_bytes()], then the behavior is undefined.
  *
- * These routines attempt to convert the value where appropriate.  For
+ * These routines attempt to convert the value where appropriate.  ^For
  * example, if the internal representation is FLOAT and a text result
- * is requested, sprintf() is used internally to do the conversion
- * automatically.  The following table details the conversions that
- * are applied:
+ * is requested, [sqlite3_snprintf()] is used internally to perform the
+ * conversion automatically.  ^(The following table details the conversions
+ * that are applied:
  *
  *    Internal Type    Requested Type     Conversion
  *    -------------    --------------    --------------------------
  *       NULL             INTEGER         Result is 0
  *       NULL             FLOAT           Result is 0.0
- *       NULL             TEXT            Result is an empty string
- *       NULL             BLOB            Result is a zero-length BLOB
+ *       NULL             TEXT            Result is a NULL pointer
+ *       NULL             BLOB            Result is a NULL pointer
  *       INTEGER          FLOAT           Convert from integer to float
  *       INTEGER          TEXT            ASCII rendering of the integer
- *       INTEGER          BLOB            Same as for INTEGER->TEXT
- *       FLOAT            INTEGER         Convert from float to integer
+ *       INTEGER          BLOB            Same as INTEGER->TEXT
+ *       FLOAT            INTEGER         [CAST] to INTEGER
  *       FLOAT            TEXT            ASCII rendering of the float
- *       FLOAT            BLOB            Same as FLOAT->TEXT
- *       TEXT             INTEGER         Use atoi()
- *       TEXT             FLOAT           Use atof()
+ *       FLOAT            BLOB            [CAST] to BLOB
+ *       TEXT             INTEGER         [CAST] to INTEGER
+ *       TEXT             FLOAT           [CAST] to REAL
  *       TEXT             BLOB            No change
- *       BLOB             INTEGER         Convert to TEXT then use atoi()
- *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a "\000" terminator if needed
+ *       BLOB             INTEGER         [CAST] to INTEGER
+ *       BLOB             FLOAT           [CAST] to REAL
+ *       BLOB             TEXT            Add a zero terminator if needed
  *
  *  Return the value as UTF-8 text.
  */

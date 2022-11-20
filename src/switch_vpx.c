@@ -1109,13 +1109,15 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	vp9++;
 
 	if (desc->have_pid) {
+#ifdef DEBUG_VP9
 		uint16_t pid = 0;
-
 		pid = *vp9 & 0x7f;	//0 bit is M , 1-7 bit is pid.
-
+#endif
 		if (*vp9 & 0x80) {	//if (M==1)
 			vp9++;
+#ifdef DEBUG_VP9
 			pid = (pid << 8) + *vp9;
+#endif 
 		}
 
 		vp9++;

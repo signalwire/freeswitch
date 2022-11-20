@@ -19,7 +19,7 @@ void deinit_ssl(void)
 }
 
 #else
-static unsigned long pthreads_thread_id(void);
+static void pthreads_thread_id(CRYPTO_THREADID *id);
 static void pthreads_locking_callback(int mode, int type, const char *file, int line);
 
 static pthread_mutex_t *lock_cs;
@@ -39,7 +39,7 @@ static void thread_setup(void)
 		pthread_mutex_init(&(lock_cs[i]), NULL);
 	}
 
-	CRYPTO_set_id_callback(pthreads_thread_id);
+	CRYPTO_THREADID_set_callback(pthreads_thread_id);
 	CRYPTO_set_locking_callback(pthreads_locking_callback);
 }
 
@@ -70,9 +70,9 @@ static void pthreads_locking_callback(int mode, int type, const char *file, int 
 
 
 
-static unsigned long pthreads_thread_id(void)
+static void pthreads_thread_id(CRYPTO_THREADID *id)
 {
-	return (unsigned long) pthread_self();
+	CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
 
 

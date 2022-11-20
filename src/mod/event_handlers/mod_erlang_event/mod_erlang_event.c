@@ -1376,7 +1376,9 @@ static listener_t *new_outbound_listener_locked(char *node)
 		listener->peer_nodename = switch_core_strdup(listener->pool, node);
 	}
 
-	switch_thread_rwlock_rdlock(listener->rwlock);
+	if (listener) {
+		switch_thread_rwlock_rdlock(listener->rwlock);
+	}
 
 	return listener;
 }
@@ -1399,7 +1401,6 @@ void destroy_listener(listener_t * listener)
 	switch_mutex_unlock(listener->sock_mutex);
 
 	switch_core_hash_destroy(&listener->event_hash);
-	switch_core_hash_destroy(&listener->sessions);
 
 	/* remove any bindings for this connection */
 	remove_binding(listener, NULL);
@@ -1412,6 +1413,7 @@ void destroy_listener(listener_t * listener)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Orphaning call %s\n", s->uuid_str);
 		destroy_session_elem(s);
 	}
+	switch_core_hash_destroy(&listener->sessions);
 	switch_thread_rwlock_unlock(listener->session_rwlock);
 	switch_thread_rwlock_unlock(listener->rwlock);
 
@@ -1419,7 +1421,6 @@ void destroy_listener(listener_t * listener)
 		switch_memory_pool_t *pool = listener->pool;
 		switch_core_destroy_memory_pool(&pool);
 	}
-
 }
 
 static switch_status_t state_handler(switch_core_session_t *session)
@@ -1991,7 +1992,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	switch_memory_pool_t *pool = NULL, *listener_pool = NULL;
 	switch_status_t rv;
 	switch_sockaddr_t *sa;
-	switch_os_socket_t sockdes;
+	switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
 	listener_t *listener;
 	uint32_t x = 0;
 	struct ei_cnode_s ec;

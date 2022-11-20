@@ -57,6 +57,8 @@
 #define HAVE_FUNC 1
 #endif
 
+#define ROUTE_MAX_HEADERS 20
+#define ROUTE_ENCODED_HEADER_MAX_CHARS (1024 * 3)
 #define MAX_CODEC_CHECK_FRAMES 50
 #define MAX_MISMATCH_FRAMES 5
 #define MODNAME "mod_sofia"
@@ -91,6 +93,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_REINVITE "sofia::reinvite"
 #define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
 #define MY_EVENT_GATEWAY_DEL "sofia::gateway_delete"
+#define MY_EVENT_GATEWAY_INVALID_DIGEST_REQ "sofia::gateway_invalid_digest_req"
 #define MY_EVENT_RECOVERY "sofia::recovery_recv"
 #define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
 #define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
@@ -142,7 +145,6 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/tport_tag.h>
 #include <sofia-sip/sip_extra.h>
-#include "nua_stack.h"
 #include "sofia-sip/msg_parser.h"
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/tport_tag.h"
@@ -348,7 +350,6 @@ typedef enum {
 	TFLAG_TPORT_LOG,
 	TFLAG_SENT_UPDATE,
 	TFLAG_PROXY_MEDIA,
-	TFLAG_ZRTP_PASSTHRU,
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_UPDATING_DISPLAY,
@@ -363,12 +364,15 @@ typedef enum {
 	TFLAG_PASS_ACK,
 	TFLAG_KEEPALIVE,
 	TFLAG_SKIP_EARLY,
+	TFLAG_100_UEPOCH_SET,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
 
 #define SOFIA_MAX_MSG_QUEUE 64
 #define SOFIA_MSG_QUEUE_SIZE 1000
+
+#define SOFIA_MAX_REG_ALGS 7 /* rfc8760 */
 
 struct mod_sofia_globals {
 	switch_memory_pool_t *pool;
@@ -405,6 +409,12 @@ struct mod_sofia_globals {
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
 	int presence_year;
+	int abort_on_empty_external_ip;
+	const char *stir_shaken_as_key;
+	const char *stir_shaken_as_url;
+	const char *stir_shaken_vs_ca_dir;
+	int stir_shaken_vs_cert_path_check;
+	int stir_shaken_vs_require_date;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -432,6 +442,7 @@ typedef enum {
 	REG_STATE_FAIL_WAIT,
 	REG_STATE_EXPIRED,
 	REG_STATE_NOREG,
+	REG_STATE_DOWN,
 	REG_STATE_TIMEOUT,
 	REG_STATE_LAST
 } reg_state_t;
@@ -452,6 +463,7 @@ typedef enum {
 	SOFIA_TLS_VERSION_TLSv1 = (1 << 2),
 	SOFIA_TLS_VERSION_TLSv1_1 = (1 << 3),
 	SOFIA_TLS_VERSION_TLSv1_2 = (1 << 4),
+	SOFIA_TLS_VERSION_TLSv1_3 = (1 << 5),
 } sofia_tls_version_t;
 
 typedef enum {
@@ -518,6 +530,9 @@ struct sofia_gateway {
 	char *register_proxy;
 	char *register_sticky_proxy;
 	char *outbound_sticky_proxy;
+	char *register_proxy_host_cfg; /* hold only the IP or the hostname, no port, no "sip:" or "sips:" prefix */
+	char *outbound_proxy_host_cfg;
+	char *proxy_host_cfg;
 	char *register_context;
 	char *expires_str;
 	char *register_url;
@@ -532,6 +547,7 @@ struct sofia_gateway {
 	int pinging;
 	sofia_gateway_status_t status;
 	switch_time_t uptime;
+	uint32_t contact_in_ping;
 	uint32_t ping_freq;
 	int ping_count;
 	int ping_max;
@@ -561,6 +577,7 @@ struct sofia_gateway {
 	sofia_cid_type_t cid_type;
 	char register_network_ip[80];
 	int register_network_port;
+	char *gw_auth_acl;
 };
 
 typedef enum {
@@ -596,6 +613,13 @@ typedef enum {
 	KA_MESSAGE,
 	KA_INFO
 } ka_type_t;
+
+typedef enum {
+	ALG_MD5 = (1 << 0),
+	ALG_SHA256 = (1 << 1),
+	ALG_SHA512 = (1 << 2),
+	ALG_NONE = (1 << 3),
+} sofia_auth_algs_t;
 
 struct sofia_profile {
 	int debug;
@@ -699,8 +723,10 @@ struct sofia_profile {
 	uint32_t session_timeout;
 	uint32_t minimum_session_expires;
 	uint32_t max_proceeding;
+	uint32_t max_recv_requests_per_second;
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
+	uint32_t db_spin_up_wait_ms;
 	char *odbc_dsn;
 	char *pre_trans_execute;
 	char *post_trans_execute;
@@ -739,6 +765,7 @@ struct sofia_profile {
 	uint32_t timer_t1x64;
 	uint32_t timer_t2;
 	uint32_t timer_t4;
+	uint32_t tls_orq_connect_timeout;
 	char *contact_user;
 	char *local_network;
 	uint32_t trans_timeout;
@@ -787,6 +814,8 @@ struct sofia_profile {
 	char *rfc7989_filter;
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
+	uint8_t rfc8760_algs_count;
+	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
 };
 
 
@@ -1233,11 +1262,13 @@ void sofia_glue_global_watchdog(switch_bool_t on);
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile);
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
+char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);
 void sofia_glue_pause_jitterbuffer(switch_core_session_t *session, switch_bool_t on);
 void sofia_process_dispatch_event(sofia_dispatch_event_t **dep);
 void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep);
 char *sofia_glue_get_host(const char *str, switch_memory_pool_t *pool);
+char *sofia_glue_get_host_from_cfg(const char *str, switch_memory_pool_t *pool);
 void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now);
 void sofia_msg_thread_start(int idx);
 void crtp_init(switch_loadable_module_interface_t *module_interface);
@@ -1258,6 +1289,10 @@ void sofia_reg_close_handles(sofia_profile_t *profile);
 
 void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwd_type);
 void sofia_glue_clear_soa(switch_core_session_t *session, switch_bool_t partner);
+sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive);
+switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen);
+
+char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session, const char *attest, const char *orig, const char *dest);
 
 /* For Emacs:
  * Local Variables:

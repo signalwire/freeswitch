@@ -68,12 +68,11 @@
       <AdditionalIncludeDirectories>$(OpenSSLLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(OpenSSLLibDir)\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(OpenSSLLibDir)\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>OPENSSL;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;HAVE_OPENSSL_DTLSv1_2_method;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies Condition="'$(Platform)'=='Win32'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Platform)'=='x64'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

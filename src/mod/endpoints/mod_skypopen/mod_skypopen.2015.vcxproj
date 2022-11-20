@@ -66,6 +66,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)\w32\tiff.props" />
+    <Import Project="$(SolutionDir)\w32\spandsp.props"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>

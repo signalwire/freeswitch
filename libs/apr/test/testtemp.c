@@ -15,31 +15,31 @@
  */
 
 #include "testutil.h"
-#include "apr_file_io.h"
-#include "apr_strings.h"
+#include "fspr_file_io.h"
+#include "fspr_strings.h"
 
 static void test_temp_dir(abts_case *tc, void *data)
 {
     const char *tempdir = NULL;
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_temp_dir_get(&tempdir, p);
+    rv = fspr_temp_dir_get(&tempdir, p);
     APR_ASSERT_SUCCESS(tc, "Error finding Temporary Directory", rv);
     ABTS_PTR_NOTNULL(tc, tempdir);
 }
 
 static void test_mktemp(abts_case *tc, void *data)
 {
-    apr_file_t *f = NULL;
+    fspr_file_t *f = NULL;
     const char *tempdir = NULL;
     char *filetemplate;
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_temp_dir_get(&tempdir, p);
+    rv = fspr_temp_dir_get(&tempdir, p);
     APR_ASSERT_SUCCESS(tc, "Error finding Temporary Directory", rv);
     
-    filetemplate = apr_pstrcat(p, tempdir, "/tempfileXXXXXX", NULL);
-    rv = apr_file_mktemp(&f, filetemplate, 0, p);
+    filetemplate = fspr_pstrcat(p, tempdir, "/tempfileXXXXXX", NULL);
+    rv = fspr_file_mktemp(&f, filetemplate, 0, p);
     APR_ASSERT_SUCCESS(tc, "Error opening Temporary file", rv);
 }
 

@@ -99,6 +99,7 @@ distclean: clean
       rm -f Makefile; \
       rm -f config.log config.mk; \
       rm -f vpx_config.[hc] vpx_config.asm; \
+      rm -f arm_neon.h; \
     else \
       rm -f $(target)-$(TOOLCHAIN).mk; \
     fi

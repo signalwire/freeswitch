@@ -8,6 +8,7 @@ extern "C" {
 #include "mod_lua_extra.h"
 }
 #include <switch_cpp.h>
+#include <string>
 
 #ifndef lua_pushglobaltable
 #define lua_pushglobaltable(L) lua_pushvalue(L,LUA_GLOBALSINDEX)
@@ -89,11 +90,11 @@ namespace LUA {
       JSON();
       ~JSON();
       cJSON *decode(const char *);
-      char *encode(SWIGLUA_TABLE table);
+      std::string encode(SWIGLUA_TABLE table);
       cJSON *execute(const char *);
       cJSON *execute(SWIGLUA_TABLE table);
-      char *execute2(const char *);
-      char *execute2(SWIGLUA_TABLE table);
+      std::string execute2(const char *);
+      std::string execute2(SWIGLUA_TABLE table);
       void encode_empty_table_as_object(bool flag);
       void return_unformatted_json(bool flag);
       static int cJSON2LuaTable(lua_State *L, cJSON *json);

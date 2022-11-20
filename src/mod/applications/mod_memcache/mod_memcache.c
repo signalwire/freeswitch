@@ -313,7 +313,7 @@ SWITCH_STANDARD_API(memcache_function)
 			}
 			switch_safe_free(val);
 		} else if ((!strcasecmp(subcmd, "increment") || !strcasecmp(subcmd, "decrement")) && argc > 1) {
-			uint64_t ivalue;
+			uint64_t ivalue = 0;
 			unsigned int offset = 1;
 			switch_bool_t increment = SWITCH_TRUE;
 			char *svalue = NULL;

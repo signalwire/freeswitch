@@ -33,27 +33,27 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-x264|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_x64\config.asm</YasmCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_x64\config.asm</YasmCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-openh264|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_openh264_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_openh264_x64\config.asm</YasmCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-openh264|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <YasmCommand>yasm.exe -f x64 -I./../../ffmpeg-$(ffmpegVersion)/ -I./../../ffmpeg-$(ffmpegVersion)/include_openh264_x64 -P.\..\..\libs\ffmpeg-$(ffmpegVersion)\include_openh264_x64\config.asm</YasmCommand>
   </PropertyGroup>

@@ -736,7 +736,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		mpg123_getformat(context->mh, &rate, &channels, &encoding);
 
 		if (!channels || !rate) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s (invalid rate or channel count)\n", path);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error opening %s (invalid rate or channel count)\n", path);
 			goto error;
 		}
 
@@ -1333,8 +1333,6 @@ void do_telecast(switch_stream_handle_t *stream)
 
 	  end:
 
-		switch_safe_free(uuid);
-
 		if (gfp) {
 			lame_close(gfp);
 			gfp = NULL;
@@ -1350,6 +1348,8 @@ void do_telecast(switch_stream_handle_t *stream)
 
 		switch_core_session_rwunlock(tsession);
 	}
+
+	switch_safe_free(uuid);
 }
 
 void do_broadcast(switch_stream_handle_t *stream)

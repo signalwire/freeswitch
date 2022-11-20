@@ -301,6 +301,7 @@ FST_TEST_BEGIN(create_dtmf_match)
 	result_str = iks_string(NULL, result);
 	fst_check_string_equals(nlsml_dtmf_result, result_str);
 	iks_free(result_str);
+	iks_delete(result);
 }
 FST_TEST_END()
 
@@ -316,6 +317,7 @@ FST_TEST_BEGIN(create_dtmf_instance)
 	result_str = iks_string(NULL, result);
 	fst_check_string_equals(nlsml_dtmf_instance_result, result_str);
 	iks_free(result_str);
+	iks_delete(result);
 }
 FST_TEST_END()
 
@@ -325,8 +327,13 @@ FST_TEST_END()
 FST_TEST_BEGIN(normalize)
 {
 	iks *result = nlsml_normalize(nlsml_good);
+	char *result_str;
+
 	fst_requires(result);
-	fst_check_string_equals(nlsml_good_normalized, iks_string(NULL, result));
+	result_str = iks_string(NULL, result);
+	fst_check_string_equals(nlsml_good_normalized, result_str);
+	iks_free(result_str);
+	iks_delete(result);
 }
 FST_TEST_END()
 

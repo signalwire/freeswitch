@@ -147,12 +147,22 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		return xml;
 	}
 
+	/* no profile, no work required */
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "weird case where client is available but there's no profile for %s. try reloading mod_kazoo.\n"
+						  ,section);
+		switch_thread_rwlock_unlock(agent->lock);
+		return xml;
+	}
+
 	if(event == NULL) {
 		if (switch_event_create(&event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error creating event for fetch handler\n");
 			return xml;
 		}
 	}
+
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Switch-Nodename", kazoo_globals.ei_cnode.thisnodename);
 
 	/* prepare the reply collector */
 	switch_uuid_get(&uuid);
@@ -165,7 +175,7 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 		for(i = 0; fetch_uuid_sources[i] != NULL; i++) {
 			if((fetch_call_id = switch_event_get_header(event, fetch_uuid_sources[i])) != NULL) {
 				switch_core_session_t *session = NULL;
-				if((session = switch_core_session_force_locate(fetch_call_id)) != NULL) {
+				if((session = switch_core_session_locate(fetch_call_id)) != NULL) {
 					switch_channel_t *channel = switch_core_session_get_channel(session);
 					uint32_t verbose = switch_channel_test_flag(channel, CF_VERBOSE_EVENTS);
 					switch_channel_set_flag(channel, CF_VERBOSE_EVENTS);
@@ -309,8 +319,9 @@ static switch_xml_t fetch_handler(const char *section, const char *tag_name, con
 						  ,reply.uuid_str
 						  ,(unsigned int) (switch_micro_time_now() - now) / 1000
 						  ,reply.xml_str);
-
-		xml = switch_xml_parse_str_dynamic(reply.xml_str, SWITCH_FALSE);
+		if ((xml = switch_xml_parse_str_dynamic(reply.xml_str, SWITCH_FALSE)) == NULL) {
+			switch_safe_free(reply.xml_str);
+		}
 	} else {
 		/* facepalm */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Request for %s XML (%s) timed-out after %dms\n"
@@ -327,6 +338,8 @@ void bind_fetch_profile(ei_xml_agent_t *agent, kazoo_config_ptr fetch_handlers)
 	switch_hash_index_t *hi;
 	kazoo_fetch_profile_ptr val = NULL, ptr = NULL;
 
+	if (!fetch_handlers) return;
+
 	for (hi = switch_core_hash_first(fetch_handlers->hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, (void**) &val);
 		if (val && val->section == agent->section) {
@@ -335,6 +348,7 @@ void bind_fetch_profile(ei_xml_agent_t *agent, kazoo_config_ptr fetch_handlers)
 		}
 	}
 	agent->profile = ptr;
+	switch_safe_free(hi);
 }
 
 void rebind_fetch_profiles(kazoo_config_ptr fetch_handlers)

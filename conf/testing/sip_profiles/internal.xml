@@ -216,6 +216,14 @@
     <!-- TLS ciphers default: ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH  -->
     <param name="tls-ciphers" value="$${sip_tls_ciphers}"/>
 
+    <!--
+        Connect timeout for outgoing requests using TLS (in milliseconds).
+        Set the timeout and SIP engine will try again sending an outgoing request
+        and when possible - using an alternative address (DNS failover).
+        Default - 0 (disabled)
+    -->
+    <!-- <param name="tls-orq-connect-timeout" value="3000" /> -->
+
     <!-- turn on auto-flush during bridge (skip timer sleep when the socket already has data)
          (reduces delay on latent connections default true, must be disabled explicitly)-->
     <!--<param name="rtp-autoflush-during-bridge" value="false"/>-->
@@ -237,9 +245,6 @@
 
     <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
     <param name="inbound-late-negotiation" value="true"/>
-
-    <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
-    <param name="inbound-zrtp-passthru" value="true"/>
 
     <!-- this lets anything register -->
     <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
@@ -267,6 +272,8 @@
     <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
     <!--<param name="NDLB-received-in-nat-reg-contact" value="true"/>-->
     <param name="auth-calls" value="$${internal_auth_calls}"/>
+    <!-- Force subscription requests to require authentication -->
+    <param name="auth-subscriptions" value="true"/>
     <!-- Force the user and auth-user to match. -->
     <param name="inbound-reg-force-matching-username" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->

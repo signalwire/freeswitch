@@ -76,6 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char *fp = NULL;
 	int to = 0;
 	int force_channels = 0;
+	uint32_t core_channel_limit;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
@@ -273,6 +274,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		goto fail;
 	}
 
+	if (!strncasecmp(file_path, "https://", 8) && (switch_stristr("youtube", file_path) || switch_stristr("youtu.be", file_path))) {
+		char *youtube_root = NULL;
+
+		if ((youtube_root = switch_core_get_variable_pdup("youtube_resolver", fh->memory_pool))) {
+			char *resolve_url, *encoded, *url_buf;
+			switch_size_t url_buflen = 0;
+			switch_stream_handle_t stream = { 0 };
+			const char *video = NULL, *format = "best";
+			
+			url_buflen = strlen(file_path) * 4;
+			url_buf = switch_core_alloc(fh->memory_pool, url_buflen);
+			encoded = switch_url_encode(file_path, url_buf, url_buflen);
+
+			if (fh->params && (video = switch_event_get_header(fh->params, "video")) && switch_false(video)) {
+				format = "bestaudio";
+			}
+			
+			resolve_url = switch_core_sprintf(fh->memory_pool, "%s?url=%s&format=%s", youtube_root, encoded, format);
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			//Depends on mod_curl *shrug*
+			switch_api_execute("curl", resolve_url, NULL, &stream);
+
+			if (stream.data && !strncasecmp("https://", (char *)stream.data, 8)) {
+				char *url = (char *) stream.data;
+				while (end_of_p(url) > url && (end_of(url) == '\n' || end_of(url) == '\r')) {
+					end_of(url) = '\0';
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "resolved url to: %s\n", url);
+				file_path = switch_core_sprintf(fh->memory_pool, "av://%s", url);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "YOUTUBE RESOLVER FAIL: %s\n", (char *) stream.data);
+			}
+
+			switch_safe_free(stream.data);
+		}
+	}
+
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;
@@ -359,6 +399,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		}
 		UNPROTECT_INTERFACE(fh->file_interface);
 		goto fail;
+	}
+
+	if (fh->channels > 2) {
+		/* just show a warning for more than 2 channels, no matter if we allow them or not */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File [%s] has more than 2 channels: [%u]\n", file_path, fh->channels);
+	}
+
+	core_channel_limit = switch_core_max_audio_channels(0);
+	if (core_channel_limit && fh->channels > core_channel_limit) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File [%s] has more channels (%u) than limit (%u). Closing.\n", file_path, fh->channels, core_channel_limit);
+		fh->file_interface->file_close(fh);
+		UNPROTECT_INTERFACE(fh->file_interface);
+		switch_goto_status(SWITCH_STATUS_FALSE, fail);
 	}
 
 	if (!force_channels && !fh->real_channels) {
@@ -482,7 +535,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				if (status != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag_locked(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
-					fh->samples_in += rlen;
 					if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
 						switch_mux_channels((int16_t *) fh->pre_buffer_data, rlen, fh->real_channels, fh->channels);
 					}
@@ -492,6 +544,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		}
 
 		rlen = switch_buffer_read(fh->pre_buffer, data, asis ? *len : *len * 2 * fh->channels);
+		fh->samples_in += rlen;
 		*len = asis ? rlen : rlen / 2 / fh->channels;
 
 		if (*len == 0) {
@@ -589,15 +642,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 
 	if (fh->real_channels != fh->channels && !switch_test_flag(fh, SWITCH_FILE_NOMUX)) {
-		int need = *len * 2 * fh->real_channels;
+		int need = *len * 2 * (fh->real_channels > fh->channels ? fh->real_channels : fh->channels);
 
 		if (need > fh->muxlen) {
 			fh->muxbuf = realloc(fh->muxbuf, need);
 			switch_assert(fh->muxbuf);
 			fh->muxlen = need;
-			memcpy(fh->muxbuf, data, fh->muxlen);
-			data = fh->muxbuf;
+		}
 
+		if (fh->muxbuf) {
+			memcpy(fh->muxbuf, data, *len * 2);
+			data = fh->muxbuf;
 		}
 
 		switch_mux_channels((int16_t *) data, *len, fh->real_channels, fh->channels);
@@ -894,10 +949,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 
 	if (fh->pre_buffer) {
 		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
-			switch_size_t rlen, blen;
+			switch_size_t blen;
 			int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
-			while ((rlen = switch_buffer_inuse(fh->pre_buffer))) {
+			while (switch_buffer_inuse(fh->pre_buffer)) {
 				if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
 					if (!asis)
 						blen /= 2;
@@ -919,6 +974,75 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 
 	if (fh->file_interface->file_pre_close) {
 		status = fh->file_interface->file_pre_close(fh);
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool)
+{
+	switch_status_t status;
+	switch_file_handle_t *fh;
+	uint8_t destroy_pool = 0;
+
+	switch_assert(oldfh != NULL);
+	switch_assert(newfh != NULL);
+
+	if (!pool) {
+		if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+		destroy_pool = 1;
+	}
+
+	if (!(fh = switch_core_alloc(pool, sizeof(switch_file_handle_t)))) {
+		switch_goto_status(SWITCH_STATUS_MEMERR, err);
+	}
+
+	memcpy(fh, oldfh, sizeof(switch_file_handle_t));
+
+	if (!destroy_pool) {
+		switch_clear_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	} else {
+		fh->memory_pool = pool;
+		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
+	}
+
+	if ((status = switch_mutex_init(&fh->flag_mutex, SWITCH_MUTEX_NESTED, pool)) != SWITCH_STATUS_SUCCESS) {
+		switch_goto_status(status, err);
+	}
+
+#define DUP_CHECK(dup) if (oldfh->dup && !(fh->dup = switch_core_strdup(pool, oldfh->dup))) {switch_goto_status(SWITCH_STATUS_MEMERR, err);}
+
+	DUP_CHECK(prefix);
+	DUP_CHECK(modname);
+	DUP_CHECK(mm.auth_username);
+	DUP_CHECK(mm.auth_password);
+	DUP_CHECK(stream_name);
+	DUP_CHECK(file_path);
+	DUP_CHECK(handler);
+	DUP_CHECK(spool_path);
+	
+	fh->pre_buffer_data = NULL;
+	if (oldfh->pre_buffer_data) {
+		switch_size_t pre_buffer_data_size = oldfh->pre_buffer_datalen * oldfh->channels;
+		if (pre_buffer_data_size) {
+			if (!(fh->pre_buffer_data = switch_core_alloc(pool, pre_buffer_data_size))) {
+				switch_goto_status(SWITCH_STATUS_MEMERR, err);
+			}
+
+			memcpy(fh->pre_buffer_data, oldfh->pre_buffer_data, pre_buffer_data_size);
+		}
+	}
+
+	*newfh = fh;
+
+	return SWITCH_STATUS_SUCCESS;
+
+err:
+	if (destroy_pool) {
+		switch_core_destroy_memory_pool(&pool);
 	}
 
 	return status;

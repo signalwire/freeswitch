@@ -277,12 +277,29 @@ class ResizeTest
     SetMode(GET_PARAM(1));
   }
 
+  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
+    ASSERT_NE(static_cast<int>(pkt->data.frame.width[0]), 0);
+    ASSERT_NE(static_cast<int>(pkt->data.frame.height[0]), 0);
+    encode_frame_width_.push_back(pkt->data.frame.width[0]);
+    encode_frame_height_.push_back(pkt->data.frame.height[0]);
+  }
+
+  unsigned int GetFrameWidth(size_t idx) const {
+    return encode_frame_width_[idx];
+  }
+
+  unsigned int GetFrameHeight(size_t idx) const {
+    return encode_frame_height_[idx];
+  }
+
   virtual void DecompressedFrameHook(const vpx_image_t &img,
                                      vpx_codec_pts_t pts) {
     frame_info_list_.push_back(FrameInfo(pts, img.d_w, img.d_h));
   }
 
   std::vector<FrameInfo> frame_info_list_;
+  std::vector<unsigned int> encode_frame_width_;
+  std::vector<unsigned int> encode_frame_height_;
 };
 
 TEST_P(ResizeTest, TestExternalResizeWorks) {
@@ -296,6 +313,9 @@ TEST_P(ResizeTest, TestExternalResizeWorks) {
     const unsigned int frame = static_cast<unsigned>(info->pts);
     unsigned int expected_w;
     unsigned int expected_h;
+    const size_t idx = info - frame_info_list_.begin();
+    ASSERT_EQ(info->w, GetFrameWidth(idx));
+    ASSERT_EQ(info->h, GetFrameHeight(idx));
     ScaleForFrameNumber(frame, kInitialWidth, kInitialHeight, &expected_w,
                         &expected_h, 0);
     EXPECT_EQ(expected_w, info->w)
@@ -464,7 +484,22 @@ class ResizeRealtimeTest
     ++mismatch_nframes_;
   }
 
+  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
+    ASSERT_NE(static_cast<int>(pkt->data.frame.width[0]), 0);
+    ASSERT_NE(static_cast<int>(pkt->data.frame.height[0]), 0);
+    encode_frame_width_.push_back(pkt->data.frame.width[0]);
+    encode_frame_height_.push_back(pkt->data.frame.height[0]);
+  }
+
   unsigned int GetMismatchFrames() { return mismatch_nframes_; }
+
+  unsigned int GetFrameWidth(size_t idx) const {
+    return encode_frame_width_[idx];
+  }
+
+  unsigned int GetFrameHeight(size_t idx) const {
+    return encode_frame_height_[idx];
+  }
 
   void DefaultConfig() {
     cfg_.rc_buf_initial_sz = 500;
@@ -493,6 +528,8 @@ class ResizeRealtimeTest
   bool change_bitrate_;
   double mismatch_psnr_;
   int mismatch_nframes_;
+  std::vector<unsigned int> encode_frame_width_;
+  std::vector<unsigned int> encode_frame_height_;
 };
 
 TEST_P(ResizeRealtimeTest, TestExternalResizeWorks) {
@@ -582,6 +619,9 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDownUpChangeBitRate) {
   int resize_count = 0;
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
+    const size_t idx = info - frame_info_list_.begin();
+    ASSERT_EQ(info->w, GetFrameWidth(idx));
+    ASSERT_EQ(info->h, GetFrameHeight(idx));
     if (info->w != last_w || info->h != last_h) {
       resize_count++;
       if (resize_count == 1) {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_ENCODER_VP9_ENCODER_H_
-#define VP9_ENCODER_VP9_ENCODER_H_
+#ifndef VPX_VP9_ENCODER_VP9_ENCODER_H_
+#define VPX_VP9_ENCODER_VP9_ENCODER_H_
 
 #include <stdio.h>
 
@@ -29,7 +29,9 @@
 #include "vp9/common/vp9_thread_common.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
+#if !CONFIG_REALTIME_ONLY
 #include "vp9/encoder/vp9_alt_ref_aq.h"
+#endif
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_context_tree.h"
 #include "vp9/encoder/vp9_encodemb.h"
@@ -119,9 +121,11 @@ typedef enum {
   COMPLEXITY_AQ = 2,
   CYCLIC_REFRESH_AQ = 3,
   EQUATOR360_AQ = 4,
+  PERCEPTUAL_AQ = 5,
+  PSNR_AQ = 6,
   // AQ based on lookahead temporal
   // variance (only valid for altref frames)
-  LOOKAHEAD_AQ = 5,
+  LOOKAHEAD_AQ = 7,
   AQ_MODE_COUNT  // This should always be the last member of the enum
 } AQ_MODE;
 
@@ -248,6 +252,8 @@ typedef struct VP9EncoderConfig {
   int tile_columns;
   int tile_rows;
 
+  int enable_tpl_model;
+
   int max_threads;
 
   unsigned int target_level;
@@ -278,11 +284,102 @@ static INLINE int is_lossless_requested(const VP9EncoderConfig *cfg) {
   return cfg->best_allowed_q == 0 && cfg->worst_allowed_q == 0;
 }
 
+typedef struct TplDepStats {
+  int64_t intra_cost;
+  int64_t inter_cost;
+  int64_t mc_flow;
+  int64_t mc_dep_cost;
+  int64_t mc_ref_cost;
+
+  int ref_frame_index;
+  int_mv mv;
+
+#if CONFIG_NON_GREEDY_MV
+  int ready[3];
+  int64_t sse_arr[3];
+  double feature_score;
+#endif
+} TplDepStats;
+
+#if CONFIG_NON_GREEDY_MV
+#define SQUARE_BLOCK_SIZES 4
+
+#define ZERO_MV_MODE 0
+#define NEW_MV_MODE 1
+#define NEAREST_MV_MODE 2
+#define NEAR_MV_MODE 3
+#define MAX_MV_MODE 4
+#endif
+
+typedef struct TplDepFrame {
+  uint8_t is_valid;
+  TplDepStats *tpl_stats_ptr;
+  int stride;
+  int width;
+  int height;
+  int mi_rows;
+  int mi_cols;
+  int base_qindex;
+#if CONFIG_NON_GREEDY_MV
+  int lambda;
+  int_mv *pyramid_mv_arr[3][SQUARE_BLOCK_SIZES];
+  int *mv_mode_arr[3];
+  double *rd_diff_arr[3];
+#endif
+} TplDepFrame;
+
+#if CONFIG_NON_GREEDY_MV
+static INLINE int get_square_block_idx(BLOCK_SIZE bsize) {
+  if (bsize == BLOCK_4X4) {
+    return 0;
+  }
+  if (bsize == BLOCK_8X8) {
+    return 1;
+  }
+  if (bsize == BLOCK_16X16) {
+    return 2;
+  }
+  if (bsize == BLOCK_32X32) {
+    return 3;
+  }
+  assert(0 && "ERROR: non-square block size");
+  return -1;
+}
+
+static INLINE BLOCK_SIZE square_block_idx_to_bsize(int square_block_idx) {
+  if (square_block_idx == 0) {
+    return BLOCK_4X4;
+  }
+  if (square_block_idx == 1) {
+    return BLOCK_8X8;
+  }
+  if (square_block_idx == 2) {
+    return BLOCK_16X16;
+  }
+  if (square_block_idx == 3) {
+    return BLOCK_32X32;
+  }
+  assert(0 && "ERROR: invalid square_block_idx");
+  return BLOCK_INVALID;
+}
+
+static INLINE int_mv *get_pyramid_mv(const TplDepFrame *tpl_frame, int rf_idx,
+                                     BLOCK_SIZE bsize, int mi_row, int mi_col) {
+  return &tpl_frame->pyramid_mv_arr[rf_idx][get_square_block_idx(bsize)]
+                                   [mi_row * tpl_frame->stride + mi_col];
+}
+#endif
+
+#define TPL_DEP_COST_SCALE_LOG2 4
+
 // TODO(jingning) All spatially adaptive variables should go to TileDataEnc.
 typedef struct TileDataEnc {
   TileInfo tile_info;
   int thresh_freq_fact[BLOCK_SIZES][MAX_MODES];
-  int mode_map[BLOCK_SIZES][MAX_MODES];
+#if CONFIG_CONSISTENT_RECODE
+  int thresh_freq_fact_prev[BLOCK_SIZES][MAX_MODES];
+#endif
+  int8_t mode_map[BLOCK_SIZES][MAX_MODES];
   FIRSTPASS_DATA fp_data;
   VP9RowMTSync row_mt_sync;
 
@@ -450,6 +547,31 @@ typedef struct ARNRFilterData {
   struct scale_factors sf;
 } ARNRFilterData;
 
+typedef struct EncFrameBuf {
+  int mem_valid;
+  int released;
+  YV12_BUFFER_CONFIG frame;
+} EncFrameBuf;
+
+// Maximum operating frame buffer size needed for a GOP using ARF reference.
+#define MAX_ARF_GOP_SIZE (2 * MAX_LAG_BUFFERS)
+#if CONFIG_NON_GREEDY_MV
+typedef struct FEATURE_SCORE_LOC {
+  int visited;
+  double feature_score;
+  int mi_row;
+  int mi_col;
+} FEATURE_SCORE_LOC;
+#endif
+
+#define MAX_KMEANS_GROUPS 8
+
+typedef struct KMEANS_DATA {
+  double value;
+  int pos;
+  int group_idx;
+} KMEANS_DATA;
+
 typedef struct VP9_COMP {
   QUANTS quants;
   ThreadData td;
@@ -473,16 +595,42 @@ typedef struct VP9_COMP {
 #endif
   YV12_BUFFER_CONFIG *raw_source_frame;
 
+  BLOCK_SIZE tpl_bsize;
+  TplDepFrame tpl_stats[MAX_ARF_GOP_SIZE];
+  YV12_BUFFER_CONFIG *tpl_recon_frames[REF_FRAMES];
+  EncFrameBuf enc_frame_buf[REF_FRAMES];
+#if CONFIG_MULTITHREAD
+  pthread_mutex_t kmeans_mutex;
+#endif
+  int kmeans_data_arr_alloc;
+  KMEANS_DATA *kmeans_data_arr;
+  int kmeans_data_size;
+  int kmeans_data_stride;
+  double kmeans_ctr_ls[MAX_KMEANS_GROUPS];
+  double kmeans_boundary_ls[MAX_KMEANS_GROUPS];
+  int kmeans_count_ls[MAX_KMEANS_GROUPS];
+  int kmeans_ctr_num;
+#if CONFIG_NON_GREEDY_MV
+  int tpl_ready;
+  int feature_score_loc_alloc;
+  FEATURE_SCORE_LOC *feature_score_loc_arr;
+  FEATURE_SCORE_LOC **feature_score_loc_sort;
+  FEATURE_SCORE_LOC **feature_score_loc_heap;
+  int_mv *select_mv_arr;
+#endif
+
   TileDataEnc *tile_data;
   int allocated_tiles;  // Keep track of memory allocated for tiles.
 
   // For a still frame, this flag is set to 1 to skip partition search.
   int partition_search_skippable_frame;
 
-  int scaled_ref_idx[MAX_REF_FRAMES];
+  int scaled_ref_idx[REFS_PER_FRAME];
   int lst_fb_idx;
   int gld_fb_idx;
   int alt_fb_idx;
+
+  int ref_fb_idx[REF_FRAMES];
 
   int refresh_last_frame;
   int refresh_golden_frame;
@@ -496,10 +644,15 @@ typedef struct VP9_COMP {
   int ext_refresh_frame_context_pending;
   int ext_refresh_frame_context;
 
+  int64_t norm_wiener_variance;
+  int64_t *mb_wiener_variance;
+  int mb_wiener_var_rows;
+  int mb_wiener_var_cols;
+  double *mi_ssim_rdmult_scaling_factors;
+
   YV12_BUFFER_CONFIG last_frame_uf;
 
   TOKENEXTRA *tile_tok[4][1 << 6];
-  uint32_t tok_count[4][1 << 6];
   TOKENLIST *tplist[4][1 << 6];
 
   // Ambient reconstruction err target for force key frames
@@ -521,7 +674,7 @@ typedef struct VP9_COMP {
   RATE_CONTROL rc;
   double framerate;
 
-  int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE];
+  int interp_filter_selected[REF_FRAMES][SWITCHABLE];
 
   struct vpx_codec_pkt_list *output_pkt_list;
 
@@ -555,6 +708,7 @@ typedef struct VP9_COMP {
   ActiveMap active_map;
 
   fractional_mv_step_fp *find_fractional_mv_step;
+  struct scale_factors me_sf;
   vp9_diamond_search_fn_t diamond_search_sad;
   vp9_variance_fn_ptr_t fn_ptr[BLOCK_SIZES];
   uint64_t time_receive_data;
@@ -645,10 +799,8 @@ typedef struct VP9_COMP {
   int y_mode_costs[INTRA_MODES][INTRA_MODES][INTRA_MODES];
   int switchable_interp_costs[SWITCHABLE_FILTER_CONTEXTS][SWITCHABLE_FILTERS];
   int partition_cost[PARTITION_CONTEXTS][PARTITION_TYPES];
-
-  int multi_arf_allowed;
-  int multi_arf_enabled;
-  int multi_arf_last_grp_enabled;
+  // Indices are:  max_tx_size-1,  tx_size_ctx,    tx_size
+  int tx_size_cost[TX_SIZES - 1][TX_SIZE_CONTEXTS][TX_SIZES];
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   VP9_DENOISER denoiser;
@@ -723,6 +875,9 @@ typedef struct VP9_COMP {
 
   uint8_t *count_arf_frame_usage;
   uint8_t *count_lastgolden_frame_usage;
+
+  int multi_layer_arf;
+  vpx_roi_map_t roi;
 } VP9_COMP;
 
 void vp9_initialize_enc(void);
@@ -737,7 +892,7 @@ void vp9_change_config(VP9_COMP *cpi, const VP9EncoderConfig *oxcf);
 // frame is made and not just a copy of the pointer..
 int vp9_receive_raw_frame(VP9_COMP *cpi, vpx_enc_frame_flags_t frame_flags,
                           YV12_BUFFER_CONFIG *sd, int64_t time_stamp,
-                          int64_t end_time_stamp);
+                          int64_t end_time);
 
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest, int64_t *time_stamp,
@@ -758,9 +913,11 @@ int vp9_set_reference_enc(VP9_COMP *cpi, VP9_REFFRAME ref_frame_flag,
 
 int vp9_update_entropy(VP9_COMP *cpi, int update);
 
-int vp9_set_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols);
+int vp9_set_active_map(VP9_COMP *cpi, unsigned char *new_map_16x16, int rows,
+                       int cols);
 
-int vp9_get_active_map(VP9_COMP *cpi, unsigned char *map, int rows, int cols);
+int vp9_get_active_map(VP9_COMP *cpi, unsigned char *new_map_16x16, int rows,
+                       int cols);
 
 int vp9_set_internal_size(VP9_COMP *cpi, VPX_SCALING horiz_mode,
                           VPX_SCALING vert_mode);
@@ -769,6 +926,27 @@ int vp9_set_size_literal(VP9_COMP *cpi, unsigned int width,
                          unsigned int height);
 
 void vp9_set_svc(VP9_COMP *cpi, int use_svc);
+
+static INLINE int stack_pop(int *stack, int stack_size) {
+  int idx;
+  const int r = stack[0];
+  for (idx = 1; idx < stack_size; ++idx) stack[idx - 1] = stack[idx];
+
+  return r;
+}
+
+static INLINE int stack_top(const int *stack) { return stack[0]; }
+
+static INLINE void stack_push(int *stack, int new_item, int stack_size) {
+  int idx;
+  for (idx = stack_size; idx > 0; --idx) stack[idx] = stack[idx - 1];
+  stack[0] = new_item;
+}
+
+static INLINE void stack_init(int *stack, int length) {
+  int idx;
+  for (idx = 0; idx < length; ++idx) stack[idx] = -1;
+}
 
 int vp9_get_quantizer(struct VP9_COMP *cpi);
 
@@ -795,9 +973,13 @@ static INLINE int get_ref_frame_buf_idx(const VP9_COMP *const cpi,
   return (map_idx != INVALID_IDX) ? cm->ref_frame_map[map_idx] : INVALID_IDX;
 }
 
+static INLINE RefCntBuffer *get_ref_cnt_buffer(VP9_COMMON *cm, int fb_idx) {
+  return fb_idx != INVALID_IDX ? &cm->buffer_pool->frame_bufs[fb_idx] : NULL;
+}
+
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame_buffer(
-    VP9_COMP *cpi, MV_REFERENCE_FRAME ref_frame) {
-  VP9_COMMON *const cm = &cpi->common;
+    const VP9_COMP *const cpi, MV_REFERENCE_FRAME ref_frame) {
+  const VP9_COMMON *const cm = &cpi->common;
   const int buf_idx = get_ref_frame_buf_idx(cpi, ref_frame);
   return buf_idx != INVALID_IDX ? &cm->buffer_pool->frame_bufs[buf_idx].buf
                                 : NULL;
@@ -858,19 +1040,14 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(
 
 void vp9_apply_encoding_flags(VP9_COMP *cpi, vpx_enc_frame_flags_t flags);
 
-static INLINE int is_two_pass_svc(const struct VP9_COMP *const cpi) {
-  return cpi->use_svc && cpi->oxcf.pass != 0;
-}
-
 static INLINE int is_one_pass_cbr_svc(const struct VP9_COMP *const cpi) {
   return (cpi->use_svc && cpi->oxcf.pass == 0);
 }
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
 static INLINE int denoise_svc(const struct VP9_COMP *const cpi) {
-  return (!cpi->use_svc ||
-          (cpi->use_svc &&
-           cpi->svc.spatial_layer_id >= cpi->svc.first_layer_denoise));
+  return (!cpi->use_svc || (cpi->use_svc && cpi->svc.spatial_layer_id >=
+                                                cpi->svc.first_layer_denoise));
 }
 #endif
 
@@ -878,12 +1055,10 @@ static INLINE int denoise_svc(const struct VP9_COMP *const cpi) {
 static INLINE int is_altref_enabled(const VP9_COMP *const cpi) {
   return !(cpi->oxcf.mode == REALTIME && cpi->oxcf.rc_mode == VPX_CBR) &&
          cpi->oxcf.lag_in_frames >= MIN_LOOKAHEAD_FOR_ARFS &&
-         (cpi->oxcf.enable_auto_arf &&
-          (!is_two_pass_svc(cpi) ||
-           cpi->oxcf.ss_enable_auto_arf[cpi->svc.spatial_layer_id]));
+         cpi->oxcf.enable_auto_arf;
 }
 
-static INLINE void set_ref_ptrs(VP9_COMMON *cm, MACROBLOCKD *xd,
+static INLINE void set_ref_ptrs(const VP9_COMMON *const cm, MACROBLOCKD *xd,
                                 MV_REFERENCE_FRAME ref0,
                                 MV_REFERENCE_FRAME ref1) {
   xd->block_refs[0] =
@@ -938,6 +1113,10 @@ static INLINE int log_tile_cols_from_picsize_level(uint32_t width,
 
 VP9_LEVEL vp9_get_level(const Vp9LevelSpec *const level_spec);
 
+int vp9_set_roi_map(VP9_COMP *cpi, unsigned char *map, unsigned int rows,
+                    unsigned int cols, int delta_q[8], int delta_lf[8],
+                    int skip[8], int ref_frame[8]);
+
 void vp9_new_framerate(VP9_COMP *cpi, double framerate);
 
 void vp9_set_row_mt(VP9_COMP *cpi);
@@ -948,4 +1127,4 @@ void vp9_set_row_mt(VP9_COMP *cpi);
 }  // extern "C"
 #endif
 
-#endif  // VP9_ENCODER_VP9_ENCODER_H_
+#endif  // VPX_VP9_ENCODER_VP9_ENCODER_H_

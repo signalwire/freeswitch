@@ -1,27 +1,28 @@
 #!/bin/bash
 
-TESTS=$(make -f -  2>/dev/null <<EOF
-include Makefile
-all:
-	@echo \$(TESTS)
-EOF
-)
+# "print_tests" returns relative paths to all the tests
+TESTS=$(make -s -C ../.. print_tests)
 
 echo "-----------------------------------------------------------------";
 echo "Starting tests";
 echo "Tests found: ${TESTS}";
 echo "-----------------------------------------------------------------";
+echo "Starting" > pids.txt
 for i in $TESTS
 do
     echo "Testing $i" ;
-    logfilename="log_run-tests_$i.html";
-    ./$i | tee >(ansi2html > $logfilename) ;
-    exitstatus=${PIPESTATUS[0]} ;
-    if [ "0" -eq $exitstatus ] ; then
-	rm $logfilename ;
-    else
-	echo "*** ./$i exit status is $exitstatus" ;
-	echo "*** $logfilename was saved" ;
-    fi ;
+    ./test.sh "$i" &
+    pid=($!)
+    pids+=($pid)
+    echo "$pid $i" >> pids.txt
     echo "----------------" ;
 done
+
+for pid in "${pids[@]}"
+do
+  echo "$pid waiting" >> pids.txt
+  wait "$pid"
+  echo "$pid finished" >> pids.txt
+done
+
+echo "Done running tests!"

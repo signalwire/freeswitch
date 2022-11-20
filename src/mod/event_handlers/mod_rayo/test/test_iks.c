@@ -164,15 +164,27 @@ FST_TEST_END()
 
 FST_TEST_BEGIN(dialback_key)
 {
-	fst_check_string_equals("37c69b1cf07a3f67c04a5ef5902fa5114f2c76fe4a2686482ba5b89323075643", iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("", "xmpp.example.com", "example.org", "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("s3cr3tf0rd14lb4ck", "", "example.org", "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "", "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", ""));
-	fst_check(NULL == iks_server_dialback_key(NULL, "xmpp.example.com", "example.org", "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("s3cr3tf0rd14lb4ck", NULL, "example.org", "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", NULL, "D60000229F"));
-	fst_check(NULL == iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", NULL));
+	char *dialback_key;
+
+	dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", "D60000229F");
+	fst_check_string_equals("37c69b1cf07a3f67c04a5ef5902fa5114f2c76fe4a2686482ba5b89323075643", dialback_key);
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("", "xmpp.example.com", "example.org", "D60000229F")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", "", "example.org", "D60000229F")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "", "D60000229F")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", "")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key(NULL, "xmpp.example.com", "example.org", "D60000229F")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", NULL, "example.org", "D60000229F")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", NULL, "D60000229F")));
+	switch_safe_free(dialback_key);
+	fst_check(NULL == (dialback_key = iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", NULL)));
+	switch_safe_free(dialback_key);
 }
 FST_TEST_END()
 

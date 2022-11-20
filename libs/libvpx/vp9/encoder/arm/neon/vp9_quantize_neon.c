@@ -97,6 +97,9 @@ void vp9_quantize_fp_neon(const tran_low_t *coeff_ptr, intptr_t count,
     store_s16q_to_tran_low(qcoeff_ptr + i, v_qcoeff);
     store_s16q_to_tran_low(dqcoeff_ptr + i, v_dqcoeff);
   }
+#ifdef __aarch64__
+  *eob_ptr = vmaxvq_s16(v_eobmax_76543210);
+#else
   {
     const int16x4_t v_eobmax_3210 = vmax_s16(vget_low_s16(v_eobmax_76543210),
                                              vget_high_s16(v_eobmax_76543210));
@@ -111,6 +114,7 @@ void vp9_quantize_fp_neon(const tran_low_t *coeff_ptr, intptr_t count,
 
     *eob_ptr = (uint16_t)vget_lane_s16(v_eobmax_final, 0);
   }
+#endif  // __aarch64__
 }
 
 static INLINE int32x4_t extract_sign_bit(int32x4_t a) {
@@ -122,7 +126,7 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
                                 const int16_t *quant_ptr,
                                 tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                                 const int16_t *dequant_ptr, uint16_t *eob_ptr,
-                                const int16_t *scan, const int16_t *iscan_ptr) {
+                                const int16_t *scan, const int16_t *iscan) {
   const int16x8_t one = vdupq_n_s16(1);
   const int16x8_t neg_one = vdupq_n_s16(-1);
 
@@ -134,8 +138,8 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
   const int16x8_t dequant_thresh = vshrq_n_s16(vld1q_s16(dequant_ptr), 2);
 
   // Process dc and the first seven ac coeffs.
-  const uint16x8_t iscan =
-      vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan_ptr), one));
+  const uint16x8_t v_iscan =
+      vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
   const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
   const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
   const int16x8_t coeff_abs = vabsq_s16(coeff);
@@ -169,12 +173,12 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
 
   dqcoeff = vcombine_s16(vshrn_n_s32(dqcoeff_0, 1), vshrn_n_s32(dqcoeff_1, 1));
 
-  eob_max = vandq_u16(vtstq_s16(qcoeff, neg_one), iscan);
+  eob_max = vandq_u16(vtstq_s16(qcoeff, neg_one), v_iscan);
 
   store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
   store_s16q_to_tran_low(dqcoeff_ptr, dqcoeff);
 
-  iscan_ptr += 8;
+  iscan += 8;
   coeff_ptr += 8;
   qcoeff_ptr += 8;
   dqcoeff_ptr += 8;
@@ -188,8 +192,8 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
 
     // Process the rest of the ac coeffs.
     for (i = 8; i < 32 * 32; i += 8) {
-      const uint16x8_t iscan =
-          vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan_ptr), one));
+      const uint16x8_t v_iscan =
+          vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
       const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
       const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
       const int16x8_t coeff_abs = vabsq_s16(coeff);
@@ -215,17 +219,20 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
           vcombine_s16(vshrn_n_s32(dqcoeff_0, 1), vshrn_n_s32(dqcoeff_1, 1));
 
       eob_max =
-          vmaxq_u16(eob_max, vandq_u16(vtstq_s16(qcoeff, neg_one), iscan));
+          vmaxq_u16(eob_max, vandq_u16(vtstq_s16(qcoeff, neg_one), v_iscan));
 
       store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
       store_s16q_to_tran_low(dqcoeff_ptr, dqcoeff);
 
-      iscan_ptr += 8;
+      iscan += 8;
       coeff_ptr += 8;
       qcoeff_ptr += 8;
       dqcoeff_ptr += 8;
     }
 
+#ifdef __aarch64__
+    *eob_ptr = vmaxvq_u16(eob_max);
+#else
     {
       const uint16x4_t eob_max_0 =
           vmax_u16(vget_low_u16(eob_max), vget_high_u16(eob_max));
@@ -233,5 +240,6 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
       const uint16x4_t eob_max_2 = vpmax_u16(eob_max_1, eob_max_1);
       vst1_lane_u16(eob_ptr, eob_max_2, 0);
     }
+#endif  // __aarch64__
   }
 }

@@ -1,0 +1,27 @@
+<document type="freeswitch/xml">
+
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_loopback"/>
+        <load module="mod_sndfile"/>
+      </modules>
+    </configuration>
+    <configuration name="sndfile.conf">
+        <settings>
+                <!-- Allow only these file extensions. Default: allow all sndfile provided extensions + FS custom extra -->               
+                <param name="allowed-extensions" value="wav,raw,r8,r16"/>
+        </settings>
+    </configuration>
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <context name="default">
+      <extension name="sample">
+        <condition>
+          <action application="info"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>

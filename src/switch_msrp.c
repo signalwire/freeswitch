@@ -252,14 +252,25 @@ static switch_status_t msock_init(char *ip, switch_port_t port, switch_socket_t 
 	switch_sockaddr_t *sa;
 	switch_status_t rv;
 
-	rv = switch_sockaddr_info_get(&sa, ip, SWITCH_INET, port, 0, pool);
-	if (rv) goto sock_fail;
+	rv = switch_sockaddr_info_get(&sa, ip, SWITCH_UNSPEC, port, 0, pool);
+	if (rv) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot get information about MSRP listen IP address %s\n", ip);
+		goto sock_fail;
+	}
 
 	rv = switch_socket_create(sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
 	if (rv) goto sock_fail;
 
 	rv = switch_socket_opt_set(*sock, SWITCH_SO_REUSEADDR, 1);
 	if (rv) goto sock_fail;
+
+#ifdef WIN32
+	/* Enable dual-stack listening on Windows */
+	if (switch_sockaddr_get_family(sa) == AF_INET6) {
+		rv = switch_socket_opt_set(*sock, SWITCH_SO_IPV6_V6ONLY, 0);
+		if (rv) goto sock_fail;
+	}
+#endif
 
 	rv = switch_socket_bind(*sock, sa);
 	if (rv) goto sock_fail;
@@ -695,7 +706,7 @@ static char *msrp_parse_header(char *start, int skip, const char *end, switch_ms
 static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_msg_t *msrp_msg, switch_memory_pool_t *pool)
 {
 	char *p = start;
-	char *q = p;
+	char *q;
 	const char *end = start + len;
 
 	while(p < end) {
@@ -1402,7 +1413,7 @@ end:
 
 	if (!client_mode) switch_core_destroy_memory_pool(&pool);
 
-	if (client_mode && ssl) SSL_free(ssl);
+	if (ssl) SSL_free(ssl);
 
 	if (msrp_session) msrp_session->running = 0;
 
@@ -1414,7 +1425,6 @@ end:
 static void *SWITCH_THREAD_FUNC msrp_listener(switch_thread_t *thread, void *obj)
 {
 	switch_msrp_socket_t *msock = (switch_msrp_socket_t *)obj;
-	switch_status_t rv;
 	switch_memory_pool_t *pool = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_socket_t *sock = NULL;
@@ -1429,7 +1439,7 @@ static void *SWITCH_THREAD_FUNC msrp_listener(switch_thread_t *thread, void *obj
 	switch_socket_opt_set(msock->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	// switch_socket_opt_set(msock->sock, SWITCH_SO_NONBLOCK, TRUE);
 
-	while (globals.running && (rv = switch_socket_accept(&sock, msock->sock, pool)) == SWITCH_STATUS_SUCCESS) {
+	while (globals.running && switch_socket_accept(&sock, msock->sock, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_memory_pool_t *worker_pool;
 		worker_helper_t *helper;
 

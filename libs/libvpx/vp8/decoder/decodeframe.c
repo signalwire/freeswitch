@@ -674,7 +674,7 @@ static unsigned int read_partition_size(VP8D_COMP *pbi,
 
 static int read_is_valid(const unsigned char *start, size_t len,
                          const unsigned char *end) {
-  return (start + len > start && start + len <= end);
+  return len != 0 && end > start && len <= (size_t)(end - start);
 }
 
 static unsigned int read_available_partition_size(
@@ -686,6 +686,12 @@ static unsigned int read_available_partition_size(
   const unsigned char *partition_size_ptr = token_part_sizes + i * 3;
   unsigned int partition_size = 0;
   ptrdiff_t bytes_left = fragment_end - fragment_start;
+  if (bytes_left < 0) {
+    vpx_internal_error(
+        &pc->error, VPX_CODEC_CORRUPT_FRAME,
+        "Truncated packet or corrupt partition. No bytes left %d.",
+        (int)bytes_left);
+  }
   /* Calculate the length of this partition. The last partition
    * size is implicit. If the partition size can't be read, then
    * either use the remaining data in the buffer (for EC mode)
@@ -750,6 +756,9 @@ static void setup_token_decoder(VP8D_COMP *pbi,
       ptrdiff_t ext_first_part_size = token_part_sizes -
                                       pbi->fragments.ptrs[0] +
                                       3 * (num_token_partitions - 1);
+      if (fragment_size < (unsigned int)ext_first_part_size)
+        vpx_internal_error(&pbi->common.error, VPX_CODEC_CORRUPT_FRAME,
+                           "Corrupted fragment size %d", fragment_size);
       fragment_size -= (unsigned int)ext_first_part_size;
       if (fragment_size > 0) {
         pbi->fragments.sizes[0] = (unsigned int)ext_first_part_size;
@@ -767,6 +776,9 @@ static void setup_token_decoder(VP8D_COMP *pbi,
           first_fragment_end, fragment_end, fragment_idx - 1,
           num_token_partitions);
       pbi->fragments.sizes[fragment_idx] = (unsigned int)partition_size;
+      if (fragment_size < (unsigned int)partition_size)
+        vpx_internal_error(&pbi->common.error, VPX_CODEC_CORRUPT_FRAME,
+                           "Corrupted fragment size %d", fragment_size);
       fragment_size -= (unsigned int)partition_size;
       assert(fragment_idx <= num_token_partitions);
       if (fragment_size > 0) {
@@ -1208,7 +1220,11 @@ int vp8_decode_frame(VP8D_COMP *pbi) {
   if (vpx_atomic_load_acquire(&pbi->b_multithreaded_rd) &&
       pc->multi_token_partition != ONE_PARTITION) {
     unsigned int thread;
-    vp8mt_decode_mb_rows(pbi, xd);
+    if (vp8mt_decode_mb_rows(pbi, xd)) {
+      vp8_decoder_remove_threads(pbi);
+      pbi->restart_threads = 1;
+      vpx_internal_error(&pbi->common.error, VPX_CODEC_CORRUPT_FRAME, NULL);
+    }
     vp8_yv12_extend_frame_borders(yv12_fb_new);
     for (thread = 0; thread < pbi->decoding_thread_count; ++thread) {
       corrupt_tokens |= pbi->mb_row_di[thread].mbd.corrupted;

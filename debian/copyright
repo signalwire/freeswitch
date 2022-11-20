@@ -1011,12 +1011,6 @@ License: MPL-1.1 or GPL-2+
       use the text of this Exhibit A rather than the text found in the
       Original Code Source Code for Your Modifications.]
 
-Files: libs/unimrcp/*
-Copyright: 2008-2010 Arsen Chaloyan
- 2009-2010 Tomas Valenta, Arsen Chaloyan
- 2001-2006 Steve Underwood
-License: Apache-2.0
-
 Files: */inet_pton.c
  libs/curl/lib/inet_ntop.c
  libs/curl/lib/mprintf.c
@@ -1310,45 +1304,6 @@ Files: libs/js/nsprpub/pr/tests/tmocon.c
 Copyright: 1998-2004 Netscape Communications Corporation
 License: MPL-1.1 or GPL-2+
 
-Files: libs/spandsp/*
-Copyright: 2001-2012, Steve Underwood
- 2006 Michael Jerris
- 1991-1997 Silicon Graphics, Inc.
- 1990-1997 Sam Leffler
- 1993 CMU
- 2004, Horizon Wimba, Inc.
- 1990, 1995  Frank D. Cringle.
-License: LGPL-2.1
-
-Files: libs/spandsp/tests/*
- libs/spandsp/spandsp-sim/g1050.c
- libs/spandsp/spandsp-sim/line_model.c
- libs/spandsp/spandsp-sim/make_line_models.c
- libs/spandsp/spandsp-sim/spandsp-sim.h
- libs/spandsp/spandsp-sim/test_utils.c
- libs/spandsp/src/image_translate.c
- libs/spandsp/src/make_at_dictionary.c
- libs/spandsp/src/make_cielab_luts.c
- libs/spandsp/src/make_math_fixed_tables.c
- libs/spandsp/src/make_modem_filter.c
- libs/spandsp/test-data/etsi/fax/generate_etsi_300_242_pages.c
- libs/spandsp/test-data/itu/fax/generate_dithered_tif.c
- libs/spandsp/test-data/itu/fax/generate_sized_pages.c
- libs/spandsp/test-data/itu/fax/generate_striped_pages.c
-Copyright: 2001-2012, Steve Underwood
-License: GPL-2
-
-Files: libs/spandsp/tests/ademco_contactid_tests.c
- libs/spandsp/tests/regression_tests.sh
- libs/spandsp/tests/timezone_tests.c
- libs/spandsp/tests/tsb85_extra_tests.sh
- libs/spandsp/tests/tsb85_tests.c
- libs/spandsp/tests/tsb85_tests.sh
- libs/spandsp/tests/v42bis_tests.sh
- libs/spandsp/tests/fax_tests.sh
-Copyright: 2001-2012, Steve Underwood
-License: LGPL-2.1
-
 Files: src/mod/applications/mod_cluechoo/sl.h
 Copyright: 1993 Toyoda Masashi
 License: FIXME
@@ -1440,11 +1395,6 @@ License: public-domain
 Files: libs/libsndfile/src/G72x/*
 Copyright: Abandoned, Sun Microsystems, Inc.
 License: public-domain
-
-Files: libs/spandsp/src/spandsp/fast_convert.h
-Copyright: 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
- 2009 Steve Underwood
-License: LGPL-2.1
 
 Files: libs/libsndfile/*
  libs/win32/libsndfile/*
@@ -1639,15 +1589,6 @@ Files: libs/silk/*
 Copyright: 2006-2011, Skype Limited.
 License: BSD-2-clause
 
-Files: libs/libdingaling/*
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2001-2003 Allan Saddi <allan@saddi.com>
-License: MPL-1.1
-
-Files: libs/libdingaling/src/sha1.[ch]
-Copyright: 2001-2003 Allan Saddi <allan@saddi.com>
-License: BSD-2-clause
-
 Files: libs/libcodec2/*
 Copyright: 1990-2010 David Rowe
  1990-2010 David Rowe 2009
@@ -1767,27 +1708,6 @@ License: LGPL-2.1
 
 Files: libs/broadvoice/autogen.sh
 License: GPL-2
-
-Files: libs/libzrtp/*
-Copyright: 2006-2012 Philip R. Zimmermann.
- 1993-2005 Colin Plumb
- 1998-2006, Dr Brian Gladman, Worcester, UK.
- 2002, Bryce "Zooko" Wilcox-O'Hearn
- 2010 Soft Industry
-License: AGPL-3 or MPL-1.1
-
-Files: libs/libzrtp/test/cmockery/cmockery.c
-Copyright: 2008 Google Inc
-License: Apache-2.0
-
-Files: libs/libzrtp/third_party/bnlib/legal.c
- libs/libzrtp/third_party/bnlib/*
-Copyright: 1993-2005 Colin Plumb
-License: GPL-2 or GPL-3 or MPL-1.1
-
-Files: libs/libzrtp/third_party/bnlib/test/md5.c
-Copyright: 1995 Abandoned Colin Plumb
-License: public-domain
 
 Files: libs/win32/sqlite/sqlite3.[ch]
  libs/win32/sqlite/parse.c

@@ -717,7 +717,6 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	char rip[50] = { 0 };
 	uint16_t rport = 0;
 	switch_time_t started = 0;
-	unsigned int elapsed = 0;
 	int funny = 0;
 	int size = sizeof(buf);
 	int xlen = sizeof(switch_stun_packet_header_t);
@@ -787,7 +786,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 			break;
 		}
 
-		if ((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > 5000) {
+		if (((unsigned int)((switch_micro_time_now() - started) / 1000)) > 5000) {
 			*err = "Timeout";
 			switch_socket_shutdown(sock, SWITCH_SHUTDOWN_READWRITE);
 			switch_socket_close(sock);
@@ -883,9 +882,6 @@ SWITCH_DECLARE(switch_status_t) switch_stun_ip_lookup(char **external_ip, const 
 			if (iport > 0 && iport < 0xFFFF) {
 				stun_port = (switch_port_t)iport;
 			}
-		}
-		else {
-			p = stun_ip;
 		}
 
 		switch_find_local_ip(ip_buf, sizeof(ip_buf), NULL, AF_INET);

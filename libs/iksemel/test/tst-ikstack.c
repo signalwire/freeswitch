@@ -36,7 +36,7 @@ test_stack (int cs)
 		memset (mem, 'x', i);
 		old = iks_stack_strcat (s, old, 0, buf + i, 1);
 	}
-	if (strcmp (old, buf) != 0) {
+	if (old && strcmp (old, buf) != 0) {
 		printf ("ikstack strcat bug:\nExpected: %s\n  Result: %s\n", buf, old);
 		exit (1);
 	}

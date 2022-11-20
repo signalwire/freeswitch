@@ -568,11 +568,11 @@ void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
 
 		switch_assert(*json);
 
-		if (lua_isnumber(L, -2)) {
+		if (lua_type(L, -2) == LUA_TNUMBER) {
 			ADDITEM(*json, key, cJSON_CreateNumber(lua_tonumber(L, -2)));
-		} else if (lua_isstring(L, -2)) {
+		} else if (lua_type(L, -2) == LUA_TSTRING) {
 			ADDITEM(*json, key, cJSON_CreateString(lua_tostring(L, -2)));
-		} else if (lua_isboolean(L, -2)) {
+		} else if (lua_type(L, -2) == LUA_TBOOLEAN) {
 			ADDITEM(*json, key, cJSON_CreateBool(lua_toboolean(L, -2)));
 		} else if (lua_isnil(L, -2)) {
 			ADDITEM(*json, key, cJSON_CreateNull());
@@ -600,7 +600,7 @@ void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
     // Stack is now the same as it was on entry to this function
 }
 
-char *JSON::encode(SWIGLUA_TABLE lua_table)
+std::string JSON::encode(SWIGLUA_TABLE lua_table)
 {
 	lua_State *L = lua_table.L;
 	cJSON *json = NULL;
@@ -613,8 +613,10 @@ char *JSON::encode(SWIGLUA_TABLE lua_table)
 	}
 
 	char *s = _return_unformatted_json ? cJSON_PrintUnformatted(json) : cJSON_Print(json);
+	std::string result = std::string(s);
+	free(s);
 	cJSON_Delete(json);
-	return s;
+	return result;
 }
 
 int JSON::cJSON2LuaTable(lua_State *L, cJSON *json) {
@@ -724,16 +726,22 @@ cJSON *JSON::execute(SWIGLUA_TABLE table)
 	return reply;
 }
 
-char *JSON::execute2(const char *str)
+std::string JSON::execute2(const char *str)
 {
-	cJSON *reply = execute(str);
-
-	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    cJSON *reply = execute(str);
+    char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    std::string result = std::string(s);
+    free(s);
+    cJSON_Delete(reply);
+    return result;
 }
 
-char *JSON::execute2(SWIGLUA_TABLE table)
+std::string JSON::execute2(SWIGLUA_TABLE table)
 {
-	cJSON *reply = execute(table);
-
-	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    cJSON *reply = execute(table);
+    char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    std::string result = std::string(s);
+    free(s);
+    cJSON_Delete(reply);
+    return result;
 }

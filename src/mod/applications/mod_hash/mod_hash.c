@@ -144,10 +144,7 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 	if (!(item = (limit_hash_item_t *) switch_core_hash_find(globals.limit_hash, hashkey))) {
 		/* No, create an empty structure and add it, then continue like as if it existed */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Creating new limit structure: key: %s\n", hashkey);
-		item = (limit_hash_item_t *) malloc(sizeof(limit_hash_item_t));
-		switch_assert(item);
-		memset(item, 0, sizeof(limit_hash_item_t));
-		switch_core_hash_insert(globals.limit_hash, hashkey, item);
+		item = (limit_hash_item_t *)switch_core_hash_insert_alloc(globals.limit_hash, hashkey, sizeof(limit_hash_item_t));
 	}
 
 	if (!(pvt = switch_channel_get_private(channel, "limit_hash"))) {
@@ -246,7 +243,6 @@ SWITCH_HASH_DELETE_FUNC(limit_hash_remote_cleanup_callback)
 	switch_time_t now = (switch_time_t)(intptr_t)pData;
 
 	if (item->last_update != now) {
-		free(item);
 		return SWITCH_TRUE;
 	}
 
@@ -434,17 +430,13 @@ SWITCH_STANDARD_APP(hash_function)
 			free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
 		}
-		value = strdup(argv[3]);
-		switch_assert(value);
-		switch_core_hash_insert(globals.db_hash, hash_key, value);
+		switch_core_hash_insert_dup(globals.db_hash, hash_key, argv[3]);
 	} else if (!strcasecmp(argv[0], "insert_ifempty")) {
 		if (argc < 4) {
 			goto usage;
 		}
-		if (!(value = switch_core_hash_find(globals.db_hash, hash_key))) {
-			value = strdup(argv[3]);
-			switch_assert(value);
-			switch_core_hash_insert(globals.db_hash, hash_key, value);
+		if (!switch_core_hash_find(globals.db_hash, hash_key)) {
+			switch_core_hash_insert_dup(globals.db_hash, hash_key, argv[3]);
 		}
 
 	} else if (!strcasecmp(argv[0], "delete")) {
@@ -507,9 +499,7 @@ SWITCH_STANDARD_API(hash_api_function)
 			switch_safe_free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
 		}
-		value = strdup(argv[3]);
-		switch_assert(value);
-		switch_core_hash_insert(globals.db_hash, hash_key, value);
+		switch_core_hash_insert_dup(globals.db_hash, hash_key, argv[3]);
 		stream->write_function(stream, "+OK\n");
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	} else if (!strcasecmp(argv[0], "insert_ifempty")) {
@@ -517,12 +507,10 @@ SWITCH_STANDARD_API(hash_api_function)
 			goto usage;
 		}
 		switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
-		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
+		if (switch_core_hash_find(globals.db_hash, hash_key)) {
 			stream->write_function(stream, "-ERR key already exists\n");
 		} else {
-			value = strdup(argv[3]);
-			switch_assert(value);
-			switch_core_hash_insert(globals.db_hash, hash_key, value);
+			switch_core_hash_insert_dup(globals.db_hash, hash_key, argv[3]);
 			stream->write_function(stream, "+OK\n");
 		}
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
@@ -763,8 +751,6 @@ limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t
 void limit_remote_destroy(limit_remote_t **r)
 {
 	if (r && *r) {
-		switch_hash_index_t *hi;
-
 		(*r)->state = REMOTE_OFF;
 
 		if ((*r)->thread) {
@@ -775,20 +761,12 @@ void limit_remote_destroy(limit_remote_t **r)
 		switch_thread_rwlock_wrlock((*r)->rwlock);
 
 		/* Free hashtable data */
-		for (hi = switch_core_hash_first((*r)->index); hi; hi = switch_core_hash_next(&hi)) {
-			void *val;
-			const void *key;
-			switch_ssize_t keylen;
-			switch_core_hash_this(hi, &key, &keylen, &val);
-
-			free(val);
-		}
+		switch_core_hash_destroy(&(*r)->index);
 
 		switch_thread_rwlock_unlock((*r)->rwlock);
 		switch_thread_rwlock_destroy((*r)->rwlock);
 
 		switch_core_destroy_memory_pool(&((*r)->pool));
-		switch_core_hash_destroy(&(*r)->index);
 		*r = NULL;
 	}
 }
@@ -880,8 +858,8 @@ static void *SWITCH_THREAD_FUNC limit_remote_thread(switch_thread_t *thread, voi
 								limit_hash_item_t *item;
 								switch_thread_rwlock_wrlock(remote->rwlock);
 								if (!(item = switch_core_hash_find(remote->index, argv[0]))) {
-									item = malloc(sizeof(*item));
-									switch_core_hash_insert(remote->index, argv[0], item);
+									switch_zmalloc(item, sizeof(*item));
+									switch_core_hash_insert_auto_free(remote->index, argv[0], item);
 								}
 								item->total_usage = atoi(argv[1]);
 								item->rate_usage = atoi(argv[2]);

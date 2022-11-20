@@ -7,17 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VP9_VP9_IFACE_COMMON_H_
-#define VP9_VP9_IFACE_COMMON_H_
+#ifndef VPX_VP9_VP9_IFACE_COMMON_H_
+#define VPX_VP9_VP9_IFACE_COMMON_H_
 
 #include "vpx_ports/mem.h"
 
 static void yuvconfig2image(vpx_image_t *img, const YV12_BUFFER_CONFIG *yv12,
                             void *user_priv) {
   /** vpx_img_wrap() doesn't allow specifying independent strides for
-    * the Y, U, and V planes, nor other alignment adjustments that
-    * might be representable by a YV12_BUFFER_CONFIG, so we just
-    * initialize all the fields.*/
+   * the Y, U, and V planes, nor other alignment adjustments that
+   * might be representable by a YV12_BUFFER_CONFIG, so we just
+   * initialize all the fields.*/
   int bps;
   if (!yv12->subsampling_y) {
     if (!yv12->subsampling_x) {
@@ -142,4 +142,4 @@ static VP9_REFFRAME ref_frame_to_vp9_reframe(vpx_ref_frame_type_t frame) {
   assert(0 && "Invalid Reference Frame");
   return VP9_LAST_FLAG;
 }
-#endif  // VP9_VP9_IFACE_COMMON_H_
+#endif  // VPX_VP9_VP9_IFACE_COMMON_H_

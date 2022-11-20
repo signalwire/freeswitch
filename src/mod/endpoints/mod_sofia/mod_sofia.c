@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,6 +40,10 @@
 /*************************************************************************************************************************************************************/
 #include "mod_sofia.h"
 #include "sofia-sip/sip_extra.h"
+
+#if HAVE_STIRSHAKEN
+#include <stir_shaken.h>
+#endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
@@ -351,6 +355,17 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 		return 606;
 	case SWITCH_CAUSE_UNWANTED:
 		return 607;
+	/* STIR/SHAKEN */
+	case SWITCH_CAUSE_NO_IDENTITY:
+		return 428;
+	case SWITCH_CAUSE_BAD_IDENTITY_INFO:
+		return 429;
+	case SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE:
+		return 437;
+	case SWITCH_CAUSE_INVALID_IDENTITY:
+		return 438;
+	case SWITCH_CAUSE_STALE_DATE:
+		return 403;
 	default:
 		return 480;
 	}
@@ -903,7 +918,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
-		(val = switch_channel_get_variable(channel, "sip-force-contact")) ||
+		switch_channel_get_variable(channel, "sip-force-contact") ||
 		((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 		sticky = tech_pvt->record_route;
 		session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
@@ -1414,6 +1429,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						   SIPTAG_PAYLOAD_STR(msg->string_arg),
 						   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 						   SIPTAG_EVENT_STR("refer"), TAG_END());
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
 				goto end;
 			}
 
@@ -1533,11 +1549,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
 				  TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 				  TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+				  SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 				  TAG_END());
 
 		if (msg->string_array_arg[0]) {
 			tech_pvt->proxy_refer_uuid = (char *)msg->string_array_arg[0];
-		} else {
+		} else if (!switch_channel_var_true(tech_pvt->channel, "sip_refer_continue_after_reply")) {
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
 			sofia_wait_for_reply(tech_pvt, 9999, 10);
 			switch_mutex_lock(tech_pvt->sofia_mutex);
@@ -2053,6 +2070,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 									  (switch_stristr("cisco/spa50", ua) ||
 									  switch_stristr("cisco/spa525", ua)) ||
 									  switch_stristr("cisco/spa30", ua) ||
+									  switch_stristr("Fanvil", ua) ||
 									  switch_stristr("Grandstream", ua) ||
 									  switch_stristr("Yealink", ua) ||
 									  switch_stristr("Mitel", ua) ||
@@ -2456,7 +2474,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				/* Set sip_to_tag to local tag for inbound channels. */
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					const char* to_tag = "";
-					to_tag = switch_str_nil(nta_leg_get_tag(tech_pvt->nh->nh_ds->ds_leg));
+					to_tag = switch_str_nil(nta_leg_get_tag(nua_get_dialog_state_leg(tech_pvt->nh)));
 					if(to_tag) {
 						switch_channel_set_variable(channel, "sip_to_tag", to_tag);
 					}
@@ -2579,8 +2597,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						}
 					}
 
-					switch_channel_check_zrtp(tech_pvt->channel);
-
 					if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						goto end_lock;
@@ -2597,7 +2613,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 
 				if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
-					(val = switch_channel_get_variable(channel, "sip-force-contact")) ||
+					switch_channel_get_variable(channel, "sip-force-contact") ||
 					((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
 					sticky = tech_pvt->record_route;
 					switch_channel_set_variable(channel, "sip_nat_detected", "true");
@@ -2740,6 +2756,7 @@ const char *sofia_state_names[] = {
 	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
+	"DOWN",
 	"TIMEOUT",
 	NULL
 };
@@ -2918,9 +2935,9 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
 							free(pkey);
 
-							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 								time_t now = switch_epoch_time_now(NULL);
-								if (gp->reg_timeout > now) {
+								if (gp->reg_timeout >= now) {
 									stream->write_function(stream, " (retry: %ds)", gp->reg_timeout - now);
 								} else {
 									stream->write_function(stream, " (retry: NEVER)");
@@ -3043,10 +3060,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "CNG              \t%d\n", profile->cng_pt);
 					stream->write_function(stream, "SESSION-TO       \t%d\n", profile->session_timeout);
 					stream->write_function(stream, "MAX-DIALOG       \t%d\n", profile->max_proceeding);
+					stream->write_function(stream, "MAX-RECV-RPS     \t%d\n", profile->max_recv_requests_per_second);
 					stream->write_function(stream, "NOMEDIA          \t%s\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "LATE-NEG         \t%s\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "PROXY-MEDIA      \t%s\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
-					stream->write_function(stream, "ZRTP-PASSTHRU    \t%s\n", sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) ? "true" : "false");
 					stream->write_function(stream, "AGGRESSIVENAT    \t%s\n",
 										   sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					if (profile->user_agent_filter) {
@@ -3167,9 +3184,9 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "%25s\t%s\t  %40s\t%s", pkey, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					free(pkey);
 
-					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 						time_t now = switch_epoch_time_now(NULL);
-						if (gp->retry > now) {
+						if (gp->retry >= now) {
 							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
 						} else {
 							stream->write_function(stream, " (retry: NEVER)");
@@ -3221,9 +3238,9 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
 	stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", gp->ob_failed_calls);
 
-	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 		time_t now = switch_epoch_time_now(NULL);
-		if (gp->retry > now) {
+		if (gp->retry >= now) {
 			stream->write_function(stream, "    <retry>%ds</retry>\n", gp->retry - now);
 		} else {
 			stream->write_function(stream, "    <retry>NEVER</retry>\n");
@@ -3345,10 +3362,10 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <cng>%d</cng>\n", profile->cng_pt);
 					stream->write_function(stream, "    <session-to>%d</session-to>\n", profile->session_timeout);
 					stream->write_function(stream, "    <max-dialog>%d</max-dialog>\n", profile->max_proceeding);
+					stream->write_function(stream, "    <max-recv-rps>%d</max-recv-rps>\n", profile->max_recv_requests_per_second);
 					stream->write_function(stream, "    <nomedia>%s</nomedia>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "    <late-neg>%s</late-neg>\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "    <proxy-media>%s</proxy-media>\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
-					stream->write_function(stream, "    <zrtp-passthru>%s</zrtp-passthru>\n", sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) ? "true" : "false");
 					stream->write_function(stream, "    <aggressive-nat>%s</aggressive-nat>\n",
 										   sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					if (profile->user_agent_filter) {
@@ -3483,9 +3500,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					switch_assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "<gateway>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</gateway>\n",
 										   gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
-					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 						time_t now = switch_epoch_time_now(NULL);
-						if (gp->retry > now) {
+						if (gp->retry >= now) {
 							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
 						} else {
 							stream->write_function(stream, " (retry: NEVER)");
@@ -3653,15 +3670,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGED;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGED;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGED;
+					stream->write_function(stream, "+OK\n");
+					sofia_reg_release_gateway(gateway_ptr);
+				} else {
+					stream->write_function(stream, "-ERR NOREG gateway [%s] can't be registered!\n", gname);
+				}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -3680,15 +3703,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 		if (!strcasecmp(gname, "all")) {
 			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-				gateway_ptr->retry = 0;
-				gateway_ptr->state = REG_STATE_UNREGISTER;
+				if (gateway_ptr->state != REG_STATE_NOREG) {
+					gateway_ptr->retry = 0;
+					gateway_ptr->state = REG_STATE_UNREGISTER;
+				}
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			gateway_ptr->retry = 0;
-			gateway_ptr->state = REG_STATE_UNREGISTER;
-			stream->write_function(stream, "+OK\n");
-			sofia_reg_release_gateway(gateway_ptr);
+			if (gateway_ptr->state != REG_STATE_NOREG) {
+				gateway_ptr->retry = 0;
+				gateway_ptr->state = REG_STATE_UNREGISTER;
+				stream->write_function(stream, "+OK\n");
+				sofia_reg_release_gateway(gateway_ptr);
+			} else {
+				stream->write_function(stream, "-ERR NOREG gateway [%s] can't be unregistered!\n", gname);
+			}
 		} else {
 			stream->write_function(stream, "Invalid gateway!\n");
 		}
@@ -4356,7 +4385,6 @@ SWITCH_STANDARD_API(sofia_gateway_data_function)
 {
 	char *argv[4];
 	char *mydata;
-	int argc;
 	sofia_gateway_t *gateway;
 	char *gwname, *param, *varname;
 	const char *val = NULL;
@@ -4369,7 +4397,7 @@ SWITCH_STANDARD_API(sofia_gateway_data_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
+	if (!switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) || !argv[0]) {
 		goto end;
 	}
 
@@ -4646,7 +4674,7 @@ static int protect_dest_uri(switch_caller_profile_t *cp)
 	switch_size_t enclen = 0;
 	int mod = 0;
 
-	if (!(e = strchr(p, '@'))) {
+	if (!strchr(p, '@')) {
 		return 0;
 	}
 
@@ -4769,11 +4797,13 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		*dest++ = '\0';
 
-		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
+		if (!(gateway_ptr = sofia_reg_find_gateway(gw)) || !gateway_ptr->profile) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Gateway \'%s\'\n", gw);
 			cause = SWITCH_CAUSE_INVALID_GATEWAY;
 			goto error;
 		}
+
+		profile = gateway_ptr->profile;
 
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
@@ -4814,8 +4844,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto error;
 		}
-
-		profile = gateway_ptr->profile;
 
 		if (profile && sofia_test_pflag(profile, PFLAG_STANDBY)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "System Paused\n");
@@ -4880,6 +4908,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 	} else {
+		const char *sip_destination_prefix = switch_str_nil(switch_event_get_header(var_event, "sip_destination_prefix"));
+
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid URL\n");
 			cause = SWITCH_CAUSE_INVALID_URL;
@@ -4903,13 +4933,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			profile_name = profile->domain_name;
 		}
 
-		if (!strncasecmp(dest, "sip:", 4) || !strncasecmp(dest, "sips:", 5)) {
-			char *c;
-			tech_pvt->dest = switch_core_session_strdup(nsession, dest);
-			if ((c = strchr(tech_pvt->dest, ':'))) {
-				c++;
-				tech_pvt->e_dest = switch_core_session_strdup(nsession, c);
-			}
+		if (!strncasecmp(dest, "sip:", 4)) {
+			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest + 4);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s", sip_destination_prefix, tech_pvt->e_dest);
+		} else if (!strncasecmp(dest, "sips:", 5)) {
+			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest + 5);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sips:%s%s", sip_destination_prefix, tech_pvt->e_dest);
 		} else if (!mod && !strchr(dest, '@') && (host = strchr(dest, '%'))) {
 			char buf[1024];
 			*host = '@';
@@ -4955,9 +4984,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				}
 			}
 
-			tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s", sip_destination_prefix, dest);
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
-			switch_snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 		}
 	}
 
@@ -5070,7 +5098,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (gateway_ptr && gateway_ptr->ob_vars) {
 		switch_event_header_t *hp;
 		for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(nsession), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
 							  switch_channel_get_name(nchannel), hp->name, hp->value);
 			if (!strncmp(hp->name, "p:", 2)) {
 				switch_channel_set_profile_var(nchannel, hp->name + 2, hp->value);
@@ -5153,17 +5181,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				sofia_clear_flag(ctech_pvt, TFLAG_ENABLE_SOA);
 			}
 
-			if (switch_channel_test_flag(o_channel, CF_ZRTP_PASSTHRU_REQ) && switch_channel_test_flag(o_channel, CF_ZRTP_HASH)) {
-				const char *x = NULL;
-				switch_core_media_pass_zrtp_hash2(session, nsession);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[zrtp_passthru] Setting a-leg inherit_codec=true\n");
-				switch_channel_set_variable(o_channel, "inherit_codec", "true");
-				if ((x = switch_channel_get_variable(o_channel, "ep_codec_string"))) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[zrtp_passthru] Setting b-leg absolute_codec_string='%s'\n", x);
-					switch_channel_set_variable(nchannel, "absolute_codec_string", x);
-				}
-			}
-
 			/* SNARK: lets copy this across so we can see if we're the other leg of 3PCC + bypass_media... */
 			if (sofia_test_flag(ctech_pvt, TFLAG_3PCC) && (switch_channel_test_flag(o_channel, CF_PROXY_MODE) || switch_channel_test_flag(o_channel, CF_PROXY_MEDIA))) {
 				sofia_set_flag(tech_pvt, TFLAG_3PCC_INVITE);
@@ -5180,7 +5197,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	goto done;
 
   error:
-	if (gateway_ptr) {
+	/* gateway pointer lock is really a readlock of the profile so we let the profile release below free that lock if we have a profile */
+	if (gateway_ptr && !profile) {
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
@@ -5250,7 +5268,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 
 	//nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(full_to), SIPTAG_TO_STR(full_from), SIPTAG_CONTACT_STR(profile->url), TAG_END());
-	cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
+	cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
 
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
@@ -5384,6 +5402,9 @@ void general_event_handler(switch_event_t *event)
 
 					if (zstr(dst->contact)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid contact uri [%s]\n", switch_str_nil(dst->contact));
+						sofia_glue_free_destination(dst);
+						switch_safe_free(route_uri);
+						sofia_glue_release_profile(profile);
 						return;
 					}
 
@@ -5410,9 +5431,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			} else if (to_uri || from_uri) {
@@ -5465,9 +5486,9 @@ void general_event_handler(switch_event_t *event)
 
 					switch_safe_free(route_uri);
 					sofia_glue_free_destination(dst);
-
-					sofia_glue_release_profile(profile);
 				}
+
+				sofia_glue_release_profile(profile);
 
 				return;
 			}
@@ -5647,6 +5668,7 @@ void general_event_handler(switch_event_t *event)
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
+					sofia_glue_release_profile(profile);
 					return;
 				}
 
@@ -5773,12 +5795,14 @@ void general_event_handler(switch_event_t *event)
 					 TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
 
 			if (call_id && nh) {
-				nua_handle_unref(nh);
+				nua_handle_unref_user(nh);
 			}
 
-			sofia_glue_release_profile(profile);
-
 		  done:
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
 
 			switch_safe_free(local_dup);
 
@@ -6089,6 +6113,414 @@ SWITCH_STANDARD_APP(sofia_sla_function)
 	switch_ivr_eavesdrop_session(session, data, NULL, ED_MUX_READ | ED_MUX_WRITE | ED_COPY_DISPLAY);
 }
 
+#if HAVE_STIRSHAKEN
+static stir_shaken_as_t *sofia_stir_shaken_as = NULL;
+static stir_shaken_vs_t *sofia_stir_shaken_vs = NULL;
+
+static switch_status_t sofia_stir_shaken_vs_create(stir_shaken_context_t *context)
+{
+	sofia_stir_shaken_vs = stir_shaken_vs_create(context);
+	if (!sofia_stir_shaken_vs) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity verification service!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	if (mod_sofia_globals.stir_shaken_vs_ca_dir) {
+		if (stir_shaken_vs_load_ca_dir(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_ca_dir) != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load trusted root certificates from %s\n", mod_sofia_globals.stir_shaken_vs_ca_dir);
+			return SWITCH_STATUS_FALSE;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded trusted root certificates from %s\n", mod_sofia_globals.stir_shaken_vs_ca_dir);
+		}
+	}
+	stir_shaken_vs_set_x509_cert_path_check(context, sofia_stir_shaken_vs, mod_sofia_globals.stir_shaken_vs_cert_path_check);
+	stir_shaken_vs_set_connect_timeout(context, sofia_stir_shaken_vs, 3);
+	//stir_shaken_vs_set_callback(context, sofia_stir_shaken_vs, shaken_callback);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sofia_stir_shaken_as_create(stir_shaken_context_t *context)
+{
+	if (mod_sofia_globals.stir_shaken_as_key && mod_sofia_globals.stir_shaken_as_url) {
+		sofia_stir_shaken_as = stir_shaken_as_create(context);
+		if (!sofia_stir_shaken_as) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create Identity authentication service!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		if (stir_shaken_as_load_private_key(context, sofia_stir_shaken_as, mod_sofia_globals.stir_shaken_as_key) != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load key for Identity authentication service: %s", mod_sofia_globals.stir_shaken_as_key);
+			stir_shaken_as_destroy(&sofia_stir_shaken_as);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
+static void sofia_stir_shaken_create_services(void)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_context_t context = { 0 };
+	if (stir_shaken_init(&context, STIR_SHAKEN_LOGLEVEL_NOTHING) != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to initialize stirshaken library!\n");
+		return;
+	}
+	sofia_stir_shaken_vs_create(&context);
+	sofia_stir_shaken_as_create(&context);
+#endif
+}
+
+static void sofia_stir_shaken_destroy_services(void)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_vs_destroy(&sofia_stir_shaken_vs);
+	stir_shaken_as_destroy(&sofia_stir_shaken_as);
+	stir_shaken_deinit();
+#endif
+}
+
+#if HAVE_STIRSHAKEN
+static char *canonicalize_phone_number(const char *number)
+{
+	// remove all characters except for digits, *, and # from the phone number
+	// TODO determine if dial number and remove dial codes or add country code
+	char *canonicalized_number = strdup(number ? number : "");
+	size_t i = 0, j = 0;
+	size_t number_len = strlen(canonicalized_number);
+	for (i = 0; i < number_len; i++) {
+		if (isdigit(canonicalized_number[i]) || canonicalized_number[i] == '#' || canonicalized_number[i] == '*') {
+			canonicalized_number[j] = canonicalized_number[i];
+			j++;
+		}
+	}
+	canonicalized_number[j] = '\0';
+	return canonicalized_number;
+}
+
+static switch_status_t sofia_stir_shaken_validate_passport_claims(switch_core_session_t *session, long iat, const char *orig, int orig_is_tn, const char *dest, int dest_is_tn)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *from = NULL;
+	const char *to = NULL;
+	char *canonicalized_from = NULL;
+	char *canonicalized_to = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_time_t now = switch_epoch_time_now(NULL);
+
+	if (iat > now) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "PASSporT iat is in the future\n");
+		return SWITCH_STATUS_FALSE;
+	} else if (now - iat > 60) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "PASSporT iat is too old\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (mod_sofia_globals.stir_shaken_vs_require_date || switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_require_date"))) {
+		const char *sip_epoch_time_var = switch_channel_get_variable(channel, "sip_date_epoch_time");
+		switch_time_t sip_epoch_time;
+
+		if (zstr(sip_epoch_time_var)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required SIP Date\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		sip_epoch_time = strtol(sip_epoch_time_var, NULL, 10);
+		if (sip_epoch_time > now) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is in the future\n", sip_epoch_time_var);
+			return SWITCH_STATUS_FALSE;
+		}
+		if (now - sip_epoch_time > 60) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is too old\n", sip_epoch_time_var);
+			return SWITCH_STATUS_FALSE;
+		}
+		if ((iat > sip_epoch_time && iat - sip_epoch_time > 60) || (iat < sip_epoch_time && sip_epoch_time - iat > 60)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP Date %s is too far from PASSporT iat %ld\n", sip_epoch_time_var, iat);
+			return SWITCH_STATUS_FALSE;
+		}
+		// Date is within 60 seconds of now and within 60 seconds of iat
+	}
+
+	if (orig_is_tn) {
+		from = switch_channel_get_variable(channel, "sip_from_user");
+		from = canonicalized_from = canonicalize_phone_number(from);
+	} else {
+		from = switch_channel_get_variable(channel, "sip_from_uri");
+	}
+	if (dest_is_tn) {
+		to = switch_channel_get_variable(channel, "sip_to_user");
+		to = canonicalized_to = canonicalize_phone_number(to);
+	} else {
+		to = switch_channel_get_variable(channel, "sip_to_uri");
+	}
+
+	if (zstr(from) || zstr(to) || zstr(orig) || zstr(dest)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing data to verify SIP From/To matches PASSporT claims. From=%s, To=%s, orig=%s, dest=%s\n", from, to, orig, dest);
+		status = SWITCH_STATUS_FALSE;
+	} else if (strcmp(orig, from) || strcmp(dest, to)) {
+		status = SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP From/To does not match PASSporT claims. From=%s, To=%s, orig=%s, dest=%s\n", from, to, orig, dest);
+	} else {
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_safe_free(canonicalized_from);
+	switch_safe_free(canonicalized_to);
+	return status;
+}
+
+/**
+ * Returns first dest if found. Must be freed by caller.
+ */
+static char* sofia_stir_shaken_passport_get_dest(stir_shaken_passport_t *passport, int *is_tn)
+{
+	char *id = NULL;
+	char *dest = NULL;
+	int tn_form = 0;
+	int id_int = 0;
+	cJSON *item = NULL;
+	cJSON *destjson = NULL;
+	stir_shaken_context_t ss = { 0 };
+
+	if (!passport) return NULL;
+
+	dest = stir_shaken_passport_get_grants_json(&ss, passport, "dest");
+	if (!dest) {
+		return NULL;
+	}
+
+	destjson = cJSON_Parse(dest);
+	if (!destjson) {
+		free(dest);
+		return NULL;
+	}
+
+	if ((item = cJSON_GetObjectItem(destjson, "tn"))) {
+		tn_form = 1;
+	} else if ((item = cJSON_GetObjectItem(destjson, "uri"))) {
+		tn_form = 0;
+	} else {
+		cJSON_Delete(destjson);
+		free(dest);
+		return NULL;
+	}
+
+	if (cJSON_IsArray(item)) {
+		item = cJSON_GetArrayItem(item, 0);
+		if (!item) {
+			cJSON_Delete(destjson);
+			free(dest);
+			return NULL;
+		}
+	} else {
+		item = destjson;
+	}
+
+	if (cJSON_IsString(item)) {
+		id = strdup(item->valuestring);
+	} else if (cJSON_IsNumber(item)) {
+		id_int = item->valueint;
+		id = malloc(20);
+		if (!id) {
+			cJSON_Delete(destjson);
+			free(dest);
+			return NULL;
+		}
+		snprintf(id, 20, "%d", id_int);
+	} else {
+		cJSON_Delete(destjson);
+		free(dest);
+		return NULL;
+	}
+
+	if (is_tn) *is_tn = tn_form;
+	cJSON_Delete(destjson);
+	free(dest);
+	return id;
+}
+
+
+#endif
+
+// TODO Date header must be present
+//   Date header must be < (expiration policy) age
+//   Date header must be within 1 minute of iat
+
+
+/* Check signature in Identity header and save result to sip_verstat */
+SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+#if HAVE_STIRSHAKEN
+	stir_shaken_status_t verify_signature_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_context_t verify_signature_context = { 0 };
+	stir_shaken_status_t validate_passport_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_context_t validate_passport_context = { 0 };
+	stir_shaken_context_t get_grant_context = { 0 };
+	stir_shaken_passport_t *passport = NULL;
+	stir_shaken_cert_t *cert = NULL;
+	stir_shaken_error_t stir_error = { 0 };
+	switch_status_t claim_status = SWITCH_STATUS_FALSE;
+	const char *identity_header = switch_channel_get_variable(channel, "sip_h_identity");
+	const char *attestation = NULL;
+	int orig_is_tn = 0;
+	switch_bool_t hangup_on_fail = switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_hangup_on_fail"));
+
+	// TODO: compact Identity header is not supported - this will require construction of PASSporT from SIP headers in order to check signature
+
+	if (zstr(identity_header)) {
+		// Nothing to do
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: no SIP Identity\n");
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NO_IDENTITY);
+		}
+		goto done;
+	}
+
+	// verify the JWT signature in the SIP Identity header
+	verify_signature_status = stir_shaken_vs_sih_verify(&verify_signature_context, sofia_stir_shaken_vs, identity_header, &cert, &passport);
+	if (verify_signature_status != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed signature verification: %s\n", stir_shaken_get_error(&verify_signature_context, &stir_error));
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+			goto done;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed signature verification\n");
+	}
+
+	if (passport) {
+		// validate the PASSporT is not expired
+		int timeout = 60;
+		const char *timeout_str = switch_channel_get_variable(channel, "sip_stir_shaken_vs_max_age");
+		if (timeout_str && switch_is_number(timeout_str)) {
+			int new_timeout = atoi(timeout_str);
+			if (new_timeout > 0) {
+				timeout = new_timeout;
+			}
+		}
+		validate_passport_status = stir_shaken_passport_validate_iat_against_freshness(&validate_passport_context, passport, timeout);
+		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed stale check: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_STALE_DATE);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed stale check\n");
+		}
+
+		// validate the required PASSporT headers and grants are set
+		validate_passport_status = stir_shaken_passport_validate_headers_and_grants(&validate_passport_context, passport);
+		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				if (validate_passport_status == STIR_SHAKEN_STATUS_OK && verify_signature_status == STIR_SHAKEN_STATUS_OK) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMING_CALL_BARRED);
+				} else {
+					switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				}
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed header and grant validation\n");
+		}
+	}
+
+	if (passport) {
+		// validate the PASSporT claims match the SIP headers
+		stir_shaken_context_t validate_claims_context = { 0 };
+		int dest_is_tn = 0;
+		char *orig = stir_shaken_passport_get_identity(&validate_claims_context, passport, &orig_is_tn);
+		char *dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
+		long iat = stir_shaken_passport_get_grant_int(&validate_claims_context, passport, "iat");
+		claim_status = sofia_stir_shaken_validate_passport_claims(session, iat, orig, orig_is_tn, dest, dest_is_tn);
+		if (claim_status != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				switch_safe_free(orig);
+				switch_safe_free(dest);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims match SIP request\n");
+		}
+		switch_safe_free(orig);
+		switch_safe_free(dest);
+	}
+
+	attestation = stir_shaken_passport_get_grant(&get_grant_context, passport, "attest");
+
+	if (!zstr(attestation) && verify_signature_status == STIR_SHAKEN_STATUS_OK && validate_passport_status == STIR_SHAKEN_STATUS_OK && claim_status == SWITCH_STATUS_SUCCESS) {
+		if (orig_is_tn) {
+			switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Passed-%s", attestation);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT orig is not a telephone number\n");
+			switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		}
+		if (orig_is_tn && !strcmp(attestation, "A")) {
+			// Signature is valid and call has "A" attestation
+			switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Passed");
+		} else {
+			// Signature is valid and call has "B" or "C" attestation or is not from a phone number
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT only has \"%s\" attestation\n", attestation);
+			switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		}
+	} else if (!passport || !cert || zstr(attestation) || verify_signature_status == STIR_SHAKEN_STATUS_OK) {
+		// failed to get cert / bad passport / no attestation / claims don't match SIP
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+	} else {
+		// bad signature
+		switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Failed-%s", attestation);
+		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Failed");
+	}
+
+
+done:
+	stir_shaken_passport_destroy(&passport);
+	stir_shaken_cert_destroy(&cert);
+
+#else
+	switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+	switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+#endif
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "verstat=%s, verstat_detailed=%s\n", switch_channel_get_variable(channel, "sip_verstat"), switch_channel_get_variable(channel, "sip_verstat_detailed"));
+}
+
+/* This assumes TN attestation for orig and dest only */
+char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session, const char *attest, const char *orig, const char *dest)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_context_t as_context = { 0 };
+	stir_shaken_passport_params_t passport_params = { 0 };
+	char *canonical_desttn = NULL;
+	char *canonical_origtn = NULL;
+	char *passport = NULL;
+
+	if (zstr(attest) || zstr(orig) || zstr(dest) || !mod_sofia_globals.stir_shaken_as_url) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required parameter to create PASSporT\n");
+		return NULL;
+	}
+
+	passport_params.attest = attest;
+	passport_params.x5u = mod_sofia_globals.stir_shaken_as_url;
+	passport_params.desttn_key = "tn";
+	passport_params.desttn_val = canonical_desttn = canonicalize_phone_number(dest);
+	passport_params.iat = switch_epoch_time_now(NULL);
+	passport_params.origtn_key = "tn";
+	passport_params.origtn_val = canonical_origtn = canonicalize_phone_number(orig);
+	passport_params.origid = switch_core_session_get_uuid(session);
+
+	passport = stir_shaken_as_authenticate_to_sih(&as_context, sofia_stir_shaken_as, &passport_params, NULL);
+	switch_safe_free(canonical_desttn);
+	switch_safe_free(canonical_origtn);
+	return passport;
+#else
+	return NULL;
+#endif
+}
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
@@ -6347,11 +6779,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_APP(app_interface, "sofia_sla", "private sofia sla function",
 				   "private sofia sla function", sofia_sla_function, "<uuid>", SAF_NONE);
 
+	SWITCH_ADD_APP(app_interface, "sofia_stir_shaken_vs", "Verify SIP Identity header and store result in sip_verstat channel variable",
+				   "Verify SIP Identity header and store result in sip_verstat channel variable", sofia_stir_shaken_vs_function, "", SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
 	SWITCH_ADD_API(api_interface, "sofia_gateway_data", "Get data from a sofia gateway", sofia_gateway_data_function, "<gateway_name> [ivar|ovar|var] <name>");
 	switch_console_set_complete("add sofia ::[help:status");
-	switch_console_set_complete("add sofia status profile ::sofia::list_profiles reg");
+	switch_console_set_complete("add sofia status profile ::sofia::list_profiles ::[reg:user:pres");
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
 
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
@@ -6389,6 +6823,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
 	crtp_init(*module_interface);
+
+	sofia_stir_shaken_create_services();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -6476,6 +6912,8 @@ void mod_sofia_shutdown_cleanup() {
 	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
 	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	sofia_stir_shaken_destroy_services();
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)

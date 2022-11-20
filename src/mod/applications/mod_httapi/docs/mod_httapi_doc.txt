@@ -319,6 +319,8 @@ auth-scheme                     : <string               >               basic   
 disable-100-continue            : <true|false>          true            Disable the 100 continue feature.
 method                          : <string>              ""              METHOD name to send.
 timeout                         : <number>              0               Timeout waiting for response.
+connect-timeout                 : <number>              0               Timeout to create connection. Use default value 0 to switch to the
+                                                                        default built-in connection timeout - 300 seconds.
 enable-cacert-check             : <true|false>          false           Check CA/CERT.
 ssl-cert-path                   : <string>              ""              path to file.
 ssl-key-path                    : <string>              ""              path to file.

@@ -1,4 +1,4 @@
-@REM this script builds freeswitch using VS2017
+@REM this script builds freeswitch using the latest found Microsoft Visual Studio
 @REM only one platform/configuration will be built
 @REM runs (probably only) from the commandline
 @REM usage: Freeswitch.2017.sln  [[[.*]ebug] [[.*]elease] [[.*]64] [[.*]32]]
@@ -47,13 +47,13 @@
 @set procs=%NUMBER_OF_PROCESSORS%
 @set /a procs -= 1
 
-@REM check and set VS2017 environment
+@REM check and set Visual Studio environment
 CALL msbuild.cmd
 
 if exist %msbuild% (
-%msbuild% Freeswitch.2017.sln /m:%procs% /verbosity:normal /property:Configuration=%configuration% /property:Platform=%platform% /fl /flp:logfile=vs2017%platform%%configuration%.log;verbosity=normal
+%msbuild% Freeswitch.2017.sln /m:%procs% /verbosity:normal /property:Configuration=%configuration% /property:Platform=%platform% /fl /flp:logfile=vs%platform%%configuration%.log;verbosity=normal
 ) ELSE (
-    echo "echo ERROR: Cannot find msbuild. You need Visual Studio 2017 to compile this solution."
+    echo "echo ERROR: Cannot find msbuild. You need Microsoft Visual Studio to compile this solution."
 )
 @pause
 

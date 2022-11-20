@@ -1539,7 +1539,7 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 #ifdef WIN32
 		/* Enable dual-stack listening on Windows (if the listening address is IPv6), it's default on Linux */
 		if (switch_sockaddr_get_family(sa) == AF_INET6) {
-			rv = switch_socket_opt_set(listener->socket, 16384, 0);
+			rv = switch_socket_opt_set(listener->socket, SWITCH_SO_IPV6_V6ONLY, 0);
 			if (rv) goto sock_fail;
 		}
 #endif
@@ -1589,7 +1589,7 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 		}
 
 		/* accept the connection */
-		if ((rv = switch_socket_accept(&socket, listener->socket, pool))) {
+		if (switch_socket_accept(&socket, listener->socket, pool)) {
 			if (context->shutdown) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting down xmpp listener\n");
 				goto end;

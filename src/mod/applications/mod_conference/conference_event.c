@@ -108,7 +108,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action, cid);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action ? action : "N/A", cid);
 
 	if (zstr(action)) {
 		goto end;
@@ -305,7 +305,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	} else if (!strcasecmp(action, "shift-click-layer")) {
 	} else if (!strcasecmp(action, "reset-layer") || !strcasecmp(action, "layer-pan-x") || !strcasecmp(action, "layer-pan-y")) {
 		cJSON *v;
-		int layer_id = 0, canvas_id = 0, metric = 0, absolute = 0;
+		int layer_id = 0, canvas_id = 0, metric = 0;
 		const char *i = "i", *xy = "";
 
 		if ((v = cJSON_GetObjectItem(data, "layerID"))) {
@@ -321,7 +321,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 
 		if ((v = cJSON_GetObjectItem(data, "absolute"))) {
-			if ((absolute = v->valueint)) {
+			if (v->valueint) {
 				i = "";
 			}
 		}
@@ -634,7 +634,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
 	switch_core_media_gen_key_frame(member->session);
 
-	if (conference && conference->la && member->session && !switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
+	if (conference && conference->la && member->session) {
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
 		const char *cookie = switch_channel_get_variable(member->channel, "event_channel_cookie");
@@ -651,6 +651,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 		cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 		cJSON_AddItemToObject(msg, "eventType", cJSON_CreateString("channelPvtData"));
 
+		cJSON_AddStringToObject(data, "callID", switch_core_session_get_uuid(member->session));
 		cJSON_AddItemToObject(data, "action", cJSON_CreateString(join ? "conference-liveArray-join" : "conference-liveArray-part"));
 		cJSON_AddItemToObject(data, "laChannel", cJSON_CreateString(conference->la_event_channel));
 		cJSON_AddItemToObject(data, "laName", cJSON_CreateString(conference->la_name));
@@ -1028,17 +1029,18 @@ switch_status_t chat_send(switch_event_t *message_event)
 			conference_list_pretty(conference, &stream);
 			/* provide help */
 		} else {
-			return SWITCH_STATUS_SUCCESS;
+			goto done;
 		}
 	}
-
-	switch_safe_free(lbuf);
 
 	if (!conference->broadcast_chat_messages) {
 		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL, SWITCH_FALSE);
 	}
 
+done:
+	switch_safe_free(lbuf);
 	switch_safe_free(stream.data);
+
 	switch_thread_rwlock_unlock(conference->rwlock);
 
 	return SWITCH_STATUS_SUCCESS;

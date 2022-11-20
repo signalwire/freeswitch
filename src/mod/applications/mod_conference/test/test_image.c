@@ -50,32 +50,39 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(scale_test)
 		{
-			switch_image_t *img = switch_img_read_png("images/signalwire.png", SWITCH_IMG_FMT_I420);
+			char path[4096];
+			switch_image_t *img;
 			int i;
+
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../images/signalwire.png");
+			img = switch_img_read_png(path, SWITCH_IMG_FMT_I420);
 
 			for(i = 2; i <= 10; i += 2) {
 				switch_image_t *scaled_img = NULL;
 				char name[1024];
 
-				switch_snprintf(name, sizeof(name), "images/signalwire-scaled-I420-%d.png", i);
+				switch_snprintf(name, sizeof(name), "../images/signalwire-scaled-I420-%d.png", i);
+				sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, name);
 				switch_img_scale(img, &scaled_img, img->d_w / i, img->d_h / i);
 				fst_requires(scaled_img);
-				switch_img_write_png(scaled_img, name);
+				switch_img_write_png(scaled_img, path);
 				switch_img_free(&scaled_img);
 			}
 
 			switch_img_free(&img);
 
-			img = switch_img_read_png("images/signalwire.png", SWITCH_IMG_FMT_ARGB);
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../images/signalwire.png");
+			img = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
 
 			for(i = 2; i <= 10; i += 2) {
 				switch_image_t *scaled_img = NULL;
 				char name[1024];
 
-				switch_snprintf(name, sizeof(name), "images/signalwire-scaled-ARGB-%d.png", i);
+				switch_snprintf(name, sizeof(name), "../images/signalwire-scaled-ARGB-%d.png", i);
+				sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, name);
 				switch_img_scale(img, &scaled_img, img->d_w / i, img->d_h / i);
 				fst_requires(scaled_img);
-				switch_img_write_png(scaled_img, name);
+				switch_img_write_png(scaled_img, path);
 				switch_img_free(&scaled_img);
 			}
 
@@ -86,7 +93,8 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(scale_test)
 		{
-			switch_image_t *img = switch_img_read_png("images/signalwire-scaled-ARGB-8.png", SWITCH_IMG_FMT_ARGB);
+			char path[1024];
+			switch_image_t *img;
 			char *font_face = "font/AEH.ttf";
 			char *fg = "#000000";
 			char *altfg = "#FFFFFF";
@@ -96,12 +104,18 @@ FST_CORE_BEGIN("./conf")
 			const char *txt = "FEESWITCH ROCKS";
 			const char *alttxt = "freeswitch";
 
-			switch_img_txt_handle_create(&txthandle, font_face, fg, bg, font_size, 0, NULL);
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../images/signalwire-scaled-ARGB-8.png");
+			img = switch_img_read_png(path, SWITCH_IMG_FMT_ARGB);
+
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, font_face);
+			switch_img_txt_handle_create(&txthandle, path, fg, bg, font_size, 0, NULL);
 			switch_img_txt_handle_render(txthandle, img, 50, 3, txt, NULL, fg, bg, font_size, 0);
 			switch_img_txt_handle_render(txthandle, img, 60, 15, alttxt, NULL, altfg, "#000000", font_size, 0);
-			switch_img_write_png(img, "images/signalwire-scaled-ARGB-8-txt.png");
+			sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "../images/signalwire-scaled-ARGB-8-txt.png");
+			switch_img_write_png(img, path);
 
 			switch_img_free(&img);
+			switch_img_txt_handle_destroy(&txthandle);
 		}
 		FST_TEST_END()
 

@@ -1,3 +1,0 @@
-PROJECT_NUMBER = @VERSION@
-
-IMAGE_PATH = @top_srcdir@/libsofia-sip-ua/docs/pictures

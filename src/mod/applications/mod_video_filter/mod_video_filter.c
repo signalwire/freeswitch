@@ -70,7 +70,14 @@ typedef struct chromakey_child_context_s {
 } chromakey_child_context_t;
 
 
-	
+typedef struct video_replace_context_s {
+	switch_image_t *rp_img;
+	switch_file_handle_t vfh;
+	switch_core_session_t *session;
+	int sound;
+} video_replace_context_t;
+
+
 static void init_context(chromakey_context_t *context)
 {
 	switch_color_set_rgb(&context->bgcolor, "#000000");
@@ -221,7 +228,6 @@ static void parse_params(chromakey_context_t *context, int start, int argc, char
 	if (n > 2 && argv[i]) {
 
 		if (context->child_bug) {
-			printf("WTF CLOSE IT\n");
 			switch_core_media_bug_close(&context->child_bug, SWITCH_TRUE);
 			context->child_uuid = NULL;
 		}
@@ -569,6 +575,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 			if (context->vfh.params) {
 				const char *loopstr = switch_event_get_header(context->vfh.params, "loop");
+
 				if (switch_true(loopstr)) {
 					uint32_t pos = 0;
 					switch_core_file_seek(&context->vfh, &pos, 0, SEEK_SET);
@@ -606,7 +613,6 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 
 		status = switch_core_file_read_video(&context->fg_vfh, &file_frame, SVR_FLUSH);
 		switch_core_file_command(&context->fg_vfh, SCFC_FLUSH_AUDIO);
-		
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			int close = 1;
@@ -681,7 +687,6 @@ static switch_bool_t chromakey_bug_callback(switch_media_bug_t *bug, void *user_
 SWITCH_STANDARD_APP(chromakey_start_function)
 {
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *argv[4] = { 0 };
 	int argc;
@@ -715,7 +720,7 @@ SWITCH_STANDARD_APP(chromakey_start_function)
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-	if ((status = switch_core_media_bug_add(session, function, NULL, chromakey_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(session, function, NULL, chromakey_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		return;
@@ -731,7 +736,6 @@ SWITCH_STANDARD_API(chromakey_api_function)
 	switch_core_session_t *rsession = NULL;
 	switch_channel_t *channel = NULL;
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	chromakey_context_t *context;
 	char *mycmd = NULL;
 	int argc = 0;
@@ -794,8 +798,8 @@ SWITCH_STANDARD_API(chromakey_api_function)
 
 	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
 
-	if ((status = switch_core_media_bug_add(rsession, function, NULL,
-											chromakey_bug_callback, context, 0, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(rsession, function, NULL,
+											chromakey_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Failure!\n");
 		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
 		goto done;
@@ -807,6 +811,354 @@ SWITCH_STANDARD_API(chromakey_api_function)
 
  usage:
 	stream->write_function(stream, "-USAGE: %s\n", CHROMAKEY_API_SYNTAX);
+
+ done:
+	if (rsession) {
+		switch_core_session_rwunlock(rsession);
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t video_replace_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data, switch_abc_type_t type)
+{
+	video_replace_context_t *context = (video_replace_context_t *)user_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_frame_t file_frame = { 0 };
+
+	if (!switch_channel_ready(channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!frame->img) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
+		switch_status_t status = SWITCH_STATUS_FALSE;
+
+		//if (type == SWITCH_ABC_TYPE_READ_VIDEO_PING || (context->vfh.params && switch_true(switch_event_get_header(context->vfh.params, "scale")))) {
+			//context->vfh.mm.scale_w = frame->img->d_w;
+			//context->vfh.mm.scale_h = frame->img->d_h;
+		//}
+
+		status = switch_core_file_read_video(&context->vfh, &file_frame, SVR_FLUSH);
+		if (!context->sound) { 
+			switch_core_file_command(&context->vfh, SCFC_FLUSH_AUDIO);
+		}
+		
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			int close = 1;
+			
+			if (context->vfh.params) {
+				const char *loopstr = switch_event_get_header(context->vfh.params, "loop");
+				if (switch_true(loopstr)) {
+					uint32_t pos = 0;
+
+					switch_core_file_seek(&context->vfh, &pos, 0, SEEK_SET);
+					close = 0;
+				}
+			}
+
+			if (close) {
+				switch_core_file_close(&context->vfh);
+				switch_core_session_request_video_refresh(session);
+			}
+		}
+
+		if (file_frame.img) {
+			switch_img_free(&(context->rp_img));
+
+			if (frame->img && (frame->img->d_w != file_frame.img->d_w || frame->img->d_h != file_frame.img->d_h)) {
+				switch_img_letterbox(file_frame.img, &context->rp_img, frame->img->d_w, frame->img->d_h, "#0000000");
+				switch_img_free(&file_frame.img);
+			} else {
+				context->rp_img = file_frame.img;
+			}
+		}
+
+		if (context->rp_img) {
+			if (context->rp_img->d_w != frame->img->d_w || context->rp_img->d_h != frame->img->d_h ) {
+				frame->img = NULL;
+			}
+			
+			switch_img_copy(context->rp_img, &frame->img);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_bool_t video_replace_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	video_replace_context_t *context = (video_replace_context_t *)user_data;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		{
+			switch_core_session_request_video_refresh(session);
+			switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
+			switch_core_media_gen_key_frame(session);
+		}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
+			switch_core_session_request_video_refresh(session);
+			switch_channel_set_flag(channel, CF_VIDEO_REFRESH_REQ);
+			switch_core_media_gen_key_frame(session);
+			
+			switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
+			switch_img_free(&context->rp_img);
+
+			if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
+				switch_core_file_close(&context->vfh);
+				memset(&context->vfh, 0, sizeof(context->vfh));
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		{
+			switch_frame_t *rframe = NULL;
+			switch_size_t len;
+
+			if (type == SWITCH_ABC_TYPE_WRITE_REPLACE) {
+				rframe = switch_core_media_bug_get_write_replace_frame(bug);
+			} else {
+				rframe = switch_core_media_bug_get_read_replace_frame(bug);
+			}
+			
+			if (rframe) {
+				len = rframe->samples;
+
+				if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
+					switch_core_file_read(&context->vfh, rframe->data, &len);
+
+					if (len < rframe->samples) {
+						memset((char *)rframe->data + (len * 2 * context->vfh.channels), 0, (rframe->samples - len) * 2 * context->vfh.channels);
+					}
+
+					rframe->datalen = rframe->samples * 2 * context->vfh.channels;
+				}
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_VIDEO_PING:
+	case SWITCH_ABC_TYPE_WRITE_VIDEO_PING:
+		{
+			if (switch_test_flag(&context->vfh, SWITCH_FILE_OPEN)) {
+				switch_frame_t *frame = switch_core_media_bug_get_video_ping_frame(bug);
+				video_replace_thread_callback(context->session, frame, context, type);
+			} else {
+				switch_channel_set_private(channel, "_video_replace_bug_", NULL);
+				return SWITCH_FALSE;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_STANDARD_APP(video_replace_start_function)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_bug_flag_t flags = 0;
+	const char *function = "video_replace";
+	video_replace_context_t *context;
+	char *lbuf;
+	int argc = 0;
+	char *argv[2] = { 0 };
+	char *direction = NULL;
+	char *file = NULL;
+	switch_codec_implementation_t read_impl = { 0 };
+	
+	if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_video_replace_bug_"))) {
+		if (!zstr(data) && !strcasecmp(data, "stop")) {
+			switch_channel_set_private(channel, "_video_replace_bug_", NULL);
+			switch_core_media_bug_remove(session, &bug);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "alreday start!\n");
+		}
+		return;
+	}
+
+	if (data && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
+
+		if (argc > 1) {
+			direction = argv[0];
+			file = argv[1];
+		} else {
+			direction = "write";
+			file = lbuf;
+		}
+
+		if (!strcasecmp(direction, "read")) {
+			flags = SMBF_READ_VIDEO_PING;
+		} else if (!strcasecmp(direction, "write")) {
+			flags = SMBF_WRITE_VIDEO_PING;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "invalid replace direction!\n");
+			return;
+		}
+	} else {
+		return;
+	}
+
+	// switch_channel_wait_for_flag(channel, CF_VIDEO_READY, SWITCH_TRUE, 10000, NULL);
+
+	context = (video_replace_context_t *) switch_core_session_alloc(session, sizeof(*context));
+	switch_assert(context != NULL);
+	memset(context, 0, sizeof(*context));
+	context->session = session;
+
+	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
+
+	switch_core_session_get_read_impl(session, &read_impl);
+	
+	if (switch_core_file_open(&context->vfh, file, read_impl.number_of_channels, read_impl.actual_samples_per_second,
+								  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO, 
+								  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening video file\n");
+		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
+		return;
+	}
+
+	if (switch_core_media_bug_add(session, function, NULL, video_replace_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
+		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
+		return;
+	}
+
+	switch_channel_set_private(channel, "_video_replace_bug_", bug);
+}
+
+/* API Interface Function */
+#define VIDEO_REPLACE_API_SYNTAX "<uuid> <stop|start> [read|write] <file>"
+SWITCH_STANDARD_API(video_replace_api_function)
+{
+	switch_core_session_t *rsession = NULL;
+	switch_channel_t *channel = NULL;
+	switch_media_bug_t *bug;
+	video_replace_context_t *context;
+	char *mycmd = NULL;
+	int argc = 0;
+	char *argv[4] = { 0 };
+	char *uuid = NULL;
+	char *action = NULL;
+	char *file = NULL;
+	char *direction = NULL;
+	switch_media_bug_flag_t flags = 0;
+	const char *function = "video_replace";
+	switch_codec_implementation_t read_impl = { 0 };
+	int sound = 0;
+	
+	if (zstr(cmd)) {
+		goto usage;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto usage;
+	}
+
+	uuid = argv[0];
+	action = argv[1];
+
+	if (!(rsession = switch_core_session_locate(uuid))) {
+		stream->write_function(stream, "-ERR Cannot locate session!\n");
+		goto done;
+	}
+
+	channel = switch_core_session_get_channel(rsession);
+
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_video_replace_bug_");
+
+	if (!strcasecmp(action, "stop")) {
+		if (bug) {
+			switch_channel_set_private(channel, "_video_replace_bug_", NULL);
+			switch_core_media_bug_remove(rsession, &bug);
+			stream->write_function(stream, "+OK Success\n");
+		} else {
+			stream->write_function(stream, "-ERR not start\n");
+		}
+
+		goto done;
+	} else if (!strcasecmp(action, "start")) {
+		if (argc == 3) {
+			direction = "write";
+			file = argv[2];
+		} else {
+			direction = argv[2];
+			file = argv[3];
+		}
+
+		if (zstr(direction) || zstr(file)) goto usage;
+
+		if (!strncasecmp(direction, "read", 4)) {
+			flags = SMBF_READ_VIDEO_PING;
+			if (switch_stristr(":sound", direction)) {
+				flags |= SMBF_READ_REPLACE;
+				sound = 1;
+			}
+		} else if (!strncasecmp(direction, "write", 5)) {
+			flags = SMBF_WRITE_VIDEO_PING;
+			if (switch_stristr(":sound", direction)) {
+				flags |= SMBF_WRITE_REPLACE;
+				sound = 1;
+			}
+		} else {
+			goto usage;
+		}
+
+		if (bug) {
+			stream->write_function(stream, "-ERR alreday start\n");
+			goto done;
+		}
+	} else {
+		goto usage;
+	}
+
+	context = (video_replace_context_t *) switch_core_session_alloc(rsession, sizeof(*context));
+	switch_assert(context != NULL);
+	context->session = rsession;
+	context->sound = sound;
+	switch_thread_rwlock_rdlock(MODULE_INTERFACE->rwlock);
+
+	
+	switch_core_session_get_read_impl(rsession, &read_impl);
+	
+	if (switch_core_file_open(&context->vfh, file, read_impl.number_of_channels, read_impl.actual_samples_per_second,
+								  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT | SWITCH_FILE_FLAG_VIDEO, 
+								  switch_core_session_get_pool(rsession)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening video file\n");
+		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
+		goto done;
+	}
+
+	if (switch_core_media_bug_add(rsession, function, NULL,
+											video_replace_bug_callback, context, 0, flags, &bug) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "-ERR Failure!\n");
+		switch_thread_rwlock_unlock(MODULE_INTERFACE->rwlock);
+		goto done;
+	} else {
+		switch_channel_set_private(channel, "_video_replace_bug_", bug);
+		stream->write_function(stream, "+OK Success\n");
+		goto done;
+	}
+
+ usage:
+	stream->write_function(stream, "-USAGE: %s\n", VIDEO_REPLACE_API_SYNTAX);
 
  done:
 	if (rsession) {
@@ -837,7 +1189,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_video_filter_load)
 
     SWITCH_ADD_API(api_interface, "chromakey", "chromakey", chromakey_api_function, CHROMAKEY_API_SYNTAX);
 
+	SWITCH_ADD_APP(app_interface, "video_replace", "video_replace", "video replace bug",
+				   video_replace_start_function, "[read|write] <file> | stop", SAF_NONE);
+
+	SWITCH_ADD_API(api_interface, "uuid_video_replace", "video_replace", video_replace_api_function, VIDEO_REPLACE_API_SYNTAX);
+
     switch_console_set_complete("add chromakey ::console::list_uuid ::[start:stop");
+	switch_console_set_complete("add uuid_video_replace ::console::list_uuid start ::[read:write");
+	switch_console_set_complete("add uuid_video_replace ::console::list_uuid stop");
 
 	return SWITCH_STATUS_SUCCESS;
 }

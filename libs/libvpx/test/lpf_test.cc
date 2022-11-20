@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <tuple>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
@@ -56,8 +57,8 @@ typedef void (*dual_loop_op_t)(Pixel *s, int p, const uint8_t *blimit0,
                                const uint8_t *thresh1);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-typedef std::tr1::tuple<loop_op_t, loop_op_t, int> loop8_param_t;
-typedef std::tr1::tuple<dual_loop_op_t, dual_loop_op_t, int> dualloop8_param_t;
+typedef std::tuple<loop_op_t, loop_op_t, int> loop8_param_t;
+typedef std::tuple<dual_loop_op_t, dual_loop_op_t, int> dualloop8_param_t;
 
 void InitInput(Pixel *s, Pixel *ref_s, ACMRandom *rnd, const uint8_t limit,
                const int mask, const int32_t p, const int i) {
@@ -402,7 +403,7 @@ TEST_P(Loop8Test9Param, ValueCheck) {
       << "First failed at test case " << first_failure;
 }
 
-using std::tr1::make_tuple;
+using std::make_tuple;
 
 #if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH

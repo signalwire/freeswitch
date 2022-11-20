@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2018-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Seven Du <dujinfang@gmail.com>
+ * Chris Rienzo <chris@signalwire.com>
  *
  *
  * switch_vad.c VAD code with optional libfvad
@@ -189,11 +190,14 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 	// determine if this is a voice or non-voice frame
 #ifdef SWITCH_HAVE_FVAD
 	if (vad->fvad) {
+		// fvad returns -1, 0, or 1
+		// -1: error
+		//  0: non-voice frame
+		//  1: voice frame
 		int ret = fvad_process(vad->fvad, data, samples);
 
-		// printf("%d ", ret); fflush(stdout);
-
-		score = vad->thresh + ret - 1;
+		// if voice frame set score > threshold
+		score = ret > 0 ? vad->thresh + 100 : 0;
 	} else {
 #endif
 		int energy = 0, j = 0, count = 0;

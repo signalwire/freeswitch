@@ -1200,6 +1200,7 @@ FST_TEST_BEGIN(repeat_item_range_ambiguous_grammar)
 	fst_check(SMT_MATCH == srgs_grammar_match(grammar, "1", &interpretation));
 	fst_check(SMT_MATCH == srgs_grammar_match(grammar, "12", &interpretation));
 	fst_check(SMT_MATCH_END == srgs_grammar_match(grammar, "123", &interpretation));
+	srgs_parser_destroy(parser);
 }
 FST_TEST_END()
 
@@ -1217,6 +1218,7 @@ FST_TEST_BEGIN(repeat_item_range_optional_pound_grammar)
 	fst_check(SMT_MATCH == srgs_grammar_match(grammar, "12", &interpretation));
 	fst_check(SMT_MATCH_END == srgs_grammar_match(grammar, "12#", &interpretation));
 	fst_check(SMT_MATCH_END == srgs_grammar_match(grammar, "123", &interpretation));
+	srgs_parser_destroy(parser);
 }
 FST_TEST_END()
 
@@ -1253,6 +1255,7 @@ FST_TEST_BEGIN(w3c_example_grammar)
 
 	fst_requires((grammar = srgs_parse(parser, w3c_example_grammar)));
 	fst_check(srgs_grammar_to_jsgf(grammar));
+	srgs_parser_destroy(parser);
 }
 FST_TEST_END()
 
@@ -1266,6 +1269,7 @@ FST_TEST_BEGIN(metadata_grammar)
 
 	fst_requires((grammar = srgs_parse(parser, metadata_grammar)));
 	fst_check(srgs_grammar_to_jsgf(grammar));
+	srgs_parser_destroy(parser);
 }
 FST_TEST_END()
 

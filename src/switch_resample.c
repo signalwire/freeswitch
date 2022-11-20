@@ -345,9 +345,23 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t samples, int32_t vol)
 {
 	double newrate = 0;
-	double pos[13] = {1.25, 1.50, 1.75, 2.0, 2.25, 2.50, 2.75, 3.0, 3.25, 3.50, 3.75, 4.0, 4.5};
-	double neg[13] = {.917, .834, .751, .668, .585, .502, .419, .336, .253, .087, .017, .004, 0.0};
-	double *chart;
+	// change in dB mapped to ratio for output sample
+	// computed as (powf(10.0f, (float)(change_in_dB) / 20.0f))
+	static const double pos[SWITCH_GRANULAR_VOLUME_MAX] = {
+		  1.122018,   1.258925,   1.412538,   1.584893,   1.778279,   1.995262,   2.238721,   2.511887,   2.818383,   3.162278,
+		  3.548134,   3.981072,   4.466835,   5.011872,   5.623413,   6.309574,   7.079458,   7.943282,   8.912509,  10.000000,
+		 11.220183,  12.589254,  14.125375,  15.848933,  17.782795,  19.952621,  22.387213,  25.118862,  28.183832,  31.622776,
+		 35.481335,  39.810719,  44.668358,  50.118729,  56.234131,  63.095726,  70.794586,  79.432816,  89.125107, 100.000000,
+		112.201836, 125.892517, 141.253784, 158.489334, 177.827942, 199.526215, 223.872070, 251.188705, 281.838318, 316.227753
+	};
+	static const double neg[SWITCH_GRANULAR_VOLUME_MAX] = {
+		0.891251, 0.794328, 0.707946, 0.630957, 0.562341, 0.501187, 0.446684, 0.398107, 0.354813, 0.316228,
+		0.281838, 0.251189, 0.223872, 0.199526, 0.177828, 0.158489, 0.141254, 0.125893, 0.112202, 0.100000,
+		0.089125, 0.079433, 0.070795, 0.063096, 0.056234, 0.050119, 0.044668, 0.039811, 0.035481, 0.031623,
+		0.028184, 0.025119, 0.022387, 0.019953, 0.017783, 0.015849, 0.014125, 0.012589, 0.011220, 0.010000,
+		0.008913, 0.007943, 0.007079, 0.006310, 0.005623, 0.005012, 0.004467, 0.003981, 0.003548, 0.000000  // NOTE mapped -50 dB ratio to total silence instead of 0.003162
+	};
+	const double *chart;
 	uint32_t i;
 
 	if (vol == 0) return;
@@ -362,7 +376,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 
 	i = abs(vol) - 1;
 
-	switch_assert(i < 13);
+	switch_assert(i < SWITCH_GRANULAR_VOLUME_MAX);
 
 	newrate = chart[i];
 
@@ -444,6 +458,13 @@ SWITCH_DECLARE(void) switch_agc_set(switch_agc_t *agc, uint32_t energy_avg,
 	agc->change_factor = change_factor;
 	agc->period_len = period_len;
 	agc->low_energy_point = low_energy_point;
+
+	agc->score = 0;
+	agc->score_count = 0;
+	agc->score_sum = 0;
+	agc->score_avg = 0;
+	agc->score_over = 0;
+	agc->score_under = 0;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_agc_create(switch_agc_t **agcP, uint32_t energy_avg, 
@@ -522,7 +543,9 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 			energy += abs(data[i]);
 		}
 
-		agc->score = energy / samples * channels;
+		if (samples) { 
+			agc->score = energy / samples * channels;
+		}
 		agc->score_sum += agc->score;
 		agc->score_count++;
 								
@@ -537,6 +560,8 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] OVER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 									  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 					agc->score_over++;
+				} else {
+					agc->score_over = 0;
 				}
 			} else {
 				agc->score_over = 0;
@@ -547,8 +572,6 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] BELOW LOW POINT, SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 			} else if (((agc->score_avg < agc->energy_avg) && (agc->energy_avg - agc->score_avg > agc->margin))) {
-				//&& (agc->vol < 0 || agc->score_avg > agc->low_energy_point)) {
-				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "[%s] UNDER++ SCORE AVG: %d ENERGY AVG: %d MARGIN: %d\n", 
 								  agc->token, agc->score_avg, agc->energy_avg, agc->margin);
 				agc->score_under++;

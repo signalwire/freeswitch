@@ -15,10 +15,10 @@
  */
 
 #include <nks/fsio.h>
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 
 
-apr_status_t apr_file_lock(apr_file_t *thefile, int type)
+fspr_status_t fspr_file_lock(fspr_file_t *thefile, int type)
 {
 	int fc;
 
@@ -30,7 +30,7 @@ apr_status_t apr_file_lock(apr_file_t *thefile, int type)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_file_unlock(apr_file_t *thefile)
+fspr_status_t fspr_file_unlock(fspr_file_t *thefile)
 {
     if(NXFileRangeUnlock(thefile->filedes,NX_RANGE_LOCK_CANCEL,0 , 0) == -1)
 		return errno;

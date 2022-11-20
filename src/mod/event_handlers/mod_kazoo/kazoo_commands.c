@@ -48,138 +48,69 @@
 
 #define MAX_FIRST_OF 25
 
-#define MAX_HISTORY 50
-#define HST_ARRAY_DELIM "|:"
-#define HST_ITEM_DELIM ':'
-
-static void process_history_item(char* value, cJSON *json)
-{
-	char *argv[4] = { 0 };
-	char *item = strdup(value);
-	int argc = switch_separate_string(item, HST_ITEM_DELIM, argv, (sizeof(argv) / sizeof(argv[0])));
-	cJSON *jitem = cJSON_CreateObject();
-	char *epoch = NULL, *callid = NULL, *type = NULL;
-	int add = 0;
-	if(argc == 4) {
-		add = 1;
-		epoch = argv[0];
-		callid = argv[1];
-		type = argv[2];
-
-		if(!strncmp(type, "bl_xfer", 7)) {
-			char *split = strchr(argv[3], '/');
-			if(split) *(split++) = '\0';
-			cJSON_AddItemToObject(jitem, "Call-ID", cJSON_CreateString(callid));
-			cJSON_AddItemToObject(jitem, "Type", cJSON_CreateString("blind"));
-			cJSON_AddItemToObject(jitem, "Extension", cJSON_CreateString(argv[3]));
-		} else if(!strncmp(type, "att_xfer", 8)) {
-			char *split = strchr(argv[3], '/');
-			if(split) {
-				*(split++) = '\0';
-				cJSON_AddItemToObject(jitem, "Call-ID", cJSON_CreateString(callid));
-				cJSON_AddItemToObject(jitem, "Type", cJSON_CreateString("attended"));
-				cJSON_AddItemToObject(jitem, "Transferee", cJSON_CreateString(argv[3]));
-				cJSON_AddItemToObject(jitem, "Transferer", cJSON_CreateString(split));
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER TYPE '%s' NOT HANDLED => %s\n", type, item);
-				add = 0;
-			}
-		} else if(!strncmp(type, "uuid_br", 7)) {
-			cJSON_AddItemToObject(jitem, "Call-ID", cJSON_CreateString(callid));
-			cJSON_AddItemToObject(jitem, "Type", cJSON_CreateString("bridge"));
-			cJSON_AddItemToObject(jitem, "Other-Leg", cJSON_CreateString(argv[3]));
-
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER TYPE '%s' NOT HANDLED => %s\n", type, item);
-			add = 0;
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER TYPE SPLIT ERROR %i => %s\n", argc, item);
-	}
-	if(add) {
-		cJSON_AddItemToObject(json, epoch, jitem);
-	} else {
-		cJSON_Delete(jitem);
-	}
-	switch_safe_free(item);
-}
-
-SWITCH_STANDARD_API(kz_json_history)
-{
-	char *mycmd = NULL, *argv[MAX_HISTORY] = { 0 };
-	int n, argc = 0;
-	cJSON *json = cJSON_CreateObject();
-	char* output = NULL;
-	switch_event_header_t *header = NULL;
-	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		if (!strncmp(mycmd, "ARRAY::", 7)) {
-			mycmd += 7;
-			argc = switch_separate_string_string(mycmd, HST_ARRAY_DELIM, argv, (sizeof(argv) / sizeof(argv[0])));
-			for(n=0; n < argc; n++) {
-				process_history_item(argv[n], json);
-			}
-		} else if (strchr(mycmd, HST_ITEM_DELIM)) {
-			process_history_item(mycmd, json);
-		} else if (stream->param_event) {
-			header = switch_event_get_header_ptr(stream->param_event, mycmd);
-			if (header != NULL) {
-				if(header->idx) {
-					for(n = 0; n < header->idx; n++) {
-						process_history_item(header->array[n], json);
-					}
-				} else {
-					process_history_item(header->value, json);
-				}
-
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER HISTORY HEADER NOT FOUND => %s\n", mycmd);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TRANSFER HISTORY NOT PARSED => %s\n", mycmd);
-		}
-	}
-	output = cJSON_PrintUnformatted(json);
-	stream->write_function(stream, "%s", output);
-	switch_safe_free(output);
-	cJSON_Delete(json);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 SWITCH_STANDARD_API(kz_first_of)
 {
 	char delim = '|';
-	char *mycmd = NULL, *argv[MAX_FIRST_OF] = { 0 };
+	char *mycmd = NULL, *mycmd_dup = NULL, *argv[MAX_FIRST_OF] = { 0 };
 	int n, argc = 0;
 	switch_event_header_t *header = NULL;
-	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "FIRST-OF %s\n", mycmd);
-		if (!zstr(mycmd) && *mycmd == '^' && *(mycmd+1) == '^') {
-			mycmd += 2;
-			delim = *mycmd++;
-		}
-		argc = switch_separate_string(mycmd, delim, argv, (sizeof(argv) / sizeof(argv[0])));
-		for(n=0; n < argc; n++) {
-			char* item = argv[n];
-			if(*item == '#') {
-				if(*(++item) != '\0') {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING default %s\n", item);
-					stream->write_function(stream, item);
+	switch_channel_t *channel = NULL;
+
+	if (zstr(cmd)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid arg\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if ( session ) {
+		channel = switch_core_session_get_channel(session);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT CHANNEL\n");
+	}
+
+	mycmd_dup = mycmd = strdup(cmd);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "FIRST-OF %s\n", mycmd);
+	if (!zstr(mycmd) && *mycmd == '^' && *(mycmd+1) == '^') {
+		mycmd += 2;
+		delim = *mycmd++;
+	}
+	argc = switch_separate_string(mycmd, delim, argv, (sizeof(argv) / sizeof(argv[0])));
+	for(n=0; n < argc; n++) {
+		char* item = argv[n];
+		if(*item == '#' || *item == '!' || *item == '?') {
+			if(*(++item) != '\0') {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING default %s\n", item);
+				stream->write_function(stream, item);
+				break;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING %s\n", item);
+			if (channel) {
+				const char *var = switch_channel_get_variable_dup(channel, item, SWITCH_FALSE, -1);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING CHANNEL %s\n", item);
+				if (var) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT FROM CHANNEL %s => %s\n", item, var);
+					stream->write_function(stream, var);
 					break;
 				}
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING %s\n", item);
-				header = switch_event_get_header_ptr(stream->param_event, item);
-				if(header) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING %s : %s\n", item, header->value);
-					stream->write_function(stream, header->value);
-					break;
+				if (!strncmp(item, "variable_", 9)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "CHECKING CHANNEL %s\n", item+9);
+					var = switch_channel_get_variable_dup(channel, item+9, SWITCH_FALSE, -1);
+					if (var) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "GOT FROM CHANNEL %s => %s\n", item+9, var);
+						stream->write_function(stream, var);
+						break;
+					}
 				}
+			}
+			header = switch_event_get_header_ptr(stream->param_event, item);
+			if(header) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "RETURNING %s : %s\n", item, header->value);
+				stream->write_function(stream, header->value);
+				break;
 			}
 		}
 	}
 
-	switch_safe_free(mycmd);
+	switch_safe_free(mycmd_dup);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -364,7 +295,6 @@ SWITCH_STANDARD_API(kz_http_put)
 	long httpRes = 0;
 	struct stat file_info = {0};
 	FILE *file_to_put = NULL;
-	int fd;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -390,7 +320,11 @@ SWITCH_STANDARD_API(kz_http_put)
 	/* parse params and get profile */
 	url = switch_core_strdup(pool, argv[0]);
 	if (*url == '{') {
-		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
+		if (switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_FALSE;
+			stream->write_function(stream, "-ERR error parsing parameters\n");
+			goto done;
+		}
 	}
 
 	filename = switch_core_strdup(pool, argv[1]);
@@ -404,30 +338,23 @@ SWITCH_STANDARD_API(kz_http_put)
 	}
 
 	buf = switch_mprintf("Content-Type: %s", mime_type);
-
 	headers = switch_curl_slist_append(headers, buf);
 
 	/* open file and get the file size */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opening %s for upload to %s\n", filename, url);
-	fd = open(filename, O_RDONLY);
-	if (fd == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
-		status = SWITCH_STATUS_FALSE;
-		stream->write_function(stream, "-ERR error opening file\n");
-		goto done;
-	}
-	if (fstat(fd, &file_info) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
-		stream->write_function(stream, "-ERR fstat error\n");
-		goto done;
-	}
-	close(fd);
 
 	/* libcurl requires FILE* */
  	file_to_put = fopen(filename, "rb");
 	if (!file_to_put) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fopen() error: %s\n", strerror(errno));
+		stream->write_function(stream, "-ERR error opening file\n");
 		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	if (fstat(fileno(file_to_put), &file_info) == -1) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fstat() error: %s\n", strerror(errno));
+		stream->write_function(stream, "-ERR fstat error\n");
 		goto done;
 	}
 
@@ -502,13 +429,145 @@ done:
 
 SWITCH_STANDARD_API(kz_expand_api)
 {
-	if (!zstr(cmd)) {
-		char * val = kz_expand(cmd);
-		stream->write_function(stream, "+OK %s", val);
-		switch_safe_free(val);
-	} else {
-		stream->write_function(stream, "ERR invalid input");
+	char *p = NULL, *input = NULL;
+	char *uuid = NULL, *mycmd;
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR invalid input");
+		return SWITCH_STATUS_GENERR;
 	}
+
+	if (!(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-ERR no memory");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!strncasecmp(mycmd, "uuid:", 5)) {
+		uuid = mycmd + 5;
+		if ((input = strchr(uuid, ' ')) != NULL) {
+			*input++ = '\0';
+		} else {
+			stream->write_function(stream, "-ERR invalid argument");
+			switch_safe_free(mycmd);
+			return SWITCH_STATUS_GENERR;
+		}
+	} else {
+		input = mycmd;
+	}
+
+	p = kz_expand(input, uuid);
+	stream->write_function(stream, "+OK %s", p);
+	if (p != input) {
+		switch_safe_free(p);
+	}
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(kz_eval_api)
+{
+	char *p = NULL, *input = NULL;
+	char *uuid = NULL, *mycmd;
+	switch_core_session_t *nsession = NULL;
+	switch_channel_t *channel = NULL;
+
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "-ERR invalid input");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-ERR no memory");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!strncasecmp(mycmd, "uuid:", 5)) {
+		uuid = mycmd + 5;
+		if ((input = strchr(uuid, ' ')) != NULL) {
+			*input++ = '\0';
+			if ((nsession = switch_core_session_locate(uuid)) != NULL) {
+				channel = switch_core_session_get_channel(nsession);
+			} else {
+				stream->write_function(stream, "-ERR invalid session");
+				switch_safe_free(mycmd);
+				return SWITCH_STATUS_GENERR;
+			}
+		} else {
+			stream->write_function(stream, "-ERR invalid argument");
+			switch_safe_free(mycmd);
+			return SWITCH_STATUS_GENERR;
+		}
+	} else if (session == NULL) {
+		stream->write_function(stream, "-ERR invalid argument");
+		switch_safe_free(mycmd);
+		return SWITCH_STATUS_GENERR;
+	} else {
+		channel = switch_core_session_get_channel(session);
+		input = mycmd;
+	}
+
+	p = switch_channel_expand_variables_check(channel, input, NULL, NULL, 0);
+	stream->write_function(stream, "+OK %s", p);
+	if (p != input) {
+		switch_safe_free(p);
+	}
+	switch_safe_free(mycmd);
+	if (nsession) {
+		switch_core_session_rwunlock(nsession);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define KZ_CONTACT_DESC "returns kazoo contact"
+#define KZ_CONTACT_SYNTAX "endpoint@account"
+
+SWITCH_STANDARD_API(kz_contact_fun)
+{
+	switch_event_t *params = NULL;
+	const char *var = NULL;
+	switch_xml_t xml_node = NULL;
+	switch_xml_t xml_root = NULL;
+
+	const char *reply = "error/subscriber_absent";
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", reply);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "call");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Exclude-Cache", "true");
+
+	/*
+	if (stream->param_event) {
+		switch_event_merge(params, stream->param_event);
+	}
+	*/
+
+	/*
+	if (session) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", switch_core_session_get_uuid(session));
+	} else if (stream->param_event && (var = switch_event_get_header(stream->param_event, "ent_originate_aleg_uuid")) != NULL) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Fetch-Call-UUID", var);
+	}
+	*/
+
+	if (switch_xml_locate("directory", "location", "id", cmd, &xml_root, &xml_node, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "%s", reply);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	var = switch_xml_attr(xml_node, "value");
+	if (!zstr(var)) {
+		reply = var;
+	}
+
+	stream->write_function(stream, "%s", reply);
+
+	switch_xml_free(xml_root);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -524,7 +583,8 @@ void add_kz_commands(switch_loadable_module_interface_t **module_interface) {
 	switch_console_set_complete("add kz_uuid_setvar_encoded ::console::list_uuid");
 	SWITCH_ADD_API(api_interface, "kz_http_put", KZ_HTTP_PUT_DESC, kz_http_put, KZ_HTTP_PUT_SYNTAX);
 	SWITCH_ADD_API(api_interface, "first-of", KZ_FIRST_OF_DESC, kz_first_of, KZ_FIRST_OF_SYNTAX);
-	SWITCH_ADD_API(api_interface, "kz_json_history", KZ_FIRST_OF_DESC, kz_json_history, KZ_FIRST_OF_SYNTAX);
 	SWITCH_ADD_API(api_interface, "kz_expand", KZ_FIRST_OF_DESC, kz_expand_api, KZ_FIRST_OF_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_eval", KZ_FIRST_OF_DESC, kz_eval_api, KZ_FIRST_OF_SYNTAX);
+	SWITCH_ADD_API(api_interface, "kz_contact", KZ_CONTACT_DESC, kz_contact_fun, KZ_CONTACT_SYNTAX);
 }
 

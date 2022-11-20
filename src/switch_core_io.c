@@ -227,7 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_assert((*frame)->codec != NULL);
 
-	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation) && switch_core_codec_ready((*frame)->codec)) {
+	if (!switch_core_codec_ready(session->read_codec) || !switch_core_codec_ready((*frame)->codec)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -242,7 +242,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		for (bp = session->bugs; bp; bp = bp->next) {
 			ok = SWITCH_TRUE;
 
-			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+			if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 				continue;
 			}
 
@@ -303,7 +303,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -422,7 +422,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			if (is_cng) {
 				if (session->plc) {
-					plc_fillin(session->plc, session->raw_read_frame.data, read_frame->codec->implementation->decoded_bytes_per_packet / 2);
+					switch_plc_fillin(session->plc, session->raw_read_frame.data, read_frame->codec->implementation->decoded_bytes_per_packet / 2);
 					is_cng = 0;
 					flag &= ~SFF_CNG;
 				} else {
@@ -470,7 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (!switch_test_flag(read_frame->codec, SWITCH_CODEC_FLAG_HAS_PLC) &&
 					(switch_channel_test_flag(session->channel, CF_JITTERBUFFER_PLC) ||
 					 switch_channel_test_flag(session->channel, CF_CNG_PLC)) && !session->plc) {
-					session->plc = plc_init(NULL);
+					session->plc = switch_plc_init(NULL);
 				}
 
 				if (!switch_test_flag(read_frame->codec, SWITCH_CODEC_FLAG_HAS_PLC) && session->plc && switch_test_flag(read_frame, SFF_PLC)) {
@@ -519,10 +519,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (status == SWITCH_STATUS_SUCCESS && session->read_impl.number_of_channels == 1) {
 					if (session->plc) {
 						if (switch_test_flag(read_frame, SFF_PLC)) {
-							plc_fillin(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
+							switch_plc_fillin(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
 							switch_clear_flag(read_frame, SFF_PLC);
 						} else {
-							plc_rx(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
+							switch_plc_rx(session->plc, session->raw_read_frame.data, session->raw_read_frame.datalen / 2);
 						}
 					}
 				}
@@ -652,7 +652,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -703,7 +703,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -883,7 +883,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
-				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
 
@@ -1127,6 +1127,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 	int i, argc;
 	char *argv[256];
 	int dur_total = 0;
+	int rate_mult = 8;
+
+	switch_codec_implementation_t write_impl = { 0 };
 
 	switch_assert(session != NULL);
 
@@ -1156,13 +1159,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 		switch_channel_pre_answer(session->channel);
 	}
 
+	switch_core_session_get_write_impl(session, &write_impl);
+
+	if (write_impl.actual_samples_per_second >= 1000) {
+		rate_mult = (write_impl.actual_samples_per_second / 1000);
+	} 
+
 	for (i = 0; i < argc; i++) {
 		dtmf.duration = switch_core_default_dtmf_duration(0);
-		dur = switch_core_default_dtmf_duration(0) / 8;
+		dur = switch_core_default_dtmf_duration(0) / rate_mult;
 		if ((p = strchr(argv[i], '@'))) {
 			*p++ = '\0';
-			if ((dur = atoi(p)) > (int)switch_core_min_dtmf_duration(0) / 8) {
-				dtmf.duration = dur * 8;
+			if ((dur = atoi(p)) > (int)switch_core_min_dtmf_duration(0) / rate_mult) {
+				dtmf.duration = dur * rate_mult;
 			}
 		}
 
@@ -1192,14 +1201,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s send dtmf\ndigit=%c ms=%u samples=%u\n",
 									  switch_channel_get_name(session->channel), dtmf.digit, dur, dtmf.duration);
 					sent++;
-					dur_total += dtmf.duration + 2000;	/* account for 250ms pause */
+					dur_total += dtmf.duration + (250 * rate_mult);	/* account for 250ms pause */
 				}
 			}
 		}
 
 		if (dur_total) {
 			char tmp[32] = "";
-			switch_snprintf(tmp, sizeof(tmp), "%d", dur_total / 8);
+			switch_snprintf(tmp, sizeof(tmp), "%d", dur_total / rate_mult);
 			switch_channel_set_variable(session->channel, "last_dtmf_duration", tmp);
 		}
 

@@ -105,6 +105,15 @@ void MergeUVPlane(const uint8_t* src_u,
                   int width,
                   int height);
 
+// Swap U and V channels in interleaved UV plane.
+LIBYUV_API
+void SwapUVPlane(const uint8_t* src_uv,
+                 int src_stride_uv,
+                 uint8_t* dst_vu,
+                 int dst_stride_vu,
+                 int width,
+                 int height);
+
 // Split interleaved RGB plane into separate R, G and B planes.
 LIBYUV_API
 void SplitRGBPlane(const uint8_t* src_rgb,
@@ -217,6 +226,19 @@ int YUY2ToNV12(const uint8_t* src_yuy2,
 LIBYUV_API
 int UYVYToNV12(const uint8_t* src_uyvy,
                int src_stride_uyvy,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Convert NV21 to NV12.
+LIBYUV_API
+int NV21ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_vu,
+               int src_stride_vu,
                uint8_t* dst_y,
                int dst_stride_y,
                uint8_t* dst_uv,

@@ -256,6 +256,7 @@ int NV21ToARGB(const uint8_t* src_y,
                int height);
 
 // Convert NV12 to ABGR.
+LIBYUV_API
 int NV12ToABGR(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_uv,
@@ -295,6 +296,17 @@ int NV21ToRGB24(const uint8_t* src_y,
                 int src_stride_vu,
                 uint8_t* dst_rgb24,
                 int dst_stride_rgb24,
+                int width,
+                int height);
+
+// Convert NV21 to YUV24.
+LIBYUV_API
+int NV21ToYUV24(const uint8_t* src_y,
+                int src_stride_y,
+                const uint8_t* src_vu,
+                int src_stride_vu,
+                uint8_t* dst_yuv24,
+                int dst_stride_yuv24,
                 int width,
                 int height);
 
@@ -627,8 +639,8 @@ int AR30ToAB30(const uint8_t* src_ar30,
 // src_width/height provided by capture
 // dst_width/height for clipping determine final size.
 LIBYUV_API
-int MJPGToARGB(const uint8_t* src_mjpg,
-               size_t src_size_mjpg,
+int MJPGToARGB(const uint8_t* sample,
+               size_t sample_size,
                uint8_t* dst_argb,
                int dst_stride_argb,
                int src_width,

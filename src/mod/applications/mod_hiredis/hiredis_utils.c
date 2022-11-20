@@ -115,10 +115,14 @@ switch_status_t mod_hiredis_do_config()
 		goto err;
 	}
 
+	switch_xml_free(xml);
 	return SWITCH_STATUS_SUCCESS;
 
  err:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Configuration failed\n");
+	if (xml) {
+		switch_xml_free(xml);
+	}
 	return SWITCH_STATUS_GENERR;
 }
 

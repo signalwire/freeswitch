@@ -160,7 +160,7 @@ tagHook (void *udata, char *name, char **atts, int type)
 	nr = tester.cur->nr_atts;
 	while (nr) {
 		flag = 0;
-		for (i = 0;atts[i]; i+= 2) {
+		for (i = 0;atts&&atts[i]; i+= 2) {
 			if (iks_strcmp (atts[i], tester.cur->atts[nr-1]) == 0 && iks_strcmp (atts[i+1], tester.cur->vals[nr-1]) == 0) {
 				flag = 1;
 				break;

@@ -1,0 +1,36 @@
+<document type="freeswitch/xml">
+
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_loopback"/>
+        <load module="mod_tone_stream"/>
+        <load module="mod_dptools"/>
+        <load module="mod_sndfile"/>
+        <load module="mod_test"/>
+      </modules>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="loglevel" value="debug"/>
+        <param name="uuid" value="true"/>
+      </settings>
+    </configuration>
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <context name="default">
+      <extension name="sample">
+        <condition>
+          <action application="info"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>

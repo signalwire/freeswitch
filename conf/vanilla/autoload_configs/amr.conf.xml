@@ -15,5 +15,7 @@
 	  <param name="volte" value="0"/>
 	  <!-- Enable automatic bitrate variation during the call based on RTCP feedback -->
 	  <param name="adjust-bitrate" value="0"/> 
+	  <!-- force OA when originating -->
+	  <param name="force-oa" value="0"/> 
 	</settings>
 </configuration>

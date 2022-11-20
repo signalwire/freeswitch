@@ -2213,7 +2213,7 @@ static iks *exec_conference_api(switch_core_session_t *session, const char *conf
 	const char *conf_member_id = switch_channel_get_variable(switch_core_session_get_channel(session), "conference_member_id");
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute("conference", switch_core_session_sprintf(session, "%s %s %s", conf_name, command, conf_member_id), NULL, &stream);
-	if (!zstr(stream.data) && strncmp("OK", stream.data, 2)) {
+	if (!zstr(stream.data) && strncmp("+OK", stream.data, 3)) {
 		response = iks_new_error_detailed_printf(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "%s", stream.data);
 	}
 	switch_safe_free(stream.data);
@@ -4854,7 +4854,7 @@ static int alias_api(struct rayo_cmd_alias *alias, char *args, switch_stream_han
 	cmd = strdup(alias->cmd);
 	for (i = 1; i < argc; i++) {
 		char *cmd_new;
-		char to_replace[4] = { 0 };
+		char to_replace[12] = { 0 };
 		sprintf(to_replace, "$%i", i);
 		cmd_new = switch_string_replace(cmd, to_replace, argv[i]);
 		free(cmd);

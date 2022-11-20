@@ -39,6 +39,9 @@ SWITCH_MODULE_DEFINITION(mod_sndfile, mod_sndfile_load, mod_sndfile_shutdown, NU
 
 static struct {
 	switch_hash_t *format_hash;
+	int debug;
+	char *allowed_extensions[100];
+	int allowed_extensions_count;
 } globals;
 
 struct format_map {
@@ -55,6 +58,16 @@ struct sndfile_context {
 typedef struct sndfile_context sndfile_context;
 
 static switch_status_t sndfile_perform_open(sndfile_context *context, const char *path, int mode, switch_file_handle_t *handle);
+
+static void reverse_channel_count(switch_file_handle_t *handle) {
+	/* for recording stereo conferences and stereo calls in audio file formats that support only 1 channel.
+	 * "{force_channels=1}" does similar, but here switch_core_open_file() was already called and we 
+	 * have the handle and we chane the count before _read_ or _write_ are called (where muxing is done). */
+	if (handle->channels > 1) {
+		handle->real_channels = handle->channels;
+		handle->channels = handle->mm.channels = 1;
+	}
+}
 
 static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const char *path)
 {
@@ -119,41 +132,107 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	if (!strcmp(ext, "raw")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 8000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "r8")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 8000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "r16")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.samplerate = 16000;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 16000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "r24")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
-		context->sfinfo.samplerate = 24000;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 24000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "r32")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
-		context->sfinfo.samplerate = 32000;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 32000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "gsm")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
 		context->sfinfo.channels = 1;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
 		context->sfinfo.samplerate = 8000;
 	} else if (!strcmp(ext, "ul") || !strcmp(ext, "ulaw")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 8000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "al") || !strcmp(ext, "alaw")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ALAW;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = 8000;
+			context->sfinfo.channels = 1;
+		}
 	} else if (!strcmp(ext, "vox")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
 	} else if (!strcmp(ext, "adpcm")) {
 		context->sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_IMA_ADPCM;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
 	} else if (!strcmp(ext, "oga") || !strcmp(ext, "ogg")) {
 		context->sfinfo.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
-		context->sfinfo.samplerate = handle->samplerate;
+		if (mode & SFM_READ) {
+			context->sfinfo.samplerate = handle->samplerate;
+		}
+	} else if (!strcmp(ext, "wve")) {
+		context->sfinfo.format = SF_FORMAT_WVE | SF_FORMAT_ALAW;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
+	} else if (!strcmp(ext, "htk")) {
+		context->sfinfo.format = SF_FORMAT_HTK | SF_FORMAT_PCM_16;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
+	} else if (!strcmp(ext, "iff")) {
+		context->sfinfo.format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
+	} else if (!strcmp(ext, "xi")) {
+		context->sfinfo.format = SF_FORMAT_XI | SF_FORMAT_DPCM_16;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 44100;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
+	} else if (!strcmp(ext, "sds")) {
+		context->sfinfo.format = SF_FORMAT_SDS | SF_FORMAT_PCM_16;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+		if (mode & SFM_WRITE) {
+			reverse_channel_count(handle);
+		}
 	}
 
 	if ((mode & SFM_WRITE) && sf_format_check(&context->sfinfo) == 0) {
@@ -199,12 +278,15 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	if (!context->handle) {
 		if (sndfile_perform_open(context, path, mode, handle) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
 			status = SWITCH_STATUS_GENERR;
 			goto end;
 		}
 	}
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] rate %dhz\n", path, context->sfinfo.samplerate);
+	if (globals.debug) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				"Opening File [%s] rate [%dhz] channels: [%d]\n", path, context->sfinfo.samplerate, (uint8_t) context->sfinfo.channels);
+	}
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
 	handle->channels = (uint8_t) context->sfinfo.channels;
@@ -227,6 +309,12 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
 	}
 
+	/*
+		http://www.mega-nerd.com/libsndfile/api.html#note2
+	 */
+	if (switch_test_flag(handle, SWITCH_FILE_DATA_SHORT)) {
+		sf_command(context->handle,  SFC_SET_SCALE_FLOAT_INT_READ, NULL, SF_TRUE);
+	}
 
   end:
 
@@ -365,6 +453,20 @@ static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, swi
 	return SWITCH_STATUS_FALSE;
 }
 
+static switch_bool_t exten_is_allowed(const char *exten) {
+	int i;
+	if (!globals.allowed_extensions[0]) {
+		// defaults to allowing all extensions if param "allowed-extensions" not set in cfg
+		return SWITCH_TRUE;
+	}
+	for (i = 0 ; i < globals.allowed_extensions_count; i++) {
+		if (exten && globals.allowed_extensions[i] && !strcasecmp(globals.allowed_extensions[i], exten)) {
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
 /* Registration */
 
 static char **supported_formats;
@@ -407,6 +509,9 @@ static switch_status_t setup_formats(switch_memory_pool_t *pool)
 		skip = 0;
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
+		if (!exten_is_allowed(info.extension)) {
+			continue;
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name, info.extension);
 		for (x = 0; x < len; x++) {
 			if (supported_formats[x] == info.extension) {
@@ -470,7 +575,9 @@ static switch_status_t setup_formats(switch_memory_pool_t *pool)
 		}
 	}
 	for (m = 0; m < exlen; m++) {
-		supported_formats[len++] = extras[m];
+		if (exten_is_allowed(extras[m])) {
+			supported_formats[len++] = extras[m];
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_NOTICE, "================================================================================\n");
@@ -478,11 +585,48 @@ static switch_status_t setup_formats(switch_memory_pool_t *pool)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SNDFILE_DEBUG_SYNTAX "<on|off>"
+SWITCH_STANDARD_API(mod_sndfile_debug)
+{
+		if (zstr(cmd)) {
+			stream->write_function(stream, "-USAGE: %s\n", SNDFILE_DEBUG_SYNTAX);
+		} else {
+			if (!strcasecmp(cmd, "on")) {
+				globals.debug = 1;
+				stream->write_function(stream, "Sndfile Debug: on\n");
+			} else if (!strcasecmp(cmd, "off")) {
+				globals.debug = 0;
+				stream->write_function(stream, "Sndfile Debug: off\n");
+			} else {
+				stream->write_function(stream, "-USAGE: %s\n", SNDFILE_DEBUG_SYNTAX);
+			}
+		}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 {
 	switch_file_interface_t *file_interface;
+	switch_api_interface_t *commands_api_interface;
+	char *cf = "sndfile.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	memset(&globals, 0, sizeof(globals));
 
 	switch_core_hash_init(&globals.format_hash);
+
+	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				if (!strcasecmp(var, "allowed-extensions") && val) {
+					globals.allowed_extensions_count = switch_separate_string(val, ',', globals.allowed_extensions, (sizeof(globals.allowed_extensions) / sizeof(globals.allowed_extensions[0])));
+				}
+			}
+		}
+		switch_xml_free(xml);
+	}
 
 	if (setup_formats(pool) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -501,6 +645,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 	file_interface->file_seek = sndfile_file_seek;
 	file_interface->file_set_string = sndfile_file_set_string;
 	file_interface->file_get_string = sndfile_file_get_string;
+
+	SWITCH_ADD_API(commands_api_interface, "sndfile_debug", "Set sndfile debug", mod_sndfile_debug, SNDFILE_DEBUG_SYNTAX);
+
+	switch_console_set_complete("add sndfile_debug on");
+	switch_console_set_complete("add sndfile_debug off");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

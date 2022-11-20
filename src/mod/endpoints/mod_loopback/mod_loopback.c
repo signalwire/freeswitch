@@ -25,6 +25,7 @@
  *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * mod_loopback.c -- Loopback Endpoint Module
@@ -271,8 +272,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_snprintf(name, sizeof(name), "loopback/%s-b", tech_pvt->caller_profile->destination_number);
 		switch_channel_set_name(b_channel, name);
 		if (loopback_globals.early_set_loopback_id) {
-			switch_channel_set_variable(channel, "loopback_leg", "B");
-			switch_channel_set_variable(channel, "is_loopback", "1");
+			switch_channel_set_variable(b_channel, "loopback_leg", "B");
+			switch_channel_set_variable(b_channel, "is_loopback", "1");
 		}
 		if (tech_init(b_tech_pvt, b_session, switch_core_session_get_read_codec(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -315,6 +316,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			for (h = vars->headers; h; h = h->next) {
 				switch_channel_set_variable(tech_pvt->other_channel, h->name, h->value);
 			}
+
+			switch_channel_del_variable_prefix(channel, "group_confirm_");
 
 			switch_event_destroy(&vars);
 		}
@@ -1149,7 +1152,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		ochannel = switch_core_session_get_channel(session);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
-		switch_channel_pre_answer(ochannel);
+		if (!switch_channel_var_true(ochannel, "loopback_no_pre_answer")) {
+			switch_channel_pre_answer(ochannel);
+		}
 	}
 
 	if ((*new_session = switch_core_session_request(loopback_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
@@ -1298,10 +1303,25 @@ struct null_private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	switch_timer_t timer;
+	switch_codec_t video_read_codec;
+	switch_codec_t video_write_codec;
+	switch_timer_t video_timer;
 	switch_caller_profile_t *caller_profile;
 	switch_frame_t read_frame;
 	int16_t *null_buf;
 	int rate;
+	/* pre answer the channel */
+	int pre_answer;
+	/* enable_auto_answer (enabled by default) */
+	int enable_auto_answer;
+	/* auto_answer_delay (0 ms by default) */
+	int auto_answer_delay;
+	char *video_codec_name;
+	switch_frame_t video_read_frame;
+	uint8_t video_data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_image_t *img;
+	switch_media_handle_t *media_handle;
+	switch_core_media_params_t mparams;
 };
 
 typedef struct null_private_object null_private_t;
@@ -1314,9 +1334,31 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 													switch_call_cause_t *cancel_cause);
 static switch_status_t null_channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t null_channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t null_channel_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
+static switch_status_t null_channel_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t null_channel_kill_channel(switch_core_session_t *session, int sig);
 
+static void set_mparams(null_private_t *tech_pvt)
+{
+	switch_core_media_params_t *mparams = &tech_pvt->mparams;
 
+	mparams->inbound_codec_string = "L16";
+	mparams->outbound_codec_string = "L16";
+	mparams->timer_name = "soft";
+	mparams->extsipip = "10.0.0.1";
+	mparams->extrtpip = "10.0.0.2";
+	mparams->local_network = "127.0.0.1";
+	mparams->sipip = "127.0.0.1";
+	mparams->rtpip = "127.0.0.1";
+	mparams->jb_msec = "60";
+	mparams->rtcp_audio_interval_msec = "5000";
+	mparams->rtcp_video_interval_msec = "5000";
+	mparams->sdp_username = "FreeSWITCH";
+	mparams->cng_pt = 13;
+	mparams->rtp_timeout_sec = 300;
+	mparams->rtp_hold_timeout_sec = 3600;
+	mparams->external_video_source = 1;
+}
 
 static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_session_t *session)
 {
@@ -1353,6 +1395,43 @@ static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_sess
 
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+
+	if (!zstr(tech_pvt->video_codec_name)) {
+		status = switch_core_codec_init(&tech_pvt->video_read_codec,
+						tech_pvt->video_codec_name,
+						NULL,
+						NULL,
+						90000, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+
+		if (status != SWITCH_STATUS_SUCCESS || !tech_pvt->video_read_codec.implementation || !switch_core_codec_ready(&tech_pvt->video_read_codec)) {
+			goto end;
+		}
+
+		status = switch_core_codec_init(&tech_pvt->video_write_codec,
+						tech_pvt->video_codec_name,
+						NULL,
+						NULL,
+						90000, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session));
+
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			switch_core_codec_destroy(&tech_pvt->video_read_codec);
+			goto end;
+		}
+
+		switch_channel_set_flag(switch_core_session_get_channel(session), CF_VIDEO);
+		switch_core_session_set_video_read_codec(session, &tech_pvt->read_codec);
+		switch_core_session_set_video_write_codec(session, &tech_pvt->write_codec);
+		switch_core_timer_init(&tech_pvt->video_timer, "soft", 100, 900, switch_core_session_get_pool(session));
+		set_mparams(tech_pvt);
+		switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
+		// switch_core_media_prepare_codecs(session, SWITCH_TRUE);
+		// switch_core_media_check_video_codecs(session);
+		// switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_AUDIO, 0);
+		// switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 0);
+		// switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, "127.0.0.1", 2000, NULL, 0);
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", mparams.local_sdp_str);
+	}
 
 	read_impl = tech_pvt->read_codec.implementation;
 
@@ -1409,7 +1488,19 @@ static switch_status_t null_channel_on_destroy(switch_core_session_t *session)
 		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
+
+		if (switch_core_codec_ready(&tech_pvt->video_read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->video_read_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->video_write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->video_write_codec);
+		}
+
+		switch_img_free(&tech_pvt->img);
 	}
+
+	switch_media_handle_destroy(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1451,9 +1542,25 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA\n");
 
-	switch_channel_mark_answered(channel);
+	if (tech_pvt->pre_answer) {
+		switch_channel_mark_pre_answered(channel);
+	}
+
+	if (tech_pvt->enable_auto_answer) {
+		switch_time_t start_time = switch_time_now();
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA - answering in %d ms\n", tech_pvt->auto_answer_delay);
+
+		if (tech_pvt->auto_answer_delay > 0) {
+			while (switch_channel_ready(channel) && ((int)((switch_time_now() - start_time) / 1000)) < tech_pvt->auto_answer_delay) {
+				switch_yield(1000 * 20);
+			}
+		}
+
+		switch_channel_mark_answered(channel);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1461,9 +1568,15 @@ static switch_status_t null_channel_on_consume_media(switch_core_session_t *sess
 static switch_status_t null_channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
 {
 	null_private_t *tech_pvt = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *dtmf_str = switch_channel_get_variable(channel, "null_channel_dtmf_queued");
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	if (!dtmf_str) dtmf_str = "";
+
+	switch_channel_set_variable_printf(channel, "null_channel_dtmf_queued", "%s%c", dtmf_str, dtmf->digit);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1494,6 +1607,7 @@ static switch_status_t null_channel_read_frame(switch_core_session_t *session, s
 		samples = tech_pvt->read_codec.implementation->samples_per_packet;
 		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->read_frame.datalen = samples * sizeof(int16_t);
+		tech_pvt->read_frame.buflen = samples * sizeof(int16_t);
 		tech_pvt->read_frame.samples = samples;
 		tech_pvt->read_frame.data = tech_pvt->null_buf;
 		switch_generate_sln_silence((int16_t *)tech_pvt->read_frame.data, tech_pvt->read_frame.samples, tech_pvt->read_codec.implementation->number_of_channels, 10000);
@@ -1525,6 +1639,50 @@ static switch_status_t null_channel_write_frame(switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t null_channel_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id)
+{
+	switch_channel_t *channel = NULL;
+	null_private_t *tech_pvt = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	*frame = NULL;
+
+	if (!switch_channel_ready(channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_timer_next(&tech_pvt->video_timer);
+
+	tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
+	tech_pvt->video_read_frame.datalen = 0;
+	tech_pvt->video_read_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	tech_pvt->video_read_frame.samples = 0;
+	tech_pvt->video_read_frame.data = tech_pvt->video_data;
+	if (!tech_pvt->img) {
+		tech_pvt->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 0);
+	}
+	tech_pvt->video_read_frame.img = tech_pvt->img;
+	*frame = &tech_pvt->video_read_frame;
+
+	if (*frame) {
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
+}
+static switch_status_t null_channel_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t null_channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
@@ -1545,6 +1703,29 @@ static switch_status_t null_channel_receive_message(switch_core_session_t *sessi
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		switch_core_timer_sync(&tech_pvt->timer);
 		break;
+	case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		if (msg->string_array_arg[0]) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "string_array_arg[0]: %s\n", (char *)msg->string_array_arg[0]);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "string_arg: %s\n", (char *)msg->string_arg);
+			if (msg->string_arg) {
+				if (!strncmp(msg->string_arg, "sip:refer-200", 13)) {
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
+					switch_channel_set_variable(channel, "sip_refer_status_code", "202");
+					switch_channel_set_variable(channel, "sip_refer_reply", "SIP/2.0 200 OK\r\n");
+				} else if (!strncmp(msg->string_arg, "sip:refer-202", 13)) {
+					switch_channel_set_variable(channel, "sip_refer_status_code", "202");
+					// no notify received
+					switch_yield(5000000);
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				} else if (!strncmp(msg->string_arg, "sip:refer-403", 13)) {
+					switch_channel_set_variable(channel, "sip_refer_status_code", "202");
+					switch_channel_set_variable(channel, "sip_refer_reply", "SIP/2.0 403 Forbidden\r\n");
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_BLIND_TRANSFER);
+				}
+			}
+		}
+		break;
 	default:
 		break;
 	}
@@ -1559,23 +1740,30 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 {
 	char name[128];
 	switch_channel_t *ochannel = NULL;
+	const char *enable_auto_answer = switch_event_get_header(var_event, "null_enable_auto_answer");
+	const char *auto_answer_delay = switch_event_get_header(var_event, "null_auto_answer_delay");
+	const char *pre_answer = switch_event_get_header(var_event, "null_pre_answer");
+	const char *hangup_cause = switch_event_get_header(var_event, "null_hangup_cause");
 
 	if (session) {
 		ochannel = switch_core_session_get_channel(session);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MEDIA);
 		switch_channel_clear_flag(ochannel, CF_PROXY_MODE);
-		switch_channel_pre_answer(ochannel);
+		if (!switch_channel_var_true(ochannel, "null_no_pre_answer")) {
+			switch_channel_pre_answer(ochannel);
+		}
 	}
 
 	if ((*new_session = switch_core_session_request(null_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool)) != 0) {
 		null_private_t *tech_pvt;
 		switch_channel_t *channel;
-		switch_caller_profile_t *caller_profile;
+		switch_caller_profile_t *caller_profile = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
 
 		if ((tech_pvt = (null_private_t *) switch_core_session_alloc(*new_session, sizeof(null_private_t))) != 0) {
 			const char *rate_ = switch_event_get_header(var_event, "rate");
+			const char *video_codec = switch_event_get_header(var_event, "null_video_codec");
 			int rate = 0;
 
 			if (rate_) {
@@ -1587,6 +1775,28 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 			}
 
 			tech_pvt->rate = rate;
+			tech_pvt->pre_answer = switch_true(pre_answer);
+
+			if (video_codec) {
+				tech_pvt->video_codec_name = switch_core_session_strdup(*new_session, video_codec);
+			}
+
+			if (!enable_auto_answer) {
+				/* if not set - enabled by default */
+				tech_pvt->enable_auto_answer = SWITCH_TRUE;
+			} else {
+				tech_pvt->enable_auto_answer = switch_true(enable_auto_answer);
+			}
+
+			if (!auto_answer_delay) {
+				/* if not set - 0 ms by default */
+				tech_pvt->auto_answer_delay = 0;
+			} else {
+				tech_pvt->auto_answer_delay = atoi(auto_answer_delay);
+
+				if (tech_pvt->auto_answer_delay < 0) tech_pvt->auto_answer_delay = 0;
+				if (tech_pvt->auto_answer_delay > 60000) tech_pvt->auto_answer_delay = 60000;
+			}
 
 			channel = switch_core_session_get_channel(*new_session);
 			switch_snprintf(name, sizeof(name), "null/%s", outbound_profile->destination_number);
@@ -1613,6 +1823,14 @@ static switch_call_cause_t null_channel_outgoing_channel(switch_core_session_t *
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		}
+
+		switch_assert(caller_profile);
+
+		if (hangup_cause || !strncmp(caller_profile->destination_number, "cause-", 6)) {
+			if (!hangup_cause) hangup_cause = caller_profile->destination_number + 6;
+			switch_core_session_destroy(new_session);
+			return switch_channel_str2cause(hangup_cause);
 		}
 
 		switch_channel_set_state(channel, CS_INIT);
@@ -1644,7 +1862,15 @@ static switch_io_routines_t null_channel_io_routines = {
 	/*.write_frame */ null_channel_write_frame,
 	/*.kill_channel */ null_channel_kill_channel,
 	/*.send_dtmf */ null_channel_send_dtmf,
-	/*.receive_message */ null_channel_receive_message
+	/*.receive_message */ null_channel_receive_message,
+	/*.receive_event */ NULL,
+	/*.state_change */ NULL,
+	/*.read_video_frame */ null_channel_read_video_frame,
+	/*.write_video_frame */ null_channel_write_video_frame,
+	/*.read_text_frame */ NULL,
+	/*.write_text_frame */ NULL,
+	/*.state_run*/ NULL,
+	/*.get_jb*/ NULL
 };
 
 switch_status_t load_loopback_configuration(switch_bool_t reload)

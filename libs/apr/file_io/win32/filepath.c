@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_lib.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_lib.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -37,10 +37,10 @@
  * OS2 appears immune from the nonsense :)
  */
 
-APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath, 
+APR_DECLARE(fspr_status_t) fspr_filepath_root(const char **rootpath, 
                                             const char **inpath, 
-                                            apr_int32_t flags,
-                                            apr_pool_t *p)
+                                            fspr_int32_t flags,
+                                            fspr_pool_t *p)
 {
     const char *testpath = *inpath;
     char *newpath;
@@ -78,7 +78,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
             Otherwise we either have an incomplete or relative path
         */
         if (volume && strlen(volume) > 0) {
-            newpath = apr_pcalloc(p, strlen(server)+strlen(volume)+5);
+            newpath = fspr_pcalloc(p, strlen(server)+strlen(volume)+5);
             construct(newpath, server, volume, NULL, NULL, NULL, PATH_NETWARE);
 
             /* NetWare doesn't add the root slash so we need to add it manually.
@@ -106,7 +106,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
             in same manner as unix although this path will be
             incomplete.
         */
-        *rootpath = apr_pstrdup(p, seperator);
+        *rootpath = fspr_pstrdup(p, seperator);
         do {
             ++(*inpath);
         } while ((**inpath == '/') || (**inpath == '\\'));
@@ -133,12 +133,12 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
                     && (testpath[3] == '/' || testpath[3] == '\\')) {
                 if (IS_FNCHAR(testpath[4]) && testpath[5] == ':') 
                 {
-                    apr_status_t rv;
+                    fspr_status_t rv;
                     testpath += 4;
                     /* given  '//?/C: or //./C: let us try this
                      * all over again from the drive designator
                      */
-                    rv = apr_filepath_root(rootpath, &testpath, flags, p);
+                    rv = fspr_filepath_root(rootpath, &testpath, flags, p);
                     if (!rv || rv == APR_EINCOMPLETE)
                         *inpath = testpath;
                     return rv;
@@ -170,7 +170,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
             } while (*delim1 && *delim1 != '/' && *delim1 != '\\');
 
             if (*delim1) {
-                apr_status_t rv;
+                fspr_status_t rv;
                 delim2 = delim1 + 1;
                 while (*delim2 && *delim2 != '/' && *delim2 != '\\') {
                     /* Protect against //machine/X/ where X is illegal */
@@ -181,7 +181,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
                 /* Copy the '//machine/[share[/]]' path, always providing 
                  * an extra byte for the trailing slash.
                  */
-                newpath = apr_pstrmemdup(p, testpath, delim2 - testpath + 1);
+                newpath = fspr_pstrmemdup(p, testpath, delim2 - testpath + 1);
 
                 if (delim2 == delim1 + 1) {
                     /* We found simply \\machine\, so give up already
@@ -196,7 +196,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
                      * Win32 will argue about slashed in UNC paths, 
                      * so use backslashes till we finish testing,
                      * and add the trailing backslash [required].
-                     * apr_pstrmemdup above guarentees us the new 
+                     * fspr_pstrmemdup above guarentees us the new 
                      * trailing null character.
                      */
                     newpath[0] = '\\';
@@ -246,7 +246,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
              */
             delim1 = strchr(testpath, '\0');
             if (delim1 > testpath + 2) {
-                newpath = apr_pstrndup(p, testpath, delim1 - testpath + 1);
+                newpath = fspr_pstrndup(p, testpath, delim1 - testpath + 1);
                 if (flags & APR_FILEPATH_TRUENAME)
                     newpath[delim1 - testpath] = seperator[0];
                 else
@@ -254,7 +254,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
                 newpath[delim1 - testpath + 1] = '\0';
             }
             else {
-                newpath = apr_pstrndup(p, testpath, delim1 - testpath);
+                newpath = fspr_pstrndup(p, testpath, delim1 - testpath);
             }
             if (flags & APR_FILEPATH_TRUENAME) {
                 newpath[0] = seperator[0];
@@ -268,7 +268,7 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
         /* Left with a path of '/', what drive are we asking about? 
          */
         *inpath = testpath + 1;
-        newpath = apr_palloc(p, 2);
+        newpath = fspr_palloc(p, 2);
         if (flags & APR_FILEPATH_TRUENAME)
             newpath[0] = seperator[0];
         else
@@ -281,20 +281,20 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
     /* Evaluate path of 'd:[/]' */
     if (IS_FNCHAR(*testpath) && testpath[1] == ':') 
     {
-        apr_status_t rv;
+        fspr_status_t rv;
         /* Validate that D:\ drive exists, test must be rooted
          * Note that posix/win32 insists a drive letter is upper case,
          * so who are we to argue with a 'feature'.
          * It is a safe fold, since only A-Z is legal, and has no
          * side effects of legal mis-mapped non-us-ascii codes.
          */
-        newpath = apr_palloc(p, 4);
+        newpath = fspr_palloc(p, 4);
         newpath[0] = testpath[0];
         newpath[1] = testpath[1];
         newpath[2] = seperator[0];
         newpath[3] = '\0';
         if (flags & APR_FILEPATH_TRUENAME) {
-            newpath[0] = apr_toupper(newpath[0]);
+            newpath[0] = fspr_toupper(newpath[0]);
             rv = filepath_root_test(newpath, p);
             if (rv)
                 return rv;
@@ -328,24 +328,24 @@ APR_DECLARE(apr_status_t) apr_filepath_root(const char **rootpath,
 }
 
 
-APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath, 
+APR_DECLARE(fspr_status_t) fspr_filepath_merge(char **newpath, 
                                              const char *basepath, 
                                              const char *addpath, 
-                                             apr_int32_t flags,
-                                             apr_pool_t *p)
+                                             fspr_int32_t flags,
+                                             fspr_pool_t *p)
 {
     char path[APR_PATH_MAX]; /* isn't null term */
     const char *baseroot = NULL;
     const char *addroot;
-    apr_size_t rootlen; /* the length of the root portion of path, d:/ is 3 */
-    apr_size_t baselen; /* the length of basepath (excluding baseroot) */
-    apr_size_t keptlen; /* the length of the retained basepath (incl root) */
-    apr_size_t pathlen; /* the length of the result path */
-    apr_size_t segend;  /* the end of the current segment */
-    apr_size_t seglen;  /* the length of the segment (excl trailing chars) */
-    apr_status_t basetype = 0; /* from parsing the basepath's baseroot */
-    apr_status_t addtype;      /* from parsing the addpath's addroot */
-    apr_status_t rv;
+    fspr_size_t rootlen; /* the length of the root portion of path, d:/ is 3 */
+    fspr_size_t baselen; /* the length of basepath (excluding baseroot) */
+    fspr_size_t keptlen; /* the length of the retained basepath (incl root) */
+    fspr_size_t pathlen; /* the length of the result path */
+    fspr_size_t segend;  /* the end of the current segment */
+    fspr_size_t seglen;  /* the length of the segment (excl trailing chars) */
+    fspr_status_t basetype = 0; /* from parsing the basepath's baseroot */
+    fspr_status_t addtype;      /* from parsing the addpath's addroot */
+    fspr_status_t rv;
 #ifndef NETWARE
     int fixunc = 0;  /* flag to complete an incomplete UNC basepath */
 #endif
@@ -359,7 +359,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
     else {
         /* This call _should_ test the path
          */
-        addtype = apr_filepath_root(&addroot, &addpath, 
+        addtype = fspr_filepath_root(&addroot, &addpath, 
                                     APR_FILEPATH_TRUENAME
                                     | (flags & APR_FILEPATH_NATIVE),
                                     p);
@@ -370,7 +370,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
             addroot = "";
         }
         else if (addtype != APR_EINCOMPLETE) {
-            /* apr_filepath_root was incomprehensible so fail already
+            /* fspr_filepath_root was incomprehensible so fail already
              */
             return addtype;
         }
@@ -425,7 +425,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
             rv = filepath_drive_get(&getpath, addroot[0], flags, p);
         else
 #endif
-            rv = apr_filepath_get(&getpath, flags, p);
+            rv = fspr_filepath_get(&getpath, flags, p);
         if (rv != APR_SUCCESS)
             return rv;
         basepath = getpath;
@@ -434,7 +434,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
     if (!baseroot) {
         /* This call should _not_ test the path
          */
-        basetype = apr_filepath_root(&baseroot, &basepath,
+        basetype = fspr_filepath_root(&baseroot, &basepath,
                                      (flags & APR_FILEPATH_NATIVE), p);
         if (basetype == APR_SUCCESS) {
             basetype = APR_EABSOLUTE;
@@ -443,7 +443,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
             baseroot = "";
         }
         else if (basetype != APR_EINCOMPLETE) {
-            /* apr_filepath_root was incomprehensible so fail already
+            /* fspr_filepath_root was incomprehensible so fail already
              */
             return basetype;
         }
@@ -740,8 +740,8 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
             if (fixunc) {
                 const char *testpath = path;
                 const char *testroot;
-                apr_status_t testtype;
-                apr_size_t i = (addpath[segend] != '\0');
+                fspr_status_t testtype;
+                fspr_size_t i = (addpath[segend] != '\0');
                 
                 /* This isn't legal unless the unc path is complete!
                  */
@@ -764,7 +764,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
                 path[pathlen] = '\0';
                 /* This call _should_ test the path
                  */
-                testtype = apr_filepath_root(&testroot, &testpath, 
+                testtype = fspr_filepath_root(&testroot, &testpath, 
                                              APR_FILEPATH_TRUENAME
                                              | (flags & APR_FILEPATH_NATIVE),
                                              p);
@@ -774,7 +774,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
                     fixunc = 0;
                 }
                 else if (testtype != APR_EINCOMPLETE) {
-                    /* apr_filepath_root was very unexpected so fail already
+                    /* fspr_filepath_root was very unexpected so fail already
                      */
                     return testtype;
                 }
@@ -784,7 +784,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
             {
                 /* An actual segment, append it to the destination path
                  */
-                apr_size_t i = (addpath[segend] != '\0');
+                fspr_size_t i = (addpath[segend] != '\0');
                 if (pathlen + seglen + i >= sizeof(path))
                     return APR_ENAMETOOLONG;
                 memcpy(path + pathlen, addpath, seglen + i);
@@ -835,7 +835,7 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
         }
         /* Go through all the new segments */
         while (keptlen < pathlen) {
-            apr_finfo_t finfo;
+            fspr_finfo_t finfo;
             char saveslash = 0;
             seglen = 0;
             /* find any slash and set it aside for a minute. */
@@ -848,10 +848,10 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
             }
             /* Null term for stat! */
             path[keptlen + seglen] = '\0';
-            if ((rv = apr_stat(&finfo, path, 
+            if ((rv = fspr_stat(&finfo, path, 
                                APR_FINFO_LINK | APR_FINFO_TYPE | APR_FINFO_NAME, p))
                 == APR_SUCCESS) {
-                apr_size_t namelen = strlen(finfo.name);
+                fspr_size_t namelen = strlen(finfo.name);
 
 #if defined(OS2) /* only has case folding, never aliases that change the length */
 
@@ -949,28 +949,28 @@ APR_DECLARE(apr_status_t) apr_filepath_merge(char **newpath,
         }
     }
 
-    *newpath = apr_pmemdup(p, path, pathlen + 1);
+    *newpath = fspr_pmemdup(p, path, pathlen + 1);
     (*newpath)[pathlen] = '\0';
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_filepath_list_split(apr_array_header_t **pathelts,
+APR_DECLARE(fspr_status_t) fspr_filepath_list_split(fspr_array_header_t **pathelts,
                                                   const char *liststr,
-                                                  apr_pool_t *p)
+                                                  fspr_pool_t *p)
 {
-    return apr_filepath_list_split_impl(pathelts, liststr, ';', p);
+    return fspr_filepath_list_split_impl(pathelts, liststr, ';', p);
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_list_merge(char **liststr,
-                                                  apr_array_header_t *pathelts,
-                                                  apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_list_merge(char **liststr,
+                                                  fspr_array_header_t *pathelts,
+                                                  fspr_pool_t *p)
 {
-    return apr_filepath_list_merge_impl(liststr, pathelts, ';', p);
+    return fspr_filepath_list_merge_impl(liststr, pathelts, ';', p);
 }
 
 
-APR_DECLARE(apr_status_t) apr_filepath_encoding(int *style, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_encoding(int *style, fspr_pool_t *p)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE

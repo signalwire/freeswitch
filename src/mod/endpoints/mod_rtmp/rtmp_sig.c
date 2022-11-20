@@ -850,9 +850,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_sendevent)
 			if (switch_core_session_queue_event(session_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_pvt->session), SWITCH_LOG_ERROR, "Couldn't queue event to session\n");
 				switch_event_destroy(&event);
-				status = SWITCH_STATUS_FALSE;
-			} else {
-				status = SWITCH_STATUS_SUCCESS;
+				return SWITCH_STATUS_FALSE;
 			}
 		}
 	}

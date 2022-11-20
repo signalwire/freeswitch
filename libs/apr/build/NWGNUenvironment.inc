@@ -164,9 +164,9 @@ ifeq "$(RELEASE)" "optimized"
 CFLAGS += -O4,p
 endif
 
-# -prefix apr_arch_pre_nw.h      #include pre_nw.h for all files
+# -prefix fspr_arch_pre_nw.h      #include pre_nw.h for all files
 
-CFLAGS += -prefix apr_arch_pre_nw.h
+CFLAGS += -prefix fspr_arch_pre_nw.h
 
 
 PATH:=$(PATH);$(METROWERKS)\bin;$(METROWERKS)\Other Metrowerks Tools\Command Line Tools

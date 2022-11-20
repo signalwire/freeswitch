@@ -128,6 +128,7 @@ static int load_config(int reloading)
 
 	if (!(lists = switch_xml_child(cfg, "lists"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find any lists!\n");
+		switch_xml_free(xml);
 		return status;
 	}
 
@@ -402,7 +403,7 @@ SWITCH_STANDARD_API(distributor_ctl_function)
 	if (argc > 0) {
 		if (!strcasecmp(argv[0], "reload")) {
 			if (load_config(SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-				stream->write_function(stream, "+ok reloaded.\n");
+				stream->write_function(stream, "+OK reloaded.\n");
 				err = NULL;
 			}
 		} else if (!strcasecmp(argv[0], "dump")) {

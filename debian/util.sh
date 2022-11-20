@@ -46,9 +46,9 @@ find_distro () {
   case "$1" in
     experimental) echo "sid";;
     unstable) echo "sid";;
-    testing) echo "buster";;
-    stable) echo "stretch";;
-    oldstable) echo "jessie";;
+    testing) echo "bullseye";;
+    stable) echo "buster";;
+    oldstable) echo "stretch";;
     *) echo "$1";;
   esac
 }
@@ -56,9 +56,9 @@ find_distro () {
 find_suite () {
   case "$1" in
     sid) echo "unstable";;
-    buster) echo "testing";;
-    stretch) echo "stable";;
-    jessie) echo "oldstable";;
+    bullseye) echo "testing";;
+    buster) echo "stable";;
+    stretch) echo "oldstable";;
     *) echo "$1";;
   esac
 }
@@ -298,7 +298,9 @@ build_debs () {
         for X in /etc/apt/sources.list.d/*; do cat $X >> /tmp/fs.sources.list; done
       fi
       custom_sources_file="/tmp/fs.sources.list"
-      apt-key exportall > "/tmp/fs.gpg"
+      apt-key exportall > "/tmp/fs.tmp.gpg"
+      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --import /tmp/fs.tmp.gpg
+      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --export > "/tmp/fs.gpg"
       custom_keyring="/tmp/fs.gpg"
     fi
     if [ "$custom_sources_file" == "" ]; then
@@ -309,7 +311,7 @@ build_debs () {
       echo "deb [trusted=yes] http://files.freeswitch.org/repo/deb/freeswitch-1.8/ stretch main" >> "/tmp/fs.sources.list"
     fi
     if [[ "$custom_keyring" == "/tmp/fs.gpg" && ! -r "/tmp/fs.gpg" ]]; then
-      cat << EOF > "/tmp/fs.gpg"
+      cat << EOF > "/tmp/fs.tmp.gpg"
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQINBFlVeA4BEADg3MkzUvnbuqG7S6ppt0BJIYx2WIlDzsj2EBPBBo7VpppWPGa/
@@ -363,6 +365,8 @@ Y4o4oqgePeTYzkxVYj8=
 =XPvO
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
+      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --import /tmp/fs.tmp.gpg
+      gpg --no-default-keyring --keyring /tmp/fs.tmp.keyring.gpg  --export > "/tmp/fs.gpg"
     fi
 
     local distro="$(find_distro $1)" dsc="$2" arch="$3"

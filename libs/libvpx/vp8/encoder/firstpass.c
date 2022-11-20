@@ -989,11 +989,11 @@ static int estimate_max_q(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats,
     bits_per_mb_at_this_q =
         vp8_bits_per_mb[INTER_FRAME][Q] + overhead_bits_per_mb;
 
-    bits_per_mb_at_this_q = (int)(.5 +
-                                  err_correction_factor * speed_correction *
-                                      cpi->twopass.est_max_qcorrection_factor *
-                                      cpi->twopass.section_max_qfactor *
-                                      (double)bits_per_mb_at_this_q);
+    bits_per_mb_at_this_q =
+        (int)(.5 + err_correction_factor * speed_correction *
+                       cpi->twopass.est_max_qcorrection_factor *
+                       cpi->twopass.section_max_qfactor *
+                       (double)bits_per_mb_at_this_q);
 
     /* Mode and motion overhead */
     /* As Q rises in real encode loop rd code will force overhead down
@@ -1086,9 +1086,8 @@ static int estimate_cq(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats,
         vp8_bits_per_mb[INTER_FRAME][Q] + overhead_bits_per_mb;
 
     bits_per_mb_at_this_q =
-        (int)(.5 +
-              err_correction_factor * speed_correction * clip_iifactor *
-                  (double)bits_per_mb_at_this_q);
+        (int)(.5 + err_correction_factor * speed_correction * clip_iifactor *
+                       (double)bits_per_mb_at_this_q);
 
     /* Mode and motion overhead */
     /* As Q rises in real encode loop rd code will force overhead down
@@ -1273,9 +1272,8 @@ void vp8_init_second_pass(VP8_COMP *cpi) {
    * sum duration is not. Its calculated based on the actual durations of
    * all frames from the first pass.
    */
-  vp8_new_framerate(cpi,
-                    10000000.0 * cpi->twopass.total_stats.count /
-                        cpi->twopass.total_stats.duration);
+  vp8_new_framerate(cpi, 10000000.0 * cpi->twopass.total_stats.count /
+                             cpi->twopass.total_stats.duration);
 
   cpi->output_framerate = cpi->framerate;
   cpi->twopass.bits_left = (int64_t)(cpi->twopass.total_stats.duration *
@@ -1739,10 +1737,11 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
             /* Dont break out very close to a key frame */
             ((cpi->twopass.frames_to_key - i) >= MIN_GF_INTERVAL) &&
             ((boost_score > 20.0) || (next_frame.pcnt_inter < 0.75)) &&
-            (!flash_detected) && ((mv_ratio_accumulator > 100.0) ||
-                                  (abs_mv_in_out_accumulator > 3.0) ||
-                                  (mv_in_out_accumulator < -2.0) ||
-                                  ((boost_score - old_boost_score) < 2.0)))) {
+            (!flash_detected) &&
+            ((mv_ratio_accumulator > 100.0) ||
+             (abs_mv_in_out_accumulator > 3.0) ||
+             (mv_in_out_accumulator < -2.0) ||
+             ((boost_score - old_boost_score) < 2.0)))) {
       boost_score = old_boost_score;
       break;
     }
@@ -1815,8 +1814,9 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
       (next_frame.pcnt_inter > 0.75) &&
       ((mv_in_out_accumulator / (double)i > -0.2) ||
        (mv_in_out_accumulator > -2.0)) &&
-      (cpi->gfu_boost > 100) && (cpi->twopass.gf_decay_rate <=
-                                 (ARF_DECAY_THRESH + (cpi->gfu_boost / 200))))
+      (cpi->gfu_boost > 100) &&
+      (cpi->twopass.gf_decay_rate <=
+       (ARF_DECAY_THRESH + (cpi->gfu_boost / 200))))
 #endif
   {
     int Boost;

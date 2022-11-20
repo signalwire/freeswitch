@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2020, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -67,6 +67,7 @@ typedef struct switch_thread_data_s {
 	switch_thread_start_t func;
 	void *obj;
 	int alloc;
+	int running;
 	switch_memory_pool_t *pool;
 } switch_thread_data_t;
 
@@ -243,14 +244,6 @@ static inline void *switch_must_realloc(void *_b, size_t _z)
 	return m;
 }
 
-static inline char *switch_must_strdup(const char *_s)
-{
-	char *s = strdup(_s);
-	switch_assert(s);
-	return s;
-}
-
-
 /*!
   \defgroup core1 Core Library
   \ingroup FREESWITCH
@@ -285,6 +278,8 @@ SWITCH_DECLARE(switch_vid_spy_fmt_t) switch_media_bug_parse_spy_fmt(const char *
 /*!
   \brief Add a media bug to the session
   \param session the session to add the bug to
+  \param function user defined module/function/reason identifying this bug
+  \param target user defined identification of the target of the bug
   \param callback a callback for events
   \param user_data arbitrary user data
   \param stop_time absolute time at which the bug is automatically removed (or 0)
@@ -419,7 +414,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
   \brief Read a frame from the bug
   \param bug the bug to read from
   \param frame the frame to write the data to
-  \return the amount of data
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame, switch_bool_t fill);
 
@@ -623,6 +618,8 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 
 SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, const char *tag);
 
+SWITCH_DECLARE(void) switch_core_pool_stats(switch_stream_handle_t *stream);
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(_Out_ switch_memory_pool_t **pool,
 																	_In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
@@ -807,6 +804,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ sw
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(_In_ switch_core_session_t *session, _In_z_ const char *use_uuid);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(_In_ switch_core_session_t *session, _In_z_ const char *use_external_id);
+
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_session_t **session,
 														 _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
 
@@ -855,7 +854,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(_In_ switch_co
 
 SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_data_t **tdp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session);
-
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_wait(switch_thread_data_t *td, int ms);
+																
 /*!
   \brief Retrieve a pointer to the channel object associated with a given session
   \param session the session to retrieve from
@@ -876,6 +876,13 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(_In_ switch_core_se
   \return a string representing the uuid
 */
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(_In_ switch_core_session_t *session);
+
+/*!
+  \brief Retrieve the unique external identifier from a session
+  \param session the session to retrieve the uuid from
+  \return a string representing the uuid
+*/
+SWITCH_DECLARE(const char *) switch_core_session_get_external_id(_In_ switch_core_session_t *session);
 
 
 /*!
@@ -1356,6 +1363,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_impl(switch_
 SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
 
 /*!
+  \brief Reset the buffers and resampler on a session, fail if can not lock codec mutexes
+  \param session the session to reset
+  \param flush_dtmf flush all queued dtmf events too
+  \return SWITCH_STATUS_SUCCESS if the session was reset
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
+
+/*!
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
@@ -1425,6 +1440,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t *
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t **hash);
 
 /*!
+  \brief Insert data into a hash with an auto-generated key based on the data pointer
+  \param hash the hash to add data to
+  \param data unique pointer to add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_pointer(switch_hash_t *hash, const void *data);
+
+/*!
   \brief Insert data into a hash and set flags so the value is automatically freed on delete
   \param hash the hash to add data to
   \param key the name of the key to add the data to
@@ -1433,6 +1456,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t *
   \note the string key must be a constant or a dynamic string
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t *hash, const char *key, const void *data);
+
+/*!
+  \brief Insert strdup(str) into a hash and set flags so the value is automatically freed on delete
+  \param hash the hash to add str to
+  \param key the name of the key to add the str to
+  \param str string to strdup and add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_auto_free(switch_hash_t *hash, const char *key, const char *str);
 
 /*!
   \brief Insert data into a hash
@@ -1444,6 +1477,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_auto_free(switch_hash_t 
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const void *data, hashtable_destructor_t destructor);
 #define switch_core_hash_insert(_h, _k, _d) switch_core_hash_insert_destructor(_h, _k, _d, NULL)
+
+/*!
+  \brief Allocate memory and insert into a hash
+  \param hash the hash to add data to
+  \param key the name of the key to add the data to
+  \param size the size in bytes to allocate
+  \return pointer to the allocated memory
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(void *) switch_core_hash_insert_alloc_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ size_t size, hashtable_destructor_t destructor);
+#define switch_core_hash_insert_alloc(_h, _k, _s) switch_core_hash_insert_alloc_destructor(_h, _k, _s, NULL)
+
+/*!
+  \brief Insert strdup(str) into a hash
+  \param hash the hash to add str to
+  \param key the name of the key to add the str to
+  \param str string to strdup and add
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const char *str, hashtable_destructor_t destructor);
+#define switch_core_hash_insert_dup(_h, _k, _d) switch_core_hash_insert_dup_destructor(_h, _k, _d, NULL)
 
 
 /*!
@@ -1853,6 +1908,13 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(_In_ 
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(const char *filename);
 
 /*!
+  \brief Open a core db (SQLite) in-memory
+  \param uri to the db to open
+  \return the db handle
+*/
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_in_memory(const char *uri);
+
+/*!
   \brief Execute a sql stmt until it is accepted
   \param db the db handle
   \param sql the sql to execute
@@ -1963,6 +2025,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(_In_ switch_file_han
   \return SWITCH_STATUS_SUCCESS if the file handle was pre closed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(_In_ switch_file_handle_t *fh);
+
+/*!
+  \brief Duplicates a file handle using another pool
+  \param oldfh the file handle to duplicate
+  \param newfh pointer to assign new file handle to
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the file handle was duplicated
+*/
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_handle_dup(switch_file_handle_t *oldfh, switch_file_handle_t **newfh, switch_memory_pool_t *pool);
 
 /*!
   \brief Close an open file handle
@@ -2483,7 +2555,8 @@ typedef int (*switch_core_db_event_callback_func_t) (void *pArg, switch_event_t 
 #define CACHE_DB_LEN 256
 typedef enum {
 	CDF_INUSE = (1 << 0),
-	CDF_PRUNE = (1 << 1)
+	CDF_PRUNE = (1 << 1),
+	CDF_NONEXPIRING = (1 << 2)
 } cache_db_flag_t;
 
 typedef enum {
@@ -2493,13 +2566,14 @@ typedef enum {
 } switch_cache_db_handle_type_t;
 
 typedef union {
-	switch_core_db_t *core_db_dbh;
+	switch_coredb_handle_t *core_db_dbh;
 	switch_odbc_handle_t *odbc_dbh;
 	switch_database_interface_handle_t *database_interface_dbh;
 } switch_cache_db_native_handle_t;
 
 typedef struct {
 	char *db_path;
+	switch_bool_t in_memory;
 } switch_cache_db_core_db_options_t;
 
 typedef struct {
@@ -2691,6 +2765,7 @@ SWITCH_DECLARE(const char *) switch_core_banner(void);
 SWITCH_DECLARE(switch_bool_t) switch_core_session_in_thread(switch_core_session_t *session);
 SWITCH_DECLARE(uint32_t) switch_default_ptime(const char *name, uint32_t number);
 SWITCH_DECLARE(uint32_t) switch_default_rate(const char *name, uint32_t number);
+SWITCH_DECLARE(uint32_t) switch_core_max_audio_channels(uint32_t limit);
 
 /*!
  \brief Add user registration
@@ -2798,6 +2873,7 @@ SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback_err(swi
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix);
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file);
 SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fingerprint_t *fp);
 SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, const char *str);
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
@@ -2809,6 +2885,8 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
+SWITCH_DECLARE(int) switch_spawn(const char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t shell, switch_bool_t wait, switch_stream_handle_t *stream);
 
 SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
 

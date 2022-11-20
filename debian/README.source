@@ -63,7 +63,7 @@ The format of debian/modules.conf is:
 Building the Debian packaging
 -----------------------------
 
-If you want actualy Debian binary or source packages to upload to your
+If you want actually Debian binary or source packages to upload to your
 own repository, you'll need to build them as described here.  We have
 some fancy automatic tools to accomplish this.  The tools allow you to
 start from a very bare Debian image and generate working packages.

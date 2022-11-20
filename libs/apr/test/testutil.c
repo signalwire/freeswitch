@@ -19,11 +19,11 @@
 
 #include "abts.h"
 #include "testutil.h"
-#include "apr_pools.h"
+#include "fspr_pools.h"
 
-apr_pool_t *p;
+fspr_pool_t *p;
 
-void apr_assert_success(abts_case* tc, const char* context, apr_status_t rv, 
+void fspr_assert_success(abts_case* tc, const char* context, fspr_status_t rv, 
                         int lineno) 
 {
     if (rv == APR_ENOTIMPL) {
@@ -31,14 +31,14 @@ void apr_assert_success(abts_case* tc, const char* context, apr_status_t rv,
     } else if (rv != APR_SUCCESS) {
         char buf[STRING_MAX], ebuf[128];
         sprintf(buf, "%s (%d): %s\n", context, rv,
-                apr_strerror(rv, ebuf, sizeof ebuf));
+                fspr_strerror(rv, ebuf, sizeof ebuf));
         abts_fail(tc, buf, lineno);
     }
 }
 
 void initialize(void) {
-    apr_initialize();
-    atexit(apr_terminate);
+    fspr_initialize();
+    atexit(fspr_terminate);
     
-    apr_pool_create(&p, NULL);
+    fspr_pool_create(&p, NULL);
 }

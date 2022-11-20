@@ -261,6 +261,11 @@ case "$target" in
         asm_Debug_cmdline="yasm -Xvc -g cv8 -f win32 ${yasmincs} &quot;%(FullPath)&quot;"
         asm_Release_cmdline="yasm -Xvc -f win32 ${yasmincs} &quot;%(FullPath)&quot;"
     ;;
+    arm64*)
+        platforms[0]="ARM64"
+        asm_Debug_cmdline="armasm64 -nologo -oldit &quot;%(FullPath)&quot;"
+        asm_Release_cmdline="armasm64 -nologo -oldit &quot;%(FullPath)&quot;"
+    ;;
     arm*)
         platforms[0]="ARM"
         asm_Debug_cmdline="armasm -nologo -oldit &quot;%(FullPath)&quot;"
@@ -306,6 +311,16 @@ generate_vcxproj() {
             # v120 while it should be v120_wp81 if the type is Windows Phone.
             tag_content ApplicationType "Windows Store"
             tag_content ApplicationTypeRevision 8.1
+        fi
+        if [ "${platforms[0]}" = "ARM64" ]; then
+            # Require the first Visual Studio version to have ARM64 support.
+            tag_content MinimumVisualStudioVersion 15.9
+        fi
+        if [ $vs_ver -eq 15 ] && [ "${platforms[0]}" = "ARM64" ]; then
+            # Since VS 15 does not have a 'use latest SDK version' facility,
+            # specifically require the contemporaneous SDK with official ARM64
+            # support.
+            tag_content WindowsTargetPlatformVersion 10.0.17763.0
         fi
     close_tag PropertyGroup
 

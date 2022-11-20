@@ -2,7 +2,7 @@
  * Contributor(s):
  *
  * Eric des Courtis <eric.des.courtis@benbria.com>
- * Piotr Gregor     <piotrgregor@rsyncme.org>
+ * Piotr Gregor <piotrgregor@rsyncme.org>
  */
 
 
