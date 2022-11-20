@@ -1081,6 +1081,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, const char *key)
 {
 	void *val;
+	if (!key) {
+		return NULL;
+	}
 	switch_assert(channel != NULL);
 	val = switch_core_hash_find_locked(channel->private_hash, key, channel->profile_mutex);
 	return val;
