@@ -1684,7 +1684,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 
 				if (switch_channel_test_flag(channel, CF_BREAK_ALL)) {
-					// switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==> CF_BREAK_ALL\n");
 					switch_channel_clear_flag(channel, CF_BREAK_ALL);
 					done = 1;
 				}
