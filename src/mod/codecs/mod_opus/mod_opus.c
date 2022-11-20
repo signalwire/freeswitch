@@ -160,6 +160,7 @@ struct {
 	int debuginfo;
 	uint32_t use_jb_lookahead;
 	switch_mutex_t *mutex;
+	int mono;
 } opus_prefs;
 
 static struct {
@@ -283,7 +284,7 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 					}
 
 					if (!strcasecmp(data, "stereo")) {
-						codec_settings->stereo = atoi(arg);
+						codec_settings->stereo = opus_prefs.mono ? 0 : atoi(arg);
 						codec_fmtp->stereo = codec_settings->stereo;
 					}
 
@@ -562,6 +563,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	opus_codec_settings.cbr = !opus_prefs.use_vbr;
 
 	opus_codec_settings.usedtx = opus_prefs.use_dtx;
+
+	if (opus_prefs.mono) {
+		opus_codec_settings.stereo = 0;
+		opus_codec_settings.sprop_stereo = 0;
+	}
 
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
@@ -914,7 +920,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	if (samples < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s fs:%u plc:%s!\n",
 						  opus_strerror(samples), frame_size, plc ? "true" : "false");
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_NOOP;
 	}
 
 	*decoded_data_len = samples * 2 * (!context->codec_settings.sprop_stereo ? codec->implementation->number_of_channels : 2);
@@ -1080,6 +1086,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				if (!switch_opus_acceptable_rate(opus_prefs.sprop_maxcapturerate)) {
 					opus_prefs.sprop_maxcapturerate = 0; /* value not supported */
 				}
+			} else if (!strcasecmp(key, "mono")) {
+				opus_prefs.mono = atoi(val);
 			}
 		}
 	}

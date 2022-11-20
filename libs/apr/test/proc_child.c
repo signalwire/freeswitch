@@ -1,4 +1,4 @@
-#include "apr.h"
+#include "fspr.h"
 #include <stdio.h>
 #if APR_HAVE_UNISTD_H
 #include <unistd.h>
@@ -11,7 +11,7 @@
 int main(void)
 {
     char buf[256];
-    apr_ssize_t bytes;
+    fspr_ssize_t bytes;
     
     bytes = read(STDIN_FILENO, buf, 256);
     if (bytes > 0)

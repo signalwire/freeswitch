@@ -160,6 +160,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="gsmlib\gsmlib-1.10-patched-13ubuntu\win32\gsmlib.2017.vcxproj">
       <Project>{26c82fce-e0cf-4d10-a00c-d8e582ffeb53}</Project>

@@ -123,7 +123,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vmd_shutdown);
 SWITCH_STANDARD_API(vmd_api_main);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load);
-SWITCH_MODULE_DEFINITION(mod_vmd, mod_vmd_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_vmd, mod_vmd_load, mod_vmd_shutdown, NULL);
 SWITCH_STANDARD_APP(vmd_start_function);
 
 /*! Type that holds state information about the beep. */

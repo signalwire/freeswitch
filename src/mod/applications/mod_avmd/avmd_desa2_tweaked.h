@@ -10,7 +10,7 @@
  *
  * Contributor(s):
  *
- * Piotr Gregor     <piotrgregor@rsyncme.org>
+ * Piotr Gregor <piotrgregor@rsyncme.org>
  *
  * @date    20 Mar 2016
  */

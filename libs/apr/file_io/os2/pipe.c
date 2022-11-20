@@ -15,16 +15,16 @@
  */
 
 #define INCL_DOSERRORS
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 #include <string.h>
 #include <process.h>
 
-APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_create(fspr_file_t **in, fspr_file_t **out, fspr_pool_t *pool)
 {
     ULONG filedes[2];
     ULONG rc, action;
@@ -54,7 +54,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
         return APR_FROM_OS_ERROR(rc);
     }
 
-    (*in) = (apr_file_t *)apr_palloc(pool, sizeof(apr_file_t));
+    (*in) = (fspr_file_t *)fspr_palloc(pool, sizeof(fspr_file_t));
     rc = DosCreateEventSem(NULL, &(*in)->pipeSem, DC_SEM_SHARED, FALSE);
 
     if (rc) {
@@ -78,33 +78,33 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
 
     (*in)->pool = pool;
     (*in)->filedes = filedes[0];
-    (*in)->fname = apr_pstrdup(pool, pipename);
+    (*in)->fname = fspr_pstrdup(pool, pipename);
     (*in)->isopen = TRUE;
     (*in)->buffered = FALSE;
     (*in)->flags = 0;
     (*in)->pipe = 1;
     (*in)->timeout = -1;
     (*in)->blocking = BLK_ON;
-    apr_pool_cleanup_register(pool, *in, apr_file_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(pool, *in, fspr_file_cleanup, fspr_pool_cleanup_null);
 
-    (*out) = (apr_file_t *)apr_palloc(pool, sizeof(apr_file_t));
+    (*out) = (fspr_file_t *)fspr_palloc(pool, sizeof(fspr_file_t));
     (*out)->pool = pool;
     (*out)->filedes = filedes[1];
-    (*out)->fname = apr_pstrdup(pool, pipename);
+    (*out)->fname = fspr_pstrdup(pool, pipename);
     (*out)->isopen = TRUE;
     (*out)->buffered = FALSE;
     (*out)->flags = 0;
     (*out)->pipe = 1;
     (*out)->timeout = -1;
     (*out)->blocking = BLK_ON;
-    apr_pool_cleanup_register(pool, *out, apr_file_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(pool, *out, fspr_file_cleanup, fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename, apr_fileperms_t perm, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_namedpipe_create(const char *filename, fspr_fileperms_t perm, fspr_pool_t *pool)
 {
     /* Not yet implemented, interface not suitable */
     return APR_ENOTIMPL;
@@ -112,7 +112,7 @@ APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename, apr_fi
 
  
 
-APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_timeout_set(fspr_file_t *thepipe, fspr_interval_time_t timeout)
 {
     if (thepipe->pipe == 1) {
         thepipe->timeout = timeout;
@@ -135,7 +135,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_int
 
 
 
-APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_interval_time_t *timeout)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_timeout_get(fspr_file_t *thepipe, fspr_interval_time_t *timeout)
 {
     if (thepipe->pipe == 1) {
         *timeout = thepipe->timeout;
@@ -146,12 +146,12 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_int
 
 
 
-APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
-                                             apr_os_file_t *thefile,
+APR_DECLARE(fspr_status_t) fspr_os_pipe_put_ex(fspr_file_t **file,
+                                             fspr_os_file_t *thefile,
                                              int register_cleanup,
-                                             apr_pool_t *pool)
+                                             fspr_pool_t *pool)
 {
-    (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
+    (*file) = fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*file)->pool = pool;
     (*file)->isopen = TRUE;
     (*file)->pipe = 1;
@@ -160,8 +160,8 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
     (*file)->filedes = *thefile;
 
     if (register_cleanup) {
-        apr_pool_cleanup_register(pool, *file, apr_file_cleanup,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(pool, *file, fspr_file_cleanup,
+                                  fspr_pool_cleanup_null);
     }
 
     return APR_SUCCESS;
@@ -169,9 +169,9 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
 
 
 
-APR_DECLARE(apr_status_t) apr_os_pipe_put(apr_file_t **file,
-                                          apr_os_file_t *thefile,
-                                          apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_pipe_put(fspr_file_t **file,
+                                          fspr_os_file_t *thefile,
+                                          fspr_pool_t *pool)
 {
-    return apr_os_pipe_put_ex(file, thefile, 0, pool);
+    return fspr_os_pipe_put_ex(file, thefile, 0, pool);
 }

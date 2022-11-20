@@ -197,11 +197,13 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 
 			if (credis_decr(redis, (const char*)p_key, &val) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", (char *)p_key);
+				free(hi);
 				switch_goto_status(SWITCH_STATUS_FALSE, end);
 			}
 	   		p_uuid_key = switch_core_session_sprintf(session, "%s_%s", switch_core_get_switchname(), (char *)p_key);
 			if (credis_decr(redis,p_uuid_key,&uuid_val) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", p_uuid_key);
+				free(hi);
 				switch_goto_status(SWITCH_STATUS_FALSE, end);
 			}
 			switch_core_hash_delete(pvt->hash, (const char *) p_key);

@@ -34,14 +34,14 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
-/* for apr_pstrcat */
-#include <apr_strings.h>
+/* for fspr_pstrcat */
+#include <fspr_strings.h>
 
-/* for apr_env_get and apr_env_set */
-#include <apr_env.h>
+/* for fspr_env_get and fspr_env_set */
+#include <fspr_env.h>
 
-/* for apr file and directory handling */
-#include <apr_file_io.h>
+/* for fspr file and directory handling */
+#include <fspr_file_io.h>
 
 typedef struct switch_file_node_s {
 	const switch_file_interface_t *ptr;
@@ -156,24 +156,7 @@ static void switch_loadable_module_runtime(void)
 static switch_status_t switch_loadable_module_process(char *key, switch_loadable_module_t *new_module, switch_hash_t *event_hash)
 {
 	switch_event_t *event;
-	int *event_num = NULL;
-	char str_event_num[12];
-	void *val;
 	int added = 0;
-
-	if (event_hash)	{
-		if ((val = switch_core_hash_find(event_hash, "0"))) {
-			event_num = (int*)val;
-		} else {
-			if (!(event_num = malloc(sizeof(int)))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Allocation error.\n");
-				return SWITCH_STATUS_MEMERR;
-			}
-
-			*event_num = 0;
-			switch_core_hash_insert(event_hash, "0", (const void*)event_num);
-		}
-	}
 
 	new_module->key = switch_core_strdup(new_module->pool, key);
 
@@ -197,8 +180,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					if (!event_hash) {
 						switch_event_fire(&event);
 					} else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -271,8 +253,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 							switch_event_fire(&event);
 						}
 						else {
-							sprintf(str_event_num, "%i", ++*event_num);
-							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+							switch_core_hash_insert_pointer(event_hash, (const void*)event);
 						}
 
 						added++;
@@ -300,8 +281,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -329,8 +309,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -360,8 +339,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -391,8 +369,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -422,8 +399,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -453,8 +429,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -489,8 +464,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 							switch_event_fire(&event);
 						}
 						else {
-							sprintf(str_event_num, "%i", ++*event_num);
-							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+							switch_core_hash_insert_pointer(event_hash, (const void*)event);
 						}
 
 						added++;
@@ -535,8 +509,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 							switch_event_fire(&event);
 						}
 						else {
-							sprintf(str_event_num, "%i", ++*event_num);
-							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+							switch_core_hash_insert_pointer(event_hash, (const void*)event);
 						}
 
 						added++;
@@ -572,8 +545,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -601,8 +573,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -630,8 +601,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -659,8 +629,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -688,8 +657,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 						switch_event_fire(&event);
 					}
 					else {
-						sprintf(str_event_num, "%i", ++*event_num);
-						switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+						switch_core_hash_insert_pointer(event_hash, (const void*)event);
 					}
 
 					added++;
@@ -723,8 +691,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 							switch_event_fire(&event);
 						}
 						else {
-							sprintf(str_event_num, "%i", ++*event_num);
-							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+							switch_core_hash_insert_pointer(event_hash, (const void*)event);
 						}
 
 						added++;
@@ -758,8 +725,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 							switch_event_fire(&event);
 						}
 						else {
-							sprintf(str_event_num, "%i", ++*event_num);
-							switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+							switch_core_hash_insert_pointer(event_hash, (const void*)event);
 						}
 
 						added++;
@@ -781,8 +747,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_event_fire(&event);
 			}
 			else {
-				sprintf(str_event_num, "%i", ++*event_num);
-				switch_core_hash_insert(event_hash, (const char*)str_event_num, (const void*)event);
+				switch_core_hash_insert_pointer(event_hash, (const void*)event);
 			}
 
 			added++;
@@ -1668,7 +1633,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 {
 	switch_loadable_module_t *module = NULL;
 	switch_dso_lib_t dso = NULL;
-	apr_status_t status = SWITCH_STATUS_SUCCESS;
+	fspr_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_loadable_module_function_table_t *interface_struct_handle = NULL;
 	switch_loadable_module_function_table_t *mod_interface_functions = NULL;
 	char *struct_name = NULL;
@@ -1843,11 +1808,11 @@ static switch_status_t switch_loadable_module_load_module_ex(const char *dir, co
 		if ((dot = strchr(file, '.'))) {
 			*dot = '\0';
 		}
-		len = strlen(dir);
+		len = strlen(switch_str_nil(dir));
 		len += strlen(file);
 		len += 8;
 		path = (char *) switch_core_alloc(loadable_modules.pool, len);
-		switch_snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+		switch_snprintf(path, len, "%s%s%s%s", switch_str_nil(dir), SWITCH_PATH_SEPARATOR, file, ext);
 	}
 
 
@@ -2096,14 +2061,14 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 static void switch_loadable_module_path_init()
 {
 	char *path = NULL, *working = NULL;
-	apr_dir_t *perl_dir_handle = NULL;
+	fspr_dir_t *perl_dir_handle = NULL;
 
-	apr_env_get(&path, "path", loadable_modules.pool);
-	apr_filepath_get(&working, APR_FILEPATH_NATIVE, loadable_modules.pool);
+	fspr_env_get(&path, "path", loadable_modules.pool);
+	fspr_filepath_get(&working, APR_FILEPATH_NATIVE, loadable_modules.pool);
 
-	if (apr_dir_open(&perl_dir_handle, ".\\perl", loadable_modules.pool) == APR_SUCCESS) {
-		apr_dir_close(perl_dir_handle);
-		apr_env_set("path", apr_pstrcat(loadable_modules.pool, path, ";", working, "\\perl", NULL), loadable_modules.pool);
+	if (fspr_dir_open(&perl_dir_handle, ".\\perl", loadable_modules.pool) == APR_SUCCESS) {
+		fspr_dir_close(perl_dir_handle);
+		fspr_env_set("path", fspr_pstrcat(loadable_modules.pool, path, ";", working, "\\perl", NULL), loadable_modules.pool);
 	}
 }
 #endif
@@ -2111,9 +2076,9 @@ static void switch_loadable_module_path_init()
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autoload)
 {
 
-	apr_finfo_t finfo = { 0 };
-	apr_dir_t *module_dir_handle = NULL;
-	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
+	fspr_finfo_t finfo = { 0 };
+	fspr_dir_t *module_dir_handle = NULL;
+	fspr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
 	char *precf = "pre_load_modules.conf";
 	char *cf = "modules.conf";
 	char *pcf = "post_load_modules.conf";
@@ -2211,10 +2176,6 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 				if (switch_loadable_module_load_module_ex((char *)path, (char *)val, SWITCH_FALSE, global, &err, SWITCH_LOADABLE_MODULE_TYPE_PRELOAD, event_hash) == SWITCH_STATUS_GENERR) {
 					if (critical && switch_true(critical)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load critical module '%s', abort()\n", val);
-
-						if ((hash_val = switch_core_hash_find(event_hash, "0"))) {
-							switch_safe_free(hash_val);
-						}
 						switch_core_hash_destroy(&event_hash);
 
 						abort();
@@ -2233,19 +2194,11 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	if (switch_core_sqldb_init(&err) != SWITCH_STATUS_SUCCESS)
 	{
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Loading modules interrupted. [Error: %s]\n", err);
-		if ((hash_val = switch_core_hash_find(event_hash, "0"))) {
-			switch_safe_free(hash_val);
-		}
 		switch_core_hash_destroy(&event_hash);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	/* sqldb is ready. Fire holding events! */
-	if ((hash_val = switch_core_hash_find(event_hash, "0"))) {
-		switch_safe_free(hash_val);
-		switch_core_hash_delete(event_hash, "0");
-	}
-
 	for (hi = switch_core_hash_first(event_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &hash_val);
 		event = (switch_event_t *)hash_val;
@@ -2333,12 +2286,12 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	}
 
 	if (all) {
-		if (apr_dir_open(&module_dir_handle, SWITCH_GLOBAL_dirs.mod_dir, loadable_modules.pool) != APR_SUCCESS) {
+		if (fspr_dir_open(&module_dir_handle, SWITCH_GLOBAL_dirs.mod_dir, loadable_modules.pool) != APR_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", SWITCH_GLOBAL_dirs.mod_dir);
 			return SWITCH_STATUS_GENERR;
 		}
 
-		while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
+		while (fspr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
 			const char *fname = finfo.fname;
 
 			if (finfo.filetype != APR_REG) {
@@ -2359,7 +2312,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 
 			switch_loadable_module_load_module(SWITCH_GLOBAL_dirs.mod_dir, fname, SWITCH_FALSE, &err);
 		}
-		apr_dir_close(module_dir_handle);
+		fspr_dir_close(module_dir_handle);
 	}
 
 	switch_loadable_module_runtime();
@@ -3238,12 +3191,11 @@ SWITCH_DECLARE(switch_status_t) switch_say_file_handle_create(switch_say_file_ha
 SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *fmt, ...)
 {
 	char buf[256] = "";
-	int ret;
 	va_list ap;
 
 	va_start(ap, fmt);
 
-	if ((ret = switch_vsnprintf(buf, sizeof(buf), fmt, ap)) > 0) {
+	if (switch_vsnprintf(buf, sizeof(buf), fmt, ap) > 0) {
 		if (!sh->cnt++) {
 			sh->stream.write_function(&sh->stream, "file_string://%s.%s", buf, sh->ext);
 		} else if (strstr(buf, "://")) {
@@ -3251,7 +3203,6 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 		} else {
 			sh->stream.write_function(&sh->stream, "!%s.%s", buf, sh->ext);
 		}
-
 	}
 
 	va_end(ap);

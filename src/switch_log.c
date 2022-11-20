@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -68,6 +68,8 @@ static int mods_loaded = 0;
 static int console_mods_loaded = 0;
 static switch_bool_t COLORIZE = SWITCH_FALSE;
 
+static int64_t log_sequence = 0;
+
 #ifdef WIN32
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
@@ -88,13 +90,31 @@ SWITCH_SEQ_FYELLOW };
 
 SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, int log_level, switch_log_json_format_t *json_format, switch_event_t *chan_vars)
 {
-	cJSON *json = cJSON_CreateObject();
+	cJSON *json = NULL;
 	char *hostname;
 	char *full_message = node->content;
 	char *parsed_full_message = NULL;
 	char *field_name = NULL;
 	switch_event_t *log_fields = NULL;
 	switch_core_session_t *session = NULL;
+
+	if (node->meta && cJSON_IsObject(node->meta)) {
+		if (json_format->custom_field_prefix) {
+			cJSON *field = NULL;
+			json = cJSON_CreateObject();
+			for (field = node->meta->child; field; field = field->next) {
+				if (!zstr(field->string)) {
+					char *field_name = switch_mprintf("%s%s", json_format->custom_field_prefix, field->string);
+					cJSON_AddItemToObject(json, field_name, cJSON_Duplicate(field, cJSON_True));
+					free(field_name);
+				}
+			}
+		} else {
+			json = cJSON_Duplicate(node->meta, cJSON_True);
+		}
+	} else {
+		json = cJSON_CreateObject();
+	}
 
 	if (json_format->version.name && json_format->version.value) {
 		cJSON_AddItemToObject(json, json_format->version.name, cJSON_CreateString(json_format->version.value));
@@ -143,6 +163,9 @@ SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, i
 	}
 	if (json_format->function.name && !zstr_buf(node->func)) {
 		cJSON_AddItemToObject(json, json_format->function.name, cJSON_CreateString(node->func));
+	}
+	if (json_format->sequence.name) {
+		cJSON_AddItemToObject(json, json_format->sequence.name, cJSON_CreateNumber(node->sequence));
 	}
 
 	/* skip initial space and new line */
@@ -267,6 +290,10 @@ SWITCH_DECLARE(switch_log_node_t *) switch_log_node_dup(const switch_log_node_t 
 		switch_event_dup(&newnode->tags, node->tags);
 	}
 
+	if (node->meta) {
+		newnode->meta = cJSON_Duplicate(node->meta, cJSON_True);
+	}
+
 	return newnode;
 }
 
@@ -285,6 +312,10 @@ SWITCH_DECLARE(void) switch_log_node_free(switch_log_node_t **pnode)
 		switch_safe_free(node->data);
 		if (node->tags) {
 			switch_event_destroy(&node->tags);
+		}
+		if (node->meta) {
+			cJSON_Delete(node->meta);
+			node->meta = NULL;
 		}
 #ifdef SWITCH_LOG_RECYCLE
 		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
@@ -478,6 +509,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 
 		node = (switch_log_node_t *) pop;
 		switch_mutex_lock(BINDLOCK);
+		node->sequence = ++log_sequence;
 		for (binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
 				binding->function(node, node->level);
@@ -494,13 +526,22 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 	return NULL;
 }
 
+SWITCH_DECLARE(void) switch_log_meta_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
+									   const char *userdata, switch_log_level_t level, cJSON **meta, const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	switch_log_meta_vprintf(channel, file, func, line, userdata, level, meta, fmt, ap);
+	va_end(ap);
+}
+
 SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
 									   const char *userdata, switch_log_level_t level, const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
-	switch_log_vprintf(channel, file, func, line, userdata, level, fmt, ap);
+	switch_log_meta_vprintf(channel, file, func, line, userdata, level, NULL, fmt, ap);
 	va_end(ap);
 }
 
@@ -508,6 +549,12 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const char *file, const char *func, int line,
 										const char *userdata, switch_log_level_t level, const char *fmt, va_list ap)
 {
+	switch_log_meta_vprintf(channel, file, func, line, userdata, level, NULL, fmt, ap);
+}
+SWITCH_DECLARE(void) switch_log_meta_vprintf(switch_text_channel_t channel, const char *file, const char *func, int line,
+										const char *userdata, switch_log_level_t level, cJSON **meta, const char *fmt, va_list ap)
+{
+	cJSON *log_meta = NULL;
 	char *data = NULL;
 	char *new_fmt = NULL;
 	int ret = 0;
@@ -525,8 +572,13 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	switch_log_level_t limit_level = runtime.hard_log_level;
 	switch_log_level_t special_level = SWITCH_LOG_UNINIT;
 
+	if (meta && *meta) {
+		log_meta = *meta;
+		*meta = NULL;
+	}
+
 	if (limit_level == SWITCH_LOG_DISABLE) {
-		return;
+		goto end;
 	}
 
 	if (channel == SWITCH_CHANNEL_ID_SESSION && userdata) {
@@ -539,14 +591,14 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 
 	if (level > 100) {
 		if ((uint32_t) (level - 100) > runtime.debug_level) {
-			return;
+			goto end;
 		}
 
 		level = 1;
 	}
 
 	if (level > limit_level) {
-		return;
+		goto end;
 	}
 
 	switch_assert(level < SWITCH_LOG_INVALID);
@@ -559,8 +611,8 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		switch_time_exp_t tm;
 
 		switch_time_exp_lt(&tm, now);
-		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d",
-						tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec);
+		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%0.6d %0.2f%%%%",
+						tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, switch_core_idle_cpu());
 
 		//switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
@@ -665,6 +717,8 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 		node->timestamp = now;
 		node->channel = channel;
 		node->tags = NULL;
+		node->meta = log_meta;
+		log_meta = NULL;
 		if (channel == SWITCH_CHANNEL_ID_SESSION) {
 			switch_core_session_t *session = (switch_core_session_t *) userdata;
 			node->userdata = userdata ? strdup(switch_core_session_get_uuid(session)) : NULL;
@@ -682,6 +736,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 
   end:
 
+	cJSON_Delete(log_meta);
 	switch_safe_free(data);
 	switch_safe_free(new_fmt);
 

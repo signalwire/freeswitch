@@ -47,6 +47,7 @@ applications/mod_soundtouch
 applications/mod_spandsp
 applications/mod_spy
 applications/mod_stress
+applications/mod_test
 applications/mod_translate
 applications/mod_valet_parking
 applications/mod_video_filter
@@ -57,7 +58,6 @@ applications/mod_voicemail_ivr
 asr_tts/mod_flite
 asr_tts/mod_pocketsphinx
 asr_tts/mod_tts_commandline
-asr_tts/mod_unimrcp
 codecs/mod_amr
 codecs/mod_amrwb
 codecs/mod_b64
@@ -83,7 +83,6 @@ dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml
 directories/mod_ldap
 #endpoints/mod_alsa
-endpoints/mod_dingaling
 #endpoints/mod_gsmopen
 #endpoints/mod_h323
 #endpoints/mod_khomp
@@ -127,7 +126,7 @@ languages/mod_java
 languages/mod_lua
 languages/mod_managed
 languages/mod_perl
-languages/mod_python
+languages/mod_python3
 #languages/mod_v8
 languages/mod_yaml
 loggers/mod_console

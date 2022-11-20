@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "apr_file_io.h"
+#include "fspr_file_io.h"
 
 
-APR_DECLARE(apr_status_t) apr_file_read_full(apr_file_t *thefile, void *buf,
-                                             apr_size_t nbytes,
-                                             apr_size_t *bytes_read)
+APR_DECLARE(fspr_status_t) fspr_file_read_full(fspr_file_t *thefile, void *buf,
+                                             fspr_size_t nbytes,
+                                             fspr_size_t *bytes_read)
 {
-    apr_status_t status;
-    apr_size_t total_read = 0;
+    fspr_status_t status;
+    fspr_size_t total_read = 0;
 
     do {
-	apr_size_t amt = nbytes;
+	fspr_size_t amt = nbytes;
 
-	status = apr_file_read(thefile, buf, &amt);
+	status = fspr_file_read(thefile, buf, &amt);
 	buf = (char *)buf + amt;
         nbytes -= amt;
         total_read += amt;
@@ -39,18 +39,18 @@ APR_DECLARE(apr_status_t) apr_file_read_full(apr_file_t *thefile, void *buf,
     return status;
 }
 
-APR_DECLARE(apr_status_t) apr_file_write_full(apr_file_t *thefile,
+APR_DECLARE(fspr_status_t) fspr_file_write_full(fspr_file_t *thefile,
                                               const void *buf,
-                                              apr_size_t nbytes,
-                                              apr_size_t *bytes_written)
+                                              fspr_size_t nbytes,
+                                              fspr_size_t *bytes_written)
 {
-    apr_status_t status;
-    apr_size_t total_written = 0;
+    fspr_status_t status;
+    fspr_size_t total_written = 0;
 
     do {
-	apr_size_t amt = nbytes;
+	fspr_size_t amt = nbytes;
 
-	status = apr_file_write(thefile, buf, &amt);
+	status = fspr_file_write(thefile, buf, &amt);
 	buf = (char *)buf + amt;
         nbytes -= amt;
         total_written += amt;
@@ -62,18 +62,18 @@ APR_DECLARE(apr_status_t) apr_file_write_full(apr_file_t *thefile,
     return status;
 }
 
-APR_DECLARE(apr_status_t) apr_file_writev_full(apr_file_t *thefile,
+APR_DECLARE(fspr_status_t) fspr_file_writev_full(fspr_file_t *thefile,
                                                const struct iovec *vec,
-                                               apr_size_t nvec,
-                                               apr_size_t *bytes_written)
+                                               fspr_size_t nvec,
+                                               fspr_size_t *bytes_written)
 {
-    apr_status_t rv = APR_SUCCESS;
-    apr_size_t i;
-    apr_size_t amt = 0;
-    apr_size_t total = 0;
+    fspr_status_t rv = APR_SUCCESS;
+    fspr_size_t i;
+    fspr_size_t amt = 0;
+    fspr_size_t total = 0;
 
     for (i = 0; i < nvec && rv == APR_SUCCESS; i++) {
-        rv = apr_file_write_full(thefile, vec[i].iov_base, 
+        rv = fspr_file_write_full(thefile, vec[i].iov_base, 
                                  vec[i].iov_len, &amt);
         total += amt;
     }

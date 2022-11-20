@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "apr_pools.h"
+#include "fspr_pools.h"
 #include "abts.h"
 
 #ifndef APR_TEST_UTIL
@@ -35,14 +35,14 @@
  * a bit more consistent...
  */
 
-extern apr_pool_t *p;
+extern fspr_pool_t *p;
 
 /* Assert that RV is an APR_SUCCESS value; else fail giving strerror
  * for RV and CONTEXT message. */
-void apr_assert_success(abts_case* tc, const char *context, 
-                        apr_status_t rv, int lineno);
+void fspr_assert_success(abts_case* tc, const char *context, 
+                        fspr_status_t rv, int lineno);
 #define APR_ASSERT_SUCCESS(tc, ctxt, rv) \
-             apr_assert_success(tc, ctxt, rv, __LINE__)
+             fspr_assert_success(tc, ctxt, rv, __LINE__)
 
 void initialize(void);
 

@@ -2056,7 +2056,7 @@ sock_fail:
 
 		assert(profile->sock);
 
-		if ((rv = switch_socket_accept(&inbound_socket, profile->sock, listener_pool))) {
+		if (switch_socket_accept(&inbound_socket, profile->sock, listener_pool)) {
 			if (!skinny_globals.running) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;
@@ -2414,7 +2414,7 @@ static switch_status_t load_skinny_config(void)
 								char *val = (char *) switch_xml_attr_soft(param, "value");
 
 								if (!strcasecmp(var, "firmware-version")) {
-									strncpy(params->firmware_version, val, 16);
+									snprintf(params->firmware_version, 16, "%s", val);
 								}
 							} /* param */
 							switch_core_hash_insert(profile->device_type_params_hash, id_str, params);

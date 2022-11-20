@@ -736,6 +736,9 @@ static void ScaleAddCols2_C(int dst_width,
                             int dx,
                             const uint16_t* src_ptr,
                             uint8_t* dst_ptr) {
+#ifdef __clang_analyzer__
+  *dst_ptr = 0;
+#else
   int i;
   int scaletbl[2];
   int minboxwidth = dx >> 16;
@@ -750,6 +753,7 @@ static void ScaleAddCols2_C(int dst_width,
         SumPixels(boxwidth, src_ptr + ix) * scaletbl[boxwidth - minboxwidth] >>
         16;
   }
+#endif
 }
 
 static void ScaleAddCols2_16_C(int dst_width,
@@ -758,6 +762,9 @@ static void ScaleAddCols2_16_C(int dst_width,
                                int dx,
                                const uint32_t* src_ptr,
                                uint16_t* dst_ptr) {
+#ifdef __clang_analyzer__
+  * dst_ptr = 0;
+#else
   int i;
   int scaletbl[2];
   int minboxwidth = dx >> 16;
@@ -772,6 +779,7 @@ static void ScaleAddCols2_16_C(int dst_width,
                      scaletbl[boxwidth - minboxwidth] >>
                  16;
   }
+#endif
 }
 
 static void ScaleAddCols0_C(int dst_width,

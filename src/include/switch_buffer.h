@@ -132,12 +132,14 @@ SWITCH_DECLARE(void) switch_buffer_set_loops(_In_ switch_buffer_t *buffer, _In_ 
 
 /*! \brief Write data into a switch_buffer_t up to the length of datalen
  * \param buffer any buffer of type switch_buffer_t
- * \param data pointer to the data to be written
+ * \param data pointer to the data to be written or 0 to fill in with datalen zeros
  * \param datalen amount of data to be written
  * \return int amount of buffer used after the write, or 0 if no space available
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_write(_In_ switch_buffer_t *buffer, _In_bytecount_(datalen)
 												  const void *data, _In_ switch_size_t datalen);
+
+#define switch_buffer_zero_fill(_buffer, _datalen) switch_buffer_write(_buffer, 0, _datalen);
 
 /*! \brief Remove data from the buffer
  * \param buffer any buffer of type switch_buffer_t

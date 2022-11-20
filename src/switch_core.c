@@ -41,6 +41,7 @@
 #include <switch_ssl.h>
 #include <switch_stun.h>
 #include <switch_nat.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
 #include <switch_msrp.h>
@@ -59,9 +60,22 @@
 #include <priv.h>
 #endif
 
+#ifdef __linux__
+#include <sys/wait.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE /* Required for POSIX_SPAWN_USEVFORK */
+#endif
+#include <spawn.h>
+#include <poll.h>
+#endif
+
 #ifdef WIN32
 #define popen _popen
 #define pclose _pclose
+#endif
+
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
 #endif
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
@@ -437,7 +451,8 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
+			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
+			free(v);
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
@@ -467,7 +482,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_set_var_conditional(const char *varnam
 		if (value) {
 			char *v = strdup(value);
 			switch_string_var_check(v, SWITCH_TRUE);
-			switch_event_add_header_string(runtime.global_vars, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, varname, v);
+			switch_event_add_header_string_nodup(runtime.global_vars, SWITCH_STACK_BOTTOM, varname, v);
 		} else {
 			switch_event_del_header(runtime.global_vars, varname);
 		}
@@ -1312,7 +1327,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	   Setting the stack size on FreeBSD results in an instant crash.
 
 	   If anyone knows how to fix this,
-	   feel free to submit a patch to https://freeswitch.org/jira
+	   feel free to submit a patch to https://github.com/signalwire/freeswitch
 	 */
 
 #ifndef __FreeBSD__
@@ -1390,7 +1405,7 @@ SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_port_token(const char
 	} else if (strchr(list_name, '/')) {
 		if (strchr(list_name, ',')) {
 			char *list_name_dup = strdup(list_name);
-			char *argv[32];
+			char *argv[100]; /* MAX ACL */
 			int argc;
 
 			switch_assert(list_name_dup);
@@ -1485,6 +1500,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
@@ -1504,6 +1520,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "::/0", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
@@ -1771,54 +1788,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
 }
 
 
-#ifdef ENABLE_ZRTP
-static void switch_core_set_serial(void)
-{
-	char buf[13] = "";
-	char path[256];
-
-	int fd = -1, write_fd = -1;
-	switch_ssize_t bytes = 0;
-
-	switch_snprintf(path, sizeof(path), "%s%sfreeswitch.serial", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR);
-
-
-	if ((fd = open(path, O_RDONLY, 0)) < 0) {
-		char *ip = switch_core_get_variable_dup("local_ip_v4");
-		uint32_t ipi = 0;
-		switch_byte_t *byte;
-		int i = 0;
-
-		if (ip) {
-			switch_inet_pton(AF_INET, ip, &ipi);
-			free(ip);
-			ip = NULL;
-		}
-
-
-		byte = (switch_byte_t *) & ipi;
-
-		for (i = 0; i < 8; i += 2) {
-			switch_snprintf(buf + i, sizeof(buf) - i, "%0.2x", *byte);
-			byte++;
-		}
-
-		switch_stun_random_string(buf + 8, 4, "0123456789abcdef");
-
-		if ((write_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) >= 0) {
-			bytes = write(write_fd, buf, sizeof(buf));
-			bytes++;
-			close(write_fd);
-		}
-	} else {
-		bytes = read(fd, buf, sizeof(buf) - 1);
-		close(fd);
-	}
-
-	switch_core_set_variable("switch_serial", buf);
-}
-#endif
-
 SWITCH_DECLARE(int) switch_core_test_flag(int flag)
 {
 	return switch_test_flag((&runtime), flag);
@@ -1841,6 +1810,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	memset(&runtime, 0, sizeof(runtime));
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
 
+	runtime.shutdown_cause = SWITCH_CAUSE_SYSTEM_SHUTDOWN;
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;
 	runtime.event_heartbeat_interval = 20;
@@ -1890,7 +1860,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	}
 
 	/* INIT APR and Create the pool context */
-	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+	if (fspr_initialize() != SWITCH_STATUS_SUCCESS) {
 		*err = "FATAL ERROR! Could not initialize APR\n";
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -1943,6 +1913,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	SSL_library_init();
 	switch_ssl_init_ssl_locks();
+	OpenSSL_add_all_algorithms();
 	switch_curl_init();
 
 	switch_core_set_variable("hostname", runtime.hostname);
@@ -1974,9 +1945,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("cache_dir", SWITCH_GLOBAL_dirs.cache_dir);
 	switch_core_set_variable("data_dir", SWITCH_GLOBAL_dirs.data_dir);
 	switch_core_set_variable("localstate_dir", SWITCH_GLOBAL_dirs.localstate_dir);
-#ifdef ENABLE_ZRTP
-	switch_core_set_serial();
-#endif
 	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 	switch_channel_global_init(runtime.memory_pool);
@@ -1984,7 +1952,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		/* allow missing configuration if MINIMAL */
 		if (!(flags & SCF_MINIMAL)) {
-			apr_terminate();
+			fspr_terminate();
 			return SWITCH_STATUS_MEMERR;
 		}
 	}
@@ -2153,6 +2121,10 @@ static void switch_load_core_config(const char *file)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-db-handles must be between 5 and 5000\n");
 					}
+				} else if (!strcasecmp(var, "odbc-skip-autocommit-flip")) {
+					if (switch_true(val)) {
+						switch_odbc_skip_autocommit_flip();
+					}
 				} else if (!strcasecmp(var, "db-handle-timeout")) {
 					long tmp = atol(val);
 
@@ -2280,6 +2252,24 @@ static void switch_load_core_config(const char *file)
 						switch_clear_flag((&runtime), SCF_THREADED_SYSTEM_EXEC);
 					}
 #endif
+				} else if (!strcasecmp(var, "spawn-instead-of-system") && !zstr(val)) {
+#ifdef WIN32
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "spawn-instead-of-system is not implemented on this platform\n");
+#else
+					int v = switch_true(val);
+					if (v) {
+						switch_core_set_variable("spawn_instead_of_system", "true");
+					} else {
+						switch_core_set_variable("spawn_instead_of_system", "false");
+					}
+#endif
+				} else if (!strcasecmp(var, "exclude-error-log-from-xml-cdr") && !zstr(val)) {
+					int v = switch_true(val);
+					if (v) {
+						switch_core_set_variable("exclude_error_log_from_xml_cdr", "true");
+					} else {
+						switch_core_set_variable("exclude_error_log_from_xml_cdr", "false");
+					}
 				} else if (!strcasecmp(var, "min-idle-cpu") && !zstr(val)) {
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
@@ -2320,6 +2310,8 @@ static void switch_load_core_config(const char *file)
 					} else {
 						runtime.timer_affinity = atoi(val);
 					}
+				} else if (!strcasecmp(var, "ice-resolve-candidate")) {
+					switch_core_media_set_resolveice(switch_true(val));
 				} else if (!strcasecmp(var, "rtp-start-port") && !zstr(val)) {
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
@@ -2338,10 +2330,6 @@ static void switch_load_core_config(const char *file)
 					} else {
 						runtime.odbc_dbtype = DBTYPE_DEFAULT;
 					}
-#ifdef ENABLE_ZRTP
-				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
-					switch_core_set_variable("zrtp_enabled", val);
-#endif
 				} else if (!strcasecmp(var, "switchname") && !zstr(val)) {
 					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
@@ -2533,6 +2521,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 		free(stream.data);
 		free(cmd);
 	}
+
+#ifdef HAVE_SYSTEMD
+	sd_notifyf(0, "READY=1\n"
+		"MAINPID=%lu\n", (unsigned long) getpid());
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -2856,6 +2849,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Shutting down\n");
+#ifdef HAVE_SYSTEMD
+					sd_notifyf(0, "STOPPING=1\n");
+#endif
 #ifdef _MSC_VER
 					fclose(stdin);
 #endif
@@ -2972,6 +2968,12 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		switch_core_memory_reclaim_all();
 		newintval = 0;
 		break;
+	case SCSC_MDNS_RESOLVE:
+		switch_core_media_set_resolveice(!!oldintval);
+		break;
+	case SCSC_SHUTDOWN_CAUSE:
+		runtime.shutdown_cause = oldintval;
+		break;
 	}
 
 	if (intval) {
@@ -3027,7 +3029,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
-	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+	switch_core_session_hupall(runtime.shutdown_cause);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 
 	switch_loadable_module_shutdown();
@@ -3035,6 +3037,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_curl_destroy();
 
 	switch_ssl_destroy_ssl_locks();
+	EVP_cleanup();
 
 	switch_scheduler_task_thread_stop();
 
@@ -3102,8 +3105,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_core_media_deinit();
 
 	if (runtime.memory_pool) {
-		apr_pool_destroy(runtime.memory_pool);
-		apr_terminate();
+		fspr_pool_destroy(runtime.memory_pool);
+		fspr_terminate();
 	}
 
 	sqlite3_shutdown();
@@ -3337,12 +3340,21 @@ static int switch_system_fork(const char *cmd, switch_bool_t wait)
 
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 {
-	int (*sys_p)(const char *cmd, switch_bool_t wait);
-
-	sys_p = switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC) ? switch_system_thread : switch_system_fork;
-
-	return sys_p(cmd, wait);
-
+	int retval = 0;
+#ifdef __linux__
+	switch_bool_t spawn_instead_of_system = switch_true(switch_core_get_variable("spawn_instead_of_system"));
+#else
+	switch_bool_t spawn_instead_of_system = SWITCH_FALSE;
+#endif
+	
+	if (spawn_instead_of_system) {
+		retval = switch_stream_spawn(cmd, SWITCH_TRUE, wait, NULL);
+	} else if (switch_test_flag((&runtime), SCF_THREADED_SYSTEM_EXEC)) {
+		retval = switch_system_thread(cmd, wait);
+	} else {
+		retval = switch_system_fork(cmd, wait);
+	}
+	return retval;
 }
 
 
@@ -3350,6 +3362,150 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream)
 {
 	return switch_stream_system(cmd, stream);
+}
+
+#ifdef __linux__
+extern char **environ;
+#endif
+
+SWITCH_DECLARE(int) switch_stream_spawn(const char *cmd, switch_bool_t shell, switch_bool_t wait, switch_stream_handle_t *stream)
+{
+#ifndef __linux__
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "posix_spawn is unsupported on current platform\n");
+	return 1;
+#else
+	int status = 0;
+	char buffer[1024];
+	pid_t pid;
+	char *pdata = NULL, *argv[64];
+	posix_spawn_file_actions_t action;
+	posix_spawnattr_t *attr;
+	int cout_pipe[2];
+	int cerr_pipe[2];
+	struct pollfd pfds[2] = { {0} };
+
+	if (zstr(cmd)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to execute switch_spawn_stream because of empty command\n");
+		return 1;
+	}
+
+	if (shell) {
+		argv[0] = switch_core_get_variable("spawn_system_shell");
+		argv[1] = "-c";
+		argv[2] = (char *)cmd;
+		argv[3] = NULL;
+		if (zstr(argv[0])) {
+			argv[0] = "/bin/sh";
+		}
+	} else {
+		if (!(pdata = strdup(cmd))) {
+			return 1;
+		}
+		if (!switch_separate_string(pdata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
+			free(pdata);
+			return 1;
+		}
+	}
+
+	if (!(attr = malloc(sizeof(posix_spawnattr_t)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a memory error: %s\n", cmd);
+		switch_safe_free(pdata);
+		return 1;
+	}
+
+	if (stream) {
+		if (pipe(cout_pipe)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a pipe error: %s\n", cmd);
+			free(attr);
+			switch_safe_free(pdata);
+			return 1;
+		}
+
+		if (pipe(cerr_pipe)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute switch_spawn_stream because of a pipe error: %s\n", cmd);
+			close(cout_pipe[0]);
+			close(cout_pipe[1]);
+			free(attr);
+			switch_safe_free(pdata);
+			return 1;
+		}
+	}
+
+	memset(attr, 0, sizeof(posix_spawnattr_t));
+	posix_spawnattr_init(attr);
+	posix_spawnattr_setflags(attr, POSIX_SPAWN_USEVFORK);
+
+	posix_spawn_file_actions_init(&action);
+
+	if (stream) {
+		posix_spawn_file_actions_addclose(&action, cout_pipe[0]);
+		posix_spawn_file_actions_addclose(&action, cerr_pipe[0]);
+		posix_spawn_file_actions_adddup2(&action, cout_pipe[1], 1);
+		posix_spawn_file_actions_adddup2(&action, cerr_pipe[1], 2);
+
+		posix_spawn_file_actions_addclose(&action, cout_pipe[1]);
+		posix_spawn_file_actions_addclose(&action, cerr_pipe[1]);
+	}
+
+	if (posix_spawnp(&pid, argv[0], &action, attr, argv, environ) != 0) {
+		status = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to execute posix_spawnp: %s\n", cmd);
+		if (stream) {
+			close(cout_pipe[0]), close(cerr_pipe[0]);
+			close(cout_pipe[1]), close(cerr_pipe[1]);
+		}
+	} else {
+		if (stream) {
+			close(cout_pipe[1]), close(cerr_pipe[1]); /* close child-side of pipes */
+
+			pfds[0] = (struct pollfd) {
+				.fd = cout_pipe[0],
+					.events = POLLIN,
+					.revents = 0
+			};
+
+			pfds[1] = (struct pollfd) {
+				.fd = cerr_pipe[0],
+					.events = POLLIN,
+					.revents = 0
+			};
+
+			while (poll(pfds, 2, /*timeout*/-1) > 0) {
+				if (pfds[0].revents & POLLIN) {
+					int bytes_read = read(cout_pipe[0], buffer, sizeof(buffer));
+					stream->raw_write_function(stream, (unsigned char *)buffer, bytes_read);
+				} else if (pfds[1].revents & POLLIN) {
+					int bytes_read = read(cerr_pipe[0], buffer, sizeof(buffer));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "STDERR of cmd (%s): %.*s\n", cmd, bytes_read, buffer);
+				} else {
+					break; /* nothing left to read */
+				}
+			}
+
+			close(cout_pipe[0]), close(cerr_pipe[0]);
+		}
+
+		if (wait) {
+			if (waitpid(pid, &status, 0) != pid) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waitpid failed: %s\n", cmd);
+			} else if (status != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Exit status (%d): %s\n", status, cmd);
+			}
+		}
+	}
+
+	posix_spawnattr_destroy(attr);
+	free(attr);
+	posix_spawn_file_actions_destroy(&action);
+	switch_safe_free(pdata);
+
+	return status;
+#endif
+}
+
+SWITCH_DECLARE(int) switch_spawn(const char *cmd, switch_bool_t wait)
+{
+	return switch_stream_spawn(cmd, SWITCH_FALSE, wait, NULL);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, switch_size_t *max)
@@ -3378,26 +3534,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_get_stacksizes(switch_size_t *cur, s
 
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream)
 {
-	char buffer[128];
-	size_t bytes;
-	FILE* pipe = popen(cmd, "r");
-	if (!pipe) return 1;
+#ifdef __linux__
+	switch_bool_t spawn_instead_of_system = switch_true(switch_core_get_variable("spawn_instead_of_system"));
+#else
+	switch_bool_t spawn_instead_of_system = SWITCH_FALSE;
+#endif
 
-	while (!feof(pipe)) {
-		while ((bytes = fread(buffer, 1, 128, pipe)) > 0) {
-			if (stream != NULL) {
-				stream->raw_write_function(stream, (unsigned char *)buffer, bytes);
+	if (spawn_instead_of_system){
+		return switch_stream_spawn(cmd, SWITCH_TRUE, SWITCH_TRUE, stream);
+	} else {
+		char buffer[128];
+		size_t bytes;
+		FILE* pipe = popen(cmd, "r");
+		if (!pipe) return 1;
+
+		while (!feof(pipe)) {
+			while ((bytes = fread(buffer, 1, 128, pipe)) > 0) {
+				if (stream != NULL) {
+					stream->raw_write_function(stream, (unsigned char *)buffer, bytes);
+				}
 			}
 		}
-	}
 
-	if (ferror(pipe)) {
+		if (ferror(pipe)) {
+			pclose(pipe);
+			return 1;
+		}
+
 		pclose(pipe);
-		return 1;
+		return 0;
 	}
-
-	pclose(pipe);
-	return 0;
 }
 
 SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()

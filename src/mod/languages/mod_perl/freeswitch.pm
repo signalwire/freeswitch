@@ -311,6 +311,7 @@ sub DESTROY {
 *addHeader = *freeswitchc::Event_addHeader;
 *delHeader = *freeswitchc::Event_delHeader;
 *fire = *freeswitchc::Event_fire;
+*merge = *freeswitchc::Event_merge;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);

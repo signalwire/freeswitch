@@ -119,7 +119,21 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 	}
 
 	// switch_level = SWITCH_LOG_ERROR; // hardcoded for debug
-	switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, vl);
+	if (mod_av_globals.debug < 7) {
+		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, vl);
+	} else {
+		char buffer[1024] = {0};
+		char *s = NULL;
+		vsprintf(buffer, fmt, vl);
+		s = strstr(buffer, "nal_unit_type");
+		if (!zstr(s) && *(s+15) == '7') {
+			switch_log_printf(SWITCH_CHANNEL_LOG, switch_level, "Read SPS\n");
+		} else if (!zstr(s) && *(s+15) == '8') {
+			switch_log_printf(SWITCH_CHANNEL_LOG, switch_level, "Read PPS\n");
+		} else if (!zstr(s) && *(s+15) == '5') {
+			switch_log_printf(SWITCH_CHANNEL_LOG, switch_level, "Read I-frame\n");
+		}
+	}
 }
 
 

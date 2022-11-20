@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_atime.h"
-#include "apr_time.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_portable.h"
+#include "win32/fspr_arch_atime.h"
+#include "fspr_time.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_portable.h"
 #if APR_HAVE_TIME_H
 #include <time.h>
 #endif
@@ -27,7 +27,7 @@
 #endif
 #include <string.h>
 #include <winbase.h>
-#include "apr_arch_misc.h"
+#include "fspr_arch_misc.h"
 
 /* Leap year is any year divisible by four, but not by 100 unless also
  * divisible by 400
@@ -49,7 +49,7 @@ static DWORD get_local_timezone(TIME_ZONE_INFORMATION **tzresult)
     return result;
 }
 
-static void SystemTimeToAprExpTime(apr_time_exp_t *xt, SYSTEMTIME *tm)
+static void SystemTimeToAprExpTime(fspr_time_exp_t *xt, SYSTEMTIME *tm)
 {
     static const int dayoffset[12] =
     {0, 31, 59, 90, 120, 151, 182, 212, 243, 273, 304, 334};
@@ -76,15 +76,15 @@ static void SystemTimeToAprExpTime(apr_time_exp_t *xt, SYSTEMTIME *tm)
         xt->tm_yday++;
 }
 
-APR_DECLARE(apr_status_t) apr_time_ansi_put(apr_time_t *result, 
+APR_DECLARE(fspr_status_t) fspr_time_ansi_put(fspr_time_t *result, 
                                                     time_t input)
 {
-    *result = (apr_time_t) input * APR_USEC_PER_SEC;
+    *result = (fspr_time_t) input * APR_USEC_PER_SEC;
     return APR_SUCCESS;
 }
 
 /* Return micro-seconds since the Unix epoch (jan. 1, 1970) UTC */
-APR_DECLARE(apr_time_t) apr_time_now(void)
+APR_DECLARE(fspr_time_t) fspr_time_now(void)
 {
     LONGLONG aprtime = 0;
     FILETIME time;
@@ -99,8 +99,8 @@ APR_DECLARE(apr_time_t) apr_time_now(void)
     return aprtime; 
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_gmt(apr_time_exp_t *result,
-                                           apr_time_t input)
+APR_DECLARE(fspr_status_t) fspr_time_exp_gmt(fspr_time_exp_t *result,
+                                           fspr_time_t input)
 {
     FILETIME ft;
     SYSTEMTIME st;
@@ -110,13 +110,13 @@ APR_DECLARE(apr_status_t) apr_time_exp_gmt(apr_time_exp_t *result,
      * generally UTC, so no timezone info needed
      */
     SystemTimeToAprExpTime(result, &st);
-    result->tm_usec = (apr_int32_t) (input % APR_USEC_PER_SEC);
+    result->tm_usec = (fspr_int32_t) (input % APR_USEC_PER_SEC);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_tz(apr_time_exp_t *result, 
-                                          apr_time_t input, 
-                                          apr_int32_t offs)
+APR_DECLARE(fspr_status_t) fspr_time_exp_tz(fspr_time_exp_t *result, 
+                                          fspr_time_t input, 
+                                          fspr_int32_t offs)
 {
     FILETIME ft;
     SYSTEMTIME st;
@@ -126,13 +126,13 @@ APR_DECLARE(apr_status_t) apr_time_exp_tz(apr_time_exp_t *result,
      * generally UTC, so we will simply note the offs used.
      */
     SystemTimeToAprExpTime(result, &st);
-    result->tm_usec = (apr_int32_t) (input % APR_USEC_PER_SEC);
+    result->tm_usec = (fspr_int32_t) (input % APR_USEC_PER_SEC);
     result->tm_gmtoff = offs;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
-                                          apr_time_t input)
+APR_DECLARE(fspr_status_t) fspr_time_exp_lt(fspr_time_exp_t *result,
+                                          fspr_time_t input)
 {
     SYSTEMTIME st;
     FILETIME ft, localft;
@@ -144,7 +144,7 @@ APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
     {
         TIME_ZONE_INFORMATION *tz;
         SYSTEMTIME localst;
-        apr_time_t localtime;
+        fspr_time_t localtime;
 
         get_local_timezone(&tz);
 
@@ -158,7 +158,7 @@ APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
          */
         SystemTimeToTzSpecificLocalTime(tz, &st, &localst);
         SystemTimeToAprExpTime(result, &localst);
-        result->tm_usec = (apr_int32_t) (input % APR_USEC_PER_SEC);
+        result->tm_usec = (fspr_int32_t) (input % APR_USEC_PER_SEC);
 
 
         /* Recover the resulting time as an apr time and use the
@@ -166,8 +166,8 @@ APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
          */
         SystemTimeToFileTime(&localst, &localft);
         FileTimeToAprTime(&localtime, &localft);
-        result->tm_gmtoff = (int)apr_time_sec(localtime) 
-                          - (int)apr_time_sec(input);
+        result->tm_gmtoff = (int)fspr_time_sec(localtime) 
+                          - (int)fspr_time_sec(input);
 
         /* To compute the dst flag, we compare the expected 
          * local (standard) timezone bias to the delta.
@@ -189,7 +189,7 @@ APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
         FileTimeToLocalFileTime(&ft, &localft);
         FileTimeToSystemTime(&localft, &st);
         SystemTimeToAprExpTime(result, &st);
-        result->tm_usec = (apr_int32_t) (input % APR_USEC_PER_SEC);
+        result->tm_usec = (fspr_int32_t) (input % APR_USEC_PER_SEC);
 
         switch (GetTimeZoneInformation(&tz)) {
             case TIME_ZONE_ID_UNKNOWN:
@@ -216,11 +216,11 @@ APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_get(apr_time_t *t,
-                                           apr_time_exp_t *xt)
+APR_DECLARE(fspr_status_t) fspr_time_exp_get(fspr_time_t *t,
+                                           fspr_time_exp_t *xt)
 {
-    apr_time_t year = xt->tm_year;
-    apr_time_t days;
+    fspr_time_t year = xt->tm_year;
+    fspr_time_t days;
     static const int dayoffset[12] =
     {306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275};
 
@@ -244,25 +244,25 @@ APR_DECLARE(apr_status_t) apr_time_exp_get(apr_time_t *t,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_gmt_get(apr_time_t *t,
-                                               apr_time_exp_t *xt)
+APR_DECLARE(fspr_status_t) fspr_time_exp_gmt_get(fspr_time_t *t,
+                                               fspr_time_exp_t *xt)
 {
-    apr_status_t status = apr_time_exp_get(t, xt);
+    fspr_status_t status = fspr_time_exp_get(t, xt);
     if (status == APR_SUCCESS)
-        *t -= (apr_time_t) xt->tm_gmtoff * APR_USEC_PER_SEC;
+        *t -= (fspr_time_t) xt->tm_gmtoff * APR_USEC_PER_SEC;
     return status;
 }
 
-APR_DECLARE(apr_status_t) apr_os_imp_time_get(apr_os_imp_time_t **ostime,
-                                              apr_time_t *aprtime)
+APR_DECLARE(fspr_status_t) fspr_os_imp_time_get(fspr_os_imp_time_t **ostime,
+                                              fspr_time_t *aprtime)
 {
-    /* TODO: Consider not passing in pointer to apr_time_t (e.g., call by value) */
+    /* TODO: Consider not passing in pointer to fspr_time_t (e.g., call by value) */
     AprTimeToFileTime(*ostime, *aprtime);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_exp_time_get(apr_os_exp_time_t **ostime, 
-                                              apr_time_exp_t *aprexptime)
+APR_DECLARE(fspr_status_t) fspr_os_exp_time_get(fspr_os_exp_time_t **ostime, 
+                                              fspr_time_exp_t *aprexptime)
 {
     (*ostime)->wYear = aprexptime->tm_year + 1900;
     (*ostime)->wMonth = aprexptime->tm_mon + 1;
@@ -275,9 +275,9 @@ APR_DECLARE(apr_status_t) apr_os_exp_time_get(apr_os_exp_time_t **ostime,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_imp_time_put(apr_time_t *aprtime,
-                                              apr_os_imp_time_t **ostime,
-                                              apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_os_imp_time_put(fspr_time_t *aprtime,
+                                              fspr_os_imp_time_t **ostime,
+                                              fspr_pool_t *cont)
 {
     /* XXX: sanity failure, what is file time, gmt or local ?
      */
@@ -285,9 +285,9 @@ APR_DECLARE(apr_status_t) apr_os_imp_time_put(apr_time_t *aprtime,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_exp_time_put(apr_time_exp_t *aprtime,
-                                              apr_os_exp_time_t **ostime,
-                                              apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_os_exp_time_put(fspr_time_exp_t *aprtime,
+                                              fspr_os_exp_time_t **ostime,
+                                              fspr_pool_t *cont)
 {
     /* The Platform SDK documents that SYSTEMTIME/FILETIME are
      * generally UTC, so no timezone info needed
@@ -296,7 +296,7 @@ APR_DECLARE(apr_status_t) apr_os_exp_time_put(apr_time_exp_t *aprtime,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(void) apr_sleep(apr_interval_time_t t)
+APR_DECLARE(void) fspr_sleep(fspr_interval_time_t t)
 {
     /* One of the few sane situations for a cast, Sleep
      * is in ms, not us, and passed as a DWORD value
@@ -305,14 +305,14 @@ APR_DECLARE(void) apr_sleep(apr_interval_time_t t)
 }
 
 
-static apr_status_t clock_restore(void *unsetres)
+static fspr_status_t clock_restore(void *unsetres)
 {
     ULONG newRes;
     SetTimerResolution((ULONG)unsetres, FALSE, &newRes);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(void) apr_time_clock_hires(apr_pool_t *p)
+APR_DECLARE(void) fspr_time_clock_hires(fspr_pool_t *p)
 {
     ULONG newRes;
     /* Timer resolution is stated in 100ns units.  Note that TRUE requests the
@@ -320,7 +320,7 @@ APR_DECLARE(void) apr_time_clock_hires(apr_pool_t *p)
      */
     if (SetTimerResolution(10000, TRUE, &newRes) == 0 /* STATUS_SUCCESS */) {
         /* register the cleanup... */
-        apr_pool_cleanup_register(p, (void*)10000, clock_restore,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(p, (void*)10000, clock_restore,
+                                  fspr_pool_cleanup_null);
     }
 }

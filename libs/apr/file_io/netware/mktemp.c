@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
-#include "apr_file_io.h" /* prototype of apr_mkstemp() */
-#include "apr_strings.h" /* prototype of apr_mkstemp() */
-#include "apr_arch_file_io.h" /* prototype of apr_mkstemp() */
-#include "apr_portable.h" /* for apr_os_file_put() */
+#include "fspr_private.h"
+#include "fspr_file_io.h" /* prototype of fspr_mkstemp() */
+#include "fspr_strings.h" /* prototype of fspr_mkstemp() */
+#include "fspr_arch_file_io.h" /* prototype of fspr_mkstemp() */
+#include "fspr_portable.h" /* for fspr_os_file_put() */
 
 #include <stdlib.h> /* for mkstemp() - Single Unix */
 
-APR_DECLARE(apr_status_t) apr_file_mktemp(apr_file_t **fp, char *template, apr_int32_t flags, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_mktemp(fspr_file_t **fp, char *template, fspr_int32_t flags, fspr_pool_t *p)
 {
     int fd;
-    apr_status_t rv;
+    fspr_status_t rv;
 
     flags = (!flags) ? APR_CREATE | APR_READ | APR_WRITE |  
                        APR_DELONCLOSE : flags & ~APR_EXCL;
@@ -38,11 +38,11 @@ APR_DECLARE(apr_status_t) apr_file_mktemp(apr_file_t **fp, char *template, apr_i
      * Otherwise file locking will not allow the file to be shared.
      */
     close(fd);
-    if ((rv = apr_file_open(fp, template, flags|APR_FILE_NOCLEANUP,
+    if ((rv = fspr_file_open(fp, template, flags|APR_FILE_NOCLEANUP,
                             APR_UREAD | APR_UWRITE, p)) == APR_SUCCESS) {
 
-        apr_pool_cleanup_register((*fp)->pool, (void *)(*fp),
-                                  apr_unix_file_cleanup, apr_unix_file_cleanup);
+        fspr_pool_cleanup_register((*fp)->pool, (void *)(*fp),
+                                  fspr_unix_file_cleanup, fspr_unix_file_cleanup);
     }
 
     return rv;

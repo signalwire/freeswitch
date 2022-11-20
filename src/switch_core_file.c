@@ -274,6 +274,45 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		goto fail;
 	}
 
+	if (!strncasecmp(file_path, "https://", 8) && (switch_stristr("youtube", file_path) || switch_stristr("youtu.be", file_path))) {
+		char *youtube_root = NULL;
+
+		if ((youtube_root = switch_core_get_variable_pdup("youtube_resolver", fh->memory_pool))) {
+			char *resolve_url, *encoded, *url_buf;
+			switch_size_t url_buflen = 0;
+			switch_stream_handle_t stream = { 0 };
+			const char *video = NULL, *format = "best";
+			
+			url_buflen = strlen(file_path) * 4;
+			url_buf = switch_core_alloc(fh->memory_pool, url_buflen);
+			encoded = switch_url_encode(file_path, url_buf, url_buflen);
+
+			if (fh->params && (video = switch_event_get_header(fh->params, "video")) && switch_false(video)) {
+				format = "bestaudio";
+			}
+			
+			resolve_url = switch_core_sprintf(fh->memory_pool, "%s?url=%s&format=%s", youtube_root, encoded, format);
+
+			SWITCH_STANDARD_STREAM(stream);
+
+			//Depends on mod_curl *shrug*
+			switch_api_execute("curl", resolve_url, NULL, &stream);
+
+			if (stream.data && !strncasecmp("https://", (char *)stream.data, 8)) {
+				char *url = (char *) stream.data;
+				while (end_of_p(url) > url && (end_of(url) == '\n' || end_of(url) == '\r')) {
+					end_of(url) = '\0';
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "resolved url to: %s\n", url);
+				file_path = switch_core_sprintf(fh->memory_pool, "av://%s", url);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "YOUTUBE RESOLVER FAIL: %s\n", (char *) stream.data);
+			}
+
+			switch_safe_free(stream.data);
+		}
+	}
+
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
 		ext = stream_name;
@@ -910,10 +949,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_pre_close(switch_file_handle_t 
 
 	if (fh->pre_buffer) {
 		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
-			switch_size_t rlen, blen;
+			switch_size_t blen;
 			int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
-			while ((rlen = switch_buffer_inuse(fh->pre_buffer))) {
+			while (switch_buffer_inuse(fh->pre_buffer)) {
 				if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
 					if (!asis)
 						blen /= 2;

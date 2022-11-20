@@ -143,16 +143,15 @@ SWITCH_STANDARD_API(snom_command_api_function)
 	}
 
 	if (switch_inet_pton(AF_INET, argv[0], &ip)) {
-		strncpy(host, argv[0], sizeof(host));
+		snprintf(host, sizeof(host), "%s", argv[0]);
 	} else {
 		char *sql = NULL;
 		char *ret = NULL;
 		switch_cache_db_handle_t *db = NULL;
 		switch_stream_handle_t apistream = { 0 };
-		switch_status_t status;
 
 		SWITCH_STANDARD_STREAM(apistream);
-		if ((status = switch_api_execute("sofia_contact", argv[0], NULL, &apistream)) != SWITCH_STATUS_SUCCESS) {
+		if (switch_api_execute("sofia_contact", argv[0], NULL, &apistream) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR error executing sofia_contact\n");
 			goto end;
 		}
