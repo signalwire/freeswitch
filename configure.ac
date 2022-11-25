@@ -606,12 +606,6 @@ have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
-AC_ARG_ENABLE(zrtp,
-	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
-if test "x$enable_zrtp" = "xyes" ; then
-   LIBS="-lpthread $LIBS"
-   APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
-fi
 
 PA_LIBS=
 
@@ -627,7 +621,6 @@ fi
 
 AC_SUBST(PA_LIBS)
 
-AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
