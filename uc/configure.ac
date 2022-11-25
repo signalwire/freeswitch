@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.9-dev], bugs@freeswitch.org)
+AC_INIT([synswitch], [1.10.8-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [9-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -58,12 +58,12 @@ AS_CASE([$host], [sparc-*-solaris2*], [AC_CHECK_LIB(mtmalloc, malloc)])
 AC_ARG_ENABLE([fhs],[AS_HELP_STRING([--disable-fhs],
 	[Do Not follow the FHS when placing files and directories (default only when not specifying prefix])],[enable_fhs="$enableval"],[enable_fhs="yes"])
 
-AC_PREFIX_DEFAULT(/usr/local/freeswitch)
+AC_PREFIX_DEFAULT(/usr/local/synswitch)
 # AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
 
 if test "x$prefix" = "xNONE" ; then
     enable_fhs=no
-    prefix='/usr/local/freeswitch'
+    prefix='/usr/local/synswitch'
 fi
 
 if test "x${exec_prefix}" = "xNONE" ; then
@@ -87,26 +87,26 @@ default_fontsdir="$prefix/fonts"
 default_imagesdir="$prefix/images"
 
 if test "${enable_fhs}" = "yes"; then
-    eval full_datadir="${datadir}/freeswitch"
+    eval full_datadir="${datadir}/synswitch"
     eval datadir=$full_datadir
     eval full_localstatedir="${localstatedir}"
     eval localstatedir=$full_localstatedir
     eval libdir=$libdir
-    default_cachedir="${localstatedir}/cache/freeswitch"
-    rundir="${localstatedir}/run/freeswitch"
-    logdir="${localstatedir}/log/freeswitch"
-    localstatedir="${localstatedir}/lib/freeswitch"
+    default_cachedir="${localstatedir}/cache/synswitch"
+    rundir="${localstatedir}/run/synswitch"
+    logdir="${localstatedir}/log/synswitch"
+    localstatedir="${localstatedir}/lib/synswitch"
     default_scriptdir="${datadir}/scripts"
     default_grammardir="${datadir}/grammar"
     default_soundsdir="${datadir}/sounds"
     default_htdocsdir="${datadir}/htdocs"
     default_fontsdir="${datadir}/fonts"
-    default_modulesdir="${libdir}/freeswitch/mod"
+    default_modulesdir="${libdir}/synswitch/mod"
     default_dbdir="${localstatedir}/db"
     default_storagedir="${localstatedir}/storage"
     default_recordingsdir="${localstatedir}/recordings"
     default_imagesdir="${localstatedir}/images"
-    eval confdir="${sysconfdir}/freeswitch"
+    eval confdir="${sysconfdir}/synswitch"
     eval default_certsdir="${confdir}/tls"
 else
     if test "$datadir" = "\${datarootdir}" ; then
@@ -248,7 +248,7 @@ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
-LT_INIT([disable-static])
+AC_PROG_LIBTOOL
 
 #Check for compiler vendor
 AX_COMPILER_VENDOR
@@ -257,7 +257,7 @@ AX_COMPILER_VENDOR
 if test "x${cross_compiling}" = "xyes"; then
     CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
     case "$host" in
-    	 arm*-linux-gnueabi*|arm*-*-linux-gnueabi*)
+    	 arm*-linux-gnueabi*|arm*-*-linux-gnueabi*|aarch64-*)
 		# spandsp modem
 		ac_cv_file__dev_ptmx=yes
 		# libjs
@@ -272,7 +272,7 @@ if test "x${cross_compiling}" = "xyes"; then
 		export ac_cv_file__dev_zero=yes
 		export apr_cv_tcp_nodelay_with_cork=yes
 		export ac_cv_file_dbd_apr_dbd_mysql_c=no
-		export ac_cv_sizeof_ssize_t=4
+		export ac_cv_sizeof_ssize_t=8
 		export apr_cv_mutex_recursive=yes
 		export ac_cv_func_pthread_rwlock_init=yes
 		export apr_cv_type_rwlock_t=yes
@@ -597,9 +597,15 @@ AC_ARG_ENABLE(srtp,
 
 AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
 
+AC_ARG_ENABLE(ssoft,
+[AC_HELP_STRING([--disable-ssoft],[build without ssoft support])],[enable_ssoft="$enableval"],[enable_ssoft="yes"])
+
+AM_CONDITIONAL([ENABLE_SSOFT],[test "${enable_ssoft}" = "yes"])
+
 have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
+
 
 PA_LIBS=
 
@@ -614,6 +620,7 @@ PA_LIBS+=-lasound
 fi
 
 AC_SUBST(PA_LIBS)
+
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
@@ -2099,6 +2106,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
+    src/mod/applications/mod_ios_push/Makefile
 		src/mod/applications/mod_ladspa/Makefile
 		src/mod/applications/mod_lcr/Makefile
 		src/mod/applications/mod_limit/Makefile
@@ -2239,6 +2247,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/say/mod_say_sv/Makefile
 		src/mod/say/mod_say_th/Makefile
 		src/mod/say/mod_say_zh/Makefile
+    src/mod/say/mod_say_tr/Makefile
 		src/mod/timers/mod_posix_timer/Makefile
 		src/mod/timers/mod_timerfd/Makefile
 		src/mod/xml_int/mod_xml_cdr/Makefile
@@ -2270,6 +2279,7 @@ AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AM_CONDITIONAL(ISFREEBSD, [test `uname -s` = FreeBSD])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
+AM_CONDITIONAL(ISAARCH64, [test `uname -m` = aarch64])
 
 AM_CONDITIONAL(HAVE_G723_1, [ test -d ${switch_srcdir}/libs/libg723_1 ])
 AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])
@@ -2321,6 +2331,10 @@ if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
+AC_CONFIG_SUBDIRS([libs/freetdm])
+if test "x${enable_zrtp}" = "xyes"; then
+   AC_CONFIG_SUBDIRS([libs/libzrtp])
+fi
 
 case $host in
    *-openbsd*|*-netbsd*)

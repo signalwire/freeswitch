@@ -1,7 +1,7 @@
 EXTRA_DIST =
 SUBDIRS = . src build tests/unit
 AUTOMAKE_OPTIONS = foreign subdir-objects
-NAME = freeswitch
+NAME = synswitch
 
 if SYSTEM_APR
 AM_LIBAPR_CFLAGS := $(shell apr-1-config --cflags)
@@ -244,6 +244,29 @@ if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
 endif
 
+if ENABLE_SSOFT
+CORE_CFLAGS += -DENABLE_SSOFT
+CORE_CFLAGS += -I$(switch_srcdir)/libs/usbkey
+if ISAARCH64
+SSOFT_LDFLAGS = -L$(switch_srcdir)/libs/usbkey/aarch64
+else
+SSOFT_LDFLAGS = -L$(switch_srcdir)/libs/usbkey/x86_64
+endif
+if ISAARCH64
+SSOFT_LIBS = -lAuthManager libs/usbkey/aarch64/libcompat.o
+else
+SSOFT_LIBS = -lAuthManager libs/usbkey/x86_64/libcompat.o
+endif
+libfreeswitch_la_LDFLAGS += $(SSOFT_LDFLAGS)
+libfreeswitch_la_LIBADD += $(SSOFT_LIBS)
+if ISAARCH64
+CORE_LIBS += libs/usbkey/aarch64/libAuthManager.a
+else
+CORE_LIBS += libs/usbkey/x86_64/libAuthManager.a
+endif
+endif
+
+
 library_includetestdir = $(includedir)/test
 library_includetest_HEADERS = \
 	src/include/test/switch_fct.h \
@@ -254,6 +277,8 @@ library_include_HEADERS = \
 	src/include/switch_am_config.h \
 	src/include/switch.h \
 	src/include/switch_apr.h \
+	src/include/switch_uc.h \
+	src/include/switch_usbkey.h \
 	src/include/switch_buffer.h \
 	src/include/switch_caller.h \
 	src/include/switch_channel.h \
@@ -369,6 +394,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_time.c \
 	src/switch_odbc.c \
 	src/switch_limit.c \
+	src/d3des.c \
 	src/g711.c \
 	src/switch_pcm.c \
 	src/switch_speex.c \
@@ -382,6 +408,8 @@ libfreeswitch_la_SOURCES = \
 	src/switch_msrp.c \
 	src/switch_vad.c \
 	src/switch_vpx.c \
+	src/switch_uc.c \
+	src/switch_usbkey.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
 	libs/miniupnpc/miniwget.c \
@@ -412,7 +440,7 @@ src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 ##
 ## Applications
 ##
-bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode fs_tts
+bin_PROGRAMS = synswitch fs_cli fs_ivrd tone2wav fs_encode fs_tts
 
 ##
 ## fs_cli ()
@@ -468,16 +496,16 @@ fs_ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
 
 ##
-## freeswitch ()
+## synswitch ()
 ##
-nodist_freeswitch_SOURCES = src/include/switch_version.h
-freeswitch_SOURCES = src/switch.c
-freeswitch_CFLAGS  = $(AM_CFLAGS) $(CORE_CFLAGS)
-freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
-freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
+nodist_synswitch_SOURCES = src/include/switch_version.h
+synswitch_SOURCES = src/switch.c
+synswitch_CFLAGS  = $(AM_CFLAGS) $(CORE_CFLAGS)
+synswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
+synswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
 
 if HAVE_ODBC
-freeswitch_LDADD += $(ODBC_LIB_FLAGS)
+synswitch_LDADD += $(ODBC_LIB_FLAGS)
 endif
 
 
@@ -556,6 +584,7 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile $(switch_
 ##
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
+
 
 libs/libvpx/Makefile: libs/libvpx/.update
 	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(VISIBILITY_FLAG)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384

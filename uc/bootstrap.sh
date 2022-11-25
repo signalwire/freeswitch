@@ -10,7 +10,7 @@ BGJOB=false
 VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="apr iksemel srtp fs";
+SUBDIRS="apr iksemel srtp freetdm fs";
 
 while getopts 'jhd:v' o; do 
   case "$o" in
@@ -171,6 +171,7 @@ bootstrap_apr() {
   rm -rf autom4te*.cache
 
 }
+
 
 # Libs automake automation function
 libbootstrap() {
