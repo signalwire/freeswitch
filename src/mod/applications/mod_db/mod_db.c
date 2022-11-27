@@ -650,7 +650,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 	globals.pool = pool;
 
 
-	if ((status = do_config() != SWITCH_STATUS_SUCCESS)) {
+	if ((status = do_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
