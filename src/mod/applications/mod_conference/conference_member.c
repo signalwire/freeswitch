@@ -592,7 +592,7 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
 					file_sample_len = file_data_len / 2 / member->conference->channels;
 				} else {
-					file_sample_len = file_data_len = 0;
+					file_sample_len = 0;
 				}
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);

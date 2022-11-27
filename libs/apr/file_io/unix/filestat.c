@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_errno.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_errno.h"
 
 #ifdef HAVE_UTIME
 #include <utime.h>
 #endif
 
-static apr_filetype_e filetype_from_mode(mode_t mode)
+static fspr_filetype_e filetype_from_mode(mode_t mode)
 {
-    apr_filetype_e type;
+    fspr_filetype_e type;
 
     switch (mode & S_IFMT) {
     case S_IFREG:
@@ -67,12 +67,12 @@ static apr_filetype_e filetype_from_mode(mode_t mode)
     return type;
 }
 
-static void fill_out_finfo(apr_finfo_t *finfo, struct_stat *info,
-                           apr_int32_t wanted)
+static void fill_out_finfo(fspr_finfo_t *finfo, struct_stat *info,
+                           fspr_int32_t wanted)
 { 
     finfo->valid = APR_FINFO_MIN | APR_FINFO_IDENT | APR_FINFO_NLINK
                  | APR_FINFO_OWNER | APR_FINFO_PROT;
-    finfo->protection = apr_unix_mode2perms(info->st_mode);
+    finfo->protection = fspr_unix_mode2perms(info->st_mode);
     finfo->filetype = filetype_from_mode(info->st_mode);
     finfo->user = info->st_uid;
     finfo->group = info->st_gid;
@@ -80,9 +80,9 @@ static void fill_out_finfo(apr_finfo_t *finfo, struct_stat *info,
     finfo->inode = info->st_ino;
     finfo->device = info->st_dev;
     finfo->nlink = info->st_nlink;
-    apr_time_ansi_put(&finfo->atime, info->st_atime);
-    apr_time_ansi_put(&finfo->mtime, info->st_mtime);
-    apr_time_ansi_put(&finfo->ctime, info->st_ctime);
+    fspr_time_ansi_put(&finfo->atime, info->st_atime);
+    fspr_time_ansi_put(&finfo->mtime, info->st_mtime);
+    fspr_time_ansi_put(&finfo->ctime, info->st_ctime);
     /* ### needs to be revisited  
      * if (wanted & APR_FINFO_CSIZE) {
      *   finfo->csize = info->st_blocks * 512;
@@ -91,14 +91,14 @@ static void fill_out_finfo(apr_finfo_t *finfo, struct_stat *info,
      */
 }
 
-APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, 
-                                            apr_int32_t wanted,
-                                            apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_info_get(fspr_finfo_t *finfo, 
+                                            fspr_int32_t wanted,
+                                            fspr_file_t *thefile)
 {
     struct_stat info;
 
     if (thefile->buffered) {
-        apr_status_t rv = apr_file_flush(thefile);
+        fspr_status_t rv = fspr_file_flush(thefile);
         if (rv != APR_SUCCESS)
             return rv;
     }
@@ -114,30 +114,30 @@ APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo,
     }
 }
 
-APR_DECLARE(apr_status_t) apr_file_perms_set(const char *fname, 
-                                             apr_fileperms_t perms)
+APR_DECLARE(fspr_status_t) fspr_file_perms_set(const char *fname, 
+                                             fspr_fileperms_t perms)
 {
-    mode_t mode = apr_unix_perms2mode(perms);
+    mode_t mode = fspr_unix_perms2mode(perms);
 
     if (chmod(fname, mode) == -1)
         return errno;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
-                                             apr_fileattrs_t attributes,
-                                             apr_fileattrs_t attr_mask,
-                                             apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_attrs_set(const char *fname,
+                                             fspr_fileattrs_t attributes,
+                                             fspr_fileattrs_t attr_mask,
+                                             fspr_pool_t *pool)
 {
-    apr_status_t status;
-    apr_finfo_t finfo = {0};
+    fspr_status_t status;
+    fspr_finfo_t finfo = {0};
 
     /* Don't do anything if we can't handle the requested attributes */
     if (!(attr_mask & (APR_FILE_ATTR_READONLY
                        | APR_FILE_ATTR_EXECUTABLE)))
         return APR_SUCCESS;
 
-    status = apr_stat(&finfo, fname, APR_FINFO_PROT, pool);
+    status = fspr_stat(&finfo, fname, APR_FINFO_PROT, pool);
     if (status)
         return status;
 
@@ -176,18 +176,18 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
         }
     }
 
-    return apr_file_perms_set(fname, finfo.protection);
+    return fspr_file_perms_set(fname, finfo.protection);
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
-                                              apr_time_t mtime,
-                                              apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_mtime_set(const char *fname,
+                                              fspr_time_t mtime,
+                                              fspr_pool_t *pool)
 {
-    apr_status_t status;
-    apr_finfo_t finfo = {0};
+    fspr_status_t status;
+    fspr_finfo_t finfo = {0};
 
-    status = apr_stat(&finfo, fname, APR_FINFO_ATIME, pool);
+    status = fspr_stat(&finfo, fname, APR_FINFO_ATIME, pool);
     if (status) {
         return status;
     }
@@ -196,10 +196,10 @@ APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
     {
       struct timeval tvp[2];
     
-      tvp[0].tv_sec = apr_time_sec(finfo.atime);
-      tvp[0].tv_usec = apr_time_usec(finfo.atime);
-      tvp[1].tv_sec = apr_time_sec(mtime);
-      tvp[1].tv_usec = apr_time_usec(mtime);
+      tvp[0].tv_sec = fspr_time_sec(finfo.atime);
+      tvp[0].tv_usec = fspr_time_usec(finfo.atime);
+      tvp[1].tv_sec = fspr_time_sec(mtime);
+      tvp[1].tv_usec = fspr_time_usec(mtime);
       
       if (utimes(fname, tvp) == -1) {
         return errno;
@@ -224,9 +224,9 @@ APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
 }
 
 
-APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, 
+APR_DECLARE(fspr_status_t) fspr_stat(fspr_finfo_t *finfo, 
                                    const char *fname, 
-                                   apr_int32_t wanted, apr_pool_t *pool)
+                                   fspr_int32_t wanted, fspr_pool_t *pool)
 {
     struct_stat info;
     int srv;

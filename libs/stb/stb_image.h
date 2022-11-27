@@ -5806,6 +5806,10 @@ static void *stbi__tga_load(stbi__context *s, int *x, int *y, int *comp, int req
    tga_palette_start = tga_palette_len = tga_palette_bits =
          tga_x_origin = tga_y_origin = 0;
    STBI_NOTUSED(tga_palette_start);
+   STBI_NOTUSED(tga_palette_len);
+   STBI_NOTUSED(tga_palette_bits);
+   STBI_NOTUSED(tga_x_origin);
+   STBI_NOTUSED(tga_y_origin);
    //   OK, done
    return tga_data;
 }

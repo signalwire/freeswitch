@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_network_io.h"
-#include "apr_support.h"
-#include "apr_lib.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_network_io.h"
+#include "fspr_support.h"
+#include "fspr_lib.h"
 #include <sys/time.h>
 
 
-APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock, 
-                                            apr_sockaddr_t *where,
-                                            apr_int32_t flags, const char *buf,
-                                            apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_sendto(fspr_socket_t *sock, 
+                                            fspr_sockaddr_t *where,
+                                            fspr_int32_t flags, const char *buf,
+                                            fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     int serrno;
 
     do {
@@ -38,7 +38,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock,
     } while (rv == -1 && (serrno = sock_errno()) == EINTR);
 
     if (rv == -1 && serrno == SOCEWOULDBLOCK && sock->timeout != 0) {
-        apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 0);
+        fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 0);
 
         if (arv != APR_SUCCESS) {
             *len = 0;
@@ -63,12 +63,12 @@ APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock,
 
 
 
-APR_DECLARE(apr_status_t) apr_socket_recvfrom(apr_sockaddr_t *from,
-                                              apr_socket_t *sock,
-                                              apr_int32_t flags, char *buf,
-                                              apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_recvfrom(fspr_sockaddr_t *from,
+                                              fspr_socket_t *sock,
+                                              fspr_int32_t flags, char *buf,
+                                              fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     int serrno;
 
     do {
@@ -77,7 +77,7 @@ APR_DECLARE(apr_status_t) apr_socket_recvfrom(apr_sockaddr_t *from,
     } while (rv == -1 && (serrno = sock_errno()) == EINTR);
 
     if (rv == -1 && serrno == SOCEWOULDBLOCK && sock->timeout != 0) {
-        apr_status_t arv = apr_wait_for_io_or_timeout(NULL, sock, 1);
+        fspr_status_t arv = fspr_wait_for_io_or_timeout(NULL, sock, 1);
 
         if (arv != APR_SUCCESS) {
             *len = 0;

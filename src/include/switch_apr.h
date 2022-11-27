@@ -75,14 +75,14 @@ SWITCH_DECLARE(int) switch_thread_equal(switch_thread_id_t tid1, switch_thread_i
  * @{
  */
 /** The fundamental pool type */
-/* see switch types.h 	typedef struct apr_pool_t switch_memory_pool_t;*/
+/* see switch types.h 	typedef struct fspr_pool_t switch_memory_pool_t;*/
 /**
  * Clear all memory in the pool and run all the cleanups. This also destroys all
  * subpools.
  * @param pool The pool to clear
  * @remark This does not actually free the memory, it just allows the pool
  *         to re-use this memory for the next allocation.
- * @see apr_pool_destroy()
+ * @see fspr_pool_destroy()
  */
 SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *pool);
 
@@ -108,16 +108,16 @@ SWITCH_DECLARE(char *) switch_copy_string(_Out_z_cap_(dst_size)
 
 #if 0
 /**
- * @defgroup apr_hash Hash Tables
+ * @defgroup fspr_hash Hash Tables
  * @ingroup switch_apr
  * @{
  */
 
 /** Abstract type for hash tables. */
-	 typedef struct apr_hash_t switch_hash_t;
+	 typedef struct fspr_hash_t switch_hash_t;
 
 /** Abstract type for scanning hash tables. */
-	 typedef struct apr_hash_index_t switch_hash_index_t;
+	 typedef struct fspr_hash_index_t switch_hash_index_t;
 
 /**
  * When passing a key to switch_hashfunc_default, this value can be
@@ -228,7 +228,7 @@ SWITCH_DECLARE(switch_time_t) switch_time_make(switch_time_t sec, int32_t usec);
 SWITCH_DECLARE(switch_time_t) switch_time_now(void);
 
 /**
- * Convert time value from human readable format to a numeric apr_time_t that
+ * Convert time value from human readable format to a numeric fspr_time_t that
  * always represents GMT
  * @param result the resulting imploded time
  * @param input the input exploded time
@@ -273,7 +273,7 @@ SWITCH_DECLARE(switch_status_t) switch_rfc822_date(char *date_str, switch_time_t
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt(switch_time_exp_t *result, switch_time_t input);
 
 /**
- * Convert time value from human readable format to a numeric apr_time_t
+ * Convert time value from human readable format to a numeric fspr_time_t
  * e.g. elapsed usec since epoch
  * @param result the resulting imploded time
  * @param input the input exploded time
@@ -311,7 +311,7 @@ SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t);
  */
 
 /** Opaque thread-local mutex structure */
-	 typedef struct apr_thread_mutex_t switch_mutex_t;
+	 typedef struct fspr_thread_mutex_t switch_mutex_t;
 
 /** Lock Flags */
 #define SWITCH_MUTEX_DEFAULT	0x0	/**< platform-optimal lock behavior */
@@ -374,8 +374,8 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t *lock);
  */
 
 /** Opaque type used for the atomic operations */
-#ifdef apr_atomic_t
-    typedef apr_atomic_t switch_atomic_t;
+#ifdef fspr_atomic_t
+    typedef fspr_atomic_t switch_atomic_t;
 #else
     typedef uint32_t switch_atomic_t;
 #endif
@@ -433,7 +433,7 @@ SWITCH_DECLARE(int)  switch_atomic_dec(volatile switch_atomic_t *mem);
  */
 
 /** Opaque structure used for the rwlock */
-	 typedef struct apr_thread_rwlock_t switch_thread_rwlock_t;
+	 typedef struct fspr_thread_rwlock_t switch_thread_rwlock_t;
 
 SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t ** rwlock, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_destroy(switch_thread_rwlock_t *rwlock);
@@ -460,7 +460,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
  */
 
 /** Opaque structure for thread condition variables */
-	 typedef struct apr_thread_cond_t switch_thread_cond_t;
+	 typedef struct fspr_thread_cond_t switch_thread_cond_t;
 
 /**
  * Create and initialize a condition variable that can be used to signal
@@ -587,7 +587,7 @@ SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIG
  */
 
 /** Opaque structure used for queue API */
-	 typedef struct apr_queue_t switch_queue_t;
+	 typedef struct switch_apr_queue_t switch_queue_t;
 
 /**
  * create a FIFO queue
@@ -682,17 +682,17 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
  */
 
 /** Structure for referencing files. */
-	 typedef struct apr_file_t switch_file_t;
+	 typedef struct fspr_file_t switch_file_t;
 
 	 typedef int32_t switch_fileperms_t;
 	 typedef int switch_seek_where_t;
 
 	 /**
- * @defgroup apr_file_seek_flags File Seek Flags
+ * @defgroup fspr_file_seek_flags File Seek Flags
  * @{
  */
 
-/* flags for apr_file_seek */
+/* flags for fspr_file_seek */
 /** Set the file position */
 #define SWITCH_SEEK_SET SEEK_SET
 /** Current */
@@ -725,7 +725,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 
 #define SWITCH_FPROT_OS_DEFAULT 0x0FFF		/**< use OS's default permissions */
 
-/* additional permission flags for apr_file_copy  and apr_file_append */
+/* additional permission flags for fspr_file_copy  and fspr_file_append */
 #define SWITCH_FPROT_FILE_SOURCE_PERMS 0x1000	/**< Copy source file's permissions */
 /** @} */
 
@@ -769,7 +769,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 #define SWITCH_FOPEN_XTHREAD			0x00200		/**< Platform dependent tag to open the file for use across multiple threads */
 #define SWITCH_FOPEN_SHARELOCK			0x00400		/**< Platform dependent support for higher level locked read/write access to support writes across process/machines */
 #define SWITCH_FOPEN_NOCLEANUP			0x00800		/**< Do not register a cleanup when the file is opened */
-#define SWITCH_FOPEN_SENDFILE_ENABLED	0x01000		/**< Advisory flag that this file should support apr_socket_sendfile operation */
+#define SWITCH_FOPEN_SENDFILE_ENABLED	0x01000		/**< Advisory flag that this file should support fspr_socket_sendfile operation */
 #define SWITCH_FOPEN_LARGEFILE			0x04000		/**< Platform dependent flag to enable large file support */
 /** @} */
 
@@ -796,11 +796,11 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
  *											writes across process/machines
  *         SWITCH_FOPEN_NOCLEANUP			Do not register a cleanup with the pool
  *											passed in on the <EM>pool</EM> argument (see below).
- *											The apr_os_file_t handle in apr_file_t will not
+ *											The fspr_os_file_t handle in fspr_file_t will not
  *											be closed when the pool is destroyed.
  *         SWITCH_FOPEN_SENDFILE_ENABLED	Open with appropriate platform semantics
  *											for sendfile operations.  Advisory only,
- *											apr_socket_sendfile does not check this flag.
+ *											fspr_socket_sendfile does not check this flag.
  * </PRE>
  * @param perm Access permissions for file.
  * @param pool The pool to use.
@@ -844,7 +844,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_rename(const char *from_path, const 
  * @param nbytes On entry, the number of bytes to read; on exit, the number
  * of bytes read.
  *
- * @remark apr_file_read will read up to the specified number of
+ * @remark fspr_file_read will read up to the specified number of
  * bytes, but never more.  If there isn't enough data to fill that
  * number of bytes, all of the available data is read.  The third
  * argument is modified to reflect the number of bytes read.  If a
@@ -863,7 +863,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_read(switch_file_t *thefile, void *b
  * @param nbytes On entry, the number of bytes to write; on exit, the number
  *               of bytes written.
  *
- * @remark apr_file_write will write up to the specified number of
+ * @remark fspr_file_write will write up to the specified number of
  * bytes, but never more.  If the OS cannot write that many bytes, it
  * will write as many as it can.  The third argument is modified to
  * reflect the * number of bytes written.
@@ -929,10 +929,10 @@ SWITCH_DECLARE(uint32_t) switch_dir_count(switch_dir_t *thedir);
  */
 
 /** Opaque Thread structure. */
-	 typedef struct apr_thread_t switch_thread_t;
+	 typedef struct fspr_thread_t switch_thread_t;
 
 /** Opaque Thread attributes structure. */
-	 typedef struct apr_threadattr_t switch_threadattr_t;
+	 typedef struct fspr_threadattr_t switch_threadattr_t;
 
 /**
  * The prototype for any APR thread worker functions.
@@ -940,7 +940,7 @@ SWITCH_DECLARE(uint32_t) switch_dir_count(switch_dir_t *thedir);
  */
 	 typedef void *(SWITCH_THREAD_FUNC * switch_thread_start_t) (switch_thread_t *, void *);
 
-//APR_DECLARE(apr_status_t) apr_threadattr_stacksize_set(apr_threadattr_t *attr, switch_size_t stacksize)
+//APR_DECLARE(fspr_status_t) fspr_threadattr_stacksize_set(fspr_threadattr_t *attr, switch_size_t stacksize)
 SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadattr_t *attr, switch_size_t stacksize);
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_set(switch_threadattr_t *attr, switch_thread_priority_t priority);
@@ -1014,10 +1014,10 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 #endif
 
 /** A structure to represent sockets */
-	 typedef struct apr_socket_t switch_socket_t;
+	 typedef struct fspr_socket_t switch_socket_t;
 
 /** Freeswitch's socket address type, used to ensure protocol independence */
-	 typedef struct apr_sockaddr_t switch_sockaddr_t;
+	 typedef struct fspr_sockaddr_t switch_sockaddr_t;
 
 	 typedef enum {
 		 SWITCH_SHUTDOWN_READ,	   /**< no longer allow read request */
@@ -1118,8 +1118,8 @@ SWITCH_DECLARE(int) switch_sockaddr_equal(const switch_sockaddr_t *sa1, const sw
 
 
 /**
- * Create apr_sockaddr_t from hostname, address family, and port.
- * @param sa The new apr_sockaddr_t.
+ * Create fspr_sockaddr_t from hostname, address family, and port.
+ * @param sa The new fspr_sockaddr_t.
  * @param hostname The hostname or numeric address string to resolve/parse, or
  *               NULL to build an address that corresponds to 0.0.0.0 or ::
  * @param family The address family to use, or SWITCH_UNSPEC if the system should
@@ -1138,7 +1138,7 @@ SWITCH_DECLARE(int) switch_sockaddr_equal(const switch_sockaddr_t *sa1, const sw
  *                                 isn't NULL and APR_HAVE_IPV6; mutually exclusive
  *                                 with APR_IPV4_ADDR_OK
  * </PRE>
- * @param pool The pool for the apr_sockaddr_t and associated storage.
+ * @param pool The pool for the fspr_sockaddr_t and associated storage.
  */
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname,
 														 int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t *pool);
@@ -1156,7 +1156,7 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_new(switch_sockaddr_t ** sa, con
  * @remark
  * <PRE>
  * This functions acts like a blocking write by default.  To change
- * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
+ * this behavior, use fspr_socket_timeout_set() or the APR_SO_NONBLOCK
  * socket option.
  *
  * It is possible for both bytes to be sent and an error to be returned.
@@ -1168,7 +1168,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
 
 /**
  * @param sock The socket to send from
- * @param where The apr_sockaddr_t describing where to send the data
+ * @param where The fspr_sockaddr_t describing where to send the data
  * @param flags The flags to use
  * @param buf  The data to send
  * @param len  The length of the data to send
@@ -1179,7 +1179,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t *sock, swit
 SWITCH_DECLARE(switch_status_t) switch_socket_send_nonblock(switch_socket_t *sock, const char *buf, switch_size_t *len);
 
 /**
- * @param from The apr_sockaddr_t to fill in the recipient info
+ * @param from The fspr_sockaddr_t to fill in the recipient info
  * @param sock The socket to use
  * @param flags The flags to use
  * @param buf  The buffer to use
@@ -1199,7 +1199,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_atmark(switch_socket_t *sock, int 
  * @remark
  * <PRE>
  * This functions acts like a blocking read by default.  To change
- * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
+ * this behavior, use fspr_socket_timeout_set() or the APR_SO_NONBLOCK
  * socket option.
  * The number of bytes actually received is stored in argument 3.
  *
@@ -1304,14 +1304,14 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
 									   /**< descriptor type */
 		 int16_t reqevents;	/**< requested events */
 		 int16_t rtnevents;	/**< returned events */
-		 switch_descriptor_t desc;	 /**< @see apr_descriptor */
+		 switch_descriptor_t desc;	 /**< @see fspr_descriptor */
 		 void *client_data;		/**< allows app to associate context */
 	 };
 
 
 
 /**
- * @defgroup apr_poll Poll Routines
+ * @defgroup fspr_poll Poll Routines
  * @ingroup switch_apr
  * @{
  */
@@ -1319,7 +1319,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
 	 typedef struct switch_pollfd switch_pollfd_t;
 
 /** Opaque structure used for pollset API */
-	 typedef struct apr_pollset_t switch_pollset_t;
+	 typedef struct fspr_pollset_t switch_pollset_t;
 
 /**
  * Poll options
@@ -1340,9 +1340,9 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
  *
  * @remark If flags equals APR_POLLSET_THREADSAFE, then a pollset is
  * created on which it is safe to make concurrent calls to
- * apr_pollset_add(), apr_pollset_remove() and apr_pollset_poll() from
+ * fspr_pollset_add(), fspr_pollset_remove() and fspr_pollset_poll() from
  * separate threads.  This feature is only supported on some
- * platforms; the apr_pollset_create() call will fail with
+ * platforms; the fspr_pollset_create() call will fail with
  * APR_ENOTIMPL on platforms where it is not supported.
  */
 SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *pool, uint32_t flags);
@@ -1353,11 +1353,11 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollse
  * @param descriptor The descriptor to add
  * @remark If you set client_data in the descriptor, that value
  *         will be returned in the client_data field whenever this
- *         descriptor is signalled in apr_pollset_poll().
+ *         descriptor is signalled in fspr_pollset_poll().
  * @remark If the pollset has been created with APR_POLLSET_THREADSAFE
- *         and thread T1 is blocked in a call to apr_pollset_poll() for
- *         this same pollset that is being modified via apr_pollset_add()
- *         in thread T2, the currently executing apr_pollset_poll() call in
+ *         and thread T1 is blocked in a call to fspr_pollset_poll() for
+ *         this same pollset that is being modified via fspr_pollset_add()
+ *         in thread T2, the currently executing fspr_pollset_poll() call in
  *         T1 will either: (1) automatically include the newly added descriptor
  *         in the set of descriptors it is watching or (2) return immediately
  *         with APR_EINTR.  Option (1) is recommended, but option (2) is
@@ -1371,9 +1371,9 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset, co
  * @param pollset The pollset from which to remove the descriptor
  * @param descriptor The descriptor to remove
  * @remark If the pollset has been created with APR_POLLSET_THREADSAFE
- *         and thread T1 is blocked in a call to apr_pollset_poll() for
- *         this same pollset that is being modified via apr_pollset_remove()
- *         in thread T2, the currently executing apr_pollset_poll() call in
+ *         and thread T1 is blocked in a call to fspr_pollset_poll() for
+ *         this same pollset that is being modified via fspr_pollset_remove()
+ *         in thread T2, the currently executing fspr_pollset_poll() call in
  *         T1 will either: (1) automatically exclude the newly added descriptor
  *         in the set of descriptors it is watching or (2) return immediately
  *         with APR_EINTR.  Option (1) is recommended, but option (2) is

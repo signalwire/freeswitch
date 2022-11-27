@@ -1235,10 +1235,18 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_subclass_name(switch_event_t *e
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_add_header_string_nodup(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data)
+{
+	if (data) {
+		return switch_event_base_add_header(event, stack, header_name, (char *)data);
+	}
+	return SWITCH_STATUS_GENERR;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_header_string(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *data)
 {
 	if (data) {
-		return switch_event_base_add_header(event, stack, header_name, (stack & SWITCH_STACK_NODUP) ? (char *)data : DUP(data));
+		return switch_event_base_add_header(event, stack, header_name, DUP(data));
 	}
 	return SWITCH_STATUS_GENERR;
 }
@@ -1723,10 +1731,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a,
 			int x = 0;
 			for (x = 0; x < var_count; x++) {
 				char *inner_var_array[2] = { 0 };
-				int inner_var_count;
 
-				if ((inner_var_count = switch_separate_string(var_array[x], '=',
-															  inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+				if (switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0]))) == 2) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Parsing variable [%s]=[%s]\n", inner_var_array[0], inner_var_array[1]);
 					switch_event_add_header_string(e, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
 				}

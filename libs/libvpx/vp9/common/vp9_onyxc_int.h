@@ -299,6 +299,8 @@ static INLINE int get_free_fb(VP9_COMMON *cm) {
 static INLINE void ref_cnt_fb(RefCntBuffer *bufs, int *idx, int new_idx) {
   const int ref_index = *idx;
 
+  if (!bufs) return;
+
   if (ref_index >= 0 && bufs[ref_index].ref_count > 0)
     bufs[ref_index].ref_count--;
 

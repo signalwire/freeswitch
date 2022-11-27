@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.8-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.9-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [9-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -248,7 +248,7 @@ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT([disable-static])
 
 #Check for compiler vendor
 AX_COMPILER_VENDOR
@@ -601,13 +601,6 @@ have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
-AC_ARG_ENABLE(zrtp,
-	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
-if test "x$enable_zrtp" = "xyes" ; then
-   LIBS="-lpthread $LIBS"
-   APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
-fi
-
 PA_LIBS=
 
 PKG_CHECK_MODULES(JACK, jack, have_jack=yes, have_jack=no)
@@ -621,8 +614,6 @@ PA_LIBS+=-lasound
 fi
 
 AC_SUBST(PA_LIBS)
-
-AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
@@ -844,8 +835,6 @@ PKG_CHECK_MODULES([STIRSHAKEN], [stirshaken],[
 
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
-AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
-AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
@@ -1090,8 +1079,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp 
-#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
+#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1970,6 +1959,22 @@ else
 	AC_MSG_WARN([python3 support disabled, building mod_python3 will fail!])
 fi
 
+# pcap lib for unit-testing
+AC_MSG_CHECKING(libpcap)
+AC_CHECK_PROG(HAVE_PCAP_CONFIG,pcap-config,[true],[false])
+if test x"$HAVE_PCAP_CONFIG" = x"true"; then
+   AC_MSG_RESULT(yes)
+   PCAP_CONFIG=pcap-config
+   PCAP_LIBS="`$PCAP_CONFIG --libs`"
+   PCAP_CFLAGS="`$PCAP_CONFIG --cflags`"
+   AM_CONDITIONAL([HAVE_PCAP], [true])
+else
+   AC_MSG_RESULT(no)
+   AM_CONDITIONAL([HAVE_PCAP], [false])
+fi
+AC_SUBST([PCAP_CFLAGS])
+AC_SUBST([PCAP_LIBS])
+
 #
 # SNMP checks for mod_snmp
 #
@@ -2130,7 +2135,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
-		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
@@ -2159,7 +2163,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_dingaling/Makefile
 		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
 		src/mod/endpoints/mod_khomp/Makefile
@@ -2317,15 +2320,7 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-if test "$use_system_aprutil" != "yes"; then
-   AC_CONFIG_SUBDIRS([libs/apr-util])
-fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/unimrcp])
-if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp])
-fi
 
 case $host in
    *-openbsd*|*-netbsd*)

@@ -19,34 +19,34 @@
 #define FD_SETSIZE 1024
 #endif
 
-#include "apr.h"
-#include "apr_poll.h"
-#include "apr_time.h"
-#include "apr_portable.h"
-#include "apr_arch_networkio.h"
-#include "apr_arch_file_io.h"
-#include "apr_arch_poll_private.h"
+#include "fspr.h"
+#include "fspr_poll.h"
+#include "fspr_time.h"
+#include "fspr_portable.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_arch_poll_private.h"
 
 #ifdef POLL_USES_SELECT
 
-APR_DECLARE(apr_status_t) apr_poll(apr_pollfd_t *aprset, int num,
-                                   apr_int32_t *nsds,
-                                   apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_poll(fspr_pollfd_t *aprset, int num,
+                                   fspr_int32_t *nsds,
+                                   fspr_interval_time_t timeout)
 {
     fd_set readset, writeset, exceptset;
     int rv, i;
     int maxfd = -1;
     struct timeval tv, *tvptr;
 #ifdef NETWARE
-    apr_datatype_e set_type = APR_NO_DESC;
+    fspr_datatype_e set_type = APR_NO_DESC;
 #endif
 
     if (timeout < 0) {
         tvptr = NULL;
     }
     else {
-        tv.tv_sec = (long) apr_time_sec(timeout);
-        tv.tv_usec = (long) apr_time_usec(timeout);
+        tv.tv_sec = (long) fspr_time_sec(timeout);
+        tv.tv_usec = (long) fspr_time_usec(timeout);
         tvptr = &tv;
     }
 
@@ -55,7 +55,7 @@ APR_DECLARE(apr_status_t) apr_poll(apr_pollfd_t *aprset, int num,
     FD_ZERO(&exceptset);
 
     for (i = 0; i < num; i++) {
-        apr_os_sock_t fd;
+        fspr_os_sock_t fd;
 
         aprset[i].rtnevents = 0;
 
@@ -128,12 +128,12 @@ APR_DECLARE(apr_status_t) apr_poll(apr_pollfd_t *aprset, int num,
         return APR_TIMEUP;
     }
     if ((*nsds) < 0) {
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
 
     (*nsds) = 0;
     for (i = 0; i < num; i++) {
-        apr_os_sock_t fd;
+        fspr_os_sock_t fd;
 
         if (aprset[i].desc_type == APR_POLL_SOCKET) {
             fd = aprset[i].desc.s->socketdes;
@@ -169,25 +169,25 @@ APR_DECLARE(apr_status_t) apr_poll(apr_pollfd_t *aprset, int num,
 
 #ifdef POLLSET_USES_SELECT
 
-struct apr_pollset_t
+struct fspr_pollset_t
 {
-    apr_pool_t *pool;
+    fspr_pool_t *pool;
 
-    apr_uint32_t nelts;
-    apr_uint32_t nalloc;
+    fspr_uint32_t nelts;
+    fspr_uint32_t nalloc;
     fd_set readset, writeset, exceptset;
     int maxfd;
-    apr_pollfd_t *query_set;
-    apr_pollfd_t *result_set;
+    fspr_pollfd_t *query_set;
+    fspr_pollfd_t *result_set;
 #ifdef NETWARE
     int set_type;
 #endif
 };
 
-APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
-                                             apr_uint32_t size,
-                                             apr_pool_t *p,
-                                             apr_uint32_t flags)
+APR_DECLARE(fspr_status_t) fspr_pollset_create(fspr_pollset_t **pollset,
+                                             fspr_uint32_t size,
+                                             fspr_pool_t *p,
+                                             fspr_uint32_t flags)
 {
     if (flags & APR_POLLSET_THREADSAFE) {                
         *pollset = NULL;
@@ -199,7 +199,7 @@ APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
         return APR_EINVAL;
     }
 #endif
-    *pollset = apr_palloc(p, sizeof(**pollset));
+    *pollset = fspr_palloc(p, sizeof(**pollset));
     (*pollset)->nelts = 0;
     (*pollset)->nalloc = size;
     (*pollset)->pool = p;
@@ -210,21 +210,21 @@ APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
 #ifdef NETWARE
     (*pollset)->set_type = APR_NO_DESC;
 #endif
-    (*pollset)->query_set = apr_palloc(p, size * sizeof(apr_pollfd_t));
-    (*pollset)->result_set = apr_palloc(p, size * sizeof(apr_pollfd_t));
+    (*pollset)->query_set = fspr_palloc(p, size * sizeof(fspr_pollfd_t));
+    (*pollset)->result_set = fspr_palloc(p, size * sizeof(fspr_pollfd_t));
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_destroy(apr_pollset_t * pollset)
+APR_DECLARE(fspr_status_t) fspr_pollset_destroy(fspr_pollset_t * pollset)
 {
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
-                                          const apr_pollfd_t *descriptor)
+APR_DECLARE(fspr_status_t) fspr_pollset_add(fspr_pollset_t *pollset,
+                                          const fspr_pollfd_t *descriptor)
 {
-    apr_os_sock_t fd;
+    fspr_os_sock_t fd;
 
     if (pollset->nelts == pollset->nalloc) {
         return APR_ENOMEM;
@@ -285,11 +285,11 @@ APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t * pollset,
-                                             const apr_pollfd_t * descriptor)
+APR_DECLARE(fspr_status_t) fspr_pollset_remove(fspr_pollset_t * pollset,
+                                             const fspr_pollfd_t * descriptor)
 {
-    apr_uint32_t i;
-    apr_os_sock_t fd;
+    fspr_uint32_t i;
+    fspr_os_sock_t fd;
 
     if (descriptor->desc_type == APR_POLL_SOCKET) {
         fd = descriptor->desc.s->socketdes;
@@ -305,8 +305,8 @@ APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t * pollset,
     for (i = 0; i < pollset->nelts; i++) {
         if (descriptor->desc.s == pollset->query_set[i].desc.s) {
             /* Found an instance of the fd: remove this and any other copies */
-            apr_uint32_t dst = i;
-            apr_uint32_t old_nelts = pollset->nelts;
+            fspr_uint32_t dst = i;
+            fspr_uint32_t old_nelts = pollset->nelts;
             pollset->nelts--;
             for (i++; i < old_nelts; i++) {
                 if (descriptor->desc.s == pollset->query_set[i].desc.s) {
@@ -330,13 +330,13 @@ APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t * pollset,
     return APR_NOTFOUND;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_poll(apr_pollset_t *pollset,
-                                           apr_interval_time_t timeout,
-                                           apr_int32_t *num,
-                                           const apr_pollfd_t **descriptors)
+APR_DECLARE(fspr_status_t) fspr_pollset_poll(fspr_pollset_t *pollset,
+                                           fspr_interval_time_t timeout,
+                                           fspr_int32_t *num,
+                                           const fspr_pollfd_t **descriptors)
 {
     int rv;
-    apr_uint32_t i, j;
+    fspr_uint32_t i, j;
     struct timeval tv, *tvptr;
     fd_set readset, writeset, exceptset;
 
@@ -344,8 +344,8 @@ APR_DECLARE(apr_status_t) apr_pollset_poll(apr_pollset_t *pollset,
         tvptr = NULL;
     }
     else {
-        tv.tv_sec = (long) apr_time_sec(timeout);
-        tv.tv_usec = (long) apr_time_usec(timeout);
+        tv.tv_sec = (long) fspr_time_sec(timeout);
+        tv.tv_usec = (long) fspr_time_usec(timeout);
         tvptr = &tv;
     }
 
@@ -365,14 +365,14 @@ APR_DECLARE(apr_status_t) apr_pollset_poll(apr_pollset_t *pollset,
 
     (*num) = rv;
     if (rv < 0) {
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     if (rv == 0) {
         return APR_TIMEUP;
     }
     j = 0;
     for (i = 0; i < pollset->nelts; i++) {
-        apr_os_sock_t fd;
+        fspr_os_sock_t fd;
         if (pollset->query_set[i].desc_type == APR_POLL_SOCKET) {
             fd = pollset->query_set[i].desc.s->socketdes;
         }

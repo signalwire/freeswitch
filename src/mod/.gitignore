@@ -27,9 +27,6 @@
 /applications/mod_translate/Makefile
 /applications/mod_valet_parking/Makefile
 /applications/mod_voicemail/Makefile
-/asr_tts/mod_unimrcp/Makefile
-/asr_tts/mod_unimrcp/Makefile.in
-/asr_tts/mod_unimrcp/mod_unimrcp.log
 /asr_tts/mod_flite/*/*/mod_flite_manifest.rc
 /codecs/mod_b64/Makefile
 /codecs/mod_skel_codec/Makefile

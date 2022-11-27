@@ -826,20 +826,12 @@ switch_hash_t *create_default_filter()
 	switch_core_hash_insert(filter, "variable_rtp_secure_media_confirmed", "1");
 	switch_core_hash_insert(filter, "variable_rtp_secure_media_confirmed_audio", "1");
 	switch_core_hash_insert(filter, "variable_rtp_secure_media_confirmed_video", "1");
-	switch_core_hash_insert(filter, "variable_zrtp_secure_media", "1");
-	switch_core_hash_insert(filter, "variable_zrtp_secure_media_confirmed", "1");
-	switch_core_hash_insert(filter, "variable_zrtp_secure_media_confirmed_audio", "1");
-	switch_core_hash_insert(filter, "variable_zrtp_secure_media_confirmed_video", "1");
 	switch_core_hash_insert(filter, "sdp_secure_savp_only", "1");
 	switch_core_hash_insert(filter, "rtp_has_crypto", "1");
 	switch_core_hash_insert(filter, "rtp_secure_media", "1");
 	switch_core_hash_insert(filter, "rtp_secure_media_confirmed", "1");
 	switch_core_hash_insert(filter, "rtp_secure_media_confirmed_audio", "1");
 	switch_core_hash_insert(filter, "rtp_secure_media_confirmed_video", "1");
-	switch_core_hash_insert(filter, "zrtp_secure_media", "1");
-	switch_core_hash_insert(filter, "zrtp_secure_media_confirmed", "1");
-	switch_core_hash_insert(filter, "zrtp_secure_media_confirmed_audio", "1");
-	switch_core_hash_insert(filter, "zrtp_secure_media_confirmed_video", "1");
 
 	/* Device Redirect headers */
 	switch_core_hash_insert(filter, "variable_last_bridge_hangup_cause", "1");

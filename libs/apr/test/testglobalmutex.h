@@ -21,7 +21,7 @@
 #define MAX_ITER 255
 #define MAX_COUNTER (MAX_ITER * 4)
 
-#define LOCKNAME "data/apr_globalmutex.lock"
+#define LOCKNAME "data/fspr_globalmutex.lock"
 
 #endif
 

@@ -24,11 +24,6 @@ Rules:
    Glob: libs/srtp/update.sh
    Copyright: Ingate Systems AB
   -
-   Glob: libs/libzrtp/third_party/bnlib/test/md5.c
-   Matches: This\scode\sis\sin\sthe\spublic\sdomain;\sdo\swith\sit\swhat\syou\swish.
-   Copyright: 1995 Abandoned Colin Plumb
-   License: public-domain
-  -
    Glob: src/g711.c
    Matches: Copyright\s\(C\)\s2006\sSteve\sUnderwood
    Matches: \spublic\sdomain\sfor\sthe\sbenefit\sof\sall\smankind
@@ -56,28 +51,6 @@ Rules:
    Glob: src/include/switch_cpp.h
    Matches: Author[:]\sYossi\sNeiman\s<freeswitch@cartissolutions.com>,\s\(C\)\s2007////\sCopyright[:]
    Copyright: 2007 Yossi Neiman <freeswitch@cartissolutions.com>
-  -
-   Glob: libs/libzrtp/*
-   Matches: For\slicensing\sand\sother\slegal\sdetails,\ssee\sthe\sfile\szrtp_legal.c.
-   License: AGPL-3 or MPL-1.1
-  -
-   Glob: libs/libzrtp/third_party/bnlib/*
-   Matches: For\slicensing\sand\sother\slegal\sdetails,\ssee\sthe\sfile\slegal.c.
-   License: GPL-2 or GPL-3 or MPL-1.1
-  -
-   Glob: libs/libzrtp/src/zrtp_legal.c
-   Matches: As\sa\sspecial\sexception,\syou\smay\scombine\sthis\slibrary\swith\sthe\scode
-   Matches: License\sVersion\s1.1\s\(MPLv1.1\).
-   License: AGPL-3 or MPL-1.1
-  -
-   Glob: libs/libzrtp/third_party/bnlib/legal.c
-   Matches: As\sa\sspecial\sexception,\syou\smay\scombine\sthis\slibrary\swith\sthe\scode
-   Matches: License\sVersion\s1.1\s\(MPLv1.1\).
-   License: GPL-2 or GPL-3 or MPL-1.1
-  -
-   Glob: libs/libzrtp/projects/symbian/DelayRuner.h
-   Matches: Copyright\s+:\sCopyright\s\(c\)\s2010\sSoft\sIndustry
-   Copyright: 2010 Soft Industry
   -
    Glob: libs/win32/sqlite/*.[ch]
    Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
