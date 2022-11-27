@@ -4764,11 +4764,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	if ((type & ICE_VANILLA)) {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s:%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s:%s", rlogin, login);
-		switch_snprintf(luser_ice, sizeof(user_ice), "%s%s", rlogin, login);
+		switch_snprintf(luser_ice, sizeof(luser_ice), "%s%s", rlogin, login);
 		ice->ready = ice->rready = 0;
 	} else {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
+		switch_snprintf(luser_ice, sizeof(luser_ice), "");
 		ice->ready = ice->rready = 1;
 	}
 
