@@ -2417,7 +2417,7 @@ SWITCH_STANDARD_API(uptime_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
+#define CTL_SYNTAX "[api_expansion [on|off]|recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -7745,6 +7745,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add complete add");
 	switch_console_set_complete("add complete del");
 	switch_console_set_complete("add db_cache status");
+	switch_console_set_complete("add fsctl api_expansion on");
+	switch_console_set_complete("add fsctl api_expansion off");
 	switch_console_set_complete("add fsctl debug_level");
 	switch_console_set_complete("add fsctl debug_pool");
 	switch_console_set_complete("add fsctl debug_sql");
@@ -7793,6 +7795,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown restart elegant");
 	switch_console_set_complete("add fsctl sps");
 	switch_console_set_complete("add fsctl sync_clock");
+	switch_console_set_complete("add fsctl sync_clock_when_idle");
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");
