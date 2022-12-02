@@ -777,7 +777,11 @@ static switch_status_t process_packet(char* packet, size_t len)
 				switch_url_decode(val);
 				switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
 				switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
-				var = term + 1;
+				if (term) {
+					var = term + 1;
+				} else {
+					var = NULL;
+				}
 			} else {
 				/* This should be our magic packet, done processing incoming headers */
 				break;
