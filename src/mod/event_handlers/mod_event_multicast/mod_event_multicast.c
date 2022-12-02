@@ -627,8 +627,8 @@ static void event_handler(switch_event_t *event)
 					len = strlen(packet) + strlen((char *) MAGIC);
 #endif
 					buf = malloc(len + 1);
-					memset(buf, 0, len + 1);
 					switch_assert(buf);
+					memset(buf, 0, len + 1);
 
 #ifdef HAVE_OPENSSL
 					if (globals.psk) {
