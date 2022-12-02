@@ -298,7 +298,7 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 			continue;
 		}
 
-		memset(&globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr, 0, sizeof(dst_sockaddr_t));
+		memset(&globals.dst_sockaddrs[globals.num_dst_addrs], 0, sizeof(dst_sockaddr_t));
 
 		if (switch_sockaddr_info_get(&globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr, dst_hosts[i], SWITCH_UNSPEC, globals.port, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find address: %s\n", dst_hosts[i]);
