@@ -2986,9 +2986,11 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_channel_timetable_t *times = NULL;
 	const char *cc_moh_override = switch_channel_get_variable(member_channel, "cc_moh_override");
 	const char *cc_base_score = switch_channel_get_variable(member_channel, "cc_base_score");
+	const char *cc_pre_answer = switch_channel_get_variable(member_channel, "cc_pre_answer");
 	int cc_base_score_int = 0;
 	const char *cur_moh = NULL;
 	char *moh_expanded = NULL;
+	switch_time_t t_epoch;
 	char start_epoch[64];
 	switch_event_t *event;
 	switch_time_t t_member_called = local_epoch_time_now(NULL);
@@ -3017,11 +3019,21 @@ SWITCH_STANDARD_APP(callcenter_function)
 	}
 
 	/* Make sure we answer the channel before getting the switch_channel_time_table_t answer time */
-	switch_channel_answer(member_channel);
+	if (switch_true(cc_pre_answer)) {
+		switch_channel_pre_answer(member_channel);
+	} else {
+		switch_channel_answer(member_channel);
+	}
 
 	/* Grab the start epoch of a channel */
 	times = switch_channel_get_timetable(member_channel);
-	switch_snprintf(start_epoch, sizeof(start_epoch), "%" SWITCH_TIME_T_FMT, times->answered / 1000000);
+	if (switch_true(cc_pre_answer)) {
+		t_epoch = times->progress_media;
+	} else {
+		t_epoch = times->answered;
+	}
+
+	switch_snprintf(start_epoch, sizeof(start_epoch), "%" SWITCH_TIME_T_FMT, t_epoch / 1000000);
 
 	/* Check if we support and have a queued abandoned member we can resume from */
 	if (queue->abandoned_resume_allowed == SWITCH_TRUE) {
