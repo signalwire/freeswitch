@@ -167,15 +167,15 @@ void Session::do_hangup_hook()
 				arglist = Py_BuildValue("(Os)", Self, what);
 			}
 
-			#if PY_VERSION_HEX <= 0x03080000
+#if PY_VERSION_HEX <= 0x03080000
 			if (!PyEval_CallObject(hangup_func, arglist)) {
 				PyErr_Print();
 			}
-			#else 
+#else 
 			if (!PyObject_CallObject(hangup_func, arglist)) {
 				PyErr_Print();
 			}
-			#endif
+#endif
 
 			Py_XDECREF(arglist);
 			Py_XDECREF(hangup_func_arg);
@@ -326,12 +326,11 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	} else {
 		arglist = Py_BuildValue("(OsO)", Self, what, io);
 	}
-
-	#if PY_VERSION_HEX <= 0x03080000
+#if PY_VERSION_HEX <= 0x03080000
 		pyresult = PyEval_CallObject(cb_function, arglist);
-	#else 
+#else 
 		pyresult = PyObject_CallObject(cb_function, arglist);
-	#endif
+#endif
 	if (pyresult) {
 		str = (char *) PyString_AsString(pyresult);
 	} else {
