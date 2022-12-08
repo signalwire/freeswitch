@@ -5,6 +5,9 @@
   </ImportGroup>
   <PropertyGroup>
     <YasmPropsImported>true</YasmPropsImported>
+    <Is64yasm Condition="$([System.Environment]::Is64BitProcess)">true</Is64yasm>
+    <PackageToDownload Condition="'$(Is64yasm)' == 'true'">http://files.freeswitch.org/downloads/win64/yasm.exe</PackageToDownload>
+    <PackageToDownload Condition="'$(Is64yasm)' != 'true'">http://files.freeswitch.org/downloads/win32/yasm.exe</PackageToDownload>
   </PropertyGroup>
 
   <!--
@@ -28,8 +31,9 @@
    -->
 
   <Target Name="YasmDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="">
+      <Message Text="System is 64 bit." Condition="'$(Is64yasm)' == 'true'" Importance="High" />
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/win32/yasm.exe"
+           package="$(PackageToDownload)"
            expectfileordirectory="$(ProjectDir)\yasm.exe"
            outputfolder="$(ProjectDir)\"
            outputfilename=""
