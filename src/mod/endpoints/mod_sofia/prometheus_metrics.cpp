@@ -96,6 +96,17 @@ public:
 		auto_lock lock(_mutex);
 		++_outgoing_invite_retransmission_counter;
 	}
+
+	ssize_t get_request_method(const char* method)
+	{
+		auto_lock lock(_mutex);
+		request_counter::iterator found = _request_counter.find(method);
+		if (found != _request_counter.end()) {
+			return found->second;
+		}
+
+		return 0;
+	}
 	
 	void generate_metrics(switch_stream_handle_t *stream)
 	{
@@ -170,11 +181,24 @@ SWITCH_STANDARD_API(xml_rpc_prometheus_metrics)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(xml_rpc_prometheus_get_request_counter)
+{
+	ssize_t counter = 0;
+	if(!zstr(cmd))
+	{
+		counter = instance->get_request_method(cmd);
+	}
+	
+	stream->write_function(stream, "%ld", counter);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_BEGIN_EXTERN_C
 
 void prometheus_init(switch_loadable_module_interface_t **module_interface, switch_api_interface_t *api_interface, switch_memory_pool_t* pool)
 {
 	SWITCH_ADD_API(api_interface, "sofia_prometheus_metrics", "sofia_prometheus_metrics", xml_rpc_prometheus_metrics, "");
+	SWITCH_ADD_API(api_interface, "sofia_prometheus_get_request_counter", "sofia_prometheus_get_request_counter", xml_rpc_prometheus_get_request_counter, "");
 	
 	delete instance;
 	instance = new prometheus_metrics(module_interface, pool);
