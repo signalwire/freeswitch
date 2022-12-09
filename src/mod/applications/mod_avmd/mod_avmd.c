@@ -717,7 +717,6 @@ static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, d
     switch_event_t      *event;
     switch_time_t       detection_time, total_time;
     switch_status_t     status;
-    switch_event_t      *event_copy;
     char                buf[AVMD_CHAR_BUF_LEN];
 
     status = switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, avmd_events_str[type]);
@@ -823,11 +822,10 @@ static void avmd_fire_event(enum avmd_event type, switch_core_session_t *fs_s, d
             return;
     }
 
-    if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) {
-        return;
+    if (event) {
+        switch_event_fire(&event);
     }
-
-    switch_event_fire(&event_copy);
+    
     return;
 }
 
