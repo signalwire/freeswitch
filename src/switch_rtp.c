@@ -83,6 +83,8 @@
 #define RTP_MAGIC_NUMBER 42
 #define WARN_SRTP_ERRS 10
 #define MAX_SRTP_ERRS 100
+#define RTP_MOS_PACKET_LOSS_PENALTY 2.5
+#define RTP_MOS_JITTER_PENALTY 2.0
 #define NTP_TIME_OFFSET 2208988800UL
 #define ZRTP_MAGIC_COOKIE 0x5a525450
 static const switch_payload_t INVALID_PT = 255;
@@ -101,6 +103,9 @@ static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
 static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
 static rtp_create_probe_func create_probe = 0;
+
+static double rtp_mos_packet_loss_penalty = RTP_MOS_PACKET_LOSS_PENALTY;
+static double rtp_mos_jitter_penalty = RTP_MOS_JITTER_PENALTY;
 
 typedef srtp_hdr_t rtp_hdr_t;
 
@@ -1703,9 +1708,68 @@ static void normalised_ts_commit_dtmf_ts(switch_rtp_t *rtp_session, uint32_t ts)
 	rtp_session->ts_normalised.dtmf_ts = ts;
 }
 
+static void do_cumulative_pp_mos(switch_rtp_t *rtp_session)
+{
+	double R = 0;
+	double mos = 0;
+
+	rtp_session->stats.inbound.cumulative_R_count++;
+	rtp_session->stats.inbound.cumulative_R_total += rtp_session->stats.inbound.pp_R;
+	
+	R = (rtp_session->stats.inbound.cumulative_R_total / rtp_session->stats.inbound.cumulative_R_count);
+	if (R < 0) {
+		R = 0.0;
+	} else if (R > 100) {
+		R = 100;
+	}
+	
+	mos = 1.0 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
+
+	rtp_session->stats.inbound.cumulative_R = R;
+	rtp_session->stats.inbound.cumulative_mos = mos;
+}
+
+static void do_pp_mos(switch_rtp_t *rtp_session)
+{
+	// RTT is calculated when RTCP is enabled
+	double rtt = (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) ? rtp_session->stats.rtcp.rtt_avg : 0;
+	// Take the average latency, add jitter, but add an impact to jitter
+	// then add 10 for protocol latencies
+	double R = (rtt/1000 + rtp_session->stats.inbound.variance * rtp_mos_jitter_penalty + 10);
+	unsigned int packet_loss = (rtp_session->stats.rtcp.fraction_lost * 100 / 256);
+	double mos = 0;
+	
+	// Implement a basic curve - deduct 4 for the R value at 160ms of latency
+	// (round trip).  Anything over that gets a much more agressive deduction
+	if (R < 160) {
+		R = 100 - R / 40.0;
+	} else {
+		R = 100 - (R - 120) / 10.0;
+	}
+
+	// Let's deduct penalty R values per percentage of packet loss
+	R = R - (packet_loss * rtp_mos_packet_loss_penalty);
+
+	if (R < 0) {
+		R = 0.0;
+	} else if (R > 100) {
+		R = 100;
+	}
+
+	mos = 1.0 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
+	rtp_session->stats.inbound.pp_R = R;
+	rtp_session->stats.inbound.pp_mos = mos;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "PP Mos R:%0.2f M:%0.2f RTT:%0.2f PL:%d JV:%0.2f LP:%0.2f/%0.2f JP:%0.2f/%0.2f\n"
+		, R, mos, rtt, packet_loss, rtp_session->stats.inbound.variance
+		, (packet_loss * rtp_mos_packet_loss_penalty), rtp_mos_packet_loss_penalty
+		, (rtt/1000 + rtp_session->stats.inbound.variance * rtp_mos_jitter_penalty + 10), rtp_mos_jitter_penalty);
+
+	do_cumulative_pp_mos(rtp_session);
+}
+
 static void do_mos(switch_rtp_t *rtp_session) {
 	int R;
-	int cumulative_R;
 	
 	if ((switch_size_t)rtp_session->stats.inbound.recved < rtp_session->stats.inbound.flaws) {
 		rtp_session->stats.inbound.flaws = 0;
@@ -1736,17 +1800,13 @@ static void do_mos(switch_rtp_t *rtp_session) {
 	}
 
 	R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
-	cumulative_R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.cumulative_flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
 
 	if (R < 0 || R > 100) R = 100;
-	if (cumulative_R < 0) cumulative_R = 0;
-	if (cumulative_R > 100) cumulative_R = 100;
 
 	rtp_session->stats.inbound.R = R;
 	rtp_session->stats.inbound.mos = 1 + (0.035) * R + (.000007) * R * (R-60) * (100-R);
 
-	rtp_session->stats.inbound.cumulative_R = cumulative_R;
-	rtp_session->stats.inbound.cumulative_mos = 1 + (0.035) * cumulative_R + (.000007) * cumulative_R * (cumulative_R-60) * (100-cumulative_R);
+	do_pp_mos(rtp_session);
 		
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
 					  rtp_session_name(rtp_session),
@@ -2005,6 +2065,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	} else {
 		rtcp_report_block->fraction = 0;
 	}
+	stats->fraction_lost = rtcp_report_block->fraction;
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 	rtcp_report_block->lost = stats->cum_lost;
 #else
@@ -2822,6 +2883,22 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
 		}
 	}
 	return END_PORT;
+}
+
+SWITCH_DECLARE(double) switch_rtp_set_mos_packet_loss_penalty(double penalty)
+{
+	if (penalty) {
+		rtp_mos_packet_loss_penalty = penalty;
+	}
+	return rtp_mos_packet_loss_penalty;
+}
+
+SWITCH_DECLARE(double) switch_rtp_set_mos_jitter_penalty(double penalty)
+{
+	if (penalty) {
+		rtp_mos_jitter_penalty = penalty;
+	}
+	return rtp_mos_jitter_penalty;	
 }
 
 SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
@@ -7618,6 +7695,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 						} else {
 							rtp_session->rtcp_frame.reports[i].rtt_avg = (double)((rtp_session->rtcp_frame.reports[i].rtt_avg * .7) + (rtt_now * .3 ));
 						}
+						rtp_session->stats.rtcp.rtt_avg = rtp_session->rtcp_frame.reports[i].rtt_avg;
 					} else {
 #ifdef DEBUG_RTCP
 						switch_time_exp_t now_hr;

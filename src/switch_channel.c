@@ -2750,6 +2750,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	int global_verbose_events = -1;
 	const char* call_control = 0;
 	const char* telnyx_fax = 0;
+	switch_rtp_stats_t *stats = NULL;
 
 	switch_mutex_lock(channel->profile_mutex);
 
@@ -2757,6 +2758,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	
 	call_control = switch_channel_get_variable_dup(channel, "call_control", SWITCH_FALSE, -1);
 	telnyx_fax = switch_channel_get_variable_dup(channel, "telnyx_fax", SWITCH_FALSE, -1);
+	stats = switch_core_media_get_stats(switch_channel_get_session(channel), SWITCH_MEDIA_TYPE_AUDIO, NULL);
 
 	if ((call_control && switch_true(call_control)) || 
 		(telnyx_fax && switch_true(telnyx_fax)) || global_verbose_events ||
@@ -2802,6 +2804,13 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		if ((telnyx_fax && switch_true(telnyx_fax))) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_fax", "true");
 		}
+
+		if (stats && (event->event_id == SWITCH_EVENT_CHANNEL_HANGUP || event->event_id == SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE)) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "variable_cumulative_flaws", "%ld", stats->inbound.cumulative_flaws);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "variable_cumulative_R", "%0.2f", stats->inbound.cumulative_R);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "variable_cumulative_mos", "%0.2f", stats->inbound.cumulative_mos);
+		}
+		
 		/* Index Variables */
 
 		if (channel->scope_variables) {

@@ -721,9 +721,14 @@ typedef struct {
 	switch_size_t last_flaw;
 	double R;
 	double mos;
+	double pp_R;
+	double pp_mos;
+
 	switch_size_t cumulative_flaws;
 	double cumulative_R;
 	double cumulative_mos;
+	double cumulative_R_total;
+	unsigned int cumulative_R_count;
 	struct error_period *error_log;
 } switch_rtp_numbers_t;
 
@@ -747,8 +752,10 @@ typedef struct {
 	uint32_t bad_seq;             /* Bad SEQ found, used to detect reset on the other side */
 	uint16_t base_seq;            /* Packet loss calculation, first sequence number received */
 	uint32_t cum_lost;            /* Packet loss calculation, cumulative number of packet lost */
+	uint8_t  fraction_lost;       /* Packet loss calculation, The fraction of RTP data packets from source SSRC_n lost since the previous SR or RR packet was sent */
 	uint32_t last_recv_lsr_local; /* RTT calculation, When receiving an SR we save our local timestamp in fraction of 65536 seconds */
 	uint32_t last_recv_lsr_peer;  /* RTT calculation, When receiving an SR we extract the middle 32bits of the remote NTP timestamp to include it in the next SR LSR */
+	double rtt_avg;               /* RTT average */
 	uint32_t init;
 } switch_rtcp_numbers_t;
 

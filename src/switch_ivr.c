@@ -2750,6 +2750,8 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 	add_stat(x_in, stats->inbound.flaws, "flaw_total");
 	add_stat_double(x_in, stats->inbound.R, "quality_percentage");
 	add_stat_double(x_in, stats->inbound.mos, "mos");
+	add_stat_double(x_in, stats->inbound.pp_R, "pp_quality_percentage");
+	add_stat_double(x_in, stats->inbound.pp_mos, "pp_mos");
 	add_stat(x_in, stats->inbound.cumulative_flaws, "cumulative_flaw");
 	add_stat_double(x_in, stats->inbound.cumulative_R, "cumulative_quality_percentage");
 	add_stat_double(x_in, stats->inbound.cumulative_mos, "cumulative_mos");
@@ -3274,6 +3276,8 @@ SWITCH_DECLARE(void) switch_ivr_set_json_call_stats(cJSON *json, switch_core_ses
 	add_jstat(j_in, stats->inbound.flaws, "flaw_total");
 	add_jstat(j_in, stats->inbound.R, "quality_percentage");
 	add_jstat(j_in, stats->inbound.mos, "mos");
+	add_jstat(j_in, stats->inbound.pp_R, "pp_quality_percentage");
+	add_jstat(j_in, stats->inbound.pp_mos, "pp_mos");
 	add_jstat(j_in, stats->inbound.cumulative_flaws, "cumulative_flaw");
 	add_jstat(j_in, stats->inbound.cumulative_R, "cumulative_quality_percentage");
 	add_jstat(j_in, stats->inbound.cumulative_mos, "cumulative_mos");

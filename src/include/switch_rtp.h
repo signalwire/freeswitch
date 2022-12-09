@@ -235,6 +235,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_ses
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port);
 
 /*!
+  \brief Set/Get RTP packet penalty for packet loss
+  \param port new value (if > 0)
+  \return the current RTP penalty for packet loss
+*/
+SWITCH_DECLARE(double) switch_rtp_set_mos_packet_loss_penalty(double penalty);
+
+/*!
+  \brief Set/Get RTP packet penalty for jitter
+  \param port new value (if > 0)
+  \return the current RTP penalty for jitter
+*/
+SWITCH_DECLARE(double) switch_rtp_set_mos_jitter_penalty(double penalty);
+
+/*!
   \brief Request a new port to be used for media
   \param ip the ip to request a port from
   \return the new port to use
