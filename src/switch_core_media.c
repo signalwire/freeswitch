@@ -9768,7 +9768,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
 	}
 	
+	// Deprecated channel variable. please use rtp_use_ms_per_packet
 	if (((val = switch_channel_get_variable(session->channel, "rtp_genesys_dtmf")) && switch_true(val))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "rtp_genesys_dtmf is deprecated variable, please use rtp_use_ms_per_packet\n");
+		flags[SWITCH_RTP_FLAG_USE_MILLISECONDS_PER_PACKET]++;
+	}
+
+	if (((val = switch_channel_get_variable(session->channel, "rtp_use_ms_per_packet")) && switch_true(val))) {
 		flags[SWITCH_RTP_FLAG_USE_MILLISECONDS_PER_PACKET]++;
 	}
 
