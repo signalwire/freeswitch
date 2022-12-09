@@ -1408,7 +1408,7 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t *stream, char *rtp_packet,
 	switch_size_t len = rtp_packet_length;
 	zrtp_status_t status = zrtp_status_ok;
 
-	if (!rtp_session || !rtp_session->sock_output) {
+	if (!rtp_session || !rtp_session->sock_output || rtp_session->flags[SWITCH_RTP_FLAG_SHUTDOWN]) {
 		return status;
 	}
 
@@ -3444,6 +3444,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, switch_port_t remote_rtcp_port,
 															  switch_bool_t change_adv_addr, const char **err)
 {
+	switch_socket_t *sock;
 	switch_sockaddr_t *remote_addr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	*err = "Success";
@@ -3470,7 +3471,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 		rtp_session->sock_output = rtp_session->sock_input;
 	} else {
 		if (rtp_session->sock_output && rtp_session->sock_output != rtp_session->sock_input) {
-			switch_socket_close(rtp_session->sock_output);
+			sock = rtp_session->sock_output;
+			rtp_session->sock_output = NULL;
+			switch_socket_close(sock);
 		}
 		if ((status = switch_socket_create(&rtp_session->sock_output,
 										   switch_sockaddr_get_family(rtp_session->remote_addr),
