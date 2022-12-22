@@ -409,8 +409,12 @@ static switch_status_t fa_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		say_file("time/hour-e.wav");
-		say_file("digits/%do.wav",hour);
-		play_group(SSM_PRONOUNCED, 0, (tm.tm_min - tm.tm_min % 10) / 10, tm.tm_min % 10, "time/minutes-e.wav", session, args);
+		if (tm.tm_min == 0) {
+			say_file("digits/%d.wav",hour);
+		} else {
+			say_file("digits/%do.wav",hour);
+			play_group(SSM_PRONOUNCED, 0, (tm.tm_min - tm.tm_min % 10) / 10, tm.tm_min % 10, "time/minutes-e.wav", session, args);
+		}
 		say_file("time/%s.wav", pm ? "p-m" : "a-m");
 	}
 
