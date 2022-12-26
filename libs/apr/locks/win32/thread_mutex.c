@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_arch_thread_mutex.h"
-#include "apr_thread_mutex.h"
-#include "apr_portable.h"
-#include "apr_arch_misc.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_thread_mutex.h"
+#include "fspr_portable.h"
+#include "fspr_arch_misc.h"
 
-static apr_status_t thread_mutex_cleanup(void *data)
+static fspr_status_t thread_mutex_cleanup(void *data)
 {
-    apr_thread_mutex_t *lock = data;
+    fspr_thread_mutex_t *lock = data;
 
     if (lock->type == thread_mutex_critical_section) {
         lock->type = -1;
@@ -33,17 +33,17 @@ static apr_status_t thread_mutex_cleanup(void *data)
     }
     else {
         if (!CloseHandle(lock->handle)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
     }
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_create(apr_thread_mutex_t **mutex,
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_create(fspr_thread_mutex_t **mutex,
                                                   unsigned int flags,
-                                                  apr_pool_t *pool)
+                                                  fspr_pool_t *pool)
 {
-    (*mutex) = (apr_thread_mutex_t *)apr_palloc(pool, sizeof(**mutex));
+    (*mutex) = (fspr_thread_mutex_t *)fspr_palloc(pool, sizeof(**mutex));
 
     (*mutex)->pool = pool;
 
@@ -74,12 +74,12 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_create(apr_thread_mutex_t **mutex,
 #endif
     }
 
-    apr_pool_cleanup_register((*mutex)->pool, (*mutex), thread_mutex_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*mutex)->pool, (*mutex), thread_mutex_cleanup,
+                              fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_lock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_lock(fspr_thread_mutex_t *mutex)
 {
     if (mutex->type == thread_mutex_critical_section) {
         EnterCriticalSection(&mutex->section);
@@ -87,13 +87,13 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_lock(apr_thread_mutex_t *mutex)
     else {
         DWORD rv = WaitForSingleObject(mutex->handle, INFINITE);
 	if ((rv != WAIT_OBJECT_0) && (rv != WAIT_ABANDONED)) {
-            return (rv == WAIT_TIMEOUT) ? APR_EBUSY : apr_get_os_error();
+            return (rv == WAIT_TIMEOUT) ? APR_EBUSY : fspr_get_os_error();
 	}
     }        
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_trylock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_trylock(fspr_thread_mutex_t *mutex)
 {
     if (mutex->type == thread_mutex_critical_section) {
         if (!TryEnterCriticalSection(&mutex->section)) {
@@ -103,33 +103,33 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_trylock(apr_thread_mutex_t *mutex)
     else {
         DWORD rv = WaitForSingleObject(mutex->handle, 0);
 	if ((rv != WAIT_OBJECT_0) && (rv != WAIT_ABANDONED)) {
-            return (rv == WAIT_TIMEOUT) ? APR_EBUSY : apr_get_os_error();
+            return (rv == WAIT_TIMEOUT) ? APR_EBUSY : fspr_get_os_error();
 	}
     }        
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_unlock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_unlock(fspr_thread_mutex_t *mutex)
 {
     if (mutex->type == thread_mutex_critical_section) {
         LeaveCriticalSection(&mutex->section);
     }
     else if (mutex->type == thread_mutex_unnested_event) {
         if (!SetEvent(mutex->handle)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
     }
     else if (mutex->type == thread_mutex_nested_mutex) {
         if (!ReleaseMutex(mutex->handle)) {
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
     }
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_destroy(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_destroy(fspr_thread_mutex_t *mutex)
 {
-    return apr_pool_cleanup_run(mutex->pool, mutex, thread_mutex_cleanup);
+    return fspr_pool_cleanup_run(mutex->pool, mutex, thread_mutex_cleanup);
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(thread_mutex)

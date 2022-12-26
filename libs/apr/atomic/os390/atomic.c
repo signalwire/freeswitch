@@ -15,19 +15,19 @@
  */
 
 
-#include "apr.h"
-#include "apr_atomic.h"
+#include "fspr.h"
+#include "fspr_atomic.h"
 
 #include <stdlib.h>
 
-apr_status_t apr_atomic_init(apr_pool_t *p)
+fspr_status_t fspr_atomic_init(fspr_pool_t *p)
 {
     return APR_SUCCESS;
 }
 
-apr_uint32_t apr_atomic_add32(volatile apr_uint32_t *mem, apr_uint32_t val)
+fspr_uint32_t fspr_atomic_add32(volatile fspr_uint32_t *mem, fspr_uint32_t val)
 {
-    apr_uint32_t old, new_val; 
+    fspr_uint32_t old, new_val; 
 
     old = *mem;   /* old is automatically updated on cs failure */
     do {
@@ -36,9 +36,9 @@ apr_uint32_t apr_atomic_add32(volatile apr_uint32_t *mem, apr_uint32_t val)
     return old;
 }
 
-void apr_atomic_sub32(volatile apr_uint32_t *mem, apr_uint32_t val)
+void fspr_atomic_sub32(volatile fspr_uint32_t *mem, fspr_uint32_t val)
 {
-     apr_uint32_t old, new_val;
+     fspr_uint32_t old, new_val;
 
      old = *mem;   /* old is automatically updated on cs failure */
      do {
@@ -46,14 +46,14 @@ void apr_atomic_sub32(volatile apr_uint32_t *mem, apr_uint32_t val)
      } while (__cs(&old, (cs_t *)mem, new_val));
 }
 
-apr_uint32_t apr_atomic_inc32(volatile apr_uint32_t *mem)
+fspr_uint32_t fspr_atomic_inc32(volatile fspr_uint32_t *mem)
 {
-    return apr_atomic_add32(mem, 1);
+    return fspr_atomic_add32(mem, 1);
 }
 
-int apr_atomic_dec32(volatile apr_uint32_t *mem)
+int fspr_atomic_dec32(volatile fspr_uint32_t *mem)
 {
-    apr_uint32_t old, new_val; 
+    fspr_uint32_t old, new_val; 
 
     old = *mem;   /* old is automatically updated on cs failure */
     do {
@@ -63,28 +63,28 @@ int apr_atomic_dec32(volatile apr_uint32_t *mem)
     return new_val != 0;
 }
 
-apr_uint32_t apr_atomic_read32(volatile apr_uint32_t *mem)
+fspr_uint32_t fspr_atomic_read32(volatile fspr_uint32_t *mem)
 {
     return *mem;
 }
 
-void apr_atomic_set32(volatile apr_uint32_t *mem, apr_uint32_t val)
+void fspr_atomic_set32(volatile fspr_uint32_t *mem, fspr_uint32_t val)
 {
     *mem = val;
 }
 
-apr_uint32_t apr_atomic_cas32(volatile apr_uint32_t *mem, apr_uint32_t swap, 
-                              apr_uint32_t cmp)
+fspr_uint32_t fspr_atomic_cas32(volatile fspr_uint32_t *mem, fspr_uint32_t swap, 
+                              fspr_uint32_t cmp)
 {
-    apr_uint32_t old = cmp;
+    fspr_uint32_t old = cmp;
     
     __cs(&old, (cs_t *)mem, swap);
     return old; /* old is automatically updated from mem on cs failure */
 }
 
-apr_uint32_t apr_atomic_xchg32(volatile apr_uint32_t *mem, apr_uint32_t val)
+fspr_uint32_t fspr_atomic_xchg32(volatile fspr_uint32_t *mem, fspr_uint32_t val)
 {
-    apr_uint32_t old, new_val; 
+    fspr_uint32_t old, new_val; 
 
     old = *mem;   /* old is automatically updated on cs failure */
     do {

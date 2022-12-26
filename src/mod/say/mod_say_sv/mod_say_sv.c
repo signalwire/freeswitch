@@ -429,7 +429,7 @@ static switch_status_t sv_say_time(switch_say_file_handle_t *sh, char *tosay, sw
         }
 
         if (say_date) {
-                say_year = say_month = say_day = say_dow = 1;
+                say_year = say_month = say_day = 1;
         }
 
         if (say_month) {

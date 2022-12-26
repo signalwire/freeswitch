@@ -1367,7 +1367,6 @@ SWITCH_STANDARD_API(local_stream_function)
 	char *mycmd = NULL, *argv[5] = { 0 };
 	char *local_stream_name = NULL;
 	int argc = 0;
-	int ok = 0;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -1461,7 +1460,7 @@ SWITCH_STANDARD_API(local_stream_function)
 			stream->write_function(stream, "+OK stream: %s", source->name);
 			switch_thread_rwlock_unlock(source->rwlock);
 		} else {
-			if ((ok = launch_streams(local_stream_name))) {
+			if (launch_streams(local_stream_name)) {
 				stream->write_function(stream, "+OK stream: %s", local_stream_name);
 			}
 		}

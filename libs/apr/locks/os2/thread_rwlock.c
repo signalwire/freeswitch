@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_arch_thread_rwlock.h"
-#include "apr_arch_file_io.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_arch_thread_rwlock.h"
+#include "fspr_arch_file_io.h"
 #include <string.h>
 
-static apr_status_t thread_rwlock_cleanup(void *therwlock)
+static fspr_status_t thread_rwlock_cleanup(void *therwlock)
 {
-    apr_thread_rwlock_t *rwlock = therwlock;
-    return apr_thread_rwlock_destroy(rwlock);
+    fspr_thread_rwlock_t *rwlock = therwlock;
+    return fspr_thread_rwlock_destroy(rwlock);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
-                                                   apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_create(fspr_thread_rwlock_t **rwlock,
+                                                   fspr_pool_t *pool)
 {
-    apr_thread_rwlock_t *new_rwlock;
+    fspr_thread_rwlock_t *new_rwlock;
     ULONG rc;
 
-    new_rwlock = (apr_thread_rwlock_t *)apr_palloc(pool, sizeof(apr_thread_rwlock_t));
+    new_rwlock = (fspr_thread_rwlock_t *)fspr_palloc(pool, sizeof(fspr_thread_rwlock_t));
     new_rwlock->pool = pool;
     new_rwlock->readers = 0;
 
@@ -53,15 +53,15 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_create(apr_thread_rwlock_t **rwlock,
     *rwlock = new_rwlock;
 
     if (!rc)
-        apr_pool_cleanup_register(pool, new_rwlock, thread_rwlock_cleanup,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(pool, new_rwlock, thread_rwlock_cleanup,
+                                  fspr_pool_cleanup_null);
 
     return APR_FROM_OS_ERROR(rc);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_rdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_rdlock(fspr_thread_rwlock_t *rwlock)
 {
     ULONG rc, posts;
 
@@ -82,7 +82,7 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_rdlock(apr_thread_rwlock_t *rwlock)
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_tryrdlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_tryrdlock(fspr_thread_rwlock_t *rwlock)
 {
     /* As above but with different wait time */
     ULONG rc, posts;
@@ -100,7 +100,7 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_tryrdlock(apr_thread_rwlock_t *rwloc
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_wrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_wrlock(fspr_thread_rwlock_t *rwlock)
 {
     ULONG rc;
 
@@ -125,7 +125,7 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_wrlock(apr_thread_rwlock_t *rwlock)
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_trywrlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_trywrlock(fspr_thread_rwlock_t *rwlock)
 {
     ULONG rc;
 
@@ -149,7 +149,7 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_trywrlock(apr_thread_rwlock_t *rwloc
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_unlock(fspr_thread_rwlock_t *rwlock)
 {
     ULONG rc;
 
@@ -176,7 +176,7 @@ APR_DECLARE(apr_status_t) apr_thread_rwlock_unlock(apr_thread_rwlock_t *rwlock)
 
 
 
-APR_DECLARE(apr_status_t) apr_thread_rwlock_destroy(apr_thread_rwlock_t *rwlock)
+APR_DECLARE(fspr_status_t) fspr_thread_rwlock_destroy(fspr_thread_rwlock_t *rwlock)
 {
     ULONG rc;
 

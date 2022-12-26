@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-#include "apr_arch_dso.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_dso.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
 #include <library.h>
 #include <unistd.h>
 
-APR_DECLARE(apr_status_t) apr_os_dso_handle_put(apr_dso_handle_t **aprdso,
-                                                apr_os_dso_handle_t osdso,
-                                                apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_dso_handle_put(fspr_dso_handle_t **aprdso,
+                                                fspr_os_dso_handle_t osdso,
+                                                fspr_pool_t *pool)
 {
-    *aprdso = apr_pcalloc(pool, sizeof **aprdso);
+    *aprdso = fspr_pcalloc(pool, sizeof **aprdso);
     (*aprdso)->handle = osdso;
     (*aprdso)->pool = pool;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_dso_handle_get(apr_os_dso_handle_t *osdso,
-                                                apr_dso_handle_t *aprdso)
+APR_DECLARE(fspr_status_t) fspr_os_dso_handle_get(fspr_os_dso_handle_t *osdso,
+                                                fspr_dso_handle_t *aprdso)
 {
     *osdso = aprdso->handle;
     return APR_SUCCESS;
 }
 
-static apr_status_t dso_cleanup(void *thedso)
+static fspr_status_t dso_cleanup(void *thedso)
 {
-    apr_dso_handle_t *dso = thedso;
+    fspr_dso_handle_t *dso = thedso;
     sym_list *symbol = NULL;
     void *NLMHandle = getnlmhandle();
 
@@ -65,22 +65,22 @@ static apr_status_t dso_cleanup(void *thedso)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_dso_load(apr_dso_handle_t **res_handle, 
-                                       const char *path, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dso_load(fspr_dso_handle_t **res_handle, 
+                                       const char *path, fspr_pool_t *pool)
 {
 
     void *os_handle = NULL;
     char *fullpath = NULL;
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    if ((rv = apr_filepath_merge(&fullpath, NULL, path, 
+    if ((rv = fspr_filepath_merge(&fullpath, NULL, path, 
                                  APR_FILEPATH_NATIVE, pool)) != APR_SUCCESS) {
         return rv;
     }
 
     os_handle = dlopen(fullpath, RTLD_NOW | RTLD_LOCAL);
 
-    *res_handle = apr_pcalloc(pool, sizeof(**res_handle));
+    *res_handle = fspr_pcalloc(pool, sizeof(**res_handle));
 
     if(os_handle == NULL) {
         (*res_handle)->errormsg = dlerror();
@@ -91,20 +91,20 @@ APR_DECLARE(apr_status_t) apr_dso_load(apr_dso_handle_t **res_handle,
     (*res_handle)->pool = pool;
     (*res_handle)->errormsg = NULL;
     (*res_handle)->symbols = NULL;
-    (*res_handle)->path = apr_pstrdup(pool, fullpath);
+    (*res_handle)->path = fspr_pstrdup(pool, fullpath);
 
-    apr_pool_cleanup_register(pool, *res_handle, dso_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(pool, *res_handle, dso_cleanup, fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
     
-APR_DECLARE(apr_status_t) apr_dso_unload(apr_dso_handle_t *handle)
+APR_DECLARE(fspr_status_t) fspr_dso_unload(fspr_dso_handle_t *handle)
 {
-    return apr_pool_cleanup_run(handle->pool, handle, dso_cleanup);
+    return fspr_pool_cleanup_run(handle->pool, handle, dso_cleanup);
 }
 
-APR_DECLARE(apr_status_t) apr_dso_sym(apr_dso_handle_sym_t *ressym, 
-                                      apr_dso_handle_t *handle, 
+APR_DECLARE(fspr_status_t) fspr_dso_sym(fspr_dso_handle_sym_t *ressym, 
+                                      fspr_dso_handle_t *handle, 
                                       const char *symname)
 {
     sym_list *symbol = NULL;
@@ -115,21 +115,21 @@ APR_DECLARE(apr_status_t) apr_dso_sym(apr_dso_handle_sym_t *ressym,
         return APR_ESYMNOTFOUND;
     }
 
-    symbol = apr_pcalloc(handle->pool, sizeof(sym_list));
+    symbol = fspr_pcalloc(handle->pool, sizeof(sym_list));
     symbol->next = handle->symbols;
     handle->symbols = symbol;
-    symbol->symbol = apr_pstrdup(handle->pool, symname);
+    symbol->symbol = fspr_pstrdup(handle->pool, symname);
 
     *ressym = retval;
     
     return APR_SUCCESS;
 }
 
-APR_DECLARE(const char *) apr_dso_error(apr_dso_handle_t *dso, char *buffer, 
-                                        apr_size_t buflen)
+APR_DECLARE(const char *) fspr_dso_error(fspr_dso_handle_t *dso, char *buffer, 
+                                        fspr_size_t buflen)
 {
     if (dso->errormsg) {
-        apr_cpystrn(buffer, dso->errormsg, buflen);
+        fspr_cpystrn(buffer, dso->errormsg, buflen);
         return dso->errormsg;
     }
     return "No Error";

@@ -333,7 +333,6 @@ SWITCH_STANDARD_API(translate_function)
 	char *translated = NULL;
 	switch_event_t *event = NULL;
 	char *argv[32] = { 0 };
-	int argc = 0;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", TRANSLATE_SYNTAX);
@@ -344,7 +343,7 @@ SWITCH_STANDARD_API(translate_function)
 
 	mydata = strdup(cmd);
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		if (!session) {
 			char *areacode = switch_core_get_variable("default_areacode");
 			switch_core_new_memory_pool(&pool);

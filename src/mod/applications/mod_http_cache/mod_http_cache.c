@@ -1167,6 +1167,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
 	} else {
+		switch_curl_easy_cleanup(curl_handle);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
 		status = SWITCH_STATUS_GENERR;
 		goto done;

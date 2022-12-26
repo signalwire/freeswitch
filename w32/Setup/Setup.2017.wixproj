@@ -385,14 +385,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\asr_tts\mod_unimrcp\mod_unimrcp.2017.vcxproj">
-      <Name>mod_unimrcp</Name>
-      <Project>{d07c378a-f5f7-438f-adf3-4ac4fb1883cd}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_amr\mod_amr.2017.vcxproj">
       <Name>mod_amr</Name>
       <Project>{8deb383c-4091-4f42-a56f-c9e46d552d79}</Project>
@@ -524,14 +516,6 @@
     <ProjectReference Include="..\..\src\mod\directories\mod_ldap\mod_ldap.2017.vcxproj">
       <Name>mod_ldap</Name>
       <Project>{ec3e5c7f-ee09-47e2-80fe-546363d14a98}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_dingaling\mod_dingaling.2017.vcxproj">
-      <Name>mod_dingaling</Name>
-      <Project>{ffaa4c52-3a53-4f99-90c1-d59d1f0427f3}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>

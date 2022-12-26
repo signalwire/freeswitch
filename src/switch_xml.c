@@ -63,7 +63,7 @@
 #include <glob.h>
 #else /* we're on windoze :( */
 /* glob functions at end of this file */
-#include <apr_file_io.h>
+#include <fspr_file_io.h>
 
 typedef struct {
 	size_t gl_pathc;			/* Count of total paths so far. */
@@ -795,7 +795,7 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		return;
 	}
 
-	if (!root->pi || !root->pi[0]) {
+	if (root->pi == (char ***)(SWITCH_XML_NIL) || !root->pi || !root->pi[0]) {
 		root->pi = (char ***) switch_must_malloc(sizeof(char **));
 		*(root->pi) = NULL;		/* first pi */
 	}
@@ -1257,7 +1257,7 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	char *wp = ebuf;
 	char *ep = ebuf + elen - 1;
 
-	if (!(var = strstr(rp, "$${"))) {
+	if (!strstr(rp, "$${")) {
 		*newlen = strlen(buf);
 		return buf;
 	}
@@ -3626,19 +3626,19 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern, char *restpattern, glob_t *pglob, size_t *limit)
 {
 	int err;
-	apr_dir_t *dirp;
-	apr_pool_t *pool;
+	fspr_dir_t *dirp;
+	fspr_pool_t *pool;
 
-	apr_pool_create(&pool, NULL);
+	fspr_pool_create(&pool, NULL);
 
 	if (pathend > pathend_last)
 		return (GLOB_ABORTED);
 	*pathend = EOS;
 	errno = 0;
 
-	if (apr_dir_open(&dirp, pathbuf, pool) != APR_SUCCESS) {
+	if (fspr_dir_open(&dirp, pathbuf, pool) != APR_SUCCESS) {
 		/* TODO: don't call for ENOENT or ENOTDIR? */
-		apr_pool_destroy(pool);
+		fspr_pool_destroy(pool);
 		if (pglob->gl_errfunc) {
 			if (pglob->gl_errfunc(pathbuf, errno) || pglob->gl_flags & GLOB_ERR)
 				return (GLOB_ABORTED);
@@ -3650,11 +3650,11 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 
 	/* Search directory for matching names. */
 	while (dirp) {
-		apr_finfo_t dp;
+		fspr_finfo_t dp;
 		unsigned char *sc;
 		char *dc;
 
-		if (apr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
+		if (fspr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
 			break;
 		if (!(dp.valid & APR_FINFO_NAME) || !(dp.name) || !strlen(dp.name))
 			break;
@@ -3677,8 +3677,8 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 	}
 
 	if (dirp)
-		apr_dir_close(dirp);
-	apr_pool_destroy(pool);
+		fspr_dir_close(dirp);
+	fspr_pool_destroy(pool);
 	return (err);
 }
 

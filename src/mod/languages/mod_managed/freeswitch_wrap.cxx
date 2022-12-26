@@ -1569,16 +1569,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_PROXY_MEDIA_VARIAB
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_ZRTP_PASSTHRU_VARIABLE_get___() {
-  char * jresult ;
-  char *result = 0 ;
-  
-  result = (char *)("zrtp_passthru");
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get___() {
   char * jresult ;
   char *result = 0 ;
@@ -37175,14 +37165,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_perform_mark_
   result = (switch_status_t)switch_channel_perform_mark_answered(arg1,(char const *)arg2,(char const *)arg3,arg4);
   jresult = (int)result; 
   return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_check_zrtp___(void * jarg1) {
-  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
-  
-  arg1 = (switch_channel_t *)jarg1; 
-  switch_channel_check_zrtp(arg1);
 }
 
 
