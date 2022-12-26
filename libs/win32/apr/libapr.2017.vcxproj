@@ -73,7 +73,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+      <Command>if not exist "$(ProjectDir)..\..\apr\include\fspr.h" type "$(ProjectDir)fspr.hw" &gt; "$(ProjectDir)..\..\apr\include\fspr.h"
 xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
@@ -109,7 +109,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+      <Command>if not exist "$(ProjectDir)..\..\apr\include\fspr.h" type "$(ProjectDir)fspr.hw" &gt; "$(ProjectDir)..\..\apr\include\fspr.h"
 xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
@@ -143,7 +143,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+      <Command>if not exist "$(ProjectDir)..\..\apr\include\fspr.h" type "$(ProjectDir)fspr.hw" &gt; "$(ProjectDir)..\..\apr\include\fspr.h"
 xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
@@ -180,7 +180,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\..\apr\include\apr.h" type "$(ProjectDir)apr.hw" &gt; "$(ProjectDir)..\..\apr\include\apr.h"
+      <Command>if not exist "$(ProjectDir)..\..\apr\include\fspr.h" type "$(ProjectDir)fspr.hw" &gt; "$(ProjectDir)..\..\apr\include\fspr.h"
 xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /Y
 </Command>
     </PreBuildEvent>
@@ -216,7 +216,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\apr\atomic\win32\apr_atomic.c" />
+    <ClCompile Include="..\..\apr\atomic\win32\fspr_atomic.c" />
     <ClCompile Include="..\..\apr\dso\win32\dso.c" />
     <ClCompile Include="..\..\apr\file_io\unix\copy.c" />
     <ClCompile Include="..\..\apr\file_io\win32\dir.c" />
@@ -238,7 +238,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
     <ClCompile Include="..\..\apr\locks\win32\thread_cond.c" />
     <ClCompile Include="..\..\apr\locks\win32\thread_mutex.c" />
     <ClCompile Include="..\..\apr\locks\win32\thread_rwlock.c" />
-    <ClCompile Include="..\..\apr\memory\unix\apr_pools.c" />
+    <ClCompile Include="..\..\apr\memory\unix\fspr_pools.c" />
     <ClCompile Include="..\..\apr\misc\win32\charset.c" />
     <ClCompile Include="..\..\apr\misc\win32\env.c" />
     <ClCompile Include="..\..\apr\misc\unix\errorcodes.c" />
@@ -260,19 +260,19 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
     <ClCompile Include="..\..\apr\network_io\unix\sockaddr.c" />
     <ClCompile Include="..\..\apr\network_io\win32\sockets.c" />
     <ClCompile Include="..\..\apr\network_io\win32\sockopt.c" />
-    <ClCompile Include="..\..\apr\passwd\apr_getpass.c" />
-    <ClCompile Include="..\..\apr\random\unix\apr_random.c" />
+    <ClCompile Include="..\..\apr\passwd\fspr_getpass.c" />
+    <ClCompile Include="..\..\apr\random\unix\fspr_random.c" />
     <ClCompile Include="..\..\apr\random\unix\sha2.c" />
     <ClCompile Include="..\..\apr\random\unix\sha2_glue.c" />
     <ClCompile Include="..\..\apr\shmem\win32\shm.c" />
-    <ClCompile Include="..\..\apr\strings\apr_cpystrn.c" />
-    <ClCompile Include="..\..\apr\strings\apr_fnmatch.c" />
-    <ClCompile Include="..\..\apr\strings\apr_snprintf.c" />
-    <ClCompile Include="..\..\apr\strings\apr_strings.c" />
-    <ClCompile Include="..\..\apr\strings\apr_strnatcmp.c" />
-    <ClCompile Include="..\..\apr\strings\apr_strtok.c" />
-    <ClCompile Include="..\..\apr\tables\apr_hash.c" />
-    <ClCompile Include="..\..\apr\tables\apr_tables.c" />
+    <ClCompile Include="..\..\apr\strings\fspr_cpystrn.c" />
+    <ClCompile Include="..\..\apr\strings\fspr_fnmatch.c" />
+    <ClCompile Include="..\..\apr\strings\fspr_snprintf.c" />
+    <ClCompile Include="..\..\apr\strings\fspr_strings.c" />
+    <ClCompile Include="..\..\apr\strings\fspr_strnatcmp.c" />
+    <ClCompile Include="..\..\apr\strings\fspr_strtok.c" />
+    <ClCompile Include="..\..\apr\tables\fspr_hash.c" />
+    <ClCompile Include="..\..\apr\tables\fspr_tables.c" />
     <ClCompile Include="..\..\apr\threadproc\win32\proc.c" />
     <ClCompile Include="..\..\apr\threadproc\win32\signals.c" />
     <ClCompile Include="..\..\apr\threadproc\win32\thread.c" />
@@ -284,52 +284,52 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
     <ClCompile Include="..\..\apr\user\win32\userinfo.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_atime.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_dso.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_file_io.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_inherit.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_misc.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_networkio.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_thread_mutex.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_thread_rwlock.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_threadproc.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_arch_utf8.h" />
-    <ClInclude Include="..\..\apr\include\arch\win32\apr_private.h" />
-    <ClInclude Include="..\..\apr\include\arch\apr_private_common.h" />
-    <ClInclude Include="..\..\apr\include\apr_allocator.h" />
-    <ClInclude Include="..\..\apr\include\apr_atomic.h" />
-    <ClInclude Include="..\..\apr\include\apr_dso.h" />
-    <ClInclude Include="..\..\apr\include\apr_env.h" />
-    <ClInclude Include="..\..\apr\include\apr_errno.h" />
-    <ClInclude Include="..\..\apr\include\apr_file_info.h" />
-    <ClInclude Include="..\..\apr\include\apr_file_io.h" />
-    <ClInclude Include="..\..\apr\include\apr_fnmatch.h" />
-    <ClInclude Include="..\..\apr\include\apr_general.h" />
-    <ClInclude Include="..\..\apr\include\apr_getopt.h" />
-    <ClInclude Include="..\..\apr\include\apr_global_mutex.h" />
-    <ClInclude Include="..\..\apr\include\apr_hash.h" />
-    <ClInclude Include="..\..\apr\include\apr_inherit.h" />
-    <ClInclude Include="..\..\apr\include\apr_lib.h" />
-    <ClInclude Include="..\..\apr\include\apr_mmap.h" />
-    <ClInclude Include="..\..\apr\include\apr_network_io.h" />
-    <ClInclude Include="..\..\apr\include\apr_poll.h" />
-    <ClInclude Include="..\..\apr\include\apr_pools.h" />
-    <ClInclude Include="..\..\apr\include\apr_portable.h" />
-    <ClInclude Include="..\..\apr\include\apr_proc_mutex.h" />
-    <ClInclude Include="..\..\apr\include\apr_ring.h" />
-    <ClInclude Include="..\..\apr\include\apr_shm.h" />
-    <ClInclude Include="..\..\apr\include\apr_signal.h" />
-    <ClInclude Include="..\..\apr\include\apr_strings.h" />
-    <ClInclude Include="..\..\apr\include\apr_support.h" />
-    <ClInclude Include="..\..\apr\include\apr_tables.h" />
-    <ClInclude Include="..\..\apr\include\apr_thread_cond.h" />
-    <ClInclude Include="..\..\apr\include\apr_thread_mutex.h" />
-    <ClInclude Include="..\..\apr\include\apr_thread_proc.h" />
-    <ClInclude Include="..\..\apr\include\apr_thread_rwlock.h" />
-    <ClInclude Include="..\..\apr\include\apr_time.h" />
-    <ClInclude Include="..\..\apr\include\apr_user.h" />
-    <ClInclude Include="..\..\apr\include\apr_version.h" />
-    <ClInclude Include="..\..\apr\include\apr_want.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_atime.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_dso.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_file_io.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_inherit.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_misc.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_networkio.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_thread_mutex.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_thread_rwlock.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_threadproc.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_arch_utf8.h" />
+    <ClInclude Include="..\..\apr\include\arch\win32\fspr_private.h" />
+    <ClInclude Include="..\..\apr\include\arch\fspr_private_common.h" />
+    <ClInclude Include="..\..\apr\include\fspr_allocator.h" />
+    <ClInclude Include="..\..\apr\include\fspr_atomic.h" />
+    <ClInclude Include="..\..\apr\include\fspr_dso.h" />
+    <ClInclude Include="..\..\apr\include\fspr_env.h" />
+    <ClInclude Include="..\..\apr\include\fspr_errno.h" />
+    <ClInclude Include="..\..\apr\include\fspr_file_info.h" />
+    <ClInclude Include="..\..\apr\include\fspr_file_io.h" />
+    <ClInclude Include="..\..\apr\include\fspr_fnmatch.h" />
+    <ClInclude Include="..\..\apr\include\fspr_general.h" />
+    <ClInclude Include="..\..\apr\include\fspr_getopt.h" />
+    <ClInclude Include="..\..\apr\include\fspr_global_mutex.h" />
+    <ClInclude Include="..\..\apr\include\fspr_hash.h" />
+    <ClInclude Include="..\..\apr\include\fspr_inherit.h" />
+    <ClInclude Include="..\..\apr\include\fspr_lib.h" />
+    <ClInclude Include="..\..\apr\include\fspr_mmap.h" />
+    <ClInclude Include="..\..\apr\include\fspr_network_io.h" />
+    <ClInclude Include="..\..\apr\include\fspr_poll.h" />
+    <ClInclude Include="..\..\apr\include\fspr_pools.h" />
+    <ClInclude Include="..\..\apr\include\fspr_portable.h" />
+    <ClInclude Include="..\..\apr\include\fspr_proc_mutex.h" />
+    <ClInclude Include="..\..\apr\include\fspr_ring.h" />
+    <ClInclude Include="..\..\apr\include\fspr_shm.h" />
+    <ClInclude Include="..\..\apr\include\fspr_signal.h" />
+    <ClInclude Include="..\..\apr\include\fspr_strings.h" />
+    <ClInclude Include="..\..\apr\include\fspr_support.h" />
+    <ClInclude Include="..\..\apr\include\fspr_tables.h" />
+    <ClInclude Include="..\..\apr\include\fspr_thread_cond.h" />
+    <ClInclude Include="..\..\apr\include\fspr_thread_mutex.h" />
+    <ClInclude Include="..\..\apr\include\fspr_thread_proc.h" />
+    <ClInclude Include="..\..\apr\include\fspr_thread_rwlock.h" />
+    <ClInclude Include="..\..\apr\include\fspr_time.h" />
+    <ClInclude Include="..\..\apr\include\fspr_user.h" />
+    <ClInclude Include="..\..\apr\include\fspr_version.h" />
+    <ClInclude Include="..\..\apr\include\fspr_want.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\apr\libapr.rc">

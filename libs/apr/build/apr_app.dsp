@@ -83,7 +83,7 @@ LIB32=link.exe -lib
 # Name "apr_app - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\misc\win32\apr_app.c
+SOURCE=..\misc\win32\fspr_app.c
 # End Source File
 # End Target
 # End Project

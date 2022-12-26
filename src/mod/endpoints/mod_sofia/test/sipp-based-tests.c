@@ -48,7 +48,7 @@ static void test_wait_for_uuid(char *uuid)
 		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute("show", "channels", NULL, &stream);
 
-		if (!strncmp((char *)stream.data, "uuid,", 5)) {
+		if (stream.data && !strncmp((char *)stream.data, "uuid,", 5)) {
 			channel_data = switch_mprintf("%s", (char *)stream.data);
 			switch_safe_free(stream.data);
 			break;
@@ -76,7 +76,9 @@ static const char *test_wait_for_chan_var(switch_channel_t *channel, const char 
 	int loop_count = 50;
 	const char *var=NULL;
 	do {
-		if (!strcmp(switch_channel_get_variable(channel, "sip_cseq"),seq)){
+		const char *sip_cseq = switch_channel_get_variable(channel, "sip_cseq");
+
+		if (sip_cseq && seq && !strcmp(sip_cseq, seq)){
 			switch_sleep(100 * 1000);
 			var = switch_channel_get_variable(channel, "rtp_local_sdp_str");
 			break;
@@ -247,6 +249,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 
 		FST_TEARDOWN_BEGIN()
 		{
+				switch_sleep(200 * 1000);
 		}
 		FST_TEARDOWN_END()
 
@@ -681,15 +684,14 @@ skiptest:
 				fst_check(status == SWITCH_STATUS_SUCCESS);
 
 				/*test is considered PASSED if we get a session*/
-				if (!session) {
-					fst_requires(session);
+				fst_check(session);
+				if (session) {
+					switch_sleep(1000 * 1000);
+					channel = switch_core_session_get_channel(session);
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					switch_core_session_rwunlock(session);
 				}
 
-				switch_sleep(1000 * 1000);
-
-				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				switch_core_session_rwunlock(session);
 				switch_safe_free(to);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();

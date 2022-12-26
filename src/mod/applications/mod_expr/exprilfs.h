@@ -563,10 +563,12 @@ case EXPR_NODEFUNC_RECTTOPOLA:
 		tmp = atan2(d2, d1);
 		EXPR_CHECK_ERR();
 
-		if (tmp < 0.0)
+		if (tmp < 0.0) {
 			*val = tmp = (2.0 * M_PI);
-		else
+			(void)tmp;
+		} else {
 			*val = tmp;
+		}
 	} else
 		return err;
 

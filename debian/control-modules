@@ -291,10 +291,6 @@ Module: asr_tts/mod_tts_commandline
 Description: mod_tts_commandline
  Adds mod_tts_commandline.
 
-Module: asr_tts/mod_unimrcp
-Description: mod_unimrcp
- Adds mod_unimrcp.
-
 ## mod/codecs
 
 Module: codecs/mod_amr
@@ -430,10 +426,6 @@ Module: endpoints/mod_alsa
 Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
-
-Module: endpoints/mod_dingaling
-Description: mod_dingaling
- Adds mod_dingaling.
 
 Module: endpoints/mod_gsmopen
 Description: mod_gsmopen

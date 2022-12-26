@@ -3820,8 +3820,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				cc_queue_t *queue = NULL;
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
+				if (load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL)) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -3845,9 +3844,8 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				cc_queue_t *queue = NULL;
 				destroy_queue(queue_name);
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
+				if (load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL)) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -4213,6 +4211,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
 		return SWITCH_STATUS_TERM;
 	}
+	
+	
+	memset(&globals, 0, sizeof(globals));
+	globals.pool = pool;
 
 	/* Subscribe to presence request events */
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
@@ -4220,9 +4222,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to subscribe for presence events!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-
-	memset(&globals, 0, sizeof(globals));
-	globals.pool = pool;
 
 	switch_core_hash_init(&globals.queue_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);

@@ -14,13 +14,6 @@
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
 
-  <!--
-      Enable ZRTP globally you can override this on a per channel basis
-      
-      http://wiki.freeswitch.org/wiki/ZRTP (on how to enable zrtp)
-  -->
-  <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
-
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=PCMU,PCMA"/>
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU,PCMA"/>
 

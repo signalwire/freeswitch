@@ -1250,7 +1250,6 @@ JS_SESSION_FUNCTION_IMPL(WaitForMedia)
 	HandleScope handle_scope(info.GetIsolate());
 	switch_channel_t *channel;
 	switch_time_t started;
-	unsigned int elapsed;
 	int32_t timeout = 60000;
 	bool ret = true;
 
@@ -1273,7 +1272,7 @@ JS_SESSION_FUNCTION_IMPL(WaitForMedia)
 	}
 
 	for (;;) {
-		if (((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > (switch_time_t) timeout)
+		if (((/* Elapsed */(unsigned int)((switch_micro_time_now() - started) / 1000)) > (switch_time_t)timeout)
 			|| switch_channel_down(channel)) {
 			info.GetReturnValue().Set(false);
 			break;
@@ -1297,7 +1296,6 @@ JS_SESSION_FUNCTION_IMPL(WaitForAnswer)
 	HandleScope handle_scope(info.GetIsolate());
 	switch_channel_t *channel;
 	switch_time_t started;
-	unsigned int elapsed;
 	int32_t timeout = 60000;
 	bool ret = true;
 
@@ -1319,7 +1317,7 @@ JS_SESSION_FUNCTION_IMPL(WaitForAnswer)
 	}
 
 	for (;;) {
-		if (((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > (switch_time_t) timeout)
+		if (((/* Elapsed */(unsigned int)((switch_micro_time_now() - started) / 1000)) > (switch_time_t)timeout)
 			|| switch_channel_down(channel)) {
 			info.GetReturnValue().Set(false);
 			break;

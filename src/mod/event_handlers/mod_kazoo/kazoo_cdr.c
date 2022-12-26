@@ -196,7 +196,7 @@ static switch_status_t kz_report_channel_flaws(switch_core_session_t *session, s
 	kz_switch_ivr_set_json_call_flaws(callStats, session, SWITCH_MEDIA_TYPE_AUDIO);
 	kz_switch_ivr_set_json_call_flaws(callStats, session, SWITCH_MEDIA_TYPE_VIDEO);
 
-	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_channel_media_errors", cJSON_PrintUnformatted(callStats));
+	switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, "_json_channel_media_errors", cJSON_PrintUnformatted(callStats));
 
 	cJSON_Delete(callStats);
 
@@ -210,7 +210,7 @@ static switch_status_t kz_report_channel_stats(switch_core_session_t *session, s
 	kz_switch_ivr_set_json_call_stats(callStats, session, SWITCH_MEDIA_TYPE_AUDIO);
 	kz_switch_ivr_set_json_call_stats(callStats, session, SWITCH_MEDIA_TYPE_VIDEO);
 
-	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_channel_stats", cJSON_PrintUnformatted(callStats));
+	switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, "_json_channel_stats", cJSON_PrintUnformatted(callStats));
 
 	cJSON_Delete(callStats);
 
@@ -237,7 +237,7 @@ static switch_status_t kz_report_app_log(switch_core_session_t *session, switch_
 		cJSON_AddItemToArray(j_apps, j_application);
 	}
 
-	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_application_log", cJSON_PrintUnformatted(j_apps));
+	switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, "_json_application_log", cJSON_PrintUnformatted(j_apps));
 
 	cJSON_Delete(j_apps);
 
@@ -381,7 +381,7 @@ static switch_status_t kz_report_callflow(switch_core_session_t *session, switch
 		caller_profile = caller_profile->next;
 	}
 
-	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_callflow", cJSON_PrintUnformatted(j_callflow));
+	switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, "_json_callflow", cJSON_PrintUnformatted(j_callflow));
 
 	cJSON_Delete(j_callflow);
 
@@ -435,7 +435,7 @@ static switch_status_t kz_report_originated_legs(switch_core_session_t *session,
 		idx++;
 	}
 
-	switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "_json_originated_legs", cJSON_PrintUnformatted(j_originated));
+	switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, "_json_originated_legs", cJSON_PrintUnformatted(j_originated));
 
 	cJSON_Delete(j_originated);
 
@@ -526,10 +526,10 @@ static switch_status_t kz_report_transfer_history(switch_core_session_t *session
 		for(n=0; n < argc; n++) {
 			kz_report_transfer_history_item(argv[n], j_transfer);
 		}
-		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, event_header, cJSON_PrintUnformatted(j_transfer));
+		switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, event_header, cJSON_PrintUnformatted(j_transfer));
 	} else if (strchr(history, HST_ITEM_DELIM)) {
 		kz_report_transfer_history_item(history, j_transfer);
-		switch_event_add_header_string(cdr_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, event_header, cJSON_PrintUnformatted(j_transfer));
+		switch_event_add_header_string_nodup(cdr_event, SWITCH_STACK_BOTTOM, event_header, cJSON_PrintUnformatted(j_transfer));
 	}
 	cJSON_Delete(j_transfer);
 	switch_safe_free(tmp_history);

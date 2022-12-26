@@ -1,12 +1,21 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+int timeout_sec = 10;
+switch_interval_time_t delay_start_ms = 5000;
+
 FST_CORE_DB_BEGIN("./conf_sip")
 {
 FST_SUITE_BEGIN(switch_sip)
 {
 	FST_SETUP_BEGIN()
 	{
+		/* Give mod_sofia time to spinup profile threads */
+		if (delay_start_ms) {
+			switch_sleep(delay_start_ms * 1000);
+			delay_start_ms = 0;
+		}
+
 		fst_requires_module("mod_sofia");
 		fst_requires_module("mod_hash");
 	}
@@ -24,7 +33,7 @@ FST_SUITE_BEGIN(switch_sip)
 		const char *data = "eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiI;info=<https://cert.sticr.att.net:8443/certs/att/a937bb15-38b9-45f1-aac0-8cd3f8fe0648>";
 		char *originate_str = switch_mprintf("{sip_h_Identity=%s}sofia/gateway/test_gateway/+15553332901", data);
 
-		switch_ivr_originate(NULL, &session, &cause, originate_str, 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+		switch_ivr_originate(NULL, &session, &cause, originate_str, timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 		switch_safe_free(originate_str);
 		fst_requires(session);
 
@@ -60,7 +69,7 @@ FST_SUITE_BEGIN(switch_sip)
 		const char *data = "eyJhbGciOiJFUzI1NiIsInBwdCI6InNoYWtlbiI;info=<https://cert.sticr.att.net:8443/certs/att/a937bb15-38b9-45f1-aac0-8cd3f8fe0648>;alg=ES256;ppt=shaken";
 		char *originate_str = switch_mprintf("{sip_h_Identity=%s}sofia/gateway/test_gateway/+15553332901", data);
 
-		switch_ivr_originate(NULL, &session, &cause, originate_str, 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+		switch_ivr_originate(NULL, &session, &cause, originate_str, timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 		switch_safe_free(originate_str);
 		fst_requires(session);
 
