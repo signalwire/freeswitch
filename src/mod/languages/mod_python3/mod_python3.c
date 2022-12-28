@@ -360,6 +360,16 @@ static switch_xml_t python_fetch(const char *section,
 
 		switch_assert(mycmd);
 
+		if (!params) {
+			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+			switch_assert(params);
+		}
+
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "tag_name", switch_str_nil(tag_name));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_name", switch_str_nil(key_name));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_value", switch_str_nil(key_value));
+
 		eval_some_python("xml_fetch", mycmd, NULL, NULL, params, &str, NULL);
 
 		if (str) {
