@@ -323,10 +323,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\sqlite-amalgamation-3080401\sqlite3.c" />
+    <ClCompile Include="..\..\sqlite\sqlite3.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\sqlite-amalgamation-3080401\sqlite3.h" />
+    <ClInclude Include="..\..\sqlite\sqlite3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
