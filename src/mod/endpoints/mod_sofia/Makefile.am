@@ -23,7 +23,7 @@ if HAVE_STIRSHAKEN
 test_test_sofia_funcs_CFLAGS += -DHAVE_STIRSHAKEN
 endif
 test_test_sofia_funcs_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(STIRSHAKEN_LIBS)
-test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIA_SIP_LIBS)
+test_test_sofia_funcs_LDADD = libsofiamod.la $(SOFIA_SIP_LIBS) $(STIRSHAKEN_LIBS)
 
 test_test_nuafail_SOURCES = test/test_nuafail.c
 test_test_nuafail_CFLAGS = $(AM_CFLAGS) $(SOFIA_SIP_CFLAGS) $(STIRSHAKEN_CFLAGS) -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
