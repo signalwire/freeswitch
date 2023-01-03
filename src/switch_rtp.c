@@ -943,10 +943,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	switch_time_t ref_point;
 	int cur_idx = -1;
 	icand_t *cand = NULL;
+	uint32_t priority = 0;
+	uint8_t use_cand = 0;
 
 	cur_idx = locate_candidate(ice, rtp_session->from_addr, &cand);
 	if (cand) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "ICE packed from candidate %s:%d\n", cand->con_addr, cand->con_port);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "ICE packet from candidate %s:%d idx %d\n", cand->con_addr, cand->con_port, cur_idx);
 	}
 
 	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
@@ -1007,6 +1009,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		case SWITCH_STUN_ATTR_USE_CAND:
 			{
 				ice->rready = 1;
+				use_cand = 1;
 			}
 			break;
 		case SWITCH_STUN_ATTR_ERROR_CODE:
@@ -1058,7 +1061,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 		case SWITCH_STUN_ATTR_PRIORITY:
 			{
-				uint32_t priority = 0;
 				pri = (uint32_t *) attr->value;
 				priority = ntohl(*pri);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "|------: %u\n", priority);
@@ -1073,6 +1075,37 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 		xlen += 4 + switch_stun_attribute_padded_length(attr);
 	} while (xlen <= packet->header.length);
+
+	if (!cand && use_cand) {
+		const char *__host = NULL;
+		switch_port_t __port = 0;
+		char __buf[80] = "";
+		int cid = ice->proto;
+		int next_idx = ice->ice_params->cand_idx[ice->proto];
+
+		__host = switch_get_addr(__buf, sizeof(__buf), rtp_session->from_addr);
+		__port = switch_sockaddr_get_port(rtp_session->from_addr);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "ICE packet from unknown candidate %s:%d - Updating candidate list idx %d\n", __host, __port, next_idx);
+		//should we check for ACL?
+
+		//ice->ice_params->cands[next_idx][cid].foundation = switch_core_session_strdup(smh->session, fields[0]);
+		ice->ice_params->cands[next_idx][cid].transport = "udp"; //switch_core_session_strdup(smh->session, fields[2]);
+
+		ice->ice_params->cands[next_idx][cid].component_id = ice->proto;
+		ice->ice_params->cands[next_idx][cid].priority = priority;
+		ice->ice_params->cands[next_idx][cid].con_addr = switch_core_session_strdup(rtp_session->session, __host);
+		ice->ice_params->cands[next_idx][cid].con_port = __port;
+		ice->ice_params->cands[next_idx][cid].last_binding_response = 0;
+
+		switch_sockaddr_new(
+				&ice->ice_params->cands[next_idx][cid].addr,
+				ice->ice_params->cands[next_idx][cid].con_addr,
+				ice->ice_params->cands[next_idx][cid].con_port,
+				rtp_session->pool
+		);
+		ice->ice_params->cand_idx[ice->proto]++;
+	}
 
 	if ((ice->type & ICE_GOOGLE_JINGLE) && ok) {
 		ok = !strcmp(ice->user_ice, username);
@@ -1103,14 +1136,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 					}
 				}
 			} else {
-				const char *__host = NULL;
-				switch_port_t __port = 0;
-				char __buf[80] = "";
-
-				__host = switch_get_addr(__buf, sizeof(__buf), rtp_session->from_addr);
-				__port = switch_sockaddr_get_port(rtp_session->from_addr);
-
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "BINDING_RESPONSE from unknown candidate %s:%d\n", __host, __port);
 			}
 
 			ok = 1;
