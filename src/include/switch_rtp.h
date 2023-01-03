@@ -103,6 +103,8 @@ typedef struct icand_s {
 	switch_port_t rport;
 	char *generation;
 	uint8_t ready;
+	switch_time_t last_binding_response;
+	switch_sockaddr_t *addr;
 } icand_t;
 
 #define MAX_CAND 50
@@ -117,6 +119,27 @@ typedef struct ice_s {
 	char *options;
 
 } ice_t;
+
+typedef struct {
+	char *ice_user;
+	char *user_ice;
+	char *luser_ice;
+	char *pass;
+	char *rpass;
+	switch_sockaddr_t *addr;
+	uint32_t funny_stun;
+	switch_time_t next_run;
+	switch_core_media_ice_type_t type;
+	ice_t *ice_params;
+	ice_proto_t proto;
+	uint8_t sending;
+	uint8_t ready;
+	uint8_t rready;
+	uint8_t init;
+	int missed_count;
+	char last_sent_id[13];
+	switch_time_t last_ok;
+} switch_rtp_ice_t;
 
 typedef enum { /* RTCP Control Packet types (PT) http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-4 */
 	_RTCP_PT_FIR   = 192, /* [RFC 2032] RTP Payload Format for H.261 Video Streams. types 192 (FIR) section 5.2.1 */
