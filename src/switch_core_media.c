@@ -4234,6 +4234,14 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].priority = atol(fields[3]);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr = switch_core_session_strdup(smh->session, con_addr);
 				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_port = (switch_port_t)atoi(fields[5]);
+				engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].last_binding_response = 0;
+
+				switch_sockaddr_new(
+						&engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].addr,
+						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_addr,
+						engine->ice_in.cands[engine->ice_in.cand_idx[cid]][cid].con_port,
+						smh->session->pool
+				);
 
 				j = 6;
 
