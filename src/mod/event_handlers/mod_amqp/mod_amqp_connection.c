@@ -205,7 +205,7 @@ err:
 }
 
 switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *base_conn, mod_amqp_aux_connection_t **aux_conn,
-											 char *profile_name, char *custom_attr, char *reply_exchange)
+											 char *profile_name, char *custom_attr)
 {
 	int channel_max = 0;
 	int frame_max = 131072;
@@ -217,7 +217,6 @@ switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *base_conn, m
 	amqp_rpc_reply_t status;
 	amqp_socket_t *socket = NULL;
 	amqp_queue_declare_ok_t *recv_queue;
-	switch_uuid_t uuid;
 
 	amqp_connection_state_t newConnection = amqp_new_connection();
 
@@ -308,24 +307,17 @@ switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *base_conn, m
 	if (aux_conn) {
 		(*aux_conn)->state = newConnection;
 		(*aux_conn)->locked = 0;
-		switch_uuid_get(&uuid);
-		switch_uuid_format((*aux_conn)->uuid, &uuid);
 
 		recv_queue = amqp_queue_declare(newConnection,						   // state
 										1,									   // channel
-										amqp_cstring_bytes((*aux_conn)->uuid), // queue name
+										amqp_empty_bytes, // queue name
 										0,									   /* passive */
 										0,									   /* durable */
 										1,									   /* exclusive */
 										1,									   /* auto-delete */
 										amqp_empty_table);					   // args
 		(*aux_conn)->queueName = amqp_bytes_malloc_dup(recv_queue->queue);
-		amqp_queue_bind(newConnection,						   // state
-						1,									   // channel
-						(*aux_conn)->queueName,							   // queue
-						amqp_cstring_bytes(reply_exchange),	   // exchange
-						amqp_cstring_bytes((*aux_conn)->uuid), // routing key
-						amqp_empty_table);					   // args
+		amqp_basic_qos(newConnection, 1, 0, 1, 0);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

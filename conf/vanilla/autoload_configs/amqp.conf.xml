@@ -99,8 +99,6 @@
       <params>
         <param name="exchange-name" value="TAP.XML_handler"/>
         <param name="exchange-type" value="topic"/>
-        <param name="reply-exchange-name" value="TAP.XML_handler_reply"/>
-        <param name="reply-exchange-type" value="direct"/>
         <param name="send_queue_size" value="5000"/>
         <param name="reconnect_interval_ms" value="1000"/>
         <param name="xml-handler-bindings" value="directory"/>

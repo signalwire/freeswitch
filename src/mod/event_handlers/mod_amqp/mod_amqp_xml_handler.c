@@ -73,7 +73,7 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 {
 	switch_xml_t xml = NULL;
 	mod_amqp_message_t *amqp_message;
-
+	amqp_basic_properties_t props;
 	mod_amqp_aux_connection_t *conn = NULL, *conn_next = NULL, *conn_tmp = NULL;
 
 	switch_uuid_t uuid;
@@ -112,8 +112,6 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
-	switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_key", uuid_str);
-	switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_exchange", profile->reply_exchange);
 
 	if (profile->running && profile->conn_active) {
 		switch_mutex_lock(profile->mutex);
@@ -122,7 +120,7 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 				if (conn->next == NULL && i < profile->max_temp_conn) {
 					conn->next = switch_core_alloc(profile->pool, sizeof(mod_amqp_aux_connection_t));
 					status = mod_amqp_aux_connection_open(profile->conn_active, &(conn->next), profile->name,
-														  profile->custom_attr, profile->reply_exchange);
+														  profile->custom_attr);
 					if (status == SWITCH_STATUS_SUCCESS) { conn->next->locked = 0; }
 				}
 				i++;
@@ -137,11 +135,23 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 		switch_mutex_unlock(profile->mutex);
 
 		if (conn_tmp) {
-	                switch_malloc(amqp_message, sizeof(mod_amqp_message_t));
-	                mod_amqp_xml_handler_routing_key(profile, amqp_message->routing_key, params, profile->format_fields);
+			props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG | AMQP_BASIC_DELIVERY_MODE_FLAG | AMQP_BASIC_REPLY_TO_FLAG |
+						   AMQP_BASIC_CORRELATION_ID_FLAG;
+			props.content_type = amqp_cstring_bytes("application/json");
+			props.reply_to = amqp_bytes_malloc_dup(conn_tmp->queueName);
+			props.delivery_mode = 1;
+			if (props.reply_to.bytes == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory while copying queue name");
+				goto done;
+			}
+			props.correlation_id = amqp_cstring_bytes(uuid_str);
+
+			switch_malloc(amqp_message, sizeof(mod_amqp_message_t));
+			mod_amqp_xml_handler_routing_key(profile, amqp_message->routing_key, params, profile->format_fields);
 			amqp_maybe_release_buffers(conn_tmp->state);
-			switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_queue", conn_tmp->uuid);
+			// switch_event_add_header_string(params, SWITCH_STACK_TOP, "reply_queue", conn_tmp->uuid);
 			switch_event_serialize_json(params, &amqp_message->pjson);
+			amqp_message->props = props;
 			if (switch_queue_trypush(profile->send_queue, amqp_message) != SWITCH_STATUS_SUCCESS) {
 				unsigned int queue_size = switch_queue_size(profile->send_queue);
 
@@ -167,8 +177,10 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 
 			timeout.tv_usec = 5000 * 1000;
 			for (;;) {
-				char *fs_resp_id = NULL;
-				amqp_maybe_release_buffers_on_channel(conn_tmp->state, 1);
+				char *correlation_id = NULL;
+				amqp_basic_properties_t *p;
+                                //amqp_maybe_release_buffers_on_channel(conn_tmp->state, 1);
+				amqp_maybe_release_buffers(conn_tmp->state);
 				res = amqp_consume_message(conn_tmp->state, &envelope, &timeout, 0);
 				if (res.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
 					if (res.library_error == AMQP_STATUS_UNEXPECTED_STATE) {
@@ -201,40 +213,23 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 					continue;
 				}
 				if (res.reply_type == AMQP_RESPONSE_NORMAL) {
-					if (envelope.message.properties.headers.num_entries) {
-						int x = 0;
-						for (x = 0; x < envelope.message.properties.headers.num_entries; x++) {
-							char *header_key = (char *)envelope.message.properties.headers.entries[x].key.bytes;
-							char *header_value =
-								(char *)envelope.message.properties.headers.entries[x].value.value.bytes.bytes;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-											  "AMQP message custom header key[%s] value[%s]\n", header_key,
-											  header_value);
-
-							if (!strncmp(header_key, "x-fs-resp-id", 12)) {
-								fs_resp_id = header_value;
-							} else {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-												  "Ignoring unrecognized event header [%s]\n", header_key);
-							}
-						}
-					}
-					if (fs_resp_id && strcmp(fs_resp_id, uuid_str) == 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got my message. Trying to parse...\n");
+                                        p = &envelope.message.properties;
+					correlation_id = p->correlation_id.bytes;
+					if (correlation_id && strcmp(correlation_id, uuid_str) == 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got my message. Trying to parse...\n%s\n", (char *)envelope.message.body.bytes);
 						break;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "Got wrong message, Trying the next one... %s vs %s\n", fs_resp_id, uuid_str);
+									  "Got wrong message, Trying the next one... %s vs %s\n", correlation_id, uuid_str);
 					continue;
 				}
 			}
 
-			if (res.reply_type != AMQP_RESPONSE_NORMAL || 
+			if (res.reply_type != AMQP_RESPONSE_NORMAL ||
 				!(xml = switch_xml_parse_str_dynamic((char *)envelope.message.body.bytes, SWITCH_TRUE))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result! \n");
 			}
-
-
+			amqp_bytes_free(props.reply_to);
 			amqp_destroy_envelope(&envelope);
 		}
 	}
@@ -306,7 +301,6 @@ switch_status_t mod_amqp_xml_handler_create(char *name, switch_xml_t cfg)
 	switch_xml_t params, param, connections, connection;
 	switch_threadattr_t *thd_attr = NULL;
 	char *exchange = NULL, *exchange_type = NULL;
-	char *reply_exchange = NULL, *reply_exchange_type = NULL;
 	char *bindings = NULL;
 	int exchange_durable = 1; /* durable */
 	switch_memory_pool_t *pool;
@@ -353,10 +347,6 @@ switch_status_t mod_amqp_xml_handler_create(char *name, switch_xml_t cfg)
 				exchange_type = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "exchange-name", 13)) {
 				exchange = switch_core_strdup(profile->pool, val);
-			} else if (!strncmp(var, "reply-exchange-type", 19)) {
-				reply_exchange_type = switch_core_strdup(profile->pool, val);
-			} else if (!strncmp(var, "reply-exchange-name", 19)) {
-				reply_exchange = switch_core_strdup(profile->pool, val);
 			} else if (!strncmp(var, "exchange-durable", 16)) {
 				exchange_durable = switch_true(val);
 			} else if (!strncmp(var, "xml-handler-bindings", 20)) {
@@ -381,13 +371,9 @@ switch_status_t mod_amqp_xml_handler_create(char *name, switch_xml_t cfg)
 		} /* params for loop */
 	}
 	/* Handle defaults of string types */
-	profile->bindings = bindings ? bindings : switch_core_strdup(profile->pool, "all");
+	profile->bindings = bindings ? bindings : switch_core_strdup(profile->pool, "");
 	profile->exchange = exchange ? exchange : switch_core_strdup(profile->pool, "TAP.XML_handler");
 	profile->exchange_type = exchange_type ? exchange_type : switch_core_strdup(profile->pool, "topic");
-	profile->reply_exchange =
-		reply_exchange ? reply_exchange : switch_core_strdup(profile->pool, "TAP.XML_handler_reply");
-	profile->reply_exchange_type =
-		reply_exchange_type ? reply_exchange_type : switch_core_strdup(profile->pool, "direct");
 	profile->exchange_durable = exchange_durable;
 	profile->active_channels = 1;
 	if (max_temp_conn && max_temp_conn > 0 && max_temp_conn < 1000) {
@@ -473,20 +459,19 @@ err:
 /* This should only be called in a single threaded context from the xml_handler profile send thread */
 switch_status_t mod_amqp_xml_handler_send(mod_amqp_xml_handler_profile_t *profile, mod_amqp_message_t *msg)
 {
-	amqp_basic_properties_t props;
+//	amqp_basic_properties_t props;
 	int status;
-
 	if (!profile->conn_active) {
 		/* No connection, so we can not send the message. */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] not active\n", profile->name);
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
-	memset(&props, 0, sizeof(amqp_basic_properties_t));
-	props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
-	props.content_type = amqp_cstring_bytes("application/json");
+//	memset(&props, 0, sizeof(amqp_basic_properties_t));
+//	props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG;
+//	props.content_type = amqp_cstring_bytes("application/json");
 
 	status = amqp_basic_publish(profile->conn_active->state, 1, amqp_cstring_bytes(profile->exchange),
-								amqp_cstring_bytes(msg->routing_key), 0, 0, &props, amqp_cstring_bytes(msg->pjson));
+								amqp_cstring_bytes(msg->routing_key), 0, 0, &msg->props, amqp_cstring_bytes(msg->pjson));
 	if (status < 0) {
 		const char *errstr = amqp_error_string2(-status);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
@@ -523,8 +508,7 @@ void *SWITCH_THREAD_FUNC mod_amqp_xml_handler_thread(switch_thread_t *thread, vo
 				}
 				switch_mutex_lock(profile->mutex);
 				for (conn_aux = profile->conn_aux; conn_aux; conn_aux = conn_next) {
-					mod_amqp_aux_connection_open(profile->conn_active, &(conn_aux), profile->name, profile->custom_attr,
-												 profile->reply_exchange);
+					mod_amqp_aux_connection_open(profile->conn_active, &(conn_aux), profile->name, profile->custom_attr);
 					conn_next = conn_aux->next;
 				}
 				switch_mutex_unlock(profile->mutex);
@@ -533,12 +517,7 @@ void *SWITCH_THREAD_FUNC mod_amqp_xml_handler_thread(switch_thread_t *thread, vo
 				amqp_exchange_declare(profile->conn_active->state, 1, amqp_cstring_bytes(profile->exchange),
 									  amqp_cstring_bytes(profile->exchange_type), passive, durable,
 									  profile->exchange_auto_delete, 0, amqp_empty_table);
-				amqp_exchange_declare(profile->conn_active->state, 1, amqp_cstring_bytes(profile->reply_exchange),
-									  amqp_cstring_bytes(profile->reply_exchange_type), passive, durable,
-									  profile->exchange_auto_delete, 0, amqp_empty_table);
 #else
-				amqp_exchange_declare(profile->conn_active->state, 1, amqp_cstring_bytes(profile->exchange),
-									  amqp_cstring_bytes(profile->exchange_type), passive, durable, amqp_empty_table);
 				amqp_exchange_declare(profile->conn_active->state, 1, amqp_cstring_bytes(profile->exchange),
 									  amqp_cstring_bytes(profile->exchange_type), passive, durable, amqp_empty_table);
 #endif

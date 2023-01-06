@@ -67,6 +67,7 @@
 typedef struct {
     char routing_key[MAX_AMQP_ROUTING_KEY_LENGTH];
     char *pjson;
+	amqp_basic_properties_t props;
 } mod_amqp_message_t;
 
 typedef struct mod_amqp_aux_connection_s {
@@ -256,7 +257,7 @@ void mod_amqp_connection_destroy(mod_amqp_connection_t **conn);
 void mod_amqp_aux_connection_destroy(mod_amqp_aux_connection_t **conn);
 void mod_amqp_connection_close(mod_amqp_connection_t *connection);
 switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod_amqp_connection_t **active, char *profile_name, char *custom_attr);
-switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *connections, mod_amqp_aux_connection_t **active, char *profile_name, char *custom_attr, char *reply_exchange);
+switch_status_t mod_amqp_aux_connection_open(mod_amqp_connection_t *connections, mod_amqp_aux_connection_t **active, char *profile_name, char *custom_attr);
 
 /* command */
 switch_status_t mod_amqp_command_destroy(mod_amqp_command_profile_t **profile);
