@@ -85,6 +85,8 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 	switch_time_t now = switch_time_now();
 	switch_time_t reset_time;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *amqp_body = NULL;
+	int amqp_body_len;
 	int i = 0;
 
 	if (!profile) {
@@ -215,8 +217,9 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 				if (res.reply_type == AMQP_RESPONSE_NORMAL) {
                                         p = &envelope.message.properties;
 					correlation_id = p->correlation_id.bytes;
+
 					if (correlation_id && strcmp(correlation_id, uuid_str) == 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got my message. Trying to parse...\n%s\n", (char *)envelope.message.body.bytes);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got my message. Trying to parse\n");
 						break;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -225,10 +228,15 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 				}
 			}
 
+			amqp_body_len = (int) envelope.message.body.len + 1;
+			amqp_body = malloc(amqp_body_len);
+			snprintf(amqp_body, amqp_body_len, "%s", (char *) envelope.message.body.bytes);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XML from AMQP msg:\n%s\n", amqp_body);
 			if (res.reply_type != AMQP_RESPONSE_NORMAL ||
-				!(xml = switch_xml_parse_str_dynamic((char *)envelope.message.body.bytes, SWITCH_TRUE))) {
+				!(xml = switch_xml_parse_str_dynamic(amqp_body, SWITCH_TRUE))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result! \n");
 			}
+			switch_safe_free(amqp_body);
 			amqp_bytes_free(props.reply_to);
 			amqp_destroy_envelope(&envelope);
 		}
@@ -236,6 +244,7 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 done:
 	if (conn_tmp) {
 		switch_mutex_lock(profile->mutex);
+		amqp_maybe_release_buffers(conn_tmp->state);
 		conn_tmp->locked = 0;
 		switch_mutex_unlock(profile->mutex);
 		conn_tmp = NULL;
