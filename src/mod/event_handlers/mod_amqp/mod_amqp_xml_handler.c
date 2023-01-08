@@ -504,6 +504,10 @@ void *SWITCH_THREAD_FUNC mod_amqp_xml_handler_thread(switch_thread_t *thread, vo
 	mod_amqp_aux_connection_t *conn_aux = NULL, *conn_next = NULL;
 	amqp_boolean_t passive = 0;
 	amqp_boolean_t durable = 1;
+	// init first temp connection (for outgoing msgs)
+	if (!profile->conn_aux) {
+		profile->conn_aux = switch_core_alloc(profile->pool, sizeof(mod_amqp_aux_connection_t));
+	}
 	while (profile->running) {
 		if (!profile->conn_active) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Amqp no connection- reconnecting...\n");
@@ -511,10 +515,6 @@ void *SWITCH_THREAD_FUNC mod_amqp_xml_handler_thread(switch_thread_t *thread, vo
 			status = mod_amqp_connection_open(profile->conn_root, &(profile->conn_active), profile->name,
 											  profile->custom_attr);
 			if (status == SWITCH_STATUS_SUCCESS) {
-				// init first temp connection (for outgoing msgs)
-				if (!profile->conn_aux) {
-					profile->conn_aux = switch_core_alloc(profile->pool, sizeof(mod_amqp_aux_connection_t));
-				}
 				switch_mutex_lock(profile->mutex);
 				for (conn_aux = profile->conn_aux; conn_aux; conn_aux = conn_next) {
 					mod_amqp_aux_connection_open(profile->conn_active, &(conn_aux), profile->name, profile->custom_attr);
