@@ -4577,7 +4577,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				uint8_t disable_subscription_auth_flag = 0;
 				uint8_t max_recv_requests_per_second_initialized = 0;
 
-				if (!xprofilename) {
+				if (zstr(xprofilename)) {
 					xprofilename = "unnamed";
 				}
 
