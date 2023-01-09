@@ -239,6 +239,8 @@ static switch_xml_t xml_amqp_fetch(const char *section, const char *tag_name, co
 			switch_safe_free(amqp_body);
 			amqp_bytes_free(props.reply_to);
 			amqp_destroy_envelope(&envelope);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No more aux amqp connections(%d). Increase max-temp-conn\n", i);
 		}
 	}
 done:
