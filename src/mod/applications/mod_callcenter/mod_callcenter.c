@@ -3230,6 +3230,11 @@ SWITCH_STANDARD_APP(callcenter_function)
 		h->running = 0;
 	}
 
+	/* Stop uuid_broadcasts */
+	switch_core_session_flush_private_events(member_session);
+	switch_channel_stop_broadcast(member_channel);
+	switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+
 	/* Check if we were removed because FS Core(BREAK) asked us to */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
