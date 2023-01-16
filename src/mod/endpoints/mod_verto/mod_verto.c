@@ -1970,6 +1970,7 @@ static void client_run(jsock_t *jsock)
 {
 	int flags = KWS_BLOCK;
 	int idle = 0;
+	ks_json_t *params = NULL;
 	
 	if (jsock->profile->vhosts) {
 		flags |= KWS_STAY_OPEN;
@@ -1977,7 +1978,14 @@ static void client_run(jsock_t *jsock)
 	}
 
 	ks_pool_open(&jsock->kpool);
+
+#if defined(KS_VERSION_NUM) && KS_VERSION_NUM >= 20000
+	params = ks_json_create_object();
+	ks_json_add_number_to_object(params, "payload_size_max", 1000000);
+	if (kws_init_ex(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool, params) != KS_STATUS_SUCCESS) {
+#else
 	if (kws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool) != KS_STATUS_SUCCESS) {
+#endif
 		log_and_exit(SWITCH_LOG_NOTICE, "%s WS SETUP FAILED\n", jsock->name);
 	}
 
@@ -2123,6 +2131,8 @@ static void client_run(jsock_t *jsock)
 	detach_jsock(jsock);
 	kws_destroy(&jsock->ws);
 	ks_pool_close(&jsock->kpool);
+	ks_json_delete(&params);
+
 	return;
 }
 
@@ -6768,6 +6778,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	ks_ssl_init_skip(KS_TRUE);
 	ks_init();
+
+#if defined(KS_VERSION_NUM) && KS_VERSION_NUM < 20000
+	kws_set_global_payload_size_max(1000000);
+#endif
 
 	if (switch_event_reserve_subclass(MY_EVENT_LOGIN) != SWITCH_STATUS_SUCCESS) {
 		ks_shutdown();
