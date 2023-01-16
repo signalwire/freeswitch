@@ -4667,7 +4667,7 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int protect_dest_uri(switch_caller_profile_t *cp)
+int protect_dest_uri(switch_caller_profile_t *cp)
 {
 	char *p = cp->destination_number, *o = p;
 	char *q = NULL, *e = NULL, *qenc = NULL;
