@@ -11484,6 +11484,16 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			}
 		}
 
+		if (sip->sip_identity) {
+			sip_identity_t *id;
+
+			for (id = sip->sip_identity; id; id = id->id_next) {
+				if (!zstr(id->id_value)) {
+					switch_channel_add_variable_var_check(channel, "sip_identity", id->id_value, SWITCH_FALSE, SWITCH_STACK_PUSH);
+				}
+			}
+		}
+
 		if (sip->sip_identity && sip->sip_identity->id_value) {
 			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
 		}
