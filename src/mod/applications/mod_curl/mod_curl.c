@@ -702,7 +702,6 @@ http_sendfile_app_done:
 #define HTTP_SENDFILE_SYNTAX "<url> <filenameParamName=filepath> [nopost|postparam1=foo&postparam2=bar... [event|stream|both|none  [identifier ]]]"
 SWITCH_STANDARD_API(http_sendfile_function)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_bool_t new_memory_pool = SWITCH_FALSE;
 	char *argv[10] = { 0 }, *argv2[10] = { 0 };
 	int argc = 0, argc2 = 0;
@@ -712,7 +711,6 @@ SWITCH_STANDARD_API(http_sendfile_function)
 
 	if(zstr(cmd))
 	{
-		status = SWITCH_STATUS_SUCCESS;
 		goto http_sendfile_usage;
 	}
 	if(session)
@@ -741,7 +739,6 @@ SWITCH_STANDARD_API(http_sendfile_function)
 
 		if (argc < 2 || argc > 5)
 		{
-			status = SWITCH_STATUS_SUCCESS;
 			goto http_sendfile_usage;
 		}
 
@@ -805,7 +802,6 @@ SWITCH_STANDARD_API(http_sendfile_function)
 
 	http_sendfile_success_report(http_data, event);
 
-	status = SWITCH_STATUS_SUCCESS;
 	goto http_sendfile_done;
 
 http_sendfile_usage:
@@ -823,7 +819,7 @@ http_sendfile_done:
 		switch_core_destroy_memory_pool(&pool);
 	}
 
-	return status;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_STANDARD_APP(curl_app_function)
