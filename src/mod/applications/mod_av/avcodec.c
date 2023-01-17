@@ -393,7 +393,7 @@ typedef struct h264_codec_context_s {
 	switch_codec_settings_t codec_settings;
 	AVCodecContext *encoder_ctx;
 	AVFrame *encoder_avframe;
-	AVPacket encoder_avpacket;
+	AVPacket *encoder_avpacket;
 	AVFrame *decoder_avframe;
 	our_h264_nalu_t nalus[MAX_NALUS];
 	enum AVCodecID av_codec_id;
@@ -1033,7 +1033,7 @@ static switch_status_t consume_h263_bitstream(h264_codec_context_t *context, swi
 	}
 
 	if (!context->nalus[context->nalu_current_index].len) {
-		av_packet_unref(&context->encoder_avpacket);
+		av_packet_free(&context->encoder_avpacket);
 		frame->m = 1;
 	}
 
@@ -1081,7 +1081,7 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 #endif
 
 	if (frame->m) {
-		av_packet_unref(&context->encoder_avpacket);
+		av_packet_free(&context->encoder_avpacket);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1090,7 +1090,7 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 
 static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, switch_frame_t *frame)
 {
-	AVPacket *pkt = &context->encoder_avpacket;
+	AVPacket *pkt = context->encoder_avpacket;
 	our_h264_nalu_t *nalu = &context->nalus[context->nalu_current_index];
 	uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
 	uint8_t nalu_type = nalu_hdr & 0x1f;
@@ -1148,7 +1148,7 @@ static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, swi
 
 static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
-	AVPacket *pkt = &context->encoder_avpacket;
+	AVPacket *pkt = context->encoder_avpacket;
 	our_h264_nalu_t *nalu = &context->nalus[context->nalu_current_index];
 
 	if (!nalu->len) {
@@ -1460,7 +1460,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	int ret;
 	int *got_output = &context->got_encoded_output;
 	AVFrame *avframe = NULL;
-	AVPacket *pkt = &context->encoder_avpacket;
+	AVPacket *pkt = context->encoder_avpacket;
 	uint32_t width = 0;
 	uint32_t height = 0;
 	switch_image_t *img = frame->img;
@@ -1511,7 +1511,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
-	pkt = av_packet_alloc();
+	context->encoder_avpacket = av_packet_alloc();
 	pkt->data = NULL;      // packet data will be allocated by the encoder
 	pkt->size = 0;
 
