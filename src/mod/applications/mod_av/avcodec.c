@@ -1460,7 +1460,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	int ret;
 	int *got_output = &context->got_encoded_output;
 	AVFrame *avframe = NULL;
-	AVPacket *pkt;
+	AVPacket *pkt = &context->encoder_avpacket;
 	uint32_t width = 0;
 	uint32_t height = 0;
 	switch_image_t *img = frame->img;
