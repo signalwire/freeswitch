@@ -5,6 +5,7 @@
   </ImportGroup>
   <PropertyGroup>
     <downloadsqlitePropsImported>true</downloadsqlitePropsImported>
+    <sqliteVersion>3400000</sqliteVersion>
   </PropertyGroup>
 
   <!--
@@ -29,11 +30,12 @@
 
   <Target Name="sqliteDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/libs/sqlite-amalgamation-3080401.zip"
-           expectfileordirectory="$(BaseDir)libs\sqlite-amalgamation-3080401\sqlite3.c"
+           package="http://files.freeswitch.org/downloads/libs/sqlite-amalgamation-$(sqliteVersion).zip"
+           expectfileordirectory="$(BaseDir)libs\sqlite\sqlite3.c"
            outputfolder=""
            outputfilename=""
            extractto="$(BaseDir)libs\"
+           moveafter="sqlite-amalgamation-$(sqliteVersion)|sqlite"
       />
   </Target>
 

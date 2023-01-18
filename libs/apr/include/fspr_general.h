@@ -29,7 +29,7 @@
 #include "fspr_pools.h"
 #include "fspr_errno.h"
 
-#if !defined(_ANSI_SOURCE) && defined(_DARWIN_C_SOURCE)
+#if !defined(NSIG) && !defined(_ANSI_SOURCE) && defined(_DARWIN_C_SOURCE)
 #define NSIG __DARWIN_NSIG
 #endif
 
