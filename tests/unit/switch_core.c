@@ -95,6 +95,19 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_END()
 #endif
 
+		FST_TEST_BEGIN(test_md5)
+		{
+			char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
+			char test_string[] = "test";
+			switch_status_t status;
+
+			status = switch_md5_string(digest, (void *)test_string, strlen(test_string));
+
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(digest, "098f6bcd4621d373cade4e832627b4f6");
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(test_switch_event_add_header_leak)
 		{
 			switch_event_t* event;
