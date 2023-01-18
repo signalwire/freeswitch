@@ -41,9 +41,9 @@
 /* usbkey headers*/
 #include <switch_usbkey.h>
 
-SWITCH_DECLARE(BOOL) switch_StartAuthManagerEx(int nKeyID,char * szIPRErr, char * szLicSn, char * szLicPw)
+SWITCH_DECLARE(BOOL) switch_StartAuthManagerEx(int nKeyID,char * szIPRErr, char * szLicSn, char * szLicPw, char *szLogDirectory, unsigned char ucLogLevel, unsigned char ucLogCreatePeriod)
 {
-	return StartAuthManagerEx(nKeyID, szIPRErr, szLicSn, szLicPw, NULL, 0, 0);
+	return StartAuthManagerEx(nKeyID, szIPRErr, szLicSn, szLicPw, szLogDirectory, ucLogLevel, ucLogCreatePeriod);
 }
 SWITCH_DECLARE(BOOL) switch_CheckRCSKEY(int nKeyID)
 {

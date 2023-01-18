@@ -1230,12 +1230,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				use_from_str = switch_core_session_sprintf(tech_pvt->session, "sip:%s", from_var);
 			}
 		} else if (!zstr(tech_pvt->gateway_from_str)) {
-			if(!zstr(cid_num) && !zstr(url_str)){ //added by dsq for dod number 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "URL %s cid_num:%s\n",url_str,switch_core_session_url_encode(tech_pvt->session, cid_num));
-				use_from_str = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s%s%s>", cid_name, switch_core_session_url_encode(tech_pvt->session, cid_num), strrchr(url_str,'@'),"");
-			}else{
 			use_from_str = tech_pvt->gateway_from_str;
-			}
 		} else {
 			use_from_str = tech_pvt->from_str;
 		}

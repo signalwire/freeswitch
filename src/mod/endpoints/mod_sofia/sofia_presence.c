@@ -905,6 +905,101 @@ static void do_dialog_probe(switch_event_t *event)
 		switch_core_hash_init(&h4235->hash);
 		sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_dialog_probe_callback, h4235);
 		switch_safe_free(sql);
+
+		//added by liangjie for OS-14678,2019.8.14
+        if (!h4235->rowcount) {
+	        switch_bool_t isReg=  SWITCH_FALSE;
+			char *tmp;
+			char key[256] = "";
+	        if(!strncasecmp(probe_euser,"sip_",4)){
+				sofia_gateway_t *gp;
+				switch_hash_index_t *hi;
+				const void *vvar;
+				sofia_profile_t *profile_tmp; 
+				void *val;
+				switch_mutex_lock(mod_sofia_globals.hash_mutex);
+				for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+					switch_core_hash_this(hi, &vvar, NULL, &val);
+					profile_tmp = (sofia_profile_t *) val;
+					if (sofia_test_pflag(profile_tmp, PFLAG_RUNNING)) {
+						if (!strcmp(vvar, profile_tmp->name)) {
+							for (gp = profile_tmp->gateways; gp; gp = gp->next) {
+								switch_assert(gp->state < REG_STATE_LAST);
+								if (!strcasecmp(gp->sla_gateway_name, probe_euser)) {
+									if (switch_true(gp->register_str)) {
+										if (gp->state == REG_STATE_REGED && gp->status == SOFIA_GATEWAY_UP) {
+											isReg= SWITCH_TRUE;
+										}
+									}
+									else {
+										if (gp->ping) {
+											if (gp->status == SOFIA_GATEWAY_UP) {
+												isReg = SWITCH_TRUE;
+											}
+										}
+										else {
+											isReg = SWITCH_TRUE;
+										}
+									}
+									if (mod_sofia_globals.debug_presence > 0) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "[SLA] profile %s user %s register_str %s status %d ping %lu \n\n", profile->name ,probe_euser,gp->register_str,gp->status,gp->ping);
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	        }
+			else if(!strncasecmp(probe_euser,"fxo",3)){
+				char buf[40];
+				FILE *fp=popen(switch_mprintf("fs_cli -x 'ftdm sigstatus get %c 1'",probe_euser[3]),"r");
+				fgets(buf,40,fp);
+				pclose(fp);
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "[SLA] ftdm [%s] [%s] \n\n",switch_mprintf("ftdm sigstatus get %c 1",probe_euser[3]), buf);
+	            }
+				if(!strncasecmp(buf,"Channel 1 signaling status: UP",30)){
+					isReg = SWITCH_TRUE;
+				}
+
+	        } 
+			else {
+	            char buf[32] = "";
+	            sql = switch_mprintf("select count(*) from sip_registrations where sip_user='%q' and sip_host='%q' ",
+	                                 probe_euser, probe_host);
+	            sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
+	            switch_safe_free(sql);
+	            if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "[SLA] profile %s user %s reg %s\n\n", profile->name ,probe_euser,buf);
+	            }
+				if (atoi(buf) > 0) {
+	                isReg = SWITCH_TRUE;
+	            }
+	            
+	        }
+
+			if (isReg) {
+				tmp = switch_core_sprintf(h4235->pool,
+	                  "<dialog id=\"%s\">\n"
+	                  " <state>terminated</state>\n"
+	                  "</dialog>\n",
+	                  probe_euser
+	                  );
+	        }
+	        else {
+	            tmp = switch_core_sprintf(h4235->pool,
+	                  "<dialog id=\"%s\">\n"
+	                  " <state>unknown</state>\n"
+	                  "</dialog>\n",
+	                  probe_euser
+	                  );
+	        }
+			switch_snprintf(key, sizeof(key), "%s%s", probe_euser, probe_host);
+			switch_core_hash_insert(h4235->hash, key, tmp);
+        }
+        //end by liangjie for OS-14678,2019.8.14
 		if (mod_sofia_globals.debug_presence > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END DIALOG_PROBE_SQL\n\n", profile->name);
 		}
@@ -2607,6 +2702,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *user = argv[1];
 	char *host = argv[2];
 	char *sub_to_user = argv[3];
+	char *sip_host = argv[4];
 	char *event = argv[5];
 	char *contact = argv[6];
 	char *call_id = argv[7];
@@ -3065,6 +3161,33 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			}
 			if (is_dialog) {
 				stream.write_function(&stream, "</dialog>\n");
+			}
+		}else{
+			if(!strcasecmp(event_status, "Registered")){
+				char buf[32] = "";
+				char *sql;
+				switch_bool_t isReg=  SWITCH_FALSE;
+
+	            sql = switch_mprintf("select count(*) from sip_registrations where sip_user='%q' and sip_host='%q' ",
+	                                 sub_to_user, sip_host);
+	            sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
+	            switch_safe_free(sql);
+	            if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "[SLA] profile %s user %s reg %s\n\n", profile->name ,sub_to_user,buf);
+	            }
+				if (atoi(buf) > 0) {
+	                isReg = SWITCH_TRUE;
+	            }
+				if (isReg) {
+					stream.write_function(&stream, "<dialog id=\"%s\">\n", sub_to_user);
+					stream.write_function(&stream, "<state>%s</state>\n", "terminated");
+					stream.write_function(&stream, "</dialog>\n");
+				}
+				else {
+					stream.write_function(&stream, "<dialog id=\"%s\">\n", sub_to_user);
+					stream.write_function(&stream, "<state>unknown</state>\n");
+					stream.write_function(&stream, "</dialog>\n");
+				}
 			}
 		}
 

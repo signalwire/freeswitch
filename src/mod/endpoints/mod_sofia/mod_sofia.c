@@ -1819,7 +1819,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_REINVITE:
         {
             switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
-
+			switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);
             switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 			switch_core_media_check_video_codecs(tech_pvt->session);
             sofia_glue_do_invite(session);

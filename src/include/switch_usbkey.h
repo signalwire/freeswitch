@@ -48,7 +48,7 @@
 SWITCH_BEGIN_EXTERN_C
 
 
-SWITCH_DECLARE(BOOL) switch_StartAuthManagerEx(int nKeyID, char * szIPRErr, char * szLicSn, char * szLicPw);
+SWITCH_DECLARE(BOOL) switch_StartAuthManagerEx(int nKeyID,char * szIPRErr, char * szLicSn, char * szLicPw, char *szLogDirectory, unsigned char ucLogLevel, unsigned char ucLogCreatePeriod);
 
 SWITCH_DECLARE(BOOL) switch_CheckRCSKEY(int nKeyID);
 

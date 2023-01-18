@@ -2329,7 +2329,22 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 						NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_DATE_STR(date), TAG_END());
 		}
 
-
+		if(regtype == REG_REGISTER){
+			switch_event_t *sevent;					
+			if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "login", profile->url);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
+				switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, mod_sofia_globals.hostname);
+				// switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "to_host", to_host);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "status", "Registered");
+				switch_event_fire(&sevent);
+			}		
+			
+		}
 		if (s_event) {
 			switch_event_fire(&s_event);
 		}

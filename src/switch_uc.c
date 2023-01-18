@@ -730,22 +730,23 @@ static void *SWITCH_THREAD_FUNC switch_check_usbkey_thread(switch_thread_t *thre
 				runtime.check_rcs_key = SWITCH_FALSE;
 			}
 			else
-			{	//超过20分钟，每1分钟重新reset
-				if (runtime.rcs_key_restart == SWITCH_TRUE)
-				{
-					runtime.rcs_key_restart = SWITCH_FALSE;
-
-					switch_CloseAuthManager();
-
-					switch_StartAuthManagerEx(RCS_KEY_ID,NULL,runtime.lic_sn,runtime.lic_pw);
-				}
-
+			{	
 				if(switch_CheckRCSKEY(RCS_KEY_ID) && (runtime.serial_num == switch_GetUSBKeySerial(RCS_KEY_ID)) && runtime.max_concurrency <= switch_GetAuthChNum(RCS_KEY_ID, &g_nNormalChNum, &g_nExChNum, FALSE))
 					runtime.has_rcs_key = SWITCH_TRUE;
 				else
 					runtime.has_rcs_key = SWITCH_FALSE;
 				
 				runtime.check_rcs_key = SWITCH_FALSE;
+			}
+
+			//超过20分钟，每1分钟重新reset
+			if (runtime.rcs_key_restart == SWITCH_TRUE)
+			{
+				runtime.rcs_key_restart = SWITCH_FALSE;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "auth lost, do restart auth!\n");
+
+				switch_CloseAuthManager();
+				switch_StartAuthManagerEx(RCS_KEY_ID,NULL,runtime.lic_sn,runtime.lic_pw,NULL,0,0);
 			}
 		}
 
@@ -820,7 +821,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err)
 	}
 
 
-	start = switch_StartAuthManagerEx(RCS_KEY_ID,szIPRErr,runtime.lic_sn,runtime.lic_pw);
+	start = switch_StartAuthManagerEx(RCS_KEY_ID,szIPRErr,runtime.lic_sn,runtime.lic_pw,NULL,0,0);
 
 	if (start)
 	{

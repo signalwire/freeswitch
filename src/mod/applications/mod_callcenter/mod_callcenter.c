@@ -1841,11 +1841,13 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		t_agent_called = local_epoch_time_now(NULL);
 		if(h->member_callback == SWITCH_FALSE){
 			dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
+			switch_mutex_lock(globals.mutex);
 			switch_channel_set_variable(member_channel, "pre_cc_queue", h->queue_name);
 			switch_channel_set_variable(member_channel, "pre_cc_agent", h->agent_name);
 			switch_channel_set_variable(member_channel, "pre_agent_contact", h->originate_string);
 			switch_channel_execute_on(member_channel,"execute_on_pre_originate_agent");
 			agent_contact =  switch_channel_get_variable(member_channel, "agent_contact");
+			switch_mutex_unlock(globals.mutex);
 			switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
 		} else{
 			dialstr = (char *)h->originate_string;
