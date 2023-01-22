@@ -1,4 +1,4 @@
-<configuration name="modules.conf" description="Modules">
+<configuration name="mod_signalwire.c -- SignalWire module">
   <modules>
     <!-- Loggers (I'd load these first) -->
     <load module="mod_console"/>
