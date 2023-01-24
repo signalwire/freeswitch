@@ -354,6 +354,7 @@ static switch_xml_t python_fetch(const char *section,
 
 	switch_xml_t xml = NULL;
 	char *str = NULL;
+	switch_event_t *my_params = NULL;
 
 	if (!zstr(globals.xml_handler)) {
 		char *mycmd = strdup(globals.xml_handler);
@@ -363,6 +364,7 @@ static switch_xml_t python_fetch(const char *section,
 		if (!params) {
 			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 			switch_assert(params);
+			my_params = params;
 		}
 
 		switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
@@ -382,6 +384,10 @@ static switch_xml_t python_fetch(const char *section,
 		}
 
 		free(mycmd);
+
+		if (my_params) {
+			switch_event_destroy(&my_params);
+		}
 	}
 
 	return xml;
