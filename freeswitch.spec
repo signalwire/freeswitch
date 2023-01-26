@@ -144,7 +144,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.6
+BuildRequires: sofia-sip-devel >= 1.13.12
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -1662,7 +1662,6 @@ autoreconf --force --install
 --with-odbc \
 --with-erlang \
 --with-openssl \
---enable-zrtp \
 %{?configure_options}
 
 unset MODULES

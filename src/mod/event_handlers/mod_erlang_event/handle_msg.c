@@ -836,7 +836,7 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 						switch_safe_free(event->body);
 						event->body = value;
 					} else if (!fail)  {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+						switch_event_add_header_string_nodup(event, SWITCH_STACK_BOTTOM, key, value);
 					}
 
 					/* Do not free malloc here! The above commands utilize the raw allocated memory and skip any copying/duplication. Faster. */
@@ -901,7 +901,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					}
 
 					if (!fail) {
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+						switch_event_add_header_string_nodup(event, SWITCH_STACK_BOTTOM, key, value);
 					}
 				}
 
