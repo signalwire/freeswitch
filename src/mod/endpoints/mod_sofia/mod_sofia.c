@@ -2065,7 +2065,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
-						} else if (update_allowed && ua && (switch_stristr("polycom", ua) ||
+						} else if (update_allowed && ua && (switch_channel_var_true(tech_pvt->channel, "update_ignore_ua") ||
+									  switch_stristr("polycom", ua) ||
 									  (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
 									  (switch_stristr("cisco/spa50", ua) ||
 									  switch_stristr("cisco/spa525", ua)) ||
