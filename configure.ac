@@ -1518,7 +1518,7 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
+PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
     if module_enabled mod_verto; then
       AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
