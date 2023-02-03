@@ -78,7 +78,6 @@
         <param name="inbound-codec-negotiation" value="generous"/>
         <param name="nonce-ttl" value="60"/>
         <param name="inbound-late-negotiation" value="true"/>
-        <param name="inbound-zrtp-passthru" value="false"/>
         <param name="rtp-ip" value="$${local_ip_v4}"/>
         <param name="sip-ip" value="$${local_ip_v4}"/>
         <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
@@ -120,7 +119,6 @@
         <param name="inbound-codec-negotiation" value="generous"/>
         <param name="nonce-ttl" value="60"/>
         <param name="inbound-late-negotiation" value="true"/>
-        <param name="inbound-zrtp-passthru" value="false"/>
         <param name="rtp-ip" value="$${local_ip_v4}"/>
         <param name="sip-ip" value="$${local_ip_v4}"/>
         <param name="ext-rtp-ip" value="$${local_ip_v4}"/>

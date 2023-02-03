@@ -12022,10 +12022,6 @@ else
     return ret;
   }
 
-  public static void switch_channel_check_zrtp(SWIGTYPE_p_switch_channel channel) {
-    freeswitchPINVOKE.switch_channel_check_zrtp(SWIGTYPE_p_switch_channel.getCPtr(channel));
-  }
-
   public static switch_status_t switch_channel_perform_acknowledge_call(SWIGTYPE_p_switch_channel channel, string file, string func, int line) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_perform_acknowledge_call(SWIGTYPE_p_switch_channel.getCPtr(channel), file, func, line);
     return ret;
@@ -12564,6 +12560,11 @@ else
 
   public static switch_status_t switch_event_add_header_string(switch_event arg0, switch_stack_t stack, string header_name, string data) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_add_header_string(switch_event.getCPtr(arg0), (int)stack, header_name, data);
+    return ret;
+  }
+
+  public static switch_status_t switch_event_add_header_string_nodup(switch_event arg0, switch_stack_t stack, string header_name, string data) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_add_header_string_nodup(switch_event.getCPtr(arg0), (int)stack, header_name, data);
     return ret;
   }
 
@@ -15094,7 +15095,6 @@ else
   public static readonly string SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME = freeswitchPINVOKE.SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME_get();
   public static readonly string SWITCH_BYPASS_MEDIA_VARIABLE = freeswitchPINVOKE.SWITCH_BYPASS_MEDIA_VARIABLE_get();
   public static readonly string SWITCH_PROXY_MEDIA_VARIABLE = freeswitchPINVOKE.SWITCH_PROXY_MEDIA_VARIABLE_get();
-  public static readonly string SWITCH_ZRTP_PASSTHRU_VARIABLE = freeswitchPINVOKE.SWITCH_ZRTP_PASSTHRU_VARIABLE_get();
   public static readonly string SWITCH_ENDPOINT_DISPOSITION_VARIABLE = freeswitchPINVOKE.SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get();
   public static readonly string SWITCH_HOLD_MUSIC_VARIABLE = freeswitchPINVOKE.SWITCH_HOLD_MUSIC_VARIABLE_get();
   public static readonly string SWITCH_TEMP_HOLD_MUSIC_VARIABLE = freeswitchPINVOKE.SWITCH_TEMP_HOLD_MUSIC_VARIABLE_get();
@@ -15789,9 +15789,6 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_PROXY_MEDIA_VARIABLE_get___")]
   public static extern string SWITCH_PROXY_MEDIA_VARIABLE_get();
-
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_ZRTP_PASSTHRU_VARIABLE_get___")]
-  public static extern string SWITCH_ZRTP_PASSTHRU_VARIABLE_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get___")]
   public static extern string SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get();
@@ -24580,9 +24577,6 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_perform_mark_answered___")]
   public static extern int switch_channel_perform_mark_answered(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, int jarg4);
 
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_check_zrtp___")]
-  public static extern void switch_channel_check_zrtp(global::System.Runtime.InteropServices.HandleRef jarg1);
-
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_perform_acknowledge_call___")]
   public static extern int switch_channel_perform_acknowledge_call(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, int jarg4);
 
@@ -25092,6 +25086,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_event_add_header_string___")]
   public static extern int switch_event_add_header_string(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, string jarg3, string jarg4);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_event_add_header_string_nodup___")]
+  public static extern int switch_event_add_header_string_nodup(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, string jarg3, string jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_event_del_header_val___")]
   public static extern int switch_event_del_header_val(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
@@ -31968,9 +31965,6 @@ public enum switch_channel_flag_t {
   CF_MANUAL_MEDIA_PARAMS,
   CF_SERVICE_AUDIO,
   CF_SERVICE_VIDEO,
-  CF_ZRTP_PASSTHRU_REQ,
-  CF_ZRTP_PASSTHRU,
-  CF_ZRTP_HASH,
   CF_CHANNEL_SWAP,
   CF_DEVICE_LEG,
   CF_FINAL_DEVICE_LEG,
@@ -38545,20 +38539,19 @@ namespace FreeSWITCH.Native {
   SFF_RFC2833 = (1 << 4),
   SFF_PROXY_PACKET = (1 << 5),
   SFF_DYNAMIC = (1 << 6),
-  SFF_ZRTP = (1 << 7),
-  SFF_UDPTL_PACKET = (1 << 8),
-  SFF_NOT_AUDIO = (1 << 9),
-  SFF_RTCP = (1 << 10),
-  SFF_MARKER = (1 << 11),
-  SFF_WAIT_KEY_FRAME = (1 << 12),
-  SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
-  SFF_PICTURE_RESET = (1 << 14),
-  SFF_SAME_IMAGE = (1 << 15),
-  SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
-  SFF_ENCODED = (1 << 17),
-  SFF_TEXT_LINE_BREAK = (1 << 18),
-  SFF_IS_KEYFRAME = (1 << 19),
-  SFF_EXTERNAL = (1 << 20)
+  SFF_UDPTL_PACKET = (1 << 7),
+  SFF_NOT_AUDIO = (1 << 8),
+  SFF_RTCP = (1 << 9),
+  SFF_MARKER = (1 << 10),
+  SFF_WAIT_KEY_FRAME = (1 << 11),
+  SFF_RAW_RTP_PARSE_FRAME = (1 << 12),
+  SFF_PICTURE_RESET = (1 << 13),
+  SFF_SAME_IMAGE = (1 << 14),
+  SFF_USE_VIDEO_TIMESTAMP = (1 << 15),
+  SFF_ENCODED = (1 << 16),
+  SFF_TEXT_LINE_BREAK = (1 << 17),
+  SFF_IS_KEYFRAME = (1 << 18),
+  SFF_EXTERNAL = (1 << 19)
 }
 
 }
@@ -43652,10 +43645,6 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_FLUSH,
   SWITCH_RTP_FLAG_AUTOFLUSH,
   SWITCH_RTP_FLAG_STICKY_FLUSH,
-  SWITCH_ZRTP_FLAG_SECURE_SEND,
-  SWITCH_ZRTP_FLAG_SECURE_RECV,
-  SWITCH_ZRTP_FLAG_SECURE_MITM_SEND,
-  SWITCH_ZRTP_FLAG_SECURE_MITM_RECV,
   SWITCH_RTP_FLAG_DEBUG_RTP_READ,
   SWITCH_RTP_FLAG_DEBUG_RTP_WRITE,
   SWITCH_RTP_FLAG_ESTIMATORS,
@@ -46043,9 +46032,8 @@ namespace FreeSWITCH.Native {
 public enum switch_stack_t {
   SWITCH_STACK_BOTTOM = (1 << 0),
   SWITCH_STACK_TOP = (1 << 1),
-  SWITCH_STACK_NODUP = (1 << 2),
-  SWITCH_STACK_UNSHIFT = (1 << 3),
-  SWITCH_STACK_PUSH = (1 << 4)
+  SWITCH_STACK_UNSHIFT = (1 << 2),
+  SWITCH_STACK_PUSH = (1 << 3)
 }
 
 }

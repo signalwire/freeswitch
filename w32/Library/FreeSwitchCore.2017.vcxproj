@@ -128,8 +128,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <BuildLog />
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -178,8 +178,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -219,8 +219,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <BuildLog />
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -257,8 +257,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -767,9 +767,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ProjectReference Include="..\..\libs\libteletone\libteletone.2017.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\libzrtp\projects\win\libzrtp.2017.vcxproj">
-      <Project>{c13cc324-0032-4492-9a30-310a6bd64ff5}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\spandsp\libspandsp.2017.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>

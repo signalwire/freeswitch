@@ -985,23 +985,5 @@
       <prompt phrase="woodlark" filename="woodlark.wav"/> 
       <prompt phrase="yesteryear" filename="yesteryear.wav"/> 
     </base256>
-    <zrtp>
-      <!--  Event prompts --> 
-      <prompt phrase="Bem-vindo ao agente de registro de segurança ZRTP." filename="zrtp-enroll_welcome.wav"/> 
-      <prompt phrase="Você deve verificar a autentificação com o seu destinatário. Se não coincidir, isso indica presença de um dispositivo de escuta telefonica." filename="zrtp-check_sas.wav"/> 
-      <prompt phrase="Somente aqueles telefones que estão autentificados podem ser configurados de maneira segura neste sistema para retransmitir as ligações em ZRTP. O seu telefone não está autentificado com este sistema, esta ligação não será realizada." filename="zrtp-enroll_not_sip_registered.wav"/> 
-      <prompt phrase="O seu telefone indica que é seguro este sistema para realizar ligações seguras em ZRTP, você não precisa fazer nada mais." filename="zrtp-enroll_already_enrolled.wav"/> 
-      <prompt phrase="Somente os telefones equipados com protocolo ZRTP podem usar este ramal. O seu telefone não esta configurado para ZRTP, esta ligação não sera completada." filename="zrtp-enroll_notzrtp.wav"/> 
-      <prompt phrase="Este sistema está configurado para realizar ligações telefónicas encriptadas em ZRTP. Você deve decidir se permitira que este sistema possa interceptar e monitorizar as suas ligações telefónicas seguras. Pode finalizar a ligação depois disso." filename="zrtp-enroll_confirmed.wav"/> 
-      <prompt phrase="Compare verbalmente este código de autentificação com o seu destinatário." filename="zrtp-is_secure.wav"/> 
-      <prompt phrase="O código de autentificação não foi verificado." filename="zrtp-is_unverified.wav"/> 
-      <prompt phrase="O código de autentificação foi verificado." filename="zrtp-is_verified.wav"/> 
-      <prompt phrase="Obrigado pela sua ligação. Até logo." filename="zrtp-thankyou_goodbye.wav"/> 
-      <prompt phrase="Algo falha." filename="zrtp-somethings_wrong.wav"/> 
-      <prompt phrase="Erro." filename="zrtp-status_error.wav"/> 
-      <prompt phrase="A ligação não e segura." filename="zrtp-status_notsecure.wav"/> 
-      <prompt phrase="A ligação é segura." filename="zrtp-status_secure.wav"/> 
-      <prompt phrase="Securizando a ligação." filename="zrtp-status_securing.wav"/> 
-    </zrtp>
   </pt_BR>
 </language>

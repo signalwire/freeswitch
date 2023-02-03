@@ -43,7 +43,6 @@
 #include <stdbool.h>
 
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
-static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp, switch_sdp_type_t sdp_type);
 static void gen_ice(switch_core_session_t *session, switch_media_type_t type, const char *ip, switch_port_t port);
 //#define GOOGLE_ICE
@@ -148,10 +147,6 @@ typedef struct switch_rtp_engine_s {
 	char *proxy_sdp_ip;
 	switch_port_t proxy_sdp_port;
 
-
-	/** ZRTP **/
-	char *local_sdp_zrtp_hash;
-	char *remote_sdp_zrtp_hash;
 
 	payload_map_t *cur_payload_map;
 	payload_map_t *payload_map;
@@ -369,39 +364,6 @@ static int get_channels(const char *name, int dft)
 	return dft ? dft : 1;
 }
 
-static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session, switch_media_type_t type)
-{
-	switch_rtp_engine_t *aleg_engine;
-	switch_rtp_engine_t *bleg_engine;
-
-	if (!aleg_session->media_handle || !bleg_session->media_handle) return;
-	aleg_engine = &aleg_session->media_handle->engines[type];
-	bleg_engine = &bleg_session->media_handle->engines[type];
-
-
-
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG1,
-					  "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
-
-	if (!(switch_channel_test_flag(aleg_session->channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG1,
-						  "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
-		return;
-	}
-
-	if (aleg_engine->remote_sdp_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG, "Passing a-leg remote zrtp-hash (audio) to b-leg\n");
-		bleg_engine->local_sdp_zrtp_hash = switch_core_session_strdup(bleg_session, aleg_engine->remote_sdp_zrtp_hash);
-		switch_channel_set_variable(bleg_session->channel, "l_sdp_audio_zrtp_hash", bleg_engine->local_sdp_zrtp_hash);
-	}
-
-	if (bleg_engine->remote_sdp_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG, "Passing b-leg remote zrtp-hash (audio) to a-leg\n");
-		aleg_engine->local_sdp_zrtp_hash = switch_core_session_strdup(aleg_session, bleg_engine->remote_sdp_zrtp_hash);
-		switch_channel_set_variable(aleg_session->channel, "l_sdp_audio_zrtp_hash", aleg_engine->local_sdp_zrtp_hash);
-	}
-}
-
 SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session)
 {
 	switch_media_handle_t *smh;
@@ -444,101 +406,6 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 
 	return fps;
 }
-
-SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
-{
-	_switch_core_media_pass_zrtp_hash2(aleg_session, bleg_session, SWITCH_MEDIA_TYPE_AUDIO);
-	_switch_core_media_pass_zrtp_hash2(aleg_session, bleg_session, SWITCH_MEDIA_TYPE_VIDEO);
-	_switch_core_media_pass_zrtp_hash2(aleg_session, bleg_session, SWITCH_MEDIA_TYPE_TEXT);
-}
-
-
-SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash(switch_core_session_t *session)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	switch_core_session_t *other_session;
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Deciding whether to pass zrtp-hash between legs\n");
-	if (!(switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "CF_ZRTP_PASSTHRU_REQ not set, so not propagating zrtp-hash\n");
-		return;
-	} else if (!(switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "No partner channel found, so not propagating zrtp-hash\n");
-		return;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Found peer channel; propagating zrtp-hash if set\n");
-		switch_core_media_pass_zrtp_hash2(session, other_session);
-		switch_core_session_rwunlock(other_session);
-	}
-}
-
-SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session_t *session, switch_media_type_t type, switch_bool_t local)
-{
-	switch_rtp_engine_t *engine;
-	if (!session->media_handle) return NULL;
-
-	engine = &session->media_handle->engines[type];
-
-	if (local) {
-		return engine->local_sdp_zrtp_hash;
-	}
-
-
-	return engine->remote_sdp_zrtp_hash;
-
-}
-
-static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_rtp_engine_t *audio_engine;
-	switch_rtp_engine_t *video_engine;
-	switch_rtp_engine_t *text_engine;
-	sdp_media_t *m;
-	sdp_attribute_t *attr;
-	int got_audio = 0, got_video = 0, got_text = 0;
-
-	if (!session->media_handle) return;
-
-	audio_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	video_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO];
-	text_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT];
-
-
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Looking for zrtp-hash\n");
-	for (m = sdp->sdp_media; m; m = m->m_next) {
-		if (got_audio && got_video && got_text) break;
-		if (m->m_port && ((m->m_type == sdp_media_audio && !got_audio)
-						  || (m->m_type == sdp_media_video && !got_video))) {
-			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (zstr(attr->a_name)) continue;
-				if (strcasecmp(attr->a_name, "zrtp-hash") || !(attr->a_value)) continue;
-				if (m->m_type == sdp_media_audio) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found audio zrtp-hash; setting r_sdp_audio_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_audio_zrtp_hash", attr->a_value);
-					audio_engine->remote_sdp_zrtp_hash = switch_core_session_strdup(session, attr->a_value);
-					got_audio++;
-				} else if (m->m_type == sdp_media_video) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found video zrtp-hash; setting r_sdp_video_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_video_zrtp_hash", attr->a_value);
-					video_engine->remote_sdp_zrtp_hash = switch_core_session_strdup(session, attr->a_value);
-					got_video++;
-				} else if (m->m_type == sdp_media_text) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found text zrtp-hash; setting r_sdp_video_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_text_zrtp_hash", attr->a_value);
-					text_engine->remote_sdp_zrtp_hash = switch_core_session_strdup(session, attr->a_value);
-					got_text++;
-				}
-				switch_channel_set_flag(channel, CF_ZRTP_HASH);
-				break;
-			}
-		}
-	}
-}
-
 
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m)
 {
@@ -5043,9 +4910,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_set_variable(session->channel, "t38_broken_boolean", "true");
 	}
 
-	switch_core_media_find_zrtp_hash(session, sdp);
-	switch_core_media_pass_zrtp_hash(session);
-
 	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL);
 	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 	check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, NULL);
@@ -9143,16 +9007,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 
 
-		if (switch_channel_test_flag(session->channel, CF_ZRTP_PASSTHRU)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating ZRTP PROXY MODE\n");
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable NOTIMER_DURING_BRIDGE\n");
-			switch_channel_clear_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating audio UDPTL mode\n");
-			switch_rtp_udptl_mode(a_engine->rtp_session);
-		}
-
-
-
 	text:
 
 		//if (switch_channel_test_flag(session->channel, CF_MSRP)) { // skip RTP RTT
@@ -9449,12 +9303,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_channel_set_variable_printf(session->channel, "rtp_use_text_ssrc", "%u", t_engine->ssrc);
 
 				switch_core_session_apply_crypto(session, SWITCH_MEDIA_TYPE_TEXT);
-
-
-				if (switch_channel_test_flag(session->channel, CF_ZRTP_PASSTHRU)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating text UDPTL mode\n");
-					switch_rtp_udptl_mode(t_engine->rtp_session);
-				}
 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TEXT RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
@@ -9779,11 +9627,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_core_session_apply_crypto(session, SWITCH_MEDIA_TYPE_VIDEO);
 
 
-				if (switch_channel_test_flag(session->channel, CF_ZRTP_PASSTHRU)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating video UDPTL mode\n");
-					switch_rtp_udptl_mode(v_engine->rtp_session);
-				}
-
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 				switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
@@ -9876,7 +9719,6 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	const char *local_sdp_audio_zrtp_hash;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
 	int include_external;
@@ -10232,13 +10074,6 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ptime:%d\r\n", cur_ptime);
 	}
 
-	local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
-
-	if (local_sdp_audio_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding audio a=zrtp-hash:%s\n", local_sdp_audio_zrtp_hash);
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=zrtp-hash:%s\r\n", local_sdp_audio_zrtp_hash);
-	}
-
 	if (!zstr(sr)) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\r\n", sr);
 	}
@@ -10386,9 +10221,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_event_t *map = NULL, *ptmap = NULL;
 	//const char *b_sdp = NULL;
 	//const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
-	const char *local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
-	const char *local_sdp_video_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_TRUE);
-	const char *local_sdp_text_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_TRUE);
 	const char *tmp;
 	switch_rtp_engine_t *a_engine, *v_engine, *t_engine;
 	switch_media_handle_t *smh;
@@ -10824,13 +10656,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ptime:%d\r\n", ptime);
 		}
 
-
-		if (local_sdp_audio_zrtp_hash) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding audio a=zrtp-hash:%s\r\n",
-							  local_sdp_audio_zrtp_hash);
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\r\n",
-							local_sdp_audio_zrtp_hash);
-		}
 
 		if (!zstr(sr)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=%s\r\n", sr);
@@ -11505,12 +11330,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 
-				if (local_sdp_video_zrtp_hash) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\r\n", local_sdp_video_zrtp_hash);
-				}
-
-
 				if (switch_channel_test_flag(session->channel, CF_DTLS) ||
 					!switch_channel_test_flag(session->channel, CF_SECURE) ||
 					smh->crypto_mode == CRYPTO_MODE_MANDATORY || smh->crypto_mode == CRYPTO_MODE_FORBIDDEN) {
@@ -11849,12 +11668,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						}
 					}
 					//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\r\n");
-				}
-
-
-				if (local_sdp_text_zrtp_hash) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding text a=zrtp-hash:%s\n", local_sdp_text_zrtp_hash);
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\r\n", local_sdp_text_zrtp_hash);
 				}
 
 
@@ -13770,9 +13583,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 			break;
 		}
 	}
-
-	switch_core_media_find_zrtp_hash(session, sdp);
-	switch_core_media_pass_zrtp_hash(session);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		ptime = dptime;

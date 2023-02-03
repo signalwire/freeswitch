@@ -436,7 +436,6 @@ SWITCH_DECLARE(void) switch_channel_clear_flag_recursive(switch_channel_t *chann
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel, const char *file, const char *func, int line);
-SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel);
 
 /*!
   \brief Answer a channel (initiate/acknowledge a successful connection)
