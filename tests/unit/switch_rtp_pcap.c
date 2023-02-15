@@ -50,6 +50,8 @@ switch_payload_t read_pt;
 static switch_port_t audio_rx_port = 1234;
 
 static int got_media_timeout = 0;
+switch_time_t timeout_time;
+switch_mutex_t *timeout_mutex;
 
 //#define USE_RTCP_PCAP 
 
@@ -276,8 +278,11 @@ static void event_handler(switch_event_t *event)
 	const char *new_ev = switch_event_get_header(event, "Event-Name");
 
 	if (new_ev && !strcmp(new_ev, "CHANNEL_HANGUP")) {
-		if (!strcmp(switch_event_get_header(event, "Hangup-Cause"), "MEDIA_TIMEOUT")) {
+		if (new_ev && (!strcmp(new_ev, "CHANNEL_HANGUP") || !strcmp(new_ev, "CHANNEL_HANGUP_COMPLETE"))) {
+			switch_mutex_lock(timeout_mutex);
 			got_media_timeout = 1;
+			timeout_time = switch_time_now();
+			switch_mutex_unlock(timeout_mutex);
 		}
 	}
 
@@ -470,6 +475,7 @@ FST_TEARDOWN_END()
 		switch_socket_t *sock_rtp = NULL;
 		switch_sockaddr_t *sock_addr = NULL;
 		const char *str_err;
+		switch_time_t time_of_last_packet_rcvd;
 
 		status = rtp_test_start_call(&session);
 		fst_requires(status == SWITCH_STATUS_SUCCESS);
@@ -480,7 +486,7 @@ FST_TEARDOWN_END()
 		pcap = pcap_open_offline_with_tstamp_precision("pcap/milliwatt.pcmu.rtp.pcap", PCAP_TSTAMP_PRECISION_MICRO, errbuf);
 		fst_requires(pcap);
 
-		switch_core_media_set_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
+		switch_core_media_clear_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
 
 		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
 		fst_requires(rtp_session);
@@ -498,6 +504,7 @@ FST_TEARDOWN_END()
 
 		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
 		switch_rtp_reset(rtp_session);
+		switch_mutex_init(&timeout_mutex, SWITCH_MUTEX_NESTED, fst_pool);
 
 		/* send 3 packets then wait and expect RTP timeout */
 		while ((packet = pcap_next(pcap, &pcap_header)) && x < 3) {
@@ -548,9 +555,13 @@ FST_TEARDOWN_END()
 			fst_requires(rcvd_datalen == plen - SWITCH_RTP_HEADER_LEN);
 		}
 
+		time_of_last_packet_rcvd = switch_time_now();
 		x = 150; /* 3 seconds max */
-		while (x || !got_media_timeout) {
-			uint32_t rcvd_datalen; 
+		switch_mutex_lock(timeout_mutex);
+		while (x > 0 || !got_media_timeout) {
+			uint32_t rcvd_datalen;
+
+			switch_mutex_unlock(timeout_mutex);
 			status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
 			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG, skip\n");
@@ -558,7 +569,9 @@ FST_TEARDOWN_END()
 			switch_yield(20 * 1000);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			x--;
+			switch_mutex_lock(timeout_mutex);
 		}
+		switch_mutex_unlock(timeout_mutex);
 
 		if (write_frame) switch_frame_free(&write_frame);
 
@@ -570,9 +583,155 @@ FST_TEARDOWN_END()
 
 		pcap_close(pcap);
 
+		switch_event_unbind_callback(event_handler);
+
 		fst_check(got_media_timeout);
+
+		fst_check(timeout_time - time_of_last_packet_rcvd > 3 * 1000); /* consider 3 seconds extra for the test - CI delay, load, etc */
 	}
 	FST_TEST_END()
+	FST_TEST_BEGIN(test_rtp_media_timeout_hold)
+	{
+		switch_core_session_t *session = NULL;
+		switch_status_t status;
+		uint32_t plen = SWITCH_RTP_HEADER_LEN;
+		char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
+		switch_payload_t pt = { 0 };
+		switch_frame_flag_t frameflags = { 0 };
+		int x = 0;
+		switch_frame_t *write_frame;
+		pcap_t *pcap;
+		const unsigned char *packet;
+		char errbuf[PCAP_ERRBUF_SIZE];
+		struct pcap_pkthdr pcap_header;
+		const struct sniff_ip *ip; /* The IP header */
+		int size_ip, jump_over;
+		struct timeval prev_ts = { 0 };
+		switch_socket_t *sock_rtp = NULL;
+		switch_sockaddr_t *sock_addr = NULL;
+		const char *str_err;
+		switch_time_t time_of_last_packet_rcvd;
+		switch_channel_t *channel = NULL;
+
+		got_media_timeout = 0;
+		status = rtp_test_start_call(&session);
+		fst_requires(status == SWITCH_STATUS_SUCCESS);
+		fst_requires(session);
+
+		switch_event_bind("", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL);
+
+		pcap = pcap_open_offline_with_tstamp_precision("pcap/milliwatt.pcmu.rtp.pcap", PCAP_TSTAMP_PRECISION_MICRO, errbuf);
+		fst_requires(pcap);
+
+		switch_core_media_clear_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
+
+		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
+		fst_requires(rtp_session);
+
+		rtp_test_init_frame(&write_frame, &session);
+
+		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
+
+		if (switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			fst_requires(0); /*exit*/ 
+		}
+
+		switch_sockaddr_new(&sock_addr, rx_host, audio_rx_port, switch_core_session_get_pool(session));
+		fst_requires(sock_addr);
+
+		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
+		switch_rtp_reset(rtp_session);
+		switch_mutex_init(&timeout_mutex, SWITCH_MUTEX_NESTED, fst_pool);
+
+		/* send 3 packets then wait and expect RTP timeout */
+		while ((packet = pcap_next(pcap, &pcap_header)) && x < 3) {
+			/*assume only UDP/RTP packets in the pcap*/
+			uint32_t rcvd_datalen = pcap_header.caplen;
+			size_t len;
+			switch_size_t tmp_len;
+
+			int diff_us = (pcap_header.ts.tv_sec-prev_ts.tv_sec)*1000000+(pcap_header.ts.tv_usec-prev_ts.tv_usec);
+			if (diff_us > 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SENT pkt diff: %d us\n", diff_us);
+				usleep(diff_us);
+			}
+
+			x++;
+
+			prev_ts = pcap_header.ts;
+
+			len = pcap_header.caplen;
+
+			if (len <= 42) {
+				continue;
+			} 
+
+			ip = (struct sniff_ip*)(packet + 14);
+			size_ip = IP_HL(ip) * 4;
+
+			jump_over = 14 /*SIZE_ETHERNET*/ + size_ip /*IP HDR size*/ + 8 /* UDP HDR SIZE */; /* jump 42 bytes over network layers/headers */
+			packet += jump_over;
+			
+			if (packet[0] == 0x80 && packet[1] == 0 /*PCMU*/) {
+				int16_t *seq = (int16_t *)packet + 1;
+				plen = len - jump_over;
+				tmp_len = plen;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent RTP. Packet size = [%u] seq = [%d]\n", plen, htons(*seq));
+				if (switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char*)packet, &tmp_len) != SWITCH_STATUS_SUCCESS) {
+					fst_requires(0);
+				}
+			}
+
+			status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG, skip\n");
+				continue;
+			}
+
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			fst_requires(rcvd_datalen == plen - SWITCH_RTP_HEADER_LEN);
+		}
+
+		time_of_last_packet_rcvd = switch_time_now();
+		channel = switch_core_session_get_channel(session);
+		switch_channel_set_flag(channel, CF_PROTO_HOLD);
+		switch_core_media_toggle_hold(session, 0);
+		
+		x = 600; /* 12 seconds max (hold) */
+		switch_mutex_lock(timeout_mutex);
+		while (x > 0 || !got_media_timeout) {
+			uint32_t rcvd_datalen;
+
+			switch_mutex_unlock(timeout_mutex);
+			status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG, skip\n");
+			}
+			switch_yield(20 * 1000);
+			fst_requires(status == SWITCH_STATUS_SUCCESS);
+			x--;
+			switch_mutex_lock(timeout_mutex);
+		}
+		switch_mutex_unlock(timeout_mutex);
+
+		if (write_frame) switch_frame_free(&write_frame);
+
+		switch_rtp_destroy(&rtp_session);
+
+		rtp_test_end_call(&session);
+
+		switch_socket_close(sock_rtp);
+
+		pcap_close(pcap);
+
+		switch_event_unbind_callback(event_handler);
+
+		fst_check(got_media_timeout);
+
+		fst_check(timeout_time - time_of_last_packet_rcvd > 13000); /* consider 3 extra seconds for the tets - CI delay, load, etc */
+	}
+	FST_TEST_END()
+
 }
 FST_SUITE_END()
 }
