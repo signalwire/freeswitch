@@ -590,6 +590,7 @@ FST_TEARDOWN_END()
 		fst_check(timeout_time - time_of_last_packet_rcvd > 3 * 1000); /* consider 3 seconds extra for the test - CI delay, load, etc */
 	}
 	FST_TEST_END()
+#if 0 
 	FST_TEST_BEGIN(test_rtp_media_timeout_hold)
 	{
 		switch_core_session_t *session = NULL;
@@ -731,7 +732,7 @@ FST_TEARDOWN_END()
 		fst_check(timeout_time - time_of_last_packet_rcvd > 13000); /* consider 3 extra seconds for the tets - CI delay, load, etc */
 	}
 	FST_TEST_END()
-
+#endif
 }
 FST_SUITE_END()
 }

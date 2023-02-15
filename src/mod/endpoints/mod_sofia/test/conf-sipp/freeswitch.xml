@@ -395,6 +395,32 @@
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
         <param name="tls" value="false"/>
+     <!-- Initial retransmission interval (in milliseconds).
+          Set the T1 retransmission interval used by the SIP transaction engine.
+          The T1 is the initial duration used by request retransmission timers A and E (UDP) as well as response retransmission timer G.   -->
+      <param name="timer-T1" value="200" />
+ 
+     <!--  Transaction timeout (defaults to T1 * 64).
+          Set the T1x64 timeout value used by the SIP transaction engine.
+          The T1x64 is duration used for timers B, F, H, and J (UDP) by the SIP transaction engine.
+          The timeout value T1x64 can be adjusted separately from the initial retransmission interval T1. -->
+     <<param name="timer-T1X64" value="10000" />
+ 
+ 
+     <!-- Maximum retransmission interval (in milliseconds).
+          Set the maximum retransmission interval used by the SIP transaction engine.
+          The T2 is the maximum duration used for the timers E (UDP) and G by the SIP transaction engine.
+          Note that the timer A is not capped by T2. Retransmission interval of INVITE requests grows exponentially
+          until the timer B fires.  -->
+      <param name="timer-T2" value="200" />
+ 
+     <!--
+         Transaction lifetime (in milliseconds).
+         Set the lifetime for completed transactions used by the SIP transaction engine.
+         A completed transaction is kept around for the duration of T4 in order to catch late responses.
+         The T4 is the maximum duration for the messages to stay in the network and the duration of SIP timer K. -->
+     <param name="timer-T4" value="1000" /> 
+
       </settings>
   </profile>
 
@@ -435,7 +461,33 @@
         <param name="rtp-hold-timeout-sec" value="1800"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
-        <param name="tls" value="false"/>
+		<param name="tls" value="false"/>
+     <!-- Initial retransmission interval (in milliseconds).
+          Set the T1 retransmission interval used by the SIP transaction engine.
+          The T1 is the initial duration used by request retransmission timers A and E (UDP) as well as response retransmission timer G.   -->
+      <param name="timer-T1" value="200" />
+ 
+     <!--  Transaction timeout (defaults to T1 * 64).
+          Set the T1x64 timeout value used by the SIP transaction engine.
+          The T1x64 is duration used for timers B, F, H, and J (UDP) by the SIP transaction engine.
+          The timeout value T1x64 can be adjusted separately from the initial retransmission interval T1. -->
+     <<param name="timer-T1X64" value="10000" />
+ 
+ 
+     <!-- Maximum retransmission interval (in milliseconds).
+          Set the maximum retransmission interval used by the SIP transaction engine.
+          The T2 is the maximum duration used for the timers E (UDP) and G by the SIP transaction engine.
+          Note that the timer A is not capped by T2. Retransmission interval of INVITE requests grows exponentially
+          until the timer B fires.  -->
+      <param name="timer-T2" value="200" />
+ 
+     <!--
+         Transaction lifetime (in milliseconds).
+         Set the lifetime for completed transactions used by the SIP transaction engine.
+         A completed transaction is kept around for the duration of T4 in order to catch late responses.
+         The T4 is the maximum duration for the messages to stay in the network and the duration of SIP timer K. -->
+     <param name="timer-T4" value="1000" /> 
+
       </settings>
   </profile>
 
