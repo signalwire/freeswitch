@@ -49,7 +49,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown);
 SWITCH_MODULE_DEFINITION(mod_voicemail, mod_voicemail_load, mod_voicemail_shutdown, NULL);
 #define VM_EVENT_MAINT "vm::maintenance"
 
-#define VM_MAX_GREETINGS 9
+#define VM_MAX_GREETINGS 1 // Cytracom only support greeting_1 now
 #define VM_EVENT_QUEUE_SIZE 50000
 
 static switch_status_t voicemail_inject(const char *data, switch_core_session_t *session);
@@ -2210,7 +2210,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 				if (!strcmp(input, profile->main_menu_key)) {
 					vm_check_state = VM_CHECK_MENU;
-				} else if (!strcmp(input, profile->choose_greeting_key)) {
+				} else if (!strcmp(input, profile->choose_greeting_key) && (VM_MAX_GREETINGS > 1)) { // Cytracom only supports greeting_1 now
 					int num;
 					switch_input_args_t greeting_args = { 0 };
 					greeting_args.input_callback = cancel_on_dtmf;
@@ -2267,9 +2267,13 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_safe_free(file_path);
 				} else if (!strcmp(input, profile->record_greeting_key)) {
 					int num;
-					TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
+					if (VM_MAX_GREETINGS > 1) { // Cytracom only support greeting_1 now
+						TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
+						num = atoi(input);
+					} else {
+						num = 1;
+					}
 
-					num = atoi(input);
 					if (num < 1 || num > VM_MAX_GREETINGS) {
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
 					} else {
