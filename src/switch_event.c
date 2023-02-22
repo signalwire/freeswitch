@@ -1141,7 +1141,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 		len = 0;
 		for(j = 0; j < header->idx; j++) {
 			len += 2;
-			if (!header->array[j]) { 
+			if (!header->array[j]) {
 				continue;
 			}
 			len += strlen(header->array[j]);
@@ -1165,7 +1165,7 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 					memcpy(hv, "|:", 2);
 					hv += 2;
 				}
-				if (!header->array[j]) { 
+				if (!header->array[j]) {
 					continue;
 				}
 				memcpy(hv, header->array[j], strlen(header->array[j]));
@@ -1606,8 +1606,22 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	switch_safe_free(encode_buf);
 
 	if (event->body) {
+		char *saved_body_buf = NULL;
+		char *encode_body_buf = NULL;
 		int blen = (int) strlen(event->body);
 		llen = blen;
+
+		// encode body if it's asr result
+		if (strstr(event->body, "<interpretation")) {
+			int newBodyLen = strlen(event->body) * 3 + 1;
+
+			/* save old body buffer, assign it with newly allocated buffer which is encoded */
+			if ((encode_body_buf = malloc(newBodyLen))) {
+				switch_url_encode(event->body, encode_body_buf, newBodyLen);
+				saved_body_buf = event->body;
+				event->body = encode_body_buf;
+			}
+		}
 
 		if (blen) {
 			llen += 25;
@@ -1628,6 +1642,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 			switch_snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
 		} else {
 			switch_snprintf(buf + len, dlen - len, "\n");
+		}
+
+		/* free newly allocated buffer and restore old body buffer of event. */
+		if (saved_body_buf) {
+			event->body = saved_body_buf;
+			switch_safe_free(encode_body_buf);
+			encode_body_buf = NULL;
 		}
 	} else {
 		switch_snprintf(buf + len, dlen - len, "\n");
@@ -3618,7 +3639,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_add(switch_live_array_t *la, c
 	const char *action = "add";
 	cJSON *msg = NULL, *data = NULL;
 	const char *visibility = NULL;
-	
+
 	switch_mutex_lock(la->mutex);
 
 	if ((node = switch_core_hash_find(la->hash, name))) {
