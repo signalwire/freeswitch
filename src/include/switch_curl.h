@@ -50,7 +50,11 @@ SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt(CURL *handle, switch_CUR
 SWITCH_DECLARE(const char *) switch_curl_easy_strerror(switch_CURLcode errornum );
 SWITCH_DECLARE(void) switch_curl_init(void);
 SWITCH_DECLARE(void) switch_curl_destroy(void);
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, curl_mime **mimep);
+#else
 SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, struct curl_httppost **formpostp);
+#endif
 #define switch_curl_easy_setopt curl_easy_setopt
 
 SWITCH_END_EXTERN_C

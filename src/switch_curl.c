@@ -58,11 +58,19 @@ SWITCH_DECLARE(void) switch_curl_destroy(void)
 	curl_global_cleanup();
 }
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, curl_mime **mimep)
+#else
 SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, struct curl_httppost **formpostp)
+#endif
 {
-
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	curl_mime *mime = NULL;
+	curl_mimepart *part = NULL;
+#else
 	struct curl_httppost *formpost=NULL;
 	struct curl_httppost *lastptr=NULL;
+#endif
 	switch_event_header_t *hp;
 	int go = 0;
 
@@ -77,6 +85,9 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_even
 		return SWITCH_STATUS_FALSE;
 	}
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	mime = curl_mime_init(curl_handle);
+#endif
 	for (hp = event->headers; hp; hp = hp->next) {
 
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
@@ -87,26 +98,42 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_even
 				if (fname) {
 					*fname++ = '\0';
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+					part = curl_mime_addpart(mime);
+					curl_mime_name(part, pname);
+					curl_mime_filename(part, fname);
+					curl_mime_filedata(part, hp->value);
+#else
 					curl_formadd(&formpost,
 								 &lastptr,
 								 CURLFORM_COPYNAME, pname,
 								 CURLFORM_FILENAME, fname,
 								 CURLFORM_FILE, hp->value,
 								 CURLFORM_END);
+#endif
 				}
 				free(pname);
 			}
 		} else {
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+			part = curl_mime_addpart(mime);
+			curl_mime_name(part, hp->name);
+			curl_mime_data(part, hp->value, CURL_ZERO_TERMINATED);
+#else
 			curl_formadd(&formpost,
 						 &lastptr,
 						 CURLFORM_COPYNAME, hp->name,
 						 CURLFORM_COPYCONTENTS, hp->value,
 						 CURLFORM_END);
-
+#endif
 		}
 	}
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	*mimep = mime;
+#else
 	*formpostp = formpost;
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 
