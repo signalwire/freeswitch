@@ -10387,7 +10387,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 															 imp->iananame, imp->samples_per_second, smh->fmtp[i], &orig_pt, NULL, &orig_fmtp) == SWITCH_STATUS_SUCCESS) {
 
 						if (orig_pt == smh->mparams->te) {
-							smh->mparams->te  = (switch_payload_t)smh->payload_space++;
+							smh->mparams->recv_te = smh->mparams->te  = (switch_payload_t)smh->payload_space++;
 						}
 
 						smh->ianacodes[i] = orig_pt;
