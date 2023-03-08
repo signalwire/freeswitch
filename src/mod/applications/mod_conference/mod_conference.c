@@ -1996,7 +1996,7 @@ SWITCH_STANDARD_APP(conference_function)
 	while (*conference_name == ' ') {
 		conference_name++;
 	}
-	/* Supporting + in the conference name ? */
+	/* checking for pin only after profile_name */
 	if ((profile_name_and_pin = strrchr(conference_name, '@'))) {
 		*profile_name_and_pin++ = '\0';
 	} else {
