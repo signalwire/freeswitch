@@ -156,6 +156,7 @@ struct vm_profile {
 	char *tone_spec;
 	char *storage_dir;
 	switch_bool_t storage_dir_shared;
+	char *name_file_path_prefix;
 	char *callback_dialplan;
 	char *callback_context;
 	char *email_body;
@@ -633,6 +634,8 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 						   &profile->storage_dir, "", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "storage-dir-shared", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
 						   &profile->storage_dir_shared, SWITCH_FALSE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "name-file-path-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
+						   &profile->name_file_path_prefix, "/var/media/fs_voicemail", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "callback-dialplan", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->callback_dialplan, "XML", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "callback-context", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
@@ -3500,6 +3503,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	switch_snprintfv(sql, sizeof(sql), "select * from voicemail_prefs where username='%q' and domain='%q'", id, domain_name);
 	vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
+
+	// Cytracom change - Override the name_path from SQL voicemail_prefs with the name_path from the voicemail.conf.xml file, because SQL isn't always synced.
+	switch_snprintf(cbt.name_path, sizeof(cbt.name_path), "%s/%s/%s/recorded_name.wav", profile->name_file_path_prefix, domain_name, id);
 
 	if (!vm_ext) {
 		vm_ext = profile->file_ext;
