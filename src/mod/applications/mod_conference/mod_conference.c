@@ -1901,6 +1901,7 @@ SWITCH_STANDARD_APP(conference_function)
 	char *flags_prefix = "+flags{";
 	char *bridgeto = NULL;
 	char *profile_name = NULL;
+	char *profile_name_and_pin = NULL;
 	switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
 	const char *flags_str, *v_flags_str;
 	const char *cflags_str, *v_cflags_str;
@@ -1995,18 +1996,20 @@ SWITCH_STANDARD_APP(conference_function)
 	while (*conference_name == ' ') {
 		conference_name++;
 	}
+	/* Supporting + in the conference name ? */
+	if ((profile_name_and_pin = strrchr(conference_name, '@'))) {
+		*profile_name_and_pin++ = '\0';
+	} else {
+		profile_name_and_pin = "default";
+	}
 
 	/* is there a conference pin ? */
-	if ((dpin = strchr(conference_name, '+'))) {
+	if ((dpin = strchr(profile_name_and_pin, '+'))) {
 		*dpin++ = '\0';
 	} else dpin = "";
 
 	/* is there profile specification ? */
-	if ((profile_name = strrchr(conference_name, '@'))) {
-		*profile_name++ = '\0';
-	} else {
-		profile_name = "default";
-	}
+	profile_name = profile_name_and_pin;
 
 #if 0
 	if (0) {
