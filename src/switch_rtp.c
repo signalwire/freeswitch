@@ -1739,7 +1739,7 @@ static void do_pp_mos(switch_rtp_t *rtp_session)
 	double rtt = (rtp_session->rtcp_sock_output && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) ? rtp_session->stats.rtcp.rtt_avg : 0;
 	// Take the average latency, add jitter, but add an impact to jitter
 	// then add 10 for protocol latencies
-	double R = (rtt/1000 + rtp_session->stats.inbound.variance * rtp_mos_jitter_penalty + 10);
+	double R = (rtt/1000 + rtp_session->stats.inbound.mean_interval * rtp_mos_jitter_penalty + 10);
 	unsigned int packet_loss = (rtp_session->stats.rtcp.fraction_lost * 100 / 256);
 	double mos = 0;
 	switch_time_t now = switch_micro_time_now();
@@ -1766,9 +1766,9 @@ static void do_pp_mos(switch_rtp_t *rtp_session)
 	rtp_session->stats.inbound.pp_mos = mos;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "PP Mos R:%0.2f M:%0.2f RTT:%0.2f PL:%d JV:%0.2f LP:%0.2f/%0.2f JP:%0.2f/%0.2f\n"
-		, R, mos, rtt, packet_loss, rtp_session->stats.inbound.variance
+		, R, mos, rtt, packet_loss, rtp_session->stats.inbound.mean_interval
 		, (packet_loss * rtp_mos_packet_loss_penalty), rtp_mos_packet_loss_penalty
-		, (rtt/1000 + rtp_session->stats.inbound.variance * rtp_mos_jitter_penalty + 10), rtp_mos_jitter_penalty);
+		, (rtt/1000 + rtp_session->stats.inbound.mean_interval * rtp_mos_jitter_penalty + 10), rtp_mos_jitter_penalty);
 
 	do_cumulative_pp_mos(rtp_session);
 
@@ -1818,13 +1818,14 @@ static void do_mos(switch_rtp_t *rtp_session) {
 
 	do_pp_mos(rtp_session);
 		
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f v: %0.2f %0.2f/%0.2f\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3, "%s %s stat %0.2f %ld/%d flaws: %ld mos: %0.2f jitter: %0.2f v: %0.2f %0.2f/%0.2f\n",
 					  rtp_session_name(rtp_session),
 					  rtp_type(rtp_session),
 					  rtp_session->stats.inbound.R,
 					  (long int)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws), rtp_session->stats.inbound.recved,
 					  (long int)rtp_session->stats.inbound.flaws,
 					  rtp_session->stats.inbound.mos,
+					  rtp_session->stats.inbound.mean_interval,
 					  rtp_session->stats.inbound.variance,
 					  rtp_session->stats.inbound.min_variance,
 					  rtp_session->stats.inbound.max_variance
