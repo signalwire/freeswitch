@@ -17,6 +17,7 @@ typedef void (*switch_telnyx_on_populate_plain_status_func)(switch_stream_handle
 typedef void (*switch_telnyx_on_populate_json_status_func)(cJSON *);
 typedef void (*switch_telnyx_publish_json_event_func)(const char*);
 typedef void (*switch_telnyx_process_audio_stats_func)(switch_core_session_t*,switch_rtp_stats_t*);
+typedef void (*switch_telnyx_process_audio_quality_func)(switch_core_session_t*,double);
 typedef void (*switch_telnyx_process_flaws_func)(switch_rtp_t *,int);
 typedef void (*switch_telnyx_process_packet_loss_func)(switch_rtp_t *,int);
 typedef void (*switch_telnyx_set_current_trace_message_func)(const char*);
@@ -33,6 +34,7 @@ typedef struct switch_telnyx_event_dispatch_s {
 	switch_telnyx_on_channel_recover_func switch_telnyx_on_channel_recover;
 	switch_telnyx_publish_json_event_func switch_telnyx_publish_json_event;
 	switch_telnyx_process_audio_stats_func switch_telnyx_process_audio_stats;
+	switch_telnyx_process_audio_quality_func switch_telnyx_process_audio_quality;
 	switch_telnyx_process_flaws_func switch_telnyx_process_flaws;
 	switch_telnyx_process_packet_loss_func switch_telnyx_process_packet_loss;
 	switch_telnyx_set_current_trace_message_func switch_telnyx_set_current_trace_message;
@@ -60,6 +62,7 @@ SWITCH_DECLARE(void) switch_telnyx_add_populate_api_plain_status_callback(switch
 SWITCH_DECLARE(void) switch_telnyx_add_populate_api_json_status_callback(switch_telnyx_on_populate_json_status_func cb);
 SWITCH_DECLARE(void) switch_telnyx_publish_json_event(const char* json);
 SWITCH_DECLARE(void) switch_telnyx_process_audio_stats(switch_core_session_t* session, switch_rtp_stats_t* stats);
+SWITCH_DECLARE(void) switch_telnyx_process_audio_quality(switch_core_session_t* session, double r);
 SWITCH_DECLARE(void) switch_telnyx_process_flaws(switch_rtp_t* rtp_session, int penalty);
 SWITCH_DECLARE(void) switch_telnyx_process_packet_loss(switch_rtp_t* rtp_session, int loss);
 SWITCH_DECLARE(void) switch_telnyx_set_current_trace_message(const char* msg);

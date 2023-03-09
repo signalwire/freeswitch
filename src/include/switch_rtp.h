@@ -249,6 +249,13 @@ SWITCH_DECLARE(double) switch_rtp_set_mos_packet_loss_penalty(double penalty);
 SWITCH_DECLARE(double) switch_rtp_set_mos_jitter_penalty(double penalty);
 
 /*!
+  \brief Set/Get RTP publish stat interval
+  \param port new value (if >= 0)
+  \return the current RTP penalty for jitter
+*/
+SWITCH_DECLARE(double) switch_rtp_set_publish_stats_interval_ms(int interval);
+
+/*!
   \brief Request a new port to be used for media
   \param ip the ip to request a port from
   \return the new port to use

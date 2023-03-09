@@ -2387,6 +2387,8 @@ static void switch_load_core_config(const char *file)
 					switch_rtp_set_mos_packet_loss_penalty(atof(val));
 				} else if (!strcasecmp(var, "rtp-mos-jitter-penalty") && !zstr(val)) {
 					switch_rtp_set_mos_jitter_penalty(atof(val));
+				} else if (!strcasecmp(var, "rtp-publish-stats-interval-ms") && !zstr(val)) {
+					switch_rtp_set_publish_stats_interval_ms(atoi(val));
 				} else if (!strcasecmp(var, "rtp-port-usage-robustness") && switch_true(val)) {
 					runtime.port_alloc_flags |= SPF_ROBUST_UDP;
 				} else if (!strcasecmp(var, "core-db-name") && !zstr(val)) {

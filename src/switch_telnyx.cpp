@@ -98,6 +98,13 @@ void switch_telnyx_process_audio_stats(switch_core_session_t* session, switch_rt
 	}
 }
 
+void switch_telnyx_process_audio_quality(switch_core_session_t* session, double r)
+{
+	if (_event_dispatch.switch_telnyx_process_audio_quality) {
+		_event_dispatch.switch_telnyx_process_audio_quality(session, r);
+	}
+}
+
 void switch_telnyx_on_populate_event(switch_event_t* event)
 {
 	switch_thread_rwlock_rdlock(_rwlock);

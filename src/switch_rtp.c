@@ -85,6 +85,7 @@
 #define MAX_SRTP_ERRS 100
 #define RTP_MOS_PACKET_LOSS_PENALTY 2.5
 #define RTP_MOS_JITTER_PENALTY 2.0
+#define RTP_PUBLISH_STATS_INTERVAL_MS 5000
 #define NTP_TIME_OFFSET 2208988800UL
 #define ZRTP_MAGIC_COOKIE 0x5a525450
 static const switch_payload_t INVALID_PT = 255;
@@ -106,6 +107,7 @@ static rtp_create_probe_func create_probe = 0;
 
 static double rtp_mos_packet_loss_penalty = RTP_MOS_PACKET_LOSS_PENALTY;
 static double rtp_mos_jitter_penalty = RTP_MOS_JITTER_PENALTY;
+static int rtp_publish_stats_interval_ms = RTP_PUBLISH_STATS_INTERVAL_MS;
 
 typedef srtp_hdr_t rtp_hdr_t;
 
@@ -509,6 +511,8 @@ struct switch_rtp {
 	uint16_t last_write_seq;
 	uint8_t video_delta_mode;
 	switch_time_t last_read_time;
+	switch_time_t last_publish_stats;
+	int publish_stats_interval_ms;
 	switch_size_t last_flush_packet_count;
 	uint32_t interdigit_delay;
 	switch_core_session_t *session;
@@ -1738,6 +1742,7 @@ static void do_pp_mos(switch_rtp_t *rtp_session)
 	double R = (rtt/1000 + rtp_session->stats.inbound.variance * rtp_mos_jitter_penalty + 10);
 	unsigned int packet_loss = (rtp_session->stats.rtcp.fraction_lost * 100 / 256);
 	double mos = 0;
+	switch_time_t now = switch_micro_time_now();
 	
 	// Implement a basic curve - deduct 4 for the R value at 160ms of latency
 	// (round trip).  Anything over that gets a much more agressive deduction
@@ -1766,6 +1771,11 @@ static void do_pp_mos(switch_rtp_t *rtp_session)
 		, (rtt/1000 + rtp_session->stats.inbound.variance * rtp_mos_jitter_penalty + 10), rtp_mos_jitter_penalty);
 
 	do_cumulative_pp_mos(rtp_session);
+
+	if (rtp_session->publish_stats_interval_ms && ((now - rtp_session->last_publish_stats)/1000) > rtp_session->publish_stats_interval_ms) {
+		switch_telnyx_process_audio_quality(rtp_session->session, R);
+		rtp_session->last_publish_stats = now;
+	}
 }
 
 static void do_mos(switch_rtp_t *rtp_session) {
@@ -2899,6 +2909,14 @@ SWITCH_DECLARE(double) switch_rtp_set_mos_jitter_penalty(double penalty)
 		rtp_mos_jitter_penalty = penalty;
 	}
 	return rtp_mos_jitter_penalty;	
+}
+
+SWITCH_DECLARE(double) switch_rtp_set_publish_stats_interval_ms(int interval)
+{
+	if (interval >= 0) {
+		rtp_publish_stats_interval_ms = interval;
+	}
+	return rtp_publish_stats_interval_ms;	
 }
 
 SWITCH_DECLARE(void) switch_rtp_release_port(const char *ip, switch_port_t port)
@@ -5241,6 +5259,23 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTP poll timeout set to %us\n", rtp_session->poll_timeout_s);
+
+	rtp_session->last_publish_stats = switch_micro_time_now();
+	rtp_session->publish_stats_interval_ms = RTP_PUBLISH_STATS_INTERVAL_MS;
+	
+	{
+		const char *v = switch_channel_get_variable(channel, "telnyx_rtp_publish_stats_interval_ms");
+		if (!zstr(v)) {
+			if (!switch_is_number(v)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RTP publish stats interval variable is set but is not a number - ignoring\n");
+			} else {
+				rtp_session->publish_stats_interval_ms = atoi(v);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE, "Setting RTP publish stats interval to %ums\n", rtp_session->publish_stats_interval_ms);
+			}
+		} else {
+			rtp_session->publish_stats_interval_ms = rtp_publish_stats_interval_ms;
+		}
+	}
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
