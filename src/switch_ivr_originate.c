@@ -2433,7 +2433,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
 		switch_channel_set_variable(caller_channel, "DIALSTATUS", "INVALIDARGS");
 
-		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) || switch_channel_test_flag(caller_channel, CF_3PCC_PROXY)) {
 			ringback_data = NULL;
 		}
 	}
@@ -2562,7 +2562,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "instant_ringback")) && switch_true(var_val)) {
-		oglobals.instant_ringback = 1;
+		if (switch_channel_test_flag(caller_channel, CF_3PCC_PROXY)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Set instant_ringback to execute ring_ready for 3PCC Proxy calls\n");
+			switch_channel_ring_ready(caller_channel);
+		} else {
+			oglobals.instant_ringback = 1;
+		}
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "originate_timeout"))) {
