@@ -1832,6 +1832,40 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 	}
 }
 
+
+static switch_rtp_crypto_mode_t switch_core_session_check_crypto_prefs(switch_core_session_t *session)
+{
+	const char *var = NULL;
+	const char *val = NULL;
+
+	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		var = "rtp_secure_media_inbound";
+	} else {
+		var = "rtp_secure_media_outbound";
+	}
+
+	if (!(val = switch_channel_get_variable(session->channel, var))) {
+		var = "rtp_secure_media";
+		val = switch_channel_get_variable(session->channel, var);
+	}
+
+	if (zstr(val)) {
+		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+			val = "optional";
+		} else {
+			val = "forbidden";
+		}
+	}
+
+	if (!strcasecmp(val, "optional")) {
+		return CRYPTO_MODE_OPTIONAL;
+	} else if (switch_true(val) || !strcasecmp(val, "mandatory")) {
+		return CRYPTO_MODE_MANDATORY;
+	} else {
+		return CRYPTO_MODE_FORBIDDEN;
+	}
+}
+
 SWITCH_DECLARE(int) switch_core_session_validate_incoming_crypto(switch_core_session_t *session,
 																switch_media_type_t type,
 																const char *crypto,
@@ -1847,14 +1881,14 @@ SWITCH_DECLARE(int) switch_core_session_validate_incoming_crypto(switch_core_ses
 		return 0;
 	}
 
-	if (smh->crypto_mode == CRYPTO_MODE_FORBIDDEN) {
+	if (switch_core_session_check_crypto_prefs(session) == CRYPTO_MODE_FORBIDDEN) {
 		return -1;
 	}
 
-	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+	for (i = 0; i < CRYPTO_INVALID; i++) {
 		int use_alias = 0;
 
-		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+		switch_rtp_crypto_key_type_t j = SUITES[i].type;
 		if (switch_stristr(SUITES[j].alias, crypto)) {
 			use_alias = 1;
 		}
@@ -15435,10 +15469,10 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO);
 
 
-	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_local_crypto_key")) && a_engine->ssec[a_engine->crypto_type].remote_crypto_key) {
+	if ((tmp = switch_channel_get_variable(session->channel, "srtp_remote_audio_crypto_key")) && a_engine->ssec[a_engine->crypto_type].remote_crypto_key) {
 		int idx = atoi(tmp);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Adding crypto due to rtp_last_audio_local_crypto_key set idx=%d\n", idx);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Adding crypto due to srtp_remote_audio_crypto_key set idx=%d\n", idx);
 
 		a_engine->ssec[a_engine->crypto_type].local_crypto_key = switch_core_session_strdup(session, tmp);
 		switch_core_media_add_crypto(session, &a_engine->ssec[a_engine->crypto_type],SWITCH_RTP_CRYPTO_SEND);
