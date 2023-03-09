@@ -105,10 +105,14 @@ struct mod_unimrcp_globals {
 	char *unimrcp_default_recog_profile;
 	/** log level for UniMRCP library */
 	char *unimrcp_log_level;
+	/** max-retry config */
+	char *unimrcp_max_retry;
 	/** profile events configuration param */
 	char *enable_profile_events_param;
 	/** True if profile events are wanted */
 	int enable_profile_events;
+	/** number of max retry*/
+	int max_retry;	
 	/** the MRCP client stack */
 	mrcp_client_t *mrcp_client;
 	/** synthesizer application */
@@ -185,6 +189,8 @@ static switch_xml_config_item_t instructions[] = {
 									 "Maximum time to wait for server response to a request"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("connection-tx-buffer-size", 0, &globals.unimrcp_tx_buffer_size, "1024", "",
 									 "Maximum time to wait for server response to a request"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("max-retry", 0, &globals.unimrcp_max_retry, "3", "",
+									 "Number of retry attempts when sending mrcp request"),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -997,7 +1003,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	mpf_termination_t *termination = NULL;
 	mrcp_resource_type_e resource_type;
-	int warned = 0;
+	int warned = 0, retry = 0;
 
 	switch_mutex_lock(schannel->mutex);
 
@@ -1047,7 +1053,8 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 
 	/* wait for channel to be ready */
 	warned = 0;
-	while (schannel->state == SPEECH_CHANNEL_CLOSED) {
+	retry = 0;
+	while (schannel->state == SPEECH_CHANNEL_CLOSED && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 			warned = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not opened after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
@@ -1069,7 +1076,8 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 
 		/* Wait for session to be cleaned up */
 		warned = 0;
-		while (schannel->state == SPEECH_CHANNEL_ERROR) {
+		retry = 0;
+		while (schannel->state == SPEECH_CHANNEL_ERROR && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 				warned = 1;
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not cleaned up after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
@@ -1103,7 +1111,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 	mrcp_message_t *mrcp_message = NULL;
 	mrcp_generic_header_t *generic_header = NULL;
 	mrcp_synth_header_t *synth_header = NULL;
-	int warned = 0;
+	int warned = 0, retry = 0;
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -1150,8 +1158,9 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
+
 	/* wait for IN-PROGRESS */
-	while (schannel->state == SPEECH_CHANNEL_READY) {
+	while (schannel->state == SPEECH_CHANNEL_READY && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 			warned = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) SPEAK IN-PROGRESS not received after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
@@ -1376,7 +1385,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int warned = 0;
+	int warned = 0, retry = 0;
 	switch_mutex_lock(schannel->mutex);
 
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING) {
@@ -1396,7 +1405,7 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 			goto done;
 		}
 		mrcp_application_message_send(schannel->unimrcp_session, schannel->unimrcp_channel, mrcp_message);
-		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
+		while (schannel->state == SPEECH_CHANNEL_PROCESSING && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 				warned = 1;
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) STOP has not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
@@ -2191,7 +2200,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	switch_size_t grammar_uri_count = 0;
 	switch_size_t grammar_uri_list_len = 0;
 	char *grammar_uri_list = NULL;
-	int warned = 0;
+	int warned = 0, retry = 0;
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -2320,8 +2329,9 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
+
 	/* wait for IN-PROGRESS */
-	while (schannel->state == SPEECH_CHANNEL_READY) {
+	while (schannel->state == SPEECH_CHANNEL_READY && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 			warned = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) IN-PROGRESS not received for RECOGNIZE after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
@@ -2366,7 +2376,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		mrcp_message_t *mrcp_message;
 		mrcp_generic_header_t *generic_header;
 		const char *mime_type;
-		int warned = 0;
+		int warned = 0, retry = 0;
 
 		/* create MRCP message */
 		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_DEFINE_GRAMMAR);
@@ -2400,7 +2410,8 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
-		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
+
+		while (schannel->state == SPEECH_CHANNEL_PROCESSING && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 				warned = 1;
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) DEFINE-GRAMMAR not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
@@ -3873,6 +3884,8 @@ static switch_status_t recog_shutdown()
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define DEFAULT_MRCP_MAX_RETRY 3
+
 /**
  * Process the XML configuration for this module
  * Uses the instructions[] defined in this module to process the configuration.
@@ -3895,6 +3908,11 @@ static switch_status_t mod_unimrcp_do_config()
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Config parsed ok!\n");
 			globals.enable_profile_events = !zstr(globals.enable_profile_events_param) && (!strcasecmp(globals.enable_profile_events_param, "true")
 																						   || !strcmp(globals.enable_profile_events_param, "1"));
+			globals.max_retry = !zstr(globals.unimrcp_max_retry) ? atoi(globals.unimrcp_max_retry) : DEFAULT_MRCP_MAX_RETRY;
+			if(globals.max_retry < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid value for max_retry, use default value: %d!\n", DEFAULT_MRCP_MAX_RETRY);
+				globals.max_retry = DEFAULT_MRCP_MAX_RETRY;
+			}																		 
 		}
 	}
 
