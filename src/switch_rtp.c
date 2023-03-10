@@ -1429,11 +1429,10 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	switch_event_t *fsevent = NULL;
 	const char *type;
 
-	if (!rtp_session || !rtp_session->session) {
+	if (!rtp_session || !rtp_session->session || rtp_session->flags[SWITCH_RTP_FLAG_SHUTDOWN]) {
 		return;
 	}
 
-	channel = switch_core_session_get_channel(rtp_session->session);
 	if (SWITCH_STATUS_SUCCESS == switch_core_session_check_session_down(rtp_session->session)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Discarding a dangling call to zrtp_event_callback\n");
 		return;
