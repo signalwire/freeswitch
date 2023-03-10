@@ -1459,6 +1459,97 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_events(sw
 	return x;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_media_events(switch_core_session_t *session, char *cmds[], int cmdlen)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_queue_t *queue_pri, *queue;
+	int x = 0;
+	void *pop;
+	int index = 0;
+	int matches = 0;
+	
+	if (session->private_event_queue) {
+		switch_memory_pool_t *pool = switch_core_session_get_pool(session);
+
+		if (switch_queue_size(session->private_event_queue_pri)) {
+			switch_queue_create(&queue_pri, SWITCH_EVENT_QUEUE_LEN, pool);
+			while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue_pri, &pop)) == SWITCH_STATUS_SUCCESS) {
+				if (pop) {
+					switch_event_t *interrupt_event = NULL;
+					switch_event_t *command_event = (switch_event_t *) pop;
+					const char *app_name = switch_event_get_header(command_event, "execute-app-name");
+
+					for(index = 0; index < cmdlen; ++index) {
+						if (!strcasecmp(app_name, cmds[index])) {
+							matches = 1;
+							break;
+						}
+					}
+					if (matches) {
+						if (switch_event_create(&interrupt_event, SWITCH_EVENT_COMMAND_INTERRUPTED) == SWITCH_STATUS_SUCCESS) {
+							switch_channel_event_set_data(session->channel, interrupt_event);
+							switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "Unique-ID", session->uuid_str);
+							switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-name", switch_event_get_header(command_event, "execute-app-name"));
+							switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-arg", switch_event_get_header(command_event, "execute-app-arg"));
+							switch_event_fire(&interrupt_event);
+						}
+						x++;
+					}else {
+						switch_event_t *clone_pri = NULL;
+						switch_event_dup(&clone_pri, command_event);
+						switch_queue_trypush(queue_pri, clone_pri);
+					}
+					switch_event_destroy(&command_event);
+				}
+				matches = 0;
+			}
+			if (queue_pri){
+				session->private_event_queue_pri = queue_pri;
+			}
+		}
+
+		if (switch_queue_size(session->private_event_queue)) {
+			switch_queue_create(&queue, SWITCH_EVENT_QUEUE_LEN, pool);
+			while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+				if (pop) {
+					switch_event_t *interrupt_event = NULL;
+					switch_event_t *command_event = (switch_event_t *) pop;
+					const char *app_name = switch_event_get_header(command_event, "execute-app-name");
+
+					for(index = 0; index < cmdlen; ++index) {
+						if (!strcasecmp(app_name, cmds[index])) {
+							matches = 1;
+							break;
+						}
+					}
+					if (matches) {
+						if (switch_event_create(&interrupt_event, SWITCH_EVENT_COMMAND_INTERRUPTED) == SWITCH_STATUS_SUCCESS) {
+							switch_channel_event_set_data(session->channel, interrupt_event);
+							switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "Unique-ID", session->uuid_str);
+							switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-name", app_name);
+							switch_event_add_header_string(interrupt_event, SWITCH_STACK_BOTTOM, "execute-app-arg", switch_event_get_header(command_event, "execute-app-arg"));
+							switch_event_fire(&interrupt_event);
+						}
+						x++;
+					}else {
+						switch_event_t *clone = NULL;
+						switch_event_dup(&clone, command_event);
+						switch_queue_trypush(queue, clone);
+					}
+					switch_event_destroy(&command_event);
+				}
+				matches = 0;
+			}
+			if (queue){
+				session->private_event_queue = queue;
+			}
+		}
+		check_media(session);
+	}
+
+	return x;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_session_t* session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;

@@ -1325,6 +1325,12 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_events(switch_core_session_t *session);
 
+/*!
+  \brief Flush only private media events queue of a session and publish COMMAND_INTERRUPTED event
+  \param session the session to flush
+  \return SWITCH_STATUS_SUCCESS if the events have been flushed
+*/
+SWITCH_DECLARE(uint32_t) switch_core_session_flush_and_publish_private_media_events(switch_core_session_t *session, char *cmds[], int cmdlen);
 
 /*!
   \brief Read a frame from a session
