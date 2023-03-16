@@ -1086,6 +1086,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		switch_telnyx_on_channel_recover(tech_pvt->channel);
 	}
+	
+	/* TEL-5560: If this is set true, it means we previously received a reInvite
+	 * on an outbound leg.  Need to set this to false because we're now going to
+	 * send an outbound invite elsewhere.  (This function we're in gets called up
+	 * in initial invites and cases of 3XX in-dialog)
+	 */
+	switch_channel_set_variable(tech_pvt->channel, "dlg_req_swap_direction", "false");
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
 		switch_true(switch_channel_get_variable_dup(tech_pvt->channel, "sofia_hold_inactive", SWITCH_FALSE, -1))) {
