@@ -34,7 +34,7 @@
 
   <Target Name="signalwire-client-cBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/signalwire-client-c/$(signalwire-client-cVersion)/signalwire-client-c-$(signalwire-client-cVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="http://files.freeswitch.org/windows/packages/signalwire-client-c/$(signalwire-client-cVersion)_$(signalwire-client-cBuildNumber)/signalwire-client-c-$(signalwire-client-cVersion)_$(signalwire-client-cBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(signalwire-client-cDir)\binaries\$(Platform)\$(Configuration)\signalwire_client.dll" 
            outputfolder=""
            outputfilename="" 
@@ -43,7 +43,7 @@
   </Target> 
   <Target Name="signalwire-client-cHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/signalwire-client-c/$(signalwire-client-cVersion)/signalwire-client-c-$(signalwire-client-cVersion)-headers.zip"
+           package="http://files.freeswitch.org/windows/packages/signalwire-client-c/$(signalwire-client-cVersion)_$(signalwire-client-cBuildNumber)/signalwire-client-c-$(signalwire-client-cVersion)_$(signalwire-client-cBuildNumber)-headers.zip"
            expectfileordirectory="$(signalwire-client-cDir)\include\signalwire-client-c\client.h" 
            outputfolder=""
            outputfilename="" 

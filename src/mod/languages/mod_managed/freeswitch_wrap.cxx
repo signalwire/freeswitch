@@ -39405,6 +39405,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_event_add_header_stri
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_event_add_header_string_nodup___(void * jarg1, int jarg2, char * jarg3, char * jarg4) {
+  int jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  switch_stack_t arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (switch_stack_t)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  result = (switch_status_t)switch_event_add_header_string_nodup(arg1,arg2,(char const *)arg3,(char const *)arg4);
+  jresult = (int)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_event_del_header_val___(void * jarg1, char * jarg2, char * jarg3) {
   int jresult ;
   switch_event_t *arg1 = (switch_event_t *) 0 ;

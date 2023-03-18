@@ -5,6 +5,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <libksVersion>1.8.2</libksVersion>
+    <libksBuildNumber>1</libksBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <libksVersionImported>true</libksVersionImported>
