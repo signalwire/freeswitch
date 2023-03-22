@@ -10873,7 +10873,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	} else {
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = smh->codecs[i];
-			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO && switch_true(switch_channel_get_variable_partner(session->channel, "sdp_take_video"))) {
+			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO 
+			&& (switch_true(switch_channel_get_variable(session->channel, "sdp_take_video"))
+			|| switch_true(switch_channel_get_variable_partner(session->channel, "sdp_take_video")))) {
 				has_vid = 1;
 				break;
 			}
