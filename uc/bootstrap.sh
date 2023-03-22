@@ -172,7 +172,6 @@ bootstrap_apr() {
 
 }
 
-
 # Libs automake automation function
 libbootstrap() {
   i=$1

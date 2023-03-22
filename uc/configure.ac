@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([synswitch], [1.10.8-dev], bugs@freeswitch.org)
+AC_INIT([synswitch], [1.10.10-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [10-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -248,7 +248,7 @@ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT([disable-static])
 
 #Check for compiler vendor
 AX_COMPILER_VENDOR
@@ -606,7 +606,6 @@ have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
-
 PA_LIBS=
 
 PKG_CHECK_MODULES(JACK, jack, have_jack=yes, have_jack=no)
@@ -620,7 +619,6 @@ PA_LIBS+=-lasound
 fi
 
 AC_SUBST(PA_LIBS)
-
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
@@ -723,7 +721,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.6],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.14],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
@@ -1525,7 +1523,7 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
+PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
     if module_enabled mod_verto; then
       AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
@@ -2332,9 +2330,6 @@ if test "$use_system_apr" != "yes"; then
 fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/freetdm])
-if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp])
-fi
 
 case $host in
    *-openbsd*|*-netbsd*)

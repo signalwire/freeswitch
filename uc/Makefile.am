@@ -585,7 +585,6 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile $(switch_
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-
 libs/libvpx/Makefile: libs/libvpx/.update
 	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(VISIBILITY_FLAG)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384
 
