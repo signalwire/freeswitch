@@ -2395,11 +2395,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	}
 #endif
 
-	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
-		return NULL;
-	}
-
 	if (direction == SWITCH_CALL_DIRECTION_INBOUND && !switch_core_ready_inbound()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any inbound sessions at this time.\n");
 		return NULL;
@@ -2421,6 +2416,15 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 
 	PROTECT_INTERFACE(endpoint_interface);
 
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
+		switch_mutex_unlock(runtime.session_hash_mutex);
+		UNPROTECT_INTERFACE(endpoint_interface);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+
+		return NULL;
+	}
+
 	if (!(originate_flags & SOF_NO_LIMITS)) {
 		switch_mutex_lock(runtime.throttle_mutex);
 		count = session_manager.session_count;
@@ -2428,12 +2432,14 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 		switch_mutex_unlock(runtime.throttle_mutex);
 
 		if (sps <= 0) {
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error! %d\n", session_manager.session_count);
 			UNPROTECT_INTERFACE(endpoint_interface);
 			return NULL;
 		}
 
 		if ((count + 1) > session_manager.session_limit) {
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit! %d\n", session_manager.session_limit);
 			UNPROTECT_INTERFACE(endpoint_interface);
 			return NULL;
@@ -2505,7 +2511,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue_pri, SWITCH_EVENT_QUEUE_LEN, session->pool);
 
-	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
 	session->id = session_manager.session_id++;
 	session_manager.session_count++;
