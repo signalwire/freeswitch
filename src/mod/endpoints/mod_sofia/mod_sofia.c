@@ -2410,7 +2410,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							}
 						} else {
 							if (msg->numeric_arg && !(switch_channel_test_flag(channel, CF_ANSWERED) && code == 488)) {
-								if (code > 399) {
+								if (code === 180 || code == 183 || code > 399) {
 									switch_call_cause_t cause = sofia_glue_sip_cause_to_freeswitch(code);
 									if (code == 401 || cause == 407) cause = SWITCH_CAUSE_USER_CHALLENGE;
 
