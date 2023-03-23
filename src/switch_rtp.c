@@ -6975,13 +6975,10 @@ static void check_timeout(switch_rtp_t *rtp_session)
 					  elapsed, rtp_session->media_timeout);
 
 	if (elapsed > rtp_session->media_timeout) {
-
-		if (rtp_session->session) {
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 
 			switch_channel_execute_on(channel, "execute_on_media_timeout");
 			switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
-		}
 	}
 }
 
