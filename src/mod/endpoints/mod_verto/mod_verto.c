@@ -771,10 +771,6 @@ static void jsock_send_event(cJSON *event)
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
-	if (use_jsock) {
-		switch_thread_rwlock_unlock(use_jsock->rwlock);
-		use_jsock = NULL;
-	}
 }
 
 static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
