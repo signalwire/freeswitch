@@ -1105,7 +1105,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	uint32_t LBRR_threshold_bitrate,LBRR_rate_thres_bps,real_target_bitrate ;
 	opus_int32 a32,b32;
 	uint32_t fs = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
-	float frame_rate =(float)(1000 / (codec->implementation->microseconds_per_packet / 1000));
+	float frame_rate =(float)(1000 / (float)(codec->implementation->microseconds_per_packet / 1000));
 	uint32_t step = (codec->implementation->microseconds_per_packet / 1000) != 60 ? 8000 / (codec->implementation->microseconds_per_packet / 1000 ) : 134 ;
 
 	opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
