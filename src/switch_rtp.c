@@ -3529,9 +3529,13 @@ SWITCH_DECLARE(dtls_state_t) switch_rtp_dtls_state(switch_rtp_t *rtp_session, dt
 {
 	dtls_state_t s = DS_OFF;
 
+	if (!rtp_session) {
+		return s;
+	}
+
 	switch_mutex_lock(rtp_session->ice_mutex);
 
-	if (!rtp_session || (!rtp_session->dtls && !rtp_session->rtcp_dtls)) {
+	if (!rtp_session->dtls && !rtp_session->rtcp_dtls) {
 		s = DS_OFF;
 		goto done;
 	}
