@@ -3601,11 +3601,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	int resetting = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
-	switch_time_t start = switch_micro_time_now();
 
 	switch_assert(session);
 
-retry:
+	switch_core_session_lock_codec_write(session);
+	switch_core_session_lock_codec_read(session);
+
 	switch_mutex_lock(session->codec_init_mutex);
 
 	if (!(smh = session->media_handle)) {
@@ -3627,17 +3628,7 @@ retry:
 			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
 			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
 
-			if (switch_core_session_try_reset(session, 0, 0) != SWITCH_STATUS_SUCCESS) {
-				switch_time_t elapsed = switch_micro_time_now() - start;
-				if (elapsed > 1000000) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not reset session in %"SWITCH_TIME_T_FMT" us. Give up.\n", elapsed);
-					switch_goto_status(SWITCH_STATUS_FALSE, end);
-				}
-
-				switch_mutex_unlock(session->codec_init_mutex);
-				switch_yield(10000);
-				goto retry;
-			}
+			switch_core_session_reset(session, 0, 0);
 
 			switch_channel_audio_sync(session->channel);
 
@@ -3651,9 +3642,6 @@ retry:
 							  a_engine->cur_payload_map->codec_ms,
 							  a_engine->cur_payload_map->rm_rate);
 
-			switch_yield(a_engine->read_impl.microseconds_per_packet);
-			switch_core_session_lock_codec_write(session);
-			switch_core_session_lock_codec_read(session);
 			resetting = 1;
 			switch_yield(a_engine->read_impl.microseconds_per_packet);
 			switch_core_codec_destroy(&a_engine->read_codec);
@@ -3767,11 +3755,12 @@ retry:
 
 	if (resetting) {
 	    switch_channel_execute_on(session->channel, "execute_on_audio_change");
-	    switch_core_session_unlock_codec_write(session);
-	    switch_core_session_unlock_codec_read(session);
 	}
 
 	switch_mutex_unlock(session->codec_init_mutex);
+
+	switch_core_session_unlock_codec_read(session);
+	switch_core_session_unlock_codec_write(session);
 
 	return status;
 }
