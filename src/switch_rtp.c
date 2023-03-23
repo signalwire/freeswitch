@@ -3560,9 +3560,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (!rtp_session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(rtp_session->ice_mutex);
 
-	if (!rtp_session || (!rtp_session->dtls && !rtp_session->rtcp_dtls)) {
+	if (!rtp_session->dtls && !rtp_session->rtcp_dtls) {
 		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
