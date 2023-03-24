@@ -3586,9 +3586,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 	switch_image_t *dest = NULL;
 	int ret = 0;
 
-	if (destP) {
-		dest = *destP;
+	if (!destP) {
+		return SWITCH_STATUS_FALSE;
 	}
+
+	dest = *destP;
 
 	switch_assert(width > 0);
 	switch_assert(height > 0);
@@ -3615,13 +3617,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 				kFilterBox);
 	}
 
+	*destP = dest;
+
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (destP) {
-		*destP = dest;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
