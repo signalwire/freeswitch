@@ -3637,9 +3637,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_im
 	switch_image_t *dest = NULL;
 	int ret = 0;
 
-	if (destP) {
-		dest = *destP;
+	if (!destP) {
+		return SWITCH_STATUS_FALSE;
 	}
+
+	dest = *destP;
 
 	if (dest && src->fmt != dest->fmt) switch_img_free(&dest);
 
@@ -3660,13 +3662,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_im
 		
 	}
 
+	*destP = dest;
+
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Mirror Error: ret: %d\n", ret);
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (destP) {
-		*destP = dest;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
