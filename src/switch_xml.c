@@ -1646,11 +1646,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 		m = switch_must_malloc(st.st_size);
 
 		if (!(0 < (l = read(fd, m, st.st_size)))) {
+			free(m);
 			close(fd);
 			goto error;
 		}
 
 		if (!(root = (switch_xml_root_t)switch_xml_parse_str((char*)m, l))) {
+			free(m);
 			close(fd);
 			goto error;
 		}
