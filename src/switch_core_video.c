@@ -3521,11 +3521,18 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 #endif
 }
 
-SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height)
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t **destP, void *src, switch_img_fmt_t fmt, int width, int height)
 {
 #ifdef SWITCH_HAVE_YUV
 	uint32_t fourcc;
 	int ret = -1;
+	switch_image_t *dest = NULL;
+
+	if (!destP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	dest = *destP;
 
 	fourcc = switch_img_fmt2fourcc(fmt);
 
@@ -3573,6 +3580,8 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 					width, height,
 					0, fourcc);
 	}
+
+	*destP = dest;
 
 	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 #else
