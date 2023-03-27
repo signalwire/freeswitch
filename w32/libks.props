@@ -36,7 +36,7 @@
 
   <Target Name="libksBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)/libks-$(libksVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)_$(libksBuildNumber)/libks-$(libksVersion)_$(libksBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(libksDir)\binaries\$(Platform)\$(Configuration)\ks.dll" 
            outputfolder=""
            outputfilename="" 
@@ -45,7 +45,7 @@
   </Target> 
   <Target Name="libksHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)/libks-$(libksVersion)-headers.zip"
+           package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)_$(libksBuildNumber)/libks-$(libksVersion)_$(libksBuildNumber)-headers.zip"
            expectfileordirectory="$(libksDir)\src\include\libks\ks.h" 
            outputfolder=""
            outputfilename="" 

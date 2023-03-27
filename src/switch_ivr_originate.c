@@ -1465,6 +1465,7 @@ typedef struct {
 	int done;
 	switch_thread_t *thread;
 	switch_mutex_t *mutex;
+	switch_mutex_t *fence_mutex;
 	switch_dial_handle_t *dh;
 } enterprise_originate_handle_t;
 
@@ -1479,9 +1480,13 @@ struct ent_originate_ringback {
 static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thread, void *obj)
 {
 	enterprise_originate_handle_t *handle = (enterprise_originate_handle_t *) obj;
+	switch_status_t status;
 
+	switch_mutex_lock(handle->fence_mutex);
 	handle->done = 0;
-	handle->status = switch_ivr_originate(NULL, &handle->bleg, &handle->cause,
+	switch_mutex_unlock(handle->fence_mutex);
+
+	status = switch_ivr_originate(NULL, &handle->bleg, &handle->cause,
 										  handle->bridgeto, handle->timelimit_sec,
 										  handle->table,
 										  handle->cid_name_override,
@@ -1492,8 +1497,11 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 										  &handle->cancel_cause,
 										  handle->dh);
 
-
+	switch_mutex_lock(handle->fence_mutex);
+	handle->status = status;
 	handle->done = 1;
+	switch_mutex_unlock(handle->fence_mutex);
+
 	switch_mutex_lock(handle->mutex);
 	switch_mutex_unlock(handle->mutex);
 
@@ -1697,6 +1705,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			switch_dial_handle_dup(&handles[i].dh, hl->handles[i]);
 		}
 		switch_mutex_init(&handles[i].mutex, SWITCH_MUTEX_NESTED, pool);
+		switch_mutex_init(&handles[i].fence_mutex, SWITCH_MUTEX_NESTED, pool);
 		switch_mutex_lock(handles[i].mutex);
 		switch_thread_create(&handles[i].thread, thd_attr, enterprise_originate_thread, &handles[i], pool);
 	}
@@ -1738,13 +1747,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 		for (i = 0; i < x_argc; i++) {
 
-
+			switch_mutex_lock(handles[i].fence_mutex);
 			if (handles[i].done == 0) {
 				running++;
 			} else if (handles[i].done == 1) {
 				if (handles[i].status == SWITCH_STATUS_SUCCESS) {
 					handles[i].done = 2;
 					hp = &handles[i];
+					switch_mutex_unlock(handles[i].fence_mutex);
 					goto done;
 				} else {
 					handles[i].done = -1;
@@ -1752,6 +1762,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			} else {
 				over++;
 			}
+
+			switch_mutex_unlock(handles[i].fence_mutex);
 
 			switch_yield(10000);
 		}
