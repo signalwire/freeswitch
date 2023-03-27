@@ -5653,22 +5653,26 @@ SWITCH_STANDARD_API(alias_function)
 #define COALESCE_SYNTAX "[^^<delim>]<value1>,<value2>,..."
 SWITCH_STANDARD_API(coalesce_function)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *data = (char *) cmd;
 	char *mydata = NULL, *argv[256] = { 0 };
+	char *arg = (char *) cmd;
 	int argc = -1;
+	char delim = ',';
 
-	if (data && *data && (mydata = strdup(data))) {
-		argc = switch_separate_string(mydata, ',', argv,
+	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
+		arg += 2;
+		delim = *arg++;
+	}
+
+	if (!zstr(arg) && (mydata = strdup(arg))) {
+		argc = switch_separate_string(mydata, delim, argv,
 				(sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argc > 0) {
 		int i;
 		for (i = 0; i < argc; i++) {
-			if (argv[i] && *argv[i]) {
+			if (!zstr(argv[i])) {
 				stream->write_function(stream, argv[i]);
-				status = SWITCH_STATUS_SUCCESS;
 				break;
 			}
 		}
@@ -5676,7 +5680,9 @@ SWITCH_STANDARD_API(coalesce_function)
 		stream->write_function(stream, "-USAGE: %s\n", COALESCE_SYNTAX);
 	}
 
-	return status;
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
