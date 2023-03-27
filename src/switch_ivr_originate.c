@@ -3215,6 +3215,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						l_session = NULL;
 					}
 
+					switch_channel_set_variable(oglobals.originate_status[i].peer_channel, "originate_endpoint", chan_type);
 					switch_channel_execute_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE);
 					switch_channel_api_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE);
 				}
