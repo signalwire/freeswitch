@@ -141,6 +141,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 								  void *user_data)
 {
+	switch_event_t *my_params = NULL;
 	char filename[512] = "";
 	switch_CURL *curl_handle = NULL;
 	switch_CURLcode cc;
@@ -185,6 +186,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		if (!params) {
 			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 			switch_assert(params);
+			my_params = params;
 		}
 
 		switch_event_add_header_string(params, SWITCH_STACK_TOP, "hostname", hostname);
@@ -333,6 +335,11 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		switch_safe_free(uri);
 	if (binding->use_dynamic_url && dynamic_url != binding->url)
 		switch_safe_free(dynamic_url);
+
+	if (my_params) {
+		switch_event_destroy(&my_params);
+	}
+
 	return xml;
 }
 

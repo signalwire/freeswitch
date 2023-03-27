@@ -167,9 +167,15 @@ void Session::do_hangup_hook()
 				arglist = Py_BuildValue("(Os)", Self, what);
 			}
 
+#if PY_VERSION_HEX <= 0x03080000
 			if (!PyEval_CallObject(hangup_func, arglist)) {
 				PyErr_Print();
 			}
+#else 
+			if (!PyObject_CallObject(hangup_func, arglist)) {
+				PyErr_Print();
+			}
+#endif
 
 			Py_XDECREF(arglist);
 			Py_XDECREF(hangup_func_arg);
@@ -287,7 +293,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 
 	PyObject *pyresult, *arglist, *io = NULL;
 	int ts = 0;
-	char *str = NULL, *what = "";
+	char *str = NULL, *what = (char*)"";
 
 	if (TS) {
 		ts++;
@@ -302,9 +308,9 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	if (itype == SWITCH_INPUT_TYPE_DTMF) {
 		switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 		io = mod_python_conjure_DTMF(dtmf->digit, dtmf->duration);
-		what = "dtmf";
+		what = (char*)"dtmf";
 	} else if (itype == SWITCH_INPUT_TYPE_EVENT){
-		what = "event";
+		what = (char*)"event";
 		io = mod_python_conjure_event((switch_event_t *) input);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported type!\n");
@@ -320,8 +326,12 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 	} else {
 		arglist = Py_BuildValue("(OsO)", Self, what, io);
 	}
-
-	if ((pyresult = PyEval_CallObject(cb_function, arglist))) {
+#if PY_VERSION_HEX <= 0x03080000
+		pyresult = PyEval_CallObject(cb_function, arglist);
+#else 
+		pyresult = PyObject_CallObject(cb_function, arglist);
+#endif
+	if (pyresult) {
 		str = (char *) PyString_AsString(pyresult);
 	} else {
 		PyErr_Print();
