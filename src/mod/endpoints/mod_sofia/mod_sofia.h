@@ -405,6 +405,9 @@ struct mod_sofia_globals {
 	char guess_mask_str[16];
 	int debug_presence;
 	int debug_sla;
+	int min_idle_cpu_failure_code; // SIP RC For when insufficient cpu-idle
+	char min_idle_cpu_failure_text[128]; // The text portion of the SIP response
+	int min_idle_cpu_override_outbound;
 	int auto_restart;
 	int reg_deny_binding_fetch_and_no_lookup; /* backwards compatibility */
 	int auto_nat;

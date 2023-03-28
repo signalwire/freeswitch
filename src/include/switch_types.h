@@ -337,7 +337,8 @@ typedef enum {
 	SOF_NO_EFFECTIVE_ANIII = (1 << 3),
 	SOF_NO_EFFECTIVE_CID_NUM = (1 << 4),
 	SOF_NO_EFFECTIVE_CID_NAME = (1 << 5),
-	SOF_NO_LIMITS = (1 << 6)
+	SOF_NO_LIMITS = (1 << 6),
+	SOF_NO_CPU_IDLE_LIMITS = (1 << 7)
 } switch_originate_flag_enum_t;
 typedef uint32_t switch_originate_flag_t;
 

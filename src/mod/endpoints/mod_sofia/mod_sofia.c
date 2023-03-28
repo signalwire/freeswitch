@@ -4904,6 +4904,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	int mod = 0;
 
 	*new_session = NULL;
+	
+	// Need to allow for override for outbound calls even when min-idle-cpu fails
+	if(mod_sofia_globals.min_idle_cpu_override_outbound) {
+		flags |= SOF_NO_CPU_IDLE_LIMITS;
+	}
 
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Empty Destination\n");
