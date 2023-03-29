@@ -3529,9 +3529,13 @@ SWITCH_DECLARE(dtls_state_t) switch_rtp_dtls_state(switch_rtp_t *rtp_session, dt
 {
 	dtls_state_t s = DS_OFF;
 
+	if (!rtp_session) {
+		return s;
+	}
+
 	switch_mutex_lock(rtp_session->ice_mutex);
 
-	if (!rtp_session || (!rtp_session->dtls && !rtp_session->rtcp_dtls)) {
+	if (!rtp_session->dtls && !rtp_session->rtcp_dtls) {
 		s = DS_OFF;
 		goto done;
 	}
@@ -3556,9 +3560,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (!rtp_session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(rtp_session->ice_mutex);
 
-	if (!rtp_session || (!rtp_session->dtls && !rtp_session->rtcp_dtls)) {
+	if (!rtp_session->dtls && !rtp_session->rtcp_dtls) {
 		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
@@ -6967,13 +6975,10 @@ static void check_timeout(switch_rtp_t *rtp_session)
 					  elapsed, rtp_session->media_timeout);
 
 	if (elapsed > rtp_session->media_timeout) {
-
-		if (rtp_session->session) {
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 
 			switch_channel_execute_on(channel, "execute_on_media_timeout");
 			switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
-		}
 	}
 }
 
