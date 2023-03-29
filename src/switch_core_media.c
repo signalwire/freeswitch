@@ -3057,7 +3057,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 							uint32_t codec_ms = (int) (engine->read_frame.timestamp -
 													   engine->last_ts) / (engine->read_impl.samples_per_second / 1000);
 							if (engine->last_seq && (int) (engine->read_frame.seq - engine->last_seq) > 1) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[%s]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s). \n", is_vbr?"VBR":"CBR", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[CBR]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s). \n",  codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
 								codec_ms = codec_ms / (int) (engine->read_frame.seq - engine->last_seq);
 							}
 
@@ -3080,9 +3080,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 									if (codec_ms > 120) {	/* yeah right */
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-														  "[%s]: Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
+														  "[CBR]: Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
 														  "That seems hard to believe so I am going to go on ahead and um ignore that, mmkay?\n",
-														  is_vbr?"VBR":"CBR",
 														  (int) codec_ms);
 										engine->check_frames = MAX_CODEC_CHECK_FRAMES;
 										goto skip;
@@ -3092,8 +3091,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 									if (codec_ms != engine->cur_payload_map->codec_ms) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-														  "[%s]: Asynchronous PTIME not supported, changing our end from %d to %d\n",
-														  is_vbr?"VBR":"CBR",
+														  "[CBR]: Asynchronous PTIME not supported, changing our end from %d to %d\n",
 														  (int) engine->cur_payload_map->codec_ms,
 														  (int) codec_ms
 														  );
@@ -3123,7 +3121,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 								   engine->last_ts) / (engine->read_impl.samples_per_second / 1000);
 
 						if (engine->last_seq && (int) (engine->read_frame.seq - engine->last_seq) > 1) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[%s]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s)\n", is_vbr?"VBR":"CBR", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[VBR]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s)\n", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
 								codec_ms = codec_ms / (int) (engine->read_frame.seq - engine->last_seq);
 						}
 
@@ -3142,8 +3140,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 							if (codec_ms > 120) {
 								/*will show too many times with packet loss*/
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3,
-												  "[%s]: Remote party is trying to send timestamps that suggest an increment of [%d] ms per packet, which is too high. Ignoring.\n",
-												   is_vbr?"VBR":"CBR",
+												  "[VBR]: Remote party is trying to send timestamps that suggest an increment of [%d] ms per packet, which is too high. Ignoring.\n",
 												  (int) codec_ms);
 								engine->last_ts = engine->read_frame.timestamp;
 								engine->last_seq = engine->read_frame.seq;
@@ -3152,8 +3149,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 							if (codec_ms != engine->cur_payload_map->codec_ms) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-												  "[%s]: Packet size change detected. Remote PTIME changed from [%d] to [%d]\n",
-												  is_vbr?"VBR":"CBR",
+												  "[VBR]: Packet size change detected. Remote PTIME changed from [%d] to [%d]\n",
 												  (int) engine->cur_payload_map->codec_ms,
 												  (int) codec_ms
 												  );

@@ -909,6 +909,9 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 		return -1;
 	}
 	wrote = teletone_mux_tones(ts, map);
+	if (wrote <= 0) {
+		return -1;
+	}
 
 	if (tto->channels != 1) {
 		if (tto->mux_buflen < wrote * 2 * tto->channels) {
