@@ -12435,7 +12435,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_media_params(switch_core_sessi
 				*val++ = '\0';
 			}
 
-			if (name && val) {
+			if (val) {
 				if (!strcmp(name, "aspect")) {
 					aspect = val;
 					vid++;
