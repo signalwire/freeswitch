@@ -6672,10 +6672,6 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	if (!height) height = 288;
 	if (!fps) fps = 15;
 
-	if (!(width && height && fps)) {
-		return;
-	}
-
 	fr.packet = buf;
 	fr.packetlen = buflen;
 	fr.data = buf + 12;
