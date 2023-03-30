@@ -399,6 +399,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
+	switch_safe_free(extra_headers);
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
