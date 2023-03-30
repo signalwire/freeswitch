@@ -447,8 +447,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 	a_id = switch_strip_whitespace(duped);
 
 	if (zstr(a_id)) {
-		switch_safe_free(a_id);
-		return;
+		goto end;
 	}
 
 	p = strchr(a_id, ';');
@@ -456,8 +455,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 
 	if (!sofia_glue_is_valid_session_uuid(a_id)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: Ignoring \"%s\" parsed as \"%s\"\n", header, a_id);
-		switch_safe_free(a_id);
-		return;
+		goto end;
 	}
 
 	/* RFC7329 compatibility */
@@ -487,8 +485,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 	if (!p) {
 		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
 		switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
-		switch_safe_free(a_id);
-		return;
+		goto end;
 	}
 	p++;
 	remote_param = strstr(p, "remote=");
@@ -496,8 +493,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
 		switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
 		sofia_glue_check_filter_generic_params(session, profile, p);
-		switch_safe_free(a_id);
-		return;
+		goto end;
 	} 
 	b_id = remote_param + 7;
 	if (!zstr(b_id) && strlen(b_id) == RFC7989_SESSION_UUID_LEN /*32*/) {
@@ -510,6 +506,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: invalid uuid, ignored.\n");
 	}
 
+end:
 	switch_safe_free(a_id);
 }
 
