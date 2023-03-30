@@ -2178,10 +2178,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_pop_eavesdropper(switch_cor
 		struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) switch_core_media_bug_get_user_data(bug);
 
 		if (ep && ep->eavesdropper && ep->eavesdropper != session) {
-			switch_core_session_read_lock(ep->eavesdropper);
-			*sessionp = ep->eavesdropper;
-			switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
-			status = SWITCH_STATUS_SUCCESS;
+			if (switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+				*sessionp = ep->eavesdropper;
+				switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+				status = SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 
