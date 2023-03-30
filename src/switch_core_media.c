@@ -15856,7 +15856,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (!(switch_core_codec_ready(session->write_codec) && switch_core_codec_ready(frame->codec))) goto error;
 
-	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
+	if (frame->codec && session->write_codec->implementation != frame->codec->implementation) {
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id ||
 			session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
 			ptime_mismatch = TRUE;
