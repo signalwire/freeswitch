@@ -3,7 +3,12 @@
 
 
 #include <stdarg.h>
+
+#ifdef __APPLE__
+#include <strings.h>
+#else
 #include <string.h>
+#endif
 
 #include "xmlrpc_config.h"
 #include "c_util.h"

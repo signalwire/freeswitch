@@ -1173,9 +1173,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
 					uint64_t exp;
-					int r;
-					r = read(tfd, &exp, sizeof(exp));
-					r++;
+					read(tfd, &exp, sizeof(exp));
+					(void)exp;
 				} else {
 					switch_time_t timediff = runtime.reference - ts;
 
