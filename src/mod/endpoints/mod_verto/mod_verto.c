@@ -823,7 +823,6 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 {
 	char delim = ',';
 	char *cur, *next;
-	int count = 0;
 	char *edup;
 
 	if (!zstr(str)) {
@@ -844,7 +843,7 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 			delim = ' ';
 		}
 
-		for (cur = edup; cur; count++) {
+		for (cur = edup; cur;) {
 			if ((next = strchr(cur, delim))) {
 				*next++ = '\0';
 			}
@@ -5579,8 +5578,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 {
 	verto_profile_t *profile = NULL;
 	jsock_t *jsock;
-	int cp = 0;
-	int cc = 0;
 	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
 	int i;
 
@@ -5594,14 +5591,12 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</profile>\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
 		}
-		cp++;
 
 		switch_mutex_lock(profile->mutex);
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			char *tmpname = switch_mprintf("%s@%s", jsock->id, jsock->domain);
 			stream->write_function(stream, "<client>\n<profile>%s</profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%s)</state>\n</client>\n", profile->name, tmpname, "client", jsock->name,
 									 (!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG",  (jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS");
-			cc++;
 			switch_safe_free(tmpname);
 		}
 		switch_mutex_unlock(profile->mutex);
@@ -5611,7 +5606,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static cJSON *json_status()
+static cJSON *json_status(void)
 {
 	cJSON *obj, *profiles, *jprofile, *users, *user;
 	verto_profile_t *profile = NULL;
@@ -6740,14 +6735,14 @@ static void mod_verto_ks_logger(const char *file, const char *func, int line, in
 	va_end(ap);
 }
 
-static void verto_event_free_subclass() 
+static void verto_event_free_subclass(void)
 {
 	switch_event_free_subclass(MY_EVENT_LOGIN);
 	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
 	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
 }
 
-static void verto_destroy_globals_hash_tables()
+static void verto_destroy_globals_hash_tables(void)
 {
 	if (verto_globals.method_hash) {
 		switch_core_hash_destroy(&verto_globals.method_hash);
