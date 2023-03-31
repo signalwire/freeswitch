@@ -1910,6 +1910,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		if (!data) {
 			va_end(ap);
 			switch_xml_free(xml);
+
 			return NULL;
 		}
 		ret = vsnprintf(data, 2048, fmt, ap);
@@ -1920,6 +1921,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 			free(data);
 #endif
 			switch_xml_free(xml);
+
 			return NULL;
 		}
 	}
