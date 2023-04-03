@@ -10217,6 +10217,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *append_video = switch_channel_get_variable(session->channel, "rtp_append_video_sdp");
 	char srbuf[128] = "";
 	const char *var_val;
+	const char *fvar_val;
 	const char *username;
 	const char *fmtp_out;
 	const char *fmtp_out_var = switch_channel_get_variable(session->channel, "rtp_force_audio_fmtp");
@@ -10874,8 +10875,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = smh->codecs[i];
 			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO 
-			&& (switch_true(switch_channel_get_variable(session->channel, "sdp_take_video"))
-			|| switch_true(switch_channel_get_variable_partner(session->channel, "sdp_take_video")))) {
+			&& ((var_val = switch_channel_get_variable(session->channel, "sdp_take_video") && switch_true(var_val))
+				|| (fvar_val = switch_channel_get_variable_partner(session->channel, "sdp_take_video") && switch_true(fvar_val))
+				|| (var_val == NULL && fvar_val == NULL))
+			) {
 				has_vid = 1;
 				break;
 			}
