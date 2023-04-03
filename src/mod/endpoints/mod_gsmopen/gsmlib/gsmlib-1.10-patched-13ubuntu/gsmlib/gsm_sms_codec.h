@@ -125,11 +125,11 @@ namespace gsmlib
     
     // return true if message compressed
     // (if messageWaitingIndication == false)
-    bool compressed() const {return _dcs & DCS_COMPRESSED == DCS_COMPRESSED;}
+    bool compressed() const {return (_dcs & DCS_COMPRESSED) == DCS_COMPRESSED;}
 
     // return true if message waiting indication
     bool messageWaitingIndication() const
-      {return _dcs & DCS_MESSAGE_WAITING_INDICATION == 
+      {return (_dcs & DCS_MESSAGE_WAITING_INDICATION) == 
          DCS_MESSAGE_WAITING_INDICATION;}
 
     // return type of waiting message (if messageWaitingIndication == true)
