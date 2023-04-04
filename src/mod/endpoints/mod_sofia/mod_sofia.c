@@ -832,7 +832,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 								TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-									   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
+								SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), 
+								TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_IGNORE_ACK), NUTAG_IGNORE_ACK(1)),
+                                TAG_END());
 				} else {
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								NUTAG_MEDIA_ENABLE(0),
@@ -843,7 +845,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 								SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str),
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-									   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
+								SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)),
+								TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_IGNORE_ACK), NUTAG_IGNORE_ACK(1)),
+								TAG_END());
 				}
 
 
@@ -990,7 +994,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SOATAG_RTP_SELECT(1),
 						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-							   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
+						SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), 
+						TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_IGNORE_ACK), NUTAG_IGNORE_ACK(1)),
+						TAG_END());
 		} else {
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 						NUTAG_AUTOANSWER(0),
@@ -1008,7 +1014,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str),
 						TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 						TAG_IF(switch_stristr("update_display", tech_pvt->x_freeswitch_support_remote),
-							   SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), TAG_END());
+						SIPTAG_HEADER_STR("X-SH-Support: " FREESWITCH_SUPPORT)), 
+						TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_IGNORE_ACK), NUTAG_IGNORE_ACK(1)),
+						TAG_END());
 		}
 		switch_safe_free(extra_headers);
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);

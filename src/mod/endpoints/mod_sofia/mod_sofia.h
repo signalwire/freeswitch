@@ -314,7 +314,7 @@ typedef enum {
 	PFLAG_AUTH_REQUIRE_USER,
 	PFLAG_AUTH_CALLS_ACL_ONLY,
 	PFLAG_USE_PORT_FOR_ACL_CHECK,
-
+	PFLAG_IGNORE_ACK,//added by liangjie for DS-84208,2020.5.26
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

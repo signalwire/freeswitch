@@ -6128,6 +6128,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-info-content-types")) {
 						profile->proxy_info_content_types = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "ignore-ack") && !zstr(val)) { //added by liangjie for DS-84208,2020.5.26
+						if(switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IGNORE_ACK);
+						}  else {
+							sofia_clear_pflag(profile, PFLAG_IGNORE_ACK);
+						}
 					} else if (!strcasecmp(var, "rfc8760-auth-algorithms")) {
 						char *algs_arr[100] = { 0 };
 						uint8_t algs = switch_separate_string(val, ',', algs_arr, (sizeof(algs_arr) / sizeof(algs_arr[0])));
