@@ -6672,10 +6672,6 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	if (!height) height = 288;
 	if (!fps) fps = 15;
 
-	if (!(width && height && fps)) {
-		return;
-	}
-
 	fr.packet = buf;
 	fr.packetlen = buflen;
 	fr.data = buf + 12;
@@ -12439,7 +12435,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_media_params(switch_core_sessi
 				*val++ = '\0';
 			}
 
-			if (name && val) {
+			if (val) {
 				if (!strcmp(name, "aspect")) {
 					aspect = val;
 					vid++;
@@ -15860,7 +15856,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (!(switch_core_codec_ready(session->write_codec) && switch_core_codec_ready(frame->codec))) goto error;
 
-	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
+	if (frame->codec && session->write_codec->implementation != frame->codec->implementation) {
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id ||
 			session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
 			ptime_mismatch = TRUE;
