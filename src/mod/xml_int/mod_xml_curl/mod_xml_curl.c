@@ -210,13 +210,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_uuid_format(uuid_str, &uuid);
 
 	switch_snprintf(filename, sizeof(filename), "%s%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str);
-	curl_handle = switch_curl_easy_init();
-	headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
-
-	if (!strncasecmp(binding->url, "https", 5)) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
-	}
 
 	memset(&config_data, 0, sizeof(config_data));
 
@@ -224,6 +217,14 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	config_data.max_bytes = binding->curl_max_bytes;
 
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+		curl_handle = switch_curl_easy_init();
+		headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+
+		if (!strncasecmp(binding->url, "https", 5)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
+
 		if (!zstr(binding->cred)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, binding->auth_scheme);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
