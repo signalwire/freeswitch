@@ -772,10 +772,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
   end:
 
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	}
-
 	return status;
 }
 
