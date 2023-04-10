@@ -147,7 +147,7 @@ static void check_ip(void)
 	} else if (strcmp(hostname, runtime.hostname)) {
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "hostname-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname ? hostname : "nil");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "new-hostname", runtime.hostname);
 			switch_event_fire(&event);
 		}
