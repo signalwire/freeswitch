@@ -1138,6 +1138,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load) {
 
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+
+	if (pool == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No memory pool assigned!\n");
+
+		return SWITCH_STATUS_TERM;
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -1147,10 +1154,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load) {
 	}
 
 	memset(&avmd_globals, 0, sizeof(avmd_globals));
-	if (pool == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No memory pool assigned!\n");
-		return SWITCH_STATUS_TERM;
-	}
 	switch_mutex_init(&avmd_globals.mutex, SWITCH_MUTEX_NESTED, pool);
 	avmd_globals.pool = pool;
 
