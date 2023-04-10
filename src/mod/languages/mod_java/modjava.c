@@ -294,64 +294,57 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount,
 
 static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm_control_t * vmControl)
 {
-    jint (JNICALL *pJNI_CreateJavaVM)(JavaVM**,void**,void*);
-    switch_status_t status;
+	jint (JNICALL *pJNI_CreateJavaVM)(JavaVM**,void**,void*);
+	switch_status_t status;
 	char *derr = NULL;
 
 	pJNI_CreateJavaVM = (jint (*)(JavaVM **, void **, void *))switch_dso_func_sym(javaVMHandle, "JNI_CreateJavaVM", &derr);
 
-    if (!derr)
-    {
-        JNIEnv *env;
-        JavaVMInitArgs initArgs;
-        jint res;
+	if (!derr) {
+		JNIEnv *env;
+		JavaVMInitArgs initArgs;
+		jint res;
 
-        memset(&initArgs, 0, sizeof(initArgs));
-        initArgs.version = JNI_VERSION_1_4;
-        initArgs.nOptions = optionCount;
-        initArgs.options = options;
-        initArgs.ignoreUnrecognized = JNI_TRUE;
+		memset(&initArgs, 0, sizeof(initArgs));
+		initArgs.version = JNI_VERSION_1_4;
+		initArgs.nOptions = optionCount;
+		initArgs.options = options;
+		initArgs.ignoreUnrecognized = JNI_TRUE;
 
-        res = pJNI_CreateJavaVM(&javaVM, (void*) &env, &initArgs);
-        if (res == JNI_OK)
-        {
-        	// call FindClass here already so that the Java VM executes the static
-        	// initializer (@see org.freeswitch.Launcher) which loads the jni library
-        	// so we can use jni functions right away (for example in the startup method)
-        	launcherClass = (*env)->FindClass(env, "org/freeswitch/Launcher");
-        	if ( launcherClass == NULL )
-        	{
-        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find 'org.freeswitch.Launcher' class!\n");
-        		(*env)->ExceptionDescribe(env);
-        	}
+		res = pJNI_CreateJavaVM(&javaVM, (void*) &env, &initArgs);
+		if (res == JNI_OK) {
+			/* call FindClass here already so that the Java VM executes the static
+			initializer (@see org.freeswitch.Launcher) which loads the jni library
+			so we can use jni functions right away (for example in the startup method) */
 
-        	// store a global reference for use in the launch_java() function
-            launcherClass = (*env)->NewGlobalRef(env, launcherClass);
-        	if ( launcherClass == NULL )
-        	{
-        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
-        		(*env)->ExceptionDescribe(env);
-        		status = SWITCH_STATUS_FALSE;
-        	}
-        	else
-        	{
-        		status = SWITCH_STATUS_SUCCESS;
-        	}
+			launcherClass = (*env)->FindClass(env, "org/freeswitch/Launcher");
+			if ( launcherClass == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find 'org.freeswitch.Launcher' class!\n");
+				(*env)->ExceptionDescribe(env);
+			}
 
-            (*javaVM)->DetachCurrentThread(javaVM);
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating Java VM!\n");
-            status = SWITCH_STATUS_FALSE;
-        }
-    }
-    else
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Specified Java VM doesn't have JNI_CreateJavaVM\n");
-        status = SWITCH_STATUS_FALSE;
-    }
-    return status;
+			/* store a global reference for use in the launch_java() function */
+			launcherClass = (*env)->NewGlobalRef(env, launcherClass);
+			if ( launcherClass == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
+				(*env)->ExceptionDescribe(env);
+				status = SWITCH_STATUS_FALSE;
+			} else {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
+			(*javaVM)->DetachCurrentThread(javaVM);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating Java VM!\n");
+			status = SWITCH_STATUS_FALSE;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Specified Java VM doesn't have JNI_CreateJavaVM\n");
+		switch_safe_free(derr);
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)

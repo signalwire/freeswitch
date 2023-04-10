@@ -546,6 +546,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	}
 
 	if (dmachine->pinging) {
+		switch_mutex_unlock(dmachine->mutex);
 		return SWITCH_STATUS_BREAK;
 	}
 
@@ -2129,7 +2130,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 				break;
 			}
 
-			if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_session_write_video_frame(ep->eavesdropper, bug->video_ping_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", switch_core_session_get_name(ep->eavesdropper));
 					ep->errs++;
@@ -2177,10 +2178,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_pop_eavesdropper(switch_cor
 		struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) switch_core_media_bug_get_user_data(bug);
 
 		if (ep && ep->eavesdropper && ep->eavesdropper != session) {
-			switch_core_session_read_lock(ep->eavesdropper);
-			*sessionp = ep->eavesdropper;
-			switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
-			status = SWITCH_STATUS_SUCCESS;
+			if (switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+				*sessionp = ep->eavesdropper;
+				switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+				status = SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 

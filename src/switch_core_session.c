@@ -3005,7 +3005,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 {
 	char *dp[25];
 	char *dpstr;
-	int argc, x, count = 0;
+	int argc, x;
 	uint32_t stack_count = 0;
 	switch_caller_profile_t *profile, *new_profile, *pp = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3058,8 +3058,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 		if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 			continue;
 		}
-
-		count++;
 
 		extension = dialplan_interface->hunt_function(session, dparg, new_profile);
 		UNPROTECT_INTERFACE(dialplan_interface);
