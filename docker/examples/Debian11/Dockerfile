@@ -31,12 +31,17 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -yq install \
 # mod_pgsql
     libpq-dev \
 # mod_sndfile
-    libsndfile1-dev libflac-dev libogg-dev libvorbis-dev
-  
+    libsndfile1-dev libflac-dev libogg-dev libvorbis-dev \
+# mod_shout
+    libshout3-dev libmpg123-dev libmp3lame-dev
+
 RUN cd /usr/src/libs/libks && cmake . -DCMAKE_INSTALL_PREFIX=/usr -DWITH_LIBBACKTRACE=1 && make install
 RUN cd /usr/src/libs/sofia-sip && ./bootstrap.sh && ./configure CFLAGS="-g -ggdb" --with-pic --with-glib=no --without-doxygen --disable-stun --prefix=/usr && make -j`nproc --all` && make install
 RUN cd /usr/src/libs/spandsp && ./bootstrap.sh && ./configure CFLAGS="-g -ggdb" --with-pic --prefix=/usr && make -j`nproc --all` && make install
 RUN cd /usr/src/libs/signalwire-c && PKG_CONFIG_PATH=/usr/lib/pkgconfig cmake . -DCMAKE_INSTALL_PREFIX=/usr && make install
+
+# Enable modules
+RUN sed -i 's|#formats/mod_shout|formats/mod_shout|' /usr/src/freeswitch/build/modules.conf.in
 
 RUN cd /usr/src/freeswitch && ./bootstrap.sh -j
 RUN cd /usr/src/freeswitch && ./configure

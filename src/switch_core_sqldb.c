@@ -3181,6 +3181,8 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 	if (!(ep = switch_loadable_module_get_endpoint_interface(argv[0]))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "EP ERROR\n");
+		switch_xml_free(xml);
+
 		return 0;
 	}
 

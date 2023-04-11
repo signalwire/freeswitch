@@ -99,6 +99,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *database_hash;
 	switch_hash_t *secondary_recover_hash;
 	switch_mutex_t *mutex;
+	switch_thread_rwlock_t *chat_rwlock;
 	switch_memory_pool_t *pool;
 };
 
@@ -634,7 +635,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 					added++;
 				}
+				switch_thread_rwlock_wrlock(loadable_modules.chat_rwlock);
 				switch_core_hash_insert(loadable_modules.chat_hash, ptr->interface_name, (const void *) ptr);
+				switch_thread_rwlock_unlock(loadable_modules.chat_rwlock);
 			}
 		}
 	}
@@ -822,7 +825,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	replying = switch_event_get_header(message_event, "replying");
 
 	if (!switch_true(replying) && !switch_stristr("global", proto) && !switch_true(switch_event_get_header(message_event, "skip_global_process"))) {
-		switch_mutex_lock(loadable_modules.mutex);
+		switch_thread_rwlock_rdlock(loadable_modules.chat_rwlock);
 		for (hi = switch_core_hash_first(loadable_modules.chat_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 
@@ -852,7 +855,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 			}
 		}
 		switch_safe_free(hi);
-		switch_mutex_unlock(loadable_modules.mutex);
+		switch_thread_rwlock_unlock(loadable_modules.chat_rwlock);
 	}
 
 
@@ -1548,7 +1551,9 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 					switch_event_fire(&event);
 					removed++;
 				}
+				switch_thread_rwlock_wrlock(loadable_modules.chat_rwlock);
 				switch_core_hash_delete(loadable_modules.chat_hash, ptr->interface_name);
+				switch_thread_rwlock_unlock(loadable_modules.chat_rwlock);
 			}
 		}
 	}
@@ -2131,7 +2136,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash);
 	switch_core_hash_init(&loadable_modules.secondary_recover_hash);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
-
+	switch_thread_rwlock_create(&loadable_modules.chat_rwlock, loadable_modules.pool);
+	
 	if (!autoload) return SWITCH_STATUS_SUCCESS;
 	
 	/*

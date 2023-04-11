@@ -497,6 +497,7 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 		/* create a new resolver from /etc/resolv.conf */
 		if (res) {
 			ldns_resolver_free(res);
+			res = NULL;
 		}
 		s = ldns_resolver_new_frm_file(&res, NULL);
 	}

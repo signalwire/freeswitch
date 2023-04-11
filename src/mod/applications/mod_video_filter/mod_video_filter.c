@@ -645,7 +645,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
 	}
 
 
-	switch_img_from_raw(frame->img, patch_data, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h);
+	switch_img_from_raw(&frame->img, patch_data, SWITCH_IMG_FMT_ARGB, frame->img->d_w, frame->img->d_h);
 
 	switch_img_free(&img);
 
