@@ -163,7 +163,9 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 			if ((status = switch_file_rename(from_filename, to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s [%s]\n",
 								  from_filename, to_filename, strerror(errno));
-				goto end;
+				if (errno != ENOENT) {
+					goto end;
+				}
 			}
 		}
 

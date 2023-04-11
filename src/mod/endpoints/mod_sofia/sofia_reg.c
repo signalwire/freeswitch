@@ -884,7 +884,6 @@ long sofia_reg_uniform_distribution(int max)
 	int result;
 	int range = max + 1;
 
-	srand((unsigned)((intptr_t) switch_thread_self() + switch_micro_time_now()));
 	result = (int)((double)rand() / (((double)RAND_MAX + (double)1) / range));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Generated random %ld, max is %d\n", (long) result, max);
@@ -894,8 +893,7 @@ long sofia_reg_uniform_distribution(int max)
 void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int interval)
 {
 	char *sql;
-	int mean = interval / 2;
-	long next, irand;
+	long next;
 	char buf[32] = "";
 	int count;
 
@@ -952,8 +950,7 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 		/* only update if needed */
 		if (count) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s\n", profile->name);
-			irand = mean + sofia_reg_uniform_distribution(interval);
-			next = (long) now + irand;
+			next = (long) now + interval;
 
 			sql = switch_mprintf("update sip_registrations set ping_expires = %ld where hostname='%q' and profile_name='%q' and ping_expires <= %ld ",
 								 next, mod_sofia_globals.hostname, profile->name, (long) now);
@@ -1765,7 +1762,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			     (( exp_max_deviation_var = profile->sip_expires_max_deviation )) ) {
 				if (exp_max_deviation_var > 0) {
 					int exp_deviation;
-					srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
 					/* random number between negative exp_max_deviation_var and positive exp_max_deviation_var: */
 					exp_deviation = ( rand() % ( exp_max_deviation_var * 2 ) ) - exp_max_deviation_var;
 					exptime += exp_deviation;
@@ -2013,23 +2009,26 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			sql = switch_mprintf("insert into sip_registrations "
 					"(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
-					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count, force_ping) "
-					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d, %d)",
+					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count, ping_expires, force_ping) "
+					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d, %ld, %d)",
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "",
 					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm,
-								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0, force_ping);
+								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0,
+								 (long) switch_epoch_time_now(NULL) + sofia_reg_uniform_distribution(profile->iping_seconds), force_ping);
 		} else {
 			sql = switch_mprintf("update sip_registrations set call_id='%q',"
 								 "sub_host='%q', network_ip='%q',network_port='%q',"
 								 "presence_hosts='%q', server_host='%q', orig_server_host='%q',"
 								 "hostname='%q', orig_hostname='%q',"
-								 "expires = %ld, force_ping=%d where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'",
+								 "expires = %ld, ping_expires=%ld, force_ping=%d "
+								 "where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'",
 								 call_id, sub_host, network_ip, network_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
-								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin, force_ping,
-								 to_user, username, reg_host, contact_str);
+								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
+								 (long) switch_epoch_time_now(NULL) + sofia_reg_uniform_distribution(profile->iping_seconds),
+								 force_ping, to_user, username, reg_host, contact_str);
 		}
 
 		if (sql) {

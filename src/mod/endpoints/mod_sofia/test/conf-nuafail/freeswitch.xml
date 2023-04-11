@@ -65,7 +65,6 @@
         <param name="inbound-codec-negotiation" value="generous"/>
         <param name="nonce-ttl" value="60"/>
         <param name="inbound-late-negotiation" value="true"/>
-        <param name="inbound-zrtp-passthru" value="false"/>
         <param name="rtp-ip" value="170.0.0.1"/>
         <param name="sip-ip" value="170.0.0.1"/>
         <param name="ext-rtp-ip" value="170.0.0.1"/>

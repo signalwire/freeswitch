@@ -244,19 +244,6 @@ if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
 endif
 
-if ENABLE_ZRTP
-CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
-CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
-CORE_CFLAGS += -isystem $(switch_srcdir)/libs/libzrtp/include
-ZRTP_LDFLAGS = -L$(switch_srcdir)/libs/libzrtp/third_party/bnlib
-ZRTP_LDFLAGS += -L$(switch_srcdir)/libs/libzrtp
-ZRTP_LIBS = -lbn -lzrtp
-libfreeswitch_la_LDFLAGS += $(ZRTP_LDFLAGS)
-libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
-CORE_LIBS += libs/libzrtp/libzrtp.a
-LIBS += libs/libzrtp/third_party/bnlib/libbn.a
-endif
-
 library_includetestdir = $(includedir)/test
 library_includetest_HEADERS = \
 	src/include/test/switch_fct.h \
@@ -569,9 +556,6 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile $(switch_
 ##
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
-
-libs/libzrtp/libzrtp.a:
-	cd libs/libzrtp && $(MAKE)
 
 libs/libvpx/Makefile: libs/libvpx/.update
 	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(VISIBILITY_FLAG)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384

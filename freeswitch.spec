@@ -140,7 +140,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.6
+BuildRequires: sofia-sip-devel >= 1.13.14
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -1616,7 +1616,6 @@ autoreconf --force --install
 --with-odbc \
 --with-erlang \
 --with-openssl \
---enable-zrtp \
 %{?configure_options}
 
 unset MODULES
@@ -1709,6 +1708,8 @@ cd ../..
 %{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_isdn*
 %endif
 
+%{__rm} -f %{buildroot}/%{LIBDIR}/*.la
+%{__rm} -f %{buildroot}/%{MODINSTDIR}/*.la
 
 
 ######################################################################################################################
@@ -1861,10 +1862,8 @@ fi
 #
 ######################################################################################################################
 %files devel
-%{LIBDIR}/*.a
-%{LIBDIR}/*.la
+%{LIBDIR}/*.so*
 %{PKGCONFIGDIR}/*
-%{MODINSTDIR}/*.*a
 %{INCLUDEDIR}/*.h
 %{INCLUDEDIR}/test/*.h
 
@@ -1939,6 +1938,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/skinny.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/smpp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sms_flowroute.conf.xml

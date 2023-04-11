@@ -617,6 +617,7 @@ srtp/build/compile
 /curl-*/
 /sqlite-*.zip
 /sqlite-*/
+/sqlite/
 /ldns/
 /portaudio/
 portaudio.*.log

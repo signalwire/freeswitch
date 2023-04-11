@@ -295,6 +295,7 @@ static switch_status_t switch_opusfile_open(switch_file_handle_t *handle, const 
 	context->of = op_open_file(path, &ret);
 	if (!context->of) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[OGG/OPUS File] Error opening %s\n", path);
+		switch_thread_rwlock_unlock(context->rwlock);
 		return SWITCH_STATUS_GENERR;
 	}
 

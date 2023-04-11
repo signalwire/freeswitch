@@ -8,7 +8,7 @@ Visit  [https://signalwire.com](https://signalwire.com/)  or https://github.com/
 
 FreeSWITCH is available on [Github](https://github.com/signalwire/freeswitch) in source code format.  You can checkout the development branch and build for many popular platforms including Linux, Windows, MacOSX and BSD.  There is an issue tracker and pull request system available as part of the repo online.
 
-See [https://freeswitch.com/#getting-started](https://freeswitch.com/#getting-started) for more detailed instructions.
+See https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/ for more detailed instructions.
 
 ## Additional Help
 
@@ -40,7 +40,7 @@ Step by step tutorials to install FreeSWITCH from packages:
 ### Build from source
 
 Example Dockerfiles to build FreeSWITCH and dependencies from source:
-  * https://github.com/signalwire/freeswitch/tree/dockerfile/docker/examples
+  * https://github.com/signalwire/freeswitch/tree/master/docker/examples
 
 Step by step tutorials to build FreeSWITCH with provided dependency packages:
   * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian#Debian-buildfromsource) [<b>Recommended</b>]

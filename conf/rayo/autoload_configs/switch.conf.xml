@@ -145,8 +145,6 @@
     <!-- <param name="rtp-start-port" value="16384"/> -->
     <!-- <param name="rtp-end-port" value="32768"/> -->
 
-    <param name="rtp-enable-zrtp" value="true"/>
-
     <!--
 	 Native PostgreSQL support was removed from the FreeSWITCH Core!
 	 =================================
