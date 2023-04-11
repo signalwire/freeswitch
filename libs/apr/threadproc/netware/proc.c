@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "apr_arch_threadproc.h"
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_threadproc.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
 #include <proc.h>
 
-apr_status_t apr_netware_proc_cleanup(void *theproc)
+fspr_status_t fspr_netware_proc_cleanup(void *theproc)
 {
-    apr_proc_t *proc = theproc;
+    fspr_proc_t *proc = theproc;
     int exit_int;
     int waitpid_options = WUNTRACED | WNOHANG;
 
@@ -35,9 +35,9 @@ apr_status_t apr_netware_proc_cleanup(void *theproc)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_create(apr_procattr_t **new,apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_procattr_create(fspr_procattr_t **new,fspr_pool_t *pool)
 {
-    (*new) = (apr_procattr_t *)apr_pcalloc(pool, sizeof(apr_procattr_t));
+    (*new) = (fspr_procattr_t *)fspr_pcalloc(pool, sizeof(fspr_procattr_t));
 
     if ((*new) == NULL) {
         return APR_ENOMEM;
@@ -45,18 +45,18 @@ APR_DECLARE(apr_status_t) apr_procattr_create(apr_procattr_t **new,apr_pool_t *p
     (*new)->pool = pool;
     (*new)->cmdtype = APR_PROGRAM;
     /* Default to a current path since NetWare doesn't handle it very well */
-    apr_filepath_get(&((*new)->currdir), APR_FILEPATH_NATIVE, pool);
+    fspr_filepath_get(&((*new)->currdir), APR_FILEPATH_NATIVE, pool);
     (*new)->detached = 1;
     return APR_SUCCESS;
 
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr, apr_int32_t in, 
-                                 apr_int32_t out, apr_int32_t err)
+APR_DECLARE(fspr_status_t) fspr_procattr_io_set(fspr_procattr_t *attr, fspr_int32_t in, 
+                                 fspr_int32_t out, fspr_int32_t err)
 {
-    apr_status_t status;
+    fspr_status_t status;
     if (in != 0) {
-        if ((status = apr_file_pipe_create(&attr->child_in, &attr->parent_in, 
+        if ((status = fspr_file_pipe_create(&attr->child_in, &attr->parent_in, 
                                    attr->pool)) != APR_SUCCESS) {
             return status;
         }
@@ -64,18 +64,18 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr, apr_int32_t 
         case APR_FULL_BLOCK:
             break;
         case APR_PARENT_BLOCK:
-            apr_file_pipe_timeout_set(attr->child_in, 0);
+            fspr_file_pipe_timeout_set(attr->child_in, 0);
             break;
         case APR_CHILD_BLOCK:
-            apr_file_pipe_timeout_set(attr->parent_in, 0);
+            fspr_file_pipe_timeout_set(attr->parent_in, 0);
             break;
         default:
-            apr_file_pipe_timeout_set(attr->child_in, 0);
-            apr_file_pipe_timeout_set(attr->parent_in, 0);
+            fspr_file_pipe_timeout_set(attr->child_in, 0);
+            fspr_file_pipe_timeout_set(attr->parent_in, 0);
         }
     } 
     if (out) {
-        if ((status = apr_file_pipe_create(&attr->parent_out, &attr->child_out, 
+        if ((status = fspr_file_pipe_create(&attr->parent_out, &attr->child_out, 
                                    attr->pool)) != APR_SUCCESS) {
             return status;
         }
@@ -83,18 +83,18 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr, apr_int32_t 
         case APR_FULL_BLOCK:
             break;
         case APR_PARENT_BLOCK:
-            apr_file_pipe_timeout_set(attr->child_out, 0);
+            fspr_file_pipe_timeout_set(attr->child_out, 0);
             break;
         case APR_CHILD_BLOCK:
-            apr_file_pipe_timeout_set(attr->parent_out, 0);
+            fspr_file_pipe_timeout_set(attr->parent_out, 0);
             break;
         default:
-            apr_file_pipe_timeout_set(attr->child_out, 0);
-            apr_file_pipe_timeout_set(attr->parent_out, 0);
+            fspr_file_pipe_timeout_set(attr->child_out, 0);
+            fspr_file_pipe_timeout_set(attr->parent_out, 0);
         }
     } 
     if (err) {
-        if ((status = apr_file_pipe_create(&attr->parent_err, &attr->child_err, 
+        if ((status = fspr_file_pipe_create(&attr->parent_err, &attr->child_err, 
                                    attr->pool)) != APR_SUCCESS) {
             return status;
         }
@@ -102,90 +102,90 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr, apr_int32_t 
         case APR_FULL_BLOCK:
             break;
         case APR_PARENT_BLOCK:
-            apr_file_pipe_timeout_set(attr->child_err, 0);
+            fspr_file_pipe_timeout_set(attr->child_err, 0);
             break;
         case APR_CHILD_BLOCK:
-            apr_file_pipe_timeout_set(attr->parent_err, 0);
+            fspr_file_pipe_timeout_set(attr->parent_err, 0);
             break;
         default:
-            apr_file_pipe_timeout_set(attr->child_err, 0);
-            apr_file_pipe_timeout_set(attr->parent_err, 0);
+            fspr_file_pipe_timeout_set(attr->child_err, 0);
+            fspr_file_pipe_timeout_set(attr->parent_err, 0);
         }
     } 
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_procattr_child_in_set(apr_procattr_t *attr, apr_file_t *child_in,
-                                   apr_file_t *parent_in)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_in_set(fspr_procattr_t *attr, fspr_file_t *child_in,
+                                   fspr_file_t *parent_in)
 {
     if (attr->child_in == NULL && attr->parent_in == NULL)
-        apr_file_pipe_create(&attr->child_in, &attr->parent_in, attr->pool);
+        fspr_file_pipe_create(&attr->child_in, &attr->parent_in, attr->pool);
 
     if (child_in != NULL)
-        apr_file_dup2(attr->child_in, child_in, attr->pool);
+        fspr_file_dup2(attr->child_in, child_in, attr->pool);
 
     if (parent_in != NULL)
-        apr_file_dup2(attr->parent_in, parent_in, attr->pool);
+        fspr_file_dup2(attr->parent_in, parent_in, attr->pool);
 
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_procattr_child_out_set(apr_procattr_t *attr, apr_file_t *child_out,
-                                    apr_file_t *parent_out)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_out_set(fspr_procattr_t *attr, fspr_file_t *child_out,
+                                    fspr_file_t *parent_out)
 {
     if (attr->child_out == NULL && attr->parent_out == NULL)
-        apr_file_pipe_create(&attr->child_out, &attr->parent_out, attr->pool);
+        fspr_file_pipe_create(&attr->child_out, &attr->parent_out, attr->pool);
 
     if (child_out != NULL)
-        apr_file_dup2(attr->child_out, child_out, attr->pool);
+        fspr_file_dup2(attr->child_out, child_out, attr->pool);
 
     if (parent_out != NULL)
-        apr_file_dup2(attr->parent_out, parent_out, attr->pool);
+        fspr_file_dup2(attr->parent_out, parent_out, attr->pool);
 
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_procattr_child_err_set(apr_procattr_t *attr, apr_file_t *child_err,
-                                   apr_file_t *parent_err)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_err_set(fspr_procattr_t *attr, fspr_file_t *child_err,
+                                   fspr_file_t *parent_err)
 {
     if (attr->child_err == NULL && attr->parent_err == NULL)
-        apr_file_pipe_create(&attr->child_err, &attr->parent_err, attr->pool);
+        fspr_file_pipe_create(&attr->child_err, &attr->parent_err, attr->pool);
 
     if (child_err != NULL)
-        apr_file_dup2(attr->child_err, child_err, attr->pool);
+        fspr_file_dup2(attr->child_err, child_err, attr->pool);
 
     if (parent_err != NULL)
-        apr_file_dup2(attr->parent_err, parent_err, attr->pool);
+        fspr_file_dup2(attr->parent_err, parent_err, attr->pool);
 
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_procattr_dir_set(apr_procattr_t *attr, 
+APR_DECLARE(fspr_status_t) fspr_procattr_dir_set(fspr_procattr_t *attr, 
                                const char *dir) 
 {
-    return apr_filepath_merge(&attr->currdir, NULL, dir, 
+    return fspr_filepath_merge(&attr->currdir, NULL, dir, 
                               APR_FILEPATH_NATIVE, attr->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_cmdtype_set(apr_procattr_t *attr,
-                                     apr_cmdtype_e cmd) 
+APR_DECLARE(fspr_status_t) fspr_procattr_cmdtype_set(fspr_procattr_t *attr,
+                                     fspr_cmdtype_e cmd) 
 {
     /* won't ever be called on this platform, so don't save the function pointer */
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_detach_set(apr_procattr_t *attr, apr_int32_t detach) 
+APR_DECLARE(fspr_status_t) fspr_procattr_detach_set(fspr_procattr_t *attr, fspr_int32_t detach) 
 {
     attr->detached = detach;
     return APR_SUCCESS;
 }
 
 #if APR_HAS_FORK
-APR_DECLARE(apr_status_t) apr_proc_fork(apr_proc_t *proc, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_proc_fork(fspr_proc_t *proc, fspr_pool_t *pool)
 {
     int pid;
     
@@ -207,7 +207,7 @@ APR_DECLARE(apr_status_t) apr_proc_fork(apr_proc_t *proc, apr_pool_t *pool)
 }
 #endif
 
-static apr_status_t limit_proc(apr_procattr_t *attr)
+static fspr_status_t limit_proc(fspr_procattr_t *attr)
 {
 #if APR_HAVE_STRUCT_RLIMIT && APR_HAVE_SETRLIMIT
 #ifdef RLIMIT_CPU
@@ -252,33 +252,33 @@ static apr_status_t limit_proc(apr_procattr_t *attr)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_child_errfn_set(apr_procattr_t *attr,
-                                                       apr_child_errfn_t *errfn)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_errfn_set(fspr_procattr_t *attr,
+                                                       fspr_child_errfn_t *errfn)
 {
     /* won't ever be called on this platform, so don't save the function pointer */
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_error_check_set(apr_procattr_t *attr,
-                                                       apr_int32_t chk)
+APR_DECLARE(fspr_status_t) fspr_procattr_error_check_set(fspr_procattr_t *attr,
+                                                       fspr_int32_t chk)
 {
     /* won't ever be used on this platform, so don't save the flag */
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_addrspace_set(apr_procattr_t *attr,
-                                                       apr_int32_t addrspace)
+APR_DECLARE(fspr_status_t) fspr_procattr_addrspace_set(fspr_procattr_t *attr,
+                                                       fspr_int32_t addrspace)
 {
     attr->addrspace = addrspace;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *newproc,
+APR_DECLARE(fspr_status_t) fspr_proc_create(fspr_proc_t *newproc,
 									const char *progname, 
 									const char * const *args, 
 									const char * const *env,
-                              		apr_procattr_t *attr, 
-                              		apr_pool_t *pool)
+                              		fspr_procattr_t *attr, 
+                              		fspr_pool_t *pool)
 {
 	wiring_t		wire;
     int             addr_space;
@@ -299,9 +299,9 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *newproc,
 
     if (attr->currdir) {
         char *fullpath = NULL;
-        apr_status_t rv;
+        fspr_status_t rv;
 
-        if ((rv = apr_filepath_merge(&fullpath, attr->currdir, progname, 
+        if ((rv = fspr_filepath_merge(&fullpath, attr->currdir, progname, 
                                      APR_FILEPATH_NATIVE, pool)) != APR_SUCCESS) {
             return rv;
         }
@@ -314,47 +314,47 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *newproc,
     }
 
     if (attr->child_in) {
-        apr_pool_cleanup_kill(apr_file_pool_get(attr->child_in), 
-                              attr->child_in, apr_unix_file_cleanup);
-        apr_file_close(attr->child_in);
+        fspr_pool_cleanup_kill(fspr_file_pool_get(attr->child_in), 
+                              attr->child_in, fspr_unix_file_cleanup);
+        fspr_file_close(attr->child_in);
     }
     if (attr->child_out) {
-        apr_pool_cleanup_kill(apr_file_pool_get(attr->child_out), 
-                              attr->child_out, apr_unix_file_cleanup);
-        apr_file_close(attr->child_out);
+        fspr_pool_cleanup_kill(fspr_file_pool_get(attr->child_out), 
+                              attr->child_out, fspr_unix_file_cleanup);
+        fspr_file_close(attr->child_out);
     }
     if (attr->child_err) {
-        apr_pool_cleanup_kill(apr_file_pool_get(attr->child_err), 
-                              attr->child_err, apr_unix_file_cleanup);
-        apr_file_close(attr->child_err);
+        fspr_pool_cleanup_kill(fspr_file_pool_get(attr->child_err), 
+                              attr->child_err, fspr_unix_file_cleanup);
+        fspr_file_close(attr->child_err);
     }
 
 
-    apr_pool_cleanup_register(pool, (void *)newproc, apr_netware_proc_cleanup,
-        apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(pool, (void *)newproc, fspr_netware_proc_cleanup,
+        fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_wait_all_procs(apr_proc_t *proc,
+APR_DECLARE(fspr_status_t) fspr_proc_wait_all_procs(fspr_proc_t *proc,
                                                   int *exitcode,
-                                                  apr_exit_why_e *exitwhy,
-                                                  apr_wait_how_e waithow,
-                                                  apr_pool_t *p)
+                                                  fspr_exit_why_e *exitwhy,
+                                                  fspr_wait_how_e waithow,
+                                                  fspr_pool_t *p)
 {
     proc->pid = -1;
-    return apr_proc_wait(proc, exitcode, exitwhy, waithow);
+    return fspr_proc_wait(proc, exitcode, exitwhy, waithow);
 }
 
-APR_DECLARE(apr_status_t) apr_proc_wait(apr_proc_t *proc,
-                                        int *exitcode, apr_exit_why_e *exitwhy,
-                                        apr_wait_how_e waithow)
+APR_DECLARE(fspr_status_t) fspr_proc_wait(fspr_proc_t *proc,
+                                        int *exitcode, fspr_exit_why_e *exitwhy,
+                                        fspr_wait_how_e waithow)
 {
     pid_t pstatus;
     int waitpid_options = WUNTRACED;
     int exit_int;
     int ignore;
-    apr_exit_why_e ignorewhy;
+    fspr_exit_why_e ignorewhy;
 
     if (exitcode == NULL) {
         exitcode = &ignore;
@@ -407,7 +407,7 @@ APR_DECLARE(apr_status_t) apr_proc_wait(apr_proc_t *proc,
     return errno;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_limit_set(apr_procattr_t *attr, apr_int32_t what, 
+APR_DECLARE(fspr_status_t) fspr_procattr_limit_set(fspr_procattr_t *attr, fspr_int32_t what, 
                           struct rlimit *limit)
 {
     switch(what) {
@@ -436,7 +436,7 @@ APR_DECLARE(apr_status_t) apr_procattr_limit_set(apr_procattr_t *attr, apr_int32
     return APR_SUCCESS;
 }  
 
-APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr, 
+APR_DECLARE(fspr_status_t) fspr_procattr_user_set(fspr_procattr_t *attr, 
                                                 const char *username,
                                                 const char *password)
 {
@@ -444,7 +444,7 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_group_set(apr_procattr_t *attr,
+APR_DECLARE(fspr_status_t) fspr_procattr_group_set(fspr_procattr_t *attr,
                                                  const char *groupname)
 {
     /* Always return SUCCESS because NetWare threads don't run within a group */

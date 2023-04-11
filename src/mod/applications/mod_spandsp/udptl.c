@@ -188,7 +188,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 	seq_no = (buf[0] << 8) | buf[1];
 	ptr += 2;
 	/* Break out the primary packet */
-	if ((stat = decode_open_type(buf, len, &ptr, &msg, &msg_len)) != 0)
+	if (decode_open_type(buf, len, &ptr, &msg, &msg_len) != 0)
 		return -1;
 	/* Decode error_recovery */
 	if (ptr + 1 > len)
@@ -290,13 +290,13 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 
 		/* Decode the elements */
 		for (i = 0; i < entries; i++) {
-			if ((stat = decode_open_type(buf, len, &ptr, &data, &s->rx[x].fec_len[i])) != 0)
+			if (decode_open_type(buf, len, &ptr, &data, &s->rx[x].fec_len[i]) != 0)
 				return -1;
 			if (s->rx[x].fec_len[i] > LOCAL_FAX_MAX_DATAGRAM)
 				return -1;
 
 			/* Save the new FEC data */
-			if (s->rx[x].fec_len[i])
+			if (s->rx[x].fec_len[i] && data)
 				memcpy(s->rx[x].fec[i], data, s->rx[x].fec_len[i]);
 #if 0
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FEC: ");

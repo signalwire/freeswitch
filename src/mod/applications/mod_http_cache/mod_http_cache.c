@@ -781,7 +781,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Waiting for URL %s to be available\n", url);
 			u->waiters++;
 			url_cache_unlock(cache, session);
-			while(u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
+			while(!gcache.shutdown && u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
 				switch_sleep(10 * 1000); /* 10 ms */
 			}
 			url_cache_lock(cache, session);
@@ -1167,6 +1167,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
 	} else {
+		switch_curl_easy_cleanup(curl_handle);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
 		status = SWITCH_STATUS_GENERR;
 		goto done;
@@ -1532,6 +1533,51 @@ static void *SWITCH_THREAD_FUNC prefetch_thread(switch_thread_t *thread, void *o
 	return NULL;
 }
 
+static switch_curl_slist_t *default_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
+        const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string)
+{
+	char header[1024];
+	int i;
+
+	for (i = 0; i < profile->header_count; i++) {
+		switch_snprintf(header, sizeof(header), "%s: %s", profile->header_names[i], profile->header_values[i]);
+
+		headers = switch_curl_slist_append(headers, header);
+	}
+
+	return headers;
+}
+
+static switch_status_t default_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool)
+{
+	int i, header_count = 0;
+	switch_xml_t header;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring default profile\n");
+
+	for (header = switch_xml_child(xml, "header"); header; header = header->next) {
+		header_count++;
+	}
+
+	profile->header_count = header_count;
+	profile->header_names = switch_core_alloc(pool, sizeof(char*) * header_count);
+	profile->header_values = switch_core_alloc(pool, sizeof(char*) * header_count);
+
+	for (i = 0, header = switch_xml_child(xml, "header"); header; i++, header = header->next) {
+		char *header_name = (char *) switch_xml_attr_soft(header, "name");
+		char *header_value = (char *) switch_xml_txt(header);
+
+		profile->header_names[i] = switch_core_strdup(pool, header_name);
+		profile->header_values[i] = switch_core_strdup(pool, header_value);
+	}
+
+	profile->append_headers_ptr = default_append_headers;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configured default profile\n");
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 /**
  * Configure the module
  * @param cache to configure
@@ -1632,6 +1678,9 @@ static switch_status_t do_config(url_cache_t *cache)
 				profile_obj->secret_access_key = NULL;
 				profile_obj->base_domain = NULL;
 				profile_obj->bytes_per_block = 0;
+				profile_obj->header_count = 0;
+				profile_obj->header_names = NULL;
+				profile_obj->header_values = NULL;
 				profile_obj->append_headers_ptr = NULL;
 				profile_obj->finalise_put_ptr = NULL;
 
@@ -1645,6 +1694,13 @@ static switch_status_t do_config(url_cache_t *cache)
 					if (profile_xml) {
 						if (azure_blob_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
 							continue;
+						}
+					} else {
+						profile_xml = switch_xml_child(profile, "default");
+						if (profile_xml) {
+							if (default_config_profile(profile_xml, profile_obj, cache->pool) == SWITCH_STATUS_FALSE) {
+								continue;
+							}
 						}
 					}
 				}
@@ -1881,13 +1937,22 @@ static switch_status_t http_file_close(switch_file_handle_t *handle)
 
 static switch_status_t http_cache_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
-    struct http_context *context = (struct http_context *)handle->private_info;
+	struct http_context *context = (struct http_context *)handle->private_info;
+	switch_status_t status;
+	
+	if (!handle->seekable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+		return SWITCH_STATUS_NOTIMPL;
+	}
 
-    if (!handle->seekable) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
-        return SWITCH_STATUS_NOTIMPL;
-    }
-    return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+	if ((status = switch_core_file_seek(&context->fh, cur_sample, samples, whence)) == SWITCH_STATUS_SUCCESS) {
+		handle->pos = context->fh.pos;
+		handle->offset_pos = context->fh.offset_pos;
+		handle->samples_in = context->fh.samples_in;
+		handle->samples_out = context->fh.samples_out;
+	}
+
+	return status;
 }
 
 static char *http_supported_formats[] = { "http", NULL };

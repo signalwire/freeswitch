@@ -37,8 +37,6 @@
 %define build_mod_esl 0
 %define build_mod_rayo 1
 %define build_mod_ssml 1
-%define build_mod_shout 1
-%define build_mod_opusfile 0
 %define build_mod_v8 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
@@ -47,8 +45,6 @@
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
-%{?with_mod_shout:%define build_mod_shout 1 }
-%{?with_mod_opusfile:%define build_mod_opusfile 1 }
 %{?with_mod_v8:%define build_mod_v8 1 }
 
 %define nonparsedversion 1.7.0
@@ -144,7 +140,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.12.12
+BuildRequires: sofia-sip-devel >= 1.13.14
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -172,10 +168,26 @@ Requires: zlib
 Requires: libxml2
 Requires: libsndfile
 
+%if 0%{?rhel} == 7
+# to build mariadb module required gcc >= 4.9 (more details GH #1046)
+# On CentOS 7 dist you can install fresh gcc using command
+# yum install centos-release-scl && yum install devtoolset-9
+BuildRequires: devtoolset-9
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+# On CentOS 8 dist you can install fresh gcc using command
+# dnf install gcc-toolset-9
+BuildRequires: gcc-toolset-9
+%endif
+
 %if 0%{?suse_version} > 800
 PreReq:       %insserv_prereq %fillup_prereq
 %endif
 
+%if 0%{?fedora}
+BuildRequires: gumbo-parser-devel
+%endif
 
 ######################################################################################################################
 #
@@ -296,7 +308,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-directory
-Provides FreeSWITCH mod_directory, a dial by name directory application. 
+Provides FreeSWITCH mod_directory, a dial by name directory application.
 
 %package application-distributor
 Summary:	FreeSWITCH mod_distributor
@@ -304,7 +316,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-distributor
-Provides FreeSWITCH mod_distributor, a simple round-robbin style distribution 
+Provides FreeSWITCH mod_distributor, a simple round-robin style distribution
 to call gateways.
 
 %package application-easyroute
@@ -461,7 +473,7 @@ Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description application-rad_auth
-Provides FreeSWITCH mod_rad_auth, authetication via RADIUS protocol from FreeSWITCH dialplan
+Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
 
 %package application-redis
 Summary:	FreeSWITCH mod_redis
@@ -623,15 +635,6 @@ Requires:       %{name} = %{version}-%{release}
 %description asrtts-tts-commandline
 Provides FreeSWITCH mod_tts_commandline, Run a command line and play the 
 output file.
-
-%package asrtts-unimrcp
-Summary:	FreeSWITCH mod_unimrcp
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description asrtts-unimrcp
-Provides FreeSWITCH mod_unimrcp, allows communication with Media Resource 
-Control Protocol (MRCP) servers
 
 ######################################################################################################################
 #				FreeSWITCH Codec Modules
@@ -829,17 +832,8 @@ PostgreSQL native support for FreeSWITCH.
 #				FreeSWITCH Endpoint Modules
 ######################################################################################################################
 
-%package endpoint-dingaling
-Summary:        Generic XMPP support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description endpoint-dingaling
-XMPP support for FreeSWITCH open source telephony platform. Allows FreeSWITCH
-to be used as a client for GoogleTalk or other XMPP Servers.
-
 #%package endpoint-gsmopen
-#Summary:        Generic GSM enpoint support for FreeSWITCH open source telephony platform
+#Summary:        Generic GSM endpoint support for FreeSWITCH open source telephony platform
 #Group:          System/Libraries
 #Requires:       %{name} = %{version}-%{release}
 #
@@ -849,12 +843,12 @@ to be used as a client for GoogleTalk or other XMPP Servers.
 #SMS is handled via the standard CHAT API in FreeSWITCH.
 
 #%package endpoint-h323
-#Summary:        H.323 enpoint support for FreeSWITCH open source telephony platform
+#Summary:        H.323 endpoint support for FreeSWITCH open source telephony platform
 #Group:          System/Libraries
 #Requires:       %{name} = %{version}-%{release}
 #
 #%description endpoint-h323
-#H.323 enpoint support for FreeSWITCH open source telephony platform
+#H.323 endpoint support for FreeSWITCH open source telephony platform
 
 #%package endpoint-khomp
 #Summary:        khomp endpoint support for FreeSWITCH open source telephony platform
@@ -1078,7 +1072,6 @@ Mod shell stream is a FreeSWITCH module to allow you to stream audio from an
 arbitrary shell command. You could use it to read audio from a database, from 
 a soundcard, etc. 
 
-%if %{build_mod_shout}
 %package format-mod-shout
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1093,19 +1086,16 @@ BuildRequires:	lame-devel
 %description format-mod-shout
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
-%endif
 
-%if %{build_mod_opusfile}
-%package format-mod-opusfile
+%package format-opusfile
 Summary:	Plays Opus encoded files
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	opusfile >= 0.5
 BuildRequires:	opusfile-devel >= 0.5
 
-%description format-mod-opusfile
+%description format-opusfile
 Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
-%endif
 
 %if %{build_mod_ssml}
 %package format-ssml
@@ -1170,7 +1160,7 @@ Requires:	%{name} = %{version}-%{release}
 ######################################################################################################################
 
 %package lang-en
-Summary:	Provides english language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:	Provides english language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -1178,7 +1168,7 @@ Requires:        %{name} = %{version}-%{release}
 English language phrases module and directory structure for say module and voicemail
 
 %package lang-ru
-Summary:        Provides russian language dependand modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides russian language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -1218,12 +1208,12 @@ Requires:        %{name} = %{version}-%{release}
 Spanish language phrases module and directory structure for say module and voicemail
 
 %package lang-pt
-Summary:        Provides Portugese language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides Portuguese language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description lang-pt
-Portugese language phrases module and directory structure for say module and voicemail
+Portuguese language phrases module and directory structure for say module and voicemail
 
 %package lang-sv
 Summary:        Provides Swedish language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
@@ -1436,7 +1426,7 @@ APPLICATIONS_MODULES="$APPLICATION_MODULES_AC $APPLICATION_MODULES_DE $APPLICATI
 #				Automatic Speech Recognition and Text To Speech Modules
 #
 ######################################################################################################################
-ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline asr_tts/mod_unimrcp"
+ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_commandline"
 
 ######################################################################################################################
 #
@@ -1477,7 +1467,7 @@ DIRECTORIES_MODULES=""
 #						Endpoints
 #
 ######################################################################################################################
-ENDPOINTS_MODULES="endpoints/mod_dingaling \
+ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
@@ -1502,16 +1492,10 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 #					File and Audio Format Handlers
 #
 ######################################################################################################################
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
-                 formats/mod_shell_stream formats/mod_sndfile formats/mod_tone_stream"
-%if %{build_mod_shout}
-FORMATS_MODULES+=" formats/mod_shout "
-%endif
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile formats/mod_portaudio_stream \
+                 formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 %if %{build_mod_ssml}
 FORMATS_MODULES+=" formats/mod_ssml"
-%endif
-%if %{build_mod_opusfile}
-FORMATS_MODULES+=" formats/mod_opusfile"
 %endif
 
 ######################################################################################################################
@@ -1579,6 +1563,16 @@ export DESTDIR=%{buildroot}/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9 (more details GH #1046)
+export CFLAGS="$CFLAGS -Wno-error=expansion-to-defined"
+. /opt/rh/devtoolset-9/enable
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+. /opt/rh/gcc-toolset-9/enable
+%endif
+
 ######################################################################################################################
 #
 #				Bootstrap, Configure and Build the whole enchilada
@@ -1638,6 +1632,15 @@ cd libs/esl
 #
 ######################################################################################################################
 %install
+%if 0%{?rhel} == 7
+# to build mod_mariadb we need gcc >= 4.9
+. /opt/rh/devtoolset-9/enable
+%endif
+%if 0%{?rhel} == 8
+# we want use fresh gcc on RHEL 8 based dists
+. /opt/rh/gcc-toolset-9/enable
+%endif
+
 
 %{__make} DESTDIR=%{buildroot} install
 
@@ -1645,6 +1648,7 @@ cd libs/esl
 %{__mkdir} -p %{buildroot}%{prefix}/log
 %{__mkdir} -p %{buildroot}%{logfiledir}
 %{__mkdir} -p %{buildroot}%{runtimedir}
+%{__mkdir} -p %{buildroot}%{_localstatedir}/cache/freeswitch
 
 #install the esl stuff
 cd libs/esl
@@ -1704,6 +1708,8 @@ cd ../..
 %{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_isdn*
 %endif
 
+%{__rm} -f %{buildroot}/%{LIBDIR}/*.la
+%{__rm} -f %{buildroot}/%{MODINSTDIR}/*.la
 
 
 ######################################################################################################################
@@ -1787,9 +1793,7 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/dialplan/skinny-patterns
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/directory
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/directory/default
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/jingle_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external-ipv6
@@ -1858,10 +1862,8 @@ fi
 #
 ######################################################################################################################
 %files devel
-%{LIBDIR}/*.a
-%{LIBDIR}/*.la
+%{LIBDIR}/*.so*
 %{PKGCONFIGDIR}/*
-%{MODINSTDIR}/*.*a
 %{INCLUDEDIR}/*.h
 %{INCLUDEDIR}/test/*.h
 
@@ -1897,7 +1899,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/curl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/db.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dialplan_directory.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/dingaling.conf.xml 
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/directory.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/distributor.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/easyroute.conf.xml
@@ -1937,6 +1938,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/skinny.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/smpp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sms_flowroute.conf.xml
@@ -1949,7 +1951,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/translate.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unimrcp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
@@ -1982,7 +1983,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/directory/default/*
 ######################################################################################################################
-#							IVR Menues
+#							IVR Menus
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/ivr_menus/*.xml
 ######################################################################################################################
@@ -1992,11 +1993,9 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/sip_profiles/external-ipv6/*.xml
 ######################################################################################################################
-#				Other Protocol Profiles (skinny, jingle, mrcp)
+#				Other Protocol Profiles (skinny)
 ######################################################################################################################
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/skinny_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/jingle_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/mrcp_profiles/*.xml
 ######################################################################################################################
 #						Grammar Files
 ######################################################################################################################
@@ -2073,6 +2072,7 @@ fi
 %{MODINSTDIR}/mod_httapi.so*
 
 %files application-http-cache
+%dir %attr(0750, freeswitch, daemon) %{_localstatedir}/cache/freeswitch
 %{MODINSTDIR}/mod_http_cache.so*
 
 %files application-lcr
@@ -2148,9 +2148,6 @@ fi
 
 %files asrtts-tts-commandline
 %{MODINSTDIR}/mod_tts_commandline.so*
-
-%files asrtts-unimrcp
-%{MODINSTDIR}/mod_unimrcp.so*
 
 ######################################################################################################################
 #
@@ -2234,9 +2231,6 @@ fi
 #
 ######################################################################################################################
 
-%files endpoint-dingaling
-%{MODINSTDIR}/mod_dingaling.so*
-
 #%files endpoint-gsmopen
 #%{MODINSTDIR}/mod_gsmopen.so*
 
@@ -2318,16 +2312,17 @@ fi
 %files format-native-file
 %{MODINSTDIR}/mod_native_file.so*
 
+%files format-opusfile
+%{MODINSTDIR}/mod_opusfile.so*
+
 %files format-portaudio-stream
 %{MODINSTDIR}/mod_portaudio_stream.so*
 
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*
 
-%if %{build_mod_shout}
 %files format-mod-shout
 %{MODINSTDIR}/mod_shout.so*
-%endif
 
 %if %{build_mod_ssml}
 %files format-ssml
@@ -2344,18 +2339,15 @@ fi
 ######################################################################################################################
 %files lua
 %{MODINSTDIR}/mod_lua*.so*
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/lua.conf.xml
 
 %files perl
 %{MODINSTDIR}/mod_perl*.so*
 %{prefix}/perl/*
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/perl.conf.xml
 
 %files python
 %{MODINSTDIR}/mod_python*.so*
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
 %if %{build_mod_v8}
@@ -2365,7 +2357,6 @@ fi
 %{LIBDIR}/libicui18n.so
 %{LIBDIR}/libicuuc.so
 %endif
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/v8.conf.xml
 
 ######################################################################################################################
@@ -2557,7 +2548,7 @@ fi
 * Wed Jun 19 2013 - krice@freeswitch.org
 - tweak files included for vanilla configs
 * Wed Sep 19 2012 - krice@freeswitch.org
-- Add support for Spanish and Portugese say language modules
+- Add support for Spanish and Portuguese say language modules
 * Thu Jan 26 2012 - krice@freeswitch.org
 - complete rework of spec file
 * Tue Jun 14 2011 - michal.bielicki@seventhsignal.de
@@ -2576,7 +2567,7 @@ fi
 - fixes for ss7 freetdm modules
 - added mod_opus
 - added selector for sangoma modules
-- addded python esl module to rpm
+- added python esl module to rpm
 - some minor cleanups
 - cut sangoma modules into separate rpms as addons for freetdm
 * Tue Jan 18 2011 - michal.bielicki@seventhsignal.de
@@ -2594,7 +2585,7 @@ fi
 - added mod_nibblebill to standard modules
 * Sun Sep 26 2010 - michal.bielicki@seventhsignal.de
 - added portaudio_stream module
-- some more formating work
+- some more formatting work
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
 - new hash module config file added to freeswitch.spec
 * Mon Jul 19 2010 - michal.bielicki@seventhsignal.de
@@ -2607,7 +2598,7 @@ fi
 - Added Contributors
 - Added Anthony's copyright for the whole package into the header
 * Tue Jun 22 2010 - michal.bielicki@seventhsignal.de
-- Reorganized the modules alphabeticaly
+- Reorganized the modules alphabetically
 - synced SFEopensolaris and centos spec
 - started to fix Run Dependencies
 - added mod_say_ru which seemd to have gone missing
@@ -2619,7 +2610,7 @@ fi
 - replaced mod_limit with mod_db
 - added mod_spy
 - added mod_valet_parking
-- addded mod_memcache
+- added mod_memcache
 - added mod_distributor
 - added mod_avmd
 * Thu Apr 29 2010 - michal.bielicki@seventhsignal.de
@@ -2639,7 +2630,7 @@ fi
 * Sat Nov 21 2009 - michal.bielicki@seventhsignal.de
 - added patch by Igor Neves <neves.igor@gmail.com>: Added some checkup in %post and %postun to prevent upgrades from removing freeswitch user
 * Wed Nov 18 2009 - michal.bielicki@seventhsignal.de
-- added new config files for diretory and distributor
+- added new config files for directory and distributor
 - removed sangoma boost from openzap for builds that do not inherit wanpipe while building.
 * Fri Jul 24 2009 - mike@jerris.com
 - removed mod_http
@@ -2704,7 +2695,7 @@ fi
 - fixed odbc requirements
 - added all buildable modules
 - added redhat style init file
-- splitted off language dependant stuff into separate language files
+- split off language dependent stuff into separate language files
 - disable non complete language modules
 * Tue Apr 24 2007 - peter+rpmspam@suntel.com.tr
 - Added a debug package

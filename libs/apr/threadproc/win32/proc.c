@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_threadproc.h"
-#include "win32/apr_arch_file_io.h"
+#include "win32/fspr_arch_threadproc.h"
+#include "win32/fspr_arch_file_io.h"
 
-#include "apr_thread_proc.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_lib.h"
+#include "fspr_thread_proc.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_lib.h"
 #include <stdlib.h>
 #if APR_HAVE_SIGNAL_H
 #include <signal.h>
@@ -52,21 +52,21 @@
  *
  */
 
-APR_DECLARE(apr_status_t) apr_procattr_create(apr_procattr_t **new,
-                                                  apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_procattr_create(fspr_procattr_t **new,
+                                                  fspr_pool_t *pool)
 {
-    (*new) = (apr_procattr_t *)apr_pcalloc(pool, sizeof(apr_procattr_t));
+    (*new) = (fspr_procattr_t *)fspr_pcalloc(pool, sizeof(fspr_procattr_t));
     (*new)->pool = pool;
     (*new)->cmdtype = APR_PROGRAM;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr,
-                                              apr_int32_t in, 
-                                              apr_int32_t out,
-                                              apr_int32_t err)
+APR_DECLARE(fspr_status_t) fspr_procattr_io_set(fspr_procattr_t *attr,
+                                              fspr_int32_t in, 
+                                              fspr_int32_t out,
+                                              fspr_int32_t err)
 {
-    apr_status_t stat = APR_SUCCESS;
+    fspr_status_t stat = APR_SUCCESS;
 
     if (in) {
         /* APR_CHILD_BLOCK maps to APR_WRITE_BLOCK, while
@@ -79,138 +79,138 @@ APR_DECLARE(apr_status_t) apr_procattr_io_set(apr_procattr_t *attr,
             in = APR_READ_BLOCK;
         else if (in == APR_PARENT_BLOCK)
             in = APR_WRITE_BLOCK;
-        stat = apr_create_nt_pipe(&attr->child_in, &attr->parent_in, in,
+        stat = fspr_create_nt_pipe(&attr->child_in, &attr->parent_in, in,
                                   attr->pool);
         if (stat == APR_SUCCESS)
-            stat = apr_file_inherit_unset(attr->parent_in);
+            stat = fspr_file_inherit_unset(attr->parent_in);
     }
     if (out && stat == APR_SUCCESS) {
-        stat = apr_create_nt_pipe(&attr->parent_out, &attr->child_out, out,
+        stat = fspr_create_nt_pipe(&attr->parent_out, &attr->child_out, out,
                                   attr->pool);
         if (stat == APR_SUCCESS)
-            stat = apr_file_inherit_unset(attr->parent_out);
+            stat = fspr_file_inherit_unset(attr->parent_out);
     }
     if (err && stat == APR_SUCCESS) {
-        stat = apr_create_nt_pipe(&attr->parent_err, &attr->child_err, err,
+        stat = fspr_create_nt_pipe(&attr->parent_err, &attr->child_err, err,
                                   attr->pool);
         if (stat == APR_SUCCESS)
-            stat = apr_file_inherit_unset(attr->parent_err);
+            stat = fspr_file_inherit_unset(attr->parent_err);
     }
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_child_in_set(apr_procattr_t *attr, 
-                                                  apr_file_t *child_in, 
-                                                  apr_file_t *parent_in)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_in_set(fspr_procattr_t *attr, 
+                                                  fspr_file_t *child_in, 
+                                                  fspr_file_t *parent_in)
 {
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     if (child_in) {
         if (attr->child_in == NULL)
-            rv = apr_file_dup(&attr->child_in, child_in, attr->pool);
+            rv = fspr_file_dup(&attr->child_in, child_in, attr->pool);
         else
-            rv = apr_file_dup2(attr->child_in, child_in, attr->pool);
+            rv = fspr_file_dup2(attr->child_in, child_in, attr->pool);
 
         if (rv == APR_SUCCESS)
-            rv = apr_file_inherit_set(attr->child_in);
+            rv = fspr_file_inherit_set(attr->child_in);
     }
 
     if (parent_in && rv == APR_SUCCESS) {
         if (attr->parent_in == NULL)
-            rv = apr_file_dup(&attr->parent_in, parent_in, attr->pool);
+            rv = fspr_file_dup(&attr->parent_in, parent_in, attr->pool);
         else
-            rv = apr_file_dup2(attr->parent_in, parent_in, attr->pool);
+            rv = fspr_file_dup2(attr->parent_in, parent_in, attr->pool);
     }
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_child_out_set(apr_procattr_t *attr,
-                                                   apr_file_t *child_out,
-                                                   apr_file_t *parent_out)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_out_set(fspr_procattr_t *attr,
+                                                   fspr_file_t *child_out,
+                                                   fspr_file_t *parent_out)
 {
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     if (child_out) {
         if (attr->child_out == NULL)
-            rv = apr_file_dup(&attr->child_out, child_out, attr->pool);
+            rv = fspr_file_dup(&attr->child_out, child_out, attr->pool);
         else
-            rv = apr_file_dup2(attr->child_out, child_out, attr->pool);
+            rv = fspr_file_dup2(attr->child_out, child_out, attr->pool);
 
         if (rv == APR_SUCCESS)
-            rv = apr_file_inherit_set(attr->child_out);
+            rv = fspr_file_inherit_set(attr->child_out);
     }
 
     if (parent_out && rv == APR_SUCCESS) {
         if (attr->parent_out == NULL)
-            rv = apr_file_dup(&attr->parent_out, parent_out, attr->pool);
+            rv = fspr_file_dup(&attr->parent_out, parent_out, attr->pool);
         else
-            rv = apr_file_dup2(attr->parent_out, parent_out, attr->pool);
+            rv = fspr_file_dup2(attr->parent_out, parent_out, attr->pool);
     }
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_child_err_set(apr_procattr_t *attr,
-                                                   apr_file_t *child_err,
-                                                   apr_file_t *parent_err)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_err_set(fspr_procattr_t *attr,
+                                                   fspr_file_t *child_err,
+                                                   fspr_file_t *parent_err)
 {
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     if (child_err) {
         if (attr->child_err == NULL)
-            rv = apr_file_dup(&attr->child_err, child_err, attr->pool);
+            rv = fspr_file_dup(&attr->child_err, child_err, attr->pool);
         else
-            rv = apr_file_dup2(attr->child_err, child_err, attr->pool);
+            rv = fspr_file_dup2(attr->child_err, child_err, attr->pool);
 
         if (rv == APR_SUCCESS)
-            rv = apr_file_inherit_set(attr->child_err);
+            rv = fspr_file_inherit_set(attr->child_err);
     }
 
     if (parent_err && rv == APR_SUCCESS) {
         if (attr->parent_err == NULL)
-            rv = apr_file_dup(&attr->parent_err, parent_err, attr->pool);
+            rv = fspr_file_dup(&attr->parent_err, parent_err, attr->pool);
         else
-            rv = apr_file_dup2(attr->parent_err, parent_err, attr->pool);
+            rv = fspr_file_dup2(attr->parent_err, parent_err, attr->pool);
     }
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_dir_set(apr_procattr_t *attr,
+APR_DECLARE(fspr_status_t) fspr_procattr_dir_set(fspr_procattr_t *attr,
                                               const char *dir) 
 {
     /* curr dir must be in native format, there are all sorts of bugs in
      * the NT library loading code that flunk the '/' parsing test.
      */
-    return apr_filepath_merge(&attr->currdir, NULL, dir, 
+    return fspr_filepath_merge(&attr->currdir, NULL, dir, 
                               APR_FILEPATH_NATIVE, attr->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_cmdtype_set(apr_procattr_t *attr,
-                                                  apr_cmdtype_e cmd) 
+APR_DECLARE(fspr_status_t) fspr_procattr_cmdtype_set(fspr_procattr_t *attr,
+                                                  fspr_cmdtype_e cmd) 
 {
     attr->cmdtype = cmd;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_detach_set(apr_procattr_t *attr,
-                                                 apr_int32_t det) 
+APR_DECLARE(fspr_status_t) fspr_procattr_detach_set(fspr_procattr_t *attr,
+                                                 fspr_int32_t det) 
 {
     attr->detached = det;
     return APR_SUCCESS;
 }
 
-static apr_status_t attr_cleanup(void *theattr)
+static fspr_status_t attr_cleanup(void *theattr)
 {
-    apr_procattr_t *attr = (apr_procattr_t *)theattr;    
+    fspr_procattr_t *attr = (fspr_procattr_t *)theattr;    
     if (attr->user_token)
         CloseHandle(attr->user_token);
     attr->user_token = NULL;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr, 
+APR_DECLARE(fspr_status_t) fspr_procattr_user_set(fspr_procattr_t *attr, 
                                                 const char *username,
                                                 const char *password)
 {
@@ -218,18 +218,18 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
     return APR_ENOTIMPL;
 #else
     HANDLE user;
-    apr_wchar_t *wusername = NULL;
-    apr_wchar_t *wpassword = NULL;
-    apr_status_t rv;
-    apr_size_t len, wlen;
+    fspr_wchar_t *wusername = NULL;
+    fspr_wchar_t *wpassword = NULL;
+    fspr_status_t rv;
+    fspr_size_t len, wlen;
 
-    if (apr_os_level >= APR_WIN_NT_4) 
+    if (fspr_os_level >= APR_WIN_NT_4) 
     {
         if (attr->user_token) {
             /* Cannot set that twice */
             if (attr->errfn) {
                 attr->errfn(attr->pool, 0, 
-                            apr_pstrcat(attr->pool, 
+                            fspr_pstrcat(attr->pool, 
                                         "function called twice" 
                                          " on username: ", username, NULL));
             }
@@ -237,12 +237,12 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
         }
         len = strlen(username) + 1;
         wlen = len;
-        wusername = apr_palloc(attr->pool, wlen * sizeof(apr_wchar_t));
-        if ((rv = apr_conv_utf8_to_ucs2(username, &len, wusername, &wlen))
+        wusername = fspr_palloc(attr->pool, wlen * sizeof(fspr_wchar_t));
+        if ((rv = fspr_conv_utf8_to_ucs2(username, &len, wusername, &wlen))
                    != APR_SUCCESS) {
             if (attr->errfn) {
                 attr->errfn(attr->pool, rv, 
-                            apr_pstrcat(attr->pool, 
+                            fspr_pstrcat(attr->pool, 
                                         "utf8 to ucs2 conversion failed" 
                                          " on username: ", username, NULL));
             }
@@ -251,12 +251,12 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
         if (password) {
             len = strlen(password) + 1;
             wlen = len;
-            wpassword = apr_palloc(attr->pool, wlen * sizeof(apr_wchar_t));
-            if ((rv = apr_conv_utf8_to_ucs2(password, &len, wpassword, &wlen))
+            wpassword = fspr_palloc(attr->pool, wlen * sizeof(fspr_wchar_t));
+            if ((rv = fspr_conv_utf8_to_ucs2(password, &len, wpassword, &wlen))
                        != APR_SUCCESS) {
                 if (attr->errfn) {
                     attr->errfn(attr->pool, rv, 
-                                apr_pstrcat(attr->pool, 
+                                fspr_pstrcat(attr->pool, 
                                         "utf8 to ucs2 conversion failed" 
                                          " on password: ", password, NULL));
                 }
@@ -270,10 +270,10 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
                         LOGON32_PROVIDER_DEFAULT,
                         &user)) {
             /* Logon Failed */            
-            return apr_get_os_error();
+            return fspr_get_os_error();
         }
         if (wpassword)
-            memset(wpassword, 0, wlen * sizeof(apr_wchar_t));
+            memset(wpassword, 0, wlen * sizeof(fspr_wchar_t));
         /* Get the primary token for user */
         if (!DuplicateTokenEx(user, 
                               TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY, 
@@ -282,24 +282,24 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
                               TokenPrimary,
                               &(attr->user_token))) {
             /* Failed to duplicate the user token */
-            rv = apr_get_os_error();
+            rv = fspr_get_os_error();
             CloseHandle(user);
             return rv;
         }
         CloseHandle(user);
 
-        attr->sd = apr_pcalloc(attr->pool, SECURITY_DESCRIPTOR_MIN_LENGTH);
+        attr->sd = fspr_pcalloc(attr->pool, SECURITY_DESCRIPTOR_MIN_LENGTH);
         InitializeSecurityDescriptor(attr->sd, SECURITY_DESCRIPTOR_REVISION);
         SetSecurityDescriptorDacl(attr->sd, -1, 0, 0);
-        attr->sa = apr_palloc(attr->pool, sizeof(SECURITY_ATTRIBUTES));
+        attr->sa = fspr_palloc(attr->pool, sizeof(SECURITY_ATTRIBUTES));
         attr->sa->nLength = sizeof (SECURITY_ATTRIBUTES);
         attr->sa->lpSecurityDescriptor = attr->sd;
         attr->sa->bInheritHandle = TRUE;
 
         /* register the cleanup */
-        apr_pool_cleanup_register(attr->pool, (void *)attr,
+        fspr_pool_cleanup_register(attr->pool, (void *)attr,
                                   attr_cleanup,
-                                  apr_pool_cleanup_null);
+                                  fspr_pool_cleanup_null);
         return APR_SUCCESS;
     }
     else
@@ -307,7 +307,7 @@ APR_DECLARE(apr_status_t) apr_procattr_user_set(apr_procattr_t *attr,
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_group_set(apr_procattr_t *attr,
+APR_DECLARE(fspr_status_t) fspr_procattr_group_set(fspr_procattr_t *attr,
                                                  const char *groupname)
 {
     /* Always return SUCCESS cause groups are irrelevant */
@@ -318,20 +318,20 @@ static const char* has_space(const char *str)
 {
     const char *ch;
     for (ch = str; *ch; ++ch) {
-        if (apr_isspace(*ch)) {
+        if (fspr_isspace(*ch)) {
             return ch;
         }
     }
     return NULL;
 }
 
-static char *apr_caret_escape_args(apr_pool_t *p, const char *str)
+static char *fspr_caret_escape_args(fspr_pool_t *p, const char *str)
 {
     char *cmd;
     unsigned char *d;
     const unsigned char *s;
 
-    cmd = apr_palloc(p, 2 * strlen(str) + 1);	/* Be safe */
+    cmd = fspr_palloc(p, 2 * strlen(str) + 1);	/* Be safe */
     d = (unsigned char *)cmd;
     s = (const unsigned char *)str;
     for (; *s; ++s) {
@@ -356,36 +356,36 @@ static char *apr_caret_escape_args(apr_pool_t *p, const char *str)
     return cmd;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_child_errfn_set(apr_procattr_t *attr,
-                                                       apr_child_errfn_t *errfn)
+APR_DECLARE(fspr_status_t) fspr_procattr_child_errfn_set(fspr_procattr_t *attr,
+                                                       fspr_child_errfn_t *errfn)
 {
     attr->errfn = errfn;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_error_check_set(apr_procattr_t *attr,
-                                                       apr_int32_t chk)
+APR_DECLARE(fspr_status_t) fspr_procattr_error_check_set(fspr_procattr_t *attr,
+                                                       fspr_int32_t chk)
 {
     attr->errchk = chk;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_procattr_addrspace_set(apr_procattr_t *attr,
-                                                       apr_int32_t addrspace)
+APR_DECLARE(fspr_status_t) fspr_procattr_addrspace_set(fspr_procattr_t *attr,
+                                                       fspr_int32_t addrspace)
 {
     /* won't ever be used on this platform, so don't save the flag */
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
+APR_DECLARE(fspr_status_t) fspr_proc_create(fspr_proc_t *new,
                                           const char *progname,
                                           const char * const *args,
                                           const char * const *env,
-                                          apr_procattr_t *attr,
-                                          apr_pool_t *pool)
+                                          fspr_procattr_t *attr,
+                                          fspr_pool_t *pool)
 {
-    apr_status_t rv;
-    apr_size_t i;
+    fspr_status_t rv;
+    fspr_size_t i;
     const char *argv0;
     char *cmdline;
     char *pEnvBlock;
@@ -404,7 +404,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
          * not manage the stdio handles properly when running old 16
          * bit executables if the detached attribute is set.
          */
-        if (apr_os_level >= APR_WIN_NT) {
+        if (fspr_os_level >= APR_WIN_NT) {
             /* 
              * XXX DETACHED_PROCESS won't on Win9x at all; on NT/W2K 
              * 16 bit executables fail (MS KB: Q150956)
@@ -418,16 +418,16 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
      * XXX progname must be NULL if this is a 16 bit app running in WOW
      */
     if (progname[0] == '\"') {
-        progname = apr_pstrndup(pool, progname + 1, strlen(progname) - 2);
+        progname = fspr_pstrndup(pool, progname + 1, strlen(progname) - 2);
     }
 
     if (attr->cmdtype == APR_PROGRAM || attr->cmdtype == APR_PROGRAM_ENV) {
         char *fullpath = NULL;
-        if ((rv = apr_filepath_merge(&fullpath, attr->currdir, progname, 
+        if ((rv = fspr_filepath_merge(&fullpath, attr->currdir, progname, 
                                      APR_FILEPATH_NATIVE, pool)) != APR_SUCCESS) {
             if (attr->errfn) {
                 attr->errfn(pool, rv, 
-                            apr_pstrcat(pool, "filepath_merge failed.", 
+                            fspr_pstrcat(pool, "filepath_merge failed.", 
                                         " currdir: ", attr->currdir, 
                                         " progname: ", progname, NULL));
             }
@@ -437,21 +437,21 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
     } 
     else {
         /* Do not fail if the path isn't parseable for APR_PROGRAM_PATH
-         * or APR_SHELLCMD.  We only invoke apr_filepath_merge (with no
+         * or APR_SHELLCMD.  We only invoke fspr_filepath_merge (with no
          * left hand side expression) in order to correct the path slash
          * delimiters.  But the filename doesn't need to be in the CWD,
          * nor does it need to be a filename at all (it could be a
          * built-in shell command.)
          */
         char *fullpath = NULL;
-        if ((rv = apr_filepath_merge(&fullpath, "", progname, 
+        if ((rv = fspr_filepath_merge(&fullpath, "", progname, 
                                      APR_FILEPATH_NATIVE, pool)) == APR_SUCCESS) {
             progname = fullpath;
         }        
     }
 
     if (has_space(progname)) {
-        argv0 = apr_pstrcat(pool, "\"", progname, "\"", NULL);
+        argv0 = fspr_pstrcat(pool, "\"", progname, "\"", NULL);
     }
     else {
         argv0 = progname;
@@ -461,10 +461,10 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
     cmdline = "";
     for (i = 1; args && args[i]; ++i) {
         if (has_space(args[i]) || !args[i][0]) {
-            cmdline = apr_pstrcat(pool, cmdline, " \"", args[i], "\"", NULL);
+            cmdline = fspr_pstrcat(pool, cmdline, " \"", args[i], "\"", NULL);
         }
         else {
-            cmdline = apr_pstrcat(pool, cmdline, " ", args[i], NULL);
+            cmdline = fspr_pstrcat(pool, cmdline, " ", args[i], NULL);
         }
     }
 
@@ -478,22 +478,22 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
             return APR_EINVAL;
         }
         if (shellcmd[0] == '"') {
-            progname = apr_pstrndup(pool, shellcmd + 1, strlen(shellcmd) - 2);
+            progname = fspr_pstrndup(pool, shellcmd + 1, strlen(shellcmd) - 2);
         }
         else {
             progname = shellcmd;
             if (has_space(shellcmd)) {
-                shellcmd = apr_pstrcat(pool, "\"", shellcmd, "\"", NULL);
+                shellcmd = fspr_pstrcat(pool, "\"", shellcmd, "\"", NULL);
             }
         }
         /* Command.com does not support a quoted command, while cmd.exe demands one.
          */
         i = strlen(progname);
         if (i >= 11 && strcasecmp(progname + i - 11, "command.com") == 0) {
-            cmdline = apr_pstrcat(pool, shellcmd, " /C ", argv0, cmdline, NULL);
+            cmdline = fspr_pstrcat(pool, shellcmd, " /C ", argv0, cmdline, NULL);
         }
         else {
-            cmdline = apr_pstrcat(pool, shellcmd, " /C \"", argv0, cmdline, "\"", NULL);
+            cmdline = fspr_pstrcat(pool, shellcmd, " /C \"", argv0, cmdline, "\"", NULL);
         }
     } 
     else 
@@ -517,12 +517,12 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
                 return APR_EINVAL;
             }
             if (shellcmd[0] == '"') {
-                progname = apr_pstrndup(pool, shellcmd + 1, strlen(shellcmd) - 2);
+                progname = fspr_pstrndup(pool, shellcmd + 1, strlen(shellcmd) - 2);
             }
             else {
                 progname = shellcmd;
                 if (has_space(shellcmd)) {
-                    shellcmd = apr_pstrcat(pool, "\"", shellcmd, "\"", NULL);
+                    shellcmd = fspr_pstrcat(pool, "\"", shellcmd, "\"", NULL);
                 }
             }
             i = strlen(progname);
@@ -532,7 +532,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
                  * until this moment in all four code paths, with some flags
                  * to toggle 'which flavor' is needed.
                  */
-                cmdline = apr_pstrcat(pool, shellcmd, " /C ", argv0, cmdline, NULL);
+                cmdline = fspr_pstrcat(pool, shellcmd, " /C ", argv0, cmdline, NULL);
             }
             else {
                 /* We must protect the cmdline args from any interpolation - this
@@ -542,16 +542,16 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
                  * the shift-state to be toggled, and the application will 
                  * not see the caret escapes.
                  */
-                cmdline = apr_caret_escape_args(pool, cmdline);
+                cmdline = fspr_caret_escape_args(pool, cmdline);
                 /*
                  * Our app name must always be quoted so the quotes surrounding
                  * the entire /c "command args" are unambigious.
                  */
                 if (*argv0 != '"') {
-                    cmdline = apr_pstrcat(pool, shellcmd, " /C \"\"", argv0, "\"", cmdline, "\"", NULL);
+                    cmdline = fspr_pstrcat(pool, shellcmd, " /C \"\"", argv0, "\"", cmdline, "\"", NULL);
                 }
                 else {
-                    cmdline = apr_pstrcat(pool, shellcmd, " /C \"", argv0, cmdline, "\"", NULL);
+                    cmdline = fspr_pstrcat(pool, shellcmd, " /C \"", argv0, cmdline, "\"", NULL);
                 }
             }
         }
@@ -563,7 +563,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
              * would succeed, but "c:\bin\aprtest" or "aprtest.exe"
              * can fail.
              */
-            cmdline = apr_pstrcat(pool, argv0, cmdline, NULL);
+            cmdline = fspr_pstrcat(pool, argv0, cmdline, NULL);
 
             if (attr->cmdtype == APR_PROGRAM_PATH) {
                 progname = NULL;
@@ -576,7 +576,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
         pEnvBlock = NULL;
     }
     else {
-        apr_size_t iEnvBlockLen;
+        fspr_size_t iEnvBlockLen;
         /*
          * Win32's CreateProcess call requires that the environment
          * be passed in an environment block, a null terminated block of
@@ -594,20 +594,20 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
 #if APR_HAS_UNICODE_FS
         IF_WIN_OS_IS_UNICODE
         {
-            apr_wchar_t *pNext;
-            pEnvBlock = (char *)apr_palloc(pool, iEnvBlockLen * 2);
+            fspr_wchar_t *pNext;
+            pEnvBlock = (char *)fspr_palloc(pool, iEnvBlockLen * 2);
             dwCreationFlags |= CREATE_UNICODE_ENVIRONMENT;
 
             i = 0;
-            pNext = (apr_wchar_t*)pEnvBlock;
+            pNext = (fspr_wchar_t*)pEnvBlock;
             while (env[i]) {
-                apr_size_t in = strlen(env[i]) + 1;
-                if ((rv = apr_conv_utf8_to_ucs2(env[i], &in, 
+                fspr_size_t in = strlen(env[i]) + 1;
+                if ((rv = fspr_conv_utf8_to_ucs2(env[i], &in, 
                                                 pNext, &iEnvBlockLen)) 
                         != APR_SUCCESS) {
                     if (attr->errfn) {
                         attr->errfn(pool, rv, 
-                                    apr_pstrcat(pool, 
+                                    fspr_pstrcat(pool, 
                                                 "utf8 to ucs2 conversion failed" 
                                                 " on this string: ", env[i], NULL));
                     }
@@ -625,7 +625,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
         ELSE_WIN_OS_IS_ANSI
         {
             char *pNext;
-            pEnvBlock = (char *)apr_palloc(pool, iEnvBlockLen);
+            pEnvBlock = (char *)fspr_palloc(pool, iEnvBlockLen);
     
             i = 0;
             pNext = pEnvBlock;
@@ -647,19 +647,19 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
     IF_WIN_OS_IS_UNICODE
     {
         STARTUPINFOW si;
-        apr_wchar_t *wprg = NULL;
-        apr_wchar_t *wcmd = NULL;
-        apr_wchar_t *wcwd = NULL;
+        fspr_wchar_t *wprg = NULL;
+        fspr_wchar_t *wcmd = NULL;
+        fspr_wchar_t *wcwd = NULL;
 
         if (progname) {
-            apr_size_t nprg = strlen(progname) + 1;
-            apr_size_t nwprg = nprg + 6;
-            wprg = apr_palloc(pool, nwprg * sizeof(wprg[0]));
-            if ((rv = apr_conv_utf8_to_ucs2(progname, &nprg, wprg, &nwprg))
+            fspr_size_t nprg = strlen(progname) + 1;
+            fspr_size_t nwprg = nprg + 6;
+            wprg = fspr_palloc(pool, nwprg * sizeof(wprg[0]));
+            if ((rv = fspr_conv_utf8_to_ucs2(progname, &nprg, wprg, &nwprg))
                    != APR_SUCCESS) {
                 if (attr->errfn) {
                     attr->errfn(pool, rv, 
-                                apr_pstrcat(pool, 
+                                fspr_pstrcat(pool, 
                                             "utf8 to ucs2 conversion failed" 
                                             " on progname: ", progname, NULL));
                 }
@@ -668,14 +668,14 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
         }
 
         if (cmdline) {
-            apr_size_t ncmd = strlen(cmdline) + 1;
-            apr_size_t nwcmd = ncmd;
-            wcmd = apr_palloc(pool, nwcmd * sizeof(wcmd[0]));
-            if ((rv = apr_conv_utf8_to_ucs2(cmdline, &ncmd, wcmd, &nwcmd))
+            fspr_size_t ncmd = strlen(cmdline) + 1;
+            fspr_size_t nwcmd = ncmd;
+            wcmd = fspr_palloc(pool, nwcmd * sizeof(wcmd[0]));
+            if ((rv = fspr_conv_utf8_to_ucs2(cmdline, &ncmd, wcmd, &nwcmd))
                     != APR_SUCCESS) {
                 if (attr->errfn) {
                     attr->errfn(pool, rv, 
-                                apr_pstrcat(pool, 
+                                fspr_pstrcat(pool, 
                                             "utf8 to ucs2 conversion failed" 
                                             " on cmdline: ", cmdline, NULL));
                 }
@@ -685,15 +685,15 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
 
         if (attr->currdir)
         {
-            apr_size_t ncwd = strlen(attr->currdir) + 1;
-            apr_size_t nwcwd = ncwd;
-            wcwd = apr_palloc(pool, ncwd * sizeof(wcwd[0]));
-            if ((rv = apr_conv_utf8_to_ucs2(attr->currdir, &ncwd, 
+            fspr_size_t ncwd = strlen(attr->currdir) + 1;
+            fspr_size_t nwcwd = ncwd;
+            wcwd = fspr_palloc(pool, ncwd * sizeof(wcwd[0]));
+            if ((rv = fspr_conv_utf8_to_ucs2(attr->currdir, &ncwd, 
                                             wcwd, &nwcwd))
                     != APR_SUCCESS) {
                 if (attr->errfn) {
                     attr->errfn(pool, rv, 
-                                apr_pstrcat(pool, 
+                                fspr_pstrcat(pool, 
                                             "utf8 to ucs2 conversion failed" 
                                             " on currdir: ", attr->currdir, NULL));
                 }
@@ -732,7 +732,7 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
             si.lpDesktop = L"Winsta0\\Default";
             if (!ImpersonateLoggedOnUser(attr->user_token)) {
             /* failed to impersonate the logged user */
-                rv = apr_get_os_error();
+                rv = fspr_get_os_error();
                 CloseHandle(attr->user_token);
                 attr->user_token = NULL;
                 return rv;
@@ -814,43 +814,43 @@ APR_DECLARE(apr_status_t) apr_proc_create(apr_proc_t *new,
     /* Check CreateProcess result 
      */
     if (!rv)
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
-    /* XXX Orphaned handle warning - no fix due to broken apr_proc_t api.
+    /* XXX Orphaned handle warning - no fix due to broken fspr_proc_t api.
      */
     new->hproc = pi.hProcess;
     new->pid = pi.dwProcessId;
 
     if (attr->child_in) {
-        apr_file_close(attr->child_in);
+        fspr_file_close(attr->child_in);
     }
     if (attr->child_out) {
-        apr_file_close(attr->child_out);
+        fspr_file_close(attr->child_out);
     }
     if (attr->child_err) {
-        apr_file_close(attr->child_err);
+        fspr_file_close(attr->child_err);
     }
     CloseHandle(pi.hThread);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_wait_all_procs(apr_proc_t *proc,
+APR_DECLARE(fspr_status_t) fspr_proc_wait_all_procs(fspr_proc_t *proc,
                                                   int *exitcode,
-                                                  apr_exit_why_e *exitwhy,
-                                                  apr_wait_how_e waithow,
-                                                  apr_pool_t *p)
+                                                  fspr_exit_why_e *exitwhy,
+                                                  fspr_wait_how_e waithow,
+                                                  fspr_pool_t *p)
 {
-    /* Unix does apr_proc_wait(proc(-1), exitcode, exitwhy, waithow)
-     * but Win32's apr_proc_wait won't work that way.  We can either
+    /* Unix does fspr_proc_wait(proc(-1), exitcode, exitwhy, waithow)
+     * but Win32's fspr_proc_wait won't work that way.  We can either
      * register all APR created processes in some sort of AsyncWait
      * thread, or simply walk from the global process pool for all 
-     * apr_pool_note_subprocess()es registered with APR.
+     * fspr_pool_note_subprocess()es registered with APR.
      */
     return APR_ENOTIMPL;
 }
 
-static apr_exit_why_e why_from_exit_code(DWORD exit) {
+static fspr_exit_why_e why_from_exit_code(DWORD exit) {
     /* See WinNT.h STATUS_ACCESS_VIOLATION and family for how
      * this class of failures was determined
      */
@@ -863,9 +863,9 @@ static apr_exit_why_e why_from_exit_code(DWORD exit) {
     /* ### No way to tell if Dr Watson grabbed a core, AFAICT. */
 }
 
-APR_DECLARE(apr_status_t) apr_proc_wait(apr_proc_t *proc,
-                                        int *exitcode, apr_exit_why_e *exitwhy,
-                                        apr_wait_how_e waithow)
+APR_DECLARE(fspr_status_t) fspr_proc_wait(fspr_proc_t *proc,
+                                        int *exitcode, fspr_exit_why_e *exitwhy,
+                                        fspr_wait_how_e waithow)
 {
     DWORD stat;
     DWORD time;
@@ -889,10 +889,10 @@ APR_DECLARE(apr_status_t) apr_proc_wait(apr_proc_t *proc,
     else if (stat == WAIT_TIMEOUT) {
         return APR_CHILD_NOTDONE;
     }
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_proc_detach(int daemonize)
+APR_DECLARE(fspr_status_t) fspr_proc_detach(int daemonize)
 {
     return APR_ENOTIMPL;
 }

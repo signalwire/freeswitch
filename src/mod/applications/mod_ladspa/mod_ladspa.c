@@ -370,6 +370,11 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 					}
 				}
 			}
+
+			if (pvt->ldesc->activate) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(pvt->session), SWITCH_LOG_DEBUG, "ACTIVATE\n");
+				pvt->ldesc->activate(pvt->handle);
+			}
 		}
 
 		break;
@@ -382,6 +387,10 @@ static switch_bool_t ladspa_callback(switch_media_bug_t *bug, void *user_data, s
 			}
 
 			if (pvt->handle && pvt->ldesc) {
+				if (pvt->ldesc->deactivate) {
+					pvt->ldesc->deactivate(pvt->handle);
+				}
+
 				pvt->ldesc->cleanup(pvt->handle);
 			}
 

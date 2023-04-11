@@ -71,6 +71,7 @@ public class freeswitchJNI {
   public final static native boolean Event_addHeader(long jarg1, Event jarg1_, String jarg2, String jarg3);
   public final static native boolean Event_delHeader(long jarg1, Event jarg1_, String jarg2);
   public final static native boolean Event_fire(long jarg1, Event jarg1_);
+  public final static native boolean Event_merge(long jarg1, Event jarg1_, long jarg2, Event jarg2_);
   public final static native void EventConsumer_events_set(long jarg1, EventConsumer jarg1_, long jarg2);
   public final static native long EventConsumer_events_get(long jarg1, EventConsumer jarg1_);
   public final static native void EventConsumer_e_event_id_set(long jarg1, EventConsumer jarg1_, long jarg2);

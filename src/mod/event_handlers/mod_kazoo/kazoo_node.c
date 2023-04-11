@@ -512,7 +512,7 @@ static switch_status_t build_event(switch_event_t *event, ei_x_buff * buf) {
 					}
 				}
 			}
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, key, value);
+			switch_event_add_header_string_nodup(event, SWITCH_STACK_BOTTOM, key, value);
 		}
 		n++;
 	}

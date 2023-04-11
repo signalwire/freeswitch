@@ -722,6 +722,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+		switch_safe_free(dup);
 		return CC_ERROR;
 	}
 
@@ -836,7 +837,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			}
 		}
 
-		for (x = 0; x < argc && x < 11; x++) {
+		for (x = 0; x < argc; x++) {
 			if (h.words + 1 > argc) {
 				if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%q')%q",

@@ -273,7 +273,6 @@ JS_ODBC_FUNCTION_IMPL(NumCols)
 JS_ODBC_FUNCTION_IMPL(NextRow)
 {
 	HandleScope handle_scope(info.GetIsolate());
-	int result = 0;
 	bool tf = false;
 
 	if (switch_odbc_handle_get_state(_handle) != SWITCH_ODBC_STATE_CONNECTED) {
@@ -282,7 +281,7 @@ JS_ODBC_FUNCTION_IMPL(NextRow)
 	}
 
 	if (_stmt) {
-		if ((result = SQLFetch(_stmt) == SQL_SUCCESS)) {
+		if (SQLFetch(_stmt) == SQL_SUCCESS) {
 			tf = true;
 		}
 	}

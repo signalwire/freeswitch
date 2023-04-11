@@ -6,6 +6,7 @@
     <param name="complexity" value="10"/>
     <param name="use-jb-lookahead" value="true"/>
 	<param name="keep-fec-enabled" value="true"/>
-    <param name="adjust-bitrate" value="true"/>
+	<param name="adjust-bitrate" value="true"/>
+    <param name="mono" value="0"/>
   </settings>
 </configuration>

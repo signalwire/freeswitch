@@ -514,6 +514,13 @@ SWITCH_STANDARD_CHAT_APP(stop_function)
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_STANDARD_CHAT_APP(final_function)
+{
+	switch_event_add_header(message, SWITCH_STACK_BOTTOM, "final_delivery", "true");
+	switch_set_flag(message, EF_NO_CHAT_EXEC);
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_STANDARD_CHAT_APP(send_function)
 {
 	const char *dest_proto = data;
@@ -627,6 +634,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "reply", "reply to a message", "reply to a message", reply_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "stop", "stop execution", "stop execution", stop_function, "", SCAF_NONE);
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "final", "final delivery", "final delivery", final_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "set", "set a variable", "set a variable", set_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "unset", "unset a variable", "unset a variable", unset_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "send", "send the message as-is", "send the message as-is", send_function, "", SCAF_NONE);

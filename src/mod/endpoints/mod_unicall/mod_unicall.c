@@ -1771,7 +1771,7 @@ static switch_status_t config_unicall(int reload)
 		for (i = min_span; i <= max_span; i++) {
 			current_span = i;
 
-			if (current_span <= 0 || current_span > MAX_SPANS) {
+			if (current_span <= 0 || current_span >= MAX_SPANS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid SPAN %d!\n", current_span);
 				current_span = 0;
 				continue;

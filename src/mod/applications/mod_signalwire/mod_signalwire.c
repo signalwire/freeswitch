@@ -46,6 +46,7 @@ int sslContextFunction(void* curl, void* sslctx, void* userdata);
 static int debug_level = 7;
 
 static int signalwire_gateway_exists(void);
+static switch_status_t mod_signalwire_load_or_generate_token(void);
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_signalwire_shutdown);
@@ -75,6 +76,7 @@ static struct {
 	char blade_bootstrap[1024];
 	char adoption_service[1024];
 	char stun_server[1024];
+	switch_port_t stun_port;
 	char adoption_token[64];
 	char override_context[64];
 	ks_size_t adoption_backoff;
@@ -318,7 +320,7 @@ static ks_status_t mod_signalwire_adoption_post(void)
 
 		external_ip = globals.adoption_data_local_ip;
 		external_port = local_port;
-		if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, SWITCH_STUN_DEFAULT_PORT, &error, pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, globals.stun_port, &error, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SignalWire adoption failed: stun [%s] lookup error: %s\n", globals.stun_server, error);
 			status = KS_STATUS_FAIL;
 			goto done;
@@ -459,10 +461,9 @@ done:
 	return status;
 }
 
-#define SIGNALWIRE_SYNTAX "token | adoption | adopted | reload | update | debug <level> | kslog <on|off|logfile e.g. /tmp/ks.log>"
+#define SIGNALWIRE_SYNTAX "token | token-reset | adoption | adopted | reload | update | debug <level> | kslog <on|off|logfile e.g. /tmp/ks.log>"
 SWITCH_STANDARD_API(mod_signalwire_api_function)
 {
-	int argc = 0;
 	char *argv[2] = { 0 };
 	char *buf = NULL;
 
@@ -472,7 +473,7 @@ SWITCH_STANDARD_API(mod_signalwire_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-    if ((argc = switch_separate_string(buf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+    if (switch_separate_string(buf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		if (!strcmp(argv[0], "token")) {
 			if (globals.adoption_token[0]) {
 				stream->write_function(stream,
@@ -529,6 +530,42 @@ SWITCH_STANDARD_API(mod_signalwire_api_function)
 		} else if (!strcmp(argv[0], "update")) {
 			globals.profile_update = KS_TRUE;
 			stream->write_function(stream, "+OK\n");
+			goto done;
+        	} else if (!strcmp(argv[0], "token-reset")) {
+			char tmp[1024];
+			
+			switch_snprintf(tmp, sizeof(tmp), "%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, "adoption-token.dat");
+			if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				if (unlink(tmp)) {
+					stream->write_function(stream, "-ERR Could not delete the old adoption-token.dat file. Token was not re-generated.\n");
+					goto done;
+				}
+			}
+
+			switch_snprintf(tmp, sizeof(tmp), "%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, "adoption-auth.dat");
+			if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				if (unlink(tmp)) {
+					stream->write_function(stream, "-ERR Could not delete the old adoption-auth.dat file. Token was not re-generated.\n");
+					goto done;
+				}
+			}
+
+			switch_snprintf(tmp, sizeof(tmp), "%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, "signalwire-conf.dat");
+			if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				if (unlink(tmp)) {
+					stream->write_function(stream, "-ERR Could not delete the old signalwire-conf.dat file. Token was not re-generated.\n");
+					goto done;
+				}
+			}
+
+			if (mod_signalwire_load_or_generate_token() != SWITCH_STATUS_SUCCESS) {
+				stream->write_function(stream, "-ERR Could not generate a new token.\n");
+			} else {
+				globals.state = SW_STATE_ADOPTION;
+				globals.adoption_next = ks_time_now();
+				stream->write_function(stream, "+OK\n");
+			}
+			
 			goto done;
 		}
 	}
@@ -677,7 +714,8 @@ static switch_status_t load_config()
 	switch_set_string(globals.blade_bootstrap, "edge.<space>.signalwire.com/api/relay/wss");
 	switch_set_string(globals.adoption_service, "https://adopt.signalwire.com/adoption");
 	switch_set_string(globals.stun_server, "stun.freeswitch.org");
-
+	globals.stun_port = SWITCH_STUN_DEFAULT_PORT;
+	
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "open of %s failed\n", cf);
 		// don't need the config
@@ -699,7 +737,20 @@ static switch_status_t load_config()
 				} else if (!strcasecmp(var, "adoption-service") && !ks_zstr(val)) {
 					switch_set_string(globals.adoption_service, val);
 				} else if (!strcasecmp(var, "stun-server") && !ks_zstr(val)) {
-					switch_set_string(globals.stun_server, val);
+					char *p, *ss = strdup(val);
+					
+					if ((p = strchr(ss, ':'))) {
+						int port;
+						*p++ = '\0';
+
+						port = atoi(p);
+						if (port > 0 && port < 65536) {
+							globals.stun_port = port;
+						}
+					}
+					
+					switch_set_string(globals.stun_server, ss);
+					switch_safe_free(ss);
 				} else if (!strcasecmp(var, "ssl-verify")) {
 					globals.ssl_verify = switch_true(val) ? 1 : 0;
 				} else if (!strcasecmp(var, "override-context") && !ks_zstr(val)) {
@@ -869,7 +920,7 @@ static void on_sofia_gateway_state(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SignalWire SIP Gateway registered to %s:%s\n", ip, port);
 			switch_set_string(globals.gateway_ip, ip);
 			switch_set_string(globals.gateway_port, port);
-		} else if (!strcmp(state, "NOREG")) {
+		} else if (!strcmp(state, "DOWN")) {
 			globals.gateway_ip[0] = '\0';
 			globals.gateway_port[0] = '\0';
 		}
@@ -909,6 +960,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_signalwire_load)
 	switch_console_set_complete("add signalwire kslog on");
 	switch_console_set_complete("add signalwire kslog off");
 	switch_console_set_complete("add signalwire token");
+	switch_console_set_complete("add signalwire token-reset");
 	switch_console_set_complete("add signalwire adoption");
 	switch_console_set_complete("add signalwire adopted");
 	switch_console_set_complete("add signalwire update");
@@ -1143,7 +1195,7 @@ static void mod_signalwire_state_configure(void)
 	external_ip = local_ip;
 	external_port = local_port;
 
-	if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, SWITCH_STUN_DEFAULT_PORT, &error, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_stun_lookup(&external_ip, &external_port, globals.stun_server, globals.stun_port, &error, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SignalWire configure failed: stun [%s] lookup error: %s\n", globals.stun_server, error);
 		ks_sleep_ms(4000);
 		goto done;

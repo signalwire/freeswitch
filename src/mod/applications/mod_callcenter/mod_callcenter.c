@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2016, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -426,7 +426,7 @@ static struct {
 	int debug;
 	char *odbc_dsn;
 	char *dbname;
-	char *cc_instance_id;
+	const char *cc_instance_id;
 	switch_bool_t reserve_agents;
 	switch_bool_t truncate_tiers;
 	switch_bool_t truncate_agents;
@@ -998,7 +998,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 {
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
-	char res[256];
+	char res[256] = "";
 	switch_event_t *event;
 
 	/* Check to see if agent already exist */
@@ -1501,7 +1501,7 @@ static int sqlite_column_rename_callback(void *pArg, const char *errmsg)
 	return 0;
 }
 
-static switch_status_t load_config(void)
+static switch_status_t load_config(switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers;
@@ -1536,7 +1536,7 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "global-database-lock")) {
 				globals.global_database_lock = switch_true(val);
 			} else if (!strcasecmp(var, "cc-instance-id")) {
-				globals.cc_instance_id = strdup(val);
+				globals.cc_instance_id = switch_core_strdup(pool, val);
 			} else if (!strcasecmp(var, "agent-originate-timeout")) {
 				globals.agent_originate_timeout = atoi(val);
 			}
@@ -1546,7 +1546,7 @@ static switch_status_t load_config(void)
 		globals.dbname = strdup(CC_SQLITE_DB_NAME);
 	}
 	if (zstr(globals.cc_instance_id)) {
-		globals.cc_instance_id = strdup("single_box");
+		globals.cc_instance_id = switch_core_strdup(pool, "single_box");
 	}
 	if (!globals.reserve_agents) {
 		globals.reserve_agents = SWITCH_FALSE;
@@ -1969,9 +1969,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			playback_array(agent_session, o_announce);
 		}
 
-		/* This is used for the waiting caller to quit waiting for a agent */
+		/* This is used to set the reason for callcenter_function breakout */
 		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
 		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+
 		if (switch_true(switch_channel_get_variable(member_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) || switch_true(switch_channel_get_variable(agent_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_set_flag(member_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 		}
@@ -1989,6 +1990,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 										   h->member_cid_name, h->member_cid_number, h->agent_name);
 			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "false");
 			switch_channel_set_variable(member_channel, "cc_agent_bridged", "false");
+
+			/* Set member to Abandoned state, previous Trying */
+			sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), h->member_uuid, globals.cc_instance_id);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
 
 			if ((o_announce = switch_channel_get_variable(member_channel, "cc_bridge_failed_outbound_announce"))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Playing bridge failed audio to agent %s, audio: %s\n", h->agent_name, o_announce);
@@ -2008,9 +2015,15 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			bridged = 1;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member \"%s\" %s is bridged to agent %s\n",
 										   h->member_cid_name, h->member_cid_number, h->agent_name);
+
 			switch_channel_set_variable(member_channel, "cc_agent_bridged", "true");
 			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "true");
-			switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+
+			/* Update member to Answered state, previous Trying */
+			sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
+					cc_member_state2str(CC_MEMBER_STATE_ANSWERED), local_epoch_time_now(NULL), h->member_uuid, globals.cc_instance_id);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
 		}
 
 		if (bridged) {
@@ -2111,7 +2124,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		}
 
 	} else {
-		/* Agent didn't answer or originate failed */
+		/* Agent didn't answer or originate/bridge failed */
 		int delay_next_agent_call = 0;
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_clear_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
@@ -3051,6 +3064,10 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_channel_set_variable(member_channel, "cc_side", "member");
 	switch_channel_set_variable(member_channel, "cc_member_uuid", member_uuid);
 
+	/* Clear flags in case previously set */
+	switch_channel_set_variable(member_channel, "cc_agent_found", NULL);
+	switch_channel_set_variable(member_channel, "cc_agent_bridged", NULL);
+
 	/* Add manually imported score */
 	if (cc_base_score) {
 		cc_base_score_int += atoi(cc_base_score);
@@ -3178,8 +3195,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		args.buf = (void *) &ht;
 		args.buflen = sizeof(h);
 
-		/* An agent was found, time to exit and let the bridge do it job */
-		if ((p = switch_channel_get_variable(member_channel, "cc_agent_found")) && (agent_found = switch_true(p))) {
+		/* If the bridge didn't break the loop, break out now */
+		if ((p = switch_channel_get_variable(member_channel, "cc_agent_bridged")) && (agent_found = switch_true(p))) {
 			break;
 		}
 		/* If the member thread set a different reason, we monitor it so we can quit the wait */
@@ -3200,8 +3217,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 				char buf[2] = { ht.dtmf, 0 };
 				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
 				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
-				break;
-			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
 		} else {
@@ -3230,12 +3245,18 @@ SWITCH_STANDARD_APP(callcenter_function)
 		h->running = 0;
 	}
 
+	/* Stop uuid_broadcasts */
+	switch_core_session_flush_private_events(member_session);
+	switch_channel_stop_broadcast(member_channel);
+	switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+
 	/* Check if we were removed because FS Core(BREAK) asked us to */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
 	}
 
 	switch_channel_set_variable(member_channel, "cc_agent_found", NULL);
+
 	/* Canceled for some reason */
 	if (!switch_channel_up(member_channel) || h->member_cancel_reason != CC_MEMBER_CANCEL_REASON_NONE) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> abandoned waiting in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
@@ -3281,12 +3302,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> is answered by an agent in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
-
-		/* Update member state */
-		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), local_epoch_time_now(NULL), member_uuid, globals.cc_instance_id);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
 
 		/* Update some channel variables for xml_cdr needs */
 		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");
@@ -3826,8 +3841,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				cc_queue_t *queue = NULL;
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
+				if (load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL)) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -3851,9 +3865,8 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				cc_queue_t *queue = NULL;
 				destroy_queue(queue_name);
-				if ((queue = load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL))) {
+				if (load_queue(queue_name, SWITCH_TRUE, SWITCH_TRUE, NULL)) {
 					stream->write_function(stream, "%s", "+OK\n");
 				} else {
 					stream->write_function(stream, "%s", "-ERR Invalid Queue not found!\n");
@@ -4219,6 +4232,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
 		return SWITCH_STATUS_TERM;
 	}
+	
+	
+	memset(&globals, 0, sizeof(globals));
+	globals.pool = pool;
 
 	/* Subscribe to presence request events */
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY,
@@ -4227,13 +4244,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	memset(&globals, 0, sizeof(globals));
-	globals.pool = pool;
-
 	switch_core_hash_init(&globals.queue_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
-	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+	if ((status = load_config(pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_event_unbind(&globals.node);
 		switch_event_free_subclass(CALLCENTER_EVENT);
 		switch_core_hash_destroy(&globals.queue_hash);
@@ -4347,7 +4361,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 
 	switch_safe_free(globals.odbc_dsn);
 	switch_safe_free(globals.dbname);
-	switch_safe_free(globals.cc_instance_id);
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;

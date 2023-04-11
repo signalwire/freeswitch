@@ -79,7 +79,7 @@ package com.adobe.utils
 		*	@param input The String whose beginning and ending whitespace will
 		*	will be removed.
 		*
-		*	@returns A String with whitespace removed from the begining and end	
+		*	@returns A String with whitespace removed from the beginning and end
 		*
 		* 	@langversion ActionScript 3.0
 		*	@playerversion Flash 9.0
@@ -95,7 +95,7 @@ package com.adobe.utils
 		* 
 		*	@param input The String whose beginning whitespace will will be removed.
 		*
-		*	@returns A String with whitespace removed from the begining	
+		*	@returns A String with whitespace removed from the beginning
 		*
 		* 	@langversion ActionScript 3.0
 		*	@playerversion Flash 9.0
