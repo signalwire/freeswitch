@@ -228,7 +228,7 @@ static ks_status_t load_credentials_from_json(ks_json_t *json)
 	const char *relay_connector_id = NULL;
 
 #if SIGNALWIRE_CLIENT_C_VERSION_MAJOR >= 2
-	if ((bootstrap = ks_json_get_string(json, "bootstrap")) == NULL) {
+	if ((bootstrap = ks_json_get_object_string(json, "bootstrap", NULL)) == NULL) {
 #else
 	if ((bootstrap = ks_json_get_object_cstr(json, "bootstrap")) == NULL) {
 #endif
@@ -238,7 +238,7 @@ static ks_status_t load_credentials_from_json(ks_json_t *json)
 	}
 
 #if SIGNALWIRE_CLIENT_C_VERSION_MAJOR >= 2
-	if ((relay_connector_id = ks_json_get_string(json, "relay_connector_id")) == NULL) {
+	if ((relay_connector_id = ks_json_get_object_string(json, "relay_connector_id", NULL)) == NULL) {
 #else
 	if ((relay_connector_id = ks_json_get_object_cstr(json, "relay_connector_id")) == NULL) {
 #endif
@@ -797,6 +797,7 @@ static ks_status_t load_credentials(void)
 		status = KS_STATUS_FAIL;
 		goto done;
 	}
+
 	fclose(fp);
 
 	json = ks_json_parse(data);
@@ -805,6 +806,7 @@ static ks_status_t load_credentials(void)
 		status = KS_STATUS_FAIL;
 		goto done;
 	}
+
 	status = load_credentials_from_json(json);
 	ks_json_delete(&json);
 
@@ -981,7 +983,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_signalwire_load)
 #ifdef WIN32
 	sslLoadWindowsCACertificate();
 #endif
-
 	// Configuration
 	swclt_config_create(&globals.config);
 	load_config();
@@ -1206,6 +1207,7 @@ static void mod_signalwire_state_configure(void)
 #if SIGNALWIRE_CLIENT_C_VERSION_MAJOR >= 2
 	if (!swclt_sess_provisioning_configure(globals.signalwire_session, "freeswitch", local_endpoint, external_endpoint, globals.relay_connector_id, &reply)) {
 		if (reply->type == SWCLT_CMD_TYPE_RESULT) {
+			ks_json_t *result;
 #else
 	if (!swclt_sess_provisioning_configure(globals.signalwire_session, "freeswitch", local_endpoint, external_endpoint, globals.relay_connector_id, &cmd)) {
 		SWCLT_CMD_TYPE cmd_type;
@@ -1215,7 +1217,8 @@ static void mod_signalwire_state_configure(void)
 #endif
 			signalwire_provisioning_configure_response_t *configure_res;
 #if SIGNALWIRE_CLIENT_C_VERSION_MAJOR >= 2
-			if (!SIGNALWIRE_PROVISIONING_CONFIGURE_RESPONSE_PARSE(reply->pool, reply->json, &configure_res)) {
+			result = ks_json_get_object_item(reply->json, "result");
+			if (!SIGNALWIRE_PROVISIONING_CONFIGURE_RESPONSE_PARSE(reply->pool, result, &configure_res)) {
 #else
 			swclt_cmd_result(cmd, &result);
 			result = ks_json_get_object_item(result, "result");
@@ -1223,7 +1226,7 @@ static void mod_signalwire_state_configure(void)
 #endif
 				ks_json_t *configuration = configure_res->configuration;
 #if SIGNALWIRE_CLIENT_C_VERSION_MAJOR >= 2
-				const char *configuration_profile = ks_json_get_string(configuration, "profile");
+				const char *configuration_profile = ks_json_get_object_string(configuration, "profile", NULL);
 #else
 				const char *configuration_profile = ks_json_get_object_cstr(configuration, "profile");
 #endif
@@ -1231,6 +1234,7 @@ static void mod_signalwire_state_configure(void)
 					switch_xml_free(globals.signalwire_profile);
 					globals.signalwire_profile = NULL;
 				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\"\n", configuration_profile);
 				globals.signalwire_profile = switch_xml_parse_str_dynamic((char *)configuration_profile, SWITCH_TRUE);
 				if (!globals.signalwire_profile) {
