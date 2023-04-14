@@ -144,8 +144,9 @@ extern int init_fast_acosf(void)
 			 * or some other error occured */
 			errsv = errno;
 			strerror_r(errsv, err, 150);
-			if (errsv != ENOENT) return -1;
-			else {
+			if (errsv != ENOENT) {
+				return -1;
+			} else {
 				switch_log_printf(
 					SWITCH_CHANNEL_LOG,
 					SWITCH_LOG_NOTICE,
@@ -170,6 +171,7 @@ extern int init_fast_acosf(void)
 	acos_table = (float *) mmap(
 			NULL,							   /* kernel chooses the address at which to create the mapping */
 			ACOS_TABLE_LENGTH * sizeof(float), PROT_READ, MAP_SHARED, acos_fd, 0);
+	fclose(acos_fp);
 	if (acos_table == MAP_FAILED) return -4;
 
 	return 0;
