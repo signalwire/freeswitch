@@ -255,7 +255,10 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 				item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, expanded);
 			}
 
-			switch_safe_free(expanded);
+			if (expanded != field->value) {
+				switch_safe_free(expanded);
+			}
+
 			break;
 
 		case FIELD_FIRST_OF:
