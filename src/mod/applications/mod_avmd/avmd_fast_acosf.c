@@ -112,6 +112,10 @@ extern int compute_table(void)
 
 	acos_table_file = fopen(ACOS_TABLE_FILENAME, "w");
 
+	if (!acos_table_file) {
+		return -3;
+	}
+
 	for (i = 0; i < ACOS_TABLE_LENGTH; i++) {
 		f = acosf(float_from_index(i));
 		res = fwrite(&f, sizeof(f), 1, acos_table_file);
@@ -124,10 +128,12 @@ extern int compute_table(void)
 	if (res != 0) {
 		return -2;
 	}
+
 	return 0;
 
 fail:
 	fclose(acos_table_file);
+
 	return -1;
 }
 
