@@ -1622,9 +1622,6 @@ SWITCH_STANDARD_APP(avmd_start_function) {
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown) {
 	size_t session_n;
-#ifndef WIN32
-	int res;
-#endif
 
 	switch_mutex_lock(avmd_globals.mutex);
 
@@ -1638,18 +1635,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown) {
 
 #ifndef WIN32
 	if (avmd_globals.settings.fast_math == 1) {
-		res = destroy_fast_acosf();
-		if (res != 0) {
-			switch (res) {
-				case -1:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed unmap arc cosine table\n");
-					break;
-				case -2:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed closing arc cosine table\n");
-					break;
-				default:
-					break;
-			}
+		if (destroy_fast_acosf()) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed unmap arc cosine table\n");
 		}
 	}
 #endif
@@ -1658,6 +1645,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown) {
 	switch_mutex_unlock(avmd_globals.mutex);
 	switch_mutex_destroy(avmd_globals.mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Advanced voicemail detection disabled\n");
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
