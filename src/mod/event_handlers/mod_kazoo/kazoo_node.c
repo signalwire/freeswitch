@@ -1097,23 +1097,27 @@ static switch_status_t handle_request_fetch_reply(ei_node_t *ei_node, erlang_pid
 	if (ei_decode_atom_safe(buf->buff, &buf->index, section_str)
 		|| !(section = switch_xml_parse_section_string(section_str))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring a fetch reply without a configuration section\n");
+
 		return erlang_response_badarg(rbuf);
 	}
 
 	if (ei_decode_string_or_binary_limited(buf->buff, &buf->index, sizeof(uuid_str), uuid_str)
 		|| zstr_buf(uuid_str)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring a fetch reply without request UUID\n");
+
 		return erlang_response_badarg(rbuf);
 	}
 
 	if (ei_decode_string_or_binary(buf->buff, &buf->index, &xml_str)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring a fetch reply without XML : %s \n", uuid_str);
+
 		return erlang_response_badarg(rbuf);
 	}
 
 	if (zstr(xml_str)) {
 		switch_safe_free(xml_str);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring an empty fetch reply : %s\n", uuid_str);
+
 		return erlang_response_badarg(rbuf);
 	}
 
@@ -1138,13 +1142,19 @@ static switch_status_t handle_request_fetch_reply(ei_node_t *ei_node, erlang_pid
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received fetch reply %s for an unknown configuration section: %s : %s\n", uuid_str, section_str, xml_str);
+		switch_safe_free(xml_str);
+
 		return erlang_response_badarg(rbuf);
 	}
 
 	if (result == SWITCH_STATUS_SUCCESS) {
+		switch_safe_free(xml_str);
+
 		return erlang_response_ok(rbuf);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received fetch reply %s is unknown or has expired : %s\n", uuid_str, xml_str);
+		switch_safe_free(xml_str);
+
 		return erlang_response_baduuid(rbuf);
 	}
 }
