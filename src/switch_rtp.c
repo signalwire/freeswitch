@@ -1353,7 +1353,6 @@ SWITCH_DECLARE(void) switch_srtp_err_to_txt(srtp_err_status_t stat, char **msg)
 	else if (stat == srtp_err_status_read_fail) *msg="couldn't read data";
 	else if (stat == srtp_err_status_write_fail) *msg="couldn't write data";
 	else if (stat == srtp_err_status_parse_err) *msg="error parsing data";
-	else if (stat == srtp_err_status_write_fail) *msg="couldn't read data";
 	else if (stat == srtp_err_status_encode_err) *msg="error encoding data";
 	else if (stat == srtp_err_status_semaphore_err) *msg="error while using semaphores";
 	else if (stat == srtp_err_status_pfkey_err) *msg="error while using pfkey ";
@@ -4947,7 +4946,7 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
-			if (rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_input != rtp_session->sock_input) {
+			if (rtp_session->sock_input && rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_input != rtp_session->sock_input) {
 				ping_socket(rtp_session);
 				switch_socket_shutdown(rtp_session->rtcp_sock_input, SWITCH_SHUTDOWN_READWRITE);
 			}
