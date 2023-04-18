@@ -6278,6 +6278,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_SDP_MEDIA_STRICT_FMT);
 						}
+					} else if (!strcasecmp(var, "always-bridge-early-media")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA);
+						}
+					} else if (!strcasecmp(var, "default-ringback")) {
+						profile->default_ringback = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-info-content-types")) {
@@ -7734,6 +7742,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	if (status == 183 && !r_sdp) {
 		if ((channel && switch_true(switch_channel_get_variable(channel, "sip_ignore_183nosdp"))) || sofia_test_pflag(profile, PFLAG_IGNORE_183NOSDP)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp\n", channel ? switch_channel_get_name(channel) : "None");
+			goto done;
+		} else if (sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp during early media\n", channel ? switch_channel_get_name(channel) : "None");
 			goto done;
 		}
 		status = 180;

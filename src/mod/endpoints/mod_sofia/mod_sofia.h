@@ -319,6 +319,7 @@ typedef enum {
 	PFLAG_ALWAYS_REGENERATE_OFFER,
 	PFLAG_TAGGED_ON_PRACK,
 	PFLAG_SDP_MEDIA_STRICT_FMT,
+	PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -825,6 +826,7 @@ struct sofia_profile {
 	char *rfc7989_filter;
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
+	char *default_ringback;
 	uint8_t rfc8760_algs_count;
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
 };
