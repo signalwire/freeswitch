@@ -1368,12 +1368,15 @@ static void drop_calls(void)
 	verto_pvt_t *tech_pvt;
 
 	switch_thread_rwlock_rdlock(verto_globals.tech_rwlock);
+
 	for(tech_pvt = verto_globals.tech_head; tech_pvt; tech_pvt = tech_pvt->next) {
+
 		if (!switch_channel_up_nosig(tech_pvt->channel)) {
 			continue;
 		}
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
+	
 	switch_thread_rwlock_unlock(verto_globals.tech_rwlock);
 }
 
@@ -1443,6 +1446,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 	if (argc < 2) {
 		stream->write_function(stream, "Invalid Args!\n");
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1456,6 +1460,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		/* reload config: init ssl, load profiles, start profiles */
 		init();
 		run_profiles();
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -5808,8 +5813,7 @@ SWITCH_STANDARD_API(verto_function)
 		}
 		stream->write_function(stream, "Debug Level: %s\n", switch_log_level2str(verto_globals.debug_level));
 		goto done;
-	}
-	else if (!strcasecmp(argv[0], "profile")) {
+	} else if (!strcasecmp(argv[0], "profile")) {
 		func = cmd_profile;
 	}
 
