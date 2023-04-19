@@ -1563,10 +1563,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 		switch_event_fire(&event);
 	}
 
-
-
-
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
