@@ -3007,7 +3007,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		}
 
 
-		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
+		if (switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool)) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;

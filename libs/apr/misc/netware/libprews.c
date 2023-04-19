@@ -20,8 +20,8 @@
 #include "novsock2.h"
 #endif
 
-#include "apr_pools.h"
-#include "apr_private.h"
+#include "fspr_pools.h"
+#include "fspr_private.h"
 
 
 /* library-private data...*/
@@ -51,7 +51,7 @@ int _NonAppStart
 #ifdef USE_WINSOCK
     WSADATA wsaData;
 #endif
-    apr_status_t status;
+    fspr_status_t status;
     
     NX_LOCK_INFO_ALLOC(liblock, "Per-Application Data Lock", 0);
 
@@ -83,9 +83,9 @@ int _NonAppStart
         return -1;
     }
 
-    apr_netware_setup_time();
+    fspr_netware_setup_time();
 
-    if ((status = apr_pool_initialize()) != APR_SUCCESS)
+    if ((status = fspr_pool_initialize()) != APR_SUCCESS)
         return status;
 
 #ifdef USE_WINSOCK
@@ -97,7 +97,7 @@ int _NonAppStart
 
 void _NonAppStop( void )
 {
-    apr_pool_terminate();
+    fspr_pool_terminate();
 
 #ifdef USE_WINSOCK
     WSACleanup();

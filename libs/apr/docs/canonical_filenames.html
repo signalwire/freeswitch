@@ -88,7 +88,7 @@ system objects.</p>
 
 <h2>Canonical API</h2>
 
-Functions to manipulate the apr_canon_file_t (an opaque type) include:
+Functions to manipulate the fspr_canon_file_t (an opaque type) include:
 
 <ul>
 <li>Create canon_file_t (from char* path and canon_file_t parent path)
@@ -99,7 +99,7 @@ Functions to manipulate the apr_canon_file_t (an opaque type) include:
 </ul>
 
 <p>The path is corrected to the file system case only if is in absolute 
-form.  The apr_canon_file_t should be preserved as long as possible and 
+form.  The fspr_canon_file_t should be preserved as long as possible and 
 used as the parent to create child entries to reduce the number of expensive 
 stat and case canonicalization calls to the OS.</p>
 

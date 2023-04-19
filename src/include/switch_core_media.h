@@ -219,9 +219,6 @@ SWITCH_DECLARE(const char *)switch_core_media_get_codec_string(switch_core_sessi
 SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *flag_pole, const char *str);
 SWITCH_DECLARE(switch_status_t) switch_core_media_add_crypto(switch_core_session_t *session, switch_secure_settings_t *ssec, switch_rtp_crypto_direction_t direction);
 SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_extract_t38_options(switch_core_session_t *session, const char *r_sdp);
-SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash(switch_core_session_t *session);
-SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session_t *session, switch_media_type_t type, switch_bool_t local);
-SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session);
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly);
 SWITCH_DECLARE(void) switch_core_media_reset_t38(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_copy_t38_options(switch_t38_options_t *t38_options, switch_core_session_t *session);

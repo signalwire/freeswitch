@@ -130,6 +130,7 @@ static void translate_number(char *number, char *profile, char **translated, swi
 	hi = switch_core_hash_find_rdlock(globals.translate_profiles, (const char *)profile, globals.profile_hash_rwlock);
 	if (!hi) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "can't find key for profile matching [%s]\n", profile);
+
 		return;
 	}
 
@@ -142,6 +143,7 @@ static void translate_number(char *number, char *profile, char **translated, swi
 				switch_regex_safe_free(re);
 				goto end;
 			}
+
 			memset(substituted, 0, len);
 
 			switch_perform_substitution(re, proceed, rule->replace, number, substituted, len, ovector);
@@ -153,16 +155,21 @@ static void translate_number(char *number, char *profile, char **translated, swi
 				} else if (event) {
 					subbed = switch_event_expand_headers(event, substituted);
 				}
+
+				if (subbed != substituted) {
+					switch_safe_free(substituted);
+				}
+
 				if (session) {
 					substituted = switch_core_session_strdup(session, subbed);
 				} else {
 					substituted = switch_core_strdup(pool, subbed);
 				}
-				if (subbed != substituted) {
-					switch_safe_free(subbed);
-				}
+
+				switch_safe_free(subbed);
 			}
 
+			switch_regex_safe_free(re);
 			break;
 		}
 	}
@@ -333,7 +340,6 @@ SWITCH_STANDARD_API(translate_function)
 	char *translated = NULL;
 	switch_event_t *event = NULL;
 	char *argv[32] = { 0 };
-	int argc = 0;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", TRANSLATE_SYNTAX);
@@ -344,7 +350,7 @@ SWITCH_STANDARD_API(translate_function)
 
 	mydata = strdup(cmd);
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		if (!session) {
 			char *areacode = switch_core_get_variable("default_areacode");
 			switch_core_new_memory_pool(&pool);

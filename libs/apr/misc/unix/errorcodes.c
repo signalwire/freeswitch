@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr_arch_misc.h"
-#include "apr_strings.h"
-#include "apr_lib.h"
-#include "apr_dso.h"
+#include "fspr_arch_misc.h"
+#include "fspr_strings.h"
+#include "fspr_lib.h"
+#include "fspr_dso.h"
 
 #if APR_HAVE_NETDB_H
 #include <netdb.h>
@@ -27,16 +27,16 @@
 #endif
 
 /*
- * stuffbuffer - like apr_cpystrn() but returns the address of the
+ * stuffbuffer - like fspr_cpystrn() but returns the address of the
  * dest buffer instead of the address of the terminating '\0'
  */
-static char *stuffbuffer(char *buf, apr_size_t bufsize, const char *s)
+static char *stuffbuffer(char *buf, fspr_size_t bufsize, const char *s)
 {
-    apr_cpystrn(buf,s,bufsize);
+    fspr_cpystrn(buf,s,bufsize);
     return buf;
 }
 
-static char *apr_error_string(apr_status_t statcode)
+static char *fspr_error_string(fspr_status_t statcode)
 {
     switch (statcode) {
     case APR_ENOPOOL:
@@ -141,9 +141,9 @@ static char *apr_error_string(apr_status_t statcode)
 #ifdef OS2
 #include <ctype.h>
 
-int apr_canonical_error(apr_status_t err);
+int fspr_canonical_error(fspr_status_t err);
 
-static char *apr_os_strerror(char* buf, apr_size_t bufsize, int err)
+static char *fspr_os_strerror(char* buf, fspr_size_t bufsize, int err)
 {
   char result[200];
   unsigned char message[HUGE_STRING_LEN];
@@ -153,7 +153,7 @@ static char *apr_os_strerror(char* buf, apr_size_t bufsize, int err)
   
   if (err >= 10000 && err < 12000) {  /* socket error codes */
       return stuffbuffer(buf, bufsize,
-                         strerror(apr_canonical_error(err+APR_OS_START_SYSERR)));
+                         strerror(fspr_canonical_error(err+APR_OS_START_SYSERR)));
   } 
   else if (DosGetMessage(NULL, 0, message, HUGE_STRING_LEN, err,
 			 "OSO001.MSG", &len) == 0) {
@@ -166,9 +166,9 @@ static char *apr_os_strerror(char* buf, apr_size_t bufsize, int err)
 
       for (c=0; c<len; c++) {
 	  /* skip multiple whitespace */
-          while (apr_isspace(message[c]) && apr_isspace(message[c+1]))
+          while (fspr_isspace(message[c]) && fspr_isspace(message[c+1]))
               c++;
-          *(pos++) = apr_isspace(message[c]) ? ' ' : message[c];
+          *(pos++) = fspr_isspace(message[c]) ? ' ' : message[c];
       }
   
       *pos = 0;
@@ -186,7 +186,7 @@ static char *apr_os_strerror(char* buf, apr_size_t bufsize, int err)
 #elif defined(WIN32) || (defined(NETWARE) && defined(USE_WINSOCK))
 
 static const struct {
-    apr_status_t code;
+    fspr_status_t code;
     const char *msg;
 } gaErrorList[] = {
     WSAEINTR,           "Interrupted system call",
@@ -242,9 +242,9 @@ static const struct {
 };
 
 
-static char *apr_os_strerror(char *buf, apr_size_t bufsize, apr_status_t errcode)
+static char *fspr_os_strerror(char *buf, fspr_size_t bufsize, fspr_status_t errcode)
 {
-    apr_size_t len=0, i;
+    fspr_size_t len=0, i;
 
 #ifndef NETWARE
     len = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM 
@@ -260,7 +260,7 @@ static char *apr_os_strerror(char *buf, apr_size_t bufsize, apr_status_t errcode
     if (!len) {
         for (i = 0; gaErrorList[i].msg; ++i) {
             if (gaErrorList[i].code == errcode) {
-                apr_cpystrn(buf, gaErrorList[i].msg, bufsize);
+                fspr_cpystrn(buf, gaErrorList[i].msg, bufsize);
                 len = strlen(buf);
                 break;
             }
@@ -284,17 +284,17 @@ static char *apr_os_strerror(char *buf, apr_size_t bufsize, apr_status_t errcode
     else {
         /* Windows didn't provide us with a message.  Even stuff like                    * WSAECONNREFUSED won't get a message.
          */
-        apr_snprintf(buf, bufsize, "Unrecognized Win32 error code %d", errcode);
+        fspr_snprintf(buf, bufsize, "Unrecognized Win32 error code %d", errcode);
     }
 
     return buf;
 }
 
 #else
-/* On Unix, apr_os_strerror() handles error codes from the resolver 
+/* On Unix, fspr_os_strerror() handles error codes from the resolver 
  * (h_errno). 
  */
-static char *apr_os_strerror(char* buf, apr_size_t bufsize, int err) 
+static char *fspr_os_strerror(char* buf, fspr_size_t bufsize, int err) 
 {
 #ifdef HAVE_HSTRERROR
     return stuffbuffer(buf, bufsize, hstrerror(err));
@@ -327,8 +327,8 @@ static char *apr_os_strerror(char* buf, apr_size_t bufsize, int err)
 
 #if defined(HAVE_STRERROR_R) && defined(STRERROR_R_RC_INT) && !defined(BEOS)
 /* AIX and Tru64 style */
-static char *native_strerror(apr_status_t statcode, char *buf,
-                             apr_size_t bufsize)
+static char *native_strerror(fspr_status_t statcode, char *buf,
+                             fspr_size_t bufsize)
 {
     if (strerror_r(statcode, buf, bufsize) < 0) {
         return stuffbuffer(buf, bufsize, 
@@ -346,11 +346,11 @@ static char *native_strerror(apr_status_t statcode, char *buf,
  * we add a suitable prototype here.
  */
 #if defined(BEOS)
-const char *strerror_r(apr_status_t, char *, apr_size_t);
+const char *strerror_r(fspr_status_t, char *, fspr_size_t);
 #endif
 
-static char *native_strerror(apr_status_t statcode, char *buf,
-                             apr_size_t bufsize)
+static char *native_strerror(fspr_status_t statcode, char *buf,
+                             fspr_size_t bufsize)
 {
     const char *msg;
 
@@ -367,8 +367,8 @@ static char *native_strerror(apr_status_t statcode, char *buf,
 /* plain old strerror(); 
  * thread-safe on some platforms (e.g., Solaris, OS/390)
  */
-static char *native_strerror(apr_status_t statcode, char *buf,
-                             apr_size_t bufsize)
+static char *native_strerror(fspr_status_t statcode, char *buf,
+                             fspr_size_t bufsize)
 {
 #ifdef _WIN32_WCE
     static char err[32];
@@ -386,14 +386,14 @@ static char *native_strerror(apr_status_t statcode, char *buf,
 }
 #endif
 
-APR_DECLARE(char *) apr_strerror(apr_status_t statcode, char *buf,
-                                 apr_size_t bufsize)
+APR_DECLARE(char *) fspr_strerror(fspr_status_t statcode, char *buf,
+                                 fspr_size_t bufsize)
 {
     if (statcode < APR_OS_START_ERROR) {
         return native_strerror(statcode, buf, bufsize);
     }
     else if (statcode < APR_OS_START_USERERR) {
-        return stuffbuffer(buf, bufsize, apr_error_string(statcode));
+        return stuffbuffer(buf, bufsize, fspr_error_string(statcode));
     }
     else if (statcode < APR_OS_START_EAIERR) {
         return stuffbuffer(buf, bufsize, "APR does not understand this error code");
@@ -410,7 +410,7 @@ APR_DECLARE(char *) apr_strerror(apr_status_t statcode, char *buf,
 #endif
     }
     else {
-        return apr_os_strerror(buf, bufsize, statcode - APR_OS_START_SYSERR);
+        return fspr_os_strerror(buf, bufsize, statcode - APR_OS_START_SYSERR);
     }
 }
 

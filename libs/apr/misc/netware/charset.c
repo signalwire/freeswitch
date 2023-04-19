@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
 /* static struct utsname sysinfo; */
 
 /* XXX This needs to be fixed to produce the correct system language */
 
-APR_DECLARE(const char*) apr_os_default_encoding (apr_pool_t *pool)
+APR_DECLARE(const char*) fspr_os_default_encoding (fspr_pool_t *pool)
 {
-    return apr_pstrdup(pool, "CP1252");
+    return fspr_pstrdup(pool, "CP1252");
 }
 
 
-APR_DECLARE(const char*) apr_os_locale_encoding (apr_pool_t *pool)
+APR_DECLARE(const char*) fspr_os_locale_encoding (fspr_pool_t *pool)
 {
-    return apr_os_default_encoding(pool);
+    return fspr_os_default_encoding(pool);
 }

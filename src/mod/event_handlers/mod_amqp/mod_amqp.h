@@ -88,6 +88,11 @@ typedef struct mod_amqp_keypart_s {
 } mod_amqp_keypart_t;
 
 typedef struct {
+  switch_event_types_t id;
+  char* subclass;
+} mod_amqp_events_t;
+
+typedef struct {
   char *name;
 
   char *exchange;
@@ -103,7 +108,7 @@ typedef struct {
   /* Array to store the possible event subscriptions */
   int event_subscriptions;
   switch_event_node_t *event_nodes[SWITCH_EVENT_ALL];
-  switch_event_types_t event_ids[SWITCH_EVENT_ALL];
+  mod_amqp_events_t events[SWITCH_EVENT_ALL];
   switch_event_node_t *eventNode;
 
 

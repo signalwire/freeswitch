@@ -186,7 +186,8 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 	profile->name = switch_core_strdup(profile->pool, name);
 	profile->running = 1;
 	memset(profile->format_fields, 0, (MAX_ROUTING_KEY_FORMAT_FIELDS + 1) * sizeof(mod_amqp_keypart_t));
-	profile->event_ids[0] = SWITCH_EVENT_ALL;
+	profile->events[0].id = SWITCH_EVENT_ALL;
+	profile->events[0].subclass = SWITCH_EVENT_SUBCLASS_ANY;
 	profile->event_subscriptions = 1;
 	profile->conn_root   = NULL;
 	profile->conn_active = NULL;
@@ -269,7 +270,14 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found %d subscriptions\n", profile->event_subscriptions);
 
 				for (arg = 0; arg < profile->event_subscriptions; arg++) {
-					if (switch_name_event(argv[arg], &(profile->event_ids[arg])) != SWITCH_STATUS_SUCCESS) {
+					char *subclass = SWITCH_EVENT_SUBCLASS_ANY;
+					if ((subclass = strchr(argv[arg], '^'))) {
+						*subclass++ = '\0';
+					}
+
+					if (switch_name_event(argv[arg], &(profile->events[arg].id)) == SWITCH_STATUS_SUCCESS) {
+						profile->events[arg].subclass = subclass;
+					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The switch event %s was not recognised.\n", argv[arg]);
 					}
 				}
@@ -344,13 +352,13 @@ switch_status_t mod_amqp_producer_create(char *name, switch_xml_t cfg)
 	/* Subscribe events */
 	for (i = 0; i < profile->event_subscriptions; i++) {
 		if (switch_event_bind_removable("AMQP",
-										profile->event_ids[i],
-										SWITCH_EVENT_SUBCLASS_ANY,
+										profile->events[i].id,
+										profile->events[i].subclass,
 										mod_amqp_producer_event_handler,
 										profile,
 										&(profile->event_nodes[i])) != SWITCH_STATUS_SUCCESS) {
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to event handler %d!\n",(int)profile->event_ids[i]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot bind to event handler %d!\n",(int)profile->events[i].id);
 			goto err;
 		}
 	}

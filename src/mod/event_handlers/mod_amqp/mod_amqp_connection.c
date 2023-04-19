@@ -203,7 +203,11 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	amqp_boolean_t ssl_verify_peer = 1;
 
 	if (zstr(name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection missing name attribute\n%s\n", switch_xml_toxml(cfg, 1));
+		char *str_tmp = switch_xml_toxml(cfg, 1);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection missing name attribute\n%s\n", str_tmp);
+		switch_safe_free(str_tmp);
+
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -260,6 +264,7 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	new_con->ssl_verify_peer = ssl_verify_peer;
 
 	*conn = new_con;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

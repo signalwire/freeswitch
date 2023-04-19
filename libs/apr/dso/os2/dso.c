@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "apr_arch_dso.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_dso.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 #include <stdio.h>
 #include <string.h>
 
 #if APR_HAS_DSO
 
-static apr_status_t dso_cleanup(void *thedso)
+static fspr_status_t dso_cleanup(void *thedso)
 {
-    apr_dso_handle_t *dso = thedso;
+    fspr_dso_handle_t *dso = thedso;
     int rc;
 
     if (dso->handle == 0)
@@ -39,39 +39,39 @@ static apr_status_t dso_cleanup(void *thedso)
 }
 
 
-APR_DECLARE(apr_status_t) apr_dso_load(apr_dso_handle_t **res_handle, const char *path, apr_pool_t *ctx)
+APR_DECLARE(fspr_status_t) fspr_dso_load(fspr_dso_handle_t **res_handle, const char *path, fspr_pool_t *ctx)
 {
     char failed_module[200];
     HMODULE handle;
     int rc;
 
-    *res_handle = apr_pcalloc(ctx, sizeof(**res_handle));
+    *res_handle = fspr_pcalloc(ctx, sizeof(**res_handle));
     (*res_handle)->cont = ctx;
     (*res_handle)->load_error = APR_SUCCESS;
     (*res_handle)->failed_module = NULL;
 
     if ((rc = DosLoadModule(failed_module, sizeof(failed_module), path, &handle)) != 0) {
         (*res_handle)->load_error = APR_FROM_OS_ERROR(rc);
-        (*res_handle)->failed_module = apr_pstrdup(ctx, failed_module);
+        (*res_handle)->failed_module = fspr_pstrdup(ctx, failed_module);
         return APR_FROM_OS_ERROR(rc);
     }
 
     (*res_handle)->handle  = handle;
-    apr_pool_cleanup_register(ctx, *res_handle, dso_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(ctx, *res_handle, dso_cleanup, fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_dso_unload(apr_dso_handle_t *handle)
+APR_DECLARE(fspr_status_t) fspr_dso_unload(fspr_dso_handle_t *handle)
 {
-    return apr_pool_cleanup_run(handle->cont, handle, dso_cleanup);
+    return fspr_pool_cleanup_run(handle->cont, handle, dso_cleanup);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_dso_sym(apr_dso_handle_sym_t *ressym, 
-                                      apr_dso_handle_t *handle, 
+APR_DECLARE(fspr_status_t) fspr_dso_sym(fspr_dso_handle_sym_t *ressym, 
+                                      fspr_dso_handle_t *handle, 
                                       const char *symname)
 {
     PFN func;
@@ -91,10 +91,10 @@ APR_DECLARE(apr_status_t) apr_dso_sym(apr_dso_handle_sym_t *ressym,
 
 
 
-APR_DECLARE(const char *) apr_dso_error(apr_dso_handle_t *dso, char *buffer, apr_size_t buflen)
+APR_DECLARE(const char *) fspr_dso_error(fspr_dso_handle_t *dso, char *buffer, fspr_size_t buflen)
 {
     char message[200];
-    apr_strerror(dso->load_error, message, sizeof(message));
+    fspr_strerror(dso->load_error, message, sizeof(message));
 
     if (dso->failed_module != NULL) {
         strcat(message, " (");
@@ -102,17 +102,17 @@ APR_DECLARE(const char *) apr_dso_error(apr_dso_handle_t *dso, char *buffer, apr
         strcat(message, ")");
     }
 
-    apr_cpystrn(buffer, message, buflen);
+    fspr_cpystrn(buffer, message, buflen);
     return buffer;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_os_dso_handle_put(apr_dso_handle_t **aprdso,
-                                                apr_os_dso_handle_t osdso,
-                                                apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_dso_handle_put(fspr_dso_handle_t **aprdso,
+                                                fspr_os_dso_handle_t osdso,
+                                                fspr_pool_t *pool)
 {
-    *aprdso = apr_pcalloc(pool, sizeof **aprdso);
+    *aprdso = fspr_pcalloc(pool, sizeof **aprdso);
     (*aprdso)->handle = osdso;
     (*aprdso)->cont = pool;
     (*aprdso)->load_error = APR_SUCCESS;
@@ -122,8 +122,8 @@ APR_DECLARE(apr_status_t) apr_os_dso_handle_put(apr_dso_handle_t **aprdso,
 
 
 
-APR_DECLARE(apr_status_t) apr_os_dso_handle_get(apr_os_dso_handle_t *osdso,
-                                                apr_dso_handle_t *aprdso)
+APR_DECLARE(fspr_status_t) fspr_os_dso_handle_get(fspr_os_dso_handle_t *osdso,
+                                                fspr_dso_handle_t *aprdso)
 {
     *osdso = aprdso->handle;
     return APR_SUCCESS;

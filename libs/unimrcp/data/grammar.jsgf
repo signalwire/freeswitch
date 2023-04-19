@@ -1,3 +1,0 @@
-#JSGF V1.0;
-grammar digits;
-public <numbers> = (one | two | three);
