@@ -33,6 +33,7 @@
  */
 
 #include <switch.h>
+#include "private/switch_apr_pvt.h"
 #ifndef WIN32
 #include <arpa/inet.h>
 #if defined(HAVE_SYS_TIME_H) && defined(HAVE_SYS_RESOURCE_H)
@@ -1141,7 +1142,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	}
 
 	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
-		if ((ext = strrchr(file, '.'))) {
+		if (strrchr(file, '.')) {
 			dupfile = strdup(file);
 			if ((ext = strrchr(dupfile, '.'))) {
 				*ext++ = '\0';
@@ -1819,9 +1820,8 @@ SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf,
 {
 
 	struct addrinfo *ai;
-	int err;
 
-	if ((err = getaddrinfo(host, 0, 0, &ai))) {
+	if (getaddrinfo(host, 0, 0, &ai)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -4639,6 +4639,10 @@ SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, ch
 			}
 
 			(*digest_str)[i] = '\0';
+		} else {
+			switch_safe_free(digest);
+			*outputlen = 0;
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 

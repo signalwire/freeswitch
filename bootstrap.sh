@@ -10,7 +10,7 @@ BGJOB=false
 VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="apr libzrtp iksemel libdingaling srtp unimrcp fs";
+SUBDIRS="apr iksemel srtp fs";
 
 while getopts 'jhd:v' o; do 
   case "$o" in
@@ -170,13 +170,6 @@ bootstrap_apr() {
   # Remove autoconf 2.5x's cache directory
   rm -rf autom4te*.cache
 
-  echo "Entering directory ${LIBDIR}/apr-util"
-  cd ${LIBDIR}/apr-util
-  ./buildconf
-}
-
-bootstrap_libzrtp() {
-  (cd ${LIBDIR}/libzrtp && ./bootstrap.sh)
 }
 
 # Libs automake automation function
@@ -263,7 +256,7 @@ bootstrap_libs_post() {
 bootstrap_libs() {
   for i in ${SUBDIRS}; do
     case "$i" in
-      apr|fs|libzrtp)
+      apr|fs)
         ${BGJOB} && wait
         bootstrap_$i
         continue

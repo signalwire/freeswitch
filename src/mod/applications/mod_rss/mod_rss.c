@@ -305,7 +305,7 @@ SWITCH_STANDARD_APP(rss_function)
 		char cmd[3];
 	  main_menu:
 		filename = NULL;
-		len = idx = 0;
+		len = 0;
 		*cmd = '\0';
 		title_txt = description_txt = rights_txt = "";
 

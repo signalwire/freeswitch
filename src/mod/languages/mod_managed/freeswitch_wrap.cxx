@@ -1569,16 +1569,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_PROXY_MEDIA_VARIAB
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_ZRTP_PASSTHRU_VARIABLE_get___() {
-  char * jresult ;
-  char *result = 0 ;
-  
-  result = (char *)("zrtp_passthru");
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_ENDPOINT_DISPOSITION_VARIABLE_get___() {
   char * jresult ;
   char *result = 0 ;
@@ -28820,6 +28810,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_vol_get__
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_volgranular_set___(void * jarg1, int jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  int32_t arg2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (int32_t)jarg2; 
+  if (arg1) (arg1)->volgranular = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_volgranular_get___(void * jarg1) {
+  int jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  int32_t result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (int32_t) ((arg1)->volgranular);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_file_handle_resampler_set___(void * jarg1, void * jarg2) {
   switch_file_handle *arg1 = (switch_file_handle *) 0 ;
   switch_audio_resampler_t *arg2 = (switch_audio_resampler_t *) 0 ;
@@ -37156,14 +37168,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_perform_mark_
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_check_zrtp___(void * jarg1) {
-  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
-  
-  arg1 = (switch_channel_t *)jarg1; 
-  switch_channel_check_zrtp(arg1);
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_perform_acknowledge_call___(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
@@ -39396,6 +39400,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_event_add_header_stri
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   result = (switch_status_t)switch_event_add_header_string(arg1,arg2,(char const *)arg3,(char const *)arg4);
+  jresult = (int)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_event_add_header_string_nodup___(void * jarg1, int jarg2, char * jarg3, char * jarg4) {
+  int jresult ;
+  switch_event_t *arg1 = (switch_event_t *) 0 ;
+  switch_stack_t arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t *)jarg1; 
+  arg2 = (switch_stack_t)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  result = (switch_status_t)switch_event_add_header_string_nodup(arg1,arg2,(char const *)arg3,(char const *)arg4);
   jresult = (int)result; 
   return jresult;
 }

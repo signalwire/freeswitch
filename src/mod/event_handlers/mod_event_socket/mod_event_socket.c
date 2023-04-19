@@ -377,7 +377,7 @@ static void event_handler(switch_event_t *event)
 			if (!uuid || (l->session && strcmp(uuid, switch_core_session_get_uuid(l->session)))) {
 				send = 0;
 			}
-			if (!strcmp(switch_core_session_get_uuid(l->session), switch_event_get_header_nil(event, "Job-Owner-UUID"))) {
+			if (l->session && !strcmp(switch_core_session_get_uuid(l->session), switch_event_get_header_nil(event, "Job-Owner-UUID"))) {
 			    send = 1;
 			}
 		}
@@ -3007,7 +3007,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		}
 
 
-		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
+		if (switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool)) {
 			if (prefs.done) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;

@@ -178,7 +178,6 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
 	char *argv[2] = { 0 };
-	int argc;
 	char *script = NULL;
 	PyObject *module_o = NULL, *module = NULL, *sp = NULL, *stp = NULL, *eve = NULL;
 	PyObject *function = NULL;
@@ -198,7 +197,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 
 	assert(dupargs != NULL);
 
-	if (!(argc = switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (!switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No module name specified!\n");
 		goto done;
 	}
@@ -355,11 +354,23 @@ static switch_xml_t python_fetch(const char *section,
 
 	switch_xml_t xml = NULL;
 	char *str = NULL;
+	switch_event_t *my_params = NULL;
 
 	if (!zstr(globals.xml_handler)) {
 		char *mycmd = strdup(globals.xml_handler);
 
 		switch_assert(mycmd);
+
+		if (!params) {
+			switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+			switch_assert(params);
+			my_params = params;
+		}
+
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "tag_name", switch_str_nil(tag_name));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_name", switch_str_nil(key_name));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_value", switch_str_nil(key_value));
 
 		eval_some_python("xml_fetch", mycmd, NULL, NULL, params, &str, NULL);
 
@@ -373,6 +384,10 @@ static switch_xml_t python_fetch(const char *section,
 		}
 
 		free(mycmd);
+
+		if (my_params) {
+			switch_event_destroy(&my_params);
+		}
 	}
 
 	return xml;

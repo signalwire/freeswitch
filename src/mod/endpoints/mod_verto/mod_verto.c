@@ -771,10 +771,6 @@ static void jsock_send_event(cJSON *event)
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
-	if (use_jsock) {
-		switch_thread_rwlock_unlock(use_jsock->rwlock);
-		use_jsock = NULL;
-	}
 }
 
 static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
@@ -1069,7 +1065,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
 			
 			jsock->logintime = now;
 			jsock->id = switch_core_strdup(jsock->pool, id);
@@ -2012,6 +2008,7 @@ static void client_run(jsock_t *jsock)
 {
 	int flags = KWS_BLOCK;
 	int idle = 0;
+	ks_json_t *params = NULL;
 	
 	if (jsock->profile->vhosts) {
 		flags |= KWS_STAY_OPEN;
@@ -2019,7 +2016,14 @@ static void client_run(jsock_t *jsock)
 	}
 
 	ks_pool_open(&jsock->kpool);
+
+#if defined(KS_VERSION_NUM) && KS_VERSION_NUM >= 20000
+	params = ks_json_create_object();
+	ks_json_add_number_to_object(params, "payload_size_max", 1000000);
+	if (kws_init_ex(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool, params) != KS_STATUS_SUCCESS) {
+#else
 	if (kws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool) != KS_STATUS_SUCCESS) {
+#endif
 		log_and_exit(SWITCH_LOG_NOTICE, "%s WS SETUP FAILED\n", jsock->name);
 	}
 
@@ -2165,6 +2169,8 @@ static void client_run(jsock_t *jsock)
 	detach_jsock(jsock);
 	kws_destroy(&jsock->ws);
 	ks_pool_close(&jsock->kpool);
+	ks_json_delete(&params);
+
 	return;
 }
 
@@ -2471,7 +2477,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 
 switch_status_t verto_tech_media(verto_pvt_t *tech_pvt, const char *r_sdp, switch_sdp_type_t sdp_type)
 {
-	uint8_t match = 0, p = 0;
+	uint8_t p = 0;
 
 	switch_assert(tech_pvt != NULL);
 	switch_assert(r_sdp != NULL);
@@ -2480,7 +2486,7 @@ switch_status_t verto_tech_media(verto_pvt_t *tech_pvt, const char *r_sdp, switc
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, r_sdp, &p, sdp_type))) {
+	if (switch_core_media_negotiate_sdp(tech_pvt->session, r_sdp, &p, sdp_type)) {
 		if (switch_core_media_choose_ports(tech_pvt->session, SWITCH_TRUE, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		//if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
@@ -3455,7 +3461,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_REFRESH_REQ);
 		} else if (!strcasecmp(action, "updateMedia")) {
 			const char *sdp = NULL;
-			uint8_t match = 0, p = 0;
+			uint8_t p = 0;
 
 			if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -3485,7 +3491,7 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 			//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-			if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_REQUEST))) {
+			if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_REQUEST)) {
 				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 		
 				if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
@@ -3591,7 +3597,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	cJSON *dialog;
 	verto_pvt_t *tech_pvt = NULL;
 	const char *call_id = NULL, *sdp = NULL;
-	uint8_t match = 0, p = 0;
+	uint8_t p = 0;
 
 	*response = obj;
 
@@ -3643,7 +3649,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 	//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE))) {
+	if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE)) {
 		//switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 		
 		if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
@@ -4615,7 +4621,6 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 {
 	cJSON *cmd = NULL, *arg = NULL, *reply;
 	switch_stream_handle_t stream = { 0 };
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (params) {
 		cmd = cJSON_GetObjectItem(params, "cmd");
@@ -4640,7 +4645,7 @@ static switch_bool_t fsapi_func(const char *method, cJSON *params, jsock_t *jsoc
 
 	SWITCH_STANDARD_STREAM(stream);
 
-	if (cmd && (status = switch_api_execute(cmd->valuestring, arg ? arg->valuestring : NULL, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+	if (cmd && switch_api_execute(cmd->valuestring, arg ? arg->valuestring : NULL, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		cJSON_AddItemToObject(reply, "message", cJSON_CreateString((char *) stream.data));
 	} else {
 		cJSON_AddItemToObject(reply, "message", cJSON_CreateString("INVALID CALL"));
@@ -5967,10 +5972,9 @@ static switch_status_t verto_write_text_frame(switch_core_session_t *session, sw
 	}
 
 	if (switch_buffer_inuse(tech_pvt->text_write_buffer)) {
-		uint32_t datalen;
 		switch_byte_t data[SWITCH_RTP_MAX_BUF_LEN] = "";
 
-		if ((datalen = switch_buffer_read(tech_pvt->text_write_buffer, data, 100))) {
+		if (switch_buffer_read(tech_pvt->text_write_buffer, data, 100)) {
 			cJSON *obj = NULL, *txt = NULL, *params = NULL;
 			jsock_t *jsock;
 
@@ -6784,6 +6788,26 @@ static void mod_verto_ks_logger(const char *file, const char *func, int line, in
 	va_end(ap);
 }
 
+static void verto_event_free_subclass() 
+{
+	switch_event_free_subclass(MY_EVENT_LOGIN);
+	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
+	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
+}
+
+static void verto_destroy_globals_hash_tables()
+{
+	if (verto_globals.method_hash) {
+		switch_core_hash_destroy(&verto_globals.method_hash);
+	}
+	if (verto_globals.event_channel_hash) {
+		switch_core_hash_destroy(&verto_globals.event_channel_hash);
+	}
+	if (verto_globals.jsock_hash) {
+		switch_core_hash_destroy(&verto_globals.jsock_hash);
+	}
+}
+
 /* Macro expands to: switch_status_t mod_verto_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 {
@@ -6797,17 +6821,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	ks_ssl_init_skip(KS_TRUE);
 	ks_init();
 
+#if defined(KS_VERSION_NUM) && KS_VERSION_NUM < 20000
+	kws_set_global_payload_size_max(1000000);
+#endif
+
 	if (switch_event_reserve_subclass(MY_EVENT_LOGIN) != SWITCH_STATUS_SUCCESS) {
+		ks_shutdown();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_LOGIN);
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_DISCONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_event_free_subclass(MY_EVENT_LOGIN);
+		ks_shutdown();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_DISCONNECT);
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (switch_event_reserve_subclass(MY_EVENT_CLIENT_CONNECT) != SWITCH_STATUS_SUCCESS) {
+		switch_event_free_subclass(MY_EVENT_LOGIN);
+		switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
+		ks_shutdown();
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_CLIENT_CONNECT);
 		return SWITCH_STATUS_TERM;
 	}
@@ -6858,7 +6892,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	r = init();
 
-	if (r) return SWITCH_STATUS_TERM;
+	if (r) {
+		switch_core_hash_destroy(&json_GLOBALS.store_hash);
+		verto_event_free_subclass();
+		switch_event_channel_unbind(NULL, verto_broadcast, NULL);
+		verto_destroy_globals_hash_tables();
+		ks_shutdown();
+		return SWITCH_STATUS_TERM;
+	}
 
 	if (verto_globals.kslog_on == SWITCH_TRUE) {
 		ks_global_set_logger(mod_verto_ks_logger);
@@ -6897,6 +6938,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	if (verto_globals.enable_fs_events) {
 		if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+			verto_event_free_subclass();
+			switch_event_channel_unbind(NULL, verto_broadcast, NULL);
+			switch_core_hash_destroy(&json_GLOBALS.store_hash);
+			verto_destroy_globals_hash_tables();
+			ks_global_set_logger(NULL);
+			ks_shutdown();
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 			return SWITCH_STATUS_GENERR;
 		}
@@ -6914,9 +6961,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 {
 
-	switch_event_free_subclass(MY_EVENT_LOGIN);
-	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
-	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
+	verto_event_free_subclass();
 
 	json_cleanup();
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
@@ -6930,9 +6975,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	attach_wake();
 	attach_wake();
 
-	switch_core_hash_destroy(&verto_globals.method_hash);
-	switch_core_hash_destroy(&verto_globals.event_channel_hash);
-	switch_core_hash_destroy(&verto_globals.jsock_hash);
+	verto_destroy_globals_hash_tables();
 
 	ks_global_set_logger(NULL);
 	ks_shutdown();

@@ -89,6 +89,8 @@ api_command_t conference_api_sub_commands[] = {
 	{"undeaf", (void_fn_t) & conference_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "undeaf", "<[member_id|all]|last|non_moderator>"},
 	{"vid-filter", (void_fn_t) & conference_api_sub_video_filter, CONF_API_SUB_MEMBER_TARGET, "vid-filter", "<[member_id|all]|last|non_moderator> <string>"},
 	{"relate", (void_fn_t) & conference_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "relate", "<member_id>[,<member_id>] <other_member_id>[,<other_member_id>] [nospeak|nohear|clear]"},
+	{"getvar", (void_fn_t) & conference_api_sub_getvar, CONF_API_SUB_ARGS_SPLIT, "getvar", "<varname>"},
+	{"setvar", (void_fn_t) & conference_api_sub_setvar, CONF_API_SUB_ARGS_SPLIT, "setvar", "<varname> <value>"},
 	{"lock", (void_fn_t) & conference_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "lock", ""},
 	{"unlock", (void_fn_t) & conference_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "unlock", ""},
 	{"dial", (void_fn_t) & conference_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "dial", "<endpoint_module_name>/<destination> <callerid number> <callerid name>"},
@@ -2018,7 +2020,6 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 	}
 
 	if (!strncasecmp(argv[2], "group", 5)) {
-		layout_group_t *lg = NULL;
 		int xx = 4;
 
 		if ((group_name = strchr(argv[2], ':'))) {
@@ -2032,7 +2033,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 			stream->write_function(stream, "-ERR Group name not specified.\n");
 			return SWITCH_STATUS_SUCCESS;
 		} else {
-			if (((lg = switch_core_hash_find(conference->layout_group_hash, group_name)))) {
+			if (switch_core_hash_find(conference->layout_group_hash, group_name)) {
 				if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
 					stream->write_function(stream, "-ERR Change personal canvas to layout group [%s]\n", group_name);
 					conference->video_layout_group = switch_core_strdup(conference->pool, group_name);
@@ -3429,6 +3430,30 @@ switch_status_t conference_api_sub_relate(conference_obj_t *conference, switch_s
 	switch_safe_free(lbuf_members);
 	switch_safe_free(lbuf_other_members);
 	switch_safe_free(action);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_getvar(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	const char *val = NULL;
+	const char *var = argv[2];
+
+	if (var) val = conference_get_variable(conference, var);
+
+	stream_write(stream, "%s", switch_str_nil(val));
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+switch_status_t conference_api_sub_setvar(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	const char *val = argv[3];
+	const char *var = argv[2];
+
+	if (var) conference_set_variable(conference, var, val);
+
+	stream_write(stream, "+OK\n", VA_NONE);
 
 	return SWITCH_STATUS_SUCCESS;
 }

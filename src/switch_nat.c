@@ -506,7 +506,7 @@ static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_na
 
 	if (r == UPNPCOMMAND_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %s protocol %s to localport %s\n", port_str,
-						  (proto == SWITCH_NAT_TCP) ? "TCP" : (proto == SWITCH_NAT_UDP ? "UDP" : "UNKNOWN"), port_str);
+						  (proto == SWITCH_NAT_TCP) ? "TCP" : "UDP", port_str);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -566,7 +566,7 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 
 	if (r == UPNPCOMMAND_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %s protocol %s to localport %s\n", port_str,
-						  (proto == SWITCH_NAT_TCP) ? "TCP" : (proto == SWITCH_NAT_UDP ? "UDP" : "UNKNOWN"), port_str);
+						  (proto == SWITCH_NAT_TCP) ? "TCP" : "UDP", port_str);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	return status;

@@ -153,16 +153,18 @@ static switch_status_t load_config(switch_xml_t input_cfg)
 	}
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
+
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
+			char *val_no_whitespace = switch_strip_whitespace(val);
 
 			if (!strcasecmp(var, "address")) {
-				set_global_dst_addrs(switch_strip_whitespace(val));
+				set_global_dst_addrs(val_no_whitespace);
 			} else if (!strcasecmp(var, "source_address")) {
-				set_global_src_addr(switch_strip_whitespace(val));
+				set_global_src_addr(val_no_whitespace);
 			} else if (!strcasecmp(var, "source_address_ipv6")) {
-				set_global_src_addr6(switch_strip_whitespace(val));
+				set_global_src_addr6(val_no_whitespace);
 			} else if (!strcasecmp(var, "bindings")) {
 				set_global_bindings(val);
 			} else if (!strcasecmp(var, "port")) {
@@ -183,6 +185,8 @@ static switch_status_t load_config(switch_xml_t input_cfg)
 			} else if (!strcasecmp(var, "loopback")) {
 				globals.loopback = switch_true(val);
 			}
+
+			switch_safe_free(val_no_whitespace);
 		}
 	}
 
@@ -190,6 +194,7 @@ static switch_status_t load_config(switch_xml_t input_cfg)
 
 
 	if (globals.bindings) {
+
 		for (cur = globals.bindings; cur; count++) {
 			switch_event_types_t type;
 
@@ -290,15 +295,15 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 	dst_host_count = switch_separate_string(globals.dst_addrs, ',', dst_hosts, MAX_DST_HOSTS);
 	for (i = 0; i < dst_host_count; i++) {
 		char *ip_addr_groups[8] = { 0 };
-		char host_string[sizeof(dst_hosts[i])];
+		char *host_string;
 		char ipv6_first_octet[3];
 
-		memset(&globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr, 0, sizeof(dst_sockaddr_t));
-
-		if (globals.num_dst_addrs > MAX_DST_HOSTS) {
+		if (globals.num_dst_addrs >= MAX_DST_HOSTS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot add destination address: %s, exceeded maximum of %d\n", dst_hosts[i], MAX_DST_HOSTS);
 			continue;
 		}
+
+		memset(&globals.dst_sockaddrs[globals.num_dst_addrs], 0, sizeof(dst_sockaddr_t));
 
 		if (switch_sockaddr_info_get(&globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr, dst_hosts[i], SWITCH_UNSPEC, globals.port, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find address: %s\n", dst_hosts[i]);
@@ -315,7 +320,8 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 		}
 
 		/* flag this address with the address type */
-		strcpy(host_string, dst_hosts[i]);
+		host_string = strdup(dst_hosts[i]);
+
 		if (switch_sockaddr_get_family(globals.dst_sockaddrs[globals.num_dst_addrs].sockaddr) == SWITCH_INET) {
 			globals.has_udp = 1;
 			switch_separate_string(host_string, '.', ip_addr_groups, sizeof(ip_addr_groups) / sizeof(ip_addr_groups[0]));
@@ -347,6 +353,7 @@ static switch_status_t initialize_sockets(switch_xml_t input_cfg)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added %s peer: %s", addr_type_names[globals.dst_sockaddrs[globals.num_dst_addrs].addrtype], dst_hosts[i]);
 		globals.dst_sockaddrs[globals.num_dst_addrs].ipaddr = switch_core_strdup(module_pool, dst_hosts[i]);
 		globals.num_dst_addrs++;
+		switch_safe_free(host_string);
 	}
 
 	/* create IPv4 source socket */
@@ -625,8 +632,8 @@ static void event_handler(switch_event_t *event)
 					len = strlen(packet) + strlen((char *) MAGIC);
 #endif
 					buf = malloc(len + 1);
-					memset(buf, 0, len + 1);
 					switch_assert(buf);
+					memset(buf, 0, len + 1);
 
 #ifdef HAVE_OPENSSL
 					if (globals.psk) {
@@ -775,7 +782,11 @@ static switch_status_t process_packet(char* packet, size_t len)
 				switch_url_decode(val);
 				switch_snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
 				switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
-				var = term + 1;
+				if (term) {
+					var = term + 1;
+				} else {
+					var = NULL;
+				}
 			} else {
 				/* This should be our magic packet, done processing incoming headers */
 				break;

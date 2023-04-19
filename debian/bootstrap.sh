@@ -332,7 +332,7 @@ Build-Depends:
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.6),
+ bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.14),
  libspandsp3-dev,
 # used to format the private freeswitch apt-repo key properly
  gnupg,
@@ -371,7 +371,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: amd64 armhf
-Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.6)
+Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.14)
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)
@@ -653,11 +653,9 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-flite (= \${binary:Version}),
  freeswitch-mod-pocketsphinx (= \${binary:Version}),
  freeswitch-mod-tts-commandline (= \${binary:Version}),
- freeswitch-mod-unimrcp (= \${binary:Version}),
  freeswitch-mod-dialplan-asterisk (= \${binary:Version}),
  freeswitch-mod-dialplan-directory (= \${binary:Version}),
  freeswitch-mod-dialplan-xml (= \${binary:Version}),
- freeswitch-mod-dingaling (= \${binary:Version}),
  freeswitch-mod-loopback (= \${binary:Version}),
  freeswitch-mod-portaudio (= \${binary:Version}),
  freeswitch-mod-rtc (= \${binary:Version}),
@@ -892,11 +890,9 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-flite-dbg (= \${binary:Version}),
  freeswitch-mod-pocketsphinx-dbg (= \${binary:Version}),
  freeswitch-mod-tts-commandline-dbg (= \${binary:Version}),
- freeswitch-mod-unimrcp-dbg (= \${binary:Version}),
  freeswitch-mod-dialplan-asterisk-dbg (= \${binary:Version}),
  freeswitch-mod-dialplan-directory-dbg (= \${binary:Version}),
  freeswitch-mod-dialplan-xml-dbg (= \${binary:Version}),
- freeswitch-mod-dingaling-dbg (= \${binary:Version}),
  freeswitch-mod-loopback-dbg (= \${binary:Version}),
  freeswitch-mod-portaudio-dbg (= \${binary:Version}),
  freeswitch-mod-rtc-dbg (= \${binary:Version}),
