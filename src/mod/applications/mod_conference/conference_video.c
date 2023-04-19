@@ -3344,7 +3344,8 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 
 			if (imember->watching_canvas_id == canvas->canvas_id && switch_channel_test_flag(imember->channel, CF_VIDEO_REFRESH_REQ)) {
 				switch_channel_clear_flag(imember->channel, CF_VIDEO_REFRESH_REQ);
-				send_keyframe = SWITCH_TRUE;
+				canvas->send_keyframe = 30;
+				send_keyframe = 1;
 			}
 
 			if (conference_utils_test_flag(conference, CFLAG_MINIMIZE_VIDEO_ENCODING) &&
@@ -3802,6 +3803,7 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thr
 					switch_image_t *use_img = NULL;
 
 					if (!omember->session || !switch_channel_test_flag(omember->channel, CF_VIDEO_READY) ||
+						(conference_utils_test_flag(omember->conference, CFLAG_VIDEO_MUTE_EXIT_CANVAS) && !conference_utils_member_test_flag(omember, MFLAG_CAN_BE_SEEN)) ||
 						switch_core_session_media_flow(omember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_SENDONLY || switch_core_session_media_flow(omember->session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_MEDIA_FLOW_INACTIVE) {
 						continue;
 					}

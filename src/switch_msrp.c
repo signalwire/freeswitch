@@ -1413,7 +1413,7 @@ end:
 
 	if (!client_mode) switch_core_destroy_memory_pool(&pool);
 
-	if (client_mode && ssl) SSL_free(ssl);
+	if (ssl) SSL_free(ssl);
 
 	if (msrp_session) msrp_session->running = 0;
 
@@ -1425,7 +1425,6 @@ end:
 static void *SWITCH_THREAD_FUNC msrp_listener(switch_thread_t *thread, void *obj)
 {
 	switch_msrp_socket_t *msock = (switch_msrp_socket_t *)obj;
-	switch_status_t rv;
 	switch_memory_pool_t *pool = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_socket_t *sock = NULL;
@@ -1440,7 +1439,7 @@ static void *SWITCH_THREAD_FUNC msrp_listener(switch_thread_t *thread, void *obj
 	switch_socket_opt_set(msock->sock, SWITCH_SO_TCP_NODELAY, TRUE);
 	// switch_socket_opt_set(msock->sock, SWITCH_SO_NONBLOCK, TRUE);
 
-	while (globals.running && (rv = switch_socket_accept(&sock, msock->sock, pool)) == SWITCH_STATUS_SUCCESS) {
+	while (globals.running && switch_socket_accept(&sock, msock->sock, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_memory_pool_t *worker_pool;
 		worker_helper_t *helper;
 

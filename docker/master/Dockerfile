@@ -1,5 +1,7 @@
 # vim:set ft=dockerfile:
-FROM debian:jessie
+ARG DEBIAN_VERSION=buster
+FROM debian:${DEBIAN_VERSION}
+ARG TOKEN
 
 # Source Dockerfile:
 # https://github.com/docker-library/postgres/blob/master/9.4/Dockerfile
@@ -8,38 +10,31 @@ FROM debian:jessie
 RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 freeswitch
 
 # grab gosu for easy step-down from root
-RUN gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends dirmngr gnupg2 ca-certificates wget \
+    && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 655DA1341B5207915210AFE936B4249FA7B0FB03 \
+    && gpg2 --output /usr/share/keyrings/signalwire-freeswitch-repo.gpg --export 655DA1341B5207915210AFE936B4249FA7B0FB03 \
+    && rm -rf /var/lib/apt/lists/* \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc" \
     && gpg --verify /usr/local/bin/gosu.asc \
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu \
-    && apt-get purge -y --auto-remove ca-certificates wget
+    && apt-get purge -y --auto-remove ca-certificates wget dirmngr gnupg2
 
 # make the "en_US.UTF-8" locale so freeswitch will be utf-8 enabled by default
 RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
 
-# https://files.freeswitch.org/repo/deb/freeswitch-1.*/dists/jessie/main/binary-amd64/Packages
+# https://freeswitch.org/confluence/display/FREESWITCH/Debian
 
-ENV FS_MAJOR debian-unstable
-
-RUN sed -i "s/jessie main/jessie main contrib non-free/" /etc/apt/sources.list
-
-# https://freeswitch.org/confluence/display/FREESWITCH/Debian+8+Jessie#Debian8Jessie-InstallingfromDebianpackages
-
-RUN apt-get update && apt-get install -y curl \
-    && curl https://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub | apt-key add - \
-    && echo "deb http://files.freeswitch.org/repo/deb/$FS_MAJOR/ jessie main" > /etc/apt/sources.list.d/freeswitch.list \
-    && apt-get purge -y --auto-remove curl
-
-RUN apt-get update && apt-get install -y freeswitch-all \
+RUN apt-get update && apt-get install ca-certificates lsb-release -y --no-install-recommends \
+    && echo "machine freeswitch.signalwire.com login signalwire password ${TOKEN}" > /etc/apt/auth.conf \
+    && echo "deb [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ `lsb_release -sc` main" > /etc/apt/sources.list.d/freeswitch.list \
+    && apt-get update && apt-get install -y freeswitch-all \
+    && apt-get purge -y --auto-remove ca-certificates lsb-release \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Clean up
-RUN apt-get autoremove
 
 COPY docker-entrypoint.sh /
 # Add anything else here

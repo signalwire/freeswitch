@@ -160,6 +160,7 @@ struct {
 	int debuginfo;
 	uint32_t use_jb_lookahead;
 	switch_mutex_t *mutex;
+	int mono;
 } opus_prefs;
 
 static struct {
@@ -283,7 +284,7 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 					}
 
 					if (!strcasecmp(data, "stereo")) {
-						codec_settings->stereo = atoi(arg);
+						codec_settings->stereo = opus_prefs.mono ? 0 : atoi(arg);
 						codec_fmtp->stereo = codec_settings->stereo;
 					}
 
@@ -563,6 +564,11 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 	opus_codec_settings.usedtx = opus_prefs.use_dtx;
 
+	if (opus_prefs.mono) {
+		opus_codec_settings.stereo = 0;
+		opus_codec_settings.sprop_stereo = 0;
+	}
+
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
 	if (encoding) {
@@ -811,6 +817,7 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	int fec = 0, plc = 0;
 	int32_t frame_size = 0, last_frame_size = 0;
 	uint32_t frame_samples;
+	uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -836,7 +843,6 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 			}
 			if (codec->cur_frame && (jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO))) {
 				switch_frame_t frame = { 0 };
-				uint8_t buf[SWITCH_RTP_MAX_BUF_LEN];
 				uint32_t ts = 0;
 				uint16_t seq = 0;
 
@@ -1080,6 +1086,8 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				if (!switch_opus_acceptable_rate(opus_prefs.sprop_maxcapturerate)) {
 					opus_prefs.sprop_maxcapturerate = 0; /* value not supported */
 				}
+			} else if (!strcasecmp(key, "mono")) {
+				opus_prefs.mono = atoi(val);
 			}
 		}
 	}
@@ -1097,7 +1105,7 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	uint32_t LBRR_threshold_bitrate,LBRR_rate_thres_bps,real_target_bitrate ;
 	opus_int32 a32,b32;
 	uint32_t fs = context->enc_frame_size * 1000 / (codec->implementation->microseconds_per_packet / 1000);
-	float frame_rate =(float)(1000 / (codec->implementation->microseconds_per_packet / 1000));
+	float frame_rate =(float)(1000 / (float)(codec->implementation->microseconds_per_packet / 1000));
 	uint32_t step = (codec->implementation->microseconds_per_packet / 1000) != 60 ? 8000 / (codec->implementation->microseconds_per_packet / 1000 ) : 134 ;
 
 	opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));

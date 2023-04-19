@@ -458,62 +458,6 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
-/*!\brief Handler for consumer DTMF
- *
- * When `fifo_consumer_exit_key` is pressed by the consumer we hangup
- * on the caller (unless we've put the caller on hold).  The default
- * exit key is '*'.
- *
- * When the consumer presses '0' we put both legs on hold and play
- * hold music as follows.  To the caller we play `fifo_music` or the
- * default hold music for the channel.  To the consumer we play
- * `fifo_hold_music`, or `fifo_music`, or the default hold music for
- * the channel.  The consumer can press '0' again to pick up the
- * caller from hold.
- */
-static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
-{
-	switch_core_session_t *bleg = (switch_core_session_t *) buf;
-
-	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF:
-		{
-			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-			switch_channel_t *bchan = switch_core_session_get_channel(bleg);
-			switch_channel_t *channel = switch_core_session_get_channel(session);
-
-			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_BRIDGE_ORIGINATOR)) {
-				const char *consumer_exit_key = switch_channel_get_variable(channel, "fifo_consumer_exit_key");
-				if (!consumer_exit_key) consumer_exit_key = "*";
-				if (dtmf->digit == *consumer_exit_key) {
-					switch_channel_hangup(bchan, SWITCH_CAUSE_NORMAL_CLEARING);
-					return SWITCH_STATUS_BREAK;
-				} else if (dtmf->digit == '0') {
-					const char *moh_a = NULL, *moh_b = NULL;
-
-					if (!(moh_b = switch_channel_get_variable(bchan, "fifo_music"))) {
-						moh_b = switch_channel_get_hold_music(bchan);
-					}
-
-					if (!(moh_a = switch_channel_get_variable(channel, "fifo_hold_music"))) {
-						if (!(moh_a = switch_channel_get_variable(channel, "fifo_music"))) {
-							moh_a = switch_channel_get_hold_music(channel);
-						}
-					}
-
-					switch_ivr_soft_hold(session, "0", moh_a, moh_b);
-					return SWITCH_STATUS_IGNORE;
-				}
-			}
-		}
-		break;
-	default:
-		break;
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 /*!\brief Handler for caller DTMF
  *
  * The channel variable `fifo_caller_exit_key` can be set to one or
@@ -723,7 +667,65 @@ static struct {
 	int allow_transcoding;
 	switch_bool_t delete_all_members_on_startup;
 	outbound_strategy_t default_strategy;
+	int disable_dtmf_moh_key;
 } globals;
+
+
+/*!\brief Handler for consumer DTMF
+ *
+ * When `fifo_consumer_exit_key` is pressed by the consumer we hangup
+ * on the caller (unless we've put the caller on hold).  The default
+ * exit key is '*'.
+ *
+ * When the consumer presses '0' we put both legs on hold and play
+ * hold music as follows.  To the caller we play `fifo_music` or the
+ * default hold music for the channel.  To the consumer we play
+ * `fifo_hold_music`, or `fifo_music`, or the default hold music for
+ * the channel.  The consumer can press '0' again to pick up the
+ * caller from hold.
+ */
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	switch_core_session_t *bleg = (switch_core_session_t *) buf;
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:
+		{
+			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
+			switch_channel_t *bchan = switch_core_session_get_channel(bleg);
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+
+			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_BRIDGE_ORIGINATOR)) {
+				const char *consumer_exit_key = switch_channel_get_variable(channel, "fifo_consumer_exit_key");
+				if (!consumer_exit_key) consumer_exit_key = "*";
+				if (dtmf->digit == *consumer_exit_key) {
+					switch_channel_hangup(bchan, SWITCH_CAUSE_NORMAL_CLEARING);
+					return SWITCH_STATUS_BREAK;
+				} else if (dtmf->digit == '0' && !globals.disable_dtmf_moh_key) {
+					const char *moh_a = NULL, *moh_b = NULL;
+
+					if (!(moh_b = switch_channel_get_variable(bchan, "fifo_music"))) {
+						moh_b = switch_channel_get_hold_music(bchan);
+					}
+
+					if (!(moh_a = switch_channel_get_variable(channel, "fifo_hold_music"))) {
+						if (!(moh_a = switch_channel_get_variable(channel, "fifo_music"))) {
+							moh_a = switch_channel_get_hold_music(channel);
+						}
+					}
+
+					switch_ivr_soft_hold(session, "0", moh_a, moh_b);
+					return SWITCH_STATUS_IGNORE;
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static int fifo_dec_use_count(const char *outbound_id)
 {
@@ -2351,7 +2353,6 @@ SWITCH_STANDARD_API(fifo_check_bridge_function)
 SWITCH_STANDARD_API(fifo_add_outbound_function)
 {
 	char *data = NULL, *argv[4] = { 0 };
-	int argc;
 	uint32_t priority = 0;
 
 	if (zstr(cmd)) {
@@ -2360,7 +2361,7 @@ SWITCH_STANDARD_API(fifo_add_outbound_function)
 
 	data = strdup(cmd);
 
-	if ((argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2 || !argv[0]) {
+	if (switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 2 || !argv[0]) {
 		goto fail;
 	}
 
@@ -2550,7 +2551,7 @@ typedef enum {
 
 #define MAX_NODES_PER_CONSUMER 25
 #define FIFO_DESC "Fifo for stacking parked calls."
-#define FIFO_USAGE "<fifo name>[!<importance_number>] [in [<announce file>|undef] [<music file>|undef] | out [wait|nowait] [<announce file>|undef] [<music file>|undef]]"
+#define FIFO_USAGE "<fifo name>[!<importance_number>] [in [<announce file>|undef] [<music file>|undef] [early|noans] | out [wait|nowait] [<announce file>|undef] [<music file>|undef]]"
 SWITCH_STANDARD_APP(fifo_function)
 {
 	int argc;
@@ -2568,7 +2569,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	char *list_string;
 	int nlist_count;
 	char *nlist[MAX_NODES_PER_CONSUMER];
-	int consumer = 0, in_table = 0;
+	int consumer = 0, in_table = 0, answer = 0;
 	const char *arg_fifo_name = NULL;
 	const char *arg_inout = NULL;
 	const char *serviced_uuid = NULL;
@@ -2658,6 +2659,13 @@ SWITCH_STANDARD_APP(fifo_function)
 		if (argc > 3) {
 			moh = argv[3];
 		}
+		if (argc > 4) {
+			if (!strcasecmp(argv[4], "noans")) {
+				answer = 1;
+			} else if (!strcasecmp(argv[4], "early")) {
+				answer = 2;
+			}
+		}
 	}
 
 	if (moh && !strcasecmp(moh, "silence")) {
@@ -2714,7 +2722,9 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-		switch_channel_answer(channel);
+                if (answer == 0) {
+		   switch_channel_answer(channel);
+                }
 
 		switch_mutex_lock(node->update_mutex);
 
@@ -2965,7 +2975,9 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_core_hash_insert(node->consumer_hash, switch_core_session_get_uuid(session), session);
 				switch_mutex_unlock(node->mutex);
 			}
-			switch_channel_answer(channel);
+                        if( answer == 0 ) {
+			   switch_channel_answer(channel);
+                        }
 		}
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -3295,7 +3307,9 @@ SWITCH_STANDARD_APP(fifo_function)
 					break;
 				}
 
-				switch_channel_answer(channel);
+                                if (answer == 0 || answer == 2) {
+				   switch_channel_answer(channel);
+                                }
 
 				if (switch_channel_inbound_display(other_channel)) {
 					if (switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
@@ -4405,6 +4419,8 @@ static switch_status_t read_config_file(switch_xml_t *xml, switch_xml_t *cfg) {
 				globals.inner_post_trans_execute = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "delete-all-outbound-member-on-startup")) {
 				globals.delete_all_members_on_startup = switch_true(val);
+			} else if (!strcasecmp(var, "disable-dtmf-moh-key") && !zstr(val)) {
+				globals.disable_dtmf_moh_key = switch_true(val);
 			}
 		}
 	}

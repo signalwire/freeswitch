@@ -205,6 +205,8 @@
         <!-- <param name="bitpacking" value="aal2"/> -->
         <!-- max number of open dialogs in proceeding -->
         <!-- <param name="max-proceeding" value="1000"/> -->
+        <!-- max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
+        <!-- <param name="max-recv-requests-per-second" value="0"/> -->
         <!-- session timers for all call to expire after the specified seconds -->
         <!-- <param name="session-timeout" value="1800"/> -->
         <!-- Can be 'true' or 'contact' -->
@@ -283,9 +285,6 @@
         <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
         <param name="inbound-late-negotiation" value="true"/>
 
-        <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
-        <param name="inbound-zrtp-passthru" value="true"/>
-
         <!-- this lets anything register -->
         <!-- comment the next line and uncomment one or both of the other 2
              lines for call authentication -->
@@ -317,12 +316,26 @@
              register for nat handling -->
         <!-- <param name="NDLB-received-in-nat-reg-contact" value="true"/> -->
         <param name="auth-calls" value="$${internal_auth_calls}"/>
-        <!-- <param name="auth-messages" value="false"/> -->
         <!-- <param name="auth-subscriptions" value="false"/> -->
         <!-- Force the user and auth-user to match. -->
         <param name="inbound-reg-force-matching-username" value="true"/>
         <!-- on authed calls, authenticate *all* the packets not just invite -->
         <param name="auth-all-packets" value="false"/>
+        <!-- NOTICE: auth-messages was deprecated and authentication is enabled by default now.
+             See disable-auth-messages param for more details. -->
+        <!-- <param name="auth-messages" value="false"/> -->
+        <!-- Uncomment to stop authentication on message packets.
+             By default authentication is enabled.
+             disable-auth-messages param has higher priority than the deprecated auth-messages param. -->
+        <!-- <param name="disable-auth-messages" value="true"/> -->
+
+        <!-- NOTICE: auth-subscriptions was deprecated and authentication is enabled by default now.
+             See disable-auth-subscriptions param for more details. -->
+        <!-- <param name="auth-subscriptions" value="false"/> -->
+        <!-- Uncomment to stop authentication on subscriptions packets.
+             By default authentication is enabled.
+             disable-auth-subscriptions param has higher priority than the deprecated auth-subscriptions param. -->
+        <!-- <param name="disable-auth-subscriptions" value="true"/> -->
 
         <!-- external_sip_ip
              Used as the public IP address for SDP.

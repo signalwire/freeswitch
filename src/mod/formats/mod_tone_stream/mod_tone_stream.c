@@ -130,7 +130,6 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	char *tmp;
 	int fd = -1;
 	char buf[1024] = "";
-	size_t len;
 
 	memset(&ts, 0, sizeof(ts));
 
@@ -172,7 +171,7 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 			return SWITCH_STATUS_FALSE;
 		}
 
-		while ((len = switch_fd_read_line(fd, buf, sizeof(buf)))) {
+		while (switch_fd_read_line(fd, buf, sizeof(buf))) {
 			teletone_run(&ts, buf);
 		}
 		close(fd);

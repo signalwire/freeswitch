@@ -466,7 +466,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_patch_spy_frame(switch_med
 {
 	switch_queue_t *spy_q = NULL;
 	int w = 0, h = 0;
-	switch_status_t status;
 	void *pop;
 	int i;
 
@@ -479,7 +478,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_patch_spy_frame(switch_med
 	spy_q = bug->spy_video_queue[rw];
 
 	while(switch_queue_size(spy_q) > 0) {
-		if ((status = switch_queue_trypop(spy_q, &pop)) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_trypop(spy_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&bug->spy_img[rw]);
 			if (!(bug->spy_img[rw] = (switch_image_t *) pop)) {
 				break;
@@ -641,7 +640,6 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 	switch_core_timer_init(&timer, "soft", fps_data.ms, fps_data.samples, NULL);
 
 	while (bug->ready) {
-		switch_status_t status;
 		int w = 0, h = 0, ok = 1, new_main = 0, new_other = 0, new_canvas = 0;
 		
 		switch_core_timer_next(&timer);
@@ -657,7 +655,7 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 		w = vw / 2;
 		h = vh;
 
-		if ((status = switch_queue_trypop(main_q, &pop)) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_trypop(main_q, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_img_free(&img);
 
 			if (!pop) {
@@ -678,7 +676,7 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 		if (other_q) {
 			flush_video_queue(other_q, 1);
 
-			if ((status = switch_queue_trypop(other_q, &other_pop)) == SWITCH_STATUS_SUCCESS) {
+			if (switch_queue_trypop(other_q, &other_pop) == SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&other_img);
 				other_img = (switch_image_t *) other_pop;
 
@@ -918,6 +916,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 	if (switch_test_flag(bug, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bug, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bug, SMBF_READ_VIDEO_PING) || switch_test_flag(bug, SMBF_WRITE_VIDEO_PING)) {
 		switch_channel_set_flag_recursive(session->channel, CF_VIDEO_DECODED_READ);
+
+		if (switch_test_flag(bug, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bug, SMBF_READ_VIDEO_PING)) {
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_READ_TAPPED);
+		}
+
+		if (switch_test_flag(bug, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bug, SMBF_WRITE_VIDEO_PING)) {
+			switch_channel_set_flag_recursive(session->channel, CF_VIDEO_WRITE_TAPPED);
+		}
 	}
 
 	if (switch_test_flag(bug, SMBF_SPY_VIDEO_STREAM) || switch_core_media_bug_test_flag(bug, SMBF_SPY_VIDEO_STREAM_BLEG)) {
@@ -1297,6 +1303,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 
 		if (switch_test_flag(bp, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bp, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bp, SMBF_READ_VIDEO_PING) || switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {
 			switch_channel_clear_flag_recursive(bp->session->channel, CF_VIDEO_DECODED_READ);
+
+			if (switch_test_flag(bp, SMBF_READ_VIDEO_STREAM) || switch_test_flag(bp, SMBF_READ_VIDEO_PING)) {
+				switch_channel_clear_flag_recursive(bp->session->channel, CF_VIDEO_READ_TAPPED);
+			}
+
+			if (switch_test_flag(bp, SMBF_WRITE_VIDEO_STREAM) || switch_test_flag(bp, SMBF_WRITE_VIDEO_PING)) {
+				switch_channel_clear_flag_recursive(bp->session->channel, CF_VIDEO_WRITE_TAPPED);
+			}
 		}
 
 		bp->ready = 0;

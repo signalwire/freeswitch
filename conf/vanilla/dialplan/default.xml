@@ -443,10 +443,6 @@
 	     This will take the SAS from the b-leg and send it to the display on the a-leg phone.
 	     Known working with Polycom and Snom maybe others.
 	-->
-	<!--
-	<action application="set" data="exec_after_bridge_app=${sched_api(+4 zrtp expand uuid_display ${uuid} \${uuid_getvar(\${uuid_getvar(${uuid} signal_bond)} zrtp_sas1_string )}  \${uuid_getvar(\${uuid_getvar(${uuid} signal_bond)} zrtp_sas2_string )} )}"/>
-	<action application="export" data="nolocal:zrtp_secure_media=true"/>
-	-->
 	<action application="bridge" data="sofia/${use_profile}/$1@conference.freeswitch.org"/>
       </condition>
     </extension>
@@ -768,13 +764,6 @@
       </condition>
     </extension>
 
-    <!-- install zrtp_agent.lua into scripts (ZRTP == 9787) -->
-    <extension name="zrtp_enrollement">
-      <condition field="destination_number" expression="^9787$">
-	<action application="lua" data="zrtp_agent.lua"/>
-      </condition>
-    </extension>
-
     <!--
 	You will no longer hear the bong tone.  The wav file is playing stating the call is secure.
 	The file will not play unless you have both TLS and SRTP active.
@@ -786,10 +775,8 @@
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML features"/>
 	<action application="playback" data="$${hold_music}"/>
-	<anti-action application="set" data="zrtp_secure_media=true"/>
 	<anti-action application="answer"/>
 	<anti-action application="playback" data="silence_stream://2000"/>
-	<anti-action application="execute_extension" data="is_zrtp_secure XML features"/>
 	<anti-action application="playback" data="$${hold_music}"/>
       </condition>
     </extension>

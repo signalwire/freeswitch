@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_general.h"
-#include "apr_pools.h"
-#include "apr_signal.h"
-#include "apr_atomic.h"
+#include "fspr.h"
+#include "fspr_general.h"
+#include "fspr_pools.h"
+#include "fspr_signal.h"
+#include "fspr_atomic.h"
 
-#include "apr_arch_proc_mutex.h" /* for apr_proc_mutex_unix_setup_lock() */
-#include "apr_arch_internal_time.h"
+#include "fspr_arch_proc_mutex.h" /* for fspr_proc_mutex_unix_setup_lock() */
+#include "fspr_arch_internal_time.h"
 
 
-APR_DECLARE(apr_status_t) apr_app_initialize(int *argc, 
+APR_DECLARE(fspr_status_t) fspr_app_initialize(int *argc, 
                                              const char * const * *argv, 
                                              const char * const * *env)
 {
@@ -33,57 +33,57 @@ APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
      * control manager into the process, and it's required to fix the char*
      * data passed in from win32 unicode into utf-8, win32's apr internal fmt.
      */
-    return apr_initialize();
+    return fspr_initialize();
 }
 
 static int initialized = 0;
 
-APR_DECLARE(apr_status_t) apr_initialize(void)
+APR_DECLARE(fspr_status_t) fspr_initialize(void)
 {
-    apr_pool_t *pool;
-    apr_status_t status;
+    fspr_pool_t *pool;
+    fspr_status_t status;
 
     if (initialized++) {
         return APR_SUCCESS;
     }
 
 #if !defined(BEOS) && !defined(OS2)
-    apr_proc_mutex_unix_setup_lock();
-    apr_unix_setup_time();
+    fspr_proc_mutex_unix_setup_lock();
+    fspr_unix_setup_time();
 #endif
 
-    if ((status = apr_pool_initialize()) != APR_SUCCESS)
+    if ((status = fspr_pool_initialize()) != APR_SUCCESS)
         return status;
     
-    if (apr_pool_create(&pool, NULL) != APR_SUCCESS) {
+    if (fspr_pool_create(&pool, NULL) != APR_SUCCESS) {
         return APR_ENOPOOL;
     }
 
-    apr_pool_tag(pool, "apr_initialize");
+    fspr_pool_tag(pool, "fspr_initialize");
 
-    /* apr_atomic_init() used to be called from here aswell.
+    /* fspr_atomic_init() used to be called from here aswell.
      * Pools rely on mutexes though, which can be backed by
      * atomics.  Due to this circular dependency
-     * apr_pool_initialize() is taking care of calling
-     * apr_atomic_init() at the correct time.
+     * fspr_pool_initialize() is taking care of calling
+     * fspr_atomic_init() at the correct time.
      */
 
-    apr_signal_init(pool);
+    fspr_signal_init(pool);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE_NONSTD(void) apr_terminate(void)
+APR_DECLARE_NONSTD(void) fspr_terminate(void)
 {
     initialized--;
     if (initialized) {
         return;
     }
-    apr_pool_terminate();
+    fspr_pool_terminate();
     
 }
 
-APR_DECLARE(void) apr_terminate2(void)
+APR_DECLARE(void) fspr_terminate2(void)
 {
-    apr_terminate();
+    fspr_terminate();
 }
