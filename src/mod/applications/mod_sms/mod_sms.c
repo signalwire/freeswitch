@@ -610,7 +610,6 @@ SWITCH_STANDARD_CHAT_APP(reply_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_STANDARD_CHAT_APP(transfer_function)
 {
 	char *context;
@@ -630,9 +629,6 @@ SWITCH_STANDARD_CHAT_APP(transfer_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
-
 
 /* Macro expands to: switch_status_t mod_sms_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
