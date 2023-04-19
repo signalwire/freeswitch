@@ -86,7 +86,6 @@ typedef union {
 static uint32_t index_from_float(float f);
 static float float_from_index(uint32_t d);
 static float *acos_table = NULL;
-static int acos_fd = -1;
 
 
 #ifdef FAST_ACOSF_TESTING
@@ -112,6 +111,10 @@ extern int compute_table(void)
 
 	acos_table_file = fopen(ACOS_TABLE_FILENAME, "w");
 
+	if (!acos_table_file) {
+		return -3;
+	}
+
 	for (i = 0; i < ACOS_TABLE_LENGTH; i++) {
 		f = acosf(float_from_index(i));
 		res = fwrite(&f, sizeof(f), 1, acos_table_file);
@@ -124,10 +127,12 @@ extern int compute_table(void)
 	if (res != 0) {
 		return -2;
 	}
+
 	return 0;
 
 fail:
 	fclose(acos_table_file);
+
 	return -1;
 }
 
@@ -144,8 +149,9 @@ extern int init_fast_acosf(void)
 			 * or some other error occured */
 			errsv = errno;
 			strerror_r(errsv, err, 150);
-			if (errsv != ENOENT) return -1;
-			else {
+			if (errsv != ENOENT) {
+				return -1;
+			} else {
 				switch_log_printf(
 					SWITCH_CHANNEL_LOG,
 					SWITCH_LOG_NOTICE,
@@ -166,10 +172,10 @@ extern int init_fast_acosf(void)
 	acos_fp = fopen(ACOS_TABLE_FILENAME, "r");
 	if (acos_fp == NULL) return -3;
 	/* can't fail */
-	acos_fd = fileno(acos_fp);
 	acos_table = (float *) mmap(
 			NULL,							   /* kernel chooses the address at which to create the mapping */
-			ACOS_TABLE_LENGTH * sizeof(float), PROT_READ, MAP_SHARED, acos_fd, 0);
+			ACOS_TABLE_LENGTH * sizeof(float), PROT_READ, MAP_SHARED, fileno(acos_fp), 0);
+	fclose(acos_fp);
 	if (acos_table == MAP_FAILED) return -4;
 
 	return 0;
@@ -178,9 +184,7 @@ extern int init_fast_acosf(void)
 extern int destroy_fast_acosf(void)
 {
 	if (munmap(acos_table, ACOS_TABLE_LENGTH) == -1) return -1;
-	if (acos_fd != -1) {
-		if (close(acos_fd) == -1) return -2;
-	}
+
 	/* disable use of fast arc cosine file */
 	acos_table = NULL;
 

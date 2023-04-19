@@ -3225,6 +3225,7 @@ SWITCH_STANDARD_API(uuid_capture_text)
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_ivr_capture_text(tsession, switch_true(onoff));
+			switch_core_session_rwunlock(tsession);
 		} else {
 			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
 		}
