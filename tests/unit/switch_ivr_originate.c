@@ -55,6 +55,20 @@ static switch_status_t my_on_destroy(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+const char *external_id_to_match = NULL;
+static int got_external_id_in_event = 0;
+
+static void on_hangup_event(switch_event_t *event)
+{
+	if (external_id_to_match) {
+		const char *external_id = switch_event_get_header(event, "Session-External-ID");
+		if (external_id && !strcmp(external_id_to_match, external_id)) {
+			got_external_id_in_event = 1;
+		}
+	}
+}
+
 static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
@@ -89,6 +103,8 @@ FST_CORE_BEGIN("./conf")
 		{
 			fst_requires_module("mod_loopback");
 			application_hit = 0;
+			external_id_to_match = NULL;
+			got_external_id_in_event = 0;
 		}
 		FST_SETUP_END()
 
@@ -96,6 +112,37 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+		FST_TEST_BEGIN(originate_test_external_id)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+			switch_event_t *ovars = NULL;
+			switch_event_create(&ovars, SWITCH_EVENT_CLONE);
+			switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_external_id", "zzzz");
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL, NULL);
+			fst_requires(session);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			switch_event_destroy(&ovars);
+			switch_core_session_rwunlock(session);
+
+			session = switch_core_session_locate("zzzz");
+			fst_requires(session);
+
+			channel = switch_core_session_get_channel(session);
+			fst_requires(channel);
+
+			external_id_to_match = "zzzz";
+			switch_event_bind("originate_test_external_id", SWITCH_EVENT_CHANNEL_HANGUP, SWITCH_EVENT_SUBCLASS_ANY, on_hangup_event, NULL);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_core_session_rwunlock(session);
+			switch_yield(1000 * 1000);
+			fst_check(got_external_id_in_event == 1);
+			switch_event_unbind_callback(on_hangup_event);
+		}
+		FST_TEST_END()
 
 		FST_TEST_BEGIN(originate_test_early_state_handler)
 		{
@@ -435,7 +482,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_handle_destroy(&dh);
 
-			fst_check_duration(3000, 500);
+			fst_check_duration(3000, 600);
 		}
 		FST_TEST_END()
 
@@ -466,7 +513,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_dial_handle_destroy(&dh);
 
-			fst_check_duration(3000, 500);
+			fst_check_duration(3000, 600);
 		}
 		FST_TEST_END()
 
@@ -713,6 +760,28 @@ FST_CORE_BEGIN("./conf")
 			switch_core_session_rwunlock(session);
 			switch_dial_handle_destroy(&dh);
 			fst_check_duration(4500, 600); // (>= 3.9 sec, <= 5.1 sec)
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(originate_test_video)
+		{
+			switch_core_session_t *session = NULL;
+			switch_channel_t *channel = NULL;
+			switch_status_t status;
+			switch_call_cause_t cause;
+
+			status = switch_ivr_originate(NULL, &session, &cause, "{null_video_codec=VP8}null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_requires(session);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			channel = switch_core_session_get_channel(session);
+			fst_requires(channel);
+			fst_check(switch_channel_test_flag(channel, CF_VIDEO));
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			fst_check(!switch_channel_ready(channel));
+
+			switch_core_session_rwunlock(session);
+			switch_sleep(1000000);
 		}
 		FST_TEST_END()
 

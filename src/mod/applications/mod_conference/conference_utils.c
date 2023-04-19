@@ -124,6 +124,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 				f[MFLAG_MUTE_DETECT] = 1;
 			} else if (!strcasecmp(argv[i], "dist-dtmf")) {
 				f[MFLAG_DIST_DTMF] = 1;
+			} else if (!strcasecmp(argv[i], "skip-dtmf")) {
+				f[MFLAG_SKIP_DTMF] = 1;
 			} else if (!strcasecmp(argv[i], "moderator")) {
 				f[MFLAG_MOD] = 1;
 			} else if (!strcasecmp(argv[i], "nomoh")) {
@@ -216,6 +218,8 @@ void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 				f[CFLAG_PERSONAL_CANVAS] = 1;
 			} else if (!strcasecmp(argv[i], "ded-vid-layer-audio-floor")) {
 				f[CFLAG_DED_VID_LAYER_AUDIO_FLOOR] = 1;
+			} else if (!strcasecmp(argv[i], "breakable")) {
+				f[CFLAG_BREAKABLE] = 1;
 			}
 		}
 

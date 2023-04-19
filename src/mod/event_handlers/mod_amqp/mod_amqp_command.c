@@ -274,11 +274,11 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 
 void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void *data)
 {
+	amqp_bytes_t queueName = { 0, NULL };
 	mod_amqp_command_profile_t *profile = (mod_amqp_command_profile_t *) data;
 
 	while (profile->running) {
 		amqp_queue_declare_ok_t *recv_queue;
-		amqp_bytes_t queueName = { 0, NULL };
 
 		/* Ensure we have an AMQP connection */
 		if (!profile->conn_active) {
@@ -387,7 +387,7 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 			amqp_rpc_reply_t res;
 			amqp_envelope_t envelope;
 			struct timeval timeout = {0};
-			char command[1024];
+			char command[10240];
 			enum ECommandFormat {
 				COMMAND_FORMAT_UNKNOWN,
 				COMMAND_FORMAT_PLAINTEXT

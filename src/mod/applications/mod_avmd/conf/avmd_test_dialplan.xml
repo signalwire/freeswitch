@@ -1,840 +1,840 @@
 
-    <extension name="1701">
-      <condition field="destination_number" expression="^1701$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/sin1000hz.raw"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-    <extension name="1702">
-      <condition field="destination_number" expression="^1702$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/sin1200hz.raw"/>
-          <action application="hangup"/>
-          <action application="avmd" data="stop"/>
-      </condition>
-  </extension>
-    <extension name="1703">
-      <condition field="destination_number" expression="^1703$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/sin1400hz.raw"/>
-          <action application="hangup"/>
-          <action application="avmd_stop"/>
-      </condition>
-  </extension>
-    <extension name="1704">
-      <condition field="destination_number" expression="^1704$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/8000/sin1600hz.raw"/>
-          <action application="avmd_stop"/>
-        <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="1701">
+		<condition field="destination_number" expression="^1701$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/sin1000hz.raw"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="1702">
+		<condition field="destination_number" expression="^1702$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/sin1200hz.raw"/>
+			<action application="hangup"/>
+			<action application="avmd" data="stop"/>
+		</condition>
+	</extension>
+	<extension name="1703">
+		<condition field="destination_number" expression="^1703$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/sin1400hz.raw"/>
+			<action application="hangup"/>
+			<action application="avmd_stop"/>
+		</condition>
+	</extension>
+	<extension name="1704">
+		<condition field="destination_number" expression="^1704$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/8000/sin1600hz.raw"/>
+			<action application="avmd_stop"/>
+		<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="503"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(503)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,400,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="504"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(504)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,500,600)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="505"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(505)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,600,700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="506"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(506)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,700,800)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="507"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(507)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,800,900)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="508"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(508)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,900,1000)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="509"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(509)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1100)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="510"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(510)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1100,1200)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="511"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(511)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1200,1300)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="512"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(512)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1300,1400)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="513"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(513)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1400,1500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="514"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(514)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1500,1600)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="515"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(515)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1600,1700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="516"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(516)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1700,1800)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="517"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(517)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1800,1900)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="518"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(518)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1900,1950)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="519"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(519)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,200,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="520"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(520)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,500,700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="521"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(521)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,100,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="522"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(522)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="523"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(523)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1500,2000)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="503"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(503)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,400,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="504"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(504)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,500,600)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="505"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(505)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,600,700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="506"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(506)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,700,800)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="507"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(507)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,800,900)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="508"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(508)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,900,1000)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="509"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(509)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1100)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="510"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(510)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1100,1200)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="511"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(511)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1200,1300)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="512"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(512)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1300,1400)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="513"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(513)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1400,1500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="514"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(514)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1500,1600)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="515"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(515)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1600,1700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="516"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(516)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1700,1800)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="517"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(517)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1800,1900)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="518"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(518)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1900,1950)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="519"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(519)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,200,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="520"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(520)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,500,700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="521"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(521)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,100,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="522"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(522)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="523"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(523)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=0"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1500,2000)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="603"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(603)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,400,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="604"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(604)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,500,600)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="605"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(605)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,600,700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="606"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(606)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,700,800)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="607"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(607)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,800,900)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="608"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(608)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,900,1000)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="609"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(609)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1100)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="610"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(610)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1100,1200)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="611"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(611)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1200,1300)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="612"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(612)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1300,1400)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="613"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(613)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1400,1500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="614"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(614)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1500,1600)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="615"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(615)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1600,1700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="616"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(616)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1700,1800)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="617"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(617)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1800,1900)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="618"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(618)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1900,1950)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="619"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(619)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,200,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="620"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(620)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,500,700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="621"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(621)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,100,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="622"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(622)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="623"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(623)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1500,2000)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="603"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(603)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,400,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="604"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(604)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,500,600)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="605"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(605)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,600,700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="606"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(606)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,700,800)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="607"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(607)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,800,900)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="608"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(608)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,900,1000)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="609"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(609)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1100)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="610"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(610)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1100,1200)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="611"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(611)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1200,1300)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="612"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(612)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1300,1400)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="613"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(613)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1400,1500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="614"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(614)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1500,1600)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="615"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(615)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1600,1700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="616"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(616)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1700,1800)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="617"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(617)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1800,1900)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="618"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(618)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1900,1950)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="619"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(619)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,200,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="620"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(620)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,500,700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="621"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(621)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,100,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="622"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(622)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="623"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(623)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=1"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1500,2000)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="703"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(703)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,400,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="704"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(704)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,500,600)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="705"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(705)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,600,700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="706"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(706)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,700,800)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="707"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(707)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,800,900)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="708"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(708)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,900,1000)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="709"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(709)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1100)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="710"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(710)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1100,1200)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="711"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(711)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1200,1300)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="712"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(712)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1300,1400)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="713"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(713)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1400,1500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="714"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(714)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1500,1600)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="715"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(715)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1600,1700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="716"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(716)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1700,1800)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="717"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(717)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1800,1900)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="718"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(718)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1900,1950)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="719"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(719)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,200,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="720"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(720)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,500,700)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="721"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(721)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,100,500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="722"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(722)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1500)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="723"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
-      <condition field="destination_number" expression="^(723)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
-          <action application="playback" data="tone_stream://L=1;%(1850,1000,1500,2000)" />
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="703"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(703)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,400,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="704"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(704)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,500,600)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="705"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(705)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,600,700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="706"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(706)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,700,800)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="707"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(707)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,800,900)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="708"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(708)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,900,1000)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="709"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(709)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1100)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="710"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(710)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1100,1200)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="711"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(711)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1200,1300)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="712"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(712)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1300,1400)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="713"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(713)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1400,1500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="714"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(714)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1500,1600)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="715"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(715)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1600,1700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="716"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(716)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1700,1800)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="717"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(717)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1800,1900)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="718"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(718)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1900,1950)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="719"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(719)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,200,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="720"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(720)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,500,700)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="721"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(721)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,100,500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="722"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(722)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1000,1500)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="723"><!-- this BEEP must be DETECETD in detection_mode 1 (FREQ), NOTDETECTED in detection_mode 0 (AMP) and 2 (BOTH) -->
+		<condition field="destination_number" expression="^(723)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,debug=0,detection_mode=2"/>
+			<action application="playback" data="tone_stream://L=1;%(1850,1000,1500,2000)" />
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="840531000"><!-- obscure voicemail  -->
-      <condition field="destination_number" expression="^(840531000)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2086613157-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531001"><!-- obscure voicemail  -->
-      <condition field="destination_number" expression="^(840531001)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2179185111-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531002"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531002)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2539488697-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531003"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531003)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2565910163-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531004"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531004)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2679091031-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531005"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531005)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2815939138-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531006"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531006)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2819127763-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531007"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531007)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/3157668346-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531008"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531008)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/4064659099-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531009"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531009)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/6062255782-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531010"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531010)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/8477910425-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531011"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531011)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/8000/8508497121-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531012"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531012)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/8635280270-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531013"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531013)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/8000/9106390422-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531014"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531014)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2"/>
-          <action application="playback" data="voicemail/8000/9156332150-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="840531000"><!-- obscure voicemail	-->
+		<condition field="destination_number" expression="^(840531000)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2086613157-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531001"><!-- obscure voicemail	-->
+		<condition field="destination_number" expression="^(840531001)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2179185111-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531002"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531002)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2539488697-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531003"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531003)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2565910163-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531004"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531004)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2679091031-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531005"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531005)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2815939138-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531006"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531006)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2819127763-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531007"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531007)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/3157668346-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531008"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531008)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/4064659099-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531009"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531009)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/6062255782-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531010"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531010)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/8477910425-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531011"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531011)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/8000/8508497121-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531012"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531012)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/8635280270-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531013"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531013)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/8000/9106390422-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531014"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531014)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2"/>
+			<action application="playback" data="voicemail/8000/9156332150-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="840531200"><!-- obscure voicemail  -->
-      <condition field="destination_number" expression="^(840531200)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2086613157-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531201"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531201)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2179185111-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531202"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531202)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2539488697-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531203"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531203)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2565910163-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531204"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531204)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2679091031-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531205"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531205)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2815939138-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531206"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531206)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/2819127763-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531207"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531207)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/3157668346-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531208"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531208)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/4064659099-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531209"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531209)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/6062255782-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531210"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531210)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/8477910425-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531211"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531211)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/8508497121-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531212"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531212)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/8635280270-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531213"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531213)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/9106390422-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531214"><!-- obscure voicemail -->
-      <condition field="destination_number" expression="^(840531214)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
-          <action application="playback" data="voicemail/8000/9156332150-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="840531200"><!-- obscure voicemail	-->
+		<condition field="destination_number" expression="^(840531200)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2086613157-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531201"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531201)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2179185111-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531202"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531202)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2539488697-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531203"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531203)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2565910163-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531204"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531204)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2679091031-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531205"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531205)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2815939138-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531206"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531206)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/2819127763-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531207"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531207)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/3157668346-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531208"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531208)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/4064659099-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531209"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531209)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/6062255782-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531210"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531210)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/8477910425-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531211"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531211)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/8508497121-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531212"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531212)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/8635280270-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531213"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531213)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/9106390422-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531214"><!-- obscure voicemail -->
+		<condition field="destination_number" expression="^(840531214)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=1,debug=0"/>
+			<action application="playback" data="voicemail/8000/9156332150-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="840531400"><!-- obscure voicemail pack 2 -->
-      <condition field="destination_number" expression="^(840531400)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/2764944714-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531401"><!-- obscure voicemail pack 2 -->
-      <condition field="destination_number" expression="^(840531401)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/3054957758-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531402"><!-- obscure voicemail pack 2 -->
-      <condition field="destination_number" expression="^(840531402)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/5044810548-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531403"><!-- obscure voicemail pack 2 -->
-      <condition field="destination_number" expression="^(840531403)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/5852842171-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531404"><!-- obscure voicemail pack 2 -->
-      <condition field="destination_number" expression="^(840531404)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/5857330628-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
-  <extension name="840531405"><!-- obscure voicemail pack 2 -->
-      <condition field="destination_number" expression="^(840531405)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/8702463704-18-15-bad.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="840531400"><!-- obscure voicemail pack 2 -->
+		<condition field="destination_number" expression="^(840531400)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/2764944714-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531401"><!-- obscure voicemail pack 2 -->
+		<condition field="destination_number" expression="^(840531401)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/3054957758-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531402"><!-- obscure voicemail pack 2 -->
+		<condition field="destination_number" expression="^(840531402)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/5044810548-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531403"><!-- obscure voicemail pack 2 -->
+		<condition field="destination_number" expression="^(840531403)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/5852842171-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531404"><!-- obscure voicemail pack 2 -->
+		<condition field="destination_number" expression="^(840531404)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/5857330628-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
+	<extension name="840531405"><!-- obscure voicemail pack 2 -->
+		<condition field="destination_number" expression="^(840531405)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/8702463704-18-15-bad.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>
 
-  <extension name="840531051"><!-- fragment of "Save tonight" by Eagle-Eye Cherry covered by D-Lete-Funk-K -->
-      <condition field="destination_number" expression="^(840531051)$">
-          <action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
-          <action application="playback" data="voicemail/8000/save_tonight_8000.wav"/>
-          <action application="avmd_stop"/>
-          <action application="hangup"/>
-      </condition>
-  </extension>
+	<extension name="840531051"><!-- fragment of "Save tonight" by Eagle-Eye Cherry covered by D-Lete-Funk-K -->
+		<condition field="destination_number" expression="^(840531051)$">
+			<action application="avmd_start" data="inbound_channel=1,outbound_channel=0,detection_mode=2,debug=0"/>
+			<action application="playback" data="voicemail/8000/save_tonight_8000.wav"/>
+			<action application="avmd_stop"/>
+			<action application="hangup"/>
+		</condition>
+	</extension>

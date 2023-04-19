@@ -767,49 +767,9 @@ process_common_toolchain() {
 
     # detect tgt_os
     case "$gcctarget" in
-      *darwin10*)
+      *darwin*)
         tgt_isa=x86_64
-        tgt_os=darwin10
-        ;;
-      *darwin11*)
-        tgt_isa=x86_64
-        tgt_os=darwin11
-        ;;
-      *darwin12*)
-        tgt_isa=x86_64
-        tgt_os=darwin12
-        ;;
-      *darwin13*)
-        tgt_isa=x86_64
-        tgt_os=darwin13
-        ;;
-      *darwin14*)
-        tgt_isa=x86_64
-        tgt_os=darwin14
-        ;;
-      *darwin15*)
-        tgt_isa=x86_64
-        tgt_os=darwin15
-        ;;
-      *darwin16*)
-        tgt_isa=x86_64
-        tgt_os=darwin16
-        ;;
-      *darwin17*)
-        tgt_isa=x86_64
-        tgt_os=darwin17
-        ;;
-      *darwin18*)
-        tgt_isa=x86_64
-        tgt_os=darwin18
-        ;;
-      *darwin19*)
-        tgt_isa=x86_64
-        tgt_os=darwin19
-        ;;
-      *darwin20*)
-        tgt_isa=x86_64
-        tgt_os=darwin20
+        tgt_os=darwin
         ;;
       x86_64*mingw32*)
         tgt_os=win64
@@ -903,53 +863,15 @@ process_common_toolchain() {
   esac
 
   case ${toolchain} in
-    *-darwin8-*)
-      add_cflags  "-mmacosx-version-min=10.4"
-      add_ldflags "-mmacosx-version-min=10.4"
-      ;;
-    *-darwin9-*)
-      add_cflags  "-mmacosx-version-min=10.5"
-      add_ldflags "-mmacosx-version-min=10.5"
-      ;;
-    *-darwin10-*)
-      add_cflags  "-mmacosx-version-min=10.6"
-      add_ldflags "-mmacosx-version-min=10.6"
-      ;;
-    *-darwin11-*)
-      add_cflags  "-mmacosx-version-min=10.7"
-      add_ldflags "-mmacosx-version-min=10.7"
-      ;;
-    *-darwin12-*)
-      add_cflags  "-mmacosx-version-min=10.8"
-      add_ldflags "-mmacosx-version-min=10.8"
-      ;;
-    *-darwin13-*)
-      add_cflags  "-mmacosx-version-min=10.9"
-      add_ldflags "-mmacosx-version-min=10.9"
-      ;;
-    *-darwin14-*)
-      add_cflags  "-mmacosx-version-min=10.10"
-      add_ldflags "-mmacosx-version-min=10.10"
-      ;;
-    *-darwin15-*)
-      add_cflags  "-mmacosx-version-min=10.11"
-      add_ldflags "-mmacosx-version-min=10.11"
-      ;;
-    *-darwin16-*)
-      add_cflags  "-mmacosx-version-min=10.12"
-      add_ldflags "-mmacosx-version-min=10.12"
-      ;;
-    *-darwin17-*)
-      add_cflags  "-mmacosx-version-min=10.13"
-      add_ldflags "-mmacosx-version-min=10.13"
-      ;;
-    *-darwin18-*)
-      add_cflags  "-mmacosx-version-min=10.14"
-      add_ldflags "-mmacosx-version-min=10.14"
-      ;;
-    *-darwin19-*)
-      add_cflags  "-mmacosx-version-min=10.15"
-      add_ldflags "-mmacosx-version-min=10.15"
+    *-darwin-*)
+      mvmin=$(sw_vers -productVersion)
+      if [[ $mvmin == 10.* ]]; then
+        mvmin="-mmacosx-version-min=""${mvmin%.*}"
+      else
+        mvmin="-mmacosx-version-min=""${mvmin%%.*}"
+      fi
+      add_cflags  $mvmin
+      add_ldflags $mvmin
       ;;
     *-iphonesimulator-*)
       add_cflags  "-miphoneos-version-min=${IOS_VERSION_MIN}"

@@ -76,7 +76,7 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 	}
 
 	memset(context, 0, sizeof(png_file_context_t));
-	context->max = 10000;
+	context->max = 86400000;;
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 
 	if (handle->params) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 
 #if APR_HAVE_FCNTL_H
 #include <fcntl.h>
@@ -23,7 +23,7 @@
 #include <sys/file.h>
 #endif
 
-APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
+APR_DECLARE(fspr_status_t) fspr_file_lock(fspr_file_t *thefile, int type)
 {
     int rc;
 
@@ -82,7 +82,7 @@ APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_unlock(apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_unlock(fspr_file_t *thefile)
 {
     int rc;
 

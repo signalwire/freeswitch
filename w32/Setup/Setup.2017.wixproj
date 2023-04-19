@@ -13,6 +13,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>FreeSWITCH</OutputName>
     <OutputType>Package</OutputType>
+    <CertificateThumbprint>bf386393c880967b00adbc438aee534de6211774</CertificateThumbprint>
+    <TimestampUrl>http://timestamp.comodoca.com</TimestampUrl>
+    <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x86\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='x86' ">$(WindowsSDK80Path)bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x64\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='AMD64' ">$(WindowsSDK80Path)bin\x64\signtool.exe</SignToolPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
   </PropertyGroup>
@@ -381,14 +385,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\asr_tts\mod_unimrcp\mod_unimrcp.2017.vcxproj">
-      <Name>mod_unimrcp</Name>
-      <Project>{d07c378a-f5f7-438f-adf3-4ac4fb1883cd}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_amr\mod_amr.2017.vcxproj">
       <Name>mod_amr</Name>
       <Project>{8deb383c-4091-4f42-a56f-c9e46d552d79}</Project>
@@ -520,14 +516,6 @@
     <ProjectReference Include="..\..\src\mod\directories\mod_ldap\mod_ldap.2017.vcxproj">
       <Name>mod_ldap</Name>
       <Project>{ec3e5c7f-ee09-47e2-80fe-546363d14a98}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_dingaling\mod_dingaling.2017.vcxproj">
-      <Name>mod_dingaling</Name>
-      <Project>{ffaa4c52-3a53-4f99-90c1-d59d1f0427f3}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -1005,8 +993,35 @@
     <Message Importance="High" Text="Deleting previously created MSI files." />
     <Delete Files="$(OutputPath)$(OutputName).msi" />
     <Delete Files="$(DestinationFileName)" />
-
-   <HeatDirectory
+    <CreateItem Include="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\f*.exe">
+        <Output ItemName="ExeFiles" TaskParameter="Include" />
+    </CreateItem>
+    <CreateItem Include="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\mod\*.dll">
+        <Output ItemName="Modules" TaskParameter="Include" />
+    </CreateItem>
+    <Message Importance="High" Text="Signing FreeSWITCH Core Library" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\FreeSwitch.dll"
+            TargetFrameworkVersion="v4.5" />
+    <Message Importance="High" Text="Signing FreeSWITCH Executables" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(ExeFiles.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
+    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
         Directory="$(ProjectDir)..\..\conf\vanilla"
@@ -1019,7 +1034,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHConfFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
         Directory="$(SoundsDir)"
@@ -1032,7 +1047,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHSoundFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHhtdocsFilesDir.wxs"
         Directory="$(ProjectDir)..\..\htdocs"
@@ -1045,7 +1060,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHhtdocsFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHimagesFilesDir.wxs"
         Directory="$(ProjectDir)..\..\images"
@@ -1058,7 +1073,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHimagesFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHfontsFilesDir.wxs"
         Directory="$(ProjectDir)..\..\fonts"
@@ -1071,7 +1086,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHfontsFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHgrammarFilesDir.wxs"
         Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\grammar"
@@ -1084,7 +1099,7 @@
         SuppressFragments="true"
         PreprocessorVariable="var.FreeSWITCHgrammarFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"
         Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)"
@@ -1101,6 +1116,10 @@
   </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />
+    <Message Importance="High" Text="Signing FreeSWITCH MSI Package" />
+    <Exec ContinueOnError="WarnAndContinue"
+        Command="&quot;$(SignToolPath)&quot; sign /fd sha256 /sha1 $(CertificateThumbprint) /t &quot;$(TimestampUrl)&quot; &quot;$(DestinationFileName)&quot;"
+        StandardOutputImportance="high" />
     <Message Importance="High" Condition="Exists('$(DestinationFileName)')" Text="Success. An output MSI has been copied to $(DestinationFileName)" />
   </Target>
 </Project>

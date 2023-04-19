@@ -1589,7 +1589,7 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 		}
 
 		/* accept the connection */
-		if ((rv = switch_socket_accept(&socket, listener->socket, pool))) {
+		if (switch_socket_accept(&socket, listener->socket, pool)) {
 			if (context->shutdown) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting down xmpp listener\n");
 				goto end;

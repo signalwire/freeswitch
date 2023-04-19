@@ -65,7 +65,7 @@ SWITCH_MODULE_DEFINITION(mod_say_pl, mod_say_pl_load, NULL, NULL);
 		if ((tstatus =													\
 			 pl_say_general_count(_sh, tmp, say_args))					\
 			!= SWITCH_STATUS_SUCCESS) {									\
-			return tstatus;												\
+			switch_goto_status(tstatus, end);							\
 		}																\
 		say_args->method = smeth; say_args->type = stype;				\
 		say_args->gender = sgen;										\
@@ -206,6 +206,7 @@ static switch_status_t pl_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	switch_time_exp_t tm, tm_now;
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	const char *tz = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	tz = switch_say_file_handle_get_variable(sh, "timezone");
 
@@ -304,7 +305,7 @@ static switch_status_t pl_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			switch_say_file(sh, "time/t_sekund");
 		}
 
-		return SWITCH_STATUS_SUCCESS;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	}
 
 	if ((t = atol(tosay)) > 0) {
@@ -384,7 +385,7 @@ static switch_status_t pl_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 	}
 
 	if (say_date) {
-		say_year = say_month = say_day = say_dow = 1;
+		say_year = say_month = say_day = 1;
 	}
 
 	if (say_day) {
@@ -409,7 +410,8 @@ static switch_status_t pl_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		/* switch_say_file(sh, "digits/t_minut");*/
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+end:
+	return status;
 }
 
 

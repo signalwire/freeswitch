@@ -305,7 +305,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 	} else if (!strcasecmp(action, "shift-click-layer")) {
 	} else if (!strcasecmp(action, "reset-layer") || !strcasecmp(action, "layer-pan-x") || !strcasecmp(action, "layer-pan-y")) {
 		cJSON *v;
-		int layer_id = 0, canvas_id = 0, metric = 0, absolute = 0;
+		int layer_id = 0, canvas_id = 0, metric = 0;
 		const char *i = "i", *xy = "";
 
 		if ((v = cJSON_GetObjectItem(data, "layerID"))) {
@@ -321,7 +321,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 
 		if ((v = cJSON_GetObjectItem(data, "absolute"))) {
-			if ((absolute = v->valueint)) {
+			if (v->valueint) {
 				i = "";
 			}
 		}
@@ -634,7 +634,7 @@ void conference_event_adv_la(conference_obj_t *conference, conference_member_t *
 	switch_channel_set_flag(member->channel, CF_VIDEO_REFRESH_REQ);
 	switch_core_media_gen_key_frame(member->session);
 
-	if (conference && conference->la && member->session && !switch_channel_test_flag(member->channel, CF_VIDEO_ONLY)) {
+	if (conference && conference->la && member->session) {
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
 		const char *cookie = switch_channel_get_variable(member->channel, "event_channel_cookie");

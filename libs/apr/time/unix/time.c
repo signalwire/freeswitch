@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_portable.h"
-#include "apr_time.h"
-#include "apr_lib.h"
-#include "apr_private.h"
-#include "apr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_time.h"
+#include "fspr_lib.h"
+#include "fspr_private.h"
+#include "fspr_strings.h"
 
 /* private APR headers */
-#include "apr_arch_internal_time.h"
+#include "fspr_arch_internal_time.h"
 
 /* System Headers required for time library */
 #if APR_HAVE_SYS_TIME_H
@@ -36,11 +36,11 @@
 /* End System Headers */
 
 #if !defined(HAVE_STRUCT_TM_TM_GMTOFF) && !defined(HAVE_STRUCT_TM___TM_GMTOFF)
-static apr_int32_t server_gmt_offset;
+static fspr_int32_t server_gmt_offset;
 #define NO_GMTOFF_IN_STRUCT_TM
 #endif          
 
-static apr_int32_t get_offset(struct tm *tm)
+static fspr_int32_t get_offset(struct tm *tm)
 {
 #if defined(HAVE_STRUCT_TM_TM_GMTOFF)
     return tm->tm_gmtoff;
@@ -63,23 +63,23 @@ static apr_int32_t get_offset(struct tm *tm)
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_time_ansi_put(apr_time_t *result,
+APR_DECLARE(fspr_status_t) fspr_time_ansi_put(fspr_time_t *result,
                                             time_t input)
 {
-    *result = (apr_time_t)input * APR_USEC_PER_SEC;
+    *result = (fspr_time_t)input * APR_USEC_PER_SEC;
     return APR_SUCCESS;
 }
 
 /* NB NB NB NB This returns GMT!!!!!!!!!! */
-APR_DECLARE(apr_time_t) apr_time_now(void)
+APR_DECLARE(fspr_time_t) fspr_time_now(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec * APR_USEC_PER_SEC + tv.tv_usec;
 }
 
-static void explode_time(apr_time_exp_t *xt, apr_time_t t,
-                         apr_int32_t offset, int use_localtime)
+static void explode_time(fspr_time_exp_t *xt, fspr_time_t t,
+                         fspr_int32_t offset, int use_localtime)
 {
     struct tm tm;
     time_t tt = (t / APR_USEC_PER_SEC) + offset;
@@ -109,36 +109,36 @@ static void explode_time(apr_time_exp_t *xt, apr_time_t t,
     xt->tm_gmtoff = get_offset(&tm);
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_tz(apr_time_exp_t *result,
-                                          apr_time_t input, apr_int32_t offs)
+APR_DECLARE(fspr_status_t) fspr_time_exp_tz(fspr_time_exp_t *result,
+                                          fspr_time_t input, fspr_int32_t offs)
 {
     explode_time(result, input, offs, 0);
     result->tm_gmtoff = offs;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_gmt(apr_time_exp_t *result,
-                                           apr_time_t input)
+APR_DECLARE(fspr_status_t) fspr_time_exp_gmt(fspr_time_exp_t *result,
+                                           fspr_time_t input)
 {
-    return apr_time_exp_tz(result, input, 0);
+    return fspr_time_exp_tz(result, input, 0);
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_lt(apr_time_exp_t *result,
-                                                apr_time_t input)
+APR_DECLARE(fspr_status_t) fspr_time_exp_lt(fspr_time_exp_t *result,
+                                                fspr_time_t input)
 {
 #if defined(__EMX__)
     /* EMX gcc (OS/2) has a timezone global we can use */
-    return apr_time_exp_tz(result, input, -timezone);
+    return fspr_time_exp_tz(result, input, -timezone);
 #else
     explode_time(result, input, 0, 1);
     return APR_SUCCESS;
 #endif /* __EMX__ */
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_get(apr_time_t *t, apr_time_exp_t *xt)
+APR_DECLARE(fspr_status_t) fspr_time_exp_get(fspr_time_t *t, fspr_time_exp_t *xt)
 {
-    apr_time_t year = xt->tm_year;
-    apr_time_t days;
+    fspr_time_t year = xt->tm_year;
+    fspr_time_t days;
     static const int dayoffset[12] =
     {306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275};
 
@@ -161,25 +161,25 @@ APR_DECLARE(apr_status_t) apr_time_exp_get(apr_time_t *t, apr_time_exp_t *xt)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_time_exp_gmt_get(apr_time_t *t, 
-                                               apr_time_exp_t *xt)
+APR_DECLARE(fspr_status_t) fspr_time_exp_gmt_get(fspr_time_t *t, 
+                                               fspr_time_exp_t *xt)
 {
-    apr_status_t status = apr_time_exp_get(t, xt);
+    fspr_status_t status = fspr_time_exp_get(t, xt);
     if (status == APR_SUCCESS)
-        *t -= (apr_time_t) xt->tm_gmtoff * APR_USEC_PER_SEC;
+        *t -= (fspr_time_t) xt->tm_gmtoff * APR_USEC_PER_SEC;
     return status;
 }
 
-APR_DECLARE(apr_status_t) apr_os_imp_time_get(apr_os_imp_time_t **ostime,
-                                              apr_time_t *aprtime)
+APR_DECLARE(fspr_status_t) fspr_os_imp_time_get(fspr_os_imp_time_t **ostime,
+                                              fspr_time_t *aprtime)
 {
     (*ostime)->tv_usec = *aprtime % APR_USEC_PER_SEC;
     (*ostime)->tv_sec = *aprtime / APR_USEC_PER_SEC;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_exp_time_get(apr_os_exp_time_t **ostime,
-                                              apr_time_exp_t *aprtime)
+APR_DECLARE(fspr_status_t) fspr_os_exp_time_get(fspr_os_exp_time_t **ostime,
+                                              fspr_time_exp_t *aprtime)
 {
     (*ostime)->tm_sec  = aprtime->tm_sec;
     (*ostime)->tm_min  = aprtime->tm_min;
@@ -200,17 +200,17 @@ APR_DECLARE(apr_status_t) apr_os_exp_time_get(apr_os_exp_time_t **ostime,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_imp_time_put(apr_time_t *aprtime,
-                                              apr_os_imp_time_t **ostime,
-                                              apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_os_imp_time_put(fspr_time_t *aprtime,
+                                              fspr_os_imp_time_t **ostime,
+                                              fspr_pool_t *cont)
 {
     *aprtime = (*ostime)->tv_sec * APR_USEC_PER_SEC + (*ostime)->tv_usec;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_exp_time_put(apr_time_exp_t *aprtime,
-                                              apr_os_exp_time_t **ostime,
-                                              apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_os_exp_time_put(fspr_time_exp_t *aprtime,
+                                              fspr_os_exp_time_t **ostime,
+                                              fspr_pool_t *cont)
 {
     aprtime->tm_sec = (*ostime)->tm_sec;
     aprtime->tm_min = (*ostime)->tm_min;
@@ -231,7 +231,7 @@ APR_DECLARE(apr_status_t) apr_os_exp_time_put(apr_time_exp_t *aprtime,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(void) apr_sleep(apr_interval_time_t t)
+APR_DECLARE(void) fspr_sleep(fspr_interval_time_t t)
 {
 #ifdef OS2
     DosSleep(t/1000);
@@ -248,7 +248,7 @@ APR_DECLARE(void) apr_sleep(apr_interval_time_t t)
 }
 
 #ifdef OS2
-APR_DECLARE(apr_status_t) apr_os2_time_to_apr_time(apr_time_t *result,
+APR_DECLARE(fspr_status_t) fspr_os2_time_to_fspr_time(fspr_time_t *result,
                                                    FDATE os2date,
                                                    FTIME os2time)
 {
@@ -268,9 +268,9 @@ APR_DECLARE(apr_status_t) apr_os2_time_to_apr_time(apr_time_t *result,
   return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_apr_time_to_os2_time(FDATE *os2date,
+APR_DECLARE(fspr_status_t) fspr_fspr_time_to_os2_time(FDATE *os2date,
                                                    FTIME *os2time,
-                                                   apr_time_t aprtime)
+                                                   fspr_time_t aprtime)
 {
     time_t ansitime = aprtime / APR_USEC_PER_SEC;
     struct tm *lt;
@@ -287,13 +287,13 @@ APR_DECLARE(apr_status_t) apr_apr_time_to_os2_time(FDATE *os2date,
 #endif
 
 #ifdef NETWARE
-APR_DECLARE(void) apr_netware_setup_time(void)
+APR_DECLARE(void) fspr_netware_setup_time(void)
 {
     tzset();
     server_gmt_offset = -TZONE;
 }
 #else
-APR_DECLARE(void) apr_unix_setup_time(void)
+APR_DECLARE(void) fspr_unix_setup_time(void)
 {
 #ifdef NO_GMTOFF_IN_STRUCT_TM
     /* Precompute the offset from GMT on systems where it's not
@@ -334,14 +334,14 @@ APR_DECLARE(void) apr_unix_setup_time(void)
 #endif
     t.tm_isdst = 0; /* we know this GMT time isn't daylight-savings */
     t2 = mktime(&t);
-    server_gmt_offset = (apr_int32_t) difftime(t1, t2);
+    server_gmt_offset = (fspr_int32_t) difftime(t1, t2);
 #endif /* NO_GMTOFF_IN_STRUCT_TM */
 }
 
 #endif
 
 /* A noop on all known Unix implementations */
-APR_DECLARE(void) apr_time_clock_hires(apr_pool_t *p)
+APR_DECLARE(void) fspr_time_clock_hires(fspr_pool_t *p)
 {
     return;
 }
