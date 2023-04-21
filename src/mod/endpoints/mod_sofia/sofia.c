@@ -7743,7 +7743,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if ((channel && switch_true(switch_channel_get_variable(channel, "sip_ignore_183nosdp"))) || sofia_test_pflag(profile, PFLAG_IGNORE_183NOSDP)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp\n", channel ? switch_channel_get_name(channel) : "None");
 			goto done;
-		} else if (sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+		} else if (session && tech_pvt && sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp during early media\n", channel ? switch_channel_get_name(channel) : "None");
 			goto done;
 		}
