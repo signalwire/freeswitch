@@ -1591,6 +1591,8 @@ GCC_DIAG_ON(deprecated-declarations)
 						context->vid_ready = 1;
 						switch_queue_push(context->eh.video_queue, img);
 						context->last_vid_push = switch_time_now();
+					} else {
+						switch_img_free(&img);
 					}
 				}
 			}

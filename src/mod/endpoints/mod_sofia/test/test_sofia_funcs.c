@@ -31,7 +31,8 @@
 
 #include <switch.h>
 #include <test/switch_test.h>
-#include "../mod_sofia.c"
+
+int protect_dest_uri(switch_caller_profile_t *cp);
 
 static int timeout_sec = 10;
 static switch_interval_time_t delay_start_ms = 5000;

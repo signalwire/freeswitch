@@ -4584,7 +4584,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 			timeout_ms = switch_atoui(argv[3]);
 		}
 
-		if (thresh > 0 && silence_hits > 0 && listen_hits >= 0) {
+		if (thresh > 0 && silence_hits > 0) {
 			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, timeout_ms, argv[4]);
 			return;
 		}

@@ -771,10 +771,6 @@ static void jsock_send_event(cJSON *event)
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
-	if (use_jsock) {
-		switch_thread_rwlock_unlock(use_jsock->rwlock);
-		use_jsock = NULL;
-	}
 }
 
 static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
@@ -1069,7 +1065,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
 			
 			jsock->logintime = now;
 			jsock->id = switch_core_strdup(jsock->pool, id);
@@ -1970,6 +1966,7 @@ static void client_run(jsock_t *jsock)
 {
 	int flags = KWS_BLOCK;
 	int idle = 0;
+	ks_json_t *params = NULL;
 	
 	if (jsock->profile->vhosts) {
 		flags |= KWS_STAY_OPEN;
@@ -1977,7 +1974,14 @@ static void client_run(jsock_t *jsock)
 	}
 
 	ks_pool_open(&jsock->kpool);
+
+#if defined(KS_VERSION_NUM) && KS_VERSION_NUM >= 20000
+	params = ks_json_create_object();
+	ks_json_add_number_to_object(params, "payload_size_max", 1000000);
+	if (kws_init_ex(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool, params) != KS_STATUS_SUCCESS) {
+#else
 	if (kws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool) != KS_STATUS_SUCCESS) {
+#endif
 		log_and_exit(SWITCH_LOG_NOTICE, "%s WS SETUP FAILED\n", jsock->name);
 	}
 
@@ -2123,6 +2127,8 @@ static void client_run(jsock_t *jsock)
 	detach_jsock(jsock);
 	kws_destroy(&jsock->ws);
 	ks_pool_close(&jsock->kpool);
+	ks_json_delete(&params);
+
 	return;
 }
 
@@ -6768,6 +6774,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	ks_ssl_init_skip(KS_TRUE);
 	ks_init();
+
+#if defined(KS_VERSION_NUM) && KS_VERSION_NUM < 20000
+	kws_set_global_payload_size_max(1000000);
+#endif
 
 	if (switch_event_reserve_subclass(MY_EVENT_LOGIN) != SWITCH_STATUS_SUCCESS) {
 		ks_shutdown();
