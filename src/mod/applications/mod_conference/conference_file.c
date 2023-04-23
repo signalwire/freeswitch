@@ -161,6 +161,7 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	uint8_t channels = (uint8_t) conference->channels;
 	int bad_params = 0;
 	int flags = 0;
+	static switch_bool_t do_print = SWITCH_TRUE;
 
 	switch_assert(conference != NULL);
 
@@ -181,6 +182,19 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	if (!count) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!async && (conference->conf_fnode_cnt >= 200)) {
+		if (do_print) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Way too many files to play in the queue already: %d\n", conference->conf_fnode_cnt);
+			do_print = SWITCH_FALSE;
+		}
+
+		return SWITCH_STATUS_IGNORE;
+	}
+
+	if (!async) {
+		do_print = SWITCH_TRUE;
 	}
 
 	if (channel) {
@@ -398,6 +412,8 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		} else {
 			conference->fnode = fnode;
 		}
+
+		conference->conf_fnode_cnt++;
 	}
 
 	switch_mutex_unlock(conference->mutex);
@@ -498,6 +514,7 @@ switch_status_t conference_close_open_files(conference_obj_t *conference)
 			x++;
 		}
 		conference->fnode = NULL;
+		conference->conf_fnode_cnt = 0;
 	}
 
 	if (conference->async_fnode) {
