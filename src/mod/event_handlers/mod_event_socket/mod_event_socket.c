@@ -470,7 +470,7 @@ static void event_handler(switch_event_t *event)
 				new_sps = cur_sps/10;
 
 				if (new_sps) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_CRIT, "== [> %d]: max_eq_util: %f, cur_sps: %d, new_sps: %d\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "== [> %d]: max_eq_util: %f, cur_sps: %d, new_sps: %d\n",
 									  prefs.queue_red_thresh, max_eq_util, cur_sps, new_sps);
 					switch_core_sessions_per_second(new_sps);
 					prefs.cooldown_delay = EVENT_QUEUE_COOLDOWN_DELAY;
@@ -484,7 +484,7 @@ static void event_handler(switch_event_t *event)
 				new_sps = cur_sps/2;
 
 				if (new_sps) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_CRIT, "== [> %d]: max_eq_util: %f, cur_sps: %d, new_sps: %d\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "== [> %d]: max_eq_util: %f, cur_sps: %d, new_sps: %d\n",
 									  prefs.queue_yellow_thresh, max_eq_util, cur_sps, new_sps);
 					switch_core_sessions_per_second(new_sps);
 					prefs.cooldown_delay = EVENT_QUEUE_COOLDOWN_DELAY;
@@ -495,7 +495,7 @@ static void event_handler(switch_event_t *event)
 				// Restore the original maximum number of sessions if event queue utilization dropped below green threshold
 				//
 				if (cur_sps < max_orig_sps) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_CRIT, "== [< %d]: max_eq_util: %f, cur_sps: %d, max_orig_sps: %d\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "== [< %d]: max_eq_util: %f, cur_sps: %d, max_orig_sps: %d\n",
 									  prefs.queue_green_thresh, max_eq_util, cur_sps, max_orig_sps);
 					switch_core_sessions_per_second(max_orig_sps);
 				}
