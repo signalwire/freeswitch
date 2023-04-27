@@ -1419,7 +1419,11 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int get_style_method = 0;
 	char *method = NULL;
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	curl_mime *formpost = NULL;
+#else
 	struct curl_httppost *formpost=NULL;
+#endif
 	switch_event_t *save_params = NULL;
 	const char *put_file;
 	FILE *fd = NULL;
@@ -1588,7 +1592,11 @@ static switch_status_t httapi_sync(client_t *client)
 		curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, put_file_read);
 
 	} else if (formpost) {
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+		curl_easy_setopt(curl_handle, CURLOPT_MIMEPOST, formpost);
+#else
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, formpost);
+#endif
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_POST, !get_style_method);
 	}
@@ -1671,7 +1679,11 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_curl_slist_free_all(headers);
 
 	if (formpost) {
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+		curl_mime_free(formpost);
+#else
 		curl_formfree(formpost);
+#endif
 	}
 
 	if (client->err) {
