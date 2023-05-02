@@ -13126,10 +13126,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 													   "codec_string", "=%s", switch_channel_get_variable(session->channel, "ep_codec_string"));
 				}
 				
-				/* Required fix to allow audio to be added to video
-				 * After making video call a_engine->rmode gets set to SWITCH_MEDIA_FLOW_DISABLED,
-				 * wich prevents audio component to be added to the SDP
-                 */
+				/* Set rmode back to INACTIVE */
 				a_engine->rmode = SWITCH_MEDIA_FLOW_INACTIVE;
 
 				a_engine->codec_negotiated = 0;
