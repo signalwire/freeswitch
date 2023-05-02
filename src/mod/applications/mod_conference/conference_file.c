@@ -149,8 +149,6 @@ uint32_t conference_file_stop(conference_obj_t *conference, file_stop_t stop)
 	return count;
 }
 
-static switch_bool_t do_print = SWITCH_TRUE;
-
 /* Play a file in the conference room */
 switch_status_t conference_file_play(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async)
 {
@@ -186,16 +184,16 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	}
 
 	if (!async && (conference->conf_fnode_cnt >= 200)) {
-		if (do_print) {
+		if (conference->do_print) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Way too many files to play in the queue already: %d\n", conference->conf_fnode_cnt);
-			do_print = SWITCH_FALSE;
+			conference->do_print = SWITCH_FALSE;
 		}
 
 		return SWITCH_STATUS_IGNORE;
 	}
 
 	if (!async) {
-		do_print = SWITCH_TRUE;
+		conference->do_print = SWITCH_TRUE;
 	}
 
 	if (channel) {

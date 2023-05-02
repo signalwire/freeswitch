@@ -3635,6 +3635,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->agc_period_len = 500 / conference->interval;
 
 	conference->conf_fnode_cnt = 0;
+	conference->do_print = SWITCH_TRUE;
 
 	if (agc_level) {
 		tmp = atoi(agc_level);
