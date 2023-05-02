@@ -149,6 +149,8 @@ uint32_t conference_file_stop(conference_obj_t *conference, file_stop_t stop)
 	return count;
 }
 
+static switch_bool_t do_print = SWITCH_TRUE;
+
 /* Play a file in the conference room */
 switch_status_t conference_file_play(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async)
 {
@@ -161,7 +163,6 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	uint8_t channels = (uint8_t) conference->channels;
 	int bad_params = 0;
 	int flags = 0;
-	static switch_bool_t do_print = SWITCH_TRUE;
 
 	switch_assert(conference != NULL);
 
