@@ -765,7 +765,6 @@ typedef struct conference_obj {
 	int heartbeat_period_sec;
 
 	uint32_t conf_fnode_cnt;
-	switch_bool_t do_print;
 
 } conference_obj_t;
 

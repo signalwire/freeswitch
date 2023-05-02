@@ -184,16 +184,8 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 	}
 
 	if (!async && (conference->conf_fnode_cnt >= 200)) {
-		if (conference->do_print) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Way too many files to play in the queue already: %d\n", conference->conf_fnode_cnt);
-			conference->do_print = SWITCH_FALSE;
-		}
-
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Way too many files to play in the queue already: %d\n", conference->conf_fnode_cnt);
 		return SWITCH_STATUS_IGNORE;
-	}
-
-	if (!async) {
-		conference->do_print = SWITCH_TRUE;
 	}
 
 	if (channel) {
