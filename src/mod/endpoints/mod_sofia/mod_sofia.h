@@ -827,6 +827,7 @@ struct sofia_profile {
 	char *acl_proxy_x_token_header;
 	uint8_t rfc8760_algs_count;
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
+	uint8_t disable_recovery_record_route_fixup;
 };
 
 
@@ -910,6 +911,7 @@ struct private_object {
 	switch_time_t last_audio_packet_sent;
 	switch_time_t last_audio_activity_signal_write;
 	switch_time_t last_audio_inactivity_signal_write;
+	uint8_t recovered_call_route_fixed;
 };
 
 

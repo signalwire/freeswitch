@@ -4716,7 +4716,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.stir_shaken_vs_cert_path_check = switch_true(val);
 			} else if (!strcasecmp(var, "stir-shaken-vs-require-date")) {
 				mod_sofia_globals.stir_shaken_vs_require_date = switch_true(val);
-			}
+			} 
 		}
 	}
 
@@ -4874,6 +4874,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
 					}
 				}
+				
+				profile->disable_recovery_record_route_fixup = 0; // We want recovery RR fixups by default
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -6308,6 +6310,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 								}
 							}
 						}
+					} else if (!strcasecmp(var, "disable_recovery_record_route_fixup")) {
+						profile->disable_recovery_record_route_fixup = atoi(val);
 					}
 				}
 
@@ -6817,6 +6821,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		int network_port = 0;
 		switch_caller_profile_t *caller_profile = NULL;
 		int has_t38 = 0;
+		const char *drrrf_chanvar_str = switch_channel_get_variable(channel, "disable_recovery_record_route_fixup"); // disable_recovery_record_route_fixup as a chanvar
+		switch_bool_t drrrf_chanvar_zstr = zstr(drrrf_chanvar_str), drrrf_chanvar = switch_true(drrrf_chanvar_str);
 
 		if (status == 100 && !sofia_test_flag(tech_pvt, TFLAG_100_UEPOCH_SET)) {
 			sofia_set_flag(tech_pvt, TFLAG_100_UEPOCH_SET);
@@ -6962,7 +6968,37 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				}
 			}
 		}
-
+		
+		// Feature flipper:  We want the chanvar to override the profile setting.
+		if(status == 200 && switch_channel_test_flag(channel, CF_RECOVERED) && !tech_pvt->recovered_call_route_fixed && ((!profile->disable_recovery_record_route_fixup && drrrf_chanvar == SWITCH_FALSE ) || (profile->disable_recovery_record_route_fixup && !drrrf_chanvar_zstr && drrrf_chanvar == SWITCH_FALSE))) {
+			const char *sip_invite_record_route = switch_channel_get_variable(channel, "sip_invite_record_route");
+			const char *total_recovery_rr_fixups = switch_channel_get_variable(channel, "total_recovery_record_route_fixups");
+			
+			if(!zstr(sip_invite_record_route)) {
+				int32_t total_recovery_rr_fixups_int = 0;
+				nta_agent_t *curagent = nua_get_agent(profile->nua);
+				const char *sip_call_id = switch_channel_get_variable(channel, "sip_call_id");
+				su_home_t *home = nua_handle_get_home(nh);
+				sip_record_route_t *rrtemp = sip_record_route_make(home, sip_invite_record_route);
+				nta_leg_t *curleg = nta_leg_by_call_id(curagent, sip_call_id);
+				
+				nta_leg_client_reroute(curleg, rrtemp, sip->sip_contact, 1);
+				
+				if(!zstr(total_recovery_rr_fixups)) {
+					total_recovery_rr_fixups_int = atoi(total_recovery_rr_fixups);
+				}
+				
+				switch_channel_set_variable_printf(channel, "total_recovery_record_route_fixups", "%d", ++total_recovery_rr_fixups_int);
+				
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Recovered call: fixing routes for this dialog.  This is the %d time for this dialog.\n", total_recovery_rr_fixups_int);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Recovered call had no Record Route information associated with it.\n");
+			}
+			
+			// Let's keep this from being called repeatedly.
+			tech_pvt->recovered_call_route_fixed++;
+		}
+		
 		if ((status == 180 || status == 183 || status > 199)) {
 			const char *vval;
 
