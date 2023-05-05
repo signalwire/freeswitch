@@ -771,10 +771,6 @@ static void jsock_send_event(cJSON *event)
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
-	if (use_jsock) {
-		switch_thread_rwlock_unlock(use_jsock->rwlock);
-		use_jsock = NULL;
-	}
 }
 
 static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
@@ -1069,7 +1065,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
 			
 			jsock->logintime = now;
 			jsock->id = switch_core_strdup(jsock->pool, id);

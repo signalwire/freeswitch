@@ -1923,6 +1923,8 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		data = (char *) malloc(2048);
 		if (!data) {
 			va_end(ap);
+			switch_xml_free(xml);
+
 			return NULL;
 		}
 		ret = vsnprintf(data, 2048, fmt, ap);
@@ -1932,6 +1934,8 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 #ifndef HAVE_VASPRINTF
 			free(data);
 #endif
+			switch_xml_free(xml);
+
 			return NULL;
 		}
 	}

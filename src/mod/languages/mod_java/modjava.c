@@ -189,169 +189,163 @@ SWITCH_STANDARD_APP(java_function)
 
 static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount, vm_control_t * vmControl)
 {
-    switch_xml_t cfg, xml;
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_xml_t cfg, xml;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *derr = NULL;
 
-    xml = switch_xml_open_cfg("java.conf", &cfg, NULL);
-    if (xml)
-    {
-        switch_xml_t javavm;
-        switch_xml_t options;
-        switch_xml_t startup;
-        switch_xml_t shutdown;
+	xml = switch_xml_open_cfg("java.conf", &cfg, NULL);
+	if (xml) {
+		switch_xml_t javavm;
+		switch_xml_t options;
+		switch_xml_t startup;
+		switch_xml_t shutdown;
 
-        javavm = switch_xml_child(cfg, "javavm");
-        if (javavm != NULL)
-        {
-            const char *path = switch_xml_attr_soft(javavm, "path");
-            if (path != NULL)
-            {
+		javavm = switch_xml_child(cfg, "javavm");
+		if (javavm != NULL) {
+			const char *path = switch_xml_attr_soft(javavm, "path");
+
+			if (path != NULL) {
 				javaVMHandle = switch_dso_open(path, 0, &derr);
 				if (derr || !javaVMHandle) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error loading %s\n", path);
+					switch_safe_free(derr);
 				}
-            }
-            else
-            {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Java VM path specified in java.conf.xml\n");
-                status = SWITCH_STATUS_FALSE;
-            }
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Java VM specified in java.conf.xml\n");
-            status = SWITCH_STATUS_FALSE;
-            goto close;
-        }
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Java VM path specified in java.conf.xml\n");
+				status = SWITCH_STATUS_FALSE;
+			}
+		} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Java VM specified in java.conf.xml\n");
+				status = SWITCH_STATUS_FALSE;
+				goto close;
+		}
 
-        options = switch_xml_child(cfg, "options");
-        if (options != NULL)
-        {
-            switch_xml_t option;
-            int i = 0;
-            *optionCount = 0;
-            for (option = switch_xml_child(options, "option"); option; option = option->next)
-            {
-                const char *value = switch_xml_attr_soft(option, "value");
-                if (value != NULL)
-                    ++*optionCount;
-            }
-            *optionCount += 1;
-            *javaOptions = switch_core_alloc(memoryPool, (switch_size_t)(*optionCount * sizeof(JavaVMOption)));
-            if (*javaOptions == NULL)
-            {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
-                status = SWITCH_STATUS_FALSE;
-                goto close;
-            }
-            for (option = switch_xml_child(options, "option"); option; option = option->next)
-            {
-                const char *value = switch_xml_attr_soft(option, "value");
-                if (value == NULL)
-                    continue;
-                (*javaOptions)[i].optionString = switch_core_strdup(memoryPool, value);
-                if ((*javaOptions)[i].optionString == NULL)
-                {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
-                    status = SWITCH_STATUS_FALSE;
-                    goto close;
-                }
-                ++i;
-            }
+		options = switch_xml_child(cfg, "options");
+		if (options != NULL) {
+			switch_xml_t option;
+			int i = 0;
+
+			*optionCount = 0;
+
+			for (option = switch_xml_child(options, "option"); option; option = option->next) {
+				const char *value = switch_xml_attr_soft(option, "value");
+
+				if (value != NULL) {
+					++*optionCount;
+				}
+			}
+
+			*optionCount += 1;
+			*javaOptions = switch_core_alloc(memoryPool, (switch_size_t)(*optionCount * sizeof(JavaVMOption)));
+			if (*javaOptions == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
+				status = SWITCH_STATUS_FALSE;
+				goto close;
+			}
+
+			for (option = switch_xml_child(options, "option"); option; option = option->next) {
+				const char *value = switch_xml_attr_soft(option, "value");
+
+				if (value == NULL) {
+					continue;
+				}
+
+				(*javaOptions)[i].optionString = switch_core_strdup(memoryPool, value);
+				if ((*javaOptions)[i].optionString == NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
+					status = SWITCH_STATUS_FALSE;
+					goto close;
+				}
+
+				++i;
+			}
+
 			(*javaOptions)[i].optionString = switch_core_sprintf(memoryPool, "-Djava.library.path=%s", SWITCH_GLOBAL_dirs.mod_dir);
-        }
+		}
 
-	/*
-	<startup class="net/cog/fs/system/Control" method="startup" arg="start up arg"/>
-	<shutdown class="net/cog/fs/system/Control" method="shutdown" arg="shutdown arg"/>
-	*/
+		/*
+		<startup class="net/cog/fs/system/Control" method="startup" arg="start up arg"/>
+		<shutdown class="net/cog/fs/system/Control" method="shutdown" arg="shutdown arg"/>
+		*/
 
-        memset(vmControl, 0, sizeof(struct vm_control));
-        startup = switch_xml_child(cfg, "startup");
-        if (startup != NULL) {
-            vmControl->startup.class = switch_xml_attr_soft(startup, "class");
-            vmControl->startup.method = switch_xml_attr_soft(startup, "method");
-            vmControl->startup.arg = switch_xml_attr_soft(startup, "arg");
-        }
-        shutdown = switch_xml_child(cfg, "shutdown");
-        if (shutdown != NULL) {
-            vmControl->shutdown.class = switch_xml_attr_soft(shutdown, "class");
-            vmControl->shutdown.method = switch_xml_attr_soft(shutdown, "method");
-            vmControl->shutdown.arg = switch_xml_attr_soft(shutdown, "arg");
-        }
+		memset(vmControl, 0, sizeof(struct vm_control));
+		startup = switch_xml_child(cfg, "startup");
+		if (startup != NULL) {
+			vmControl->startup.class = switch_xml_attr_soft(startup, "class");
+			vmControl->startup.method = switch_xml_attr_soft(startup, "method");
+			vmControl->startup.arg = switch_xml_attr_soft(startup, "arg");
+		}
 
-    close:
-        switch_xml_free(xml);
-    }
-    else
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening java.conf.xml\n");
-        status = SWITCH_STATUS_FALSE;
-    }
-    return status;
+		shutdown = switch_xml_child(cfg, "shutdown");
+		if (shutdown != NULL) {
+			vmControl->shutdown.class = switch_xml_attr_soft(shutdown, "class");
+			vmControl->shutdown.method = switch_xml_attr_soft(shutdown, "method");
+			vmControl->shutdown.arg = switch_xml_attr_soft(shutdown, "arg");
+		}
+
+	  close:
+		switch_xml_free(xml);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening java.conf.xml\n");
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
 }
 
 static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm_control_t * vmControl)
 {
-    jint (JNICALL *pJNI_CreateJavaVM)(JavaVM**,void**,void*);
-    switch_status_t status;
+	jint (JNICALL *pJNI_CreateJavaVM)(JavaVM**,void**,void*);
+	switch_status_t status;
 	char *derr = NULL;
 
 	pJNI_CreateJavaVM = (jint (*)(JavaVM **, void **, void *))switch_dso_func_sym(javaVMHandle, "JNI_CreateJavaVM", &derr);
 
-    if (!derr)
-    {
-        JNIEnv *env;
-        JavaVMInitArgs initArgs;
-        jint res;
+	if (!derr) {
+		JNIEnv *env;
+		JavaVMInitArgs initArgs;
+		jint res;
 
-        memset(&initArgs, 0, sizeof(initArgs));
-        initArgs.version = JNI_VERSION_1_4;
-        initArgs.nOptions = optionCount;
-        initArgs.options = options;
-        initArgs.ignoreUnrecognized = JNI_TRUE;
+		memset(&initArgs, 0, sizeof(initArgs));
+		initArgs.version = JNI_VERSION_1_4;
+		initArgs.nOptions = optionCount;
+		initArgs.options = options;
+		initArgs.ignoreUnrecognized = JNI_TRUE;
 
-        res = pJNI_CreateJavaVM(&javaVM, (void*) &env, &initArgs);
-        if (res == JNI_OK)
-        {
-        	// call FindClass here already so that the Java VM executes the static
-        	// initializer (@see org.freeswitch.Launcher) which loads the jni library
-        	// so we can use jni functions right away (for example in the startup method)
-        	launcherClass = (*env)->FindClass(env, "org/freeswitch/Launcher");
-        	if ( launcherClass == NULL )
-        	{
-        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find 'org.freeswitch.Launcher' class!\n");
-        		(*env)->ExceptionDescribe(env);
-        	}
+		res = pJNI_CreateJavaVM(&javaVM, (void*) &env, &initArgs);
+		if (res == JNI_OK) {
+			/* call FindClass here already so that the Java VM executes the static
+			initializer (@see org.freeswitch.Launcher) which loads the jni library
+			so we can use jni functions right away (for example in the startup method) */
 
-        	// store a global reference for use in the launch_java() function
-            launcherClass = (*env)->NewGlobalRef(env, launcherClass);
-        	if ( launcherClass == NULL )
-        	{
-        		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
-        		(*env)->ExceptionDescribe(env);
-        		status = SWITCH_STATUS_FALSE;
-        	}
-        	else
-        	{
-        		status = SWITCH_STATUS_SUCCESS;
-        	}
+			launcherClass = (*env)->FindClass(env, "org/freeswitch/Launcher");
+			if ( launcherClass == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find 'org.freeswitch.Launcher' class!\n");
+				(*env)->ExceptionDescribe(env);
+			}
 
-            (*javaVM)->DetachCurrentThread(javaVM);
-        }
-        else
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating Java VM!\n");
-            status = SWITCH_STATUS_FALSE;
-        }
-    }
-    else
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Specified Java VM doesn't have JNI_CreateJavaVM\n");
-        status = SWITCH_STATUS_FALSE;
-    }
-    return status;
+			/* store a global reference for use in the launch_java() function */
+			launcherClass = (*env)->NewGlobalRef(env, launcherClass);
+			if ( launcherClass == NULL ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Out of memory!\n");
+				(*env)->ExceptionDescribe(env);
+				status = SWITCH_STATUS_FALSE;
+			} else {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+
+			(*javaVM)->DetachCurrentThread(javaVM);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating Java VM!\n");
+			status = SWITCH_STATUS_FALSE;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Specified Java VM doesn't have JNI_CreateJavaVM\n");
+		switch_safe_free(derr);
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)

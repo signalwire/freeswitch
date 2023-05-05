@@ -845,6 +845,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
   Macro expands to: switch_status_t mod_cidlookup_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
+	switch_xml_config_cleanup(instructions);
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
 }

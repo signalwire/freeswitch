@@ -196,7 +196,7 @@ static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *
 
 static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
-	int32_t t = 0;
+	int64_t t = 0;
 	switch_time_t target = 0, target_now = 0;
 	switch_time_exp_t tm, tm_now;
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
@@ -287,7 +287,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 	if (strchr(tosay, ':')) {
 		switch_time_t tme  = switch_str_time(tosay);
-		t = (int32_t) ((tme) / (int64_t) (1000000));
+		t = (int64_t) ((tme) / (int64_t) (1000000));
 		
 		target = switch_time_make(t, 0);
 		target_now = switch_micro_time_now();
