@@ -3178,15 +3178,17 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				if (atoi(buf) > 0) {
 	                isReg = SWITCH_TRUE;
 	            }
-				if (isReg) {
-					stream.write_function(&stream, "<dialog id=\"%s\">\n", sub_to_user);
-					stream.write_function(&stream, "<state>%s</state>\n", "terminated");
-					stream.write_function(&stream, "</dialog>\n");
-				}
-				else {
-					stream.write_function(&stream, "<dialog id=\"%s\">\n", sub_to_user);
-					stream.write_function(&stream, "<state>unknown</state>\n");
-					stream.write_function(&stream, "</dialog>\n");
+				if (is_dialog) {
+					if (isReg) {
+						stream.write_function(&stream, "<dialog id=\"%s\">\n", sub_to_user);
+						stream.write_function(&stream, "<state>%s</state>\n", "terminated");
+						stream.write_function(&stream, "</dialog>\n");
+					}
+					else {
+						stream.write_function(&stream, "<dialog id=\"%s\">\n", sub_to_user);
+						stream.write_function(&stream, "<state>unknown</state>\n");
+						stream.write_function(&stream, "</dialog>\n");
+					}
 				}
 			}
 		}
