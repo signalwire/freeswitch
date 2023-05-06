@@ -2168,13 +2168,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Agent %s answered \"%s\" <%s> from queue %s%s\n",
 				h->agent_name, h->member_cid_name, h->member_cid_number, h->queue_name, (h->record_template?" (Recorded)":""));
 
-		if ((o_announce = switch_channel_get_variable(member_channel, "cc_outbound_announce"))) {
-			playback_array(agent_session, o_announce);
-		}
-
 		/* This is used to set the reason for callcenter_function breakout */
 		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
-		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+		//switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
 
 		if (switch_true(switch_channel_get_variable(member_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) || switch_true(switch_channel_get_variable(agent_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_set_flag(member_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
@@ -2224,6 +2220,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 			switch_channel_set_variable(member_channel, "cc_agent_bridged", "true");
 			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "true");
+			switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
 
 			/* Update member to Answered state, previous Trying */
 			sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
