@@ -247,6 +247,7 @@ endif
 if ENABLE_SSOFT
 CORE_CFLAGS += -DENABLE_SSOFT
 CORE_CFLAGS += -I$(switch_srcdir)/libs/usbkey
+AM_CFLAGS += -DENABLE_SSOFT
 if ISAARCH64
 SSOFT_LDFLAGS = -L$(switch_srcdir)/libs/usbkey/aarch64
 else
