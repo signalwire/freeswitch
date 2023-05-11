@@ -273,10 +273,12 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 					if (!strcasecmp(data, "maxptime")) {
 						codec_settings->maxptime = atoi(arg);
+						codec_fmtp->max_ptime = codec_settings->maxptime;
 					}
 
 					if (!strcasecmp(data, "minptime")) {
 						codec_settings->minptime = atoi(arg);
+						codec_fmtp->min_ptime = codec_settings->minptime;
 					}
 
 					if (!strcasecmp(data, "ptime")) {
@@ -291,6 +293,7 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 					if (!strcasecmp(data, "sprop-stereo")) {
 						codec_settings->sprop_stereo = atoi(arg);
+						codec_fmtp->sprop_stereo = codec_settings->sprop_stereo;
 					}
 
 					if (!strcasecmp(data, "maxaveragebitrate")) {

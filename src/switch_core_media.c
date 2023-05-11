@@ -5497,6 +5497,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						} else if (!strcasecmp(map->rm_encoding, "opus")) {
 							map_channels = 1;
 						}
+
+						if (codec_fmtp.max_ptime) {
+							maxptime = codec_fmtp.max_ptime;
+						}
 					}
 				}
 
