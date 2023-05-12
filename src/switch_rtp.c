@@ -3079,7 +3079,7 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		fp.type = dtls->remote_fp->type;
 
 		switch_core_cert_extract_fingerprint(cert, &fp);
-		r = !memcmp(fp.str,dtls->remote_fp->str,MAX_FPLEN);
+		r = !memcmp(fp.str, dtls->remote_fp->str, MAX_FPLEN);
 
 		X509_free(cert);
 	}
@@ -3279,7 +3279,7 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 		fp.type = dtls->remote_fp->type;
 
 		switch_core_cert_extract_fingerprint(cert, &fp);
-		r = !memcmp(fp.str,dtls->remote_fp->str,MAX_FPLEN);
+		r = !memcmp(fp.str, dtls->remote_fp->str, MAX_FPLEN);
 		
 		X509_free(cert);
 	} else {
