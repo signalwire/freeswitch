@@ -3074,8 +3074,12 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	if ((dtls->type & DTLS_TYPE_SERVER)) {
 		r = 1;
 	} else if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
-		switch_core_cert_extract_fingerprint(cert, dtls->remote_fp);
-		r = switch_core_cert_verify(dtls->remote_fp);
+		dtls_fingerprint_t fp;
+		fp->type = dtls->remote_fp->type;
+
+		switch_core_cert_extract_fingerprint(cert, &fp);
+		r = !memcmp(fp.str,dtls->remote_fp->str,MAX_FPLEN);
+
 		X509_free(cert);
 	}
 
@@ -3269,10 +3273,12 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 	}
 
 	if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
-		switch_core_cert_extract_fingerprint(cert, dtls->remote_fp);
+		dtls_fingerprint_t fp;
+		fp->type = dtls->remote_fp->type;
 
-		r = switch_core_cert_verify(dtls->remote_fp);
-
+		switch_core_cert_extract_fingerprint(cert, &fp);
+		r = !memcmp(fp.str,dtls->remote_fp->str,MAX_FPLEN);
+		
 		X509_free(cert);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(dtls->rtp_session->session), SWITCH_LOG_ERROR, "%s CERT ERR!\n", rtp_type(dtls->rtp_session));
