@@ -10408,6 +10408,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			for (i = 0; i < smh->num_rates; i++) {
 				if (smh->rates[i] == 8000 || smh->num_rates == 1) {
 					smh->dtmf_ianacodes[i] = smh->mparams->te;
+
+					if (!zstr(switch_channel_get_variable(session->channel, "rtp_2833_payload"))) {
+						smh->dtmf_ianacodes[i] =
+							atoi(switch_channel_get_variable(session->channel, "rtp_2833_payload"));
+					}
+
 					smh->cng_ianacodes[i] = smh->mparams->cng_pt;
 				} else {
 					int j = 0;
