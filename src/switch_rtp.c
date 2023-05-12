@@ -3075,7 +3075,7 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		r = 1;
 	} else if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
 		dtls_fingerprint_t fp;
-		fp->type = dtls->remote_fp->type;
+		fp.type = dtls->remote_fp->type;
 
 		switch_core_cert_extract_fingerprint(cert, &fp);
 		r = !memcmp(fp.str,dtls->remote_fp->str,MAX_FPLEN);
@@ -3274,7 +3274,7 @@ static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
 
 	if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
 		dtls_fingerprint_t fp;
-		fp->type = dtls->remote_fp->type;
+		fp.type = dtls->remote_fp->type;
 
 		switch_core_cert_extract_fingerprint(cert, &fp);
 		r = !memcmp(fp.str,dtls->remote_fp->str,MAX_FPLEN);
