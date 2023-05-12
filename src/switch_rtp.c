@@ -3842,7 +3842,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	
 	BIO_ctrl(dtls->filter_bio, BIO_CTRL_DGRAM_SET_MTU, dtls->mtu, NULL);
 	
-	switch_core_cert_expand_fingerprint(remote_fp, remote_fp->str);
+	// switch_core_cert_expand_fingerprint(remote_fp, remote_fp->str);
 
 	if ((type & DTLS_TYPE_RTP)) {
 		rtp_session->dtls = dtls;
