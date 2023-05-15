@@ -339,8 +339,10 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 
 	if (zstr(name)) {
 		char *str_tmp = switch_xml_toxml(cfg, 1);
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection missing name attribute\n%s\n", str_tmp);
 		switch_safe_free(str_tmp);
+
 		return SWITCH_STATUS_GENERR;
 	}
 
