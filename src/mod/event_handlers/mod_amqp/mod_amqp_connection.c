@@ -397,6 +397,7 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	new_con->ssl_verify_peer = ssl_verify_peer;
 
 	*conn = new_con;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

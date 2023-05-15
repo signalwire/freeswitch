@@ -160,8 +160,6 @@ SWITCH_DECLARE(switch_status_t) switch_packetizer_feed_extradata(switch_packetiz
 	p += 5;
 	left -= 5;
 
-	if (left < 0) return SWITCH_STATUS_FALSE;
-
 	//sps
 	n_sps = *p & 0x1f;
 	p += 1;

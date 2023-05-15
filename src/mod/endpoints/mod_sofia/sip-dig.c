@@ -815,8 +815,12 @@ sres_record_t ** dig_addr_simple(struct dig *dig,
 								uint16_t type) 
 {
 	sres_record_t **answers = NULL;
+	int error;
 
-	sres_blocking_query(dig->sres, type, host, 0, &answers);
+	error = sres_blocking_query(dig->sres, type, host, 0, &answers);
+	if (error < 0) {
+		return NULL;
+	}
 
 	return answers;
 }

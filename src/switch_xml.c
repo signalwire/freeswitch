@@ -1638,11 +1638,25 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
 		fstat(fd, &st);
-		if (!st.st_size) goto error;
+		if (!st.st_size) {
+			close(fd);
+			goto error;
+		}
+
 		m = switch_must_malloc(st.st_size);
 
-		if (!(0<(l = read(fd, m, st.st_size)))) goto error;
-		if (!(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) goto error;
+		if (!(0 < (l = read(fd, m, st.st_size)))) {
+			free(m);
+			close(fd);
+			goto error;
+		}
+
+		if (!(root = (switch_xml_root_t)switch_xml_parse_str((char*)m, l))) {
+			free(m);
+			close(fd);
+			goto error;
+		}
+
 		root->dynamic = 1;
 		close(fd);
 		return &root->xml;
