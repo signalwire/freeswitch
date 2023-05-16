@@ -929,9 +929,9 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 				if ( !exclude_regex || !(/*proceed*/ switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 					const char *hname = name + strlen(prefix);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
-					switch_regex_safe_free(re);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
+					switch_regex_safe_free(re);
 				}
 			}
 		}
