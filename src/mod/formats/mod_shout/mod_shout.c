@@ -175,7 +175,7 @@ static inline void free_context(shout_context_t *context)
 		}
 
 		if (context->fp && context->lame_ready) {
-			unsigned char mp3buffer[20480];
+			unsigned char mp3buffer[20480] = "";
 			int len;
 			int16_t blank[2048] = { 0 }, *r = NULL;
 
@@ -204,7 +204,7 @@ static inline void free_context(shout_context_t *context)
 
 		if (context->shout) {
 			if (context->gfp) {
-				unsigned char mp3buffer[8192];
+				unsigned char mp3buffer[8192] = "";
 				int len;
 				int16_t blank[2048] = { 0 }, *r = NULL;
 				int framesize;
