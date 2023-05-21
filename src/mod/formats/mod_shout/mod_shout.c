@@ -553,7 +553,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 	}
 
 	while (!context->err) {
-		unsigned char mp3buf[20480] = "";
+		unsigned char mp3buf[20480] = { 0 };
 		int16_t audio[9600] = { 0 };
 		switch_size_t audio_read = 0;
 		int rlen = 0;
@@ -1301,7 +1301,7 @@ void do_telecast(switch_stream_handle_t *stream)
 		stream->write_function(stream, "Content-type: audio/mpeg\r\n" "Content-Disposition: inline; filename=\"%s\"\r\n\r\n", fname);
 
 		while (switch_channel_ready(channel)) {
-			unsigned char mp3buf[TC_BUFFER_SIZE] = "";
+			unsigned char mp3buf[TC_BUFFER_SIZE] = { 0 };
 			int rlen;
 			uint8_t buf[1024];
 			switch_size_t bytes = 0;
@@ -1358,7 +1358,7 @@ void do_broadcast(switch_stream_handle_t *stream)
 	char *file;
 	lame_global_flags *gfp = NULL;
 	switch_file_handle_t fh = { 0 };
-	unsigned char mp3buf[TC_BUFFER_SIZE] = "";
+	unsigned char mp3buf[TC_BUFFER_SIZE] = { 0 };
 	uint8_t buf[1024];
 	int rlen;
 	int is_local = 0;
