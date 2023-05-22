@@ -1188,6 +1188,15 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON
   return jresult;
 }
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VIDEO_VARIABLE_get___() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("execute_on_answer_video");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
 
 SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE_get___() {
   char * jresult ;
@@ -1204,6 +1213,15 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON
   char *result = 0 ;
   
   result = (char *)("execute_on_media");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VIDEO_VARIABLE_get___() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("execute_on_media_video");
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

@@ -15057,8 +15057,10 @@ else
   public static readonly string SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE = freeswitchPINVOKE.SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE_get();
   public static readonly string SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE = freeswitchPINVOKE.SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
+  public static readonly string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VIDEO_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VIDEO_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE_get();
+  public static readonly string SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VIDEO_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VIDEO_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE_get();
@@ -15676,11 +15678,17 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get___")]
   public static extern string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VIDEO_VARIABLE_get___")]
+  public static extern string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VIDEO_VARIABLE_get();
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE_get___")]
   public static extern string SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE_get___")]
   public static extern string SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE_get();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VIDEO_VARIABLE_get___")]
+  public static extern string SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VIDEO_VARIABLE_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get___")]
   public static extern string SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get();

@@ -148,8 +148,10 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE "record_post_process_exec_api"
 
 #define SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE "execute_on_answer"
+#define SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VIDEO_VARIABLE "execute_on_answer_video"
 #define SWITCH_CHANNEL_EXECUTE_ON_PRE_ANSWER_VARIABLE "execute_on_pre_answer"
 #define SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VARIABLE "execute_on_media"
+#define SWITCH_CHANNEL_EXECUTE_ON_MEDIA_VIDEO_VARIABLE "execute_on_media_video"
 #define SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE "execute_on_ring"
 #define SWITCH_CHANNEL_EXECUTE_ON_TONE_DETECT_VARIABLE "execute_on_tone_detect"
 #define SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE "execute_on_originate"
