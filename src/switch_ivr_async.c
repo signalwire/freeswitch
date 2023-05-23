@@ -1240,6 +1240,9 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+		if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Video", "true");
+		}
 		merge_recording_variables(rh, event);
 		if (!zstr(rh->completion_cause)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Completion-Cause", rh->completion_cause);
@@ -1481,6 +1484,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+					if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Video", "true");
+					}
 					merge_recording_variables(rh, event);
 					switch_event_fire(&event);
 				}
@@ -3136,6 +3142,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			file_flags |= SWITCH_FILE_FLAG_VIDEO;
+		}
+
+		if (recording_var_true(channel, vars, "RECORD_VIDEO")) {
+			file_flags |= SWITCH_FILE_FLAG_VIDEO;
+			switch_channel_set_variable(channel, "RECORD_VIDEO", NULL);
 		}
 
 		if (switch_core_file_open(fh, file, channels, read_impl.actual_samples_per_second, file_flags, NULL) != SWITCH_STATUS_SUCCESS) {
