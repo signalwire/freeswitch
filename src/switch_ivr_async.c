@@ -1240,7 +1240,7 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
-		if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+		if (switch_test_flag(rh->fh, SWITCH_FILE_FLAG_VIDEO)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Video", "true");
 		}
 		merge_recording_variables(rh, event);
@@ -1484,7 +1484,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
-					if (switch_core_file_has_video(rh->fh, SWITCH_TRUE)) {
+					if (switch_test_flag(rh->fh, SWITCH_FILE_FLAG_VIDEO)) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Video", "true");
 					}
 					merge_recording_variables(rh, event);

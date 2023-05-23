@@ -767,7 +767,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file_event(switch_core_session
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_START) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
-		if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
+		if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Video", "true");
 		}
 		merge_recording_variables(vars, event);
@@ -1033,7 +1033,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file_event(switch_core_session
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", file);
-		if (switch_core_file_has_video(fh, SWITCH_TRUE)) {
+		if (switch_test_flag(fh, SWITCH_FILE_FLAG_VIDEO)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Video", "true");
 		}
 		merge_recording_variables(vars, event);
