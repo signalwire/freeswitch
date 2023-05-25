@@ -1665,7 +1665,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			sip->sip_payload->pl_data = su_strndup(nua_handle_get_home(nh), sip->sip_payload->pl_data, sip->sip_payload->pl_len);
 		}
 	}
-
+	
 	switch (event) {
 	case nua_r_get_params:
 	case nua_i_fork:
@@ -1711,6 +1711,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		{
 			if (channel && sip) {
 				const char *r_sdp = NULL;
+				
 				sofia_glue_store_session_id(session, profile, sip, 0);
 
 				if (sip->sip_payload && sip->sip_payload->pl_data) {
@@ -2162,7 +2163,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 		break;
 	}
-
+	
   done:
 
 	if (tech_pvt && tech_pvt->want_event && event == tech_pvt->want_event) {
