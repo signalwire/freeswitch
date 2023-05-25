@@ -2720,7 +2720,7 @@ void sofia_event_callback(nua_event_t event,
 
 			set_call_id(tech_pvt, sip);
 		} else {
-			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			nua_respond(nh, mod_sofia_globals.min_idle_cpu_failure_code, mod_sofia_globals.min_idle_cpu_failure_text, SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 			nua_destroy_event(de->event);
 			su_free(nua_handle_get_home(nh), de);
 
@@ -4661,6 +4661,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
 	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
+	
+	mod_sofia_globals.min_idle_cpu_failure_code = 503;
+	strcpy(mod_sofia_globals.min_idle_cpu_failure_text, "Maximum Calls In Progress");
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -4717,6 +4720,17 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.stir_shaken_vs_cert_path_check = switch_true(val);
 			} else if (!strcasecmp(var, "stir-shaken-vs-require-date")) {
 				mod_sofia_globals.stir_shaken_vs_require_date = switch_true(val);
+			} else if (!strcasecmp(var, "min-idle-cpu-failure-code")) {
+				int temp_rc = atoi(val);
+				if(temp_rc > 399 && temp_rc < 700) {
+					mod_sofia_globals.min_idle_cpu_failure_code = temp_rc;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "min-idle-cpu-failure-code must be between 400 and 699.  Value was %d, leaving value set to 503.\n", temp_rc);
+				}
+			} else if (!strcasecmp(var, "min-idle-cpu-failure-text")) {
+				strncpy(mod_sofia_globals.min_idle_cpu_failure_text, val, 128);
+			} else if (!strcasecmp(var, "min-idle-cpu-override-outbound")) {
+				mod_sofia_globals.min_idle_cpu_override_outbound = atoi(val);
 			}
 		}
 	}

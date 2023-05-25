@@ -2080,7 +2080,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0, request_timelimit_sec = 0;
-	const char *cid_tmp, *lc;
+	const char *cid_tmp, *lc, *min_idle_cpu_override_tmp;
 	originate_global_t oglobals = { 0 };
 	int cdr_total = 0;
 	int local_clobber = 0;
@@ -2671,7 +2671,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	} else {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
-
+	
+	// To override any min_idle_cpu limits set on a per-call/per-caller basis
+	if ((min_idle_cpu_override_tmp = switch_event_get_header(var_event, "min_idle_cpu_override")) && switch_true(min_idle_cpu_override_tmp)) {
+		dftflags |= SOF_NO_CPU_IDLE_LIMITS;
+	}
+	
 	if (flags & SOF_NO_LIMITS) {
 		dftflags |= SOF_NO_LIMITS;
 	}
