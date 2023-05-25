@@ -215,6 +215,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 														 const char *grammar, const char *name, const char *dest, switch_asr_handle_t *ah);
 
 /*!
+  \brief Try to cancel request for speech detection on a session
+  \param session The session to try to cancel speech detection on
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_try_cancel_detect_speech(switch_core_session_t *session);
+
+/*!
   \brief Stop background Speech detection on a session
   \param session The session to stop detection on
   \return SWITCH_STATUS_SUCCESS if all is well
