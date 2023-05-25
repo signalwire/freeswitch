@@ -2072,13 +2072,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint8_t to = 0;
 	char *var_val;
 	const char *ringback_data = NULL;
+	const char *caller_ringback_data = NULL;
+	const char *outbound_ringback = NULL;
 	switch_event_t *var_event = NULL;
 	int8_t fail_on_single_reject = 0;
 	int8_t hangup_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0, request_timelimit_sec = 0;
-	const char *cid_tmp, *lc;
+	const char *cid_tmp, *lc, *min_idle_cpu_override_tmp;
 	originate_global_t oglobals = { 0 };
 	int cdr_total = 0;
 	int local_clobber = 0;
@@ -2437,6 +2439,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			ringback_data = NULL;
 		}
 	}
+
+	// Store ringback data set in the caller channel variable
+	if(!zstr(ringback_data)) {
+		caller_ringback_data = ringback_data;
+	}
+
 #if 0
 	/* changing behaviour ignore_early_media=true must also be explicitly set for previous behaviour */
 	if (ringback_data) {
@@ -2663,7 +2671,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	} else {
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
 	}
-
+	
+	// To override any min_idle_cpu limits set on a per-call/per-caller basis
+	if ((min_idle_cpu_override_tmp = switch_event_get_header(var_event, "min_idle_cpu_override")) && switch_true(min_idle_cpu_override_tmp)) {
+		dftflags |= SOF_NO_CPU_IDLE_LIMITS;
+	}
+	
 	if (flags & SOF_NO_LIMITS) {
 		dftflags |= SOF_NO_LIMITS;
 	}
@@ -3356,12 +3369,37 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  endfor1:
 
 			if (caller_channel) {
+				const char *bridge_early_media = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "bridge_early_media");
+				if (switch_true(bridge_early_media)) {
+					if (!switch_channel_test_flag(caller_channel, CF_3PCC_PROXY)) {
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(oglobals.originate_status[i].peer_channel), SWITCH_LOG_DEBUG, "%s Enforce Bridge Early Media via profile.\n",
+									switch_channel_get_name(caller_channel));
+						oglobals.early_ok = 0;
+						oglobals.ignore_early_media = 3;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(oglobals.originate_status[i].peer_channel), SWITCH_LOG_WARNING, "%s Unable to enforce Bridge Early Media for 3PCC call.\n",
+									switch_channel_get_name(caller_channel));
+					}
+				}
+
+				outbound_ringback = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "outbound_ringback");
+				if (!zstr(outbound_ringback)) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(oglobals.originate_status[i].peer_channel), SWITCH_LOG_DEBUG, "%s Use Outbound Ringback: %s.\n",
+									  switch_channel_get_name(caller_channel), outbound_ringback);
+					ringback_data = outbound_ringback;
+				} else if(!zstr(caller_ringback_data)) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(oglobals.originate_status[i].peer_channel), SWITCH_LOG_DEBUG, "%s Use Caller Ringback %s.\n",
+									switch_channel_get_name(caller_channel), caller_ringback_data);
+					ringback_data = caller_ringback_data;
+				}
+			}
+			
+			if (caller_channel) {
 				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) ||
 					switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) || switch_channel_test_flag(caller_channel, CF_DISABLE_RINGBACK)) {
 					ringback_data = NULL;
 				}
 			}
-
 
 #if 0
 			/* changing behaviour ignore_early_media=true must also be explicitly set for previous behaviour */

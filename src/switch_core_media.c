@@ -2186,7 +2186,11 @@ static void set_stats(switch_core_session_t *session, switch_media_type_t type, 
 		add_stat(stats->inbound.flaws, "in_flaw_total");
 		add_stat_double(stats->inbound.R, "in_quality_percentage");
 		add_stat_double(stats->inbound.mos, "in_mos");
-
+		add_stat_double(stats->inbound.pp_R, "in_pp_quality_percentage");
+		add_stat_double(stats->inbound.pp_mos, "in_pp_mos");
+		add_stat(stats->inbound.cumulative_flaws, "in_cumulative_flaw");
+		add_stat_double(stats->inbound.cumulative_R, "in_cumulative_quality_percentage");
+		add_stat_double(stats->inbound.cumulative_mos, "in_cumulative_mos");
 
 		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
 		add_stat(stats->outbound.media_bytes, "out_media_bytes");
@@ -9322,6 +9326,37 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: setting up fork ip to %s\n", switch_channel_get_name(session->channel), ip);
 	return switch_rtp_fork_set_local_address(a_engine->rtp_session, ip, port);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_reset_state(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine = NULL;
+	switch_media_handle_t *smh = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: no media\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	if (!a_engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: failed to reset state (no RTP session)\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	status = switch_rtp_fork_reset_state(a_engine->rtp_session);
+	if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s Fork: failed to reset fork state\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Fork: reset state\n", switch_channel_get_name(session->channel));
+	return SWITCH_STATUS_SUCCESS;	
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction)

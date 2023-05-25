@@ -396,6 +396,8 @@ struct switch_asr_interface {
 	switch_status_t (*asr_load_grammar) (switch_asr_handle_t *ah, const char *grammar, const char *name);
 	/*! function to unload a grammar to the asr interface */
 	switch_status_t (*asr_unload_grammar) (switch_asr_handle_t *ah, const char *name);
+	/*! function to try cancel the ASR request */
+	switch_status_t (*asr_try_cancel) (switch_asr_handle_t *ah);
 	/*! function to close the asr interface */
 	switch_status_t (*asr_close) (switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 	/*! function to feed audio to the ASR */

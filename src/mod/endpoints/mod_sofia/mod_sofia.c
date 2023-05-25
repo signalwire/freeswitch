@@ -4904,6 +4904,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	int mod = 0;
 
 	*new_session = NULL;
+	
+	// Need to allow for override for outbound calls even when min-idle-cpu fails
+	if(mod_sofia_globals.min_idle_cpu_override_outbound) {
+		flags |= SOF_NO_CPU_IDLE_LIMITS;
+	}
 
 	if (!outbound_profile || zstr(outbound_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Empty Destination\n");
@@ -5269,8 +5274,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 	}
 
+	if(sofia_test_pflag(profile, PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA)) {
+		switch_channel_set_variable(nchannel, "bridge_early_media", "true");
+	}
 
-
+	if(!zstr(profile->default_ringback)) {
+		switch_channel_set_variable(nchannel, "outbound_ringback", profile->default_ringback);
+	} else if (sofia_test_pflag(profile, PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA)) {
+		// Require a default or outbound ringback if bridge early media is set
+		switch_channel_set_variable(nchannel, "outbound_ringback", "%(2000,4000,440,480)");
+	}
 
 	sofia_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	sofia_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);

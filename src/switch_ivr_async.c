@@ -5172,6 +5172,7 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			
 			switch_channel_set_private(channel, SWITCH_SPEECH_KEY, NULL);
+			switch_channel_set_private(channel, SWITCH_SPEECH_KEY "_tmp", NULL);
 			switch_core_event_hook_remove_recv_dtmf(session, speech_on_dtmf);
 			
 			switch_core_asr_close(sth->ah, &flags);
@@ -5227,16 +5228,35 @@ static switch_status_t speech_on_dtmf(switch_core_session_t *session, const swit
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_try_cancel_detect_speech(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
+	switch_asr_handle_t *ah = sth ? sth->ah : switch_channel_get_private(channel, SWITCH_SPEECH_KEY "_tmp");
+
+	if (ah) {
+		switch_core_asr_try_cancel(ah);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_detect_speech(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct speech_thread_handle *sth;
+	switch_asr_handle_t *ah;
 
 	switch_assert(channel != NULL);
 	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
+		switch_channel_set_private(channel, SWITCH_SPEECH_KEY "_tmp", NULL);
 		switch_channel_set_private(channel, SWITCH_SPEECH_KEY, NULL);
 		switch_core_event_hook_remove_recv_dtmf(session, speech_on_dtmf);
 		switch_core_media_bug_remove(session, &sth->bug);
+		return SWITCH_STATUS_SUCCESS;
+	} else if ((ah = switch_channel_get_private(channel, SWITCH_SPEECH_KEY "_tmp"))) {
+		switch_channel_set_private(channel, SWITCH_SPEECH_KEY "_tmp", NULL);
+		switch_core_asr_try_cancel(ah);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -5395,6 +5415,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 		}
 	}
 
+	switch_channel_set_private(channel, SWITCH_SPEECH_KEY "_tmp", ah);
+
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	if ((status = switch_core_asr_open(ah,
@@ -5402,6 +5424,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 									   "L16",
 									   read_impl.actual_samples_per_second, dest, &flags,
 									   switch_core_session_get_pool(session))) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_set_private(channel, SWITCH_SPEECH_KEY "_tmp", NULL);
 		return status;
 	}
 
@@ -5434,6 +5457,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	}
 
 	switch_channel_set_private(channel, SWITCH_SPEECH_KEY, sth);
+	switch_channel_set_private(channel, SWITCH_SPEECH_KEY "_tmp", NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -5474,11 +5498,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	const char *p;
 	int resume = 0;
+	switch_event_t *event = NULL;
+	int fire_asr_result = ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p));
+	int disable_queue_asr_result = ((p = switch_channel_get_variable(channel, "queue_asr_events")) && switch_false(p));
 
 
 	if (!sth) {
 		/* No speech thread handle available yet, init speech detection first. */
 		if ((status = switch_ivr_detect_speech_init(session, mod_name, dest, ah)) != SWITCH_STATUS_SUCCESS) {
+			if(status == SWITCH_STATUS_BREAK && switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "cancel");
+				if (fire_asr_result) {
+					switch_event_t *dup;
+					if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_data(channel, dup);
+						switch_event_fire(&dup);
+					}
+				}
+
+				if (!disable_queue_asr_result && switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Event queue failed!\n");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+					switch_event_fire(&event);
+				}
+			}
 			return SWITCH_STATUS_NOT_INITALIZED;
 		}
 
@@ -5502,11 +5545,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		switch_ivr_resume_detect_speech(session);
 	}
 
-	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
+	if (fire_asr_result) {
 		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
-	if ((p = switch_channel_get_variable(channel, "queue_asr_events")) && switch_false(p)) {
+	if (disable_queue_asr_result) {
 		switch_clear_flag(sth->ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);
 	} else {
 		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_QUEUE_EVENTS);

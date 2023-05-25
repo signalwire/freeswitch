@@ -490,6 +490,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_pause_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "resume")) {
 			switch_ivr_resume_detect_speech(session);
+		} else if (!strcasecmp(argv[0], "try-cancel")) {
+			switch_ivr_try_cancel_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "stop")) {
 			switch_ivr_stop_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "param")) {

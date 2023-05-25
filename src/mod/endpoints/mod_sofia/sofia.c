@@ -1665,7 +1665,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			sip->sip_payload->pl_data = su_strndup(nua_handle_get_home(nh), sip->sip_payload->pl_data, sip->sip_payload->pl_len);
 		}
 	}
-
+	
 	switch (event) {
 	case nua_r_get_params:
 	case nua_i_fork:
@@ -1711,6 +1711,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		{
 			if (channel && sip) {
 				const char *r_sdp = NULL;
+				
 				sofia_glue_store_session_id(session, profile, sip, 0);
 
 				if (sip->sip_payload && sip->sip_payload->pl_data) {
@@ -2162,7 +2163,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		}
 		break;
 	}
-
+	
   done:
 
 	if (tech_pvt && tech_pvt->want_event && event == tech_pvt->want_event) {
@@ -2719,7 +2720,7 @@ void sofia_event_callback(nua_event_t event,
 
 			set_call_id(tech_pvt, sip);
 		} else {
-			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			nua_respond(nh, mod_sofia_globals.min_idle_cpu_failure_code, mod_sofia_globals.min_idle_cpu_failure_text, SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 			nua_destroy_event(de->event);
 			su_free(nua_handle_get_home(nh), de);
 
@@ -4660,6 +4661,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
 	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
+	
+	mod_sofia_globals.min_idle_cpu_failure_code = 503;
+	strcpy(mod_sofia_globals.min_idle_cpu_failure_text, "Maximum Calls In Progress");
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -4716,7 +4720,18 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.stir_shaken_vs_cert_path_check = switch_true(val);
 			} else if (!strcasecmp(var, "stir-shaken-vs-require-date")) {
 				mod_sofia_globals.stir_shaken_vs_require_date = switch_true(val);
-			} 
+			} else if (!strcasecmp(var, "min-idle-cpu-failure-code")) {
+				int temp_rc = atoi(val);
+				if(temp_rc > 399 && temp_rc < 700) {
+					mod_sofia_globals.min_idle_cpu_failure_code = temp_rc;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "min-idle-cpu-failure-code must be between 400 and 699.  Value was %d, leaving value set to 503.\n", temp_rc);
+				}
+			} else if (!strcasecmp(var, "min-idle-cpu-failure-text")) {
+				strncpy(mod_sofia_globals.min_idle_cpu_failure_text, val, 128);
+			} else if (!strcasecmp(var, "min-idle-cpu-override-outbound")) {
+				mod_sofia_globals.min_idle_cpu_override_outbound = atoi(val);
+			}
 		}
 	}
 
@@ -6280,6 +6295,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_SDP_MEDIA_STRICT_FMT);
 						}
+					} else if (!strcasecmp(var, "always-bridge-early-media")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA);
+						}
+					} else if (!strcasecmp(var, "default-ringback")) {
+						profile->default_ringback = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-notify-events")) {
 						profile->proxy_notify_events = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-info-content-types")) {
@@ -7770,6 +7793,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	if (status == 183 && !r_sdp) {
 		if ((channel && switch_true(switch_channel_get_variable(channel, "sip_ignore_183nosdp"))) || sofia_test_pflag(profile, PFLAG_IGNORE_183NOSDP)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp\n", channel ? switch_channel_get_name(channel) : "None");
+			goto done;
+		} else if (session && tech_pvt && sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp during early media\n", channel ? switch_channel_get_name(channel) : "None");
 			goto done;
 		}
 		status = 180;

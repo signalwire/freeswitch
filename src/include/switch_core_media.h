@@ -276,6 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set(switch_core_session_t
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_id(switch_core_session_t *session, const char *id);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_wait_ssrc(switch_core_session_t *session, int timeout_ms);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_set_local_address(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_fork_reset_state(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_activate(switch_core_session_t *session, switch_fork_direction_t direction);
 SWITCH_DECLARE(switch_status_t) switch_core_media_fork_deactivate(switch_core_session_t *session, switch_fork_direction_t direction);
 SWITCH_DECLARE(void) switch_core_media_fork_fire_start_event(switch_core_session_t *session);

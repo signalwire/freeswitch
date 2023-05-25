@@ -319,6 +319,7 @@ typedef enum {
 	PFLAG_ALWAYS_REGENERATE_OFFER,
 	PFLAG_TAGGED_ON_PRACK,
 	PFLAG_SDP_MEDIA_STRICT_FMT,
+	PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -405,6 +406,9 @@ struct mod_sofia_globals {
 	char guess_mask_str[16];
 	int debug_presence;
 	int debug_sla;
+	int min_idle_cpu_failure_code; // SIP RC For when insufficient cpu-idle
+	char min_idle_cpu_failure_text[128]; // The text portion of the SIP response
+	int min_idle_cpu_override_outbound;
 	int auto_restart;
 	int reg_deny_binding_fetch_and_no_lookup; /* backwards compatibility */
 	int auto_nat;
@@ -825,6 +829,7 @@ struct sofia_profile {
 	char *rfc7989_filter;
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
+	char *default_ringback;
 	uint8_t rfc8760_algs_count;
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
 	uint8_t disable_recovery_record_route_fixup;

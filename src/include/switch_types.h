@@ -337,7 +337,8 @@ typedef enum {
 	SOF_NO_EFFECTIVE_ANIII = (1 << 3),
 	SOF_NO_EFFECTIVE_CID_NUM = (1 << 4),
 	SOF_NO_EFFECTIVE_CID_NAME = (1 << 5),
-	SOF_NO_LIMITS = (1 << 6)
+	SOF_NO_LIMITS = (1 << 6),
+	SOF_NO_CPU_IDLE_LIMITS = (1 << 7)
 } switch_originate_flag_enum_t;
 typedef uint32_t switch_originate_flag_t;
 
@@ -723,6 +724,9 @@ typedef struct {
 	double mos;
 	double pp_R;
 	double pp_mos;
+	int pp_packet_counter;
+	int pp_packet_lost;
+	double pp_lost_percentage;
 
 	switch_size_t cumulative_flaws;
 	double cumulative_R;

@@ -323,6 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set(switch_rtp_t *rtp_session, s
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_id(switch_rtp_t *rtp_session, const char *id);
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_wait_ssrc(switch_rtp_t *rtp_session, int timeout_ms);
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_local_address(switch_rtp_t *rtp_session, const char *ip, uint16_t port);
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_reset_state(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_activate(switch_rtp_t *rtp_session, switch_fork_direction_t direction);
 SWITCH_DECLARE(void) switch_rtp_fork_deactivate(switch_rtp_t *rtp_session, switch_fork_direction_t direction);
 SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session);

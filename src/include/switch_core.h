@@ -2165,6 +2165,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 const char *module_name,
 													 const char *codec, int rate, const char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool);
 
+
+/*!
+  \brief Try to cancel an asr request
+  \param ah the handle to cancel
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_try_cancel(switch_asr_handle_t *ah);
+
 /*!
   \brief Close an asr handle
   \param ah the handle to close

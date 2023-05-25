@@ -224,6 +224,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah)
 	return ah->asr_interface->asr_resume(ah);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_asr_try_cancel(switch_asr_handle_t *ah)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(ah != NULL);
+
+	if (ah->asr_interface->asr_try_cancel) {
+		status = ah->asr_interface->asr_try_cancel(ah);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
 	switch_status_t status;
