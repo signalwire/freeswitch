@@ -3707,6 +3707,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_fork_set_local_address(switch_rtp_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_fork_reset_state(switch_rtp_t *rtp_session)
+{
+	if (!rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Fork: no RTP session\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	rtp_session->fork.start_event_fired = 0;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_fork_activate(switch_rtp_t *rtp_session, switch_fork_direction_t direction)
 {
 	switch_fork_session_t *fork = NULL;
