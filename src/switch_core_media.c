@@ -2186,7 +2186,11 @@ static void set_stats(switch_core_session_t *session, switch_media_type_t type, 
 		add_stat(stats->inbound.flaws, "in_flaw_total");
 		add_stat_double(stats->inbound.R, "in_quality_percentage");
 		add_stat_double(stats->inbound.mos, "in_mos");
-
+		add_stat_double(stats->inbound.pp_R, "in_pp_quality_percentage");
+		add_stat_double(stats->inbound.pp_mos, "in_pp_mos");
+		add_stat(stats->inbound.cumulative_flaws, "in_cumulative_flaw");
+		add_stat_double(stats->inbound.cumulative_R, "in_cumulative_quality_percentage");
+		add_stat_double(stats->inbound.cumulative_mos, "in_cumulative_mos");
 
 		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
 		add_stat(stats->outbound.media_bytes, "out_media_bytes");

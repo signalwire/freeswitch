@@ -723,6 +723,9 @@ typedef struct {
 	double mos;
 	double pp_R;
 	double pp_mos;
+	int pp_packet_counter;
+	int pp_packet_lost;
+	double pp_lost_percentage;
 
 	switch_size_t cumulative_flaws;
 	double cumulative_R;

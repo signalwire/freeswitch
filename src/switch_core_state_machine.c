@@ -88,6 +88,11 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 					"in_flaw_total: %d\n"
 					"in_quality_percentage: %lf\n"
 					"in_mos: %lf\n\n"
+					"in_pp_quality_percentage: %lf\n"
+					"in_pp_mos: %lf\n"
+					"in_cumulative_flaw: %d\n"
+					"in_cumulative_quality_percentage: %lf\n"
+					"in_cumulative_mos: %lf\n\n"
 					"out_raw_bytes: %d\n"
 					"out_media_bytes: %d\n"
 					"out_packet_count: %d\n"
@@ -116,6 +121,11 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 				(int)audio_stats->inbound.flaws,
 				audio_stats->inbound.R,
 				audio_stats->inbound.mos,
+				audio_stats->inbound.pp_R,
+				audio_stats->inbound.pp_mos,
+				(int)audio_stats->inbound.cumulative_flaws,
+				audio_stats->inbound.cumulative_R,
+				audio_stats->inbound.cumulative_mos,
 				(int)audio_stats->outbound.raw_bytes,
 				(int)audio_stats->outbound.media_bytes,
 				(int)audio_stats->outbound.packet_count,
