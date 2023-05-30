@@ -1450,23 +1450,6 @@ Files: libs/silk/*
 Copyright: 2006-2011, Skype Limited.
 License: BSD-2-clause
 
-Files: libs/libcodec2/*
-Copyright: 1990-2010 David Rowe
- 1990-2010 David Rowe 2009
-License: LGPL-2.1
-
-Files: libs/libcodec2/unittest/*
-Copyright: 2009,2010 David Rowe
-License: LGPL
-
-Files: libs/libcodec2/script/menu.sh
-Copyright: 1990-2010 David Rowe
-License: GPL-2
-
-Files: libs/libcodec2/src/pack.c
-Copyright: 2010 Perens LLC <bruce@perens.com>
-License: GPL-3+
-
 Files: src/mod/codecs/mod_sangoma_codec/mod_sangoma_codec.c
  src/include/switch_profile.h
  src/switch_profile.c
