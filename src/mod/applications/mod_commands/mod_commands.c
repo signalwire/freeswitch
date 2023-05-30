@@ -3856,25 +3856,29 @@ SWITCH_STANDARD_API(uuid_pre_answer_function)
 #define ANSWER_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_answer_function)
 {
-	char *uuid = (char *) cmd;
+	char *mycmd = NULL;
 	switch_core_session_t *xsession;
-
-	if (uuid && (xsession = switch_core_session_locate(uuid))) {
+	
+	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
+		stream->write_function(stream, "-USAGE: %s\n", ANSWER_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (zstr(mycmd) || !(xsession = switch_core_session_locate(mycmd))) {
+		stream->write_function(stream, "-ERR No such channel!\n");
+	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(xsession);
 		switch_status_t status = switch_channel_answer(channel);
 		switch_core_session_rwunlock(xsession);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "+OK\n");
 		} else {
-			stream->write_function(stream, "-ERR invalid uuid\n");
+			stream->write_function(stream, "-ERR cannot answer!\n");
 		}
-	} else {
-		stream->write_function(stream, "-USAGE: %s\n", ANSWER_SYNTAX);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 #define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|holdb|both]"
 SWITCH_STANDARD_API(uuid_broadcast_function)
