@@ -62,7 +62,7 @@
 #include <openssl/ssl.h>
 #include "mcast.h"
 
-#include "ks.h"
+#include "libks/ks.h"
 
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
