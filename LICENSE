@@ -1142,57 +1142,13 @@ License: ISC
  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-Files: libs/freetdm/*
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2005-2014, Anthony Minessale II
- 2009,2010 Moises Silva <moy@sangoma.com>
- David Yat Sin <dyatsin@sangoma.com>
- 2007, Jan Vidar Berger, Case Labs, Ltd.
- 2007,2008 Michael Jerris
- 2001-2006 Steve Underwood <steveu@coppice.org>
- 2001-2006 Steve Underwood
- 2005 Robert Krten
- 2002,2004 Christopher Clark <firstname.lastname@cl.cam.ac.uk>
- 2006 Nenad Corbic <ncorbic@sangoma.com>
- 1984-2011 Sangoma Technologies Inc.
- 2007, Michael S. Collins
- 2012, Kapil Gupta <kgupta@sangoma.com>
- 2009 Konrad Hammel <konrad@sangoma.com>
- 2010 Stefan Knoblich <s.knoblich@axsentis.de>
- 2008 Stefan Knoblich, axsentis GmbH.
- 2011 Sebastien Trottier
-License: BSD-3-clause
-
-Files: libs/freetdm/src/priserver.c
- libs/freetdm/src/sangoma_pri.?
-Copyright: 2005-2014, Anthony Minessale II
- Nenad Corbic <ncorbic@sangoma.com>
-License: GPL-2+
-
-Files: libs/freetdm/src/libteletone_detect.c
- libs/freetdm/mod_freetdm/mod_freetdm.c
- libs/freetdm/src/include/private/libteletone.h
- libs/freetdm/src/include/private/libteletone_detect.h
- libs/freetdm/src/include/private/libteletone_generate.h
- libs/freetdm/src/libteletone_generate.c
+Files:
  libs/libteletone/src/libteletone_detect.[ch]
  src/mod/applications/mod_spandsp/udptl.[ch]
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2005-2014, Anthony Minessale II
+Copyright:
+ 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  2001-2009, Steve Underwood <steveu@coppice.org>
 License: MPL-1.1
-
-Files: libs/freetdm/src/include/private/fsk.h
- libs/freetdm/src/uart.c
- libs/freetdm/src/fsk.c
- libs/freetdm/src/include/private/uart.h
- libs/freetdm/src/include/private/fsk.h
-Copyright: 2005 Robert Krten
-License: BSD-2-clause
-
-Files: libs/freetdm/src/ftmod/ftmod_misdn/ftmod_misdn.c
-Copyright: 2011, Stefan Knoblich <stkn@openisdn.net>
-License: MIT/X11 (BSD like)
 
 Files: src/include/SimpleGlob.h
 Copyright: 2006-2007, Brodie Thiesfield
