@@ -4756,13 +4756,11 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 
  error:
 
-	if (jsock) {
-		if (jsock->client_socket != KS_SOCK_INVALID) {
-			close_socket(&jsock->client_socket);
-		}
-
-		switch_core_destroy_memory_pool(&pool);
+	if (jsock->client_socket != KS_SOCK_INVALID) {
+		close_socket(&jsock->client_socket);
 	}
+
+	switch_core_destroy_memory_pool(&pool);
 
 	return -1;
 }
