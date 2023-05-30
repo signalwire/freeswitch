@@ -1348,101 +1348,6 @@ Files: src/g711.c
 Copyright: 2001,2006 Abandoned Steve Underwood
 License: public-domain
 
-Files: libs/libsndfile/src/G72x/*
-Copyright: Abandoned, Sun Microsystems, Inc.
-License: public-domain
-
-Files: libs/libsndfile/*
- libs/win32/libsndfile/*
-Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
- 1999-2009 Erik de Castro Lopo
- 2007 <robs@users.sourceforge.net>
- 2007 Reuben Thomas
- 2004 Paavo Jumppanen
- 2004-2005 David Viens <davidv@plogue.com>
- 2006 Paul Davis <paul@linuxaudiosystems.com>
- 2007 Jonatan Liljedahl <lijon@kymatica.com>
- 1993 by NuEdge Development
- 2003 Ross Bencina <rbencina@iprimus.com.au>
- 2004 Tobias Gehrig <tgehrig@ira.uka.de>
-License: LGPL-2.1+
-
-Files: libs/libsndfile/src/ima_oki_adpcm.c
- libs/libsndfile/src/test_ima_oki_adpcm.c
-Copyright: 2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
- 2007 <robs@users.sourceforge.net>
-License: LGPL-2+
-
-Files: libs/libsndfile/tests/*
- libs/libsndfile/Octave/sndfile_save.m
- libs/libsndfile/examples/sndfile-play.c
- libs/libsndfile/examples/sndfilehandle.cc
- libs/libsndfile/programs/sndfile-play-beos.cpp
- libs/libsndfile/examples/sndfile-play-beos.cpp
- libs/libsndfile/regtest/database.c
- libs/libsndfile/Octave/sndfile_play.m
- libs/libsndfile/regtest/sndfile-regtest.c
- libs/libsndfile/Octave/sndfile_load.m
- libs/libsndfile/regtest/regtest.h
- libs/libsndfile/examples/cooledit-fixer.c
- libs/libsndfile/examples/sndfile-info.c
- libs/libsndfile/src/G72x/g72x_test.c
- libs/libsndfile/regtest/checksum.c
- libs/libsndfile/examples/sndfile-convert.c
-Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
- 1999-2009 Erik de Castro Lopo
- 2001 Marcus Overhagen <marcus@overhagen.de>
-License: GPL-2+
-
-Files: libs/libsndfile/programs/common.?
- libs/libsndfile/programs/sndfile-info.c
- libs/libsndfile/programs/sndfile-cmp.c
- libs/libsndfile/programs/sndfile-metadata-set.c
- libs/libsndfile/examples/make_sine.c
- libs/libsndfile/programs/test-sndfile-metadata-set.py
- libs/libsndfile/programs/sndfile-convert.c
- libs/libsndfile/programs/sndfile-metadata-get.c
- libs/libsndfile/programs/sndfile-play.c
- libs/libsndfile/examples/list_formats.c
- libs/libsndfile/examples/sfprocess.c
- libs/libsndfile/examples/generate.c
- libs/libsndfile/src/create_symbols_file.py
- libs/libsndfile/src/binheader_writef_check.py
- libs/libsndfile/src/ogg.c
- libs/libsndfile/Mingw-make-dist.sh
- libs/libsndfile/examples/sndfile-to-text.c
- libs/libsndfile/src/sndfile.hh
-Copyright: 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
- 2008 George Blood Audio
- 2007 John ffitch
- 2002 Xiph.org Foundation
-License: BSD-3-clause
-
-Files: libs/libsndfile/src/GSM610/*
-Copyright: 1992, 1993, 1994 by Jutta Degener and Carsten Bormann
-License:
- Their work was released under the following license which is
- assumed to be compatible with The GNU Lesser General Public License.
- .
- ----------------------------------------------------------------------------
- .
- Copyright 1992, 1993, 1994 by Jutta Degener and Carsten Bormann,
- Technische Universitaet Berlin
- .
- Any use of this software is permitted provided that this notice is not
- removed and that neither the authors nor the Technische Universitaet Berlin
- are deemed to have made any representations as to the suitability of this
- software for any purpose nor are held responsible for any defects of
- this software.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
- .
- As a matter of courtesy, the authors request to be informed about uses
- this software has found, about bugs in this software, and about any
- improvements that may be of general interest.
- .
- Berlin, 28.11.1994
- Jutta Degener (jutta@cs.tu-berlin.de)
- Carsten Bormann (cabo@cs.tu-berlin.de)
-
 Files: src/mod/endpoints/mod_opal/*
 Copyright: 2007 Tuyan Ozipek (tuyanozipek@gmail.com)
  2008-2012 Vox Lucida Pty. Ltd. (robertj@voxlucida.com.au)
@@ -1580,11 +1485,6 @@ Files: libs/srtp/*
 Copyright: 2001-2006, Cisco Systems, Inc.
  2005 Ingate Systems AB
 License: BSD-3-clause
-
-Files: libs/libsndfile/src/ima_oki_adpcm.h
-Copyright: 2007 <robs@users.sourceforge.net>
- 2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
-License: LGPL-2+
 
 Files: src/switch_dso.c
 Copyright: 2008 Michael Jerris
