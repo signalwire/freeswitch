@@ -13,7 +13,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -yq install \
 # build
     build-essential cmake automake autoconf 'libtool-bin|libtool' pkg-config \
 # general
-    libssl-dev zlib1g-dev libdb-dev unixodbc-dev libncurses5-dev libexpat1-dev libgdbm-dev bison erlang-dev libtpl-dev libtiff5-dev uuid-dev \
+    libssl-dev zlib1g-dev libdb-dev unixodbc-dev libncurses5-dev libexpat1-dev bison erlang-dev libtpl-dev libtiff5-dev uuid-dev \
 # core
     libpcre3-dev libedit-dev libsqlite3-dev libcurl4-openssl-dev nasm \
 # core codecs

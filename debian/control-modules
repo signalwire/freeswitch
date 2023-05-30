@@ -484,9 +484,9 @@ Module: endpoints/mod_verto
 Description: Adds mod_verto.
  Adds mod_verto.
 Build-Depends: libperl-dev
-Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
+Build-Depends-Buster: libperl-dev
+Build-Depends-Bullseye: libperl-dev
+Build-Depends-Bookworm: libperl-dev
 
 ## mod/event_handlers
 
@@ -654,9 +654,9 @@ Module: languages/mod_perl
 Description: mod_perl
  Adds mod_perl.
 Build-Depends: libperl-dev
-Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
+Build-Depends-Buster: libperl-dev
+Build-Depends-Bullseye: libperl-dev
+Build-Depends-Bookworm: libperl-dev
 
 Module: languages/mod_python
 Description: mod_python
