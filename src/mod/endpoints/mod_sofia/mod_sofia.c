@@ -4313,6 +4313,8 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 		user = argv[1];
 	}
 
+	if (!user) goto end;
+
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 		if ((concat = strchr(domain, '/'))) {
@@ -4328,8 +4330,6 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		domain = dup_domain;
 	}
-
-	if (!user) goto end;
 
 	if (zstr(profile_name) || strcmp(profile_name, "*") || zstr(domain)) {
 		if (!zstr(profile_name)) {
