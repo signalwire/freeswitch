@@ -2205,11 +2205,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 													argv[i], (double)((double)(MAX_REDIR + 1 - i))/1000);
 								}
 							} else {
-								if (i == argc - 1) {
-									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
-								} else {
-									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>,", argv[i]);
-								}
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
 							}
 						} else {
 							if (i == argc - 1) {
