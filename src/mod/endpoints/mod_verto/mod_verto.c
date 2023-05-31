@@ -836,7 +836,7 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
 	}
 	
-	if (!zstr(str)) {
+	if (!zstr(str) && event && *event) {
 		edup = strdup(str);
 		switch_assert(edup);
 
