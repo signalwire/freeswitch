@@ -215,7 +215,7 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if ((flags && SVR_BLOCK)) {
+	if ((flags & SVR_BLOCK)) {
 		switch_yield(33000);
 		have_frame = 1;
 	} else if ((context->reads++ % 20) == 0) {
