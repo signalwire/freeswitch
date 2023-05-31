@@ -472,7 +472,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
 	}
 
-	if (session && tech_pvt->profile->pres_type) {
+	if (tech_pvt->profile->pres_type) {
 		char *sql = switch_mprintf("delete from sip_dialogs where uuid='%q'", switch_core_session_get_uuid(session));
 		switch_assert(sql);
 		sofia_glue_execute_sql_now(tech_pvt->profile, &sql, SWITCH_TRUE);
