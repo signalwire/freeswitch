@@ -3954,7 +3954,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *obj = cJSON_CreateObject(), *vobj = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
-	switch_event_t *var_event;
+	switch_event_t *var_event = NULL;
 	switch_call_cause_t reason = SWITCH_CAUSE_INVALID_MSG_UNSPECIFIED, cancel_cause = 0;
 	switch_caller_profile_t *caller_profile;
 	int err = 0;
