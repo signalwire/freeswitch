@@ -3877,6 +3877,7 @@ SWITCH_STANDARD_API(uuid_answer_function)
 		}
 	}
 
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
