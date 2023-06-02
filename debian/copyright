@@ -1108,9 +1108,8 @@ Files: libs/iksemel/*
 Copyright: 2000-2007 Gurer Ozen <madcat@e-kolay.net>
 License: LGPL-2.1
 
-Files: libs/apr*/*
+Files: libs/apr/*
 Copyright: 2000-2005 The Apache Software Foundation or its licensors
- 1991-1992, RSA Data Security, Inc.
  1996 by Internet Software Consortium.
  2000 by Martin Pool <mbp@humbug.org.au>
  2000-2004 Ryan Bloom
@@ -1139,18 +1138,6 @@ Copyright: 1992-1998 Jens-Uwe Mager, Helios Software GmbH, Hannover, Germany.
  1998 Ralf S. Engelschall <rse@apache.org>
  2000 David Reid
 License: Apache-2.0
-
-Files: libs/apr-util/crypto/apr_md5.c
-Copyright: 1991-2, RSA Data Security, Inc.
- 2000-2005 The Apache Software Foundation or its licensors
- phk@login.dknet.dk
-License: RSA and Apache-2.0 and Beerware
-
-Files: libs/apr-util/ldap/apr_ldap_url.c
-Copyright: 2000-2005 The Apache Software Foundation or its licensors
- 1998-2002 The OpenLDAP Foundation
- 1992-1996 Regents of the University of Michigan
-License: Apache-2.0 and OpenLDAP and BSD-like
 
 Files: libs/miniupnpc/*
 Copyright: 2005-2009, Thomas Bernard
