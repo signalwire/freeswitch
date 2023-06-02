@@ -1012,62 +1012,8 @@ License: MPL-1.1 or GPL-2+
       Original Code Source Code for Your Modifications.]
 
 Files: */inet_pton.c
- libs/curl/lib/inet_ntop.c
- libs/curl/lib/mprintf.c
 Copyright: 1996-2001 Internet Software Consortium
 License: ISC
-
-Files: libs/curl/lib/socks_gssapi.c
- libs/curl/lib/socks_sspi.c
-Copyright: 2009-2011, Markus Moeller <markus_moeller@compuserve.com>
-License: curl
-
-Files: libs/curl/lib/md5.c
-Copyright: 1998-2005, Daniel Stenberg, <daniel@haxx.se>, et al
- 1991-1992, RSA Data Security, Inc.
-License: curl
-
-Files: libs/curl/lib/md4.c
-Copyright: 1990-1992, RSA Data Security, Inc
-License: RSA
-
-License: RSA
- License to copy and use this software is granted provided that it
- is identified as the "RSA Data Security, Inc. MD4 Message-Digest
- Algorithm" in all material mentioning or referencing this software
- or this function.
- .
- License is also granted to make and use derivative works provided
- that such works are identified as "derived from the RSA Data
- Security, Inc. MD4 Message-Digest Algorithm" in all material
- mentioning or referencing the derived work.
- .
- RSA Data Security, Inc. makes no representations concerning either
- the merchantability of this software or the suitability of this
- software for any particular purpose. It is provided "as is"
- without express or implied warranty of any kind.
- .
- These notices must be retained in any copies of any part of this
- documentation and/or software.
-
-License: curl
- All rights reserved.
- .
- Permission to use, copy, modify, and distribute this software for any purpose
- with or without fee is hereby granted, provided that the above copyright
- notice and this permission notice appear in all copies.
- .
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN
- NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
- OR OTHER DEALINGS IN THE SOFTWARE.
- .
- Except as contained in this notice, the name of a copyright holder shall not
- be used in advertising or otherwise to promote the sale, use or other dealings
- in this Software without prior written authorization of the copyright holder.
 
 License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without
