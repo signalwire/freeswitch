@@ -1567,23 +1567,6 @@ License: GIPS
 Files: libs/ilbc/tests/regression_tests.sh
 License: GPL-2
 
-Files: libs/libg722_1/*
-Copyright: 2004 Polycom, Inc
- 2006 Michael Jerris
- 2001-2009 Steve Underwood <steveu@coppice.org>
- 2001-2006 Steve Underwood
-Comment: Disclaimer: non-comercial use,gital Equipment Corporation, Maynard, Massachusetts.
-License: patent-mess
-
-Files: libs/libg722_1/autogen.sh
-License: GPL-2
-
-Files: libs/libg722_1/tests/g192_bit_stream.h
- libs/libg722_1/tests/timing.h
-Copyright: 2008-2009 Steve Underwood <steveu@coppice.org>
- 2001 Steve Underwood
-License: LGPL-2.1
-
 License: OpenLDAP
  /* Portions Copyright 1998-2002 The OpenLDAP Foundation
   * All rights reserved.
