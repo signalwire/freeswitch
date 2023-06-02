@@ -10,26 +10,6 @@ License: MPL-1.1
 Files: debian/*
 Copyright: 2012 Travis Cross <tc@traviscross.com>
 License: MPL-1.1 or GPL-2+
- This program is free software, and you may redistribute it and/or
- modify it under either (at your option) the terms of the Mozilla
- Public License Version 1.1 (MPLv1.1) or under the terms of the GNU
- General Public License as published by the Free Software Foundation
- (either version 2 of the License, or (at your option) any later
- version).  Both licenses are described below.
- .
- This program is distributed in the hope that it will be useful, but
- WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- General Public License for more details.
- .
- You should have received a copy of the GNU General Public License
- along with this package; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
- USA
- .
- On Debian systems, the full text of the GNU General Public License
- version 2 can be found in the file
- `/usr/share/common-licenses/GPL-2'.
 
 Files: */inet_pton.c
 Copyright: 1996-2001 Internet Software Consortium
@@ -868,6 +848,23 @@ License: MPL-1.1
       the notices in the Source Code files of the Original Code. You should
       use the text of this Exhibit A rather than the text found in the
       Original Code Source Code for Your Modifications.]
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <https://www.gnu.org/licenses/>.
+Comment:
+ On Debian systems, the full text of the GNU General Public License
+ version 2 can be found in the file '/usr/share/common-licenses/GPL-2'.
 
 License: OpenLDAP
  /* Portions Copyright 1998-2002 The OpenLDAP Foundation
