@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 #define HTTP_CHUNK_SIZE 1024 * 32
 #define EP_NAME "verto.rtc"
 //#define WSS_STANDALONE 1
-#include "ks.h"
+#include "libks/ks.h"
 
 #include <mod_verto.h>
 #ifndef WIN32
