@@ -46,14 +46,16 @@ enum
 	//BOOL WINAPI StartAuthManagerEx(int nKeyID,CHAR* szIPRErr,char * szLicSn, char * szLicPw);//masked by wangfeng for Os-12566, 2018.8.16
 	BOOL WINAPI StartAuthManagerEx(int nKeyID,CHAR* szIPRErr,char * szLicSn, char * szLicPw, char * szLogDirectory, UCHAR ucLogLevel, UCHAR ucLogCreatePeriod);//added by wangfeng for Os-12566, 2018.8.16
 	BOOL WINAPI CheckCfgPassword(void * hBitHandle ,char * szLicPw);
+	BOOL WINAPI TestSnPassword(char * szLicSn ,char * szLicPw);
 	//+++start+++ added by netwolf 2018.07.10
 	DWORD WINAPI GetExpAliveTime(int nKeyID);
 	//+++end +++ added by netwolf 2018.07.10
-	WORD WINAPI GetAuthExtNum(int nKeyID);//added by yy,for RCS,2020.04.14
+	DWORD WINAPI GetAuthExtNum(int nKeyID);//added by yy,for RCS,2020.04.14
 	u64 WINAPI GetAuthModules(int nKeyID);//added by yy,for RCS,2020.04.14
 	u64 WINAPI GetAuthFeatures(int nKeyID);//added by yy,for RCS,2020.04.14
 	BOOL WINAPI ChecKEY(int nKeyID);//added by yy,for RCS,2020.04.14
 	WORD WINAPI GetAuthApiNum(int nKeyID);//added by yy,for RCS,2020.04.14
+	BOOL WINAPI GetRCSTestAuth();
 #ifdef __cplusplus
 }
 #endif
