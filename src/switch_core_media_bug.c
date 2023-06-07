@@ -53,7 +53,7 @@ static void switch_core_media_bug_destroy(switch_media_bug_t **bug)
 	if (bp->video_bug_thread) {
 		switch_status_t st;
 		int i;
-
+		bp->ready = 0;
 		for (i = 0; i < 2; i++) {
 			void *pop;
 			switch_image_t *img;
