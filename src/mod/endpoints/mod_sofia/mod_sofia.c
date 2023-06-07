@@ -4801,6 +4801,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
 												  switch_memory_pool_t **pool, switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
+	const char *val = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession = NULL;
 	char *data, *profile_name, *dest;	//, *dest_num = NULL;
@@ -4936,6 +4937,15 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (zstr(gateway_ptr->pai_feild_source) || !strcasecmp(gateway_ptr->pai_feild_source, "register")){
             tech_pvt->gateway_username =  switch_core_session_strdup(nsession, gateway_ptr->register_username);
         }
+		//add by ct for OS-21813
+        if( ((val = switch_channel_get_variable(nchannel, "sip_ppi")) && !strcasecmp(val, "trunk")) || 
+        ((val = switch_channel_get_variable(o_channel, "sip_pid")) && !strcasecmp(val, "trunk")) ||
+        ((val = switch_channel_get_variable(o_channel, "sip_pai")) && !strcasecmp(val, "trunk")) ||
+        ((val = switch_channel_get_variable(o_channel, "contact_type")) && !strcasecmp(val, "trunk"))) {
+            tech_pvt->gateway_username =  switch_core_session_strdup(nsession, gateway_ptr->register_username);
+            // switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "use_number =%s \n",tech_pvt->gateway_username);
+        }
+        //end by ct for OS021813
 
 		if (!strchr(dest, '@')) {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s@%s", gateway_ptr->destination_prefix, dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));
@@ -4958,14 +4968,31 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				dest_to = NULL;
 			}
 		}
+		//add by ct for OS-21813
+		if (gateway_ptr && gateway_ptr->ob_vars) {
+            switch_event_header_t *hp;
+            for (hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+                                  switch_channel_get_name(nchannel), hp->name, hp->value);
+                if (!strncmp(hp->name, "p:", 2)) {
+                    switch_channel_set_profile_var(nchannel, hp->name + 2, hp->value);
+                } else {
+                    switch_channel_set_variable(nchannel, hp->name, hp->value);
+                }
+            }
+        }
+        if((val = switch_channel_get_variable(nchannel, "contact_type")) && !strcasecmp(val, "trunk")) {
+       
+            if (params) {
+                tech_pvt->invite_contact = switch_core_session_sprintf(nsession, "%s;%s", gateway_ptr->register_contact, params);
+                tech_pvt->dest = switch_core_session_sprintf(nsession, "%s;%s", tech_pvt->dest, params);
 
-		if (params) {
-			tech_pvt->invite_contact = switch_core_session_sprintf(nsession, "%s;%s", gateway_ptr->register_contact, params);
-			tech_pvt->dest = switch_core_session_sprintf(nsession, "%s;%s", tech_pvt->dest, params);
-		} else {
-			tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
-		}
 
+            } else {
+                tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
+            }
+        }
+		//end by ct for OS021813
 		gateway_ptr->ob_calls++;
 
 		if (!zstr(gateway_ptr->from_domain) && !switch_channel_get_variable(nchannel, "sip_invite_domain")) {

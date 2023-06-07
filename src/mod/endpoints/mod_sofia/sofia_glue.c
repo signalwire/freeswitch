@@ -1274,6 +1274,35 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			dst = sofia_glue_get_destination(tech_pvt->dest);
 		}
 
+		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) && switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			if (zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
+				zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
+				if (!(use_name = switch_channel_get_variable(tech_pvt->channel, "sip_to_display"))) {
+					use_name = switch_channel_get_variable(tech_pvt->channel, "sip_to_user");
+				}
+			}
+
+			if (zstr((use_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
+				zstr((use_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
+				use_number = switch_channel_get_variable(tech_pvt->channel, "sip_to_user");
+			}
+
+			if (zstr(use_name) && zstr(use_name = tech_pvt->caller_profile->callee_id_name)) {
+				use_name = tech_pvt->caller_profile->caller_id_name;
+			}
+
+			if (zstr(use_number) && zstr(use_number = tech_pvt->caller_profile->callee_id_number)) {
+				use_number = tech_pvt->caller_profile->caller_id_number;
+			}
+		} else {
+			use_name = tech_pvt->caller_profile->caller_id_name;
+			use_number = tech_pvt->caller_profile->caller_id_number;
+		}
+
+		if((val = switch_channel_get_variable(channel, "contact_type")) && !strcasecmp(val, "ext_number")) {
+			switch_channel_set_variable(channel, "sip_contact_user",use_number);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "11111contact2 didcontact s \n");
+		}
 		/*
 		 * Ignore transport chanvar and uri parameter for gateway connections
 		 * since all of them have been already taken care of in mod_sofia.c:sofia_outgoing_channel()
@@ -1319,12 +1348,23 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 				ipv6 = strchr(ip_addr, ':');
 
-				if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
+				if((val = switch_channel_get_variable(channel, "contact_type")) && !strcasecmp(val, "ext_number")) {
+					const char *contact_number = switch_channel_get_variable(channel, "Orig_caller_id_number");
+					if (sofia_glue_transport_has_tls(tech_pvt->transport)) {
+					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact_number,
+																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->tls_sip_port);
+					} else {
+						tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact_number,
+																			ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
+					}
+				}else{
+					if (sofia_glue_transport_has_tls(tech_pvt->transport)) {switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "contact1 didcontact =%s \n",contact);
 					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact,
 																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->tls_sip_port);
-				} else {
-					tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact,
-																		   ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
+					} else {
+						tech_pvt->invite_contact = switch_core_session_sprintf(session, "sip:%s@%s%s%s:%d", contact,
+																			ipv6 ? "[" : "", ip_addr, ipv6 ? "]" : "", tech_pvt->profile->extsipport);
+					}
 				}
 			} else {
 				tech_pvt->invite_contact = sofia_glue_get_profile_url(tech_pvt->profile, tech_pvt->mparams.remote_ip, tech_pvt->transport);
@@ -1451,78 +1491,64 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			cid_type = sofia_cid_name2type(val);
 		}
 
-		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) && switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
-			if (zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_name"))) &&
-				zstr((use_name = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_name")))) {
-				if (!(use_name = switch_channel_get_variable(tech_pvt->channel, "sip_to_display"))) {
-					use_name = switch_channel_get_variable(tech_pvt->channel, "sip_to_user");
-				}
-			}
-
-			if (zstr((use_number = switch_channel_get_variable(tech_pvt->channel, "effective_callee_id_number"))) &&
-				zstr((use_number = switch_channel_get_variable(tech_pvt->channel, "sip_callee_id_number")))) {
-				use_number = switch_channel_get_variable(tech_pvt->channel, "sip_to_user");
-			}
-
-			if (zstr(use_name) && zstr(use_name = tech_pvt->caller_profile->callee_id_name)) {
-				use_name = tech_pvt->caller_profile->caller_id_name;
-			}
-
-			if (zstr(use_number) && zstr(use_number = tech_pvt->caller_profile->callee_id_number)) {
-				use_number = tech_pvt->caller_profile->caller_id_number;
-			}
-		} else {
-			use_name = tech_pvt->caller_profile->caller_id_name;
-			use_number = tech_pvt->caller_profile->caller_id_number;
-		}
-
 		check_decode(use_name, session);
 
-		switch (cid_type) {
-		case CID_TYPE_PID:
-			//UC
-			if(!zstr(tech_pvt->gateway_username)) {
-				use_number = tech_pvt->gateway_username;
-			}
-
-			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
-					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
-																		use_number, rpid_domain,
-																		invite_pid_params ? ";" : "",
-																		invite_pid_params ? invite_pid_params : "");
-				} else {
-					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
-																		use_name, use_number, rpid_domain,
-																		invite_pid_params ? ";" : "",
-																		invite_pid_params ? invite_pid_params : "");
-				}
-			} else {
+		/************************************add by ct for OS-21813 2023.3.22***********************************************/
+		if ((val = switch_channel_get_variable(channel, "sip_ppi"))) {
+			if (!strcasecmp(val, "ext_number")) {
+				const char * ppi_number;
+				ppi_number = switch_channel_get_variable(channel, "Orig_caller_id_number");
+				//use_name = switch_channel_get_variable(channel, "Orig_caller_id_name");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ppi ext_number  use_number =%s %s %s\n",use_number,use_name,ppi_number);	
 				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
-																		 tech_pvt->caller_profile->caller_id_number, rpid_domain,
+																		 ppi_number, rpid_domain,
 																		 invite_pid_params ? ";" : "",
 																		 invite_pid_params ? invite_pid_params : "");
 				} else {
 					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
 																		 tech_pvt->caller_profile->caller_id_name,
-																		 tech_pvt->caller_profile->caller_id_number, rpid_domain,
+																		 ppi_number, rpid_domain,
 																		 invite_pid_params ? ";" : "",
 																		 invite_pid_params ? invite_pid_params : "");
 				}
-			}
-
-			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-				tech_pvt->privacy = "id";
-			} else {
-				if (!(val = switch_channel_get_variable(channel, "sip_cid_suppress_privacy_none")) || !switch_true(val)) {
-					tech_pvt->privacy = "none";
+				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+					tech_pvt->privacy = "id";
+				} else {
+					if (!(val = switch_channel_get_variable(channel, "sip_cid_suppress_privacy_none")) || !switch_true(val)) {
+						tech_pvt->privacy = "none";
+					}
 				}
 			}
+			else if(!strcasecmp(val, "trunk") && !zstr(tech_pvt->gateway_username)){
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ppi trunk tech_pvt->gateway_username =%s \n",tech_pvt->gateway_username);	
+				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																		 tech_pvt->gateway_username, rpid_domain,
+																		 invite_pid_params ? ";" : "",
+																		 invite_pid_params ? invite_pid_params : "");
+				} else {
+					tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
+																		 tech_pvt->caller_profile->caller_id_name,
+																		 tech_pvt->gateway_username, rpid_domain,
+																		 invite_pid_params ? ";" : "",
+																		 invite_pid_params ? invite_pid_params : "");
+				}
+				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+					tech_pvt->privacy = "id";
+				} else {
+					if (!(val = switch_channel_get_variable(channel, "sip_cid_suppress_privacy_none")) || !switch_true(val)) {
+						tech_pvt->privacy = "none";
+					}
+				}
+			}
+		}
 
-			break;
-		case CID_TYPE_RPID:
-			{
+		if ((val = switch_channel_get_variable(channel, "sip_pid"))) {
+			if (!strcasecmp(val, "ext_number")) {
+				const char * pid_number;
+				pid_number = switch_channel_get_variable(channel, "Orig_caller_id_number");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rpid ext_number use_number =%s \n",use_number);	
 				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 					priv = "name";
 					if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
@@ -1538,17 +1564,153 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 					tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
-																 use_number, rpid_domain, screen, priv);
+																 pid_number, rpid_domain, screen, priv);
 				} else {
 					tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
-																 use_name, use_number, rpid_domain, screen, priv);
+																 use_name, pid_number, rpid_domain, screen, priv);
+																//  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rpid ????1 = \n");
 				}
 			}
-			break;
-		default:
-			break;
+			else if(!strcasecmp(val, "trunk")){
+				if(!zstr(tech_pvt->gateway_username)) {
+					//use_number = tech_pvt->gateway_username;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rpid trunk tech_pvt->gateway_username =%s \n",tech_pvt->gateway_username);	
+					if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+						priv = "name";
+						if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+							priv = "full";
+						}
+					} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+						priv = "full";
+					}
+	
+					if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+						screen = "yes";
+					}
+	
+					if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+						tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+																	 tech_pvt->gateway_username, rpid_domain, screen, priv);
+					} else {
+						tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+																	 use_name, tech_pvt->gateway_username, rpid_domain, screen, priv);
+																	 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "rpid ????2 = \n");
+					}
+				}
+				
+			}
 		}
 
+		if ((val = switch_channel_get_variable(channel, "sip_pai"))) {
+			if (!strcasecmp(val, "ext_number")) {
+				const char * pai_number;
+				pai_number = switch_channel_get_variable(channel, "Orig_caller_id_number");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "paid ext_number aaaa use_number =%s \n",use_number);	
+				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																		pai_number, rpid_domain,
+																		invite_pid_params ? ";" : "",
+																		invite_pid_params ? invite_pid_params : "");
+				} else {
+					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
+																		use_name, pai_number, rpid_domain,
+																		invite_pid_params ? ";" : "",
+																		invite_pid_params ? invite_pid_params : "");
+				}
+			}
+			else if(!strcasecmp(val, "trunk")){
+				if(!zstr(tech_pvt->gateway_username)) {
+					// use_number = tech_pvt->gateway_username;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "paid trunk tech_pvt->gateway_username =%s \n",tech_pvt->gateway_username);	
+					if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+						tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																			tech_pvt->gateway_username, rpid_domain,
+																			invite_pid_params ? ";" : "",
+																			invite_pid_params ? invite_pid_params : "");
+					} else {
+						tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
+																			use_name, tech_pvt->gateway_username, rpid_domain,
+																			invite_pid_params ? ";" : "",
+																			invite_pid_params ? invite_pid_params : "");
+					}
+				}
+				
+			}
+		}
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "use_number old =%s \n",use_number);
+		/******************************end by cy for OS-21813 2023.3.22*****************************************************/
+		if( !(val = switch_channel_get_variable(channel, "contact_type")) ){
+			switch (cid_type) {
+			case CID_TYPE_PID:
+				//UC
+				if(!zstr(tech_pvt->gateway_username)) {
+					use_number = tech_pvt->gateway_username;
+				}
+
+				if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+					if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+						tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																			use_number, rpid_domain,
+																			invite_pid_params ? ";" : "",
+																			invite_pid_params ? invite_pid_params : "");
+					} else {
+						tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
+																			use_name, use_number, rpid_domain,
+																			invite_pid_params ? ";" : "",
+																			invite_pid_params ? invite_pid_params : "");
+					}
+				} else {
+					if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+						tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
+																			tech_pvt->caller_profile->caller_id_number, rpid_domain,
+																			invite_pid_params ? ";" : "",
+																			invite_pid_params ? invite_pid_params : "");
+					} else {
+						tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s%s%s>",
+																			tech_pvt->caller_profile->caller_id_name,
+																			tech_pvt->caller_profile->caller_id_number, rpid_domain,
+																			invite_pid_params ? ";" : "",
+																			invite_pid_params ? invite_pid_params : "");
+					}
+				}
+
+				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+					tech_pvt->privacy = "id";
+				} else {
+					if (!(val = switch_channel_get_variable(channel, "sip_cid_suppress_privacy_none")) || !switch_true(val)) {
+						tech_pvt->privacy = "none";
+					}
+				}
+
+				break;
+			case CID_TYPE_RPID:
+				{
+					if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+						priv = "name";
+						if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+							priv = "full";
+						}
+					} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+						priv = "full";
+					}
+
+					if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+						screen = "yes";
+					}
+
+					if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+						tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+																	use_number, rpid_domain, screen, priv);
+					} else {
+						tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+																	use_name, use_number, rpid_domain, screen, priv);
+					}
+				}
+				break;
+			default:
+				break;
+			}
+		}
 
 		switch_safe_free(d_url);
 

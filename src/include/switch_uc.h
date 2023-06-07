@@ -80,9 +80,9 @@ SWITCH_DECLARE(unsigned int) switch_get_valid_period(void);
 
 SWITCH_DECLARE(unsigned int) switch_get_remaining_valid_period(void);
 
-SWITCH_DECLARE(unsigned long long) switch_core_get_device_modules_auth_sn();
+SWITCH_DECLARE(unsigned long long) switch_core_get_device_modules_auth_sn(void);
 
-SWITCH_DECLARE(unsigned long long) switch_core_get_device_features_auth_sn();
+SWITCH_DECLARE(unsigned long long) switch_core_get_device_features_auth_sn(void);
 
 SWITCH_DECLARE(unsigned long long) switch_core_mem_free(void);
 
@@ -104,7 +104,7 @@ SWITCH_DECLARE(char *) switch_core_kernel_ver(void);
 
 SWITCH_DECLARE(switch_status_t) switch_core_check_usb_key(const char **err);
 
-SWITCH_DECLARE(void) switch_close_auth();
+SWITCH_DECLARE(void) switch_close_auth(void);
 
 
 SWITCH_END_EXTERN_C
