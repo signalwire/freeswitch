@@ -35,7 +35,7 @@
 #include "switch.h"
 #include "private/switch_core_pvt.h"
 
-static void switch_core_media_bug_destroy(switch_media_bug_t **bug)
+static void switch_core_media_bug_destroy(switch_media_bug_t **bug, switch_thread_rwlock_t *rwlock)
 {
 	switch_event_t *event = NULL;
 	switch_media_bug_t *bp = *bug;
@@ -66,7 +66,14 @@ static void switch_core_media_bug_destroy(switch_media_bug_t **bug)
 			}
 		}
 
+		if (rwlock) {
+			switch_thread_rwlock_unlock(rwlock);
+		}
 		switch_thread_join(&st, bp->video_bug_thread);
+		if (rwlock) {
+			switch_thread_rwlock_wrlock(rwlock);
+		}
+		
 	}
 
 	if (bp->session && switch_test_flag(bp, SMBF_READ_VIDEO_PATCH) && bp->session->video_read_codec) {
@@ -955,7 +962,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	if (bug->callback) {
 		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
 		if (result == SWITCH_FALSE) {
-			switch_core_media_bug_destroy(&bug);
+			switch_core_media_bug_destroy(&bug,NULL);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error attaching BUG to %s\n",
 							  switch_channel_get_name(session->channel));
 			return SWITCH_STATUS_GENERR;
@@ -1073,7 +1080,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_transfer_callback(switch_c
 			if ((switch_core_media_bug_add(new_session, cur->function, cur->target, cur->callback,
 										   user_data_dup_func(new_session, cur->user_data),
 										   cur->stop_time, cur->flags, &new_bug) == SWITCH_STATUS_SUCCESS)) {
-				switch_core_media_bug_destroy(&cur);
+				switch_core_media_bug_destroy(&cur,orig_session->bug_rwlock);
 				total++;
 			} else {
 				/* Call the dup function again to revert to original session */
@@ -1276,7 +1283,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all_function(switch
 	if (closed) {
 		for (bp = closed; bp; bp = next) {
 			next = bp->next;
-			switch_core_media_bug_destroy(&bp);
+			switch_core_media_bug_destroy(&bp,NULL);
 		}
 	}
 
@@ -1327,7 +1334,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 						  switch_channel_get_name(bp->session->channel));
 
 		if (destroy) {
-			switch_core_media_bug_destroy(bug);
+			switch_core_media_bug_destroy(bug,NULL);
 		}
 
 		return SWITCH_STATUS_SUCCESS;
@@ -1467,7 +1474,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 	if (closed) {
 		for (bp = closed; bp; bp = next) {
 			next = bp->next;
-			switch_core_media_bug_destroy(&bp);
+			switch_core_media_bug_destroy(&bp,NULL);
 		}
 	}
 
