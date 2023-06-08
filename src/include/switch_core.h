@@ -2577,6 +2577,7 @@ SWITCH_DECLARE(void) switch_core_sqldb_pause(void);
 SWITCH_DECLARE(void) switch_core_sqldb_resume(void);
 
 SWITCH_DECLARE(void) switch_core_session_media_writable(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_media_readable(_In_ switch_core_session_t *session);
 ///\}
 
 /*!

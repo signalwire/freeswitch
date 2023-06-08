@@ -296,6 +296,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 SWITCH_DECLARE(const char *) switch_channel_get_hold_music(switch_channel_t *channel);
 SWITCH_DECLARE(const char *) switch_channel_get_hold_music_partner(switch_channel_t *channel);
 
+SWITCH_DECLARE(switch_status_t) switch_channel_has_variable_prefix(switch_channel_t *channel, const char *prefix);
 SWITCH_DECLARE(uint32_t) switch_channel_del_variable_prefix(switch_channel_t *channel, const char *prefix);
 SWITCH_DECLARE(switch_status_t) switch_channel_transfer_variable_prefix(switch_channel_t *orig_channel, switch_channel_t *new_channel, const char *prefix);
 

@@ -1361,6 +1361,27 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_has_variable_prefix(switch_channel_t *channel, const char *prefix)
+{
+	switch_event_t *event;
+	switch_event_header_t *hp;
+	switch_status_t result = SWITCH_STATUS_FALSE;
+
+	switch_channel_get_variables(channel, &event);
+
+	if (event) {
+		for (hp = event->headers; hp; hp = hp->next) {
+			if (!strncasecmp(hp->name, prefix, strlen(prefix))) {
+				result = SWITCH_STATUS_SUCCESS;
+				break;
+			}
+		}
+	}
+
+	switch_event_destroy(&event);
+	return result;
+}
+
 
 SWITCH_DECLARE(uint32_t) switch_channel_del_variable_prefix(switch_channel_t *channel, const char *prefix)
 {
@@ -2775,6 +2796,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
 		event->event_id == SWITCH_EVENT_CHANNEL_MEDIA_WRITABLE ||
+		event->event_id == SWITCH_EVENT_CHANNEL_MEDIA_READABLE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE ||
 		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||

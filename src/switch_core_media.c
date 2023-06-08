@@ -3116,6 +3116,47 @@ static void check_media_timeout_params(switch_core_session_t *session, switch_rt
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_refresh_media_timer(switch_core_session_t *session, uint32_t* timeoutms)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine, *v_engine;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (timeoutms) {
+		a_engine->media_timeout = *timeoutms;
+		if (switch_rtp_ready(a_engine->rtp_session)) {
+			switch_rtp_set_media_timeout(a_engine->rtp_session, a_engine->media_timeout);
+			switch_rtp_reset_media_timer(a_engine->rtp_session);
+		}
+
+		v_engine->media_timeout = *timeoutms;
+		if (switch_rtp_ready(v_engine->rtp_session)) {
+			switch_rtp_set_media_timeout(v_engine->rtp_session, v_engine->media_timeout);
+			switch_rtp_reset_media_timer(v_engine->rtp_session);
+		}
+	} else {
+		if (switch_rtp_ready(a_engine->rtp_session)) {
+			check_media_timeout_params(session, a_engine);
+			switch_rtp_reset_media_timer(a_engine->rtp_session);
+		}
+
+		if (switch_rtp_ready(v_engine->rtp_session)) {
+			check_media_timeout_params(session, v_engine);
+			switch_rtp_reset_media_timer(v_engine->rtp_session);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 															 switch_io_flag_t flags, int stream_id, switch_media_type_t type)
 {
@@ -3124,6 +3165,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 	switch_status_t status;
 	switch_media_handle_t *smh;
 	int do_cng = 0;
+	int fire_readable = 0;
 
 	switch_assert(session);
 
@@ -3174,13 +3216,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			if (status == SWITCH_STATUS_TIMEOUT) {
-
-				if (switch_channel_get_variable(session->channel, "execute_on_media_timeout")) {
+				
+				if (switch_channel_has_variable_prefix(session->channel, "execute_on_media_timeout") == SWITCH_STATUS_SUCCESS) {
 					*frame = &engine->read_frame;
 					switch_set_flag((*frame), SFF_CNG);
 					(*frame)->datalen = engine->read_impl.encoded_bytes_per_packet;
 					memset((*frame)->data, 0, (*frame)->datalen);
-					switch_channel_execute_on(session->channel, "execute_on_media_timeout");
+					if (!switch_channel_test_flag(session->channel, CF_MEDIA_TIMEOUT_FIRED)) {
+						switch_channel_set_flag(session->channel, CF_MEDIA_TIMEOUT_FIRED);
+						switch_channel_execute_on(session->channel, "execute_on_media_timeout");
+						switch_channel_clear_flag(session->channel, CF_MEDIA_READABLE_FIRED);
+					}
 					switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 				}
 
@@ -3193,6 +3239,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 			}
 			goto end;
+		}
+
+		fire_readable = !switch_channel_test_flag(session->channel, CF_MEDIA_READABLE_FIRED);
+		if (fire_readable && status == SWITCH_STATUS_SUCCESS && !switch_test_flag((&engine->read_frame), SFF_CNG)) {
+			switch_event_t *event = NULL;
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_MEDIA_READABLE) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(session->channel, event);
+				switch_event_fire(&event);
+			}
+			switch_channel_set_flag(session->channel, CF_MEDIA_READABLE_FIRED);
+			switch_core_session_media_readable(session);
+			switch_channel_clear_flag(session->channel, CF_MEDIA_TIMEOUT_FIRED);
+			switch_rtp_reset_media_timer(engine->rtp_session);
 		}
 
 		if (switch_channel_test_flag(session->channel, CF_LEG_HOLDING)) {

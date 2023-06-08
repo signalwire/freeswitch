@@ -303,7 +303,7 @@ SWITCH_DECLARE(void) switch_core_media_hard_mute(switch_core_session_t *session,
 SWITCH_DECLARE(cJSON *) switch_core_media_gen_json_constraint(float min, float ideal, float max);
 SWITCH_DECLARE(switch_status_t) switch_core_media_media_params(switch_core_session_t *session, const char *json);
 SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
-
+SWITCH_DECLARE(switch_status_t) switch_core_media_refresh_media_timer(switch_core_session_t *session, uint32_t* timeoutms);
 
 
 SWITCH_DECLARE(void) switch_core_media_break(switch_core_session_t *session, switch_media_type_t type);

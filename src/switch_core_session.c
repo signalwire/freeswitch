@@ -3347,6 +3347,11 @@ SWITCH_DECLARE(void) switch_core_session_media_writable(switch_core_session_t *s
 	switch_channel_execute_on(session->channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_WRITABLE_VARIABLE);
 }
 
+SWITCH_DECLARE(void) switch_core_session_media_readable(switch_core_session_t *session)
+{
+	switch_channel_execute_on(session->channel, SWITCH_CHANNEL_EXECUTE_ON_MEDIA_READABLE_VARIABLE);
+}
+
 
 /* For Emacs:
  * Local Variables:
