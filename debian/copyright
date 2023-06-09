@@ -1189,35 +1189,6 @@ Files: src/mod/xml_int/mod_xml_ldap/lutil_ldap.h
 Copyright: 1998-2008 The OpenLDAP Foundation.
 License: OpenLDAP
 
-Files: libs/sofia-sip/*
-Copyright: 2005-2009 Nokia Corporation
- 2001-2006 Nokia Research Center
- 1996 Pekka Pessi
- 2006 Dimitri E. Prado
- 1996,1999 Internet Software Consortium
- 2004 Internet Systems Consortium, Inc. ("ISC")
- 1994 Sun Microsystems, Inc
- 1988 The Regents of the University of California
- 1995-1999 and WIDE Project
- 2001 First Peer
-License: LGPL-2.1+
-
-Files: libs/sofia-sip/libsofia-sip-ua/su/poll.c
-Copyright: 2005 Nokia Corporation
- 1994-2002 Free Software Foundation, Inc.
-License: LGPL-2.1+
-
-Files: libs/sofia-sip/libsofia-sip-ua/su/sofia-sip/su_addrinfo.h
- libs/sofia-sip/libsofia-sip-ua/su/su_addrinfo.c
-Copyright: 1995-1999, WIDE Project.
-License: BSD-3-clause
-
-Files: libs/sofia-sip/libsofia-sip-ua/su/inet_pton.c
- libs/sofia-sip/libsofia-sip-ua/su/inet_ntop.c
-Copyright: 2004 Internet Systems Consortium, Inc. ("ISC")
- 1996,1999 Internet Software Consortium.
-License: ISC
-
 Files: libs/win32/libshout/shout/shout.h
 Copyright: 2002-2003 the Icecast team <team@icecast.org>
 License: LGPL-2+
