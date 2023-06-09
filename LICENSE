@@ -1339,29 +1339,6 @@ Files: libs/libnatpmp/*
 Copyright: 2007-2008, Thomas BERNARD <miniupnp@free.fr>
 License: ISC
 
-Files: libs/libwebsockets/*
-Copyright: 2010-2011 Andy Green <andy@warmcat.com>
-License: LGPL
-
-Files: libs/libwebsockets/win32port/zlib/*
-Copyright: 1995-2010 Jean-loup Gailly
- 1995-2010 Mark Adler
- 1995-2010 Jean-loup Gailly and Mark Adler
- 1995-2010 Jean-loup Gailly and Mark Adler ";
-License: zlib/libpng
-
-Files: libs/libwebsockets/lib/base64-decode.c
-Copyright: 2001 Bob Trower, Trantor Standard Systems Inc.
-License: MIT/X11 (BSD like)
-
-Files: libs/libwebsockets/lib/sha-1.c
-Copyright: 1995-1998 WIDE Project.
-License: BSD-3-clause
-
-Files: libs/libwebsockets/win32port/win32helpers/getopt_long.c
-Copyright: 1987-1996, The Regents of the University of California.
-License: BSD-4-clause
-
 Files: libs/esl/*
 Copyright: 2007 Michael Jerris
  2002 Todd C. Miller <Todd.Miller@courtesan.com>
