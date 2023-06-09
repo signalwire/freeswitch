@@ -305,9 +305,11 @@ Copyright: 2005 Steven A. Bone, sbone@pobox.com
  1995-2000 The Apache Group.
 License: BSD-3-clause
 
-Files: libs/xmlrpc-c/lib/util/getoptx.h
+Files: libs/xmlrpc-c/lib/util/getoptx.*
 Copyright: 1987-1999 Free Software Foundation, Inc.
 License: GPL-1+
+Comment:
+ Only used by xmlrpc-c programs, should not end up in the shared library.
 
 Files: libs/win32/sqlite/sqlite3.[ch]
  libs/win32/sqlite/parse.c
