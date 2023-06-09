@@ -1490,16 +1490,6 @@ Files: libs/win32/pcre/dftables.c
 Copyright: 1997-2008 University of Cambridge
 License: BSD-3-clause
 
-Files: libs/ilbc/*
-Copyright: 2007-2008, Steve Underwood
- 2006 Michael Jerris
- 2004, The Internet Society
-Comment: Disclaimer: non-comercial use, perhaps, and non-modifiable (standards compliance)
-License: GIPS
-
-Files: libs/ilbc/tests/regression_tests.sh
-License: GPL-2
-
 License: OpenLDAP
  /* Portions Copyright 1998-2002 The OpenLDAP Foundation
   * All rights reserved.
