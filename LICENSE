@@ -1147,52 +1147,6 @@ Files: libs/miniupnpc/bsdqueue.h
 Copyright: 1991,1993, The Regents of the University of California
 License: BSD-3-clause
 
-Files: libs/js/*
-Copyright: 1998-2006 Mozilla <http://www.mozilla.org/>
- 1996-2000 Netscape Communications Corporation
- 2000 International Business Machines Corporation
- 1989-1991, Apple Computer, Inc. 1989-1991
- 1992 Charles Petzold, 1992
- 1991 Lucent Technologies
-License: MPL-1.1 or GPL-2+ or LGPL-2.1+
-
-Files: libs/js/nsprpub/pr/tests/tmocon.c
- libs/js/nsprpub/pr/src/md/beos/brng.c
- libs/js/nsprpub/pr/src/md/unix/os_Irix.s
- libs/js/nsprpub/pr/src/md/unix/os_SunOS_x86.s
- libs/js/nsprpub/pr/src/md/unix/os_SunOS_x86_64.s
- libs/js/nsprpub/pr/src/md/beos/bfile.c
- libs/js/nsprpub/pr/src/linking/prlink.c
- libs/js/nsprpub/pr/src/md/unix/os_SunOS.s
- libs/js/nsprpub/pr/src/md/unix/os_ReliantUNIX.s
- libs/js/nsprpub/pr/src/md/unix/os_Darwin_ppc.s
- libs/js/nsprpub/pr/src/md/unix/os_SunOS_ultrasparc.s
- libs/js/nsprpub/pr/src/md/unix/os_Linux_ia64.s
- libs/js/nsprpub/pr/tests/testfile.c
- libs/js/nsprpub/pr/src/md/unix/os_Darwin_x86.s
- libs/js/nsprpub/pr/src/md/unix/os_AIX.s
- libs/js/nsprpub/pr/src/md/unix/os_HPUX_ia64.s
- libs/js/nsprpub/pr/src/md/unix/os_BSD_386_2.s
- libs/js/nsprpub/pr/src/md/unix/unix.c
- libs/js/nsprpub/pr/src/md/unix/os_Linux_x86_64.s
- libs/js/nsprpub/pr/tests/testfile.c
- libs/js/nsprpub/pr/src/md/unix/os_Darwin_x86.s
- libs/js/nsprpub/pr/src/md/unix/os_AIX.s
- libs/js/nsprpub/pr/src/md/unix/os_HPUX_ia64.s
- libs/js/nsprpub/pr/src/md/unix/os_BSD_386_2.s
- libs/js/nsprpub/pr/src/md/unix/unix.c
- libs/js/nsprpub/pr/src/md/unix/os_Linux_x86_64.s
- libs/js/nsprpub/pr/src/md/unix/os_SunOS_sparcv9.s
- libs/js/nsprpub/pr/src/md/os2/os2vaclegacy.s
- libs/js/nsprpub/pr/src/md/os2/os2emx.s
- libs/js/nsprpub/pr/src/md/unix/os_Linux_x86.s
- libs/js/nsprpub/pr/include/md/_beos.cfg
- libs/js/nsprpub/configure.in
- libs/js/nsprpub/pr/src/md/unix/os_HPUX.s
- libs/js/nsprpub/pr/include/md/_netbsd.h
-Copyright: 1998-2004 Netscape Communications Corporation
-License: MPL-1.1 or GPL-2+
-
 Files: src/mod/applications/mod_cluechoo/sl.h
 Copyright: 1993 Toyoda Masashi
 License: FIXME
