@@ -75,8 +75,14 @@ Copyright: 1991,1993, The Regents of the University of California
 License: BSD-3-clause
 
 Files: src/mod/applications/mod_cluechoo/sl.h
-Copyright: 1993 Toyoda Masashi
-License: FIXME
+Copyright: 1993, 1998 Toyoda Masashi (toyoda@is.titech.ac.jp)
+License: sl
+ Everyone is permitted to do anything on this program including copying,
+ modifying, and improving, unless you try to pretend that you wrote it.
+ i.e., the above copyright notice has to appear in all copies.
+ THE AUTHOR DISCLAIMS ANY RESPONSIBILITY WITH REGARD TO THIS SOFTWARE.
+Comment:
+ Original code from the sl project <https://github.com/mtoyoda/sl>.
 
 Files: src/mod/event_handlers/mod_cdr_mongodb/*
 Copyright: 2009-2012 10gen Inc.
