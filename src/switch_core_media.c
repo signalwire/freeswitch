@@ -110,7 +110,7 @@ struct switch_rtp_text_factory_s {
 };
 
 
-typedef struct switch_rtp_engine_s {
+struct switch_rtp_engine_s {
 	switch_secure_settings_t ssec[CRYPTO_INVALID+1];
 	switch_rtp_crypto_key_type_t crypto_type;
 
@@ -204,7 +204,7 @@ typedef struct switch_rtp_engine_s {
 	void *engine_user_data;
 	int8_t engine_function_running;
 	switch_frame_buffer_t *write_fb;
-} switch_rtp_engine_t;
+};
 
 #define MAX_REJ_STREAMS 10
 
@@ -16421,7 +16421,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	return status;
 }
 
+SWITCH_DECLARE(switch_rtp_engine_t *) switch_core_media_get_engine(switch_core_session_t *session, int media_type)
+{
+    if (!session) return NULL;
 
+    return &session->media_handle->engines[media_type];
+}
+
+SWITCH_DECLARE(switch_codec_t*) switch_core_media_get_codec(switch_core_session_t *session, switch_media_type_t type)
+{
+    switch_rtp_engine_t *engine = switch_core_media_get_engine(session, type);
+
+    if (!engine) return NULL;
+
+    return &engine->read_codec;
+}
 
 /* For Emacs:
  * Local Variables:
