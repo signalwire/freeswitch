@@ -2818,7 +2818,10 @@ void event_handler(switch_event_t *event)
 
 			if ((sptr = strstr(fixed_contact_str, needle))) {
 				char *origsptr = strstr(contact_str, needle);
-				eptr = strchr(++origsptr, ';');
+
+				if (origsptr) {
+					eptr = strchr(++origsptr, ';');
+				}
 			} else {
 				sptr = strchr(fixed_contact_str, '\0') - 1;
 			}
