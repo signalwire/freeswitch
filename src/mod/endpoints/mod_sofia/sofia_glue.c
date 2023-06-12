@@ -2282,8 +2282,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = NULL;
 	sofia_profile_t *profile = NULL;
-	const char *tmp;
-	const char *rr;
+	const char *tmp, *rr, *use_uuid;
 	int r = 0;
 	const char *profile_name = switch_channel_get_variable_dup(channel, "recovery_profile_name", SWITCH_FALSE, -1);
 	int swap = switch_channel_var_true(channel, "dlg_req_swap_direction");
@@ -2374,17 +2373,13 @@ int sofia_recover_callback(switch_core_session_t *session)
 										   );
 	}
 
-	if (session) {
-		const char *use_uuid;
-
-		if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
-			if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(channel),
-								  use_uuid);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
-								  switch_channel_get_name(channel), use_uuid);
-			}
+	if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
+		if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(channel),
+							  use_uuid);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
+							  switch_channel_get_name(channel), use_uuid);
 		}
 	}
 

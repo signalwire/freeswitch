@@ -472,7 +472,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
 	}
 
-	if (session && tech_pvt->profile->pres_type) {
+	if (tech_pvt->profile->pres_type) {
 		char *sql = switch_mprintf("delete from sip_dialogs where uuid='%q'", switch_core_session_get_uuid(session));
 		switch_assert(sql);
 		sofia_glue_execute_sql_now(tech_pvt->profile, &sql, SWITCH_TRUE);
@@ -2205,11 +2205,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 													argv[i], (double)((double)(MAX_REDIR + 1 - i))/1000);
 								}
 							} else {
-								if (i == argc - 1) {
-									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
-								} else {
-									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>,", argv[i]);
-								}
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
 							}
 						} else {
 							if (i == argc - 1) {
@@ -4313,6 +4309,8 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 		user = argv[1];
 	}
 
+	if (!user) goto end;
+
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 		if ((concat = strchr(domain, '/'))) {
@@ -4328,8 +4326,6 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		domain = dup_domain;
 	}
-
-	if (!user) goto end;
 
 	if (zstr(profile_name) || strcmp(profile_name, "*") || zstr(domain)) {
 		if (!zstr(profile_name)) {
