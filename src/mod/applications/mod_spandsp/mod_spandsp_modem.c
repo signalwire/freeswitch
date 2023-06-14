@@ -897,9 +897,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	fail:
 
-		if (new_session) {
-			switch_core_session_destroy(new_session);
-		}
+		switch_core_session_destroy(new_session);
 
 		if (modem) {
 			modem_set_state(modem, MODEM_STATE_ONHOOK);
