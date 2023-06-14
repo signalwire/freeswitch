@@ -3560,6 +3560,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_video_codec(switch_core_se
 			switch_core_session_set_video_read_codec(session, &v_engine->read_codec);
 			switch_core_session_set_video_write_codec(session, &v_engine->write_codec);
 
+			switch_channel_execute_on(session->channel, SWITCH_CHANNEL_EXECUTE_ON_VIDEO_VARIABLE);
 
 			switch_channel_set_variable_printf(session->channel, "rtp_last_video_codec_string", "%s@%dh",
 											   v_engine->cur_payload_map->rm_encoding, v_engine->cur_payload_map->rm_rate);
