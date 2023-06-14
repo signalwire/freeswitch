@@ -830,6 +830,7 @@ struct sofia_profile {
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
 	char *default_ringback;
+	char *ignore_reason_header_by_sip_code;
 	uint8_t rfc8760_algs_count;
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
 	uint8_t disable_recovery_record_route_fixup;

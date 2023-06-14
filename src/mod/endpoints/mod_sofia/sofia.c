@@ -6247,6 +6247,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->acl_inbound_x_token_header = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "apply-proxy-acl-x-token")) {
 						profile->acl_proxy_x_token_header = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "ignore-reason-header-by-sip-code")) {
+						profile->ignore_reason_header_by_sip_code = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "proxy-hold")) {
 						if(switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PROXY_HOLD);
@@ -6906,8 +6908,17 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		if (status >= 400 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
 				|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
 				|| !strcasecmp(sip->sip_reason->re_protocol, profile->sdp_username)) && sip->sip_reason->re_cause) {
+			char status_str[5];
+			const char* session_ignore_list = switch_channel_get_variable(channel, "ignore_reason_header_by_sip_code");
+			const char* current_ignore_list = !zstr(session_ignore_list) ? session_ignore_list : profile->ignore_reason_header_by_sip_code;
+			switch_snprintf(status_str, sizeof(status_str), "%d", status);
+			if(!zstr(current_ignore_list) && !!switch_stristr(status_str, current_ignore_list)) {
+				tech_pvt->q850_cause = 0;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Ignore Remote Reason for %d: %s\n", status, sip->sip_reason->re_cause);
+			} else {
 				tech_pvt->q850_cause = atoi(sip->sip_reason->re_cause);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote Reason: %d\n", tech_pvt->q850_cause);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote Reason: %d\n", tech_pvt->q850_cause);
+			}
 		}
 
 		if ((caller_profile = switch_channel_get_caller_profile(channel)) && !zstr(network_ip) &&
