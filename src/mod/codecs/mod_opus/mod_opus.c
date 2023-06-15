@@ -314,6 +314,10 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 						if (!switch_opus_acceptable_rate(codec_settings->sprop_maxcapturerate)) {
 							codec_settings->sprop_maxcapturerate = 0; /* value not supported */
 						}
+
+						if (codec_settings->sprop_maxcapturerate) {
+							codec_fmtp->actual_samples_per_second = codec_settings->sprop_maxcapturerate;
+						}
 					}
 				}
 			}
