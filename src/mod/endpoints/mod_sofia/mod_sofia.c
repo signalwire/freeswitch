@@ -4935,9 +4935,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
         }
 		//add by ct for OS-21813
         if( ((val = switch_channel_get_variable(nchannel, "sip_ppi")) && !strcasecmp(val, "trunk")) || 
-        ((val = switch_channel_get_variable(o_channel, "sip_pid")) && !strcasecmp(val, "trunk")) ||
-        ((val = switch_channel_get_variable(o_channel, "sip_pai")) && !strcasecmp(val, "trunk")) ||
-        ((val = switch_channel_get_variable(o_channel, "contact_type")) && !strcasecmp(val, "trunk"))) {
+        (o_channel && (val = switch_channel_get_variable(o_channel, "sip_pid")) && !strcasecmp(val, "trunk")) ||
+        (o_channel && (val = switch_channel_get_variable(o_channel, "sip_pai")) && !strcasecmp(val, "trunk")) ||
+        (o_channel && (val = switch_channel_get_variable(o_channel, "contact_type")) && !strcasecmp(val, "trunk"))) {
             tech_pvt->gateway_username =  switch_core_session_strdup(nsession, gateway_ptr->register_username);
             // switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "use_number =%s \n",tech_pvt->gateway_username);
         }
@@ -4993,14 +4993,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!zstr(gateway_ptr->from_domain) && !switch_channel_get_variable(nchannel, "sip_invite_domain")) {
 
-			if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg-full")) {
+			if (o_channel && !strcasecmp(gateway_ptr->from_domain, "auto-aleg-full")) {
 				const char *sip_full_from = switch_channel_get_variable(o_channel, "sip_full_from");
 
 				if (!zstr(sip_full_from)) {
 					switch_channel_set_variable(nchannel, "sip_force_full_from", sip_full_from);
 				}
 
-			} else if (!strcasecmp(gateway_ptr->from_domain, "auto-aleg-domain")) {
+			} else if (o_channel && !strcasecmp(gateway_ptr->from_domain, "auto-aleg-domain")) {
 				const char *sip_from_host = switch_channel_get_variable(o_channel, "sip_from_host");
 
 				if (!zstr(sip_from_host)) {
