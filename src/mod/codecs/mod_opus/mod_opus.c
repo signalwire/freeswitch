@@ -273,10 +273,12 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 					if (!strcasecmp(data, "maxptime")) {
 						codec_settings->maxptime = atoi(arg);
+						codec_fmtp->max_ptime = codec_settings->maxptime;
 					}
 
 					if (!strcasecmp(data, "minptime")) {
 						codec_settings->minptime = atoi(arg);
+						codec_fmtp->min_ptime = codec_settings->minptime;
 					}
 
 					if (!strcasecmp(data, "ptime")) {
@@ -291,6 +293,7 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 					if (!strcasecmp(data, "sprop-stereo")) {
 						codec_settings->sprop_stereo = atoi(arg);
+						codec_fmtp->sprop_stereo = codec_settings->sprop_stereo;
 					}
 
 					if (!strcasecmp(data, "maxaveragebitrate")) {
@@ -310,6 +313,10 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 						codec_settings->sprop_maxcapturerate = atoi(arg);
 						if (!switch_opus_acceptable_rate(codec_settings->sprop_maxcapturerate)) {
 							codec_settings->sprop_maxcapturerate = 0; /* value not supported */
+						}
+
+						if (codec_settings->sprop_maxcapturerate) {
+							codec_fmtp->actual_samples_per_second = codec_settings->sprop_maxcapturerate;
 						}
 					}
 				}
@@ -1342,7 +1349,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 {
 	switch_codec_interface_t *codec_interface;
 	switch_api_interface_t *commands_api_interface;
-	int samples = 480;
+	int samples = 480; /* start with 10 ms ptime */
 	int bytes = 960;
 	int mss = 10000;
 	int x = 0;
@@ -1443,7 +1450,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 
 	/* 16 khz */
-	samples = 480;
+	samples = 160;
 	bytes = 320;
 	mss = 10000;
 	rate = 16000;
@@ -1540,7 +1547,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 
 	/* 8 khz */
-	samples = 480;
+	samples = 80;
 	bytes = 160;
 	mss = 10000;
 	rate = 8000;
