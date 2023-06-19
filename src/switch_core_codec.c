@@ -827,7 +827,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
 
 	if (codec->mutex) switch_mutex_lock(codec->mutex);
 
-	if (codec->implementation->encode_video) {
+	if (codec->implementation && codec->implementation->encode_video) {
 		status = codec->implementation->encode_video(codec, frame);
 
 		if (status == SWITCH_STATUS_MORE_DATA) {
