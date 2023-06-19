@@ -66,6 +66,8 @@ typedef struct h264_codec_context_s {
 	int change_bandwidth;
 	SSourcePicture pic;
 
+	WelsTraceCallback pFunc;
+
 	ISVCDecoder *decoder;
 	SDecodingParam decoder_params;
 	switch_buffer_t *nalu_buffer;
@@ -79,6 +81,41 @@ typedef struct h264_codec_context_s {
 	unsigned int bandwidth;
 	int32_t debug;
 } h264_codec_context_t;
+
+static void log_callback(void *ptr, int level, const char *fmt)
+{
+	char fmt_buf[32768];
+	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
+	h264_codec_context_t* context = (h264_codec_context_t*) ptr;
+ 	va_list ap;
+	size_t len;
+	va_start(ap, fmt);
+
+
+	if (level > context.debug) return;
+
+	switch(level) {
+		case WELS_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
+		case WELS_LOG_ERROR:   switch_level = SWITCH_LOG_ERROR;   break;
+		case WELS_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
+		case WELS_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
+		case WELS_LOG_DEBUG:   switch_level = SWITCH_LOG_DEBUG;   break;
+	    case WELS_LOG_RESV:   	switch_level = SWITCH_LOG_DEBUG2;   break;
+		case WELS_LOG_DETAIL:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case WELS_LOG_LEVEL_COUNT:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		default: break;
+	}
+
+	len = snprintf(fmt_buf, sizeof(fmt_buf), "%s\n", fmt); // add return that is missing
+
+	if (len < sizeof(fmt_buf)) {
+		switch_log_vprintf(SWITCH_CHANNEL_ID_LOG, switch_level, fmt_buf, ap);
+	} else {
+		switch_log_vprintf(SWITCH_CHANNEL_ID_LOG, switch_level, fmt, ap);
+	}
+	va_end(ap);
+}
+
 
 int FillSpecificParameters(h264_codec_context_t *context) {
 	int sane = 0;
@@ -487,6 +524,16 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 
 	switch_buffer_create_dynamic(&(context->nalu_buffer), H264_NALU_BUFFER_SIZE, H264_NALU_BUFFER_SIZE * 8, 0);
 	codec->private_info = context;
+
+
+	context->pFunc = log_callback;
+	int32_t iTraceLevel = WELS_LOG_DEBUG;
+	context->encoder->SetOption (ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+  	context->decoder->SetOption (DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+    context->encoder->SetOption (ENCODER_OPTION_TRACE_CALLBACK, &context->pFunc);
+    context->encoder->SetOption (ENCODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
+    context->decoder->SetOption (DECODER_OPTION_TRACE_CALLBACK, &context->pFunc);
+    context->decoder->SetOption (DECODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
 
 	return SWITCH_STATUS_SUCCESS;
 
