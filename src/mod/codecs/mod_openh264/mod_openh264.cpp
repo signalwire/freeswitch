@@ -500,7 +500,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		if (set_decoder_options(context->decoder)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Set Decoder Options Error\n");
 		}
-
+		context->debug = SWITCH_LOG_DEBUG;
 		context->pFunc = log_callback;
 		context->decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
 		context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
@@ -515,7 +515,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		}
 
 		FillSpecificParameters(context);
-
+		context->debug = SWITCH_LOG_CONSOLE;
 		context->pFunc = log_callback;
 		context->encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
 		context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
