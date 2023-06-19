@@ -466,6 +466,7 @@ end:
 static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	h264_codec_context_t *context = NULL;
+	int32_t iTraceLevel = WELS_LOG_DEBUG;
 	int encoding, decoding;
 	int ret;
 
@@ -527,7 +528,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 
 
 	context->pFunc = log_callback;
-	int32_t iTraceLevel = WELS_LOG_DEBUG;
+	
 	context->encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
   	context->decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
     context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &context->pFunc);
