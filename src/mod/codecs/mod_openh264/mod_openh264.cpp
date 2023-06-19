@@ -87,10 +87,7 @@ static void log_callback(void *ptr, int level, const char *fmt)
 	char fmt_buf[32768];
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
 	h264_codec_context_t* context = (h264_codec_context_t*) ptr;
- 	va_list ap;
 	size_t len;
-	va_start(ap, fmt);
-
 
 	if (level > context->debug) return;
 
@@ -106,14 +103,8 @@ static void log_callback(void *ptr, int level, const char *fmt)
 		default: break;
 	}
 
-	len = snprintf(fmt_buf, sizeof(fmt_buf), "%s\n", fmt); // add return that is missing
-
-	if (len < sizeof(fmt_buf)) {
-		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt_buf, ap);
-	} else {
-		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, ap);
-	}
-	va_end(ap);
+	switch_log_printf(SWITCH_CHANNEL_LOG, switch_level, fmt);
+	
 }
 
 
