@@ -92,7 +92,7 @@ static void log_callback(void *ptr, int level, const char *fmt)
 	va_start(ap, fmt);
 
 
-	if (level > context.debug) return;
+	if (level > context->debug) return;
 
 	switch(level) {
 		case WELS_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
@@ -109,9 +109,9 @@ static void log_callback(void *ptr, int level, const char *fmt)
 	len = snprintf(fmt_buf, sizeof(fmt_buf), "%s\n", fmt); // add return that is missing
 
 	if (len < sizeof(fmt_buf)) {
-		switch_log_vprintf(SWITCH_CHANNEL_ID_LOG, switch_level, fmt_buf, ap);
+		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt_buf, ap);
 	} else {
-		switch_log_vprintf(SWITCH_CHANNEL_ID_LOG, switch_level, fmt, ap);
+		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, switch_level, fmt, ap);
 	}
 	va_end(ap);
 }
