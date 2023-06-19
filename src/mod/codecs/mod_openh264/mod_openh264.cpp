@@ -521,11 +521,13 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 	context->pFunc = log_callback;
 	
 	context->encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
-  	context->decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
-    context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &context->pFunc);
-    context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
-    context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &context->pFunc);
-    context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
+	context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
+	context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &context->pFunc);
+
+	context->decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+	context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
+	context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &context->pFunc);
+
 
 	return SWITCH_STATUS_SUCCESS;
 
