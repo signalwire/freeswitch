@@ -89,8 +89,6 @@ static void log_callback(void *ptr, int level, const char *fmt)
 	h264_codec_context_t* context = (h264_codec_context_t*) ptr;
 	size_t len;
 
-	if (level > context->debug) return;
-
 	switch(level) {
 		case WELS_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
 		case WELS_LOG_ERROR:   switch_level = SWITCH_LOG_ERROR;   break;
@@ -102,6 +100,8 @@ static void log_callback(void *ptr, int level, const char *fmt)
 		case WELS_LOG_LEVEL_COUNT:   switch_level = SWITCH_LOG_DEBUG2;   break;
 		default: break;
 	}
+
+	if (switch_level > context->debug) return;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, switch_level, fmt);
 	
