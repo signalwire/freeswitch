@@ -357,6 +357,8 @@ struct speech_channel {
 	audio_queue_t *audio_queue;
 	/** True, if channel was opened successfully */
 	int channel_opened;
+	/** channel destroy flag*/
+	int channel_destroyed;
 	/** rate */
 	uint16_t rate;
 	/** silence sample */
@@ -897,6 +899,7 @@ static switch_status_t speech_channel_create(speech_channel_t ** schannel, const
 	schan->rate = rate;
 	schan->silence = 0;			/* L16 silence sample */
 	schan->channel_opened = 0;
+	schan->channel_destroyed = 0;
 
 	if (switch_mutex_init(&schan->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS ||
 		switch_thread_cond_create(&schan->cond, pool) != SWITCH_STATUS_SUCCESS ||
@@ -940,6 +943,7 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 					}
 				}
 			}
+			schannel->channel_destroyed = 1;
 			switch_mutex_unlock(schannel->mutex);
 		}
 
@@ -1513,7 +1517,7 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
  */
 static switch_status_t speech_channel_write(speech_channel_t *schannel, void *data, switch_size_t *len)
 {
-	if (!schannel || !schannel->mutex || !schannel->audio_queue) {
+	if (!schannel || !schannel->mutex || !schannel->audio_queue || schannel->channel_destroyed) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1537,7 +1541,7 @@ static switch_status_t speech_channel_read(speech_channel_t *schannel, void *dat
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (!schannel || !schannel->mutex || !schannel->audio_queue) {
+	if (!schannel || !schannel->mutex || !schannel->audio_queue || schannel->channel_destroyed) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1596,6 +1600,11 @@ static const char *speech_channel_state_to_string(speech_channel_state_t state)
 static switch_status_t speech_channel_set_state(speech_channel_t *schannel, speech_channel_state_t state)
 {
 	switch_status_t status;
+
+	if (!schannel || !schannel->mutex || schannel->channel_destroyed) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(schannel->mutex);
 	status = speech_channel_set_state_unlocked(schannel, state);
 	switch_mutex_unlock(schannel->mutex);
@@ -1907,7 +1916,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 	const mpf_codec_descriptor_t *descriptor;
 
 	/* check status */
-	if (!session || !schannel || status != MRCP_SIG_STATUS_CODE_SUCCESS) {
+	if (!session || !schannel || status != MRCP_SIG_STATUS_CODE_SUCCESS || schannel->channel_destroyed) {
 		goto error;
 	}
 
