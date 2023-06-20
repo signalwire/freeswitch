@@ -3839,6 +3839,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		//switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 	}
 
+	if (switch_true(switch_channel_get_variable(channel, "decode_video"))) {
+		switch_channel_set_flag_recursive(channel, CF_VIDEO_DECODED_READ);
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);

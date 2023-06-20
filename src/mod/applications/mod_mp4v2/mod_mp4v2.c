@@ -304,8 +304,7 @@ static switch_status_t mp4_file_open(switch_file_handle_t *handle, const char *p
 		context->offset = atoi(tmp);
 	}
 
-	//context->audio_type = MP4_ULAW_AUDIO_TYPE; // default
-	context->audio_type = MP4_PCM16_LITTLE_ENDIAN_AUDIO_TYPE; // default
+	context->audio_type = MP4_ULAW_AUDIO_TYPE; // default
 
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "mp4v2_audio_codec"))) {
 		if (!strcasecmp(tmp, "PCMU")) {

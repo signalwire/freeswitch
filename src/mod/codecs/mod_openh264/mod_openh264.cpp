@@ -84,10 +84,8 @@ typedef struct h264_codec_context_s {
 
 static void log_callback(void *ptr, int level, const char *fmt)
 {
-	char fmt_buf[32768];
 	switch_log_level_t switch_level = SWITCH_LOG_DEBUG;
 	h264_codec_context_t* context = (h264_codec_context_t*) ptr;
-	size_t len;
 
 	switch(level) {
 		case WELS_LOG_QUIET:   switch_level = SWITCH_LOG_CONSOLE; break;
@@ -95,9 +93,8 @@ static void log_callback(void *ptr, int level, const char *fmt)
 		case WELS_LOG_WARNING: switch_level = SWITCH_LOG_WARNING; break;
 		case WELS_LOG_INFO:    switch_level = SWITCH_LOG_INFO;    break;
 		case WELS_LOG_DEBUG:   switch_level = SWITCH_LOG_DEBUG;   break;
-	    case WELS_LOG_RESV:   	switch_level = SWITCH_LOG_DEBUG2;   break;
 		case WELS_LOG_DETAIL:   switch_level = SWITCH_LOG_DEBUG2;   break;
-		case WELS_LOG_LEVEL_COUNT:   switch_level = SWITCH_LOG_DEBUG2;   break;
+		case WELS_LOG_RESV:   	switch_level = SWITCH_LOG_DEBUG2;   break;
 		default: break;
 	}
 
@@ -500,11 +497,11 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		if (set_decoder_options(context->decoder)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Set Decoder Options Error\n");
 		}
-		context->debug = SWITCH_LOG_DEBUG;
-		context->pFunc = log_callback;
-		context->decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
-		context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
-		context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &context->pFunc);
+		//context->debug = SWITCH_LOG_DEBUG;
+		//context->pFunc = log_callback;
+		//context->decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+		//context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
+		//context->decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &context->pFunc);
 	}
 
 	if (encoding) {
@@ -515,11 +512,11 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		}
 
 		FillSpecificParameters(context);
-		context->debug = SWITCH_LOG_CONSOLE;
-		context->pFunc = log_callback;
-		context->encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
-		context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
-		context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &context->pFunc);
+		//context->debug = SWITCH_LOG_DEBUG;
+		//context->pFunc = log_callback;
+		//context->encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &iTraceLevel);
+		//context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK_CONTEXT, &context);
+		//context->encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &context->pFunc);
 	}
 
 	//if (encoding | decoding) WelsStderrSetTraceLevel(10);
