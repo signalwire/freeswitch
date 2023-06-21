@@ -958,8 +958,8 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			conference_utils_set_flag(conference, CFLAG_ENFORCE_MIN);
 		}
 
-		if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ) &&
-			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		// if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ) &&
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_member_add_event_data(member, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
 			//added for DS-76893 by lsq,2019.8.21//UC
@@ -969,8 +969,8 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			switch_event_fire(&event);
 		}
 
-		switch_channel_clear_app_flag_key("conference_silent", channel, CONF_SILENT_REQ);
-		switch_channel_set_app_flag_key("conference_silent", channel, CONF_SILENT_DONE);
+		// switch_channel_clear_app_flag_key("conference_silent", channel, CONF_SILENT_REQ);
+		// switch_channel_set_app_flag_key("conference_silent", channel, CONF_SILENT_DONE);
 
 
 		if ((position = switch_channel_get_variable(channel, "conference_position"))) {
@@ -1344,7 +1344,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			if (!exit_sound && conference->exit_sound && conference_utils_test_flag(conference, CFLAG_EXIT_SOUND) && !conference_utils_member_test_flag(member, MFLAG_SILENT)) {
 				conference_file_play(conference, conference->exit_sound, 0, channel, 0);
 			}
-			if (conference->count == 1 && conference->alone_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
+			if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ) && conference->count == 1 && conference->alone_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
 				conference_file_stop(conference, FILE_STOP_ASYNC);
 				conference_file_play(conference, conference->alone_sound, 0, channel, 0);
 			}
@@ -1448,6 +1448,11 @@ switch_status_t conference_member_play_file(conference_member_t *member, char *f
 		return status;
 
 	channels = member->conference->channels;
+
+	if (switch_channel_test_app_flag_key("conference_silent", switch_core_session_get_channel(member->session), CONF_SILENT_REQ)) {
+		status = SWITCH_STATUS_SUCCESS;
+		return status;
+	}
 
 	if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(member->session), file)) != file) {
 		file = expanded;
