@@ -3861,6 +3861,7 @@ SWITCH_STANDARD_API(uuid_answer_function)
 	
 	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", ANSWER_SYNTAX);
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
@@ -3878,6 +3879,7 @@ SWITCH_STANDARD_API(uuid_answer_function)
 	}
 
 	switch_safe_free(mycmd);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
