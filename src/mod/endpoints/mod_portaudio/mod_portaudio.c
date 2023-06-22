@@ -1296,9 +1296,9 @@ error:
 		}
 		switch_mutex_unlock(endpoint->mutex);
 	}
-	if (new_session && *new_session) {
-		switch_core_session_destroy(new_session);
-	}
+
+	switch_core_session_destroy(new_session);
+
 	return retcause;
 }
 
