@@ -348,6 +348,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_BUSY_EVERYWHERE:
 		return 600;
 	case SWITCH_CAUSE_DECLINE:
+	case SWITCH_CAUSE_REJECT_ALL:
 		return 603;
 	case SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE:
 		return 604;
