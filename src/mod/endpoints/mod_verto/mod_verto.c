@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 #define HTTP_CHUNK_SIZE 1024 * 32
 #define EP_NAME "verto.rtc"
 //#define WSS_STANDALONE 1
-#include "ks.h"
+#include "libks/ks.h"
 
 #include <mod_verto.h>
 #ifndef WIN32
@@ -836,7 +836,7 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
 	}
 	
-	if (!zstr(str)) {
+	if (!zstr(str) && event && *event) {
 		edup = strdup(str);
 		switch_assert(edup);
 
@@ -1059,7 +1059,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Login Incorrect");
 			login_fire_custom_event(jsock, params, 0, "Login Incorrect");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login incorrect for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login incorrect for user: %s domain: %s\n", id, domain);
 		} else {
 			switch_xml_t x_param, x_params;
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
@@ -3954,7 +3954,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *obj = cJSON_CreateObject(), *vobj = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
-	switch_event_t *var_event;
+	switch_event_t *var_event = NULL;
 	switch_call_cause_t reason = SWITCH_CAUSE_INVALID_MSG_UNSPECIFIED, cancel_cause = 0;
 	switch_caller_profile_t *caller_profile;
 	int err = 0;
@@ -4756,13 +4756,11 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 
  error:
 
-	if (jsock) {
-		if (jsock->client_socket != KS_SOCK_INVALID) {
-			close_socket(&jsock->client_socket);
-		}
-
-		switch_core_destroy_memory_pool(&pool);
+	if (jsock->client_socket != KS_SOCK_INVALID) {
+		close_socket(&jsock->client_socket);
 	}
+
+	switch_core_destroy_memory_pool(&pool);
 
 	return -1;
 }
