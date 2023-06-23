@@ -2425,6 +2425,7 @@ typedef enum {
 	SCC_VIDEO_RESET,
 	SCC_AUDIO_PACKET_LOSS,
 	SCC_AUDIO_ADJUST_BITRATE,
+	SCC_AUDIO_VAD,
 	SCC_DEBUG,
 	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
