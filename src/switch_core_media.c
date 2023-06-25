@@ -3465,7 +3465,7 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 		}
 
 		if (!bwv) {
-			bwv = "1mb";
+			bwv = "3mb";
 		}
 
 		system_bw = switch_parse_bandwidth_string(bwv);
@@ -6666,8 +6666,8 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	width = smh->vid_params.width;
 	height = smh->vid_params.height;
 
-	if (!width) width = 352;
-	if (!height) height = 288;
+	if (!width) width = 1280;
+	if (!height) height = 720;
 	if (!fps) fps = 15;
 
 	fr.packet = buf;
@@ -7450,7 +7450,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	if (!blank_img) {
 		switch_color_set_rgb(&bgcolor, "#000000");
-		if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 352, 288, 1))) {
+		if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1))) {
 			switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 		}
 	}
@@ -10989,7 +10989,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 				if (!vbw) {
-					vbw = "1mb";
+					vbw = "3mb";
 				}
 
 				bw = switch_parse_bandwidth_string(vbw);
