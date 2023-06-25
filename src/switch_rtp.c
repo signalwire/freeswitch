@@ -4637,7 +4637,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_video_buffer_size(switch_rtp_t *r
 	}
 
 	if (!max_frames || frames >= max_frames) {
-		max_frames = frames * 20;
+		max_frames = frames * 10;
 	}
 
 	rtp_session->last_max_vb_frames = max_frames;

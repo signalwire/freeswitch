@@ -622,7 +622,7 @@ static inline int check_ts(uint32_t a, uint32_t b)
 	a = ntohl(a);
 	b = ntohl(b);
 
-	if (a > b || (b > a && b > UINT_MAX / 2 && a < UINT_MAX / 2)) {
+	if (a >= b || (b > a && b > UINT_MAX / 2 && a < UINT_MAX / 2)) {
 		return 1;
 	}
 
