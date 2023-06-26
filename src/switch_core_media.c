@@ -6657,7 +6657,7 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	uint32_t frames = 0, frame_ms = 0;
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
 	uint32_t fps, width, height;
-	uint32_t width_tmp, height_tmp;
+	uint32_t width_tmp = 0, height_tmp = 0;
 	const char *var;
 	switch_assert(session != NULL);
 
@@ -7445,8 +7445,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	int blank_enabled = 1;
 	switch_codec_t *codec = NULL;
-	uint32_t width, height;
-	uint32_t width_tmp, height_tmp;
+	uint32_t width = 0, height = 0;
+	uint32_t width_tmp = 0, height_tmp = 0;
 
 	session = mh->session;
 	
