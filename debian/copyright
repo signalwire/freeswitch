@@ -191,10 +191,12 @@ Copyright: 2001-2010 Joachim Buermann
 License: wxWindows
 
 Files: src/mod/endpoints/mod_gsmopen/libctb-0.16/src/win32/getopt.cpp
-Copyright: 2001 ?
-License: clueless and unacceptable
- FIXME -- this cannot go in Debian -- the license is stated as:
-  (I think Open Source)
+Copyright: 1984 Henry Spencer
+License: public-domain
+Comment:
+ https://irreal.org/blog/?p=6240
+ http://esr.ibiblio.org/?p=7552
+ https://sources.debian.org/src/apg/2.2.3.dfsg.1-5/getopt.c/?hl=84#L84
 
 Files: src/mod/endpoints/mod_rtmp/libamf/src/types.[ch]
 Copyright: 2007, 2008 Marc Noirot <marc.noirot AT gmail.com>
