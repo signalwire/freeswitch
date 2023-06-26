@@ -6667,16 +6667,26 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	fps = smh->vid_params.fps;
 	width = smh->vid_params.width;
 	height = smh->vid_params.height;
+	
+	if (if (!width) && (var = switch_channel_get_variable(session->channel, "write_video_width"))) {
+		width = atoi(var);
+		if (width < 0) width = 352;
+	}
+
+	if ((!height) && (var = switch_channel_get_variable(session->channel, "write_video_height"))) {
+		height = atoi(var);
+		if (height < 0) height = 288;
+	}
 
 	if (!strcmp(codec->implementation->iananame, "H263")) {
-		width_tmp = 704;
-		height_tmp = 576;
+		width_tmp = 352;
+		height_tmp = 288;
 	} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
-		width_tmp = 704;
-		height_tmp = 576;
+		width_tmp = 352;
+		height_tmp = 288;
 	} else {
-		width_tmp = 1280;
-		height_tmp = 720;
+		width_tmp = 640;
+		height_tmp = 480;
 	}
 
 	if (!width) width = width_tmp;
@@ -7435,6 +7445,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	int blank_enabled = 1;
 	switch_codec_t *codec = NULL;
 	uint32_t width, height;
+	uint32_t width_tmp, height_tmp;
 
 	session = mh->session;
 	
@@ -7466,16 +7477,30 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	if (!blank_img) {
 		switch_color_set_rgb(&bgcolor, "#000000");
-		if (!strcmp(codec->implementation->iananame, "H263")) {
-			width = 704;
-			height = 576;
-		} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
-			width = 704;
-			height = 576;
-		} else {
-			width = 1280;
-			height = 720;
+
+		if ((var = switch_channel_get_variable(session->channel, "write_video_width"))) {
+			width = atoi(var);
+			if (width < 0) width = 352;
 		}
+
+		if ((var = switch_channel_get_variable(session->channel, "write_video_height"))) {
+			height = atoi(var);
+			if (height < 0) height = 288;
+		}
+
+		if (!strcmp(codec->implementation->iananame, "H263")) {
+			width_tmp = 352;
+			height_tmp = 288;
+		} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
+			width_tmp = 352;
+			height_tmp = 288;
+		} else {
+			width_tmp = 640;
+			height_tmp = 480;
+		}
+
+		if (!width) width = width_tmp;
+		if (!height) height = height_tmp;
 		
 		if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1))) {
 			switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
