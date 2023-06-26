@@ -937,7 +937,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			*frame = &tech_pvt->read_frame;
 
 
-			if (switch_true(switch_channel_get_variable(channel, "skype_get_inband_dtmf"))) {
+			if (switch_channel_var_true(channel, "skype_get_inband_dtmf")) {
 
 				frame_16_khz = tech_pvt->read_frame.data;
 
@@ -2199,7 +2199,7 @@ int dtmf_received(private_t *tech_pvt, char *value)
 		if (channel) {
 
 			if (switch_channel_test_flag(channel, CF_BRIDGED)
-				&& !switch_true(switch_channel_get_variable(channel, "skype_add_outband_dtmf_also_when_bridged"))) {
+				&& !switch_channel_var_true(channel, "skype_add_outband_dtmf_also_when_bridged")) {
 
 
 				NOTICA

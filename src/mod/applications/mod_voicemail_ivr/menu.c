@@ -534,11 +534,10 @@ void vmivr_menu_authenticate(switch_core_session_t *session, vmivr_profile_t *pr
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	vmivr_menu_t menu = { "std_authenticate" };
 	int retry;
-	const char *auth_var = NULL;
 	/* Initialize Menu Configs */
 	menu_init(profile, &menu);
 
-	if (profile->id && (auth_var = switch_channel_get_variable(channel, "voicemail_authorized")) && switch_true(auth_var)) {
+	if (profile->id && switch_channel_var_true(channel, "voicemail_authorized")) {
 		profile->authorized = SWITCH_TRUE;
 	}
 

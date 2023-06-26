@@ -220,7 +220,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 {
 	switch_core_session_t *session = tech_pvt->session;
 	const char *callee_name = NULL, *callee_number = NULL;
-	const char *var, *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+	const char  *header, *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 	char *pai = NULL;
 	const char *host = switch_channel_get_variable(tech_pvt->channel, "sip_to_host");
 
@@ -229,7 +229,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	}
 
 	if (!sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID) || !sofia_test_pflag(tech_pvt->profile, PFLAG_CID_IN_1XX) ||
-		((var = switch_channel_get_variable(tech_pvt->channel, "sip_cid_in_1xx")) && switch_false(var))) {
+		switch_channel_var_false(tech_pvt->channel, "sip_cid_in_1xx")) {
 		return NULL;
 	}
 
@@ -418,7 +418,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_call_cause_t cause = switch_channel_get_cause(channel);
 	int sip_cause = hangup_cause_to_sip(cause);
-	const char *ps_cause = NULL, *use_my_cause;
+	const char *ps_cause = NULL;
 	const char *gateway_name = NULL;
 	sofia_gateway_t *gateway_ptr = NULL;
 
@@ -453,7 +453,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		sofia_reg_release_gateway(gateway_ptr);
 	}
 
-	if (!((use_my_cause = switch_channel_get_variable(channel, "sip_ignore_remote_cause")) && switch_true(use_my_cause))) {
+	if (switch_channel_var_true_or_default(channel, "sip_ignore_remote_cause", SWITCH_TRUE)) {
 		ps_cause = switch_channel_get_variable(channel, "last_bridge_" SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE);
 	}
 
@@ -490,19 +490,18 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	} else if (tech_pvt->nh && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char reason[128] = "";
 		char *bye_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
-		const char *val = NULL;
 		const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 		const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
-		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
 
-		if (!val || switch_false(val)) {
+		if (switch_channel_var_false_or_default(tech_pvt->channel, "disable_q850_reason", SWITCH_TRUE)) {
+			const char *val = NULL;
 			if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_reason"))) {
 				switch_snprintf(reason, sizeof(reason), "%s", val);
 			} else {
 				if ((switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE)
-					&& !switch_true(switch_channel_get_variable(channel, "ignore_completed_elsewhere"))) {
+					&& !switch_channel_var_true(channel, "ignore_completed_elsewhere")) {
 					switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
 				} else if (cause > 0 && cause < 128) {
 					switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
@@ -919,8 +918,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
-		switch_channel_get_variable(channel, "sip-force-contact") ||
-		((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+		switch_channel_var_exist(channel, "sip-force-contact") ||
+		switch_channel_var_true(channel, "sip_sticky_contact")) {
 		sticky = tech_pvt->record_route;
 		session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
 		switch_channel_set_variable(channel, "sip_nat_detected", "true");
@@ -1410,7 +1409,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 			switch_channel_set_variable(channel, SOFIA_REPLACES_HEADER, NULL);
 
-			if (switch_true(switch_channel_get_variable(channel, "sip_auto_simplify"))) {
+			if (switch_channel_var_true(channel, "sip_auto_simplify")) {
 				sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
 			}
 
@@ -1485,23 +1484,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
-			const char *var;
 			const char *presence_data = switch_channel_get_variable(channel, "presence_data");
 			const char *presence_id = switch_channel_get_variable(channel, "presence_id");
 
 
-			if ((var = switch_channel_get_variable(channel, "sip_force_nat_mode")) && switch_true(var)) {
+			if (switch_channel_var_true(channel, "sip_force_nat_mode")) {
 				sofia_set_flag(tech_pvt, TFLAG_NAT);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting NAT mode based on manual variable\n");
 				switch_channel_set_variable(channel, "sip_nat_detected", "true");
 			}
 
-			if ((var = switch_channel_get_variable(channel, "sip_enable_soa"))) {
-				if (switch_true(var)) {
-					sofia_set_flag(tech_pvt, TFLAG_ENABLE_SOA);
-				} else {
-					sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
-				}
+			switch (switch_channel_var_true_or_default(channel, "sip_enable_soa", -1)) {
+				case SWITCH_TRUE:
+					sofia_set_flag(tech_pvt, TFLAG_ENABLE_SOA); break;
+				case SWITCH_FALSE:
+					sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA); break;
 			}
 
 
@@ -1860,7 +1857,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				ok = 1;
 			}
 
-			if (switch_true(switch_channel_get_variable(channel, "fs_send_unsupported_message"))) {
+			if (switch_channel_var_true(channel, "fs_send_unsupported_message")) {
 				ok = 1;
 			}
 
@@ -1897,7 +1894,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				ok = 1;
 			}
 
-			if (switch_true(switch_channel_get_variable_dup(channel, "fs_send_unsupported_info", SWITCH_FALSE, -1))) {
+			if (switch_channel_var_true(channel, "fs_send_unsupported_info")) {
 				ok = 1;
 			}
 
@@ -2521,7 +2518,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
 			char *sticky = NULL;
-			const char *val = NULL;
 			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 			const char *b_sdp = NULL;
 			int is_proxy = 0, is_3pcc_proxy = 0;
@@ -2537,7 +2533,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			is_3pcc_proxy = (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC));
 
 			// send 180 instead of 183 if variable "early_use_180" is "true"
-			if (switch_true(switch_channel_get_variable(channel, "early_use_180"))) {
+			if (switch_channel_var_true(channel, "early_use_180")) {
 				send_sip_code = 180;
 				p_send_sip_msg = sip_180_Ringing;
 			}
@@ -2611,8 +2607,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 
 				if (sofia_test_flag(tech_pvt, TFLAG_NAT) ||
-					switch_channel_get_variable(channel, "sip-force-contact") ||
-					((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val))) {
+					switch_channel_var_exist(channel, "sip-force-contact") ||
+					switch_channel_var_true(channel, "sip_sticky_contact")) {
 					sticky = tech_pvt->record_route;
 					switch_channel_set_variable(channel, "sip_nat_detected", "true");
 				}
@@ -5142,15 +5138,13 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 
 	if (session) {
-		const char *vval = NULL;
-
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
 
-		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_custom_headers")) || switch_true(vval)) {
+		if (switch_channel_var_true_or_default(o_channel, "sip_copy_custom_headers", SWITCH_TRUE)) {
 			switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
 		}
 
-		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_multipart")) || switch_true(vval)) {
+		if (switch_channel_var_true_or_default(o_channel, "sip_copy_multipart", SWITCH_TRUE)) {
 			switch_ivr_transfer_variable(session, nsession, "sip_multipart");
 		}
 		switch_ivr_transfer_variable(session, nsession, "rtp_video_fmtp");

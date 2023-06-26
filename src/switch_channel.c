@@ -505,7 +505,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 	switch_status_t status;
 	void *pop;
 	switch_dtmf_t new_dtmf = { 0 };
-	switch_bool_t sensitive = switch_true(switch_channel_get_variable_dup(channel, SWITCH_SENSITIVE_DTMF_VARIABLE, SWITCH_FALSE, -1));
+	switch_bool_t sensitive = switch_channel_var_true(channel, SWITCH_SENSITIVE_DTMF_VARIABLE);
 
 	switch_assert(dtmf);
 
@@ -850,7 +850,7 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Function", func);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Presence-Calling-Line", "%d", line);
 
-		if (switch_true(switch_channel_get_variable(channel, "presence_privacy"))) {
+		if (switch_channel_var_true(channel, "presence_privacy")) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Privacy", "true");
 		}
 
@@ -880,7 +880,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
  end:
 
 	if (on) {
-		if (switch_true(switch_channel_get_variable(channel, "flip_record_on_hold"))) {
+		if (switch_channel_var_true(channel, "flip_record_on_hold")) {
 			switch_core_session_t *other_session;
 			if (switch_core_session_get_partner(channel->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_ivr_transfer_recordings(channel->session, other_session);
@@ -3517,7 +3517,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 
 		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 
-		if (switch_true(switch_channel_get_variable(channel, "video_mirror_input"))) {
+		if (switch_channel_var_true(channel, "video_mirror_input")) {
 			switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
 		}
 
@@ -3550,7 +3550,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE);
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE);
 
-		if (switch_true(switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+		if (switch_channel_var_true(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE)) {
 			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 		}
 
@@ -3819,7 +3819,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	switch_channel_set_flag(channel, CF_ANSWERED);
 
-	if (switch_true(switch_channel_get_variable(channel, "video_mirror_input"))) {
+	if (switch_channel_var_true(channel, "video_mirror_input")) {
 		switch_channel_set_flag(channel, CF_VIDEO_MIRROR_INPUT);
 		//switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 	}
@@ -3839,7 +3839,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		switch_core_session_rwunlock(other_session);
 	}
 
-	if (switch_true(switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+	if (switch_channel_var_true(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE)) {
 		switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 	}
 
@@ -3869,7 +3869,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	if (switch_channel_get_variable(channel, "absolute_codec_string")) {
 		/* inherit_codec == true will implicitly clear the absolute_codec_string
 		   variable if used since it was the reason it was set in the first place and is no longer needed */
-		if (switch_true(switch_channel_get_variable(channel, "inherit_codec"))) {
+		if (switch_channel_var_true(channel, "inherit_codec")) {
 			switch_channel_set_variable(channel, "absolute_codec_string", NULL);
 		}
 	}
@@ -5550,6 +5550,75 @@ SWITCH_DECLARE(switch_status_t) switch_channel_pass_sdp(switch_channel_t *from_c
 	switch_safe_free(patched_sdp);
 
 	return status;
+}
+
+SWITCH_DECLARE(int) switch_channel_var_exist(switch_channel_t *channel, const char *variable) {
+	int ret;
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	ret = switch_channel_get_variable_dup(channel, variable, SWITCH_FALSE, -1)?SWITCH_TRUE:SWITCH_FALSE;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return ret;
+}
+
+SWITCH_DECLARE(int) switch_channel_var_true(switch_channel_t *channel, const char *variable) {
+	int ret;
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	ret = switch_true(switch_channel_get_variable_dup(channel, variable, SWITCH_FALSE, -1));
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return ret;
+}
+
+SWITCH_DECLARE(int) switch_channel_var_true_or_default(switch_channel_t *channel, const char *variable, int default_if_not_set) {
+	const char *var;
+	int ret;
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	var = switch_channel_get_variable_dup(channel, variable, SWITCH_FALSE, -1);
+	if (!var) {
+		ret = default_if_not_set;
+	} else {
+		ret = switch_true(var);
+	}
+
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return ret;
+}
+
+SWITCH_DECLARE(int) switch_channel_var_false(switch_channel_t *channel, const char *variable) {
+	int ret;
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	ret = switch_false(switch_channel_get_variable_dup(channel, variable, SWITCH_FALSE, -1));
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return ret;
+}
+
+SWITCH_DECLARE(int) switch_channel_var_false_or_default(switch_channel_t *channel, const char *variable, int default_if_not_set) {
+	const char *var;
+	int ret;
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	var = switch_channel_get_variable_dup(channel, variable, SWITCH_FALSE, -1);
+	if (!var) {
+		ret = default_if_not_set;
+	} else {
+		ret = switch_false(var);
+	}
+
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return ret;
 }
 
 /* For Emacs:

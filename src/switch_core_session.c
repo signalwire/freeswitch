@@ -629,7 +629,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 		switch_assert(peer_channel);
 
-		if (channel && switch_true(switch_channel_get_variable(channel, "session_copy_loglevel"))) {
+		if (channel && switch_channel_var_true(channel, "session_copy_loglevel")) {
 			(*new_session)->loglevel = session->loglevel;
 		}
 
@@ -907,7 +907,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		}
 
 
-		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE))) {
+		if (switch_channel_var_true(session->channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE)) {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
 							  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG1, "Ignoring display update.\n");
 			status = SWITCH_STATUS_SUCCESS;
@@ -1656,7 +1656,7 @@ SWITCH_DECLARE(void) switch_core_session_sched_heartbeat(switch_core_session_t *
 	time_t when;
 
 	switch_core_session_unsched_heartbeat(session);
-	if (switch_true(switch_channel_get_variable(session->channel, "heartbeat_fire_on_set"))) {
+	if (switch_channel_var_true(session->channel, "heartbeat_fire_on_set")) {
 		when = switch_epoch_time_now(NULL);
 	} else {
 		when = switch_epoch_time_now(NULL) + session->track_duration;
@@ -1677,16 +1677,16 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 	session->track_duration = seconds;
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || !switch_channel_media_ready(session->channel) ||
-		switch_true(switch_channel_get_variable_dup(session->channel, "heartbeat_use_scheduler", SWITCH_FALSE, -1)) ||
-		switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media", SWITCH_FALSE, -1)) ||
-		switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_after_bridge", SWITCH_FALSE, -1))) {
+		switch_channel_var_true(session->channel, "heartbeat_use_scheduler") ||
+		switch_channel_var_true(session->channel, "bypass_media") ||
+		switch_channel_var_true(session->channel, "bypass_media_after_bridge")) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s using scheduler due to bypass media or media is not established.\n",
 						  switch_channel_get_name(session->channel));
 		switch_core_session_sched_heartbeat(session, seconds);
 		return;
 	}
 
-	if (switch_true(switch_channel_get_variable(session->channel, "heartbeat_fire_on_set"))) {
+	if (switch_channel_var_true(session->channel, "heartbeat_fire_on_set")) {
 		session->read_frame_count = 0;
 	} else {
 		session->read_frame_count = (session->read_impl.samples_per_second / session->read_impl.samples_per_packet) * seconds;
@@ -1718,7 +1718,6 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_core_session_t *session = obj;
 	switch_event_t *event;
 	char *event_str = NULL;
-	const char *val;
 
 	session->thread = thread;
 	session->thread_id = switch_thread_self();
@@ -1745,7 +1744,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_core_session_write_lock(session);
 	switch_set_flag(session, SSF_DESTROYED);
 
-	if ((val = switch_channel_get_variable(session->channel, "memory_debug")) && switch_true(val)) {
+	if (switch_channel_var_true(session->channel, "memory_debug")) {
 		if (switch_event_create(&event, SWITCH_EVENT_GENERAL) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_serialize(event, &event_str, SWITCH_FALSE);
@@ -2835,7 +2834,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 {
 	switch_app_log_t *log, *lp;
 	switch_event_t *event;
-	const char *var;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *expanded = NULL;
 	const char *app, *app_uuid_var, *app_uuid_name;
@@ -2902,7 +2900,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 					  switch_core_session_stack_count(session, 0), switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 	}
 
-	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
+	if (switch_channel_var_true(session->channel, "verbose_presence")) {
 		char *myarg = NULL;
 		if (expanded) {
 			myarg = switch_mprintf("%s(%s)", app, expanded);
@@ -2917,7 +2915,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		}
 	}
 
-	if (!(var = switch_channel_get_variable(session->channel, SWITCH_DISABLE_APP_LOG_VARIABLE)) || (!(switch_true(var)))) {
+	if (!switch_channel_var_true_or_default(session->channel, SWITCH_DISABLE_APP_LOG_VARIABLE, SWITCH_FALSE)) {
 		log = switch_core_session_alloc(session, sizeof(*log));
 
 		log->app = switch_core_session_strdup(session, application_interface->interface_name);

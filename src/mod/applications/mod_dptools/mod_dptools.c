@@ -2400,7 +2400,7 @@ SWITCH_STANDARD_APP(sleep_function)
 		char buf[10];
 		switch_input_args_t args = { 0 };
 
-		if (switch_true(switch_channel_get_variable(channel, "sleep_eat_digits"))) {
+		if (switch_channel_var_true(channel, "sleep_eat_digits")) {
 			args.input_callback = on_dtmf;
 			args.buf = buf;
 			args.buflen = sizeof(buf);
@@ -2619,7 +2619,7 @@ void *SWITCH_THREAD_FUNC att_thread_run(switch_thread_t *thread, void *obj)
 	switch_channel_t *channel = switch_core_session_get_channel(session), *peer_channel = NULL;
 	const char *bond = NULL;
 	switch_core_session_t *b_session = NULL;
-	switch_bool_t follow_recording = switch_true(switch_channel_get_variable(channel, "recording_follow_attxfer"));
+	switch_bool_t follow_recording = switch_channel_var_true(channel, "recording_follow_attxfer");
 	const char *attxfer_cancel_key = NULL, *attxfer_hangup_key = NULL, *attxfer_conf_key = NULL;
 
 	att->running = 1;
@@ -3481,7 +3481,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
-	const char *v_campon = NULL, *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
+	const char *v_campon_retries, *v_campon_sleep, *v_campon_timeout, *v_campon_fallback_exten = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	int campon_retries = 100, campon_timeout = 10, campon_sleep = 10, tmp, camping = 0, fail = 0, thread_started = 0;
 	struct camping_stake stake = { 0 };
@@ -3496,7 +3496,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		return;
 	}
 
-	if ((v_campon = switch_channel_get_variable(caller_channel, "campon")) && switch_true(v_campon)) {
+	if (switch_channel_var_true(caller_channel, "campon")) {
 		const char *cid_name = NULL;
 		const char *cid_number = NULL;
 
@@ -3573,7 +3573,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 			if (!thread_started && fail && moh && !switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
 				!switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) &&
-				!switch_true(switch_channel_get_variable(caller_channel, "bypass_media"))) {
+				!switch_channel_var_true(caller_channel, "bypass_media")) {
 				switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 				stake.running = 1;
@@ -3644,8 +3644,8 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	} else {
 
 		switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
-			switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+		if (switch_channel_var_true(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE) ||
+			switch_channel_var_true(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) {
 			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 		}
 
@@ -4769,7 +4769,7 @@ SWITCH_STANDARD_APP(limit_function)
 
 	/* if this is an invalid backend, fallback to db backend */
 	/* TODO: remove this when we can! */
-	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag")) &&
+	if (switch_channel_var_true(channel, "switch_limit_backwards_compat_flag") &&
 			!switch_loadable_module_get_limit_interface(backend)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown backend '%s'.  To maintain backwards compatability, falling back on db backend and shifting argumens. Either update your diaplan to include the backend, fix the typo, or load the appropriate limit implementation module.\n", backend);
 		mydata = switch_core_session_sprintf(session, "db %s", data);
@@ -4827,7 +4827,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	char *mydata = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag"))) {
+	if (switch_channel_var_true(channel, "switch_limit_backwards_compat_flag")) {
 		mydata = switch_core_session_sprintf(session, "hash %s", data);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash' api: Please use 'limit hash'.\n");
 		limit_function(session, mydata);
@@ -4859,7 +4859,7 @@ SWITCH_STANDARD_APP(limit_execute_function)
 	}
 
 	/* backwards compat version, if we have 5, just prepend with db and reparse */
-	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag")) &&
+	if (switch_channel_var_true(channel, "switch_limit_backwards_compat_flag") &&
 			argc == 5) {
 		mydata = switch_core_session_sprintf(session, "db %s", data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -4918,7 +4918,7 @@ SWITCH_STANDARD_APP(limit_hash_execute_function)
 	char *mydata = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag"))) {
+	if (switch_channel_var_true(channel, "switch_limit_backwards_compat_flag")) {
 		mydata = switch_core_session_sprintf(session, "hash %s", data);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Using deprecated 'limit_hash_execute' api: Please use 'limit_execute hash'.\n");
 		limit_execute_function(session, mydata);

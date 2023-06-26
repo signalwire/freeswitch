@@ -3003,7 +3003,7 @@ SWITCH_STANDARD_API(transfer_function)
 				switch_core_session_t *tmp = tsession;
 				tsession = other_session;
 				other_session = NULL;
-				if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+				if (switch_channel_var_true(channel, "recording_follow_transfer")) {
 					switch_ivr_transfer_recordings(tmp, tsession);
 				}
 				switch_core_session_rwunlock(tmp);

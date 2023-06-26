@@ -503,7 +503,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
-	bridge_filter_dtmf = switch_true(switch_channel_get_variable(chan_a, "bridge_filter_dtmf"));
+	bridge_filter_dtmf = switch_channel_var_true(chan_a, "bridge_filter_dtmf");
 
 
 	for (;;) {
@@ -661,7 +661,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			if ((bypass_media_after_bridge || switch_channel_test_flag(chan_b, CF_BYPASS_MEDIA_AFTER_BRIDGE)) && switch_channel_test_flag(chan_a, CF_ANSWERED)
 				&& switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 
-				if (switch_true(switch_channel_get_variable_dup(chan_a, "bypass_media_after_bridge_oldschool", SWITCH_FALSE, -1))) {
+				if (switch_channel_var_true(chan_a, "bypass_media_after_bridge_oldschool")) {
 					switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 				} else {
 					switch_ivr_3p_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
@@ -715,7 +715,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 		if (!switch_channel_test_flag(chan_a, CF_ANSWERED) && answer_limit && switch_epoch_time_now(NULL) > answer_limit) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Answer timeout hit on %s.\n", switch_channel_get_name(chan_a));
-			if (switch_true(switch_channel_get_variable_dup(chan_a, "continue_on_answer_timeout", SWITCH_FALSE, -1))) {
+			if (switch_channel_var_true(chan_a, "continue_on_answer_timeout")) {
 				data->clean_exit = 1;
 				goto end_of_bridge_loop;
 			} else {
@@ -992,7 +992,7 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		!switch_channel_test_flag(channel, CF_XFER_ZOMBIE) && bd && !bd->clean_exit && state != CS_PARK && state != CS_ROUTING &&
 		state == CS_EXCHANGE_MEDIA && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 
-		if (state < CS_HANGUP && switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+		if (state < CS_HANGUP && switch_channel_var_true(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE)) {
 			switch_ivr_park_session(session);
 			return SWITCH_STATUS_FALSE;
 		} else if (state < CS_HANGUP && (var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
@@ -1203,9 +1203,9 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
-			if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_continue_on_cancel"))) {
+			if (switch_channel_var_true(channel, "uuid_bridge_continue_on_cancel")) {
 				switch_channel_set_state(channel, CS_EXECUTE);
-			} else if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_park_on_cancel"))) {
+			} else if (switch_channel_var_true(channel, "uuid_bridge_park_on_cancel")) {
 				switch_ivr_park_session(session);
 			} else if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
@@ -1446,7 +1446,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
 
 			if (switch_channel_up_nosig(other_channel)) {
-				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+				if (switch_channel_var_true(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE)) {
 					switch_ivr_park_session(other_session);
 					hup = 0;
 				} else if ((var = switch_channel_get_variable(other_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
@@ -1457,7 +1457,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 				if (hup) {
 					if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
 						if (switch_channel_test_flag(channel, CF_ANSWERED) &&
-							switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+							switch_channel_var_true(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE)) {
 
 							if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
 								switch_channel_set_flag(other_channel, CF_INTERCEPT);
@@ -1822,8 +1822,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			}
 
 			if (switch_channel_down_nosig(peer_channel)) {
-				switch_bool_t copy_xml_cdr = switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE));
-				switch_bool_t copy_json_cdr = switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_JSON_CDR_VARIABLE));
+				switch_bool_t copy_xml_cdr = switch_channel_var_true(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE);
+				switch_bool_t copy_json_cdr = switch_channel_var_true(peer_channel, SWITCH_COPY_JSON_CDR_VARIABLE);
 
 				if (copy_xml_cdr || copy_json_cdr) {
 					char *cdr_text = NULL;
@@ -1928,8 +1928,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if (!switch_channel_test_flag(caller_channel, CF_TRANSFER)) {
 
-				if ((answered && switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) ||
-					switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_EARLY_BRIDGE_VARIABLE))) {
+				if ((answered && switch_channel_var_true(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE)) ||
+					switch_channel_var_true(caller_channel, SWITCH_PARK_AFTER_EARLY_BRIDGE_VARIABLE)) {
 					switch_ivr_park_session(session);
 				} else if ((answered && (var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) ||
 						   (var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_EARLY_BRIDGE_VARIABLE))) {
@@ -2258,7 +2258,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_intercept_session(switch_core_session
 {
 	switch_core_session_t *rsession, *bsession = NULL;
 	switch_channel_t *channel, *rchannel, *bchannel = NULL;
-	const char *buuid, *var;
+	const char *buuid;
 	char brto[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -2284,14 +2284,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_intercept_session(switch_core_session
 		buuid = NULL;
 	}
 
-	if ((var = switch_channel_get_variable(channel, "intercept_unbridged_only")) && switch_true(var)) {
+	if (switch_channel_var_true(channel, "intercept_unbridged_only")) {
 		if ((switch_channel_test_flag(rchannel, CF_BRIDGED))) {
 			switch_core_session_rwunlock(rsession);
 			return status;
 		}
 	}
 
-	if ((var = switch_channel_get_variable(channel, "intercept_unanswered_only")) && switch_true(var)) {
+	if (switch_channel_var_true(channel, "intercept_unanswered_only")) {
 		if ((switch_channel_test_flag(rchannel, CF_ANSWERED))) {
 			switch_core_session_rwunlock(rsession);
 			return status;
@@ -2320,7 +2320,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_intercept_session(switch_core_session
 		switch_channel_set_variable(bchannel, "park_after_bridge", "true");
 	}
 
-	if ((var = switch_channel_get_variable(channel, "intercept_pre_bond")) && switch_true(var)) {
+	if (switch_channel_var_true(channel, "intercept_pre_bond")) {
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, uuid);
 		switch_channel_set_variable_partner(channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 	}

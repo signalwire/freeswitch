@@ -918,7 +918,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		t38_gateway_set_transmit_on_idle(pvt->t38_gateway_state, TRUE);
 
-		if (switch_true(switch_channel_get_variable(channel, "fax_v17_disabled"))) {
+		if (switch_channel_var_true(channel, "fax_v17_disabled")) {
 			t38_gateway_set_supported_modems(pvt->t38_gateway_state, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
 		} else {
 			t38_gateway_set_supported_modems(pvt->t38_gateway_state, T30_SUPPORT_V17 | T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
