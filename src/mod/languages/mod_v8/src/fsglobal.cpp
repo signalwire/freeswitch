@@ -33,6 +33,7 @@
 #include "mod_v8.h"
 #include "fsglobal.hpp"
 #include "fssession.hpp"
+#include <curl/curl.h>
 #include <switch_curl.h>
 
 using namespace std;
@@ -214,6 +215,101 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 
 		/* Return the hash */
 		info.GetReturnValue().Set(config_data.hashObject);
+	} else {
+		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+	}
+}
+
+JS_GLOBAL_FUNCTION_IMPL_STATIC(PushURLFile)
+{
+	JS_CHECK_SCRIPT_STATE();
+	HandleScope handle_scope(info.GetIsolate());
+	switch_CURL *curl_handle = NULL;
+	switch_CURLcode code = (switch_CURLcode)0;
+
+	CURLCallbackData config_data;
+	int32_t buffer_size = 65535;
+
+	int saveDepth = 0;
+
+	if (info.Length() > 1) {
+		FILE *fd;
+		const char *url = NULL, *filename = NULL;
+		struct stat file_info;
+		int fstat_res;
+		String::Utf8Value str1(info[0]);
+		String::Utf8Value str2(info[1]);
+		url = js_safe_str(*str1);
+		filename = js_safe_str(*str2);
+
+		curl_handle = switch_curl_easy_init();
+		if (!strncasecmp(url, "https", 5)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
+		config_data.isolate = info.GetIsolate();
+		config_data.bufferSize = buffer_size;
+		config_data.buffer = (char *)malloc(config_data.bufferSize);
+		config_data.bufferDataLength = 0;
+
+		if (config_data.buffer == NULL) {
+			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to allocate data buffer."));
+			switch_curl_easy_cleanup(curl_handle);
+			return;
+		}
+		if ((fd = fopen(filename, "rb")) != NULL) {
+			curl_off_t speed_upload, total_time;
+			if(fstat_res = fstat(fileno(fd), &file_info) != 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fstat returned error %u\n", (unsigned) fstat_res);
+				info.GetReturnValue().Set(false);
+				free(config_data.buffer);
+				return;
+			}
+			switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+			/* tell it to "upload" to the URL */
+			curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L);
+
+			/* set where to read from (on Windows you need to use READFUNCTION too) */
+			curl_easy_setopt(curl_handle, CURLOPT_READDATA, fd);
+
+			/* and give the size of the upload (optional) */
+			curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)file_info.st_size);
+
+			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, FSGlobal::FetchUrlCallback);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
+
+			switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-v8/1.0");
+
+			code = switch_curl_easy_perform(curl_handle);
+			/* Check for errors */
+			if(code != CURLE_OK) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "curl_easy_perform() failed: %s\n",
+						switch_curl_easy_strerror(code));
+
+			} else {
+				/* Extract transfer info */
+				switch_curl_easy_getinfo(curl_handle, CURLINFO_SPEED_UPLOAD_T, &speed_upload);
+				switch_curl_easy_getinfo(curl_handle, CURLINFO_TOTAL_TIME_T, &total_time);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Speed: %" CURL_FORMAT_CURL_OFF_T " bytes/sec during %"
+						CURL_FORMAT_CURL_OFF_T ".%06ld seconds\n",
+						speed_upload,
+						(total_time / 1000000), (long)(total_time % 1000000));
+
+				config_data.buffer[config_data.bufferDataLength] = 0;
+				info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(config_data.buffer)));
+
+			}
+			free(config_data.buffer);
+			switch_curl_easy_cleanup(curl_handle);
+			fclose(fd);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file [%s]\n", filename);
+			info.GetReturnValue().Set(false);
+		}
 	} else {
 		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
 	}
@@ -807,6 +903,7 @@ static const js_function_t fs_proc[] = {
 	{"fetchUrl", FSGlobal::FetchURL},
 	{"fetchUrlHash", FSGlobal::FetchURLHash},
 	{"fetchUrlFile", FSGlobal::FetchURLFile},
+	{"pushUrlFile", FSGlobal::PushURLFile},
 	{"id", FSGlobal::Id },
 	{"version", FSGlobal::Version},
 	{0}
