@@ -6658,6 +6658,7 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
 	uint32_t fps, width, height;
 	uint32_t width_tmp, height_tmp;
+	const char *var;
 	switch_assert(session != NULL);
 
 	if (!(smh = session->media_handle)) {
