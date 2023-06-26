@@ -6655,7 +6655,9 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	switch_media_handle_t *smh;
 	switch_image_t *blank_img = NULL;
 	uint32_t frames = 0, frame_ms = 0;
+	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
 	uint32_t fps, width, height;
+	uint32_t width_tmp, height_tmp;
 	switch_assert(session != NULL);
 
 	if (!(smh = session->media_handle)) {
@@ -6666,8 +6668,19 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	width = smh->vid_params.width;
 	height = smh->vid_params.height;
 
-	if (!width) width = 1280;
-	if (!height) height = 720;
+	if (!strcmp(codec->implementation->iananame, "H263")) {
+		width_tmp = 704;
+		height_tmp = 576;
+	} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
+		width_tmp = 704;
+		height_tmp = 576;
+	} else {
+		width_tmp = 1280;
+		height_tmp = 720;
+	}
+
+	if (!width) width = width_tmp;
+	if (!height) height = height_tmp;
 	if (!fps) fps = 15;
 
 	fr.packet = buf;
@@ -7420,6 +7433,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	const char *var;
 	int buflen = SWITCH_RTP_MAX_BUF_LEN;
 	int blank_enabled = 1;
+	switch_codec_t *codec = NULL;
+	uint32_t width, height;
 
 	session = mh->session;
 	
@@ -7437,6 +7452,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	mh->ready = 1;
 
 	channel = switch_core_session_get_channel(session);
+	codec = switch_core_session_get_video_write_codec(session);
 
 	switch_core_autobind_cpu();
 
@@ -7450,7 +7466,18 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	if (!blank_img) {
 		switch_color_set_rgb(&bgcolor, "#000000");
-		if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 1280, 720, 1))) {
+		if (!strcmp(codec->implementation->iananame, "H263")) {
+			width = 704;
+			height = 576;
+		} else if (!strcmp(codec->implementation->iananame, "H263-1998")) {
+			width = 704;
+			height = 576;
+		} else {
+			width = 1280;
+			height = 720;
+		}
+		
+		if ((blank_img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, width, height, 1))) {
 			switch_img_fill(blank_img, 0, 0, blank_img->d_w, blank_img->d_h, &bgcolor);
 		}
 	}
