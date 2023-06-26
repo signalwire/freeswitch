@@ -6668,7 +6668,7 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	width = smh->vid_params.width;
 	height = smh->vid_params.height;
 	
-	if (if (!width) && (var = switch_channel_get_variable(session->channel, "write_video_width"))) {
+	if ((!width) && (var = switch_channel_get_variable(session->channel, "write_video_width"))) {
 		width = atoi(var);
 		if (width < 0) width = 352;
 	}
