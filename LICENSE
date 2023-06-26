@@ -176,13 +176,46 @@ Files: src/mod/languages/mod_managed/*
 Copyright: 2008, Michael Giagnocavo <mgg@giagnocavo.net>
 License: MPL-1.1
 
-Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
+Files:
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
+Copyright: 1999-2002 Peter Hofmann <software@pxh.de>
+License: LGPL-2+
+
+Files:
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/scripts/install.sh
+Copyright: 1991 Massachusetts Institute of Technology
+License: MIT
+ Permission to use, copy, modify, distribute, and sell this software and its
+ documentation for any purpose is hereby granted without fee, provided that
+ the above copyright notice appear in all copies and that both that
+ copyright notice and this permission notice appear in supporting
+ documentation, and that the name of M.I.T. not be used in advertising or
+ publicity pertaining to distribution of the software without specific,
+ written prior permission.  M.I.T. makes no representations about the
+ suitability of this software for any purpose.  It is provided "as is"
+ without express or implied warranty.
+
+Files:
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/scripts/mkinstalldirs
+Copyright: 1993 Noah Friedman <friedman@prep.ai.mit.edu>
+License: public-domain
+
+Files:
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/intl/*
  src/mod/languages/mod_lua/lua-mode.el
 Copyright: 1995-2007 Free Software Foundation, Inc.
 License: GPL-2+
 
 Files:
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/scripts/config.guess
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/scripts/config.sub
+Copyright: 1992-2014 Free Software Foundation, Inc.
+License: GPL-3+ with Build System exception
+
+Files:
  libs/iksemel/ltmain.sh
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/configure
+ src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/scripts/*
 Copyright: 1995-2005 Free Software Foundation, Inc.
 License: GPL-2+ with Build System exception
 

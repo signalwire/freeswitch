@@ -1,6 +1,8 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: freeswitch
 Source: https://freeswitch.org/
+Files-Excluded:
+ src/mod/endpoints/mod_gsmopen/gsmlib/
 
 Files: *
 Copyright: 2005-2014 Anthony Minessale II <anthm@freeswitch.org>
@@ -176,7 +178,7 @@ Files: src/mod/languages/mod_managed/*
 Copyright: 2008, Michael Giagnocavo <mgg@giagnocavo.net>
 License: MPL-1.1
 
-Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
+Files:
  src/mod/languages/mod_lua/lua-mode.el
 Copyright: 1995-2007 Free Software Foundation, Inc.
 License: GPL-2+
