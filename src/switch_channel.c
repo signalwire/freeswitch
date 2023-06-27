@@ -1022,6 +1022,24 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 	return r;
 }
 
+SWITCH_DECLARE(const char *) switch_channel_get_variable_strdup(switch_channel_t *channel, const char *varname)
+{
+	const char *value = switch_channel_get_variable_dup(channel, varname, SWITCH_FALSE, -1);
+
+	return value ? (const char *)strdup(value) : NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variable_buf(switch_channel_t *channel, const char *varname, char *buf, switch_size_t buflen)
+{
+	const char *value = switch_channel_get_variable_dup(channel, varname, SWITCH_FALSE, -1);
+
+	if (value && buf && buflen && switch_copy_string(buf, value, buflen)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname)
 {
 	const char *uuid;
