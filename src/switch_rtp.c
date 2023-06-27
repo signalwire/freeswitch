@@ -8431,6 +8431,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				}
 
 				switch_jb_create(&rtp_session->vbw, SJB_VIDEO, nack_size, nack_size, rtp_session->pool);
+				switch_jb_set_session(rtp_session->vbw, rtp_session->session);
 
 				if (rtp_session->vbw) {
 					switch_jb_set_flag(rtp_session->vbw, SJB_QUEUE_ONLY);

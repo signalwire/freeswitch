@@ -3600,6 +3600,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
 
 	switch_jb_create(&jb, SJB_AUDIO, qlen, qlen, switch_core_session_get_pool(session));
+	switch_jb_set_session(jb, session);
 
 	if ((var = switch_channel_get_variable(channel, "delay_echo_debug_level"))) {
 		debug = atoi(var);
