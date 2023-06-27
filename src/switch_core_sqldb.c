@@ -3661,7 +3661,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			char *err;
 			int result = 0;
 
-			switch_cache_db_test_reactive_ex(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name, initial_cid_name, initial_cid_num, initial_ip_addr, initial_dest, initial_dialplan, initial_context, accountcode from channels", "DROP TABLE channels", create_channels_sql, create_row_size_limited_channels_sql);
+			switch_cache_db_test_reactive_ex(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name, initial_cid_name, initial_cid_num, initial_ip_addr, initial_dest, initial_dialplan, initial_context,dtmf,accountcode from channels", "DROP TABLE channels", create_channels_sql, create_row_size_limited_channels_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);

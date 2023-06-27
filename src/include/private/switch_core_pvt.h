@@ -260,6 +260,8 @@ struct switch_runtime {
 	switch_bool_t colorize_console;
 	char *odbc_dsn;
 	char *dbname;
+	char *rtp_fvf;//UC
+	uint32_t write_video_wh[2];//UC
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;

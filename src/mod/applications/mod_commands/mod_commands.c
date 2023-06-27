@@ -2614,6 +2614,14 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_RTP_END_PORT, &arg);
 			stream->write_function(stream, "+OK rtp end port: %d\n", arg);
 
+		} else if (!strcasecmp(argv[0], "rtp_force_video_fmtp")) {//added by yy for DS-105642 UC
+			if (argv[1]) {
+				switch_core_session_ctl(SCSC_RTP_FVF, argv[1]);
+			}
+		} else if (!strcasecmp(argv[0], "write_video_wh")) {//added by yy for DS-105642 UC
+			if (argv[1]) {
+				switch_core_session_ctl(SCSC_WRITE_VIDEO_WH, argv[1]);
+			}
 		} else if (!strcasecmp(argv[0], "max_dtmf_duration")) {
 			if (argc > 1) {
 				arg = atoi(argv[1]);

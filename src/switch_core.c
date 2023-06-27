@@ -2341,6 +2341,15 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "switchname") && !zstr(val)) {
 					runtime.switchname = switch_core_strdup(runtime.memory_pool, val);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Set switchname to %s\n", runtime.switchname);
+				} else if (!strcasecmp(var, "rtp-force-video-fmtp") && !zstr(val)) {
+					runtime.rtp_fvf = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "write-video-wh") && !zstr(val)) {
+					char *argv[2] = { 0 };
+					int argc = 0, i;
+					argc = switch_separate_string((char*)val, 'x', argv, (sizeof(argv) / sizeof(argv[0])));
+					for(i=0; i < argc; i++) {
+						runtime.write_video_wh[i] = atoi(argv[i]);
+					}
 				} else if (!strcasecmp(var, "rtp-retain-crypto-keys")) {
 					if (switch_true(val)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -2964,6 +2973,23 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 	case SCSC_RTP_END_PORT://added by yy for DS-65516,2018.09.19,UC
 		newintval = switch_rtp_set_end_port((switch_port_t) oldintval);
 		switch_rtp_reload();//added by yy for DS-65516,2018.09.19
+		break;
+	case SCSC_RTP_FVF://added by yy for DS-105642 UC
+		char *arg = (char *) val;
+		if (!zstr(arg)) {
+			runtime.rtp_fvf = switch_core_strdup(runtime.memory_pool, arg);
+		}
+		break;
+	case SCSC_WRITE_VIDEO_WH://added by yy for DS-105642 UC
+		char *arg = (char *) val;
+		if (!zstr(arg)) {
+			char *argv[2] = { 0 };
+			int argc = 0, i;
+			argc = switch_separate_string(arg, 'x', argv, (sizeof(argv) / sizeof(argv[0])));
+			for(i=0; i < argc; i++) {
+				runtime.write_video_wh[i] = atoi(argv[i]);
+			}
+		}
 		break;
 	case SCSC_MAX_SESSIONS:
 		//newintval = switch_core_session_limit(oldintval);//UC

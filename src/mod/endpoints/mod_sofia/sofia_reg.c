@@ -1993,7 +1993,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		{
 				char buf1[32] = "";
 		
-				sql = switch_mprintf("select count(*) from (select reg_user ,count(reg_user) as row from registrations group by reg_user having count(reg_user)>=1) ");
+				sql = switch_mprintf("select count(*) from (select reg_user ,count(reg_user) as row from registrations group by reg_user having count(reg_user)>=1) as reg");
 				if (switch_core_db_handle(&dbh) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 					switch_goto_int(r, 1, end);
