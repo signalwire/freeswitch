@@ -105,7 +105,7 @@ void mod_amqp_producer_event_handler(switch_event_t* evt)
 		/* Trip the circuit breaker for a short period to stop recurring error messages (time is measured in uS) */
 		profile->circuit_breaker_reset_time = now + profile->circuit_breaker_ms * 1000;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMQP message queue full. Messages will be dropped for %.1fs! (Queue capacity %d)",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMQP message queue full. Messages will be dropped for %.1fs! (Queue capacity %d)\n",
 						  profile->circuit_breaker_ms / 1000.0, queue_size);
 
 		mod_amqp_util_msg_destroy(&amqp_message);
