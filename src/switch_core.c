@@ -2975,19 +2975,23 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		switch_rtp_reload();//added by yy for DS-65516,2018.09.19
 		break;
 	case SCSC_RTP_FVF://added by yy for DS-105642 UC
-		char *arg = (char *) val;
-		if (!zstr(arg)) {
-			runtime.rtp_fvf = switch_core_strdup(runtime.memory_pool, arg);
+		{
+			char *arg = (char *) val;
+			if (!zstr(arg)) {
+				runtime.rtp_fvf = switch_core_strdup(runtime.memory_pool, arg);
+			}
 		}
 		break;
 	case SCSC_WRITE_VIDEO_WH://added by yy for DS-105642 UC
-		char *arg = (char *) val;
-		if (!zstr(arg)) {
-			char *argv[2] = { 0 };
-			int argc = 0, i;
-			argc = switch_separate_string(arg, 'x', argv, (sizeof(argv) / sizeof(argv[0])));
-			for(i=0; i < argc; i++) {
-				runtime.write_video_wh[i] = atoi(argv[i]);
+		{
+			char *arg = (char *) val;
+			if (!zstr(arg)) {
+				char *argv[2] = { 0 };
+				int argc = 0, i;
+				argc = switch_separate_string(arg, 'x', argv, (sizeof(argv) / sizeof(argv[0])));
+				for(i=0; i < argc; i++) {
+					runtime.write_video_wh[i] = atoi(argv[i]);
+				}
 			}
 		}
 		break;
