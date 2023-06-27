@@ -2978,7 +2978,12 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		{
 			char *arg = (char *) val;
 			if (!zstr(arg)) {
-				runtime.rtp_fvf = switch_core_strdup(runtime.memory_pool, arg);
+
+				if (!strcasecmp(arg, "null")) {
+					runtime.rtp_fvf = NULL;
+				} else {
+					runtime.rtp_fvf = switch_core_strdup(runtime.memory_pool, arg);
+				}
 			}
 		}
 		break;
