@@ -6679,6 +6679,9 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 		if (height < 0) height = 288;
 	}
 
+	if (!width) width = runtime.write_video_wh[0];
+	if (!height) height = runtime.write_video_wh[1];
+
 	if (!strcmp(codec->implementation->iananame, "H263")) {
 		width_tmp = 352;
 		height_tmp = 288;
@@ -7488,6 +7491,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			height = atoi(var);
 			if (height < 0) height = 288;
 		}
+
+		if (!width) width = runtime.write_video_wh[0];
+		if (!height) height = runtime.write_video_wh[1];
 
 		if (!strcmp(codec->implementation->iananame, "H263")) {
 			width_tmp = 352;
@@ -10284,6 +10290,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	if (!(smh = session->media_handle)) {
 		return;
+	}
+
+	if (zstr(ov_fmtp) && !zstr(runtime.rtp_fvf)) {
+		ov_fmtp = runtime.rtp_fvf;
 	}
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
