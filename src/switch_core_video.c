@@ -49,6 +49,7 @@
 #endif
 
 #define PNG_SIMPLIFIED_WRITE_SUPPORTED //UC
+#define PNG_SIMPLIFIED_READ_SUPPORTED //UC
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../libs/stb/stb_image.h"
