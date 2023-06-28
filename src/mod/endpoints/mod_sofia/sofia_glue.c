@@ -3057,6 +3057,21 @@ sofia_destination_t *sofia_glue_get_destination(char *data)
 				*p = '\0';
 			} while ((--p > route_uri) && *p == ' ');
 		}
+		if ((strlen(route_uri) > 1) && (p = strchr(route_uri, '<'))) {
+		    for (;p && *p; p++) {
+				if (*p == '>' || *p == ';') {
+					*p = '\0';
+					break;
+				}
+			}
+			p = route_uri;
+			if (!(route_uri = strdup(p + 1))) {
+				goto mem_fail;
+			}
+			if (p) {
+				switch_safe_free(p);
+			}
+		}
 	}
 
 	if (!(to = strdup(data))) {
