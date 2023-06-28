@@ -1170,7 +1170,7 @@ static uint32_t parse_lifetime_mki(const char **p, const char *end)
 					val += ((**p) - '0') * i;
 				}
 				res |= (val & 0x000000ff);					/* MKI_SIZE */
-			} else if (isdigit(*(field_begin + 1)) && (field_begin + 2) && (*(field_begin + 2) == '^') && (field_begin + 3) && isdigit(*(field_begin + 3))) {
+			} else if (isdigit(*(field_begin + 1)) && (*(field_begin + 2) == '^') && isdigit(*(field_begin + 3))) {
 				res |= (CRYPTO_KEY_MATERIAL_LIFETIME << 24);
 				val = ((uint32_t) (*(field_begin + 1) - '0')) << 8;
 				res |= val;									/* LIFETIME base. */
