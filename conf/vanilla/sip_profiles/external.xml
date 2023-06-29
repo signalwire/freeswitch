@@ -2,7 +2,7 @@
   <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
   <!-- This profile is only for outbound registrations to providers -->
   <gateways>
-    <X-PRE-PROCESS cmd="include" data="external/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="gateways/*.xml"/>
   </gateways>
 
   <aliases>
@@ -17,6 +17,8 @@
   </domains>
 
   <settings>
+    <param name="apply-inbound-acl" value="domains"/>
+    <param name="parse-all-invite-headers" value="true"/>
     <param name="debug" value="0"/>
     <!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
     <!-- <param name="shutdown-on-fail" value="true"/> -->
@@ -62,8 +64,8 @@
     -->
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
-    <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
-    <param name="ext-sip-ip" value="$${external_sip_ip}"/>
+    <param name="ext-rtp-ip" value="autonat:192.168.8.91"/>
+    <param name="ext-sip-ip" value="autonat:192.168.8.91"/>
     <param name="rtp-timeout-sec" value="300"/>
     <param name="rtp-hold-timeout-sec" value="1800"/>
     <!--<param name="enable-3pcc" value="true"/>-->

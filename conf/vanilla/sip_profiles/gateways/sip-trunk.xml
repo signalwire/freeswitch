@@ -1,0 +1,9 @@
+<gateway name="Trunk">
+	<param name="username" value="demo1touchmats" />
+	<param name="password" value="kuihdsvbhdf25_?" />
+	<param name="proxy" value="casip01.teleoffice.se" />
+	<param name="realm" value="casip01.teleoffice.se" />
+	<param name="register" value="true" />
+	<param name="context" value="Trunk-Inbound" />
+	<param name="extension" value="10000" />
+</gateway>

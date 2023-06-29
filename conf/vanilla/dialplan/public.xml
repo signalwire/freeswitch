@@ -13,62 +13,23 @@
 <include>
   <context name="public">
 
+    <extension name="Send to JS">
+      <condition field="destination_number" expression=".">
+        <action application="javascript" data="Router.js" />
+      </condition>
+    </extension>
+
     <extension name="unloop">
       <condition field="${unroll_loops}" expression="^true$"/>
       <condition field="${sip_looped_call}" expression="^true$">
-	<action application="deflect" data="${destination_number}"/>
-      </condition>
-    </extension>
-    <!--
-	Tag anything pass thru here as an outside_call so you can make sure not
-	to create any routing loops based on the conditions that it came from 
-	the outside of the switch.  
-    -->
-    <extension name="outside_call" continue="true">
-      <condition>
-	<action application="set" data="outside_call=true"/>
-	<action application="export" data="RFC2822_DATE=${strftime(%a, %d %b %Y %T %z)}"/>
+        <action application="deflect" data="${destination_number}"/>
       </condition>
     </extension>
 
-    <extension name="call_debug" continue="true">
-      <condition field="${call_debug}" expression="^true$" break="never">
-	<action application="info"/>
-      </condition>
-    </extension>
-
-    <extension name="public_extensions">
-      <condition field="destination_number" expression="^(10[01][0-9])$">
-	<action application="transfer" data="$1 XML default"/>
-      </condition>
-    </extension>
-
-    <extension name="public_conference_extensions">
-      <condition field="destination_number" expression="^(3[5-8][01][0-9])$">
-	<action application="transfer" data="$1 XML default"/>
-      </condition>
-    </extension>
-    
     <!--
 	You can place files in the public directory to get included.
     -->
     <X-PRE-PROCESS cmd="include" data="public/*.xml"/>
-    <!--
-	If you have made it this far lets challenge the caller and if they authenticate
-	lets try what they dialed in the default context. (commented out by default)
-    -->
-    <!--
-    <extension name="check_auth" continue="true">
-      <condition field="${sip_authorized}" expression="^true$" break="never">
-	<anti-action application="respond" data="407"/>
-      </condition>
-    </extension>
-    
-    <extension name="transfer_to_default">
-      <condition>
-	<action application="transfer" data="${destination_number} XML default"/>
-      </condition>
-    </extension>
-    -->
+
   </context>
 </include>
