@@ -13,13 +13,13 @@
     <key name="10" value="sofia profile internal siptrace on"/>
     <key name="11" value="sofia profile internal siptrace off"/>
     <key name="12" value="version"/>
-  </cli-keybindings> 
-  
+  </cli-keybindings>
+
   <default-ptimes>
     <!-- Set this to override the 20ms assumption of various codecs in the sdp with no ptime defined -->
     <!-- <codec name="G729" ptime="40"/> -->
   </default-ptimes>
-  
+
   <settings>
     <!-- Colorize the Console -->
     <param name="colorize-console" value="true"/>
@@ -122,7 +122,7 @@
 	account default : provider
 	###################################
 	
-    -->    
+    -->
 
     <param name="mailer-app" value="sendmail"/>
     <param name="mailer-app-args" value="-t"/>
@@ -166,17 +166,14 @@
 	 =================================
 	 According to https://www.postgresql.org/docs/9.6/libpq-connect.html#LIBPQ-CONNSTRING
 	 There are two accepted formats for connection strings supported by the libpq library: 
-	 * For plain keyword = value strings use pgsql://
-	   pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'
+	 * For plain keyword = value strings use pgsql:// pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'
 	 * For RFC 3986 URIs use postgresql:// or postgres://
 	   postgresql://
 	   postgresql://localhost
 	   postgresql://localhost:5433
 	   postgresql://localhost/mydb
 	   postgresql://user@localhost
-	   postgresql://user:secret@localhost
-	   postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp
-	   postgresql:///mydb?host=localhost&port=5433
+	   postgresql://user:secret@localhost postgresql://other@localhost/otherdb?connect_timeout=10&application_name=myapp postgresql:///mydb?host=localhost&port=5433
     -->
     <!-- <param name="core-db-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE'" /> -->
     <!-- <param name="core-db-dsn" value="postgresql://freeswitch:@127.0.0.1/freeswitch?options=-c%20client_min_messages%3DNOTICE" /> -->
