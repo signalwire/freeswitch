@@ -662,6 +662,9 @@ void conference_cdr_render(conference_obj_t *conference)
 			x_tag = switch_xml_add_child_d(x_flags, "end_conference", flag_off++);
 			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_ENDCONF) ? "true" : "false");
 
+			x_tag = switch_xml_add_child_d(x_flags, "mandatory_member_end_conference", flag_off++);
+			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_MANDATORY_MEMBER_ENDCONF) ? "true" : "false");
+
 			x_tag = switch_xml_add_child_d(x_flags, "was_kicked", flag_off++);
 			switch_xml_set_txt_d(x_tag, conference_cdr_test_mflag(np, MFLAG_KICKED) ? "true" : "false");
 
