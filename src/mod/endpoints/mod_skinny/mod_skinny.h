@@ -355,7 +355,7 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 /*****************************************************************************/
 /* MODULE FUNCTIONS */
 /*****************************************************************************/
-switch_endpoint_interface_t *skinny_get_endpoint_interface();
+switch_endpoint_interface_t *skinny_get_endpoint_interface(void);
 
 /*****************************************************************************/
 /* TEXT FUNCTIONS */

@@ -54,7 +54,7 @@ switch_endpoint_interface_t *sofia_endpoint_interface;
 
 #define STRLEN 15
 
-void mod_sofia_shutdown_cleanup();
+void mod_sofia_shutdown_cleanup(void);
 static switch_status_t sofia_on_init(switch_core_session_t *session);
 
 static switch_status_t sofia_on_exchange_media(switch_core_session_t *session);
@@ -6833,7 +6833,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	return status;
 }
 
-void mod_sofia_shutdown_cleanup() {
+void mod_sofia_shutdown_cleanup(void) {
 	int sanity = 0;
 	int i;
 	switch_status_t st;

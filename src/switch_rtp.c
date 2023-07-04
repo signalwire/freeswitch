@@ -262,8 +262,8 @@ typedef struct {
 
 struct switch_rtp;
 
-static void switch_rtp_dtls_init();
-static void switch_rtp_dtls_destroy();
+static void switch_rtp_dtls_init(void);
+static void switch_rtp_dtls_destroy(void);
 
 #define MAX_DTLS_MTU 4096
 
@@ -1660,7 +1660,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 			);
 }
 
-static inline uint32_t calc_local_lsr_now() 
+static inline uint32_t calc_local_lsr_now(void)
 {
 	switch_time_t now;
 	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
@@ -3493,7 +3493,7 @@ static BIO_METHOD dtls_bio_filter_methods = {
 static BIO_METHOD *dtls_bio_filter_methods = NULL;
 #endif
 
-static void switch_rtp_dtls_init() {
+static void switch_rtp_dtls_init(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
 	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
@@ -3503,7 +3503,7 @@ static void switch_rtp_dtls_init() {
 #endif
 }
 
-static void switch_rtp_dtls_destroy() {
+static void switch_rtp_dtls_destroy(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (dtls_bio_filter_methods) {
 		BIO_meth_free(dtls_bio_filter_methods);

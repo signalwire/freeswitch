@@ -582,7 +582,7 @@ typedef void (*ARGBBlendRow)(const uint8_t* src_argb0,
 
 // Get function to Alpha Blend ARGB pixels and store to destination.
 LIBYUV_API
-ARGBBlendRow GetARGBBlend();
+ARGBBlendRow GetARGBBlend(void);
 
 // Alpha Blend ARGB images and store to destination.
 // Source is pre-multiplied by alpha using ARGBAttenuate.
