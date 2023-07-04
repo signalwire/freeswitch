@@ -254,7 +254,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-				wrote++;
+				(void)wrote;
 				close(fd);
 			} else {
 				char ebuf[512] = { 0 };
@@ -427,7 +427,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-				wrote++;
+				(void)wrote;
 				close(fd);
 			} else {
 				char ebuf[512] = { 0 };

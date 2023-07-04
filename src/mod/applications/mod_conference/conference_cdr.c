@@ -740,7 +740,7 @@ void conference_cdr_render(conference_obj_t *conference)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-				wrote++;
+				(void)wrote;
 				close(fd);
 			} else {
 				char ebuf[512] = { 0 };
