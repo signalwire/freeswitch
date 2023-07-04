@@ -82,9 +82,6 @@
  * <dt>-6</dt>
  * <dd>Query IP6 addresses (AAAA records).
  * </dd>
- * <dt>-v</dt>
- * <dd>Be verbatim.
- * </dd>
  * <dt></dt>
  * <dd>
  * </dd>
@@ -201,7 +198,7 @@ switch_bool_t verify_ip(sres_record_t **answers, const char *ip, switch_bool_t i
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
 {
-	int o_sctp = 1, o_tls_sctp = 1, o_verbatim = 1;
+	int o_sctp = 1, o_tls_sctp = 1;
 	int family = 0, multiple = 0;
 	char const *string;
 	url_t *uri = NULL;
@@ -247,9 +244,7 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	}
 
 	while (argv[i] && argv[i][0] == '-') {
-		if (strcmp(argv[i], "-v") == 0) {
-			o_verbatim++;
-		} else if (strcmp(argv[i], "-6") == 0) {
+		if (strcmp(argv[i], "-6") == 0) {
 			dig->ip6 = ++family;
 		} else if (strcmp(argv[i], "-4") == 0) {
 			dig->ip4 = ++family;
