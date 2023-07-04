@@ -1124,7 +1124,7 @@ void conference_video_canvas_del_fnode_layer(conference_obj_t *conference, confe
 void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_file_node_t *fnode, int idx);
 void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 const char *conference_utils_combine_flag_var(switch_core_session_t *session, const char *var_name);
-int conference_loop_mapping_len();
+int conference_loop_mapping_len(void);
 void conference_api_set_agc(conference_member_t *member, const char *data);
 
 switch_status_t conference_outcall(conference_obj_t *conference,

@@ -2861,7 +2861,7 @@ static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 static const char modname[] = "mod_av";
 
-static switch_status_t load_config()
+static switch_status_t load_config(void)
 {
 	char *cf = "avformat.conf";
 	switch_xml_t cfg, xml, param, settings;
