@@ -4499,14 +4499,22 @@ struct matches {
 	int codec_idx;
 };
 
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 static void greedy_sort(switch_media_handle_t *smh, struct matches *matches, int m_idx, const switch_codec_implementation_t **codec_array, int total_codecs)
 {
 	int j = 0, f = 0, g;
 	struct matches mtmp[MAX_MATCHES] = { { 0 } };
+
+	m_idx = MIN(m_idx, MAX_MATCHES);
+
 	for(j = 0; j < m_idx; j++) {
 		*&mtmp[j] = *&matches[j];
-					}
-	for (g = 0; g < smh->mparams->num_codecs && g < total_codecs; g++) {
+	}
+
+	for (g = 0; g < smh->mparams->num_codecs && g < total_codecs && f < MAX_MATCHES; g++) {
 		const switch_codec_implementation_t *imp = codec_array[g];
 
 		for(j = 0; j < m_idx; j++) {
@@ -5545,6 +5553,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							/* ptime does not match */
 							match = 0;
 
+							if (nm_idx >= MAX_MATCHES) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+												  "Audio Codec Compare [%s:%d:%u:%u:%d:%u:%d] was not saved as a near-match. Too many. Ignoring.\n",
+												  imp->iananame, imp->ianacode, codec_rate, imp->actual_samples_per_second, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
+								continue;
+							}
+
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Audio Codec Compare [%s:%d:%u:%d:%u:%d] is saved as a near-match\n",
 											  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
@@ -6153,9 +6168,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 										  imp->iananame, map->rm_pt);
 
 						m_idx++;
+
+						if (m_idx >= MAX_MATCHES) {
+							break;
+						}
 					}
 
 					vmatch = 0;
+				}
+
+				if (m_idx >= MAX_MATCHES) {
+					break;
 				}
 			}
 
