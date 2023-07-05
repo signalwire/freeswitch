@@ -88,7 +88,7 @@ static size_t httpCallBack(char *buffer, size_t size, size_t nitems, void *outst
 	return size * nitems;
 }
 
-static switch_status_t set_xml_cdr_log_dirs()
+static switch_status_t set_xml_cdr_log_dirs(void)
 {
 	switch_time_exp_t tm;
 	char *path = NULL;
