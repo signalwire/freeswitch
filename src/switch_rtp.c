@@ -5494,7 +5494,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 {
 	int was_blocking = 0;
 	switch_size_t bytes;
-	uint32_t flushed = 0;
 	switch_size_t bytes_out = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -5575,8 +5574,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
-
-					flushed++;
 
 					rtp_session->stats.inbound.raw_bytes += bytes;
 					rtp_session->stats.inbound.flush_packet_count++;

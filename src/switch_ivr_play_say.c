@@ -1271,7 +1271,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int sleep_val_i = 250;
 	int eof = 0;
 	switch_size_t bread = 0;
-	int l16 = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	char *file_dup;
 	char *argv[128] = { 0 };
@@ -1333,10 +1332,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	arg_recursion_check_start(args);
-
-	if (!zstr(read_impl.iananame) && !strcasecmp(read_impl.iananame, "l16")) {
-		l16++;
-	}
 
 	if (play_delimiter) {
 		file_dup = switch_core_session_strdup(session, file);

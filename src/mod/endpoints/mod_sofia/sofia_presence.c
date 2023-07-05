@@ -1621,7 +1621,6 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Event Thread Started\n");
 
 	while (mod_sofia_globals.running == 1) {
-		int count = 0;
 
 		if (switch_queue_pop(mod_sofia_globals.presence_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event = (switch_event_t *) pop;
@@ -1656,7 +1655,6 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 			}
 
 			switch_event_destroy(&event);
-			count++;
 		}
 	}
 
