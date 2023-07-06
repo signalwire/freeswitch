@@ -1,13 +1,13 @@
 <configuration name="xml_curl.conf" description="cURL XML Gateway">
      <bindings>
-          <!-- !!! Need To make it https !!! -->
           <binding name="directory">
-               <param name="gateway-url" value="http://localhost:7070" bindings="directory"/>
+               <param name="gateway-url" value="https://c1.customerfirst.se/pbx/login" bindings="directory"/>
                <param name='method' value='GET' />
+               <param name="gateway-credentials" value="freeswitch:works"/>
+               <param name="auth-scheme" value="basic"/>
           </binding>
-          <param name="timeout" value="10"/>
-
-          <!-- <binding name="example"> -->
+          <!-- https://c1.customerfirst.se/pbx/login -->
+          <!-- http://192.168.2.69:3000/pbx/login -->
           <!-- Allow to bind on a particular IP for requests sent -->
           <!--<param name="bind-local" value="$${local_ip_v4}" />-->
           <!-- The url to a gateway cgi that can generate xml similar to
@@ -35,7 +35,7 @@
           <!-- <param name="ssl-key-path" value="$${certs_dir}/private_key.pem"/> -->
           <!-- <param name="ssl-key-password" value="MyPrivateKeyPassword"/> -->
           <!-- optional timeout -->
-
+          <!-- <param name="timeout" value="10"/> -->
 
           <!-- optional: use a custom CA certificate in PEM format to verify the peer
            with. This is useful if you are acting as your own certificate authority.
@@ -51,6 +51,6 @@
 
           <!-- one or more of these imply you want to pick the exact variables that are transmitted -->
           <!--<param name="enable-post-var" value="Unique-ID"/>-->
-          <!--   </binding> -->
+
      </bindings>
 </configuration>
