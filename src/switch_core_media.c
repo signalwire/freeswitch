@@ -4518,8 +4518,9 @@ static void greedy_sort(switch_media_handle_t *smh, struct matches *matches, int
 		const switch_codec_implementation_t *imp = codec_array[g];
 
 		for(j = 0; j < m_idx; j++) {
-			if (mtmp[j].imp == imp) {
+			if (mtmp[j].imp && mtmp[j].imp == imp) {
 				*&matches[f++] = *&mtmp[j];
+				mtmp[j].imp = NULL;
 			}
 		}
 	}
