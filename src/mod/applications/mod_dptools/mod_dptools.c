@@ -161,7 +161,6 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	char *string = NULL;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
-	int x = 0;
 	char *flags = "";
 
 	if (act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
@@ -171,7 +170,6 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	}
 
  top:
-	x++;
 
 	string = switch_core_session_strdup(use_session, act->string);
 	exec = 0;
