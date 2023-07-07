@@ -3859,7 +3859,7 @@ SWITCH_STANDARD_API(uuid_answer_function)
 	char *mycmd = NULL;
 	switch_core_session_t *xsession;
 	
-	if (zstr(cmd) || !(mycmd = strdup(cmd))) {
+	if (!(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", ANSWER_SYNTAX);
 
 		return SWITCH_STATUS_SUCCESS;
