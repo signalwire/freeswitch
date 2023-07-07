@@ -866,7 +866,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		char *loglevel = switch_event_get_header(stream->param_event, "loglevel");
 		switch_memory_pool_t *pool;
 		char *next, *cur;
-		uint32_t count = 0, key_count = 0;
+		uint32_t key_count = 0;
 		uint8_t custom = 0;
 		char *edup;
 
@@ -925,7 +925,7 @@ SWITCH_STANDARD_API(event_sink_function)
 				delim = ' ';
 			}
 
-			for (cur = edup; cur; count++) {
+			for (cur = edup; cur;) {
 				switch_event_types_t type;
 
 				if ((next = strchr(cur, delim))) {
@@ -1846,7 +1846,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				if (allowed_events) {
 					char delim = ',';
 					char *cur, *next;
-					int count = 0, custom = 0, key_count = 0;
+					int custom = 0;
 
 					switch_set_flag(listener, LFLAG_AUTH_EVENTS);
 
@@ -1862,7 +1862,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						delim = ' ';
 					}
 
-					for (cur = edup; cur; count++) {
+					for (cur = edup; cur;) {
 						switch_event_types_t type;
 
 						if ((next = strchr(cur, delim))) {
@@ -1872,7 +1872,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						if (custom) {
 							switch_core_hash_insert(listener->allowed_event_hash, cur, MARKER);
 						} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
-							key_count++;
 							if (type == SWITCH_EVENT_ALL) {
 								uint32_t x = 0;
 								switch_set_flag(listener, LFLAG_ALL_EVENTS_AUTHED);
@@ -1904,7 +1903,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				if (allowed_api) {
 					char delim = ',';
 					char *cur, *next;
-					int count = 0;
 
 					switch_snprintf(api_reply, sizeof(api_reply), "Allowed-API: %s\n", allowed_api);
 
@@ -1916,7 +1914,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 						delim = ' ';
 					}
 
-					for (cur = edup; cur; count++) {
+					for (cur = edup; cur;) {
 						if ((next = strchr(cur, delim))) {
 							*next++ = '\0';
 						}
@@ -2540,14 +2538,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 	} else if (!strncasecmp(cmd, "nixevent", 8)) {
 		char *next, *cur;
-		uint32_t count = 0, key_count = 0;
+		uint32_t key_count = 0;
 		uint8_t custom = 0;
 
 		strip_cr(cmd);
 		cur = cmd + 8;
 
 		if ((cur = strchr(cur, ' '))) {
-			for (cur++; cur; count++) {
+			for (cur++; cur;) {
 				switch_event_types_t type;
 
 				if ((next = strchr(cur, ' '))) {

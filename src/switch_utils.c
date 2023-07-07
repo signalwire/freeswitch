@@ -139,13 +139,10 @@ struct switch_frame_buffer_s {
 static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t *orig)
 {
 	switch_frame_node_t *np;
-	int x = 0;
 
 	switch_mutex_lock(fb->mutex);
 
 	for (np = fb->head; np; np = np->next) {
-		x++;
-
 		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
 
 			if (np == fb->head) {

@@ -115,12 +115,11 @@ static void *SWITCH_THREAD_FUNC switch_loadable_module_exec(switch_thread_t *thr
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_core_thread_session_t *ts = obj;
 	switch_loadable_module_t *module = ts->objs[0];
-	int restarts;
 
 	switch_assert(thread != NULL);
 	switch_assert(module != NULL);
 
-	for (restarts = 0; status != SWITCH_STATUS_TERM && !module->shutting_down; restarts++) {
+	while (status != SWITCH_STATUS_TERM && !module->shutting_down) {
 		status = module->switch_module_runtime();
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Thread ended for %s\n", module->module_interface->module_name);

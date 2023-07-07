@@ -54,7 +54,7 @@ switch_endpoint_interface_t *sofia_endpoint_interface;
 
 #define STRLEN 15
 
-void mod_sofia_shutdown_cleanup();
+void mod_sofia_shutdown_cleanup(void);
 static switch_status_t sofia_on_init(switch_core_session_t *session);
 
 static switch_status_t sofia_on_exchange_media(switch_core_session_t *session);
@@ -3255,8 +3255,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	switch_hash_index_t *hi;
 	void *val;
 	const void *vvar;
-	int c = 0;
-	int ac = 0;
 	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
 
 	if (argc > 0) {
@@ -3466,7 +3464,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
 
 			if (strcmp(vvar, profile->name)) {
-				ac++;
 				stream->write_function(stream, "<alias>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</alias>\n", vvar, "alias",
 									   profile->name, "ALIASED");
 			} else {
@@ -3491,8 +3488,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 									   profile->name, "profile", profile->wss_bindurl, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
 									   profile->inuse);
 				}
-
-				c++;
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
 					switch_assert(gp->state < REG_STATE_LAST);
@@ -6833,7 +6828,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	return status;
 }
 
-void mod_sofia_shutdown_cleanup() {
+void mod_sofia_shutdown_cleanup(void) {
 	int sanity = 0;
 	int i;
 	switch_status_t st;
