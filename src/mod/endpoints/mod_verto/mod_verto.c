@@ -5606,7 +5606,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static cJSON *json_status()
+static cJSON *json_status(void)
 {
 	cJSON *obj, *profiles, *jprofile, *users, *user;
 	verto_profile_t *profile = NULL;
@@ -6735,14 +6735,14 @@ static void mod_verto_ks_logger(const char *file, const char *func, int line, in
 	va_end(ap);
 }
 
-static void verto_event_free_subclass() 
+static void verto_event_free_subclass(void)
 {
 	switch_event_free_subclass(MY_EVENT_LOGIN);
 	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
 	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
 }
 
-static void verto_destroy_globals_hash_tables()
+static void verto_destroy_globals_hash_tables(void)
 {
 	if (verto_globals.method_hash) {
 		switch_core_hash_destroy(&verto_globals.method_hash);
