@@ -51,7 +51,7 @@ typedef struct opus_packet_info {
 	int16_t fec_flags_per_silk_frame;
 } opus_packet_info_t;
 
-bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, bool_t debug);
+switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, switch_bool_t debug);
 #endif
 
 /* For Emacs:

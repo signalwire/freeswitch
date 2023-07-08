@@ -44,6 +44,7 @@ static const opus_int16 silk_LBRR_flags_3_PDFCum[7] = {41, 61, 90, 131, 146, 174
 static opus_int16 switch_opus_get_nb_flags_in_silk_frame(int16_t config)
 {
 	opus_int16 silk_frame_nb_flags;
+
 	if (config > 15) {
 		/* CELT_only frame no VAD flag nor LBRR flag */
 		silk_frame_nb_flags = 0;
@@ -53,11 +54,13 @@ static opus_int16 switch_opus_get_nb_flags_in_silk_frame(int16_t config)
 			/* silk-only NB, MB or WB */
 			/* The least two significant bits give the number of VAD flags inside the silk frame 1, 2 or 3 */
 			silk_frame_nb_flags = config & 0x3;
+
 			if (silk_frame_nb_flags == 0) { /* 0  => 10ms frame : one  VAD flag */
 				silk_frame_nb_flags++;
 			}
 		}
 	}
+
 	return silk_frame_nb_flags;
 }
 
@@ -73,14 +76,17 @@ static opus_int16 switch_opus_get_silk_frame_ms_per_flag(int16_t config, opus_in
 	if (config > 15) {
 		/* CELT_only frame no VAD flag nor LBRR flag */
 		/* switch_opus_get_silk_frame_ms_per_flag: code not written for CELT-only mode */
-		return FALSE;
+
+		return 0;
 	}
+
 	silk_size_frame_ms_per_flag = 20;  /* default*/
 	if (silk_frame_nb_flags == 1) {    /* could be 10 or 20 ms */
 		if ((config &0x01) == 0) {
 			silk_size_frame_ms_per_flag  = 10;
 		}
 	}
+
 	return silk_size_frame_ms_per_flag;
 }
 
@@ -89,7 +95,7 @@ static opus_int16 switch_opus_get_silk_frame_ms_per_flag(int16_t config, opus_in
 /* for stereo : the mid frame VAD_flags and the LBRR_flag could be obtained */
 /* yet, to get the LBRR_flags of the mid frame the routine should be modified */
 /* to skip the side VAD flags and the side LBRR flag and to get the mid LBRR_symbol */
-static bool_t switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk_frame_nb_flags,
+static void switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk_frame_nb_flags,
 											 opus_int16 *VAD_flags, opus_int16 *LBRR_flags, opus_int16 *nb_VAD1, opus_int16 *nb_FEC)
 {
 	const opus_int16 *ptr_pdf_cum;
@@ -129,6 +135,7 @@ static bool_t switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk
 		val >>= 1;
 		*(--ptr_flags) = val & 0x1;
 	}
+
 	if (LBRR_flag != 0) { /* there is at least one LBRR frame */
 		if (silk_frame_nb_flags == 1) {
 			LBRR_flags[0] = 1;
@@ -148,6 +155,7 @@ static bool_t switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk
 				nb_pdf_symbol = 7;
 				ptr_pdf_cum = silk_LBRR_flags_3_PDFCum;
 			}
+
 			LBRR_symbol = 0;
 			for (i = 1; i <= nb_pdf_symbol; i++) {
 				if (val < *ptr_pdf_cum++) {
@@ -155,6 +163,7 @@ static bool_t switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk
 					break;
 				}
 			}
+
 			for (i = 0; i < silk_frame_nb_flags; i++) {
 				LBRR_flags[i] = LBRR_symbol & 0x01;
 				LBRR_symbol >>= 1;
@@ -162,20 +171,22 @@ static bool_t switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk
 			}
 		}
 	}
+
 	for (i = 0; i < silk_frame_nb_flags; i++) {
 		nb_vad += VAD_flags[i];
 	}
 
 	*nb_VAD1 = nb_vad;
 	*nb_FEC = nb_fec;
-	return TRUE;
+
+	return;
 }
 
 /* Parse the packet to retrieve informations about its content
  * RFC6716: Definition of the Opus Audio Codec
- * return: FALSE if there was a problem found parsing the packet, the info returned should be ignored.
+ * return: SWITCH_FALSE if there was a problem found parsing the packet, the info returned should be ignored.
  * */
-bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, bool_t debug)
+switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, switch_bool_t debug)
 {
 	int f;
 	int32_t samplerate;
@@ -188,6 +199,7 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 	opus_int16 silk_frame_nb_flags, silk_size_frame_ms_per_flag;
 	opus_int16 silk_frame_nb_fec, silk_frame_nb_vad1;
 	opus_int sample_per_frame;
+
 	packet_info->config = 0;
 	packet_info->fec = 0;
 	packet_info->fec_ms = 0;
@@ -198,19 +210,23 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 	packet_info->channels = 1; /* as stereo is set to FALSE */
 	packet_info->ms_per_frame = 0;
 	packet_info->ptime_ts = 0;
+
 	if (payload == NULL || payload_length_bytes <= 0) {
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: payload null.");
 		}
-		return FALSE;
+
+		return SWITCH_FALSE;
 	}
 
 	/* In CELT_ONLY mode, packets should not have FEC. */
 	if (payload[0] & 0x80) {
 		/* opus_packet_parse: CELT_ONLY mode, we do not support this mode. */
-		return FALSE;
+
+		return SWITCH_FALSE;
 	} else {
 		int mode = (payload[0] >> 3);
+
 		if (mode <= 3) {
 			samplerate = 8000;
 		} else if (mode <= 7) {
@@ -223,16 +239,19 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 			samplerate = 48000;
 		} else {
 			/* opus_packet_parse: CELT_ONLY mode, we do not support this mode. */
-			return FALSE;
+
+			return SWITCH_FALSE;
 		}
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: mode[%d]s[%d]c[%d] [%d]Hz\n", mode, (payload[0]>>2)&0x1 ,(payload[0])&0x3, samplerate);
 		}
 	}
+
 	if (payload[0] & 0x04) {
 		packet_info->stereo = TRUE;
 		packet_info->channels = 2;
 	}
+
 	packet_info->config = payload[0] >> 3;
 	sample_per_frame = opus_packet_get_samples_per_frame(payload, samplerate);
 	packet_info->ms_per_frame = sample_per_frame * 1000 / samplerate;
@@ -240,7 +259,8 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: invalid packet.");
 		}
-		return FALSE;
+
+		return SWITCH_FALSE;
 	}
 
 	packet_info->frames = opus_packet_parse(payload, payload_length_bytes, NULL, frame_data, frame_sizes, NULL);
@@ -249,15 +269,18 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: opus_packet_parse found no frame.\n");
 		}
-		return FALSE;
+
+		return SWITCH_FALSE;
 	}
+
 	packet_info->ptime_ts = packet_info->frames * sample_per_frame;
 
 	if (frame_sizes[0] <= 1) {
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: opus_packet_parse frame size too small.\n");
 		}
-		return FALSE;
+
+		return SWITCH_FALSE;
 	}
 
 	/* +---------------+-----------+-----------+-------------------+ */
@@ -281,14 +304,16 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 		silk_frame_nb_flags = switch_opus_get_nb_flags_in_silk_frame(packet_info->config); /* =1 for 10 or 20 ms frame;  = 2 for 40 ms; = 3 for 60 ms */
 		if (!silk_frame_nb_flags) {
 			/* We should not go there as CELT_ONLY is already tested above */
-			return FALSE;
+
+			return SWITCH_FALSE;
 		}
 
 		packet_info->frames_silk = silk_frame_nb_flags;
 		silk_size_frame_ms_per_flag = switch_opus_get_silk_frame_ms_per_flag(packet_info->config, silk_frame_nb_flags); /* 10 or 20 ms frame*/
 		if (!silk_size_frame_ms_per_flag) {
 			/* we should not go there as CELT_ONLY is already tested above */
-			return FALSE;
+
+			return SWITCH_FALSE;
 		}
 
 		ptr_LBBR_FLAGS = packet_LBBR_FLAGS;
@@ -305,6 +330,7 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 			ptr_VAD_FLAGS += silk_frame_nb_flags;
 			ptr_LBBR_FLAGS += silk_frame_nb_flags;
 		}
+
 		/* store the VAD & LBRR flags of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
 		vad_flags_per_silk_frame = 0;
 		fec_flags_per_silk_frame = 0;
@@ -313,8 +339,10 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 			if (debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: more than %d 20-ms frames in the packet ; only first 15 silk-frames data will be stored (pb silkFastAccelerate)\n", silk_frame_packet);
 			}
+
 			silk_frame_packet = 15;
 		}
+
 		ptr_LBBR_FLAGS = packet_LBBR_FLAGS;
 		ptr_VAD_FLAGS = packet_VAD_FLAGS;
 		shift_silk = 0;
@@ -324,17 +352,21 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 			shift_silk++;
 			ptr_LBBR_FLAGS++; ptr_VAD_FLAGS++;
 		}
+
 		packet_info->vad_flags_per_silk_frame = vad_flags_per_silk_frame;
 		packet_info->fec_flags_per_silk_frame = fec_flags_per_silk_frame;
-		return TRUE;
+
+		return SWITCH_TRUE;
 	}
 
 	if (packet_info->config != 1 && packet_info->config != 5 && packet_info->config != 9) {
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: the current parser implementation does not support muliple SILK frames for VAD or FEC detection.\n");
 		}
-		return FALSE;
+
+		return SWITCH_FALSE;
 	}
+
 	/*
 	 *  Parse the VAD and LBRR flags in each Opus frame
 	 * */
@@ -342,16 +374,20 @@ bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes
 		if (frame_data[f][0] & 0x80) {
 			packet_info->vad++;
 		}
+
 		if (frame_data[f][0] & 0x40) {
 			packet_info->fec++;
 		}
+
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: LP layer opus_frame[%d] VAD[%d] FEC[%d]\n", f+1, (frame_data[f][0]&0x80)>>7, (frame_data[f][0]&0x40)>>6);
 		}
 	}
+
 	packet_info->vad_ms = packet_info->vad * packet_info->ms_per_frame;
 	packet_info->fec_ms = packet_info->fec * packet_info->ms_per_frame;
-	return TRUE;
+
+	return SWITCH_TRUE;
 }
 
 /* For Emacs:
