@@ -877,7 +877,9 @@ static void *SWITCH_THREAD_FUNC video_thread_run(switch_thread_t *thread, void *
 
 		context->eh.in_callback = 1;
 
+GCC_DIAG_OFF(deprecated-declarations)
 		av_init_packet(&pkt);
+GCC_DIAG_ON(deprecated-declarations)
 
 		if (context->eh.video_st->frame) {
 			ret = av_frame_make_writable(context->eh.video_st->frame);
@@ -971,7 +973,9 @@ GCC_DIAG_ON(deprecated-declarations)
 		int got_packet = 0;
 		int ret = 0;
 
+GCC_DIAG_OFF(deprecated-declarations)
 		av_init_packet(&pkt);
+GCC_DIAG_ON(deprecated-declarations)
 
 GCC_DIAG_OFF(deprecated-declarations)		
 		ret = avcodec_encode_video2(context->eh.video_st->st->codec, &pkt, NULL, &got_packet);
@@ -1427,7 +1431,9 @@ GCC_DIAG_ON(deprecated-declarations)
 
 
 
+GCC_DIAG_OFF(deprecated-declarations)
 		av_init_packet(&pkt);
+GCC_DIAG_ON(deprecated-declarations)
 		pkt.data = NULL;
 		pkt.size = 0;
 
@@ -1464,7 +1470,9 @@ GCC_DIAG_ON(deprecated-declarations)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %u %x %x %x %x %x %x\n", pkt.size, *p, *(p+1), *(p+2), *(p+3), *(p+4), *(p+5));
 					}
 
+GCC_DIAG_OFF(deprecated-declarations)
 					av_init_packet(new_pkt);
+GCC_DIAG_ON(deprecated-declarations)
 					av_packet_ref(new_pkt, &pkt);
 					status = switch_queue_push(context->video_pkt_queue, new_pkt);
 					// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size = %4u flag=%x pts=%" SWITCH_INT64_T_FMT " dts=%" SWITCH_INT64_T_FMT "\n", pkt.size, pkt.flags, pkt.pts, pkt.dts);
@@ -2102,8 +2110,10 @@ GCC_DIAG_ON(deprecated-declarations)
 		int j = 0, ret = -1, audio_stream_count = 1;
 		AVFrame *use_frame = NULL;
 
+GCC_DIAG_OFF(deprecated-declarations)
 		av_init_packet(&pkt[0]);
 		av_init_packet(&pkt[1]);
+GCC_DIAG_ON(deprecated-declarations)
 
 		if (context->audio_st[1].active) {
 			switch_size_t len = 0;

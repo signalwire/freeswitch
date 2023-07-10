@@ -399,6 +399,7 @@ typedef struct h264_codec_context_s {
 	enum AVCodecID av_codec_id;
 	uint16_t last_seq; // last received frame->seq
 	int hw_encoder;
+	switch_packetizer_t *packetizer;
 } h264_codec_context_t;
 
 #ifndef AV_INPUT_BUFFER_PADDING_SIZE
@@ -1088,64 +1089,6 @@ static switch_status_t consume_h263p_bitstream(h264_codec_context_t *context, sw
 	return SWITCH_STATUS_MORE_DATA;
 }
 
-static switch_status_t consume_h264_bitstream(h264_codec_context_t *context, switch_frame_t *frame)
-{
-	AVPacket *pkt = &context->encoder_avpacket;
-	our_h264_nalu_t *nalu = &context->nalus[context->nalu_current_index];
-	uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
-	uint8_t nalu_type = nalu_hdr & 0x1f;
-	uint8_t nri = nalu_hdr & 0x60;
-	int left = nalu->len - (nalu->eat - nalu->start);
-	uint8_t *p = frame->data;
-	uint8_t start = nalu->start == nalu->eat ? 0x80 : 0;
-	int n = nalu->len / SLICE_SIZE;
-	int slice_size = nalu->len / (n + 1) + 1 + 2;
-
-	if (nalu->len <= SLICE_SIZE) {
-		memcpy(frame->data, nalu->start, nalu->len);
-		frame->datalen = nalu->len;
-		context->nalu_current_index++;
-
-		if (context->nalus[context->nalu_current_index].len) {
-			frame->m = 0;
-			return SWITCH_STATUS_MORE_DATA;
-		}
-
-		if (pkt->size > 0) av_packet_unref(pkt);
-
-		switch_clear_flag(frame, SFF_CNG);
-		frame->m = 1;
-
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (left <= (slice_size - 2)) {
-		p[0] = nri | 28; // FU-A
-		p[1] = 0x40 | nalu_type;
-		memcpy(p+2, nalu->eat, left);
-		nalu->eat += left;
-		frame->datalen = left + 2;
-		context->nalu_current_index++;
-
-		if (!context->nalus[context->nalu_current_index].len) {
-			if (pkt->size > 0) av_packet_unref(pkt);
-			frame->m = 1;
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		return SWITCH_STATUS_MORE_DATA;
-	}
-
-	p[0] = nri | 28; // FU-A
-	p[1] = start | nalu_type;
-	if (start) nalu->eat++;
-	memcpy(p+2, nalu->eat, slice_size - 2);
-	nalu->eat += (slice_size - 2);
-	frame->datalen = slice_size;
-	frame->m = 0;
-	return SWITCH_STATUS_MORE_DATA;
-}
-
 static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
 	AVPacket *pkt = &context->encoder_avpacket;
@@ -1154,8 +1097,12 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 	if (!nalu->len) {
 		frame->datalen = 0;
 		frame->m = 0;
-		if (pkt->size > 0) av_packet_unref(pkt);
+		if (pkt->size > 0) {
+			av_packet_unref(pkt);
+		}
+
 		context->nalu_current_index = 0;
+
 		return SWITCH_STATUS_NOTFOUND;
 	}
 
@@ -1167,7 +1114,9 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_
 		return consume_h263p_bitstream(context, frame);
 	}
 
-	return consume_h264_bitstream(context, frame);
+	switch_assert(0);
+
+	return SWITCH_STATUS_FALSE;
 }
 
 static void set_h264_private_data(h264_codec_context_t *context, avcodec_profile_t *profile)
@@ -1436,6 +1385,14 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		}
 	}
 
+	switch (context->av_codec_id) {
+	case AV_CODEC_ID_H264:
+		context->packetizer = switch_packetizer_create(SPT_H264_BITSTREAM, SLICE_SIZE);
+		break;
+	default:
+		break;
+	}
+
 	switch_buffer_create_dynamic(&(context->nalu_buffer), H264_NALU_BUFFER_SIZE, H264_NALU_BUFFER_SIZE * 8, 0);
 	codec->private_info = context;
 
@@ -1480,6 +1437,16 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	}
 
 	if (frame->flags & SFF_SAME_IMAGE) {
+		if (context->packetizer) {
+			switch_status_t status = switch_packetizer_read(context->packetizer, frame);
+
+			if (status == SWITCH_STATUS_SUCCESS && pkt->size > 0) {
+				av_packet_unref(pkt);
+			}
+
+			return status;
+		}
+
 		// read from nalu buffer
 		return consume_nalu(context, frame);
 	}
@@ -1511,7 +1478,9 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
+GCC_DIAG_OFF(deprecated-declarations)
 	av_init_packet(pkt);
+GCC_DIAG_ON(deprecated-declarations)
 	pkt->data = NULL;      // packet data will be allocated by the encoder
 	pkt->size = 0;
 
@@ -1596,8 +1565,7 @@ GCC_DIAG_ON(deprecated-declarations)
 // process:
 
 	if (*got_output) {
-		const uint8_t *p = pkt->data;
-		int i = 0;
+		switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 		*got_output = 0;
 
@@ -1626,38 +1594,22 @@ GCC_DIAG_ON(deprecated-declarations)
 							  "Encoded frame %" SWITCH_INT64_T_FMT " (size=%5d) nalu_type=0x%x %d\n",
 							  context->pts, pkt->size, *((uint8_t *)pkt->data +4), *got_output);
 		}
-		/* split into nalus */
-		memset(context->nalus, 0, sizeof(context->nalus));
 
-		while ((p = fs_avc_find_startcode(p, pkt->data+pkt->size)) < (pkt->data + pkt->size)) {
-			if (!context->nalus[i].start) {
-				while (!(*p++)) ; /* eat the sync bytes, what ever 0 0 1 or 0 0 0 1 */
-				context->nalus[i].start = p;
-				context->nalus[i].eat = p;
+		status = switch_packetizer_feed(context->packetizer, pkt->data, pkt->size);
+		if (status != SWITCH_STATUS_SUCCESS) {
+			if (pkt->size > 0) {
+				av_packet_unref(pkt);
+			}
 
-				if ((*p & 0x1f) == 7) { // Got Keyframe
-					// prevent to generate key frame too frequently
-					context->last_keyframe_request = switch_time_now();
-					if (mod_av_globals.debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "KEY FRAME GENERATED\n");
-					}
-				}
-			} else {
-				context->nalus[i].len = p - context->nalus[i].start;
-				while (!(*p++)) ; /* eat the sync bytes, what ever 0 0 1 or 0 0 0 1 */
-				i++;
-				context->nalus[i].start = p;
-				context->nalus[i].eat = p;
-			}
-			if (i >= MAX_NALUS - 2) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "TOO MANY SLICES!\n");
-				break;
-			}
+			return status;
 		}
 
-		context->nalus[i].len = p - context->nalus[i].start;
-		context->nalu_current_index = 0;
-		return consume_nalu(context, frame);
+		status = switch_packetizer_read(context->packetizer, frame);
+		if (status == SWITCH_STATUS_SUCCESS && pkt->size > 0) {
+			av_packet_unref(pkt);
+		}
+
+		return status;
 	}
 
 error:
@@ -1708,7 +1660,9 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 		int decoded_len;
 
 		if (size > 0) {
+GCC_DIAG_OFF(deprecated-declarations)
 			av_init_packet(&pkt);
+GCC_DIAG_ON(deprecated-declarations)
 			switch_buffer_zero_fill(context->nalu_buffer, AV_INPUT_BUFFER_PADDING_SIZE);
 			switch_buffer_peek_zerocopy(context->nalu_buffer, (const void **)&pkt.data);
 			pkt.size = size;
@@ -1823,6 +1777,10 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 	if (context->encoder_ctx) {
 		if (avcodec_is_open(context->encoder_ctx)) avcodec_close(context->encoder_ctx);
 		av_free(context->encoder_ctx);
+	}
+
+	if (context->packetizer) {
+		switch_packetizer_close(&context->packetizer);
 	}
 
 	if (context->encoder_avframe) {
