@@ -52,6 +52,7 @@ FST_CORE_BEGIN("conf")
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed(packetizer, h264data, sizeof(h264data));
@@ -94,6 +95,7 @@ FST_CORE_BEGIN("conf")
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed(packetizer, h264data, sizeof(h264data));
@@ -138,6 +140,7 @@ FST_CORE_BEGIN("conf")
 //																	1 fps       3 bytes                 1pps        3 bytes
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed_extradata(packetizer, extradata, sizeof(extradata));
@@ -210,6 +213,7 @@ FST_CORE_BEGIN("conf")
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+			frame.datalen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 			switch_set_flag(&frame, SFF_ENCODED);
 
 			status = switch_packetizer_feed(packetizer, h264data, sizeof(h264data));
