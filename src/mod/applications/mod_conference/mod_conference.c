@@ -2589,7 +2589,7 @@ SWITCH_STANDARD_APP(conference_function)
 		switch_xml_free(cxml);
 	}
 
-	if (conference && conference_utils_member_test_flag(&member, MFLAG_KICKED) && conference->kicked_sound) {
+	if (conference && !switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_REQ) && conference_utils_member_test_flag(&member, MFLAG_KICKED) && conference->kicked_sound) {
 		char *toplay = NULL;
 		char *dfile = NULL;
 		char *expanded = NULL;
