@@ -29,7 +29,7 @@
  */
 
 #include "switch.h"
-#include "opus.h"
+#include <opus/opus.h>
 #include "opus_parse.h"
 /* Tables for LBRR_sympbol decoding */
 
