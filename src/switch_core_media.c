@@ -10924,18 +10924,17 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (!switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE) && switch_media_handle_test_media_flag(smh, SCMF_RECV_SDP)) {
 		has_vid = 0;
 	} else {
-		for (i = 0; i < smh->mparams->num_codecs; i++) {
-			const switch_codec_implementation_t *imp = smh->codecs[i];
-			if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO 
-			&& ((var_val = switch_channel_get_variable(session->channel, "sdp_take_video") && switch_true(var_val))
-				|| (fvar_val = switch_channel_get_variable_partner(session->channel, "sdp_take_video") && switch_true(fvar_val))
-				|| (var_val == NULL && fvar_val == NULL))
-			) {
-				has_vid = 1;
-				break;
+		var_val = switch_channel_get_variable(session->channel, "sdp_take_video");
+		fvar_val = switch_channel_get_variable_partner(session->channel, "sdp_take_video");
+		if(switch_true(var_val) || switch_true(fvar_val) || (var_val == NULL && fvar_val == NULL)) {
+			for (i = 0; i < smh->mparams->num_codecs; i++) {
+				const switch_codec_implementation_t *imp = smh->codecs[i];
+				if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
+					has_vid = 1;
+					break;
+				}
 			}
 		}
-
 	}
 
 
