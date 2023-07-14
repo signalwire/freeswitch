@@ -10926,7 +10926,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	} else {
 		var_val = switch_channel_get_variable(session->channel, "sdp_take_video");
 		fvar_val = switch_channel_get_variable_partner(session->channel, "sdp_take_video");
-		if(switch_true(var_val) || switch_true(fvar_val) || (var_val == NULL && fvar_val == NULL)) {
+		if(switch_true(var_val) || switch_true(fvar_val)) {
 			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
 				if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
