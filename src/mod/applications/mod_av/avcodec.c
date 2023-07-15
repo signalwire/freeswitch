@@ -35,6 +35,9 @@
 #include <switch.h>
 #include "mod_av.h"
 #include <libavcodec/avcodec.h>
+#ifdef _MSC_VER
+#include <libavcodec/version.h> /* LIBAVCODEC_VERSION_INT */
+#endif
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
