@@ -10926,7 +10926,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	} else {
 		var_val = switch_channel_get_variable(session->channel, "sdp_take_video");
 		fvar_val = switch_channel_get_variable_partner(session->channel, "sdp_take_video");
-		if(switch_true(var_val) || switch_true(fvar_val)) {
+		if(switch_true(var_val) || switch_true(fvar_val) || (var_val == NULL && fvar_val == NULL)) {//UC主动发起的呼叫需要携带视频
 			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
 				if (imp->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
@@ -13182,6 +13182,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 			if (msg->string_arg) {
 				switch_channel_set_variable(session->channel, "absolute_codec_string", NULL);
+				switch_channel_set_variable(session->channel, "sdp_take_video", NULL);//UC 重新协商，需要清空
 
 				if (*msg->string_arg == '=') {
 					switch_channel_set_variable(session->channel, "codec_string", msg->string_arg);
