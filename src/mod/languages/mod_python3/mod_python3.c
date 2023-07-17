@@ -86,6 +86,9 @@ static void print_python_error(const char * script)
 {
 	PyObject *pyType = NULL, *pyValue = NULL, *pyTraceback = NULL, *pyString = NULL;
 	PyObject *pyModule=NULL, *pyFunction = NULL, *pyResult = NULL;
+#if PY_VERSION_HEX >= 0x030B0000
+	PyCodeObject *pcode = NULL;
+#endif
 	char * buffer = (char*) malloc( 20 * 1024  * sizeof(char));
 	/* Variables for the traceback */
 	PyTracebackObject * pyTB = NULL/*, *pyTB2 = NULL*/;
@@ -153,10 +156,23 @@ static void print_python_error(const char * script)
 
 		/* Traceback */
 		do {
-			sprintf((char*)sTemp, "\n\tFile: \"%s\", line %i, in %s",
+#if PY_VERSION_HEX >= 0x030B0000
+			if (pyTB->tb_frame != NULL) {
+				pcode = PyFrame_GetCode(pyTB->tb_frame);
+			} else {
+				pcode = NULL;
+			}
+
+			snprintf((char*)sTemp, sizeof(sTemp), "\n\tFile: \"%s\", line %i, in %s",
+					(pcode)?PyString_AsString(pcode->co_filename):"",
+					pyTB->tb_lineno,
+					(pcode)?PyString_AsString(pcode->co_name):"" );
+#else
+			snprintf((char*)sTemp, sizeof(sTemp), "\n\tFile: \"%s\", line %i, in %s",
 					PyString_AsString(pyTB->tb_frame->f_code->co_filename),
 					pyTB->tb_lineno,
 					PyString_AsString(pyTB->tb_frame->f_code->co_name) );
+#endif
 			strcat(buffer, (char*)sTemp);
 
 			pyTB=pyTB->tb_next;

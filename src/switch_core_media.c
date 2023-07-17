@@ -4762,7 +4762,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, saw_video = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0, got_text = 0, got_text_crypto = 0, got_msrp = 0;
+	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, saw_video = 0, got_avp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0, got_text = 0, got_text_crypto = 0, got_msrp = 0;
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
@@ -4958,14 +4958,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
 			if (m->m_type == sdp_media_audio) {
 				got_savp++;
-			} else {
-				got_video_savp++;
 			}
 		} else if (m->m_proto == sdp_proto_rtp) {
 			if (m->m_type == sdp_media_audio) {
 				got_avp++;
-			} else {
-				got_video_avp++;
 			}
 		} else if (m->m_proto == sdp_proto_udptl) {
 			got_udptl++;
@@ -7406,7 +7402,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
-	uint32_t loops = 0, xloops = 0, vloops = 0;
+	uint32_t loops = 0, xloops = 0;
 	switch_image_t *blank_img = NULL;
 	switch_frame_t fr = { 0 };
 	unsigned char *buf = NULL;
@@ -7530,8 +7526,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_cond_next();
 			continue;
 		}
-
-		vloops++;
 
 		send_blank = blank_enabled || switch_channel_test_flag(channel, CF_VIDEO_ECHO);
 
@@ -14243,7 +14237,7 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 	switch_size_t len;
 	const char *i;
 	char *o;
-	int in_m = 0, m_tally = 0, slash = 0;
+	int in_m = 0, slash = 0;
 	int number = 0, skip = 0;
 	int remove = !strcasecmp(cmd, "remove");
 	int only = !strcasecmp(cmd, "only");
@@ -14277,7 +14271,6 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 
 		if (*i == 'm' && *(i+1) == '=') {
 			in_m = 1;
-			m_tally++;
 		}
 
 		if (in_m) {
@@ -14981,7 +14974,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_event_hook_video_read_frame_t *ptr;
-	uint32_t loops = 0;
 	switch_media_handle_t *smh;
 	int is_keyframe = 0;
 
@@ -14992,8 +14984,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 
  top:
-
-	loops++;
 
 	if (switch_channel_down_nosig(session->channel)) {
 		return SWITCH_STATUS_FALSE;

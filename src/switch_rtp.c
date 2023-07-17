@@ -262,8 +262,8 @@ typedef struct {
 
 struct switch_rtp;
 
-static void switch_rtp_dtls_init();
-static void switch_rtp_dtls_destroy();
+static void switch_rtp_dtls_init(void);
+static void switch_rtp_dtls_destroy(void);
 
 #define MAX_DTLS_MTU 4096
 
@@ -1660,7 +1660,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 			);
 }
 
-static inline uint32_t calc_local_lsr_now() 
+static inline uint32_t calc_local_lsr_now(void)
 {
 	switch_time_t now;
 	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
@@ -3493,7 +3493,7 @@ static BIO_METHOD dtls_bio_filter_methods = {
 static BIO_METHOD *dtls_bio_filter_methods = NULL;
 #endif
 
-static void switch_rtp_dtls_init() {
+static void switch_rtp_dtls_init(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
 	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
@@ -3503,7 +3503,7 @@ static void switch_rtp_dtls_init() {
 #endif
 }
 
-static void switch_rtp_dtls_destroy() {
+static void switch_rtp_dtls_destroy(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (dtls_bio_filter_methods) {
 		BIO_meth_free(dtls_bio_filter_methods);
@@ -4676,7 +4676,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 		READ_INC(rtp_session);
 		status = switch_jb_create(&rtp_session->jb, SJB_AUDIO, queue_frames, max_queue_frames, rtp_session->pool);
 		switch_jb_set_session(rtp_session->jb, rtp_session->session);
-		switch_jb_set_jitter_estimator(rtp_session->jb, &rtp_session->stats.rtcp.inter_jitter, samples_per_packet, samples_per_second);
 		if (switch_true(switch_channel_get_variable_dup(switch_core_session_get_channel(rtp_session->session), "jb_use_timestamps", SWITCH_FALSE, -1))) {
 			switch_jb_ts_mode(rtp_session->jb, samples_per_packet, samples_per_second);
 		}
@@ -5494,7 +5493,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 {
 	int was_blocking = 0;
 	switch_size_t bytes;
-	uint32_t flushed = 0;
 	switch_size_t bytes_out = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -5575,8 +5573,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
-
-					flushed++;
 
 					rtp_session->stats.inbound.raw_bytes += bytes;
 					rtp_session->stats.inbound.flush_packet_count++;

@@ -75,7 +75,7 @@ struct _mapping control_mappings[] = {
 	{"deaf off", conference_loop_deaf_off}
 };
 
-int conference_loop_mapping_len()
+int conference_loop_mapping_len(void)
 {
 	return (sizeof(control_mappings)/sizeof(control_mappings[0]));
 }

@@ -35,7 +35,7 @@
   <Target Name="signalwire-client-cBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
            package="http://files.freeswitch.org/windows/packages/signalwire-client-c/$(signalwire-client-cVersion)_$(signalwire-client-cBuildNumber)/signalwire-client-c-$(signalwire-client-cVersion)_$(signalwire-client-cBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
-           expectfileordirectory="$(signalwire-client-cDir)\binaries\$(Platform)\$(Configuration)\signalwire_client.dll" 
+           expectfileordirectory="$(signalwire-client-cDir)\binaries\$(Platform)\$(Configuration)\signalwire_client2.dll" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs\"
@@ -56,7 +56,7 @@
         <ItemGroup>  
              <signalwire-client-cFiles Include="$(signalwire-client-cDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>  
         </ItemGroup>  
-        <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\signalwire_client.dll')"
+        <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\signalwire_client2.dll')"
             SourceFiles="@(signalwire-client-cFiles)"  
             DestinationFiles="@(signalwire-client-cFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
         />  
@@ -70,7 +70,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(signalwire-client-cDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>signalwire_client.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>signalwire_client2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>
