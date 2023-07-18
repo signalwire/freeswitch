@@ -2072,14 +2072,16 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 
 		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
 			switch_event_reserve_subclass_detailed(id, subclass_name);
-			subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
-			subclass->bind = 1;
+			if ((subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
+				subclass->bind = 1;
+			}
 		}
 
 		switch_mutex_unlock(CUSTOM_HASH_MUTEX);
 
 		if (!subclass) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not reserve subclass. '%s'\n", subclass_name);
+
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -2094,6 +2096,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind_removable(const char *id, swit
 		if (subclass_name) {
 			event_node->subclass_name = DUP(subclass_name);
 		}
+
 		event_node->callback = callback;
 		event_node->user_data = user_data;
 
