@@ -1220,10 +1220,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
-	if (!s)
+	if (!s) {
 		return NULL;
-	root = (switch_xml_root_t) switch_xml_parse_str(s, len);
+	}
+
+	if (!(root = (switch_xml_root_t) switch_xml_parse_str(s, len))) {
+		free(s);
+
+		return NULL;
+	}
+
 	root->dynamic = 1;			/* so we know to free s in switch_xml_free() */
+
 	return &root->xml;
 }
 
