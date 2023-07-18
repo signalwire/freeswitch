@@ -744,8 +744,12 @@ switch_status_t conference_event_add_data(conference_obj_t *conference, switch_e
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Alias-Name", conference->alias_name);//UC
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Number", conference->number);//UC
+	if(!zstr(conference->alias_name)){
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Alias-Name", conference->alias_name);//UC
+	}
+	if(!zstr(conference->number)){
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Number", conference->number);//UC
+	}
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Ghosts", "%u", conference->count_ghosts);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);

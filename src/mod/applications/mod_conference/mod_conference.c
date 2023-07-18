@@ -2815,6 +2815,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL, *force_canvas_size = NULL;
+	const char * alias_name = NULL, *number = NULL:
 	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0, video_auto_floor_msec = 0;
 	switch_event_t *event;
 
@@ -3618,12 +3619,14 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 
 	conference->name = switch_core_strdup(conference->pool, name);
 
-	if (zstr(conference->alias_name)){//UC
-		conference->alias_name = (char *)switch_channel_get_variable(channel, "conference_room_name");
+	if (!zstr(alias_name = switch_channel_get_variable(channel, "conference_room_name"))) {//UC
+		conference->alias_name = switch_core_strdup(conference->pool, alias_name);
 	}
-	if (zstr(conference->number)){//UC
-		conference->number = (char *)switch_channel_get_variable(channel, "conference_room_extension");
+	
+	if (!zstr(number = switch_channel_get_variable(channel, "conference_room_extension"))) {//UC
+		conference->number = switch_core_strdup(conference->pool, number);
 	}
+	
 
 	if ((name_domain = strchr(conference->name, '@'))) {
 		name_domain++;
