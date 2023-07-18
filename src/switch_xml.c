@@ -550,15 +550,22 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 	switch_xml_root_t root = (switch_xml_root_t) xml;
 	int i = 0;
 
-	if (!root)
+	if (!root) {
 		return (const char **) SWITCH_XML_NIL;
-	while (root->xml.parent)
+	}
+
+	while (root && root->xml.parent) {
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
+	}
+
 	if (!root || !root->pi) {
 		return (const char **) SWITCH_XML_NIL;
 	}
-	while (root->pi[i] && strcmp(target, root->pi[i][0]))
+
+	while (root->pi[i] && strcmp(target, root->pi[i][0])) {
 		i++;					/* find target */
+	}
+
 	return (const char **) ((root->pi[i]) ? root->pi[i] + 1 : SWITCH_XML_NIL);
 }
 
