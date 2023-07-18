@@ -25,6 +25,7 @@
  *
  * Seven Du <dujinfang@gmail.com>
  * Anthony Minessale <anthm@freeswitch.org>
+ * Jakub Karolczyk <jakub.karolczyk@signalwire.com>
  *
  * mod_av -- FS Video Codec / File Format using libav.org
  *
@@ -49,6 +50,7 @@ typedef struct av_mutex_helper_s {
 	switch_memory_pool_t *pool;
 } av_mutex_helper_t;
 
+#if (LIBAVCODEC_VERSION_MAJOR < LIBAVCODEC_V)
 int mod_av_lockmgr_cb(void **m, enum AVLockOp op)
 {
 	av_mutex_helper_t *context = NULL;
@@ -93,6 +95,7 @@ int mod_av_lockmgr_cb(void **m, enum AVLockOp op)
 		}
 	return 0;
 }
+#endif
 
 #ifndef AV_LOG_TRACE
 #define AV_LOG_TRACE 96
