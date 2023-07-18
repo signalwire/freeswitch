@@ -34,7 +34,13 @@
 #include <switch.h>
 #include "mod_av.h"
 #include <libavcodec/avcodec.h>
+#ifdef _MSC_VER
+#include <libavcodec/version.h> /* LIBAVCODEC_VERSION_INT */
+#endif
 #include <libavformat/avformat.h>
+#ifdef _MSC_VER
+#include <libavformat/version.h> /* LIBAVFORMAT_VERSION_INT */
+#endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load);
 SWITCH_MODULE_LOAD_FUNCTION(mod_avcodec_load);

@@ -35,7 +35,13 @@
 #include "mod_av.h"
 GCC_DIAG_OFF(deprecated-declarations)
 #include <libavcodec/avcodec.h>
+#ifdef _MSC_VER
+#include <libavcodec/version.h> /* LIBAVCODEC_VERSION_INT */
+#endif
 #include <libavformat/avformat.h>
+#ifdef _MSC_VER
+#include <libavformat/version.h> /* LIBAVFORMAT_VERSION_INT */
+#endif
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/avstring.h>
