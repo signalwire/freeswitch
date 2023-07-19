@@ -788,6 +788,7 @@ typedef struct {
 	int mux;
 	int loop;
 	char *file;
+	char *id;
 	switch_buffer_t *wbuffer; // only in r&w mode
 	switch_mutex_t *mutex;
 } displace_helper_t;
@@ -807,7 +808,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			switch_core_file_close(&dh->fh);
 
 			if (session && (channel = switch_core_session_get_channel(session))) {
-				switch_channel_set_private(channel, dh->file, NULL);
+				switch_channel_set_private(channel, dh->id, NULL);
 			}
 		}
 		break;
@@ -859,7 +860,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 					switch_channel_t *channel;
 
 					if (session && (channel = switch_core_session_get_channel(session))) {
-						switch_channel_set_private(channel, dh->file, NULL);
+						switch_channel_set_private(channel, dh->id, NULL);
 					}
 					return SWITCH_FALSE;
 				}
@@ -894,7 +895,7 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			switch_core_file_close(&dh->fh);
 
 			if (session && (channel = switch_core_session_get_channel(session))) {
-				switch_channel_set_private(channel, dh->file, NULL);
+				switch_channel_set_private(channel, dh->id, NULL);
 			}
 		}
 		break;
@@ -966,7 +967,7 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 					switch_channel_t *channel;
 
 					if (session && (channel = switch_core_session_get_channel(session))) {
-						switch_channel_set_private(channel, dh->file, NULL);
+						switch_channel_set_private(channel, dh->id, NULL);
 					}
 					return SWITCH_FALSE;
 				}
@@ -1005,6 +1006,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	time_t to = 0;
 	char *ext;
 	const char *prefix;
+	const char *id = NULL;
 	displace_helper_t *dh;
 	const char *p;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
@@ -1070,6 +1072,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	dh->fh.channels = read_impl.number_of_channels;
 	dh->fh.samplerate = read_impl.actual_samples_per_second;
 	dh->file = switch_core_session_strdup(session, file);
+	dh->id = dh->file;
 
 	if (switch_core_file_open(&dh->fh,
 							  file,
@@ -1080,6 +1083,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		}
 		return SWITCH_STATUS_GENERR;
+	}
+
+	if((id = switch_event_get_header(dh->fh.params, "id"))) {
+		dh->id = switch_core_session_strdup(session, id);
+
+		if ((bug = switch_channel_get_private(channel, id))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only 1 of the same file per channel please!\n");
+			switch_core_file_close(&dh->fh);
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	if (limit) {
@@ -1118,7 +1131,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return status;
 	}
 
-	switch_channel_set_private(channel, file, bug);
+	switch_channel_set_private(channel, dh->id, bug);
 
 	return SWITCH_STATUS_SUCCESS;
 }
