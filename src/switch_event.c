@@ -2961,7 +2961,7 @@ static void ecd_deliver(event_channel_data_t **ecdP)
 			sprintf(buf, "%s", x_argv[0]);
 			for(z=1; z < i; z++) {
 				strcat(buf, sep);
-				strcat(buf, x_argv[z]);
+				strncat(buf, x_argv[z], sizeof(buf) - strlen(buf));
 			}
 			r = _switch_event_channel_broadcast(buf, ecd->event_channel, ecd->json, ecd->key, ecd->id);
 			t += r;
