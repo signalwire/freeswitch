@@ -1652,8 +1652,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 	switch_xml_root_t root;
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
-		fstat(fd, &st);
-		if (!st.st_size) {
+		if (fstat(fd, &st) == -1 || !st.st_size) {
 			close(fd);
 			goto error;
 		}
