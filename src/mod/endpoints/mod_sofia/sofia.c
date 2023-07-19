@@ -3433,6 +3433,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 								  TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)),
 								  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
 								  TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)),
+								  TAG_IF(profile->timer_h, NTATAG_TIMER_H(profile->timer_h)),
 								  SIPTAG_ACCEPT_STR("application/sdp, multipart/mixed"),
 								  TAG_IF(sofia_test_pflag(profile, PFLAG_NO_CONNECTION_REUSE),
 										 TPTAG_REUSE(0)),
@@ -6124,6 +6125,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->timer_t4 = v;
 						} else {
 							profile->timer_t4 = 4000;
+						}
+					} else if (!strcasecmp(var, "timer-H") && !zstr(val)) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_h = v;
+						} else {
+							profile->timer_h = 32000;
 						}
 					} else if (!strcasecmp(var, "tls-orq-connect-timeout") && !zstr(val)) {
 						int v = atoi(val);
