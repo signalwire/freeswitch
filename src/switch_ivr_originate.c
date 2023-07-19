@@ -190,13 +190,12 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	char buf[10] = SWITCH_BLANK_STRING;
 	switch_application_interface_t *application_interface = NULL;
 
-	if (collect->session) {
-		channel = switch_core_session_get_channel(collect->session);
-		if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
+	if (!collect->session) {
+		return NULL;
+	}
 
-			return NULL;
-		}
-	} else {
+	channel = switch_core_session_get_channel(collect->session);
+	if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 
