@@ -1225,10 +1225,48 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 	switch_event_t *event;
 
 	if (rh->fh) {
-		switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
+		switch_size_t current_samples_out = rh->fh->samples_out;
+		switch_size_t updated_samples_out = current_samples_out;
+		const char *last_record_index_str = switch_channel_get_variable(channel, "last_record_index");
+		const char *prev_record_samples_str = switch_channel_get_variable(channel, "record_samples");
+		int record_index = 1;
+
+		if (!zstr(last_record_index_str) && switch_is_number(last_record_index_str)) {
+			record_index = atoi(last_record_index_str) + 1;
+		}
+		switch_channel_set_variable_printf(channel, "last_record_index", "%d", record_index);
+
+		if (!zstr(prev_record_samples_str) && switch_is_number(prev_record_samples_str)) {
+			updated_samples_out += atoi(prev_record_samples_str);
+		}
+
+		switch_channel_set_variable_printf(channel, "record_samples", "%d", updated_samples_out);
 		if (read_impl->actual_samples_per_second) {
-			switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl->actual_samples_per_second);
-			switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl->actual_samples_per_second / 1000));
+			switch_size_t current_record_seconds = rh->fh->samples_out / read_impl->actual_samples_per_second;
+			switch_size_t current_record_ms = rh->fh->samples_out / (read_impl->actual_samples_per_second / 1000);
+			switch_size_t updated_record_seconds = current_record_seconds;
+			switch_size_t updated_record_ms = current_record_ms;
+			const char *prev_record_sec_str = switch_channel_get_variable(channel, "record_seconds");
+			const char *prev_record_ms_str = switch_channel_get_variable(channel, "record_ms");
+			char buffer_name[25];
+
+			sprintf(buffer_name, "record_samples_%d", record_index);
+			switch_channel_set_variable_printf(channel, buffer_name, "%d", current_samples_out);
+			sprintf(buffer_name, "record_seconds_%d", record_index);
+			switch_channel_set_variable_printf(channel, buffer_name, "%d", current_record_seconds);
+			sprintf(buffer_name, "record_ms_%d", record_index);
+			switch_channel_set_variable_printf(channel, buffer_name, "%d", current_record_ms);
+			sprintf(buffer_name, "record_url_%d", record_index);
+			switch_channel_set_variable_printf(channel, buffer_name, "%s", !zstr(rh->file) ? rh->file : "");
+
+			if ((!zstr(prev_record_sec_str) && switch_is_number(prev_record_sec_str))
+				&& !zstr(prev_record_ms_str) && switch_is_number(prev_record_ms_str)) {
+				updated_record_seconds += atoi(prev_record_sec_str);
+				updated_record_ms += atoi(prev_record_ms_str);
+			}
+
+			switch_channel_set_variable_printf(channel, "record_seconds", "%d", updated_record_seconds);
+			switch_channel_set_variable_printf(channel, "record_ms", "%d", updated_record_ms);
 		}
 	}
 
