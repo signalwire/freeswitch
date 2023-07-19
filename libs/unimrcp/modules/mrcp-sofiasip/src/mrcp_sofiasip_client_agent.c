@@ -612,6 +612,13 @@ static void mrcp_sofia_event_callback(
 		phrase,
 		sofia_agent->sig_agent->id);
 
+	// Get sip call ID 
+	if (nua_event ==  nua_r_invite){
+		if (sip && sip->sip_call_id){
+			sofia_agent->sig_agent->sip_id = sip->sip_call_id->i_id;
+		}
+	}
+	
 	switch(nua_event) {
 		case nua_i_state:
 			mrcp_sofia_on_state_change(status,sofia_agent,nh,sofia_session,sip,tags);

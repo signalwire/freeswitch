@@ -33,6 +33,7 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_signaling_agent_create(const char *id, void
 {
 	mrcp_sig_agent_t *sig_agent = apr_palloc(pool,sizeof(mrcp_sig_agent_t));
 	sig_agent->id = id;
+	sig_agent->sip_id = NULL;
 	sig_agent->pool = pool;
 	sig_agent->obj = obj;
 	sig_agent->resource_factory = NULL;

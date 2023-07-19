@@ -54,6 +54,8 @@ struct mrcp_sig_settings_t {
 struct mrcp_sig_agent_t {
 	/** Agent identifier */
 	const char              *id;
+	/** Accessing mrcp client sip call id */
+	const char              *sip_id;
 	/** Memory pool to allocate memory from */
 	apr_pool_t              *pool;
 	/** External object associated with agent */
