@@ -1247,9 +1247,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 
 	if (fd < 0)
 		return NULL;
-	fstat(fd, &st);
 
-	if (!st.st_size) {
+	if (fstat(fd, &st) == -1 || !st.st_size) {
 		return NULL;
 	}
 
@@ -1258,8 +1257,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	if (!(0<(l = read(fd, m, st.st_size)))
 		|| !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
 		free(m);
+
 		return NULL;
 	}
+
 	root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
 
 	return &root->xml;
@@ -1673,6 +1674,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 
 		root->dynamic = 1;
 		close(fd);
+
 		return &root->xml;
 	}
 
