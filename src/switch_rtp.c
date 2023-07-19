@@ -4676,6 +4676,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 		READ_INC(rtp_session);
 		status = switch_jb_create(&rtp_session->jb, SJB_AUDIO, queue_frames, max_queue_frames, rtp_session->pool);
 		switch_jb_set_session(rtp_session->jb, rtp_session->session);
+		switch_jb_set_jitter_estimator(rtp_session->jb, &rtp_session->stats.rtcp.inter_jitter, samples_per_packet, samples_per_second);
 		if (switch_true(switch_channel_get_variable_dup(switch_core_session_get_channel(rtp_session->session), "jb_use_timestamps", SWITCH_FALSE, -1))) {
 			switch_jb_ts_mode(rtp_session->jb, samples_per_packet, samples_per_second);
 		}
