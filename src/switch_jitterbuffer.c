@@ -1053,17 +1053,13 @@ static inline switch_status_t jb_next_packet(switch_jb_t *jb, switch_jb_node_t *
 {
 	if (jb->samples_per_frame) {
 		return jb_next_packet_by_ts(jb, nodep);
-	} else {
-		switch_status_t status;
-
-		if (jb->elastic && jb->jitter.estimate) {
-			status = jb_next_packet_by_seq_with_acceleration(jb, nodep);
-		} else {
-			status = jb_next_packet_by_seq(jb, nodep);
-		}
-
-		return status;
 	}
+
+	if (jb->elastic && jb->jitter.estimate) {
+		return jb_next_packet_by_seq_with_acceleration(jb, nodep);
+	}
+
+	return jb_next_packet_by_seq(jb, nodep);
 }
 
 static inline void free_nodes(switch_jb_t *jb)
@@ -1511,7 +1507,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 				jb->jitter.stats.reset_missing_frames++;
 				switch_jb_reset(jb);
 			} else {
-
 				if (jb->type != SJB_VIDEO && jb->frame_len < got - want) {
 					jb_frame_inc(jb, 1);
 				}
