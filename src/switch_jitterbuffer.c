@@ -913,7 +913,7 @@ static inline switch_status_t jb_next_packet_by_ts(switch_jb_t *jb, switch_jb_no
 static inline int check_jb_size(switch_jb_t *jb)
 {
 	switch_jb_node_t *np;
-	uint16_t seq;
+	uint16_t seq_hs, target_seq_hs;
 	uint16_t l_seq = 0;
 	uint16_t h_seq = 0;
 	uint16_t count = 0;
@@ -921,30 +921,32 @@ static inline int check_jb_size(switch_jb_t *jb)
 
 	switch_mutex_lock(jb->list_mutex);
 
+	target_seq_hs = ntohs(jb->target_seq);
+
 	for (np = jb->node_list; np; np = np->next) {
 		if (!np->visible) {
 			continue;
 		}
 
-		seq = ntohs(np->packet.header.seq);
-		if (ntohs(jb->target_seq) > seq) {
+		seq_hs = ntohs(np->packet.header.seq);
+		if (target_seq_hs > seq_hs) {
 			hide_node(np, SWITCH_FALSE);
 			old++;
 			continue;
 		}
 
 		if (count == 0) {
-			l_seq = h_seq = seq;
+			l_seq = h_seq = seq_hs;
 		}
 
 		count++;
 
-		if (seq < l_seq) {
-			l_seq = seq;
+		if (seq_hs < l_seq) {
+			l_seq = seq_hs;
 		}
 
-		if (seq > h_seq) {
-			h_seq = seq;
+		if (seq_hs > h_seq) {
+			h_seq = seq_hs;
 		}
 	}
 
@@ -959,7 +961,7 @@ static inline int check_jb_size(switch_jb_t *jb)
 	}
 
 	/* update the stats every x packets */
-	if (ntohs(jb->target_seq) % 50 == 0) {
+	if (target_seq_hs % 50 == 0) {
 		int packet_ms = jb->jitter.samples_per_frame / (jb->jitter.samples_per_second / 1000);
 
 		jb->jitter.stats.estimate_ms = (*jb->jitter.estimate) / jb->jitter.samples_per_second * 1000;
@@ -986,7 +988,7 @@ static inline int check_jb_size(switch_jb_t *jb)
 
 	switch_mutex_unlock(jb->list_mutex);
 
-	jb_debug(jb, SWITCH_LOG_INFO, "JITTER buffersize %u == %u old[%u] target[%u] seq[%u|%u]\n", count, h_seq - l_seq + 1, old, ntohs(jb->target_seq), l_seq, h_seq);
+	jb_debug(jb, SWITCH_LOG_INFO, "JITTER buffersize %u == %u old[%u] target[%u] seq[%u|%u]\n", count, h_seq - l_seq + 1, old, target_seq_hs, l_seq, h_seq);
 
 	return count;
 }
