@@ -8,6 +8,7 @@ SWITCH_BEGIN_EXTERN_C
 typedef int (*switch_telnyx_hangup_cause_to_sip_func)(switch_core_session_t *, switch_call_cause_t);
 typedef void (*switch_telnyx_sofia_on_hangup_func)(switch_core_session_t *);
 typedef switch_bool_t (*switch_telnyx_sofia_on_init_func)(switch_core_session_t *);
+typedef void (*switch_telnyx_channel_on_answer_func)(switch_core_session_t *);
 typedef void (*switch_telnyx_on_set_variable_func)(switch_channel_t*, const char*, const char*);
 typedef int (*switch_telnyx_recover_func)(switch_core_session_t *);
 typedef void (*switch_telnyx_on_channel_recover_func)(switch_channel_t*);
@@ -29,6 +30,7 @@ typedef struct switch_telnyx_event_dispatch_s {
 	switch_telnyx_hangup_cause_to_sip_func switch_telnyx_hangup_cause_to_sip;
 	switch_telnyx_sofia_on_init_func switch_telnyx_sofia_on_init;
 	switch_telnyx_sofia_on_hangup_func switch_telnyx_sofia_on_hangup;
+	switch_telnyx_channel_on_answer_func switch_telnyx_channel_on_answer;
 	switch_telnyx_on_set_variable_func switch_telnyx_on_set_variable;
 	switch_telnyx_recover_func switch_telnyx_call_recover;
 	switch_telnyx_on_channel_recover_func switch_telnyx_on_channel_recover;
@@ -48,6 +50,7 @@ SWITCH_DECLARE(void) switch_telnyx_deinit();
 SWITCH_DECLARE(int) switch_telnyx_hangup_cause_to_sip(switch_core_session_t *session, switch_call_cause_t cause);
 SWITCH_DECLARE(switch_bool_t) switch_telnyx_sofia_on_init(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_telnyx_sofia_on_hangup(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_telnyx_channel_on_answer(switch_core_session_t *session);
 SWITCH_DECLARE(switch_telnyx_event_dispatch_t*) switch_telnyx_event_dispatch();
 SWITCH_DECLARE(void) switch_telnyx_on_set_variable(switch_channel_t* channel, const char* name, const char* value);
 SWITCH_DECLARE(int) switch_telnyx_call_recover(switch_core_session_t* session);

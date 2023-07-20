@@ -69,6 +69,13 @@ void switch_telnyx_sofia_on_hangup(switch_core_session_t *session)
 	}
 }
 
+void switch_telnyx_channel_on_answer(switch_core_session_t *session)
+{
+	if (_event_dispatch.switch_telnyx_channel_on_answer) {
+		_event_dispatch.switch_telnyx_channel_on_answer(session);
+	}
+}
+
 void switch_telnyx_on_set_variable(switch_channel_t* channel, const char* name, const char* value)
 {
 	if (_event_dispatch.switch_telnyx_on_set_variable) {

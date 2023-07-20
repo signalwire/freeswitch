@@ -33,6 +33,7 @@
 
 #include <switch.h>
 #include <switch_channel.h>
+#include <switch_telnyx.h>
 #include <pcre.h>
 
 struct switch_cause_table {
@@ -4064,6 +4065,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	}
 
 	switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_ANSWER_VARIABLE);
+
+	switch_telnyx_channel_on_answer(channel->session);
 
 	switch_channel_presence(channel, "unknown", "answered", NULL);
 
