@@ -463,7 +463,11 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return 0;
 }
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x072000)
+static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+#else
 static int progress_callback(void *clientp,   double dltotal,   double dlnow,   double ultotal,   double ulnow)
+#endif
 {
 	shout_context_t *context = (shout_context_t *) clientp;
 	return context->err;
@@ -496,8 +500,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_mutex_unlock(context->audio_mutex);
 	curl_handle = switch_curl_easy_init();
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x072000)
+	curl_easy_setopt(curl_handle, CURLOPT_XFERINFOFUNCTION, progress_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_XFERINFODATA, (void *)context);
+#else
 	curl_easy_setopt(curl_handle, CURLOPT_PROGRESSFUNCTION, progress_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_PROGRESSDATA, (void *)context);
+#endif
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
