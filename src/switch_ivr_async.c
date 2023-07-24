@@ -1085,7 +1085,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if((id = switch_event_get_header(dh->fh.params, "id"))) {
+	if((dh->fh.params && (id = switch_event_get_header(dh->fh.params, "id")))) {
 		dh->id = switch_core_session_strdup(session, id);
 
 		if ((bug = switch_channel_get_private(channel, id))) {
