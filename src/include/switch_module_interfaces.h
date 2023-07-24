@@ -303,6 +303,10 @@ struct switch_file_interface {
 	switch_status_t (*file_pre_close) (switch_file_handle_t *fh);
 	/*! function to control the underlying tech of the file  */
 	switch_status_t (*file_command) (switch_file_handle_t *fh, switch_file_command_t command);
+	/*! function to control remove the file  */
+	switch_status_t (*file_delete) (const char *file_path, switch_memory_pool_t *pool);
+	/*! function to check for the file  */
+	switch_status_t (*file_exists) (const char *file_path, switch_memory_pool_t *pool);
 	/*! list of supported file extensions */
 	char **extens;
 	switch_thread_rwlock_t *rwlock;

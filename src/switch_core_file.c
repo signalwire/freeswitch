@@ -62,6 +62,92 @@ static switch_status_t get_file_size(switch_file_handle_t *fh, const char **stri
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_file_exists(const char *file_path, switch_memory_pool_t *pool)
+{
+	switch_status_t status;
+	char *rhs = NULL;
+	switch_memory_pool_t *new_pool = NULL;
+	if (zstr(file_path)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	if (!pool) {
+		if ((status = switch_core_new_memory_pool(&new_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		pool = new_pool;
+	}
+	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
+		char *modname = NULL;
+		char stream_name[128] = "";
+		char *ext;
+		switch_file_interface_t *file_interface;
+		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
+		ext = stream_name;
+		file_path = rhs + 3;
+		if ((file_interface = switch_loadable_module_get_file_interface(ext, modname)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown remote format [%s] for [%s]!\n", ext, file_path);
+			status = SWITCH_STATUS_FALSE;
+		}
+		else {
+			if (file_interface->file_exists) {
+				status = file_interface->file_exists(file_path, pool);
+			}
+		}
+	}
+	else {
+		status = switch_file_exists(file_path, pool);
+	}
+	if (new_pool != NULL) {
+		switch_core_destroy_memory_pool(&new_pool);
+	}
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_file_remove( const char *file_path, switch_memory_pool_t *pool)
+{
+	char stream_name[128] = "";
+	char *rhs = NULL;
+	char *ext;
+	switch_memory_pool_t *new_pool = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	if (zstr(file_path)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	if (!pool) {
+		if (switch_core_new_memory_pool(&new_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating pool\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		pool = new_pool;
+	}
+	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
+		char *modname = NULL;
+		switch_file_interface_t *file_interface;
+		switch_copy_string(stream_name, file_path, (rhs + 1) - file_path);
+		ext = stream_name;
+		file_path = rhs + 3;
+		if ((file_interface = switch_loadable_module_get_file_interface(ext, modname)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown remote format [%s] for [%s]!\n", ext, file_path);
+			status = SWITCH_STATUS_FALSE;
+		}
+		else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Attempting delete using [%s] for [%s]!\n", ext, file_path);
+			if (file_interface->file_delete) {
+				status = file_interface->file_delete(file_path, pool);
+			}
+		}
+	} else if (switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+		status = switch_file_remove(file_path,pool);
+	} else {
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	if (new_pool != NULL) {
+		switch_core_destroy_memory_pool(&new_pool);
+	}
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
 															  switch_file_handle_t *fh,
 															  const char *file_path,
