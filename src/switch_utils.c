@@ -2380,7 +2380,7 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
 		}
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			if (!ip_only) {
@@ -2434,7 +2434,7 @@ SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa
 
 		return 1;
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			s16->sin6_port = s26->sin6_port;
