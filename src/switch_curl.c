@@ -135,9 +135,11 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, 
 		curl_mime_free(mime);
 		mime = NULL;
 	}
-#endif
 
 	*mimep = mime;
+#else
+	*mimep = formpost;
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
