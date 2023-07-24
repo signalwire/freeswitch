@@ -287,7 +287,10 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
 
-	mkcert(&x509, &pkey, 4096, 0, 36500);
+	if (!mkcert(&x509, &pkey, 4096, 0, 36500)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Certificate generation failed\n");
+		goto end;
+	}
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
@@ -499,13 +502,21 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	 */
 	X509_set_issuer_name(x, name);
 
-	if (!X509_sign(x, pk, EVP_sha1()))
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	if (!X509_sign(x, pk, EVP_sha256())) {
+#else
+	if (!X509_sign(x, pk, EVP_sha1())) {
+#endif
 		goto err;
+	}
 
 	*x509p = x;
 	*pkeyp = pk;
+
 	return(1);
- err:
+err:
+	ERR_print_errors_fp(stdout);
+
 	return(0);
 }
 
