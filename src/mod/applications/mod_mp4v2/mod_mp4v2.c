@@ -304,7 +304,7 @@ static switch_status_t mp4_file_open(switch_file_handle_t *handle, const char *p
 		context->offset = atoi(tmp);
 	}
 
-	context->audio_type = MP4_ULAW_AUDIO_TYPE; // default
+	context->audio_type = MP4_MPEG4_AUDIO_TYPE; // default
 
 	if (handle->params && (tmp = switch_event_get_header(handle->params, "mp4v2_audio_codec"))) {
 		if (!strcasecmp(tmp, "PCMU")) {
@@ -554,6 +554,8 @@ static switch_status_t mp4_file_write(switch_file_handle_t *handle, void *data, 
 
 	context->audio_duration += *len;
 
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "samplecount: %u, duration: %lu size: %u\n", context->timer.samplecount, context->audio_duration, size);
+
 	switch_mutex_unlock(context->mutex);
 
 	return status;
@@ -667,23 +669,25 @@ static switch_status_t do_write_video(switch_file_handle_t *handle, switch_frame
 	}
 
 	switch_mutex_unlock(context->mutex);
-
+#if 1
 	{
-		int delta = context->timer.samplecount * (handle->samplerate / 1000) - context->audio_duration;
+		size_t samples = handle->samplerate * PTIME / 1000;
 
-		if (delta > (int)handle->samplerate) {
+		int delta = context->timer.samplecount - (context->audio_duration/samples * PTIME);
+		//1000 ms
+		if (delta > 1000) {
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-			size_t samples = handle->samplerate / 1000 * PTIME;
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "missed audio %d samples at %d\n", delta, (int)context->audio_duration / (handle->samplerate / 1000));
-
-			while ((delta -= samples) > 0) {
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "missed audio delta %d samples at %ld\n", delta, context->audio_duration/samples * PTIME);
+#if 1
+			while ((delta -= PTIME) > 0) {
 				mp4_file_write(handle, data, &samples);
-				samples = handle->samplerate / 1000 * PTIME;
+				samples = handle->samplerate * PTIME / 1000;
 			}
+#endif
 		}
 	}
-
+#endif
 	return status;
 }
 
