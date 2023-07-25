@@ -25,16 +25,6 @@ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
   NJOBS=$(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 endif
 
-DEB_RELEASE := $(shell lsb_release -sc)
-
-ifeq ($(DEB_RELEASE), bookworm)
-    # If the Debian version is Bookworm, do not include the --with-python flag
-    PYTHON_CONFIG_ARG := --with-python=no
-else
-    # If the Debian version is not Bookworm, include the --with-python flag
-    PYTHON_CONFIG_ARG := --with-python
-endif
-
 show_vars= \
 	echo; \
 	echo "Making target $@"; \
@@ -83,7 +73,7 @@ override_dh_auto_clean:
 	./configure -C --enable-portable-binary --disable-dependency-tracking \
 		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr --localstatedir=/var --sysconfdir=/etc \
-		--with-gnu-ld $(PYTHON_CONFIG_ARG) --with-python3 --with-erlang --with-openssl \
+		--with-gnu-ld --with-python --with-python3 --with-erlang --with-openssl \
 		--enable-core-odbc-support
 	touch $@
 
@@ -94,9 +84,7 @@ override_dh_auto_configure: .stamp-configure
 	make -j$(NJOBS) core
 	make iksemel-dep
 	make -j$(NJOBS)
-ifneq ($(DEB_RELEASE), bookworm)
 	make -C libs/esl pymod
-endif
 	make -C libs/esl py3mod
 	make -C libs/esl perlmod
 	touch $@
@@ -111,9 +99,7 @@ override_dh_strip:
 
 override_dh_auto_install:
 	dh_auto_install
-ifneq ($(DEB_RELEASE), bookworm)
 	dh_auto_install -- -C libs/esl pymod-install
-endif
 	dh_auto_install -- -C libs/esl py3mod-install
 	dh_auto_install -- -C libs/esl perlmod-install
 	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING
