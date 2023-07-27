@@ -931,7 +931,6 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 		/* Terminate the MRCP session if not already done */
 		if (schannel->mutex) {
 			switch_mutex_lock(schannel->mutex);
-			schannel->channel_destroyed = 1;
 			if (schannel->state != SPEECH_CHANNEL_CLOSED) {
 				int warned = 0, retry = 0;
 				mrcp_application_session_terminate(schannel->unimrcp_session);
@@ -943,6 +942,7 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not terminated after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 					}
 					if (globals.max_retry && (retry == globals.max_retry)){
+						schannel->channel_destroyed = 1;
 						mrcp_application_channel_object_set(schannel->unimrcp_channel, NULL);
 					}
 				}
@@ -1884,13 +1884,17 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
 	speech_channel_t *schannel = (speech_channel_t *) mrcp_application_session_object_get(session);
 	switch_event_t *event = NULL;
 
-	/* check mrcp data */
-	if (!session || !schannel || schannel->channel_destroyed) {
-		return FALSE;
+	/* destroy mrcp session */
+	if (session) {
+		if (schannel){
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Destroying MRCP session\n", schannel->name);
+		}
+		mrcp_application_session_destroy(session);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Destroying MRCP session\n", schannel->name);
-	mrcp_application_session_destroy(session);
+	if (!schannel || schannel->channel_destroyed) {
+		return TRUE;
+	}
 
 	/* notify of channel close */
 	if (schannel->channel_opened && globals.enable_profile_events) {
@@ -1962,8 +1966,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 
 	/* notify of channel open */
 	if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_OPEN) == SWITCH_STATUS_SUCCESS) {
-		orig_session = switch_core_session_locate(schannel->session_uuid);
-		if (orig_session && switch_core_session_read_lock(orig_session) == SWITCH_STATUS_SUCCESS) {
+		if ((orig_session = switch_core_session_locate(schannel->session_uuid))) {
 			orig_channel = switch_core_session_get_channel(orig_session);
 		}
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MRCP-Profile", schannel->profile->name);
@@ -1997,9 +2000,9 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_session_uuid", telnyx_session_uuid);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "telnyx_uuid", telnyx_uuid);
 			}
+			switch_core_session_rwunlock(orig_session);
 		}
 		switch_event_fire(&event);
-		switch_core_session_rwunlock(orig_session);
 	}
 	schannel->channel_opened = 1;
 
@@ -4701,7 +4704,7 @@ static apt_bool_t unimrcp_log(const char *file, int line, const char *obj, apt_l
 	switch_log_level_t level;
 	char log_message[4096] = { 0 };	/* same size as MAX_LOG_ENTRY_SIZE in UniMRCP apt_log.c */
 	size_t msglen;
-	const char *id = (obj == NULL) ? "" : ((speech_channel_t *)obj)->name;
+	const char *id = (obj == NULL || ((speech_channel_t *)obj)->channel_destroyed) ? "" : ((speech_channel_t *)obj)->name;
 
 	if (zstr(format)) {
 		return TRUE;
