@@ -1245,6 +1245,7 @@ switch_status_t list_profiles(const char *line, const char *cursor, switch_conso
 
 sofia_cid_type_t sofia_cid_name2type(const char *name);
 void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);
+void sofia_glue_get_real_addr(msg_t *msg, char *buf, size_t buflen, int *port);
 sofia_destination_t *sofia_glue_get_destination(char *data);
 void sofia_glue_free_destination(sofia_destination_t *dst);
 switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *user, const char *host, const char *event, const char *contenttype,

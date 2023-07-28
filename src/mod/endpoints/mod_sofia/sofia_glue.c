@@ -843,6 +843,22 @@ void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port)
 	}
 }
 
+void sofia_glue_get_real_addr(msg_t *msg, char *buf, size_t buflen, int *port)
+{
+	su_addrinfo_t *addrinfo = msg_real_addrinfo(msg);
+	if (!addrinfo) {
+		return;
+	}
+
+	if (buf) {
+		get_addr(buf, buflen, addrinfo->ai_addr, (socklen_t)addrinfo->ai_addrlen);
+	}
+
+	if (port) {
+		*port = get_port(addrinfo->ai_addr);
+	}
+}
+
 char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const sofia_transport_t transport, switch_bool_t uri_only,
 									  const char *params, const char *invite_tel_params)
 {
@@ -2632,6 +2648,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   hostname         VARCHAR(255),\n"
 		"   network_ip       VARCHAR(255),\n"
 		"   network_port     VARCHAR(6),\n"
+		"   network_real_ip       VARCHAR(255),\n"//UC
+		"   network_real_port     VARCHAR(6),\n"//UC
 		"   sip_username     VARCHAR(255),\n"
 		"   sip_realm        VARCHAR(255),\n"
 		"   mwi_user         VARCHAR(255),\n"
@@ -2760,6 +2778,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_ping_status on sip_registrations (ping_status)",
 		"create index sr_network_ip on sip_registrations (network_ip)",
 		"create index sr_network_port on sip_registrations (network_port)",
+		"create index sr_network_real_ip on sip_registrations (network_real_ip)",//UC
+		"create index sr_network_real_port on sip_registrations (network_real_port)",//UC
 		"create index sr_sip_username on sip_registrations (sip_username)",
 		"create index sr_sip_realm on sip_registrations (sip_realm)",
 		"create index sr_orig_server_host on sip_registrations (orig_server_host)",
@@ -2842,6 +2862,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	switch_cache_db_test_reactive(dbh, "select ping_expires from sip_registrations", NULL, "alter table sip_registrations add column ping_expires INTEGER not null default 0");
 	switch_cache_db_test_reactive(dbh, "select ping_time from sip_registrations", NULL, "alter table sip_registrations add column ping_time BIGINT not null default 0");
 	switch_cache_db_test_reactive(dbh, "select force_ping from sip_registrations", NULL, "alter table sip_registrations add column force_ping INTEGER not null default 0");
+	switch_cache_db_test_reactive(dbh, "select network_real_ip from sip_registrations", NULL, "alter table sip_registrations add column network_real_ip VARCHAR(255)");
+	switch_cache_db_test_reactive(dbh, "select network_real_port from sip_registrations", NULL, "alter table sip_registrations add column network_real_port VARCHAR(6)");
 
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 

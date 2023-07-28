@@ -1357,6 +1357,11 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	char network_port_c[6];
 	char url_ip[80];
 	int network_port;
+
+	char network_real_ip[80];//UC
+	char network_real_port_c[6];//UC
+	int network_real_port;//UC
+
 	const char *reg_desc = "Registered";
 	const char *call_id = NULL;
 	char *force_user;
@@ -1426,6 +1431,12 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
 	snprintf(network_port_c, sizeof(network_port_c), "%d", network_port);
+
+	sofia_glue_get_real_addr(de->data->e_msg, network_real_ip, sizeof(network_real_ip), &network_real_port);
+	snprintf(network_real_port_c, sizeof(network_real_port_c), "%d", network_real_port);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "REGISTER request from %s:%d\n",network_ip, network_port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "REGISTER request real from %s:%d\n",network_real_ip, network_real_port);
 
 	snprintf(url_ip, sizeof(url_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
@@ -2058,22 +2069,22 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		if (!update_registration) {
 			sql = switch_mprintf("insert into sip_registrations "
 					"(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
-					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
+					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,network_real_ip,network_real_port,sip_username,sip_realm,"
 					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count, ping_expires, force_ping) "
 					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d, %ld, %d)",
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "",
 					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
-					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm,
+					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, network_real_ip, network_real_port_c,username, realm,
 								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0,
 								 (long) switch_epoch_time_now(NULL) + sofia_reg_uniform_distribution(profile->iping_seconds), force_ping);
 		} else {
 			sql = switch_mprintf("update sip_registrations set call_id='%q',"
-								 "sub_host='%q', network_ip='%q',network_port='%q',"
+								 "sub_host='%q', network_ip='%q',network_port='%q',network_real_ip='%q',network_real_port='%q',"
 								 "presence_hosts='%q', server_host='%q', orig_server_host='%q',"
 								 "hostname='%q', orig_hostname='%q',"
 								 "expires = %ld, ping_expires=%ld, force_ping=%d "
 								 "where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'",
-								 call_id, sub_host, network_ip, network_port_c,
+								 call_id, sub_host, network_ip, network_port_c,network_real_ip, network_real_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
 								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin,

@@ -483,6 +483,15 @@ static switch_status_t mp4_file_close(switch_file_handle_t *handle)
 	mp4_file_context_t *context = handle->private_info;
 	switch_status_t status;
 
+	if (context->video_queue) {
+		switch_queue_term(context->video_queue);
+		flush_video_queue(context->video_queue, 0);
+	}
+
+	if (context->video_thread) {
+		switch_thread_join(&status, context->video_thread);
+	}
+
 	if (context->fd) {
 		MP4Close(context->fd, MP4_CLOSE_DO_NOT_COMPUTE_BITRATE);
 		context->fd = NULL;
@@ -494,16 +503,7 @@ static switch_status_t mp4_file_close(switch_file_handle_t *handle)
 	if (context->timer.interval) {
 		switch_core_timer_destroy(&context->timer);
 	}
-
-	if (context->video_queue) {
-		switch_queue_term(context->video_queue);
-		flush_video_queue(context->video_queue, 0);
-	}
-
-	if (context->video_thread) {
-		switch_thread_join(&status, context->video_thread);
-	}
-
+	
 	switch_buffer_destroy(&context->buf);
 
 	return SWITCH_STATUS_SUCCESS;
