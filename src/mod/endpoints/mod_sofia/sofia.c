@@ -11500,9 +11500,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			}
 		}
 
-		if (sip->sip_identity && sip->sip_identity->id_value) {
-			switch_channel_set_variable(channel, "sip_h_identity", sip->sip_identity->id_value);
-		}
 		if (sip->sip_date && sip->sip_date->d_time > 0) {
 			// This INVITE has a SIP Date header.
 			// sofia-sip stores the Date header value in sip_date->d_time as seconds since January 1, 1900 0:00:00.

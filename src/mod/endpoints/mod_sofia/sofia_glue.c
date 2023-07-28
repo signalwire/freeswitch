@@ -1144,7 +1144,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		identity = identity_to_free = sofia_stir_shaken_as_create_identity_header(tech_pvt->session, stir_shaken_attest, cid_num, dest);
 	}
 	if (!identity) {
-		identity = switch_channel_get_variable(channel, "sip_h_identity");
+		/* sip_identity channel variable is an ARRAY, we support only first identity for now */
+		identity = switch_channel_get_variable_dup(channel, "sip_identity", SWITCH_TRUE, 0);
 	}
 	if (!date) {
 		date = switch_channel_get_variable(channel, "sip_h_date");

@@ -113,6 +113,20 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_SESSION_BEGIN(test_var_array)
+		{
+			const char *identity;
+
+			switch_channel_add_variable_var_check(fst_channel, "sip_identity", "test", SWITCH_FALSE, SWITCH_STACK_PUSH);
+			identity = switch_channel_get_variable_dup(fst_channel, "sip_identity", SWITCH_TRUE, 0);
+			fst_check_string_equals(identity, "test");
+
+			switch_channel_add_variable_var_check(fst_channel, "sip_identity", "test2", SWITCH_FALSE, SWITCH_STACK_PUSH);
+			identity = switch_channel_get_variable_dup(fst_channel, "sip_identity", SWITCH_TRUE, 0);
+			fst_check_string_equals(identity, "test");
+		}
+		FST_SESSION_END()
+
 		FST_TEST_BEGIN(originate_test_external_id)
 		{
 			switch_core_session_t *session = NULL;

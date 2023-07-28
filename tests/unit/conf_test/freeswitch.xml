@@ -145,8 +145,8 @@
     <context name="default">
 		<extension name="two">
 			<condition field="destination_number" expression="^\+15553332901$">
-				<action application="log" data="${sip_h_identity}"/>
-				<action application="hash" data="insert/realm/identity_check/${sip_h_identity}"/>
+				<action application="log" data="${sip_identity}"/>
+				<action application="hash" data="insert/realm/identity_check/${sip_identity}"/>
 				<action application="answer"/>
 				<action application="park"/>
 			</condition>

@@ -6350,7 +6350,8 @@ SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
 	stir_shaken_cert_t *cert = NULL;
 	stir_shaken_error_t stir_error = { 0 };
 	switch_status_t claim_status = SWITCH_STATUS_FALSE;
-	const char *identity_header = switch_channel_get_variable(channel, "sip_h_identity");
+	/* sip_identity channel variable is an ARRAY, we support only first identity for now */
+	const char *identity_header = switch_channel_get_variable_dup(channel, "sip_identity", SWITCH_TRUE, 0);
 	const char *attestation = NULL;
 	int orig_is_tn = 0;
 	switch_bool_t hangup_on_fail = switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_hangup_on_fail"));
