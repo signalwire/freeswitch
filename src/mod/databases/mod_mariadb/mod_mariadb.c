@@ -411,7 +411,7 @@ switch_status_t mariadb_finish_results_real(const char* file, const char* func, 
 				if ((status = mysql_next_result(&handle->con))) {
 					if (status > 0) {
 						err_str = mariadb_handle_get_error(handle);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to get next for query (%s): %s\n", handle->sql, err_str);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to get next for query (%s): %s\n", handle->sql, switch_str_nil(err_str));
 						switch_safe_free(err_str);
 
 						break;

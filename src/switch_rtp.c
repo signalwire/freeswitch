@@ -3643,7 +3643,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
 	BIO *bio;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	EVP_PKEY *dh_pk;
+#else
 	DH *dh;
+#endif
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifndef OPENSSL_NO_EC
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
@@ -3723,13 +3727,21 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	switch_assert(dtls->ssl_ctx);
 
 	bio = BIO_new_file(dtls->pem, "r");
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
 	BIO_free(bio);
 	if (dh) {
 		SSL_CTX_set_tmp_dh(dtls->ssl_ctx, dh);
 		DH_free(dh);
 	}
+#else 
+	if((dh_pk = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL)) != NULL) {
+		SSL_CTX_set0_tmp_dh_pkey(dtls->ssl_ctx, dh_pk);
+		EVP_PKEY_free(dh_pk);
+	}
 
+	BIO_free(bio);
+#endif
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
 
 	//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
@@ -3934,12 +3946,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			case SWITCH_RTP_CRYPTO_RECV:
 				switch_channel_set_variable(channel, "srtp_remote_crypto_key", (const char *)b64_key);
 				break;
-			case SWITCH_RTP_CRYPTO_SEND_RTCP:
-				switch_channel_set_variable(channel, "srtcp_local_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_RECV_RTCP:
-				switch_channel_set_variable(channel, "srtcp_remote_crypto_key", (const char *)b64_key);
-				break;
 			default:
 				break;
 		}
@@ -3952,12 +3958,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			case SWITCH_RTP_CRYPTO_RECV:
 				switch_channel_set_variable(channel, "srtp_remote_video_crypto_key", (const char *)b64_key);
 				break;
-			case SWITCH_RTP_CRYPTO_SEND_RTCP:
-				switch_channel_set_variable(channel, "srtcp_local_video_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_RECV_RTCP:
-				switch_channel_set_variable(channel, "srtcp_remote_video_crypto_key", (const char *)b64_key);
-				break;
 			default:
 				break;
 			}
@@ -3969,12 +3969,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 				break;
 			case SWITCH_RTP_CRYPTO_RECV:
 				switch_channel_set_variable(channel, "srtp_remote_audio_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_SEND_RTCP:
-				switch_channel_set_variable(channel, "srtcp_local_audio_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_RECV_RTCP:
-				switch_channel_set_variable(channel, "srtcp_remote_audio_crypto_key", (const char *)b64_key);
 				break;
 			default:
 				break;
@@ -5494,7 +5488,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 {
 	int was_blocking = 0;
 	switch_size_t bytes;
-	uint32_t flushed = 0;
 	switch_size_t bytes_out = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -5575,8 +5568,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
-
-					flushed++;
 
 					rtp_session->stats.inbound.raw_bytes += bytes;
 					rtp_session->stats.inbound.flush_packet_count++;

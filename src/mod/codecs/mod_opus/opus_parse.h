@@ -38,21 +38,24 @@ typedef struct opus_packet_info {
 	int16_t fec;
 	int16_t fec_ms;
 	bool_t stereo;
-	int16_t frames; /* number of opus frames in the packet */
+	/* number of opus frames in the packet */
+	int16_t frames;
 	int16_t config;
 	int16_t channels;
 	int16_t ms_per_frame;
 	int32_t ptime_ts;
 	bool_t valid;
-	int16_t frames_silk; /* number of silk_frames in an opus frame */
+	/* number of silk_frames in an opus frame */
+	int16_t frames_silk;
 	/* VAD flag of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
 	int16_t vad_flags_per_silk_frame;
 	/* LBRR (FEC) flag of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
 	int16_t fec_flags_per_silk_frame;
 } opus_packet_info_t;
 
-bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, bool_t debug);
-#endif
+switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, switch_bool_t debug);
+
+#endif /* SWITCH_OPUS_PARSE_H */
 
 /* For Emacs:
  * Local Variables:

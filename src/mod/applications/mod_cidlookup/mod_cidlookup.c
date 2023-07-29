@@ -347,7 +347,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, char **response, const char *query, struct curl_httppost *post,
+static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, char **response, const char *query, switch_curl_mime *post,
 						  switch_curl_slist_t *headers, int timeout)
 {
 	switch_time_t start_time = switch_micro_time_now();
@@ -373,7 +373,7 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	if (post) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, post);
+		switch_curl_easy_setopt_mime(curl_handle, post);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}

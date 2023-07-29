@@ -265,7 +265,7 @@ SWITCH_DECLARE(switch_status_t) switch_packetizer_feed(switch_packetizer_t *pack
 			context->nalus[i].eat = p;
 		} else {
 			context->nalus[i].len = p - context->nalus[i].start;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "#%d %x len=%u\n", i, *context->nalus[i].start, context->nalus[i].len);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "#%d %x len=%u\n", i, *context->nalus[i].start, context->nalus[i].len);
 			while (!(*p++)) ; /* eat the sync bytes, what ever 0 0 1 or 0 0 0 1 */
 			i++;
 			context->nalus[i].start = p;
@@ -307,8 +307,8 @@ SWITCH_DECLARE(switch_status_t) switch_packetizer_read(switch_packetizer_t *pack
 	nri = nalu_hdr & 0x60;
 
 	if (real_slice_size > slice_size) real_slice_size = slice_size;
-	if (frame->buflen < slice_size) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "frame buffer too small %u < %u\n", frame->buflen, slice_size);
+	if (frame->datalen < slice_size) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "frame buffer too small %u < %u\n", frame->datalen, slice_size);
 		return SWITCH_STATUS_FALSE;
 	}
 
