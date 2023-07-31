@@ -67,6 +67,8 @@ typedef struct switch_jb_stats_s {
 	uint32_t size_max;
 	uint32_t size_est;
 	uint32_t acceleration;
+	uint32_t fast_acceleration;
+	uint32_t forced_acceleration;
 	uint32_t expand;
 	uint32_t jitter_max_ms;
 	int estimate_ms;
@@ -784,8 +786,8 @@ static inline void increment_seq(switch_jb_t *jb)
 
 static inline void decrement_seq(switch_jb_t *jb)
 {
-	jb->last_target_seq = jb->target_seq;
 	jb->target_seq = htons((ntohs(jb->target_seq) - 1));
+	jb->last_target_seq = htons((ntohs(jb->target_seq) - 1));
 }
 
 static inline void set_read_seq(switch_jb_t *jb, uint16_t seq)
@@ -930,8 +932,13 @@ static inline int check_jb_size(switch_jb_t *jb)
 
 		seq_hs = ntohs(np->packet.header.seq);
 		if (target_seq_hs > seq_hs) {
-			hide_node(np, SWITCH_FALSE);
-			old++;
+			const int MAX_DROPOUT = 3000;
+			uint16_t udelta = target_seq_hs - seq_hs;
+			if (udelta < MAX_DROPOUT) {
+				// not a sequence id roll-over, this is an old packet, we can hide it
+				hide_node(np, SWITCH_FALSE);
+				old++;
+			}
 			continue;
 		}
 
@@ -969,6 +976,8 @@ static inline int check_jb_size(switch_jb_t *jb)
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_max_ms", "%u", jb->jitter.stats.size_max * packet_ms);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_est_ms", "%u", jb->jitter.stats.size_est * packet_ms);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", jb->jitter.stats.acceleration * packet_ms);
+			switch_channel_set_variable_printf(jb->channel, "rtp_jb_fast_acceleration_ms", "%u", jb->jitter.stats.fast_acceleration * packet_ms);
+			switch_channel_set_variable_printf(jb->channel, "rtp_jb_forced_acceleration_ms", "%u", jb->jitter.stats.forced_acceleration * packet_ms);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", jb->jitter.stats.expand * packet_ms);
 		}
 
@@ -1008,6 +1017,27 @@ static inline switch_status_t jb_next_packet_by_seq_with_acceleration(switch_jb_
 
 		jb->jitter.stats.estimate_ms = (int)((*jb->jitter.estimate) / ((jb->jitter.samples_per_second)) * 1000);
 		jb->jitter.stats.buffer_size_ms = (int)((visible_not_old * jb->jitter.samples_per_frame) / (jb->jitter.samples_per_second / 1000));
+
+		/* If the jitter buffer size is above the its max size, we force accelerate */
+		if (visible_not_old >= jb->max_frame_len) {
+			if (packet_vad(jb, packet, len) == SWITCH_FALSE) {
+				jb_debug(jb, SWITCH_LOG_WARNING, "JITTER_BUFFER above max size: [%d>%d] inactive fast acceleration\n", visible_not_old, jb->max_frame_len);
+				jb->jitter.drop_gap = 3;
+				jb->jitter.stats.acceleration++;
+				jb->jitter.stats.fast_acceleration++;
+				return jb_next_packet_by_seq(jb, nodep);
+			} else {
+				if (jb->jitter.drop_gap > 0) {
+					jb->jitter.drop_gap--;
+				} else {
+					jb_debug(jb, SWITCH_LOG_WARNING, "JITTER_BUFFER above max size: [%d>%d] forced acceleration\n", visible_not_old, jb->max_frame_len);
+					jb->jitter.drop_gap = 10;
+					jb->jitter.stats.acceleration++;
+					jb->jitter.stats.forced_acceleration++;
+					return jb_next_packet_by_seq(jb, nodep);
+				}
+			}
+		}
 
 		/* We try to accelerate in order to remove delay when the jitter buffer is 3x larger than the estimation. */
 		if (jb->jitter.stats.buffer_size_ms > (3 * jb->jitter.stats.estimate_ms) && jb->jitter.stats.buffer_size_ms > 60) {
@@ -1084,6 +1114,8 @@ SWITCH_DECLARE(void) switch_jb_set_jitter_estimator(switch_jb_t *jb, double *jit
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_ms", "%u", 0);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_ms", "%u", 0);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", 0);
+			switch_channel_set_variable_printf(jb->channel, "rtp_jb_fast_acceleration_ms", "%u", 0);
+			switch_channel_set_variable_printf(jb->channel, "rtp_jb_forced_acceleration_ms", "%u", 0);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", 0);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", 0);
 			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_ms", "%u", 0);
