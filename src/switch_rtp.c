@@ -684,6 +684,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 				}
 
 				if (rtp_session->jb && (rtp_session->rtp_bugs & RTP_BUG_FLUSH_JB_ON_DTMF)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "jb_reset : RTP_BUG_FLUSH_JB_ON_DTMF - ssrc[0x%.8X]\n", rtp_session->ssrc);
 					switch_jb_reset(rtp_session->jb);
 				}
 
@@ -2826,6 +2827,7 @@ SWITCH_DECLARE(void) switch_rtp_reset_jb(switch_rtp_t *rtp_session)
 {
 	if (switch_rtp_ready(rtp_session)) {
 		if (rtp_session->jb) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset SWITCH RESET - ssrc[0x%.8X]\n", rtp_session->ssrc);
 			switch_jb_reset(rtp_session->jb);
 		}
 	}
@@ -4573,10 +4575,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp
 
 	if (rtp_session->pause_jb && !pause) {
 		if (rtp_session->jb) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset PAUSE - ssrc[0x%.8X]\n", rtp_session->ssrc);
 			switch_jb_reset(rtp_session->jb);
 		}
 
 		if (rtp_session->vb) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset PAUSE VB - ssrc[0x%.8X]\n", rtp_session->ssrc);
 			switch_jb_reset(rtp_session->vb);
 		}
 	}
@@ -5248,6 +5252,7 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 
 
 		if (rtp_session->jb) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset SET FLAG - ssrc[0x%.8X]\n", rtp_session->ssrc);
 			switch_jb_reset(rtp_session->jb);
 		}
 	} else if (flag == SWITCH_RTP_FLAG_NOBLOCK && rtp_session->sock_input) {
@@ -5541,6 +5546,7 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 		}
 
 		if (rtp_session->vbw) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset VBW - ssrc[0x%.8X]\n", rtp_session->ssrc);
 			switch_jb_reset(rtp_session->vbw);
 		}
 
@@ -5734,8 +5740,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	tries++;
 
-	if (tries > 20) {
+	if (tries > 20 && !(switch_channel_var_true(switch_core_session_get_channel(rtp_session->session), "rtp_jitter_buffer_accelerate"))) {
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset TRIES > 20 ssrc[0x%.8X]\n", rtp_session->ssrc);
 			switch_jb_reset(rtp_session->jb);
 		}
 		rtp_session->punts++;
@@ -6308,6 +6315,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 		if (rtp_session->jb && jb_valid(rtp_session)) {
 			if (rtp_session->last_jb_read_ssrc && rtp_session->last_jb_read_ssrc != read_ssrc) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "switch_jb_reset SSRC change - ssrc[0x%.8X]\n", rtp_session->ssrc);
 				switch_jb_reset(rtp_session->jb);
 			}
 
