@@ -1607,6 +1607,30 @@ SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 	return args;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_is_uint_in_range(const char *str, unsigned int from, unsigned int to)
+{
+	unsigned int number;
+	const char *original_str = str;
+
+	if (str == NULL || *str == '\0' || from > to) {
+		return SWITCH_FALSE;
+	}
+
+	for (; *str != '\0'; str++) {
+		if (!isdigit(*str)) {
+			return SWITCH_FALSE;
+		}
+	}
+
+	number = atoi(original_str);
+
+	if (number < from || number > to) {
+		return SWITCH_FALSE;
+	}
+
+	return SWITCH_TRUE;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 {
 	const char *p;

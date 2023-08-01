@@ -4167,10 +4167,15 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				argc = switch_split(data, ' ', fields);
 
+				if (argc < 6 || !switch_is_uint_in_range(fields[1], 1, MAX_CAND_IDX_COUNT)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+					continue;
+				}
+
 				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-				if (argc < 6 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+				if (engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Too many candidates\n");
 					continue;
 				}
 
@@ -4250,7 +4255,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	
  relay:
 	
-	for (cid = 0; cid < 2; cid++) {
+	for (cid = 0; cid < MAX_CAND_IDX_COUNT; cid++) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Searching for %s candidate.\n", cid ? "rtcp" : "rtp");
 
 		for (ai = 0; ai < engine->cand_acl_count; ai++) {

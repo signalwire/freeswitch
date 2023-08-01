@@ -95,6 +95,21 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_END()
 #endif
 
+		FST_TEST_BEGIN(test_switch_is_number_in_range)
+		{
+			fst_check_int_equals(switch_is_uint_in_range("x5", 0, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 1, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-11", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-10", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("10", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("11", 0, 10), SWITCH_FALSE);
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(test_md5)
 		{
 			char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
