@@ -298,7 +298,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_aac_load)
 	switch_codec_interface_t *codec_interface;
 	int mpf = 20000, spf = 160, bpf = 320, counta, countb;
 	int rates[] = {0, 8000, 16000, 32000, 44100, 48000, 88200, 96000, 176400, 192000};
-	switch_payload_t ianacode[4] = { 0, 99, 99, 99 };
+	switch_payload_t ianacode[4] = { 0, 99, 99, 99, 99, 99 };
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
