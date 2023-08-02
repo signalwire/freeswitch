@@ -297,14 +297,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_aac_load)
 	switch_application_interface_t *app_interface;
 	switch_codec_interface_t *codec_interface;
 	int mpf = 20000, spf = 160, bpf = 320, counta, countb;
-	int rates[] = {0, 8000, 44100, 48000, 88200, 96000, 176400, 192000};
+	int rates[] = {0, 8000, 16000, 32000, 44100, 48000, 88200, 96000, 176400, 192000};
 	switch_payload_t ianacode[4] = { 0, 99, 99, 99 };
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "AAC");
 
-	for (counta = 1; counta <= 3; counta++) {
+	for (counta = 1; counta <= 5; counta++) {
 		for (countb = 1; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 												 ianacode[counta],	/* the IANA code number */
@@ -328,7 +328,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_aac_load)
 	}
 
 	mpf = 20000, spf = 160, bpf = 320;
-	for (counta = 1; counta <= 3; counta++) {
+	for (counta = 1; counta <= 5; counta++) {
 		for (countb = 1; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 												 ianacode[counta],	/* the IANA code number */

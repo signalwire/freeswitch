@@ -1439,9 +1439,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 	}
 	snprintf(network_real_port_c, sizeof(network_real_port_c), "%d", network_real_port);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "REGISTER request from %s:%d\n",network_ip, network_port);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "REGISTER request real from %s:%d\n",network_real_ip, network_real_port);
-
 	snprintf(url_ip, sizeof(url_ip), (msg_addrinfo(de->data->e_msg))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
 	expires = sip->sip_expires;
