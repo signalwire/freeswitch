@@ -3164,6 +3164,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sip_alias_node_t *node;
 	switch_event_t *s_event;
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
+	int use_precondition = sofia_test_pflag(profile, PFLAG_ENABLE_PRECONDITION);//UC
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	int use_rfc_5626 = sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626);
 	const char *supported = NULL;
@@ -3197,7 +3198,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto db_fail;
 	}
 
-	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "100rel, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
+	supported = switch_core_sprintf(profile->pool, "%s%s%spath, replaces", use_100rel ? "100rel, " : "", use_precondition ? "precondition, " : "", use_timer ? "timer, " : "", use_rfc_5626 ? "outbound, " : "");
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && switch_nat_get_type()) {
 		if ( (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) && switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -5731,6 +5732,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_DISABLE_100REL);
 						} else {
 							sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
+						}
+					} else if (!strcasecmp(var, "enable-precondition")) {//UC
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_PRECONDITION);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_PRECONDITION);
 						}
 					} else if (!strcasecmp(var, "enable-compact-headers")) {
 						if (switch_true(val)) {
