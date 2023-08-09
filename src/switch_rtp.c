@@ -3642,10 +3642,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	unsigned long ssl_ctx_error = 0;
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	BIO *bio;
-#if OPENSSL_VERSION_NUMBER >= 0x30000000
-	EVP_PKEY *dh_pk;
-#else
 	DH *dh;
 #endif
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3726,21 +3724,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 	switch_assert(dtls->ssl_ctx);
 
-	bio = BIO_new_file(dtls->pem, "r");
 #if OPENSSL_VERSION_NUMBER < 0x30000000
+	bio = BIO_new_file(dtls->pem, "r");
 	dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
 	BIO_free(bio);
 	if (dh) {
 		SSL_CTX_set_tmp_dh(dtls->ssl_ctx, dh);
 		DH_free(dh);
 	}
-#else 
-	if((dh_pk = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL)) != NULL) {
-		SSL_CTX_set0_tmp_dh_pkey(dtls->ssl_ctx, dh_pk);
-		EVP_PKEY_free(dh_pk);
+#else
+	if(!SSL_CTX_set_dh_auto(dtls->ssl_ctx, 1)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Failed enable auto DH!\n");
 	}
-
-	BIO_free(bio);
 #endif
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
 
