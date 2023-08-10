@@ -10451,7 +10451,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							smh->fmtps[i] = switch_core_session_strdup(session, orig_fmtp);
 						}
 					} else {
-						smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
+						//smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;//UC
 					}
 				}
 
@@ -13198,6 +13198,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				v_engine->codec_negotiated = 0;
 				smh->num_negotiated_codecs = 0;
 				switch_channel_clear_flag(session->channel, CF_VIDEO_POSSIBLE);
+				switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);//UC
 				switch_core_media_prepare_codecs(session, SWITCH_TRUE);
 				switch_core_media_check_video_codecs(session);
 				
