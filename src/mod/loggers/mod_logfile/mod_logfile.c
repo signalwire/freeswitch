@@ -99,6 +99,7 @@ static switch_status_t mod_logfile_openlogfile(logfile_profile_t *profile, switc
 	stat = switch_file_open(&afd, profile->logfile, flags, SWITCH_FPROT_OS_DEFAULT, module_pool);
 	if (stat != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "logfile %s open error, status=%d\n", profile->logfile, stat);
+
 		return SWITCH_STATUS_FALSE;
 	}
 
