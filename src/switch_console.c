@@ -1849,7 +1849,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			SWITCH_STANDARD_STREAM(mystream);
 
 			if (!strcasecmp(argv[0], "stickyadd")) {
-				mystream.write_function(&mystream, "insert into complete values (1,");
+				mystream.write_function(&mystream, "insert into complete (sticky, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, hostname) values (1,");
 				for (x = 0; x < 10; x++) {
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");
@@ -1865,7 +1865,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 				switch_core_sql_exec(mystream.data);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add")) {
-				mystream.write_function(&mystream, "insert into complete values (0,");
+				mystream.write_function(&mystream, "insert into complete (sticky, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, hostname) values (0,");
 				for (x = 0; x < 10; x++) {
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");

@@ -3865,6 +3865,15 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		cJSON *i, *indialog =  cJSON_GetObjectItem(msg, "inDialog");
 		const char *body = cJSON_GetObjectCstr(msg, "body");
 		switch_bool_t is_dialog = indialog && (indialog->type == cJSON_True || (indialog->type == cJSON_String && switch_true(indialog->valuestring)));
+		const char *context = NULL;
+
+		switch_mutex_lock(jsock->flag_mutex);
+
+		if (!(context = switch_event_get_header(jsock->vars, "user_context"))) {
+			context = switch_either(jsock->context, jsock->profile->context);
+		}
+
+		switch_mutex_unlock(jsock->flag_mutex);
 
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
@@ -3900,6 +3909,8 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			if (is_dialog) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
 			}
+
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "context", context);
 
 			switch_event_add_body(event, "%s", body);
 
