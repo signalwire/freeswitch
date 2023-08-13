@@ -161,7 +161,6 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	char *string = NULL;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
-	int x = 0;
 	char *flags = "";
 
 	if (act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
@@ -171,7 +170,6 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	}
 
  top:
-	x++;
 
 	string = switch_core_session_strdup(use_session, act->string);
 	exec = 0;
@@ -4584,7 +4582,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 			timeout_ms = switch_atoui(argv[3]);
 		}
 
-		if (thresh > 0 && silence_hits > 0 && listen_hits >= 0) {
+		if (thresh > 0 && silence_hits > 0) {
 			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, timeout_ms, argv[4]);
 			return;
 		}

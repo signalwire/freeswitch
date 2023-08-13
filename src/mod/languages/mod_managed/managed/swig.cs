@@ -10932,6 +10932,11 @@ else
     return ret;
   }
 
+  public static switch_bool_t switch_is_uint_in_range(string str, uint from, uint to) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_is_uint_in_range(str, from, to);
+    return ret;
+  }
+
   public static switch_bool_t switch_is_number(string str) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_is_number(str);
     return ret;
@@ -11881,6 +11886,17 @@ else
 
   public static string switch_channel_get_variable_dup(SWIGTYPE_p_switch_channel channel, string varname, switch_bool_t dup, int idx) {
     string ret = freeswitchPINVOKE.switch_channel_get_variable_dup(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, (int)dup, idx);
+    return ret;
+  }
+
+  public static string switch_channel_get_variable_strdup(SWIGTYPE_p_switch_channel channel, string varname) {
+    string ret = freeswitchPINVOKE.switch_channel_get_variable_strdup(SWIGTYPE_p_switch_channel.getCPtr(channel), varname);
+    return ret;
+  }
+
+  public static switch_status_t switch_channel_get_variable_buf(SWIGTYPE_p_switch_channel channel, string varname, string buf, SWIGTYPE_p_switch_size_t buflen) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_get_variable_buf(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, buf, SWIGTYPE_p_switch_size_t.getCPtr(buflen));
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
@@ -15223,6 +15239,7 @@ else
   public static readonly string SWITCH_RTP_CRYPTO_KEY_80 = freeswitchPINVOKE.SWITCH_RTP_CRYPTO_KEY_80_get();
   public static readonly int SWITCH_RTP_BUNDLE_INTERNAL_PT = freeswitchPINVOKE.SWITCH_RTP_BUNDLE_INTERNAL_PT_get();
   public static readonly int MAX_CAND = freeswitchPINVOKE.MAX_CAND_get();
+  public static readonly int MAX_CAND_IDX_COUNT = freeswitchPINVOKE.MAX_CAND_IDX_COUNT_get();
   public static readonly int SWITCH_XML_BUFSIZE = freeswitchPINVOKE.SWITCH_XML_BUFSIZE_get();
 }
 
@@ -20575,6 +20592,9 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_frame_free___")]
   public static extern int switch_frame_free(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_is_uint_in_range___")]
+  public static extern int switch_is_uint_in_range(string jarg1, uint jarg2, uint jarg3);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_is_number___")]
   public static extern int switch_is_number(string jarg1);
 
@@ -23614,11 +23634,29 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_microseconds_per_packet_get___")]
   public static extern int switch_codec_fmtp_microseconds_per_packet_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_max_ptime_set___")]
+  public static extern void switch_codec_fmtp_max_ptime_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_max_ptime_get___")]
+  public static extern int switch_codec_fmtp_max_ptime_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_min_ptime_set___")]
+  public static extern void switch_codec_fmtp_min_ptime_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_min_ptime_get___")]
+  public static extern int switch_codec_fmtp_min_ptime_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_stereo_set___")]
   public static extern void switch_codec_fmtp_stereo_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_stereo_get___")]
   public static extern int switch_codec_fmtp_stereo_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_sprop_stereo_set___")]
+  public static extern void switch_codec_fmtp_sprop_stereo_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_sprop_stereo_get___")]
+  public static extern int switch_codec_fmtp_sprop_stereo_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_codec_fmtp_private_info_set___")]
   public static extern void switch_codec_fmtp_private_info_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
@@ -24486,6 +24524,12 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_get_variable_dup___")]
   public static extern string switch_channel_get_variable_dup(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3, int jarg4);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_get_variable_strdup___")]
+  public static extern string switch_channel_get_variable_strdup(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_get_variable_buf___")]
+  public static extern int switch_channel_get_variable_buf(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, global::System.Runtime.InteropServices.HandleRef jarg4);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_channel_get_variables___")]
   public static extern int switch_channel_get_variables(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
@@ -26280,6 +26324,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_MAX_CAND_get___")]
   public static extern int MAX_CAND_get();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_MAX_CAND_IDX_COUNT_get___")]
+  public static extern int MAX_CAND_IDX_COUNT_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_ice_t_cands_set___")]
   public static extern void ice_t_cands_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
@@ -31066,7 +31113,8 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_BAD_IDENTITY_INFO = 821,
   SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 822,
   SWITCH_CAUSE_INVALID_IDENTITY = 823,
-  SWITCH_CAUSE_STALE_DATE = 824
+  SWITCH_CAUSE_STALE_DATE = 824,
+  SWITCH_CAUSE_REJECT_ALL = 825
 }
 
 }
@@ -32781,6 +32829,7 @@ public enum switch_codec_control_command_t {
   SCC_VIDEO_RESET,
   SCC_AUDIO_PACKET_LOSS,
   SCC_AUDIO_ADJUST_BITRATE,
+  SCC_AUDIO_VAD,
   SCC_DEBUG,
   SCC_CODEC_SPECIFIC
 }
@@ -32905,12 +32954,42 @@ public class switch_codec_fmtp : global::System.IDisposable {
     } 
   }
 
+  public int max_ptime {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_max_ptime_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_codec_fmtp_max_ptime_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int min_ptime {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_min_ptime_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_codec_fmtp_min_ptime_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public int stereo {
     set {
       freeswitchPINVOKE.switch_codec_fmtp_stereo_set(swigCPtr, value);
     } 
     get {
       int ret = freeswitchPINVOKE.switch_codec_fmtp_stereo_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public int sprop_stereo {
+    set {
+      freeswitchPINVOKE.switch_codec_fmtp_sprop_stereo_set(swigCPtr, value);
+    } 
+    get {
+      int ret = freeswitchPINVOKE.switch_codec_fmtp_sprop_stereo_get(swigCPtr);
       return ret;
     } 
   }

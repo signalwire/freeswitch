@@ -1173,9 +1173,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
 					uint64_t exp;
-					int r;
-					r = read(tfd, &exp, sizeof(exp));
-					r++;
+					read(tfd, &exp, sizeof(exp));
+					(void)exp;
 				} else {
 					switch_time_t timediff = runtime.reference - ts;
 
@@ -1243,15 +1242,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
+
+			/* These two mutexes must be held in exact order: session_hash_mutex and then throttle_mutex. See switch_core_session_request_uuid() */
+			switch_mutex_lock(runtime.session_hash_mutex);
 			switch_mutex_lock(runtime.throttle_mutex);
 			runtime.sps_last = runtime.sps_total - runtime.sps;
 
 			if (sps_interval_ticks >= 300) {
 				runtime.sps_peak_fivemin = 0;
 				sps_interval_ticks = 0;
-				switch_mutex_lock(runtime.session_hash_mutex);
+				/* This line is protected by runtime.session_hash_mutex */
 				runtime.sessions_peak_fivemin = session_manager.session_count;
-				switch_mutex_unlock(runtime.session_hash_mutex);
 			}
 
 			sps_interval_ticks++;
@@ -1265,6 +1266,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			runtime.sps = runtime.sps_total;
 			switch_mutex_unlock(runtime.throttle_mutex);
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			tick = 0;
 		}
 #ifndef DISABLE_1MS_COND

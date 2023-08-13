@@ -629,6 +629,8 @@ done:
 
 error:
 
+	pgsql_free_result(&result);
+
 	return SWITCH_STATUS_FALSE;
 }
 

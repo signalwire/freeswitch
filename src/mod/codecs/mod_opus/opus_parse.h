@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2010, Mathieu Parent <math.parent@gmail.com>
+ * Copyright (C) 2005-2023, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -17,26 +17,45 @@
  * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
  * The Initial Developer of the Original Code is
- * Mathieu Parent <math.parent@gmail.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
  *
- * Mathieu Parent <math.parent@gmail.com>
- *
- *
- * skinny_api.h -- Skinny Call Control Protocol (SCCP) Endpoint Module
+ * Julien Chavanton <jchavanton@gmail.com>
  *
  */
 
-#ifndef _SKINNY_API_H
-#define _SKINNY_API_H
+#ifndef SWITCH_OPUS_PARSE_H
+#define SWITCH_OPUS_PARSE_H
 
-switch_status_t skinny_api_register(switch_loadable_module_interface_t **module_interface);
-switch_status_t skinny_api_unregister(void);
+typedef enum { false, true } bool_t;
 
-#endif /* _SKINNY_API_H */
+typedef struct opus_packet_info {
+	int16_t vad;
+	int16_t vad_ms;
+	int16_t fec;
+	int16_t fec_ms;
+	bool_t stereo;
+	/* number of opus frames in the packet */
+	int16_t frames;
+	int16_t config;
+	int16_t channels;
+	int16_t ms_per_frame;
+	int32_t ptime_ts;
+	bool_t valid;
+	/* number of silk_frames in an opus frame */
+	int16_t frames_silk;
+	/* VAD flag of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
+	int16_t vad_flags_per_silk_frame;
+	/* LBRR (FEC) flag of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
+	int16_t fec_flags_per_silk_frame;
+} opus_packet_info_t;
+
+switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, switch_bool_t debug);
+
+#endif /* SWITCH_OPUS_PARSE_H */
 
 /* For Emacs:
  * Local Variables:
@@ -48,4 +67,3 @@ switch_status_t skinny_api_unregister(void);
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
-

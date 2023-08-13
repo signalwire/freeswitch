@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 #define HTTP_CHUNK_SIZE 1024 * 32
 #define EP_NAME "verto.rtc"
 //#define WSS_STANDALONE 1
-#include "ks.h"
+#include "libks/ks.h"
 
 #include <mod_verto.h>
 #ifndef WIN32
@@ -771,10 +771,6 @@ static void jsock_send_event(cJSON *event)
 	}
 	switch_thread_rwlock_unlock(verto_globals.event_channel_rwlock);
 
-	if (use_jsock) {
-		switch_thread_rwlock_unlock(use_jsock->rwlock);
-		use_jsock = NULL;
-	}
 }
 
 static jrpc_func_t jrpc_get_func(jsock_t *jsock, const char *method)
@@ -827,7 +823,6 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 {
 	char delim = ',';
 	char *cur, *next;
-	int count = 0;
 	char *edup;
 
 	if (!zstr(str)) {
@@ -840,7 +835,7 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
 	}
 	
-	if (!zstr(str)) {
+	if (!zstr(str) && event && *event) {
 		edup = strdup(str);
 		switch_assert(edup);
 
@@ -848,7 +843,7 @@ static void set_perm(const char *str, switch_event_t **event, switch_bool_t add)
 			delim = ' ';
 		}
 
-		for (cur = edup; cur; count++) {
+		for (cur = edup; cur;) {
 			if ((next = strchr(cur, delim))) {
 				*next++ = '\0';
 			}
@@ -1063,13 +1058,13 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Login Incorrect");
 			login_fire_custom_event(jsock, params, 0, "Login Incorrect");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login incorrect for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login incorrect for user: %s domain: %s\n", id, domain);
 		} else {
 			switch_xml_t x_param, x_params;
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain ? domain : "N/A");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
 			
 			jsock->logintime = now;
 			jsock->id = switch_core_strdup(jsock->pool, id);
@@ -3870,6 +3865,15 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		cJSON *i, *indialog =  cJSON_GetObjectItem(msg, "inDialog");
 		const char *body = cJSON_GetObjectCstr(msg, "body");
 		switch_bool_t is_dialog = indialog && (indialog->type == cJSON_True || (indialog->type == cJSON_String && switch_true(indialog->valuestring)));
+		const char *context = NULL;
+
+		switch_mutex_lock(jsock->flag_mutex);
+
+		if (!(context = switch_event_get_header(jsock->vars, "user_context"))) {
+			context = switch_either(jsock->context, jsock->profile->context);
+		}
+
+		switch_mutex_unlock(jsock->flag_mutex);
 
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
@@ -3905,6 +3909,8 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			if (is_dialog) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
 			}
+
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "context", context);
 
 			switch_event_add_body(event, "%s", body);
 
@@ -3958,7 +3964,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *obj = cJSON_CreateObject(), *vobj = NULL, *dedEnc = NULL, *mirrorInput, *bandwidth = NULL, *canvas = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
-	switch_event_t *var_event;
+	switch_event_t *var_event = NULL;
 	switch_call_cause_t reason = SWITCH_CAUSE_INVALID_MSG_UNSPECIFIED, cancel_cause = 0;
 	switch_caller_profile_t *caller_profile;
 	int err = 0;
@@ -4760,13 +4766,11 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 
  error:
 
-	if (jsock) {
-		if (jsock->client_socket != KS_SOCK_INVALID) {
-			close_socket(&jsock->client_socket);
-		}
-
-		switch_core_destroy_memory_pool(&pool);
+	if (jsock->client_socket != KS_SOCK_INVALID) {
+		close_socket(&jsock->client_socket);
 	}
+
+	switch_core_destroy_memory_pool(&pool);
 
 	return -1;
 }
@@ -5585,8 +5589,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 {
 	verto_profile_t *profile = NULL;
 	jsock_t *jsock;
-	int cp = 0;
-	int cc = 0;
 	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
 	int i;
 
@@ -5600,14 +5602,12 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</profile>\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
 		}
-		cp++;
 
 		switch_mutex_lock(profile->mutex);
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			char *tmpname = switch_mprintf("%s@%s", jsock->id, jsock->domain);
 			stream->write_function(stream, "<client>\n<profile>%s</profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%s)</state>\n</client>\n", profile->name, tmpname, "client", jsock->name,
 									 (!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG",  (jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS");
-			cc++;
 			switch_safe_free(tmpname);
 		}
 		switch_mutex_unlock(profile->mutex);
@@ -5617,7 +5617,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static cJSON *json_status()
+static cJSON *json_status(void)
 {
 	cJSON *obj, *profiles, *jprofile, *users, *user;
 	verto_profile_t *profile = NULL;
@@ -6746,14 +6746,14 @@ static void mod_verto_ks_logger(const char *file, const char *func, int line, in
 	va_end(ap);
 }
 
-static void verto_event_free_subclass() 
+static void verto_event_free_subclass(void)
 {
 	switch_event_free_subclass(MY_EVENT_LOGIN);
 	switch_event_free_subclass(MY_EVENT_CLIENT_DISCONNECT);
 	switch_event_free_subclass(MY_EVENT_CLIENT_CONNECT);
 }
 
-static void verto_destroy_globals_hash_tables()
+static void verto_destroy_globals_hash_tables(void)
 {
 	if (verto_globals.method_hash) {
 		switch_core_hash_destroy(&verto_globals.method_hash);

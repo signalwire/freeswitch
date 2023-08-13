@@ -1853,7 +1853,7 @@ static void parse_codecs(my_vpx_cfg_t *my_cfg, switch_xml_t codecs)
 	}
 }
 
-static void load_config()
+static void load_config(void)
 {
 	switch_xml_t cfg = NULL, xml = NULL;
 	my_vpx_cfg_t *my_cfg = NULL;

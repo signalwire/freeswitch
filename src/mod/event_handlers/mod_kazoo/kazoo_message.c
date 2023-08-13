@@ -233,9 +233,11 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 			} else if((header = switch_event_get_header_ptr(src, field->name)) != NULL) {
 				if (header->idx) {
 					item = cJSON_CreateArray();
+
 					for(i = 0; i < header->idx; i++) {
 						cJSON_AddItemToArray(item, kazoo_event_json_value(field->out_type, header->array[i]));
 					}
+
 					kazoo_cJSON_AddItemToObject(dst, field->as ? field->as : field->name, item);
 				} else if (field->out_type_as_array) {
 					item = cJSON_CreateArray();
@@ -251,13 +253,16 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 			expanded = kz_event_expand_headers(src, field->value);
 			if(expanded != NULL && !zstr(expanded)) {
 				item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, expanded);
-				if(expanded != field->value) {
-					free(expanded);
-				}
 			}
+
+			if (expanded != field->value) {
+				switch_safe_free(expanded);
+			}
+
 			break;
 
 		case FIELD_FIRST_OF:
+
 			for(n = 0; n < field->list.size; n++) {
 				if(*field->list.value[n] == '#') {
 					item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, ++field->list.value[n]);
@@ -267,33 +272,41 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 					if(header) {
 						if (header->idx) {
 							item = cJSON_CreateArray();
+
 							for(i = 0; i < header->idx; i++) {
 								cJSON_AddItemToArray(item, kazoo_event_json_value(field->out_type, header->array[i]));
 							}
+
 							kazoo_cJSON_AddItemToObject(dst, field->as ? field->as : field->name, item);
 						} else {
 							item = kazoo_event_add_json_value(dst, field, field->as ? field->as : field->name, header->value);
 						}
+
 						break;
 					}
 				}
 			}
+
 			break;
 
 		case FIELD_PREFIX:
+
 			for (header = src->headers; header; header = header->next) {
 				if(!strncmp(header->name, field->name, strlen(field->name))) {
 					if (header->idx) {
 						cJSON *array = cJSON_CreateArray();
+
 						for(i = 0; i < header->idx; i++) {
 							cJSON_AddItemToArray(array, kazoo_event_json_value(field->out_type, header->array[i]));
 						}
+
 						kazoo_cJSON_AddItemToObject(dst, field->exclude_prefix ? header->name+strlen(field->name) : header->name, array);
 					} else {
 						kazoo_event_add_json_value(dst, field, field->exclude_prefix ? header->name+strlen(field->name) : header->name, header->value);
 					}
 				}
 			}
+
 			break;
 
 		case FIELD_STATIC:
@@ -308,7 +321,7 @@ cJSON * kazoo_event_add_field_to_json(cJSON *dst, switch_event_t *src, kazoo_fie
 			break;
 	}
 
-    return item;
+	return item;
 }
 
 static switch_status_t kazoo_event_add_fields_to_json(kazoo_logging_ptr logging, cJSON *dst, switch_event_t *src, kazoo_field_ptr field) {

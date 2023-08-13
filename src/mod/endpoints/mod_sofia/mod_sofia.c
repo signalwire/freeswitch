@@ -54,7 +54,7 @@ switch_endpoint_interface_t *sofia_endpoint_interface;
 
 #define STRLEN 15
 
-void mod_sofia_shutdown_cleanup();
+void mod_sofia_shutdown_cleanup(void);
 static switch_status_t sofia_on_init(switch_core_session_t *session);
 
 static switch_status_t sofia_on_exchange_media(switch_core_session_t *session);
@@ -348,6 +348,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_BUSY_EVERYWHERE:
 		return 600;
 	case SWITCH_CAUSE_DECLINE:
+	case SWITCH_CAUSE_REJECT_ALL:
 		return 603;
 	case SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE:
 		return 604;
@@ -472,7 +473,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_hash_delete_locked(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt->profile->flag_mutex);
 	}
 
-	if (session && tech_pvt->profile->pres_type) {
+	if (tech_pvt->profile->pres_type) {
 		char *sql = switch_mprintf("delete from sip_dialogs where uuid='%q'", switch_core_session_get_uuid(session));
 		switch_assert(sql);
 		sofia_glue_execute_sql_now(tech_pvt->profile, &sql, SWITCH_TRUE);
@@ -2065,7 +2066,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
-						} else if (update_allowed && ua && (switch_stristr("polycom", ua) ||
+						} else if (update_allowed && ua && (switch_channel_var_true(tech_pvt->channel, "update_ignore_ua") ||
+									  switch_stristr("polycom", ua) ||
 									  (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
 									  (switch_stristr("cisco/spa50", ua) ||
 									  switch_stristr("cisco/spa525", ua)) ||
@@ -2204,11 +2206,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 													argv[i], (double)((double)(MAX_REDIR + 1 - i))/1000);
 								}
 							} else {
-								if (i == argc - 1) {
-									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
-								} else {
-									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>,", argv[i]);
-								}
+								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
 							}
 						} else {
 							if (i == argc - 1) {
@@ -3257,8 +3255,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	switch_hash_index_t *hi;
 	void *val;
 	const void *vvar;
-	int c = 0;
-	int ac = 0;
 	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
 
 	if (argc > 0) {
@@ -3468,7 +3464,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
 
 			if (strcmp(vvar, profile->name)) {
-				ac++;
 				stream->write_function(stream, "<alias>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</alias>\n", vvar, "alias",
 									   profile->name, "ALIASED");
 			} else {
@@ -3493,8 +3488,6 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 									   profile->name, "profile", profile->wss_bindurl, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
 									   profile->inuse);
 				}
-
-				c++;
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
 					switch_assert(gp->state < REG_STATE_LAST);
@@ -4312,6 +4305,8 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 		user = argv[1];
 	}
 
+	if (!user) goto end;
+
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 		if ((concat = strchr(domain, '/'))) {
@@ -4327,8 +4322,6 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		domain = dup_domain;
 	}
-
-	if (!user) goto end;
 
 	if (zstr(profile_name) || strcmp(profile_name, "*") || zstr(domain)) {
 		if (!zstr(profile_name)) {
@@ -6835,7 +6828,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	return status;
 }
 
-void mod_sofia_shutdown_cleanup() {
+void mod_sofia_shutdown_cleanup(void) {
 	int sanity = 0;
 	int i;
 	switch_status_t st;

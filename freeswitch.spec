@@ -140,7 +140,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.12
+BuildRequires: sofia-sip-devel >= 1.13.15
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -497,7 +497,7 @@ the entries aloud via a TTS engine
 Summary:	FreeSWITCH mod_signalwire
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
-BuildRequires:  libks signalwire-client-c
+BuildRequires:  libks2 signalwire-client-c2
 
 %description application-signalwire
 Provides FreeSWITCH mod_signalwire
