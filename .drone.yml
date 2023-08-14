@@ -4,14 +4,15 @@ name: unit-tests
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       commands:
       - cat /proc/sys/kernel/core_pattern
+      - apt-get update && apt-get -yq install autoconf
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -33,7 +34,7 @@ steps:
       - ./configure --enable-address-sanitizer --enable-fake-dlclose
 
     - name: build
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -50,7 +51,7 @@ steps:
       - ./build.sh
 
     - name: run-tests
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -87,6 +88,7 @@ steps:
 trigger:
   branch:
   - master
+  - sb14
   event:
   - pull_request
   - push
@@ -97,13 +99,14 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       commands:
+      - apt-get update && apt-get -yq install autoconf
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -140,7 +143,7 @@ steps:
       - ./configure
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -152,7 +155,7 @@ steps:
       - export REPOTOKEN=''
       - rm -rf /etc/apt/auth.conf
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-11 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-14 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -172,12 +175,13 @@ steps:
 trigger:
   branch:
   - master
+  - sb14
   event:
   - pull_request
   - push
 
 ---
 kind: signature
-hmac: 780e4aaee61e3683ea4a8d6fe5131f7c9e62ebad727546013f18df0fca80d705
+hmac: 65bc1e76ae74ca7c8df9e4b790e3ec096f84184020ebdab280dc1d80b6932560
 
 ...
