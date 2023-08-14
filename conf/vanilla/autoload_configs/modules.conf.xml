@@ -17,6 +17,7 @@
 
     <load module="mod_cdr_csv"/>
     <load module="mod_event_socket"/>
+    <load module="mod_format_cdr.conf"/>
 
     <!-- Endpoints -->
     <load module="mod_sofia"/>
