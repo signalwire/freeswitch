@@ -371,7 +371,7 @@ unsigned long SMSDecoder::getTimeZone(bool &negativeTimeZone)
       if (i == 0)
       {                         // get sign
         result = result * 10 + (*_op & 0x7);
-        negativeTimeZone = (*_op & 0x8 == 0);
+        negativeTimeZone = ((*_op & 0x8) == 0);
       }
       else
         result = result * 10 + (*_op & 0xf);

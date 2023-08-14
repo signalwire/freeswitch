@@ -21,7 +21,7 @@ namespace ctb {
 
     Fifo::~Fifo()
     {
-	   delete m_begin;
+	   delete[] m_begin;
     };
 
     void Fifo::clear()
