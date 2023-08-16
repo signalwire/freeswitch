@@ -12144,7 +12144,7 @@ static void sofia_handle_sip_i_update(switch_core_session_t *session, int status
 				sofia_set_flag(tech_pvt, TFLAG_NEW_SDP);
 			}
 
-			if(!answer_sent){
+			if(!is_dup_sdp && !answer_sent){
 				uint8_t match = 0, is_ok = 1;
 				if (tech_pvt->mparams.num_codecs) {
 					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
