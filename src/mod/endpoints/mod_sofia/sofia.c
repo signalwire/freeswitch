@@ -84,6 +84,12 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 									   nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
 
+static void sofia_handle_sip_i_update(switch_core_session_t *session, int status,
+									 char const *phrase,
+									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								sofia_dispatch_event_t *de,
+									 tagi_t tags[]);
+
 static void sofia_set_accept_language_channel_variable(switch_channel_t *channel, sip_t const *sip)
 {
 	if (sip->sip_accept_language) {
@@ -1857,6 +1863,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		break;
 	case nua_i_update:
 		if (session) {
+			sofia_handle_sip_i_update(session, status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
 			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
 		}
 		break;
@@ -12071,6 +12078,135 @@ void sofia_handle_sip_i_options(int status,
 	}
 
 }
+
+static void sofia_handle_sip_i_update(switch_core_session_t *session, int status,
+									 char const *phrase,
+									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								sofia_dispatch_event_t *de,
+									 tagi_t tags[])
+
+{
+
+	const char *l_sdp = NULL, *r_sdp = NULL;
+	int offer_recv = 0, answer_recv = 0, offer_sent = 0, answer_sent = 0;
+	int ss_state = nua_callstate_init;
+	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = NULL;
+	const char *replaces_str = NULL;
+	int is_dup_sdp = 0;
+	const char *session_id_header = sofia_glue_session_id_header(session, profile);
+
+	tl_gets(tags,
+			NUTAG_CALLSTATE_REF(ss_state),
+			NUTAG_OFFER_RECV_REF(offer_recv),
+			NUTAG_ANSWER_RECV_REF(answer_recv),
+			NUTAG_OFFER_SENT_REF(offer_sent),
+			NUTAG_ANSWER_SENT_REF(answer_sent),
+			SIPTAG_REPLACES_STR_REF(replaces_str), SOATAG_LOCAL_SDP_STR_REF(l_sdp), SOATAG_REMOTE_SDP_STR_REF(r_sdp), TAG_END());
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		tech_pvt = switch_core_session_get_private(session);
+
+		if (!tech_pvt || !tech_pvt->nh || !channel || status != 100) {
+			goto end;
+		}
+
+		if (!r_sdp) {
+			if (ss_state == nua_callstate_proceeding) {
+				if (tech_pvt->mparams.last_sdp_response) {
+					r_sdp = tech_pvt->mparams.last_sdp_response;
+				}
+			}
+		}
+
+		if (r_sdp) {
+			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
+
+			if (!(profile->mndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->mparams.remote_sdp_str) && !strcmp(tech_pvt->mparams.remote_sdp_str, r_sdp))) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
+				is_dup_sdp = 1;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
+				tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, r_sdp);
+				
+				switch_core_media_set_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST);
+				if(switch_stristr("m=video", tech_pvt->mparams.remote_sdp_str)){
+					if(switch_stristr("m=video 0", tech_pvt->mparams.remote_sdp_str)){
+						switch_channel_set_variable(channel, "sdp_take_video", "false");
+					} else {
+						switch_channel_set_variable(channel, "sdp_take_video", "true");
+					}
+				} else {
+					switch_channel_set_variable(channel, "sdp_take_video", "false");
+				}
+				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
+				sofia_set_flag(tech_pvt, TFLAG_NEW_SDP);
+			}
+
+			if(!answer_sent){
+				uint8_t match = 0, is_ok = 1;
+				if (tech_pvt->mparams.num_codecs) {
+					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
+				}
+				if (match) {
+					if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "UPDATE PORT Error!\n");
+						is_ok = 0;
+					}
+					switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "UPDATE RTP Error!\n");
+						is_ok = 0;
+					}
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "UPDATE in codec negotiation failure.\n");
+					is_ok = 0;
+				}
+				if (is_ok) {
+					char *sticky = NULL;
+					sticky = tech_pvt->record_route;
+					if (switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
+						switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+					}
+					if (sofia_use_soa(tech_pvt)) {
+						nua_respond(tech_pvt->nh, SIP_200_OK,
+									NUTAG_WITH_THIS_MSG(de->data->e_msg),
+									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
+									SOATAG_REUSE_REJECTED(1),
+									SOATAG_AUDIO_AUX("cn telephone-event"),
+									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+									TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
+					} else {
+						nua_respond(tech_pvt->nh, SIP_200_OK,
+									NUTAG_WITH_THIS_MSG(de->data->e_msg),
+									NUTAG_MEDIA_ENABLE(0),
+									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+									SIPTAG_CONTENT_TYPE_STR("application/sdp"), SIPTAG_PAYLOAD_STR(tech_pvt->mparams.local_sdp_str), TAG_END());
+					}
+				} else {
+					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+				}
+				return;
+			}
+		}
+	}
+		
+  end:
+	if(!answer_sent){
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), 
+				TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+				TAG_END());
+	}
+
+	return;
+
+
+}
+
 
 /*
  * This subroutine will take the a_params of a sip_addr_s structure and spin through them.
