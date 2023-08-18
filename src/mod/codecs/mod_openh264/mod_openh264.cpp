@@ -602,14 +602,14 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		context->change_bandwidth = 0;
 		init_encoder(context, 0, 0);
 	}
-
+/*//UC
 	if (width != context->encoder_params.iPicWidth || height != context->encoder_params.iPicHeight ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
 			context->encoder_params.iPicWidth, context->encoder_params.iPicHeight, width, height);
 
 		init_encoder(context, width, height);
 	}
-
+*/
 	context->pic.iColorFormat = videoFormatI420;
 	context->pic.iPicHeight = height;
 	context->pic.iPicWidth = width;
