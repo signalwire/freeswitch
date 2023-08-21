@@ -41,6 +41,9 @@
 #include "sofia-sip/hostdomain.h"
 #include "sip-dig.h"
 
+#define MAX_ACTIVE_REGISTER_TO_YIELD 100
+#define MAX_CONTINOUS_UNREGISTER_REQUEST_TO_YIELD 10
+
 static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 {
 	int ss_state = nua_callstate_authenticating;
@@ -255,8 +258,21 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 {
 	sofia_gateway_t *gateway_ptr;
 	sofia_gateway_subscription_t *gw_sub_ptr;
+	int unreg_request = 0;
+	int apply_yield = 0;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	// Count the expected unregister request based on the number of active register
+	if (profile->gateway_unreg_max_yield_ms > 0) {
+		int active_state = 0; 
+		for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+			if (gateway_ptr->state == REG_STATE_REGED) {
+				++active_state;
+			}
+		}
+		apply_yield = (active_state > MAX_ACTIVE_REGISTER_TO_YIELD ? 1 : 0);
+	}
+
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 
 		if (gateway_ptr->nh) {
@@ -265,6 +281,10 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 
 		if (gateway_ptr->state == REG_STATE_REGED) {
 			sofia_reg_kill_reg(gateway_ptr);
+			if (apply_yield && !(++unreg_request % MAX_CONTINOUS_UNREGISTER_REQUEST_TO_YIELD)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Performing yield for unregistring gateway: %d\n", (profile->gateway_unreg_max_yield_ms * 1000));
+				switch_sleep(profile->gateway_unreg_max_yield_ms * 1000);
+			}
 		}
 		sofia_private_free(gateway_ptr->sofia_private);
 

@@ -6277,6 +6277,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->acl_proxy_x_token_header = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "ignore-reason-header-by-sip-code")) {
 						profile->ignore_reason_header_by_sip_code = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "gateway-unreg-max-yield-ms") && !zstr(val)) {
+						int32_t gateway_unreg_max_yield_ms = atoi(val);
+						if (gateway_unreg_max_yield_ms >= 0) {
+							profile->gateway_unreg_max_yield_ms = gateway_unreg_max_yield_ms;
+						} else {
+							profile->gateway_unreg_max_yield_ms = 0;
+						}
 					} else if (!strcasecmp(var, "proxy-hold")) {
 						if(switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PROXY_HOLD);
