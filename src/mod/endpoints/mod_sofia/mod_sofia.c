@@ -3691,7 +3691,7 @@ static switch_status_t cmd_count(char **argv, int argc, switch_stream_handle_t *
 		for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
-			if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+			if ((argc == 1 || !strcasecmp(argv[1], profile->name)) && sofia_test_pflag(profile, PFLAG_RUNNING)) {
 				sofia_gateway_t *gp;
 				switch_mutex_lock(profile->gw_mutex);
 				for (gp = profile->gateways; gp; gp = gp->next) {
@@ -7061,7 +7061,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_console_set_complete("add sofia status gateway ::sofia::list_gateways");
 
 	switch_console_set_complete("add sofia count profiles");
-	switch_console_set_complete("add sofia count gateways");
+	switch_console_set_complete("add sofia count gateways ::sofia::list_profiles");
 
 	switch_console_set_complete("add sofia loglevel ::[all:default:tport:iptsec:nea:nta:nth_client:nth_server:nua:soa:sresolv:stun ::[0:1:2:3:4:5:6:7:8:9");
 	switch_console_set_complete("add sofia tracelevel ::[console:alert:crit:err:warning:notice:info:debug");
