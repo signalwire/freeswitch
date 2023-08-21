@@ -3973,6 +3973,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 				*retry_seconds = "30",
 				*fail_908_retry_seconds = NULL,
 				*timeout_seconds = "60",
+				*auto_delete_inactive = "false",
+				*max_inactive_seconds = "1800",
 				*from_user = "", *from_domain = NULL, *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
 				*contact_params = "", *params = NULL, *register_transport = NULL,
 				*reg_id = NULL, *str_rfc_5626 = "";
@@ -4002,6 +4004,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			gateway->ob_calls = 0;
 			gateway->ib_failed_calls = 0;
 			gateway->ob_failed_calls = 0;
+			gateway->auto_delete_inactive = 1;
+			gateway->max_inactive_seconds = 1800; // 30 mins
+			gateway->last_inactive = 0;
 			gateway->destination_prefix = "";
 
 			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
@@ -4135,6 +4140,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					if (!zstr(val)) {
 						gateway->gw_auth_acl = switch_core_strdup(gateway->pool, val);
 					}
+				} else if (!strcmp(var, "auto-delete-inactive")) {
+					auto_delete_inactive = val;
+				} else if (!strcmp(var, "max-inactive-seconds")) {
+					max_inactive_seconds = val;
 				}
 			}
 
@@ -4229,6 +4238,16 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid timeout-seconds of %d on gateway %s, using the value of 60 instead.\n",
 								  gateway->reg_timeout_seconds, name);
 				gateway->reg_timeout_seconds = 60;
+			}
+
+			if (switch_true(auto_delete_inactive)) {
+				gateway->auto_delete_inactive = 1;
+				gateway->max_inactive_seconds = atoi(max_inactive_seconds);
+				if (gateway->max_inactive_seconds < 5) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid max-inactive-seconds of %d on gateway %s, using the value of 30 minutes instead.\n",
+								  gateway->max_inactive_seconds, name);
+					gateway->max_inactive_seconds = 1800;
+				}
 			}
 
 

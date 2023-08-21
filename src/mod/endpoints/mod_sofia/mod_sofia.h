@@ -575,6 +575,9 @@ struct sofia_gateway {
 	switch_memory_pool_t *pool;
 	int deleted;
 	int destroy;
+	time_t last_inactive;
+	int32_t max_inactive_seconds;
+	int auto_delete_inactive;
 	switch_event_t *ib_vars;
 	switch_event_t *ob_vars;
 	uint32_t ib_calls;

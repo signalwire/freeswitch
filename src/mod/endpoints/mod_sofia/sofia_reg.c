@@ -173,9 +173,16 @@ void sofia_reg_truly_del_gateway(sofia_profile_t *profile)
 	sofia_gateway_t *gateway_ptr, *check, *last = NULL;
 	switch_event_t *event;
 	sofia_gateway_subscription_t *gw_sub_ptr;
+	time_t now = switch_epoch_time_now(NULL);
 	
 	switch_mutex_lock(profile->gw_deleting_mutex);
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+		if (!gateway_ptr->deleted && gateway_ptr->state == REG_STATE_DOWN && gateway_ptr->auto_delete_inactive 
+			&& gateway_ptr->last_inactive > 0 && ((now - gateway_ptr->max_inactive_seconds) > gateway_ptr->last_inactive)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Marking inactive gateway for deletion %s::%s from hash.\n", profile->name, gateway_ptr->name);
+			gateway_ptr->deleted = 1;
+		}
+
 		if (gateway_ptr->deleted) {
 			
 			if ((check = switch_core_hash_find(mod_sofia_globals.gateway_hash, gateway_ptr->name)) && check == gateway_ptr) {
@@ -434,6 +441,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 
 			gateway_ptr->failures = 0;
+			gateway_ptr->last_inactive = 0;
 
 			if (gateway_ptr->freq > 30) {
 				delta = (gateway_ptr->freq - 15);
@@ -458,6 +466,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			sofia_reg_kill_reg(gateway_ptr);
 			gateway_ptr->state = REG_STATE_DOWN;
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
+			gateway_ptr->last_inactive = switch_epoch_time_now(NULL);
 			break;
 		case REG_STATE_UNREGED:
 			gateway_ptr->retry = 0;
