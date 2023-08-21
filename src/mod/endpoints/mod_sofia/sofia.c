@@ -3741,6 +3741,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		config_sofia(SOFIA_CONFIG_RESPAWN, profile->name);
 	}
 
+	sofia_glue_del_every_gateway(profile);
 	sofia_profile_destroy(profile);
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
