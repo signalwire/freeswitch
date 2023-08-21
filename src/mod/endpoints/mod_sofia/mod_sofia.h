@@ -728,6 +728,7 @@ struct sofia_profile {
 	switch_mutex_t *dbh_mutex;
 	switch_mutex_t *gateway_mutex;
 	sofia_gateway_t *gateways;
+	unsigned int gateway_unreg_max_yield_ms;
 	//su_home_t *home;
 	switch_hash_t *chat_hash;
 	switch_hash_t *reg_nh_hash;
