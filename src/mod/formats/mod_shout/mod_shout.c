@@ -862,12 +862,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 				goto error;
 			}
 
-			if (shout_set_url(context->shout, "http://www.synway.com") != SHOUTERR_SUCCESS) {
+			if (shout_set_url(context->shout, "http://www.freeswitch.com") != SHOUTERR_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
-			if (shout_set_description(context->shout, "SynSWITCH mod_shout Broadcasting Module") != SHOUTERR_SUCCESS) {
+			if (shout_set_description(context->shout, "FreeSWITCH mod_shout Broadcasting Module") != SHOUTERR_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting description: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
