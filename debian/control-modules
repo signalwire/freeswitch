@@ -12,6 +12,7 @@ Module: applications/mod_av
 Description: mod_av
  Adds mod_av.
 Build-Depends: libavformat-dev, libswscale-dev, libavresample-dev
+Build-Depends-Bookworm: libavformat-dev, libswscale-dev, libswresample-dev
 
 Module: applications/mod_avmd
 Description: Advanced voicemail detection
@@ -209,7 +210,7 @@ Description: Adds mod_skel
 Module: applications/mod_signalwire
 Description: mod_signalwire
  Adds mod_signalwire.
-Build-Depends: libks, signalwire-client-c
+Build-Depends: libks2, signalwire-client-c2
 
 Module: applications/mod_sms
 Description: Astract SMS
@@ -485,6 +486,7 @@ Description: Adds mod_verto.
 Build-Depends: libperl-dev
 Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
 Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
+Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
 
 ## mod/event_handlers
 
@@ -647,6 +649,7 @@ Module: languages/mod_lua
 Description: mod_lua
  Adds mod_lua.
 Build-Depends: liblua5.2-dev | liblua5.1-dev
+Build-Depends-Bookworm: liblua5.3-dev | liblua5.2-dev | liblua5.1-dev
 
 Module: languages/mod_managed
 Description: mod_managed
@@ -659,6 +662,7 @@ Description: mod_perl
 Build-Depends: libperl-dev
 Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
 Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
+Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
 
 Module: languages/mod_python
 Description: mod_python
@@ -669,6 +673,7 @@ Module: languages/mod_python3
 Description: mod_python3
  Adds mod_python3.
 Build-Depends: python3-dev
+Build-Depends-Bookworm: python3-dev, python3-setuptools
 
 Module: languages/mod_v8
 Description: mod_v8

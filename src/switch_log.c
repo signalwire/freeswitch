@@ -246,7 +246,7 @@ SWITCH_DECLARE(cJSON *) switch_log_node_to_json(const switch_log_node_t *node, i
 	return json;
 }
 
-static switch_log_node_t *switch_log_node_alloc()
+static switch_log_node_t *switch_log_node_alloc(void)
 {
 	switch_log_node_t *node = NULL;
 #ifdef SWITCH_LOG_RECYCLE

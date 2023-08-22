@@ -1170,24 +1170,30 @@ static switch_status_t switch_opus_keep_fec_enabled(switch_codec_t *codec)
 	}
 }
 
-static switch_bool_t switch_opus_vad(struct opus_context *context, void *encoded_data, uint32_t encoded_data_len) {
-	const uint8_t *payload = (const uint8_t *) encoded_data;
+static switch_bool_t switch_opus_vad(struct opus_context *context, void *encoded_data, uint32_t encoded_data_len)
+{
+	const uint8_t *payload = (const uint8_t *)encoded_data;
 	opus_packet_info_t opus_packet_info;
-	switch_bool_t debug = (globals.debug || context->debug > 1);	
+	switch_bool_t debug = (globals.debug || context->debug > 1);
+
 	if (!switch_opus_packet_parse(payload, encoded_data_len, &opus_packet_info, debug)) {
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "OPUS PACKET PARSING ERROR len:%d bytes:%02x %02x\n",
-				 (int)encoded_data_len, payload[0], payload[1]);
+							  (int)encoded_data_len, payload[0], payload[1]);
 		}
+
 		return SWITCH_TRUE;
 	}
+
 	if (debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "OPUS EXTRACT PAYLOAD VAD len:%d vad_ms:%d bytes:%02x %02x\n",
-			 (int)encoded_data_len, opus_packet_info.vad_ms, payload[0], payload[1]);
+						  (int)encoded_data_len, opus_packet_info.vad_ms, payload[0], payload[1]);
 	}
+
 	if (opus_packet_info.vad_ms == 0) {
 		return SWITCH_FALSE;
 	}
+
 	return SWITCH_TRUE;
 }
 
@@ -1284,9 +1290,10 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 		break;
 	case SCC_AUDIO_VAD:
 		{
-			void* encoded_data = (void *)cmd_data;
-			uint16_t* encoded_data_len = (uint16_t *)cmd_arg;
-			switch_bool_t *ret = (switch_bool_t *) *ret_data;
+			void *encoded_data = (void *)cmd_data;
+			uint16_t *encoded_data_len = (uint16_t *)cmd_arg;
+			switch_bool_t *ret = (switch_bool_t *)*ret_data;
+
 			*ret = switch_opus_vad(context, encoded_data, *encoded_data_len);
 		}
 		break;
