@@ -132,6 +132,8 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f)
 				f[MFLAG_NOMOH] = 1;
 			} else if (!strcasecmp(argv[i], "endconf")) {
 				f[MFLAG_ENDCONF] = 1;
+			} else if (!strcasecmp(argv[i], "mandatory_member_endconf")) {
+				f[MFLAG_MANDATORY_MEMBER_ENDCONF] = 1;
 			} else if (!strcasecmp(argv[i], "mintwo")) {
 				f[MFLAG_MINTWO] = 1;
 			} else if (!strcasecmp(argv[i], "talk-data-events")) {

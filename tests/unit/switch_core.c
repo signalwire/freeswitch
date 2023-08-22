@@ -95,6 +95,21 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_END()
 #endif
 
+		FST_TEST_BEGIN(test_switch_is_number_in_range)
+		{
+			fst_check_int_equals(switch_is_uint_in_range("x5", 0, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 1, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-11", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-10", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("10", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("11", 0, 10), SWITCH_FALSE);
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(test_md5)
 		{
 			char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
@@ -416,6 +431,42 @@ FST_CORE_BEGIN("./conf")
 			fst_requires(hash == NULL);
 		}
 		FST_TEST_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_strdup)
+		{
+			const char *val;
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(!switch_channel_get_variable_strdup(channel, "test_var_does_not_exist"));
+
+			val = switch_channel_get_variable_strdup(channel, "test_var");
+
+			fst_check(val);
+			fst_check_string_equals(val, "test_value");
+
+			free((char *)val);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_buf)
+		{
+			char buf[16] = { 0 };
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var", buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(buf, "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var_does_not_exist", buf, sizeof(buf)) == SWITCH_STATUS_FALSE);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }

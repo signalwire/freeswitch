@@ -262,8 +262,8 @@ typedef struct {
 
 struct switch_rtp;
 
-static void switch_rtp_dtls_init();
-static void switch_rtp_dtls_destroy();
+static void switch_rtp_dtls_init(void);
+static void switch_rtp_dtls_destroy(void);
 
 #define MAX_DTLS_MTU 4096
 
@@ -1660,7 +1660,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 			);
 }
 
-static inline uint32_t calc_local_lsr_now() 
+static inline uint32_t calc_local_lsr_now(void)
 {
 	switch_time_t now;
 	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
@@ -3522,7 +3522,7 @@ static BIO_METHOD dtls_bio_filter_methods = {
 static BIO_METHOD *dtls_bio_filter_methods = NULL;
 #endif
 
-static void switch_rtp_dtls_init() {
+static void switch_rtp_dtls_init(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	dtls_bio_filter_methods = BIO_meth_new(BIO_TYPE_FILTER | BIO_get_new_index(), "DTLS filter");
 	BIO_meth_set_write(dtls_bio_filter_methods, dtls_bio_filter_write);
@@ -3532,7 +3532,7 @@ static void switch_rtp_dtls_init() {
 #endif
 }
 
-static void switch_rtp_dtls_destroy() {
+static void switch_rtp_dtls_destroy(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (dtls_bio_filter_methods) {
 		BIO_meth_free(dtls_bio_filter_methods);
@@ -3671,8 +3671,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	unsigned long ssl_ctx_error = 0;
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	BIO *bio;
 	DH *dh;
+#endif
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 #ifndef OPENSSL_NO_EC
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
@@ -3751,6 +3753,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 	switch_assert(dtls->ssl_ctx);
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	bio = BIO_new_file(dtls->pem, "r");
 	dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
 	BIO_free(bio);
@@ -3758,7 +3761,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		SSL_CTX_set_tmp_dh(dtls->ssl_ctx, dh);
 		DH_free(dh);
 	}
-
+#else
+	if(!SSL_CTX_set_dh_auto(dtls->ssl_ctx, 1)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Failed enable auto DH!\n");
+	}
+#endif
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
 
 	//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
@@ -3963,12 +3970,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			case SWITCH_RTP_CRYPTO_RECV:
 				switch_channel_set_variable(channel, "srtp_remote_crypto_key", (const char *)b64_key);
 				break;
-			case SWITCH_RTP_CRYPTO_SEND_RTCP:
-				switch_channel_set_variable(channel, "srtcp_local_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_RECV_RTCP:
-				switch_channel_set_variable(channel, "srtcp_remote_crypto_key", (const char *)b64_key);
-				break;
 			default:
 				break;
 		}
@@ -3981,12 +3982,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			case SWITCH_RTP_CRYPTO_RECV:
 				switch_channel_set_variable(channel, "srtp_remote_video_crypto_key", (const char *)b64_key);
 				break;
-			case SWITCH_RTP_CRYPTO_SEND_RTCP:
-				switch_channel_set_variable(channel, "srtcp_local_video_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_RECV_RTCP:
-				switch_channel_set_variable(channel, "srtcp_remote_video_crypto_key", (const char *)b64_key);
-				break;
 			default:
 				break;
 			}
@@ -3998,12 +3993,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 				break;
 			case SWITCH_RTP_CRYPTO_RECV:
 				switch_channel_set_variable(channel, "srtp_remote_audio_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_SEND_RTCP:
-				switch_channel_set_variable(channel, "srtcp_local_audio_crypto_key", (const char *)b64_key);
-				break;
-			case SWITCH_RTP_CRYPTO_RECV_RTCP:
-				switch_channel_set_variable(channel, "srtcp_remote_audio_crypto_key", (const char *)b64_key);
 				break;
 			default:
 				break;
@@ -5523,7 +5512,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 {
 	int was_blocking = 0;
 	switch_size_t bytes;
-	uint32_t flushed = 0;
 	switch_size_t bytes_out = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
@@ -5604,8 +5592,6 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "*** RTP packet handled in flush loop %d ***\n", do_cng);
 #endif
 					}
-
-					flushed++;
 
 					rtp_session->stats.inbound.raw_bytes += bytes;
 					rtp_session->stats.inbound.flush_packet_count++;

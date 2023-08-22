@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.10-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.11-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [10-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [11-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -582,7 +582,7 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-for luaversion in luajit lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
+for luaversion in luajit lua5.3 lua-5.3 lua53 lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
   PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
   if test ${have_lua} = yes; then
     break
@@ -1352,7 +1352,21 @@ PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
 PKG_CHECK_MODULES([SHOUT], [shout >= 2.2.2],[
-  AM_CONDITIONAL([HAVE_SHOUT],[true])],[
+  AM_CONDITIONAL([HAVE_SHOUT],[true])
+  SHOUT_VERSION="`$PKG_CONFIG --modversion shout`"
+  SHOUT_MAJOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f1`"
+  SHOUT_MINOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f2`"
+  SHOUT_PATCH_VERSION="`echo $SHOUT_VERSION | cut -d. -f3`"
+  test -n "$SHOUT_PATCH_VERSION" || SHOUT_PATCH_VERSION=0
+  AC_MSG_NOTICE([SHOUT version: $SHOUT_VERSION])
+  AC_MSG_NOTICE([SHOUT major version: $SHOUT_MAJOR_VERSION])
+  AC_MSG_NOTICE([SHOUT minor version: $SHOUT_MINOR_VERSION])
+  AC_MSG_NOTICE([SHOUT patch version: $SHOUT_PATCH_VERSION])
+  AC_SUBST([SHOUT_VERSION])
+  AC_SUBST([SHOUT_MAJOR_VERSION])
+  AC_SUBST([SHOUT_MINOR_VERSION])
+  AC_SUBST([SHOUT_PATCH_VERSION])
+  ],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SHOUT],[false])])
 
 mp3lame=false
@@ -1518,26 +1532,32 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
+PKG_CHECK_MODULES([KS], [libks2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
-    if module_enabled mod_verto; then
-      AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
-    else
-      if module_enabled mod_signalwire; then
-        AC_MSG_ERROR([You need to either install libks or disable mod_signalwire in modules.conf])
+  PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
+    AM_CONDITIONAL([HAVE_KS],[true])],[
+      if module_enabled mod_verto; then
+        AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_verto in modules.conf])
       else
-        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        if module_enabled mod_signalwire; then
+          AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_signalwire in modules.conf])
+        else
+          AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        fi
       fi
-    fi
+  ])
 ])
 
-PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-    if module_enabled mod_signalwire; then
-      AC_MSG_ERROR([You need to either install signalwire-client-c or disable mod_signalwire in modules.conf])
-    else
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
-    fi
+  PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+    AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install signalwire-client-c2 or signalwire-client-c or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+      fi
+  ])
 ])
 
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[

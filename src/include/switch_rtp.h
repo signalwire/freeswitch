@@ -106,12 +106,13 @@ typedef struct icand_s {
 } icand_t;
 
 #define MAX_CAND 50
+#define MAX_CAND_IDX_COUNT 2
 typedef struct ice_s {
 
-	icand_t cands[MAX_CAND][2];
-	int cand_idx[2];
-	int chosen[2];
-	int is_chosen[2];
+	icand_t cands[MAX_CAND][MAX_CAND_IDX_COUNT];
+	int cand_idx[MAX_CAND_IDX_COUNT];
+	int chosen[MAX_CAND_IDX_COUNT];
+	int is_chosen[MAX_CAND_IDX_COUNT];
 	char *ufrag;
 	char *pwd;
 	char *options;
