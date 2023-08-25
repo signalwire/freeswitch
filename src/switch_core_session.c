@@ -799,6 +799,7 @@ static const char *message_names[] = {
 	"DEFLECT",
 	"VIDEO_REFRESH_REQ",
 	"DISPLAY",
+	"MEDIA_PARAMS",
 	"TRANSCODING_NECESSARY",
 	"AUDIO_SYNC",
 	"VIDEO_SYNC",

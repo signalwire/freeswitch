@@ -1170,7 +1170,7 @@ static uint32_t parse_lifetime_mki(const char **p, const char *end)
 					val += ((**p) - '0') * i;
 				}
 				res |= (val & 0x000000ff);					/* MKI_SIZE */
-			} else if (isdigit(*(field_begin + 1)) && (field_begin + 2) && (*(field_begin + 2) == '^') && (field_begin + 3) && isdigit(*(field_begin + 3))) {
+			} else if (isdigit(*(field_begin + 1)) && (*(field_begin + 2) == '^') && isdigit(*(field_begin + 3))) {
 				res |= (CRYPTO_KEY_MATERIAL_LIFETIME << 24);
 				val = ((uint32_t) (*(field_begin + 1) - '0')) << 8;
 				res |= val;									/* LIFETIME base. */
@@ -4167,10 +4167,15 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				argc = switch_split(data, ' ', fields);
 
+				if (argc < 6 || !switch_is_uint_in_range(fields[1], 1, MAX_CAND_IDX_COUNT)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+					continue;
+				}
+
 				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-				if (argc < 6 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+				if (engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Too many candidates\n");
 					continue;
 				}
 
@@ -4250,7 +4255,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	
  relay:
 	
-	for (cid = 0; cid < 2; cid++) {
+	for (cid = 0; cid < MAX_CAND_IDX_COUNT; cid++) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Searching for %s candidate.\n", cid ? "rtcp" : "rtp");
 
 		for (ai = 0; ai < engine->cand_acl_count; ai++) {
@@ -4499,19 +4504,28 @@ struct matches {
 	int codec_idx;
 };
 
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 static void greedy_sort(switch_media_handle_t *smh, struct matches *matches, int m_idx, const switch_codec_implementation_t **codec_array, int total_codecs)
 {
 	int j = 0, f = 0, g;
 	struct matches mtmp[MAX_MATCHES] = { { 0 } };
+
+	m_idx = MIN(m_idx, MAX_MATCHES);
+
 	for(j = 0; j < m_idx; j++) {
 		*&mtmp[j] = *&matches[j];
-					}
-	for (g = 0; g < smh->mparams->num_codecs && g < total_codecs; g++) {
+	}
+
+	for (g = 0; g < smh->mparams->num_codecs && g < total_codecs && f < MAX_MATCHES; g++) {
 		const switch_codec_implementation_t *imp = codec_array[g];
 
 		for(j = 0; j < m_idx; j++) {
-			if (mtmp[j].imp == imp) {
+			if (mtmp[j].imp && mtmp[j].imp == imp) {
 				*&matches[f++] = *&mtmp[j];
+				mtmp[j].imp = NULL;
 			}
 		}
 	}
@@ -5545,6 +5559,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							/* ptime does not match */
 							match = 0;
 
+							if (nm_idx >= MAX_MATCHES) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+												  "Audio Codec Compare [%s:%d:%u:%u:%d:%u:%d] was not saved as a near-match. Too many. Ignoring.\n",
+												  imp->iananame, imp->ianacode, codec_rate, imp->actual_samples_per_second, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
+								continue;
+							}
+
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Audio Codec Compare [%s:%d:%u:%d:%u:%d] is saved as a near-match\n",
 											  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
@@ -6153,9 +6174,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 										  imp->iananame, map->rm_pt);
 
 						m_idx++;
+
+						if (m_idx >= MAX_MATCHES) {
+							break;
+						}
 					}
 
 					vmatch = 0;
+				}
+
+				if (m_idx >= MAX_MATCHES) {
+					break;
 				}
 			}
 

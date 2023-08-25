@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2023, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -23,37 +23,39 @@
  *
  * Contributor(s):
  *
- * Anthony Minessale II <anthm@freeswitch.org>
- * Ken Rice <krice@freeswitch.org>
- * Paul D. Tinsley <pdt at jackhammer.org>
- * Bret McDanel <trixter AT 0xdecafbad.com>
- * Marcel Barbulescu <marcelbarbulescu@gmail.com>
- * Raymond Chandler <intralanman@gmail.com>
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
- * Jakub Karolczyk <jakub.karolczyk@signalwire.com>
- *
- *
- * mod_av.h -- LibAV mod
+ * Julien Chavanton <jchavanton@gmail.com>
  *
  */
 
-#ifndef MOD_AV_H
-#define MOD_AV_H
+#ifndef SWITCH_OPUS_PARSE_H
+#define SWITCH_OPUS_PARSE_H
 
-#define LIBAVCODEC_V 59
-#define LIBAVFORMAT_V 59
-#define LIBAVUTIL_V 57
+typedef enum { false, true } bool_t;
 
-struct mod_av_globals {
-	int debug;
-};
+typedef struct opus_packet_info {
+	int16_t vad;
+	int16_t vad_ms;
+	int16_t fec;
+	int16_t fec_ms;
+	bool_t stereo;
+	/* number of opus frames in the packet */
+	int16_t frames;
+	int16_t config;
+	int16_t channels;
+	int16_t ms_per_frame;
+	int32_t ptime_ts;
+	bool_t valid;
+	/* number of silk_frames in an opus frame */
+	int16_t frames_silk;
+	/* VAD flag of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
+	int16_t vad_flags_per_silk_frame;
+	/* LBRR (FEC) flag of all 20 ms silk-frames of the packet; LSB the first frame, MSB: the last */
+	int16_t fec_flags_per_silk_frame;
+} opus_packet_info_t;
 
-extern struct mod_av_globals mod_av_globals;
+switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_length_bytes, opus_packet_info_t *packet_info, switch_bool_t debug);
 
-void show_codecs(switch_stream_handle_t *stream);
-void show_formats(switch_stream_handle_t *stream);
-
-#endif
+#endif /* SWITCH_OPUS_PARSE_H */
 
 /* For Emacs:
  * Local Variables:
@@ -65,4 +67,3 @@ void show_formats(switch_stream_handle_t *stream);
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
-
