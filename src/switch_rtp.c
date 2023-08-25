@@ -113,6 +113,7 @@ typedef struct {
 	char body[SWITCH_RTP_MAX_BUF_LEN+4+sizeof(char *)];
 	switch_rtp_hdr_ext_t *ext;
 	char *ebody;
+	switch_time_t received_ts;
 } rtp_msg_t;
 
 #define RTP_BODY(_s) (char *) (_s->recv_msg.ebody ? _s->recv_msg.ebody : _s->recv_msg.body)
@@ -483,6 +484,7 @@ struct switch_rtp {
 	uint32_t last_max_vb_frames;
 	int skip_timer;
 	uint32_t prev_nacks_inflight;
+	switch_bool_t packet_stats_io_info_set;
 };
 
 struct switch_rtcp_report_block {
@@ -4267,11 +4269,32 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_ses
 	return status;
 }
 
+static void reset_packet_stats_io_info(switch_rtp_t *rtp_session) {
+	switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+	const char *uuid=NULL;
+	switch_core_session_t *b_session=NULL;
+	switch_rtp_t *b_rtp_session=NULL;
+
+	rtp_session->packet_stats_io_info_set = SWITCH_FALSE;
+	if (channel) {
+		uuid = switch_channel_get_variable_dup(channel,"bridge_uuid", SWITCH_FALSE, -1);
+	}
+	if (uuid) {
+		b_session = switch_core_session_locate(uuid);
+	}
+	if (b_session) {
+		b_rtp_session = switch_core_media_get_rtp_session(b_session, SWITCH_MEDIA_TYPE_AUDIO);
+		b_rtp_session->packet_stats_io_info_set = SWITCH_FALSE;
+		switch_core_session_rwunlock(b_session);
+	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, ">>>> PACKET STATS IO INFO UNSET <<<<\n");
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc)
 {
 	rtp_session->ssrc = ssrc;
 	rtp_session->send_msg.header.ssrc = htonl(rtp_session->ssrc);
-
+	reset_packet_stats_io_info(rtp_session);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -4279,6 +4302,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_ses
 {
 	rtp_session->remote_ssrc = ssrc;
 	rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC] = 0;
+	reset_packet_stats_io_info(rtp_session);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -5651,6 +5675,46 @@ static int get_recv_payload(switch_rtp_t *rtp_session)
 	return r;
 }
 
+
+
+static void set_packet_stats_io_info(switch_rtp_t *rtp_session) {
+	switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+	const char *uuid=NULL;
+	switch_core_session_t *b_session=NULL;
+	switch_rtp_t *b_rtp_session=NULL;
+	switch_channel_t *b_channel=NULL;
+	if (rtp_session->packet_stats_io_info_set)
+		return;
+	if (channel) {
+		uuid = switch_channel_get_variable_dup(channel,"bridge_uuid", SWITCH_FALSE, -1);
+	}
+	if (uuid) {
+		b_session = switch_core_session_locate(uuid);
+	}
+	if (b_session) {
+		b_rtp_session = switch_core_media_get_rtp_session(b_session, SWITCH_MEDIA_TYPE_AUDIO);
+		b_channel = switch_core_session_get_channel(b_session);
+		switch_core_session_rwunlock(b_session);
+
+		if (b_rtp_session && b_channel) {
+			packet_stats_io_info_t packet_stats_io_info;
+			packet_stats_io_info.out_ssrc = b_rtp_session->ssrc;
+			packet_stats_io_info.out_codec = '\0';
+			packet_stats_io_info.out_remote_addr = b_rtp_session->remote_addr;
+			packet_stats_io_info.out_local_addr = b_rtp_session->local_addr;
+
+			packet_stats_io_info.in_ssrc = rtp_session->remote_ssrc;
+			packet_stats_io_info.in_codec = '\0';
+			packet_stats_io_info.in_remote_addr = rtp_session->remote_addr;
+			packet_stats_io_info.in_local_addr = rtp_session->local_addr;
+			if (rtp_session->remote_ssrc && b_rtp_session->ssrc)
+				rtp_session->packet_stats_io_info_set = SWITCH_TRUE;
+			switch_core_session_set_io_stats(b_rtp_session->session, &packet_stats_io_info);
+		}
+	}
+
+}
+
 #define return_cng_frame() do_cng = 1; goto timer_check
 
 static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags,
@@ -5719,6 +5783,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	if (poll_status == SWITCH_STATUS_SUCCESS) {
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
+		if (*bytes) {
+			rtp_session->recv_msg.received_ts = switch_micro_time_now();
+		}
 	} else {
 		*bytes = 0;
 	}
@@ -6357,7 +6424,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			}
 		}
 	}
-
+	set_packet_stats_io_info(rtp_session);
 	return status;
 }
 
@@ -7891,6 +7958,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 			switch_set_flag(frame, SFF_RFC2833);
 		}
 		frame->timestamp = ntohl(rtp_session->last_rtp_hdr.ts);
+
+		frame->received_ts = rtp_session->recv_msg.received_ts;
 		frame->seq = (uint16_t) ntohs((uint16_t) rtp_session->last_rtp_hdr.seq);
 		frame->ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 		frame->m = rtp_session->last_rtp_hdr.m ? SWITCH_TRUE : SWITCH_FALSE;
@@ -8298,7 +8367,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->seq += delta;
 
 		send_msg->header.seq = htons(rtp_session->seq);
-		
+
 		if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && send_msg->header.pt == rtp_session->payload) {
 			switch_swap_linear((int16_t *)send_msg->body, (int) datalen);
 		}

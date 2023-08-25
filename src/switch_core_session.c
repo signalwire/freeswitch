@@ -36,10 +36,42 @@
 #include "switch.h"
 #include "switch_core.h"
 #include "private/switch_core_pvt.h"
+#include <fspr_network_io.h>
 
 #define DEBUG_THREAD_POOL
 
 struct switch_session_manager session_manager;
+
+SWITCH_DECLARE(void) switch_core_session_increment_plc(switch_core_session_t *session)
+{
+	session->stats.in_plc++;
+}
+
+SWITCH_DECLARE(void) switch_core_session_increment_read(switch_core_session_t *session)
+{
+	session->stats.in_count++;
+}
+
+SWITCH_DECLARE(void) switch_core_session_set_io_stats(switch_core_session_t *session, packet_stats_io_info_t *packet_stats_io_info)
+{
+	if ((session->stats.io_info.out_ssrc != 0 && session->stats.io_info.out_ssrc != packet_stats_io_info->out_ssrc)
+	 || (session->stats.io_info.in_ssrc != 0 && session->stats.io_info.in_ssrc != packet_stats_io_info->in_ssrc)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SSRC change[%u][%u] [%u][%u]\n",
+				session->stats.io_info.out_ssrc, packet_stats_io_info->out_ssrc,
+				session->stats.io_info.in_ssrc, packet_stats_io_info->in_ssrc
+				);
+		packet_stats_print(session);
+		memset(&session->stats, '\0', sizeof(packet_stats_t));
+	}
+	session->stats.io_info.out_remote_addr = packet_stats_io_info->out_remote_addr;
+	session->stats.io_info.out_local_addr = packet_stats_io_info->out_local_addr;
+	session->stats.io_info.out_ssrc = packet_stats_io_info->out_ssrc;
+	session->stats.io_info.out_callid = packet_stats_io_info->out_callid;
+	session->stats.io_info.in_remote_addr = packet_stats_io_info->in_remote_addr;
+	session->stats.io_info.in_local_addr = packet_stats_io_info->in_local_addr;
+	session->stats.io_info.in_ssrc = packet_stats_io_info->in_ssrc;
+	session->stats.io_info.in_callid = packet_stats_io_info->in_callid;
+}
 
 SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target)
 {
@@ -1493,6 +1525,7 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 			}
 		}
 	}
+	packet_stats_print(session);
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 }
 
