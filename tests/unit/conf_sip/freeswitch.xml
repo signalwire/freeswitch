@@ -15,6 +15,7 @@
 			<load module="mod_tone_stream"/>
 			<load module="mod_commands"/>
 			<load module="mod_sndfile"/>
+			<load module="mod_hash"/>
       </modules>
     </configuration>
 
@@ -36,9 +37,21 @@
 
     <configuration name="sofia.conf" description="SofiaSIP">
         <profiles>
-    <profile name="internal">
-      <gateways>
-      </gateways>
+    <profile name="external">
+        <gateways>
+
+           <gateway name="test_gateway">
+                <param name="username" value="not-used"/>
+                <param name="password" value="not-used"/>
+                <param name="proxy" value="$${local_ip_v4}:63068"/>
+                <param name="register" value="false"/>
+                <param name="retry-seconds" value="30"/>
+                <param name="dtmf-type" value="rfc2833"/>
+                <variables>   
+                 <variable name="rtp_secure_media"  value="false"  direction="outbound"/>  
+                </variables>
+            </gateway>
+        </gateways>
 
       <domains>
         <domain name="all" alias="false" parse="true"/>
@@ -50,7 +63,48 @@
         <param name="p-asserted-id-parse" value="verbatim"/>
         <param name="username" value="SignalWire-STACK"/>
         <param name="user-agent-string" value="SignalWire STACK Unit Test"/>
-        <param name="sip-trace" value="yes"/>
+        <param name="sip-trace" value="no"/>
+        <param name="sip-capture" value="no"/>
+        <param name="rfc2833-pt" value="101"/>
+        <param name="sip-port" value="63068"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="default"/>
+        <param name="dtmf-duration" value="2000"/>
+        <param name="inbound-codec-prefs" value="PCMU"/>
+        <param name="outbound-codec-prefs" value="PCMU"/>
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="local-network-acl" value="localnet.auto"/>
+        <param name="manage-presence" value="false"/>
+        <param name="inbound-codec-negotiation" value="generous"/>
+        <param name="nonce-ttl" value="60"/>
+        <param name="inbound-late-negotiation" value="true"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${local_ip_v4}"/>
+        <param name="rtp-timeout-sec" value="300"/>
+        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="session-timeout" value="600"/>
+        <param name="minimum-session-expires" value="90"/>
+        <param name="tls" value="false"/>
+      </settings>
+  </profile>
+
+    <profile name="internal">
+        <gateways>
+    </gateways>
+
+      <domains>
+        <domain name="all" alias="false" parse="true"/>
+      </domains>
+
+      <settings>
+        <param name="debug" value="1"/>
+        <param name="shutdown-on-fail" value="true"/>
+        <param name="p-asserted-id-parse" value="verbatim"/>
+        <param name="username" value="SignalWire-STACK"/>
+        <param name="user-agent-string" value="SignalWire STACK Unit Test"/>
+        <param name="sip-trace" value="no"/>
         <param name="sip-capture" value="no"/>
         <param name="rfc2833-pt" value="101"/>
         <param name="sip-port" value="61069"/>
@@ -65,10 +119,10 @@
         <param name="inbound-codec-negotiation" value="generous"/>
         <param name="nonce-ttl" value="60"/>
         <param name="inbound-late-negotiation" value="true"/>
-        <param name="rtp-ip" value="170.0.0.1"/>
-        <param name="sip-ip" value="170.0.0.1"/>
-        <param name="ext-rtp-ip" value="170.0.0.1"/>
-        <param name="ext-sip-ip" value="170.0.0.1"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${local_ip_v4}"/>
         <param name="rtp-timeout-sec" value="300"/>
         <param name="rtp-hold-timeout-sec" value="1800"/>
         <param name="session-timeout" value="600"/>
@@ -89,12 +143,20 @@
 
   <section name="dialplan" description="Regex/XML Dialplan">
     <context name="default">
+		<extension name="two">
+			<condition field="destination_number" expression="^\+15553332901$">
+				<action application="log" data="${sip_h_identity}"/>
+				<action application="hash" data="insert/realm/identity_check/${sip_h_identity}"/>
+				<action application="answer"/>
+				<action application="park"/>
+			</condition>
+		</extension>
 		<extension name="one">
 			<condition field="destination_number" expression="^\+15553332900$">
 				<action application="set" data="absolute_codec_string=PCMU@20i"/>
 				<action application="info"/>
 				<action application="answer"/>
-				<action application="park""/>
+				<action application="park"/>
 			</condition>
 		</extension>
     </context>
