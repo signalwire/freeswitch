@@ -95,30 +95,30 @@
                 </configuration>
 
                 <configuration name="portaudio.conf" description="Soundcard Endpoint">
-                  <settings>
-                    <param name="indev" value=""/>
-                    <!-- device to use for output -->
-                    <param name="outdev" value=""/>
-                    <!--<param name="ringdev" value=""/>-->
-                    <param name="ring-file" value="tone_stream://%(2000,4000,440.0,480.0);loops=20"/>
-                    <param name="ring-interval" value="5"/>
-                    <param name="hold-file" value="$${hold_music}"/>
-                    <!--<param name="timer-name" value="soft"/>-->
-                    <param name="dialplan" value="XML"/>
-                    <param name="cid-name" value="$${outbound_caller_name}"/>
-                    <param name="cid-num" value="$${outbound_caller_number}"/>
-                    <param name="sample-rate" value="48000"/>
-                    <param name="codec-ms" value="10"/>
-                  </settings>
+                        <settings>
+                                <param name="indev" value=""/>
+                                <!-- device to use for output -->
+                                <param name="outdev" value=""/>
+                                <!--<param name="ringdev" value=""/>-->
+                                <param name="ring-file" value="tone_stream://%(2000,4000,440.0,480.0);loops=20"/>
+                                <param name="ring-interval" value="5"/>
+                                <param name="hold-file" value="$${hold_music}"/>
+                                <!--<param name="timer-name" value="soft"/>-->
+                                <param name="dialplan" value="XML"/>
+                                <param name="cid-name" value="$${outbound_caller_name}"/>
+                                <param name="cid-num" value="$${outbound_caller_number}"/>
+                                <param name="sample-rate" value="48000"/>
+                                <param name="codec-ms" value="10"/>
+                        </settings>
                 </configuration>
 
                 <configuration name="event_socket.conf" description="Socket Client">
-                      <settings>
-                            <param name="nat-map" value="false"/>
-                            <param name="listen-ip" value="127.0.0.1"/>
-                            <param name="listen-port" value="8022"/>
-                            <param name="password" value="ClueCon"/>
-                      </settings>
+                        <settings>
+                                <param name="nat-map" value="false"/>
+                                <param name="listen-ip" value="127.0.0.1"/>
+                                <param name="listen-port" value="8022"/>
+                                <param name="password" value="ClueCon"/>
+                        </settings>
                 </configuration>
 
                 <configuration name="post_load_modules.conf" description="Modules">
@@ -221,7 +221,7 @@
                                 <param name="crash-protection" value="false"/>
                                 <param name="dump-cores" value="yes"/>
                                 <param name="rtp-start-port" value="16384"/>
-                                <param name="rtp-end-port" value="16484"/>
+                                <param name="rtp-end-port" value="16584"/>
                         </settings>
                 </configuration>
         </section>
@@ -262,7 +262,7 @@
                         </extension>
                         <extension name="number">
                                 <condition field="destination_number" expression="^(.*)$">
-                                 <!-- Default gateway is set by FSComm when default account is selected -->
+                                        <!-- Default gateway is set by FSComm when default account is selected -->
                                         <action application="export" data="origination_caller_id_number=${fscomm_caller_id_num}"/>
                                         <action application="export" data="origination_caller_id_name=${fscomm_caller_id_name}"/>
                                         <action application="info"/>
