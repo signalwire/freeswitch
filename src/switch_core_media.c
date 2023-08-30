@@ -4624,9 +4624,10 @@ static void check_stream_changes(switch_core_session_t *session, const char *r_s
 {
 	switch_core_session_t *other_session = NULL;
 	switch_core_session_message_t *msg;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	switch_core_session_get_partner(session, &other_session);
-
+	status = switch_core_session_get_partner(session, &other_session);
+	(void)status;
 
 	if (switch_channel_test_flag(session->channel, CF_STREAM_CHANGED)) {
 		switch_channel_clear_flag(session->channel, CF_STREAM_CHANGED);
