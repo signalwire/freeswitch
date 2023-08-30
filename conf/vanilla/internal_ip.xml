@@ -1,0 +1,4 @@
+<include>
+    <X-PRE-PROCESS cmd="set" data="internal_ip=192.168.2.35"/>
+    <X-PRE-PROCESS cmd="set" data="lan_ip=192.168.2.35"/>
+</include>
