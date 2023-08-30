@@ -2521,7 +2521,7 @@ static void check_jb_sync(switch_core_session_t *session)
 	}
 
 	if (!jb_sync_msec && frames) {
-		jb_sync_msec = (double)(1000 / fps) * frames;
+		jb_sync_msec = ((double)1000 / fps) * frames;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
