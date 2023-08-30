@@ -4662,13 +4662,15 @@ static void check_stream_changes(switch_core_session_t *session, const char *r_s
 			if (switch_channel_test_flag(other_session->channel, CF_AWAITING_STREAM_CHANGE)) {
 				uint8_t proceed = 1;
 				const char *sdp_in, *other_ep;
+				uint8_t res = 0;
 
 				if ((other_ep = switch_channel_get_variable(session->channel, "ep_codec_string"))) {
 					switch_channel_set_variable(other_session->channel, "codec_string", other_ep);
 				}
 
 				sdp_in = switch_channel_get_variable(other_session->channel, SWITCH_R_SDP_VARIABLE);
-				switch_core_media_negotiate_sdp(other_session, sdp_in, &proceed, SDP_TYPE_REQUEST);
+				res = switch_core_media_negotiate_sdp(other_session, sdp_in, &proceed, SDP_TYPE_REQUEST);
+				(void)res;
 				switch_core_media_activate_rtp(other_session);
 				msg = switch_core_session_alloc(other_session, sizeof(*msg));
 				msg->message_id = SWITCH_MESSAGE_INDICATE_RESPOND;
