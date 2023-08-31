@@ -138,9 +138,7 @@ SWITCH_DECLARE(void) EventConsumer::cleanup()
 
 	node_index = 0;
 
-	if (events) {
-		switch_queue_interrupt_all(events);
-	}
+	switch_queue_interrupt_all(events);
 
 	while(switch_queue_trypop(events, &pop) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event = (switch_event_t *) pop;
