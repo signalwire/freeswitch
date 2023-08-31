@@ -209,14 +209,14 @@ const char * mwi_reason2str(mwi_reason_t state)
 switch_status_t vm_file_exists(const char *filename, switch_memory_pool_t *pool)
 {
 	//If filename is a URL, assume it exists
-	if(strstr(filename, "://")) return SWITCH_STATUS_SUCCESS;
+	if(filename && strstr(filename, "://")) return SWITCH_STATUS_SUCCESS;
 	return switch_file_exists(filename, pool);
 }
 
 switch_status_t vm_dir_make_recursive(const char *path, switch_fileperms_t perm, switch_memory_pool_t *pool)
 {
 	//If path is a url e.g. mod_http_cache, assume success
-	if(strstr(path, "://")) return SWITCH_STATUS_SUCCESS;
+	if(path && strstr(path, "://")) return SWITCH_STATUS_SUCCESS;
 	return switch_dir_make_recursive(path, perm, pool);
 }
 
