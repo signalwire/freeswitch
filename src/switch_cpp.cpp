@@ -98,6 +98,7 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 	void *pop = NULL;
 	Event *ret = NULL;
 	switch_event_t *event;
+	switch_status_t res;
 
 	if (!ready) {
 		return NULL;
@@ -105,13 +106,15 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 
 	if (block) {
 		if (timeout > 0) {
-			switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
+			res = switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
 		} else {
-			switch_queue_pop(events, &pop);
+			res = switch_queue_pop(events, &pop);
 		}
 	} else {
-		switch_queue_trypop(events, &pop);
+		res = switch_queue_trypop(events, &pop);
 	}
+
+	(void)res;
 
 	if ((event = (switch_event_t *) pop)) {
 		ret = new Event(event, 1);
