@@ -2272,7 +2272,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 		switch_event_destroy(&my_params);
 	}
 
-	if (status != SWITCH_STATUS_SUCCESS && root && *root) {
+	if (status != SWITCH_STATUS_SUCCESS && *root) {
 		switch_xml_free(*root);
 		*root = NULL;
 		*domain = NULL;
