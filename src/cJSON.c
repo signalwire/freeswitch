@@ -1955,12 +1955,15 @@ CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
 {
+    cJSON_bool res;
+
     if ((object == NULL) || (string == NULL))
     {
         return;
     }
 
-    add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
+    res = add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
+    (void)res;
 }
 
 CJSON_PUBLIC(cJSON*) cJSON_AddNullToObject(cJSON * const object, const char * const name)
