@@ -1934,23 +1934,28 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
 
 CJSON_PUBLIC(void) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
 {
-    add_item_to_object(object, string, item, &global_hooks, false);
+    cJSON_bool res = add_item_to_object(object, string, item, &global_hooks, false);
+    (void)res;
 }
 
 /* Add an item to an object with constant string as key */
 CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
 {
-    add_item_to_object(object, string, item, &global_hooks, true);
+    cJSON_bool res = add_item_to_object(object, string, item, &global_hooks, true);
+    (void)res;
 }
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
 {
+    cJSON_bool res;
+
     if (array == NULL)
     {
         return;
     }
 
-    add_item_to_array(array, create_reference(item, &global_hooks));
+    res = add_item_to_array(array, create_reference(item, &global_hooks));
+    (void)res;
 }
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
