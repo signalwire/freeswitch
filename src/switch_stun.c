@@ -696,8 +696,11 @@ SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_p
 {
 	switch_sockaddr_t *addr = NULL;
 	char buf[30];
+	switch_status_t res;
 
-	switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, 0, 0, pool);
+	res = switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, 0, 0, pool);
+	(void)res;
+
 	return switch_core_strdup(pool, switch_str_nil(switch_get_addr(buf, sizeof(buf), addr)));
 
 }
