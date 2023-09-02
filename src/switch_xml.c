@@ -1736,7 +1736,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 			}
 
 			close(fd);
-			fd = -1;
 		}
 	}
 
