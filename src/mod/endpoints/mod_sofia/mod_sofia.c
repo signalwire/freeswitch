@@ -2793,8 +2793,8 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 
 	if (argv[6]) {
 		time_t now = switch_epoch_time_now(NULL);
-		switch_time_t etime = atoi(argv[6]);
-		exp_unix = (int)etime;
+		switch_time_t etime = atoi(argv[6]);		
+		exp_unix = (int)(atoi(argv[6]));
 		switch_size_t retsize;
 
 		exp_secs = (int)(etime - now);
