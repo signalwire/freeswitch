@@ -37,13 +37,10 @@
       vars.xml contains all the #set directives for the preprocessor.
   -->
   <X-PRE-PROCESS cmd="include" data="vars.xml"/>
+  <X-PRE-PROCESS cmd="include" data="C1_Vars.xml"/>
 
   <section name="configuration" description="Various Configuration">
     <X-PRE-PROCESS cmd="include" data="autoload_configs/*.xml"/>
-  </section>
-
-  <section name="configuration" description="More global Vars">
-    <X-PRE-PROCESS cmd="include" data="C1_Vars.xml"/>
   </section>
 
   <section name="dialplan" description="Regex/XML Dialplan">
