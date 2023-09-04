@@ -6,4 +6,5 @@
 	<param name="register" value="true" />
 	<param name="context" value="Trunk-Inbound" />
 	<param name="extension" value="10000" />
+	<param name="caller-id-in-from" value="true"/>
 </gateway>

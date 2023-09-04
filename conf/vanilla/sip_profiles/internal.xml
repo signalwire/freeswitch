@@ -26,6 +26,8 @@
     </domains>
 
     <settings>
+        <param name="log-auth-failures" value="true"/>
+
         <!-- inject delay between dtmf digits on send to help some slow interpreters (also per channel with rtp_digit_delay var -->
         <!-- <param name="rtp-digit-delay" value="40"/>-->
 
