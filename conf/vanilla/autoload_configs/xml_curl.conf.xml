@@ -1,7 +1,7 @@
 <configuration name="xml_curl.conf" description="cURL XML Gateway">
      <bindings>
           <binding name="directory">
-               <param name="gateway-url" value="http://middleware:3000/auth/login" bindings="directory"/>
+               <param name="gateway-url" value="http://$${middleware_ip}/auth/login" bindings="directory"/>
                <param name='method' value='GET' />
                <!-- <param name="gateway-credentials" value="freeswitch:works"/>
                <param name="auth-scheme" value="basic"/> -->

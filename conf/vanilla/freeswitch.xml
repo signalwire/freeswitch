@@ -42,13 +42,14 @@
     <X-PRE-PROCESS cmd="include" data="autoload_configs/*.xml"/>
   </section>
 
+  <section name="configuration" description="More global Vars">
+    <X-PRE-PROCESS cmd="include" data="C1_Vars.xml"/>
+  </section>
+
   <section name="dialplan" description="Regex/XML Dialplan">
     <X-PRE-PROCESS cmd="include" data="dialplan/*.xml"/>
   </section>
 
-  <section name="find-ip-addr" description="Regex/XML Dialplan">
-    <X-PRE-PROCESS cmd="include" data="internal_ip.xml"/>
-  </section>
 
   <!-- mod_dingaling is reliant on the vcard data in the "directory" section. -->
   <!-- mod_sofia is reliant on the user data for authorization -->

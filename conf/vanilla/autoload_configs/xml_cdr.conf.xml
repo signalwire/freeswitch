@@ -1,7 +1,7 @@
 <configuration name="xml_cdr.conf" description="XML CDR CURL logger">
      <settings>
           <!-- the url to post to if blank web posting is disabled  -->
-          <param name="url" value="http://middleware:3000/cdr"/>
+          <param name="url" value="http://$${middleware_ip}:3000/cdr"/>
 
           <!-- optional: credentials to send to web server -->
           <!--    <param name="cred" value="user:pass"/> -->

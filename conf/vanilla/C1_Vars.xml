@@ -1,0 +1,3 @@
+<include>
+    <X-PRE-PROCESS cmd="set" data="middleware_ip=localhost"/>
+</include>
