@@ -186,15 +186,16 @@ struct key_collect {
 static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct key_collect *collect = (struct key_collect *) obj;
-	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
+	switch_channel_t *channel = NULL;
 	char buf[10] = SWITCH_BLANK_STRING;
 	switch_application_interface_t *application_interface = NULL;
 
-	if (collect->session) {
-		if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
-			return NULL;
-		}
-	} else {
+	if (!collect->session) {
+		return NULL;
+	}
+
+	channel = switch_core_session_get_channel(collect->session);
+	if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 
@@ -232,6 +233,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			switch_channel_set_flag(channel, CF_WINNER);
 			switch_channel_set_variable(channel, "group_dial_status", "winner");
 		}
+
 		goto wbreak;
 	}
 
@@ -271,6 +273,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			switch_ivr_play_file(collect->session, NULL, collect->error_file, NULL);
 		}
 	}
+
   wbreak:
 
 	switch_core_session_rwunlock(collect->session);
@@ -909,6 +912,9 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 		return -1;
 	}
 	wrote = teletone_mux_tones(ts, map);
+	if (wrote <= 0) {
+		return -1;
+	}
 
 	if (tto->channels != 1) {
 		if (tto->mux_buflen < wrote * 2 * tto->channels) {
@@ -3215,6 +3221,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						l_session = NULL;
 					}
 
+					switch_channel_set_variable(oglobals.originate_status[i].peer_channel, "originate_endpoint", chan_type);
 					switch_channel_execute_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE);
 					switch_channel_api_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE);
 				}

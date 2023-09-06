@@ -411,7 +411,7 @@ switch_status_t mariadb_finish_results_real(const char* file, const char* func, 
 				if ((status = mysql_next_result(&handle->con))) {
 					if (status > 0) {
 						err_str = mariadb_handle_get_error(handle);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to get next for query (%s): %s\n", handle->sql, err_str);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to get next for query (%s): %s\n", handle->sql, switch_str_nil(err_str));
 						switch_safe_free(err_str);
 
 						break;
@@ -627,13 +627,27 @@ switch_status_t mariadb_send_query(mariadb_handle_t *handle, const char* sql)
 {
 	char *err_str;
 	int ret;
+	unsigned retries = 60; /* 60 tries, will take 30 to 60 seconds at worst */
 
 	switch_safe_free(handle->sql);
 	handle->sql = strdup(sql);
+    again:
 	handle->stored_results = 0;
 	ret = mysql_real_query(&handle->con, sql, (unsigned long)strlen(sql));	
 	if (ret) {
 		err_str = mariadb_handle_get_error(handle);
+		if (strstr(err_str, "Deadlock found when trying to get lock; try restarting transaction")) {
+			if (--retries > 0) {
+				switch_safe_free(err_str);
+				/* We are waiting for 500 ms and random time is not more than 500 ms.
+				  This is necessary so that the delay on the primary and secondary servers does not coincide and deadlock does not occur again. */
+				switch_yield(500 + (rand() & 511));
+				goto again;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DeadLock. The retries are over.\n");
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to send query (%s) to database: %s\n", sql, err_str);
 		switch_safe_free(err_str);
 		mariadb_finish_results(handle);

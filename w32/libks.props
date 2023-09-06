@@ -37,7 +37,7 @@
   <Target Name="libksBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
            package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)_$(libksBuildNumber)/libks-$(libksVersion)_$(libksBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
-           expectfileordirectory="$(libksDir)\binaries\$(Platform)\$(Configuration)\ks.dll" 
+           expectfileordirectory="$(libksDir)\binaries\$(Platform)\$(Configuration)\ks2.dll" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs\"
@@ -46,7 +46,7 @@
   <Target Name="libksHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
            package="http://files.freeswitch.org/windows/packages/libks/$(libksVersion)_$(libksBuildNumber)/libks-$(libksVersion)_$(libksBuildNumber)-headers.zip"
-           expectfileordirectory="$(libksDir)\src\include\libks\ks.h" 
+           expectfileordirectory="$(libksDir)\libks\src\include\libks\ks.h" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs\"
@@ -58,7 +58,7 @@
         <ItemGroup>  
              <libksFiles Include="$(libksDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>  
         </ItemGroup>  
-        <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\ks.dll')"
+        <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\ks2.dll')"
             SourceFiles="@(libksFiles)"  
             DestinationFiles="@(libksFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"  
         />  
@@ -67,12 +67,12 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(libksDir)\src\include;$(libksDir)\src\include\libks;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__PRETTY_FUNCTION__=__FUNCSIG__;WIN32;_WINDOWS;SWCLT_VERSION_MAJOR=1;SWCLT_VERSION_MINOR=0;SWCLT_VERSION_REVISION=0;_WIN32_WINNT=0x0600;_WINSOCK_DEPRECATED_NO_WARNINGS=1;WIN32_LEAN_AND_MEAN=1;KS_PLAT_WIN=1;NOMAXMIN=1;_CRT_SECURE_NO_WARNINGS=1;SWCLT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(libksDir)\libks\src\include;$(libksDir)\libks\src\include\libks;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__KS_FUNC__=__FUNCSIG__;WIN32;_WINDOWS;SWCLT_VERSION_MAJOR=1;SWCLT_VERSION_MINOR=0;SWCLT_VERSION_REVISION=0;_WIN32_WINNT=0x0600;_WINSOCK_DEPRECATED_NO_WARNINGS=1;WIN32_LEAN_AND_MEAN=1;KS_PLAT_WIN=1;NOMAXMIN=1;_CRT_SECURE_NO_WARNINGS=1;SWCLT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(libksDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ks.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ks2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

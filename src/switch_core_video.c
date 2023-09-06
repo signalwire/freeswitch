@@ -3521,11 +3521,18 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 #endif
 }
 
-SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height)
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t **destP, void *src, switch_img_fmt_t fmt, int width, int height)
 {
 #ifdef SWITCH_HAVE_YUV
 	uint32_t fourcc;
 	int ret = -1;
+	switch_image_t *dest = NULL;
+
+	if (!destP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	dest = *destP;
 
 	fourcc = switch_img_fmt2fourcc(fmt);
 
@@ -3574,6 +3581,8 @@ SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *
 					0, fourcc);
 	}
 
+	*destP = dest;
+
 	return ret == 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 #else
 	return SWITCH_STATUS_FALSE;
@@ -3586,9 +3595,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 	switch_image_t *dest = NULL;
 	int ret = 0;
 
-	if (destP) {
-		dest = *destP;
+	if (!destP) {
+		return SWITCH_STATUS_FALSE;
 	}
+
+	dest = *destP;
 
 	switch_assert(width > 0);
 	switch_assert(height > 0);
@@ -3615,13 +3626,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_ima
 				kFilterBox);
 	}
 
+	*destP = dest;
+
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Scaling Error: ret: %d\n", ret);
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (destP) {
-		*destP = dest;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -3637,9 +3646,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_im
 	switch_image_t *dest = NULL;
 	int ret = 0;
 
-	if (destP) {
-		dest = *destP;
+	if (!destP) {
+		return SWITCH_STATUS_FALSE;
 	}
+
+	dest = *destP;
 
 	if (dest && src->fmt != dest->fmt) switch_img_free(&dest);
 
@@ -3660,13 +3671,11 @@ SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_im
 		
 	}
 
+	*destP = dest;
+
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Mirror Error: ret: %d\n", ret);
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (destP) {
-		*destP = dest;
 	}
 
 	return SWITCH_STATUS_SUCCESS;

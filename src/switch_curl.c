@@ -58,11 +58,16 @@ SWITCH_DECLARE(void) switch_curl_destroy(void)
 	curl_global_cleanup();
 }
 
-SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, struct curl_httppost **formpostp)
+SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, switch_CURL *curl_handle, switch_curl_mime **mimep)
 {
-
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	curl_mime *mime = NULL;
+	curl_mimepart *part = NULL;
+	uint8_t added = 0;
+#else
 	struct curl_httppost *formpost=NULL;
 	struct curl_httppost *lastptr=NULL;
+#endif
 	switch_event_header_t *hp;
 	int go = 0;
 
@@ -77,39 +82,87 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_even
 		return SWITCH_STATUS_FALSE;
 	}
 
-	for (hp = event->headers; hp; hp = hp->next) {
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	mime = curl_mime_init(curl_handle);
+#endif
 
+	for (hp = event->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
 			char *pname = strdup(hp->name + 12);
 
 			if (pname) {
 				char *fname = strchr(pname, ':');
+
 				if (fname) {
 					*fname++ = '\0';
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+					part = curl_mime_addpart(mime);
+					curl_mime_name(part, pname);
+					curl_mime_filename(part, fname);
+					curl_mime_filedata(part, hp->value);
+					added++;
+#else
 					curl_formadd(&formpost,
 								 &lastptr,
 								 CURLFORM_COPYNAME, pname,
 								 CURLFORM_FILENAME, fname,
 								 CURLFORM_FILE, hp->value,
 								 CURLFORM_END);
+#endif
 				}
+
 				free(pname);
 			}
 		} else {
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+			part = curl_mime_addpart(mime);
+			curl_mime_name(part, hp->name);
+			curl_mime_data(part, hp->value, CURL_ZERO_TERMINATED);
+			added++;
+#else
 			curl_formadd(&formpost,
 						 &lastptr,
 						 CURLFORM_COPYNAME, hp->name,
 						 CURLFORM_COPYCONTENTS, hp->value,
 						 CURLFORM_END);
-
+#endif
 		}
 	}
 
-	*formpostp = formpost;
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	if (!added) {
+		curl_mime_free(mime);
+		mime = NULL;
+	}
+
+	*mimep = mime;
+#else
+	*mimep = formpost;
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
+}
 
+SWITCH_DECLARE(void) switch_curl_mime_free(switch_curl_mime **mimep)
+{
+	if (mimep && *mimep) {
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+		curl_mime_free(*mimep);
+#else
+		curl_formfree(*mimep);
+#endif
+		mimep = NULL;
+	}
+}
+
+SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt_mime(switch_CURL *curl_handle, switch_curl_mime *mime)
+{
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	return curl_easy_setopt(curl_handle, CURLOPT_MIMEPOST, mime);
+#else
+	return curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, mime);
+#endif
 }
 
 /* For Emacs:
