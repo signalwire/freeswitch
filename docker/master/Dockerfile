@@ -7,6 +7,15 @@ FROM debian:${DEBIAN_VERSION}
 ARG DEBIAN_VERSION
 ARG TOKEN
 
+# By default, install the full set of FreeSWITCH packages.  Specify an alternative with:
+#   --build-arg="FS_META_PACKAGE=freeswitch-meta-vanilla"
+# alternatives include:
+#   freeswitch-meta-bare
+#   freeswitch-meta-vanilla
+#   freeswitch-meta-sorbet
+#   freeswitch-meta-all-dbg
+ARG FS_META_PACKAGE=freeswitch-meta-all
+
 # Source Dockerfile:
 # https://github.com/docker-library/postgres/blob/master/9.4/Dockerfile
 
@@ -20,6 +29,7 @@ RUN apt-get update -qq \
 ENV LANG en_US.utf8
 
 # https://freeswitch.org/confluence/display/FREESWITCH/Debian
+# https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/Installation/Linux/Debian_67240088/
 
 RUN wget --no-verbose --http-user=signalwire --http-password=${TOKEN} \
       -O /usr/share/keyrings/signalwire-freeswitch-repo.gpg \
@@ -35,16 +45,16 @@ COPY docker-entrypoint.sh /
 # Add anything else here
 
 ## Ports
-# Open the container up to the world.
-### 8021 fs_cli, 5060 5061 5080 5081 sip and sips, 64535-65535 rtp
+# Document ports used by this container
+### 8021 fs_cli, 5060 5061 5080 5081 sip and sips, 5066 ws, 7443 wss, 8081 8082 verto, 16384-32768, 64535-65535 rtp
 EXPOSE 8021/tcp
 EXPOSE 5060/tcp 5060/udp 5080/tcp 5080/udp
 EXPOSE 5061/tcp 5061/udp 5081/tcp 5081/udp
+EXPOSE 5066/tcp
 EXPOSE 7443/tcp
-EXPOSE 5070/udp 5070/tcp
+EXPOSE 8081/tcp 8082/tcp
 EXPOSE 64535-65535/udp
 EXPOSE 16384-32768/udp
-
 
 # Volumes
 ## Freeswitch Configuration
