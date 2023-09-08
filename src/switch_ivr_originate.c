@@ -4961,9 +4961,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_orig_and_bridge(switch_cor
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 
-		if (peer_session) {
-			switch_core_session_rwunlock(peer_session);
-		}
+		switch_core_session_rwunlock(peer_session);
 	}
 
 	return status;
@@ -5026,9 +5024,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_orig_and_bridge(switch_core_session_t
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 
-		if (peer_session) {
-			switch_core_session_rwunlock(peer_session);
-		}
+		switch_core_session_rwunlock(peer_session);
 	}
 
 	return status;

@@ -64,6 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, 
 	curl_mime *mime = NULL;
 	curl_mimepart *part = NULL;
 	uint8_t added = 0;
+	switch_CURLcode curl_code = CURLE_OK;
 #else
 	struct curl_httppost *formpost=NULL;
 	struct curl_httppost *lastptr=NULL;
@@ -98,9 +99,21 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, 
 
 #if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
 					part = curl_mime_addpart(mime);
-					curl_mime_name(part, pname);
-					curl_mime_filename(part, fname);
-					curl_mime_filedata(part, hp->value);
+					if ((curl_code = curl_mime_name(part, pname))) {
+						free(pname);
+						goto error;
+					}
+
+					if ((curl_code = curl_mime_filename(part, fname))) {
+						free(pname);
+						goto error;
+					}
+
+					if ((curl_code = curl_mime_filedata(part, hp->value))) {
+						free(pname);
+						goto error;
+					}
+
 					added++;
 #else
 					curl_formadd(&formpost,
@@ -117,8 +130,14 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, 
 		} else {
 #if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
 			part = curl_mime_addpart(mime);
-			curl_mime_name(part, hp->name);
-			curl_mime_data(part, hp->value, CURL_ZERO_TERMINATED);
+			if ((curl_code = curl_mime_name(part, hp->name))) {
+				goto error;
+			}
+
+			if ((curl_code = curl_mime_data(part, hp->value, CURL_ZERO_TERMINATED))) {
+				goto error;
+			}
+
 			added++;
 #else
 			curl_formadd(&formpost,
@@ -131,6 +150,11 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, 
 	}
 
 #if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+ error:
+	if (curl_code) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CURL error occured. Error code: %d Error msg: [%s]\n", curl_code, switch_curl_easy_strerror(curl_code));
+	}
+
 	if (!added) {
 		curl_mime_free(mime);
 		mime = NULL;
