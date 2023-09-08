@@ -1,5 +1,5 @@
 # vim:set ft=dockerfile:
-ARG DEBIAN_VERSION=buster
+ARG DEBIAN_VERSION=bookworm
 FROM debian:${DEBIAN_VERSION}
 ARG TOKEN
 
