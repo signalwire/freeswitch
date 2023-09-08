@@ -1,6 +1,10 @@
 # vim:set ft=dockerfile:
 ARG DEBIAN_VERSION=bookworm
 FROM debian:${DEBIAN_VERSION}
+
+# ARGs are cleared after every FROM
+# see: https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+ARG DEBIAN_VERSION
 ARG TOKEN
 
 # Source Dockerfile:
@@ -9,31 +13,22 @@ ARG TOKEN
 # explicitly set user/group IDs
 RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 freeswitch
 
-# grab gosu for easy step-down from root
-RUN apt-get update && apt-get install -y --no-install-recommends dirmngr gnupg2 ca-certificates wget \
-    && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
-    && gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 655DA1341B5207915210AFE936B4249FA7B0FB03 \
-    && gpg2 --output /usr/share/keyrings/signalwire-freeswitch-repo.gpg --export 655DA1341B5207915210AFE936B4249FA7B0FB03 \
-    && rm -rf /var/lib/apt/lists/* \
-    && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture)" \
-    && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/1.2/gosu-$(dpkg --print-architecture).asc" \
-    && gpg --verify /usr/local/bin/gosu.asc \
-    && rm /usr/local/bin/gosu.asc \
-    && chmod +x /usr/local/bin/gosu \
-    && apt-get purge -y --auto-remove ca-certificates wget dirmngr gnupg2
-
 # make the "en_US.UTF-8" locale so freeswitch will be utf-8 enabled by default
-RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends ca-certificates gnupg2 gosu locales wget \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
 
 # https://freeswitch.org/confluence/display/FREESWITCH/Debian
 
-RUN apt-get update && apt-get install ca-certificates lsb-release -y --no-install-recommends \
+RUN wget --no-verbose --http-user=signalwire --http-password=${TOKEN} \
+      -O /usr/share/keyrings/signalwire-freeswitch-repo.gpg \
+      https://freeswitch.signalwire.com/repo/deb/debian-release/signalwire-freeswitch-repo.gpg \
     && echo "machine freeswitch.signalwire.com login signalwire password ${TOKEN}" > /etc/apt/auth.conf \
-    && echo "deb [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ `lsb_release -sc` main" > /etc/apt/sources.list.d/freeswitch.list \
-    && apt-get update && apt-get install -y freeswitch-all \
-    && apt-get purge -y --auto-remove ca-certificates lsb-release \
+    && echo "deb [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] https://freeswitch.signalwire.com/repo/deb/debian-release/ ${DEBIAN_VERSION} main" > /etc/apt/sources.list.d/freeswitch.list \
+    && apt-get -qq update \
+    && apt-get install -y ${FS_META_PACKAGE} \
+    && apt-get purge -y --auto-remove \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY docker-entrypoint.sh /
