@@ -1109,17 +1109,19 @@ SWITCH_DECLARE(void) switch_jb_set_session(switch_jb_t *jb, switch_core_session_
 		jb->codec = switch_core_session_get_read_codec(session);
 		jb->session = session;
 		jb->channel = switch_core_session_get_channel(session);
-		if (!strcmp(jb->codec->implementation->iananame, "opus")) {
-			if (switch_channel_var_true(jb->channel, "rtp_jitter_buffer_accelerate")) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "codec is %s, accelerate on\n", jb->codec->implementation->iananame);
-				jb->elastic = SWITCH_TRUE;
+		if (jb->type == SJB_AUDIO) {
+			if (!strcmp(jb->codec->implementation->iananame, "opus")) {
+				if (switch_channel_var_true(jb->channel, "rtp_jitter_buffer_accelerate")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "audio codec is %s, accelerate on\n", jb->codec->implementation->iananame);
+					jb->elastic = SWITCH_TRUE;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "audio codec is %s, accelerate off\n", jb->codec->implementation->iananame);
+					jb->elastic = SWITCH_FALSE;
+				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "codec is %s, accelerate off\n", jb->codec->implementation->iananame);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "audio codec is not Opus: %s\n", jb->codec->implementation->iananame);
 				jb->elastic = SWITCH_FALSE;
 			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "codec not opus: %s\n", jb->codec->implementation->iananame);
-			jb->elastic = SWITCH_FALSE;
 		}
 
 		if (jb->type == SJB_VIDEO && !switch_test_flag(jb, SJB_QUEUE_ONLY) &&
