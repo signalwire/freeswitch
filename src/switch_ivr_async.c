@@ -1160,6 +1160,7 @@ struct record_helper {
 	switch_time_t last_read_time;
 	switch_time_t last_write_time;
 	switch_bool_t hangup_on_error;
+	switch_bool_t stop_write_on_error;
 	switch_codec_implementation_t read_impl;
 	switch_bool_t speech_detected;
 	switch_buffer_t *thread_buffer;
@@ -1403,6 +1404,13 @@ static void *SWITCH_THREAD_FUNC recording_thread(switch_thread_t *thread, void *
 			if (rh->hangup_on_error) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			}
+			
+			/* We might need to consider a threshold counter that we need to exceed first before
+			 * we prune it.  In the meantime, the chanvar will serve to just enable or disable it 
+			 */
+			if(rh->stop_write_on_error) {
+				switch_set_flag(bug, SMBF_PRUNE);
 			}
 		}
 	}
@@ -1759,6 +1767,13 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
 
+		if(rh->bug) {
+			if(switch_test_flag(rh->bug, SMBF_PRUNE) == SWITCH_TRUE) {
+				// recording_thread detected failure, need to clean up
+				return SWITCH_FALSE;
+			}
+		}
+		
 		if (rh->fh) {
 			switch_size_t len;
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -1861,6 +1876,14 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 
 	case SWITCH_ABC_TYPE_WRITE:
+	case SWITCH_ABC_TYPE_READ:
+		if(rh->bug) {
+			if(switch_test_flag(rh->bug, SMBF_PRUNE) == SWITCH_TRUE) {
+				// recording_thread detected failure, need to clean up
+				return SWITCH_FALSE;
+			}
+		}
+		break;
 	default:
 		break;
 	}
@@ -3068,7 +3091,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 			switch_goto_status(SWITCH_STATUS_MEMERR, err);
 		}
 	}
-
+	
 	if (recording_var_true(channel, vars, "RECORD_WRITE_ONLY")) {
 		flags &= ~SMBF_READ_STREAM;
 		flags |= SMBF_WRITE_STREAM;
@@ -3328,6 +3351,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 		rh->min_sec = 3;
 	}
 
+	if ((p = get_recording_var(channel, vars, "RECORD_STOP_WRITE_ON_ERROR"))) {
+		rh->stop_write_on_error = switch_true(p);
+	} else {
+		// Default is disabled
+		rh->stop_write_on_error = SWITCH_FALSE;
+	}
+	
 	if ((p = get_recording_var(channel, vars, "RECORD_MIN_SEC"))) {
 		int tmp = atoi(p);
 		if (tmp >= 0) {

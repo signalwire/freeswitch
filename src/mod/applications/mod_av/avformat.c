@@ -163,7 +163,8 @@ struct av_file_context {
 	int audio_timer;
 
 	unsigned int connect_start_time;
-	unsigned int connect_timeout;
+	const char *rw_timeout;
+	
 	switch_bool_t no_video_decode;
 	switch_queue_t *video_pkt_queue;
 	switch_packetizer_t *packetizer;
@@ -1677,26 +1678,12 @@ GCC_DIAG_ON(deprecated-declarations)
 static int avio_interrupt_cb(void *ctx) 
 { 
 	av_file_context_t* context = (av_file_context_t*)ctx;
-	unsigned int duration = 0;
-
+	
 	if (context == NULL) {
 		return 0;
+	} else {
+		return context->closed;
 	}
-
-	if (context->connect_timeout <= 0) {
-		return 0;
-	}
-
-	duration = (switch_time_now() / 1000) - context->connect_start_time;
-	if (duration >= context->connect_timeout) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTMP connection timeout! '%s://%s'\n"
-			, context->handle->stream_name
-			, context->handle->file_path);
-		return 1;
-	}
-		
-
-	return 0;
 } 
 
 static switch_status_t av_file_open(switch_file_handle_t *handle, const char *path)
@@ -1705,6 +1692,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	char *ext;
 	const char *tmp = NULL;
 	AVOutputFormat *fmt;
+	AVDictionary *dict = NULL; // Might be useful to set some options from what we got from the cmd
 	const char *format = NULL;
 	int ret;
 	char file[1024];
@@ -1712,7 +1700,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_set_string(file, path);
-
+	
 	if (handle->stream_name) {
 		disable_write_buffer = 1;
 	}
@@ -1761,7 +1749,7 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 	context->handle = handle;
 	context->audio_timer = 1;
 	context->colorspace = avformat_globals.colorspace;
-
+	
 	if (handle->params) {
 		if ((tmp = switch_event_get_header(handle->params, "av_video_offset"))) {
 			context->offset = atoi(tmp);
@@ -1860,10 +1848,10 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		}
 	}
 
-	if (handle->params && (tmp = switch_event_get_header(handle->params, "connect_timeout"))) {
-		context->connect_timeout = atoi(tmp);
+	if (handle->params && (tmp = switch_event_get_header(handle->params, "rw_timeout"))) {
+		context->rw_timeout = tmp;
 	}
-
+	
 	if (!strcasecmp(ext, "wav") || (handle->params && switch_true(switch_event_get_header(handle->params, "av_record_audio_only")))) {
 		context->has_video = 0;
 		switch_clear_flag(handle, SWITCH_FILE_FLAG_VIDEO);
@@ -1871,14 +1859,15 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	/* open the output file, if needed */
 	if (!(fmt->flags & AVFMT_NOFILE)) {
-		if (context->connect_timeout > 0) {
+		if (!zstr(context->rw_timeout)) {
 			AVIOInterruptCB cb = {
 				.callback = avio_interrupt_cb,
 				.opaque = context,
 			};
-
+			
+			av_dict_set(&dict, "rw_timeout", context->rw_timeout, 0);
 			context->connect_start_time = switch_time_now() / 1000;
-			ret = avio_open2(&context->fc->pb, file, AVIO_FLAG_WRITE, &cb, NULL);
+			ret = avio_open2(&context->fc->pb, file, AVIO_FLAG_WRITE, &cb, &dict);
 		} else {
 			ret = avio_open(&context->fc->pb, file, AVIO_FLAG_WRITE);
 		}
@@ -2032,6 +2021,10 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 
 	if (context->audio_buffer) {
 		switch_buffer_destroy(&context->audio_buffer);
+	}
+	
+	if(dict) {
+		av_dict_free(&dict);
 	}
 
 	return status;
@@ -2229,7 +2222,11 @@ GCC_DIAG_ON(deprecated-declarations)
 						char ebuf[255] = "";
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame: %s\n", get_error_text(ret, ebuf, sizeof(ebuf)));
 					}
-					//switch_goto_status(SWITCH_STATUS_FALSE, end);
+					
+					if(ret == -(ETIMEDOUT)) {
+						context->closed = 1;
+						switch_goto_status(SWITCH_STATUS_FALSE, end);
+					}
 				} else {
 					context->errs = 0;
 				}
