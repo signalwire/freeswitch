@@ -6732,6 +6732,7 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	float fps = 15.0f;
 	switch_image_t *last_frame = NULL;
 	int last_w = 0, last_h = 0, kps = 0;
+	switch_status_t res;
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
@@ -6739,10 +6740,12 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 
 	if (!(smh = session->media_handle)) {
 		switch_core_session_rwunlock(session);
+
 		return NULL;
 	}
 
-	switch_core_session_get_partner(session, &b_session);
+	res = switch_core_session_get_partner(session, &b_session);
+	(void)res;
 
 	switch_channel_set_flag(session->channel, CF_VIDEO_WRITING);
 
@@ -6762,7 +6765,6 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	fr.data = buf + 12;
 	fr.buflen = buflen - 12;
 	switch_core_media_gen_key_frame(session);
-
 
 	if (smh->video_write_fh) {
 		if (smh->video_write_fh->mm.fps) {
@@ -6802,8 +6804,6 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 	while (smh->video_write_thread_running > 0 &&
 		   switch_channel_up_nosig(session->channel) && smh->video_write_fh && switch_test_flag(smh->video_write_fh, SWITCH_FILE_OPEN)) {
 		switch_status_t wstatus = SWITCH_STATUS_FALSE;
-
-
 
 		switch_core_timer_next(&timer);
 
@@ -6847,12 +6847,14 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 				switch_set_flag_locked(smh->video_write_fh, SWITCH_FILE_FLAG_VIDEO_EOF);
 			}
 		}
+
 		switch_mutex_unlock(v_engine->mh.file_write_mutex);
 	}
 
 	if (last_frame) {
 		int x = 0;
 		switch_rgb_color_t bgcolor;
+
 		switch_color_set_rgb(&bgcolor, "#000000");
 		switch_img_fill(last_frame, 0, 0, last_frame->d_w, last_frame->d_h, &bgcolor);
 		fr.img = last_frame;
@@ -6863,11 +6865,11 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 			fr.flags = SFF_USE_VIDEO_TIMESTAMP|SFF_RAW_RTP|SFF_RAW_RTP_PARSE_FRAME;
 			switch_core_session_write_video_frame(session, &fr, SWITCH_IO_FLAG_FORCE, 0);
 		}
+
 		switch_core_media_gen_key_frame(session);
 		switch_core_session_request_video_refresh(session);
 		switch_img_free(&last_frame);
 	}
-
 
 	switch_core_timer_destroy(&timer);
 
@@ -6878,7 +6880,6 @@ static void *SWITCH_THREAD_FUNC video_write_thread(switch_thread_t *thread, void
 		switch_core_session_rwunlock(b_session);
 	}
 
-	
 	v_engine->thread_write_lock = 0;
 	switch_mutex_unlock(smh->write_mutex[SWITCH_MEDIA_TYPE_VIDEO]);
 
