@@ -13,7 +13,7 @@
       <node type="deny" cidr="192.168.42.0/24"/>
       <node type="allow" cidr="192.168.42.42/32"/>
     </list>
-    <list name="docker" default="deny">
+    <list name="docker" default="allow">
       <node type="allow" cidr="172.16.0.0/12"/>
       <node type="allow" domain="localhost"/>
     </list>
