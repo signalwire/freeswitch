@@ -1,0 +1,11 @@
+names:
+    service: core-tel-freeswitch
+project:
+    squad: core.telephony.squad
+    primary_maintainer: ryanc
+    secondary_maintainer: null
+    public_api: false
+    private_api: false
+build:
+    promote_to_dev:
+        branch_pattern: "telnyx/telephony/master|telnyx/telephony/development"
