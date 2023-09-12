@@ -11345,6 +11345,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				} else if (profile->paid_type == PAID_VERBATIM) {
 					switch_channel_set_variable(channel, "sip_P-Asserted-Identity",  full_paid_header);
 				}
+				
+				// We want the full PAID to be recorded without risk of transfering the data to other call legs
+				switch_channel_set_variable(channel, "full_paid_header",  full_paid_header);
 			}
 		}
 		if (!zstr(passerted->paid_display)) {
