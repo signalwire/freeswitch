@@ -34,6 +34,7 @@
  *
  */
 #include <switch.h>
+#include "prometheus_metrics.h"
 
 /* UniMRCP includes */
 #include "apt.h"
@@ -938,6 +939,7 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Waiting for MRCP session to terminate\n", schannel->name);
 				while (schannel->state != SPEECH_CHANNEL_CLOSED && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 					if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+						prometheus_increment_mrcp_timeout();
 						warned = 1;
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not terminated after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 					}
@@ -1067,6 +1069,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 	retry = 0;
 	while (schannel->state == SPEECH_CHANNEL_CLOSED && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+			prometheus_increment_mrcp_timeout();
 			warned = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not opened after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
@@ -1091,6 +1094,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		retry = 0;
 		while (schannel->state == SPEECH_CHANNEL_ERROR && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+				prometheus_increment_mrcp_timeout();
 				warned = 1;
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not cleaned up after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
@@ -1115,6 +1119,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT) {
 			mrcp_application_channel_object_set(schannel->unimrcp_channel, NULL);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not cleaned up after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+			prometheus_increment_mrcp_timeout();
 		}
 
 		status = SWITCH_STATUS_BREAK;
@@ -1190,6 +1195,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 	/* wait for IN-PROGRESS */
 	while (schannel->state == SPEECH_CHANNEL_READY && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+			prometheus_increment_mrcp_timeout();
 			warned = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) SPEAK IN-PROGRESS not received after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
@@ -1435,6 +1441,7 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 		mrcp_application_message_send(schannel->unimrcp_session, schannel->unimrcp_channel, mrcp_message);
 		while (schannel->state == SPEECH_CHANNEL_PROCESSING && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+				prometheus_increment_mrcp_timeout();
 				warned = 1;
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) STOP has not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
@@ -2016,6 +2023,7 @@ error:
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name,
 				speech_channel_type_to_string(schannel->type));
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
+			prometheus_increment_asr_failure();
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(unknown) channel error!\n");
@@ -2436,6 +2444,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	/* wait for IN-PROGRESS */
 	while (schannel->state == SPEECH_CHANNEL_READY && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+			prometheus_increment_mrcp_timeout();
 			warned = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) IN-PROGRESS not received for RECOGNIZE after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
@@ -2516,6 +2525,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 
 		while (schannel->state == SPEECH_CHANNEL_PROCESSING && !(globals.max_retry && (retry++ >= globals.max_retry))) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
+				prometheus_increment_mrcp_timeout();
 				warned = 1;
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) DEFINE-GRAMMAR not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
@@ -3228,6 +3238,8 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	switch_hash_index_t *hi = NULL;
 	char *session_uuid = NULL;
 
+	prometheus_increment_asr_counter();
+
 	/* Name the channel */
 	if (profile_name && strchr(profile_name, ':')) {
 		/* Profile has session name appended to it.  Pick it out */
@@ -3750,6 +3762,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNIZE failed: status = %d, completion-cause = %03d\n",
 									  schannel->name, message->start_line.status_code, recog_hdr->completion_cause);
 				}
+				prometheus_increment_asr_failure();
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			} else if (message->start_line.request_state == MRCP_REQUEST_STATE_PENDING) {
 				/* RECOGNIZE is queued */
@@ -3758,6 +3771,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 				/* received unexpected request_state */
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected RECOGNIZE request state: %d\n", schannel->name,
 								  message->start_line.request_state);
+				prometheus_increment_asr_failure();
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			}
 		} else if (message->start_line.method_id == RECOGNIZER_STOP) {
@@ -3792,6 +3806,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) grammar failed to load, status code = %d\n", schannel->name,
 									  message->start_line.status_code);
+					prometheus_increment_asr_failure();
 					speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 				}
 			}
@@ -3799,6 +3814,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 			/* received unexpected response */
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected response, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
+			prometheus_increment_asr_failure();
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 		}
 	} else if (message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
@@ -3820,6 +3836,7 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 					recog_channel_set_result_headers(schannel, recog_hdr);
 					recog_channel_set_results(schannel, result);
 				}
+				prometheus_increment_asr_success();
 			} else {
 				char *completion_cause = switch_mprintf("Completion-Cause: %03d", recog_hdr->completion_cause);
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) No result\n", schannel->name);
@@ -3834,11 +3851,13 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
+			prometheus_increment_asr_failure();
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected message type, message_type = %d\n", schannel->name,
 						  message->start_line.message_type);
+		prometheus_increment_asr_failure();
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 	}
 
@@ -4587,6 +4606,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	prometheus_init(module_interface, pool);
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_UNNESTED, pool);

@@ -7,7 +7,7 @@ UNIMRCP_BUILDDIR=$(switch_builddir)/libs/unimrcp
 UNIMRCPLA=$(UNIMRCP_BUILDDIR)/platforms/libunimrcp-client/libunimrcpclient.la
 
 mod_LTLIBRARIES = mod_unimrcp.la
-mod_unimrcp_la_SOURCES = mod_unimrcp.c
+mod_unimrcp_la_SOURCES = mod_unimrcp.c prometheus_metrics.cpp
 mod_unimrcp_la_CFLAGS  = $(AM_CFLAGS) 
 mod_unimrcp_la_CFLAGS += -I.
 mod_unimrcp_la_CFLAGS += -I$(switch_srcdir)/libs/apr/include
@@ -27,6 +27,7 @@ mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/mrcp/control/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/mrcp/resources/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/mpf/include
 mod_unimrcp_la_CFLAGS += -I$(UNIMRCP_DIR)/libs/apr-toolkit/include
+mod_unimrcp_la_CPPFLAGS = $(AM_CPPFLAGS)
 
 mod_unimrcp_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(UNIMRCPLA) $(switch_builddir)/libs/apr/libapr-1.la $(switch_builddir)/libs/apr-util/libaprutil-1.la $(switch_builddir)/libs/apr-util/xml/expat/lib/libexpat.la
 mod_unimrcp_la_LDFLAGS = -avoid-version -module -no-undefined -shared
