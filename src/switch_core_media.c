@@ -815,6 +815,92 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 
 }
 
+static int fmtp_map_event(char *fmtp, switch_event_t **map)
+{
+	int x, argc;
+	char *argv[16];
+	int count = 0;
+	char *tmp_fmtp = NULL;
+	
+	if(zstr(fmtp)) {
+		return count;
+	}
+
+	switch_event_create_plain(&(*map), SWITCH_EVENT_CHANNEL_DATA);
+	tmp_fmtp = strdup(fmtp);
+	argc = switch_separate_string(tmp_fmtp, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+	for (x = 0; x < argc; x++) {
+		char *data = argv[x];
+		char *arg;
+		// Remove the trailing spaces
+		while (*data && *data == ' ') {
+			data++;
+		}
+		
+		// Split data into two
+		if ((arg = strchr(data, '='))) {
+			*arg++ = '\0'; 
+			++count;
+			switch_event_add_header_string(*map, SWITCH_STACK_BOTTOM, data, arg);
+		}
+	}
+	switch_safe_free(tmp_fmtp);
+
+	return count;
+}
+
+static switch_bool_t fmtp_check_match(char *cur_fmtp, char *req_fmtp)
+{
+	switch_event_t* req_event = NULL;
+	switch_event_t* cur_event = NULL;
+	switch_bool_t result = false;
+
+	if (!strcmp(req_fmtp, cur_fmtp)) {
+		// It is a exact string match, return true here
+		result = true;
+	} else {
+		switch_event_header_t *hp;
+		int req_fmtp_fields = 0;
+		int cur_fmtp_fields = 0;
+
+		if (!(req_fmtp_fields = fmtp_map_event(req_fmtp, &req_event))) {
+			goto done;
+		}
+
+		if (!(cur_fmtp_fields = fmtp_map_event(cur_fmtp, &cur_event))) {
+			goto done;
+		}
+
+		if (req_fmtp_fields != cur_fmtp_fields) {
+			goto done;
+		}
+
+		for (hp = req_event->headers; hp; hp = hp->next) {
+			const char *value = NULL;
+			if (!(value = switch_event_get_header_idx(cur_event, hp->name, -1)) || strcmp(value, hp->value)) {
+				// Either the request parameter don't exist or the value didn't match
+				goto done;
+			}
+		}
+
+		// seems all of the fmtp parameter is a match
+		// mark it as success
+		result = true;
+	}
+
+done:
+
+	if (req_event) {
+		switch_event_destroy(&req_event);
+	}
+
+	if (cur_event) {
+		switch_event_destroy(&cur_event);
+	}
+
+	return result;
+}
+
 
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session,
 																  switch_media_type_t type,
@@ -871,7 +957,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 			if (exists) {
 
 				if (!zstr(fmtp) && !zstr(pmap->rm_fmtp)) {
-					if (strcmp(pmap->rm_fmtp, fmtp)) {
+					if (!fmtp_check_match(pmap->rm_fmtp, (char*)fmtp)) {
 						exists = 0;
 						continue;
 					}
@@ -889,7 +975,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 			if (exists) {
 				if (type != SWITCH_MEDIA_TYPE_TEXT && !zstr(fmtp) && !zstr(pmap->rm_fmtp)) {
-					if (strcmp(pmap->rm_fmtp, fmtp)) {
+					if (!fmtp_check_match(pmap->rm_fmtp, (char*)fmtp)) {
 						exists = 0;
 						continue;
 					}
@@ -4073,7 +4159,7 @@ retry:
 
 		if (strcasecmp(a_engine->read_impl.iananame, a_engine->cur_payload_map->iananame) ||
 				(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
-				rrate != a_engine->cur_payload_map->rm_rate ) {
+				rrate != a_engine->cur_payload_map->rm_rate || force > 1) {
 
 			switch_yield(a_engine->read_impl.microseconds_per_packet);
 			switch_core_session_lock_codec_write(session);
@@ -6115,6 +6201,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 			int ice = 0;
+			int last_pt = 0;
+			int changed_pt = 0;
 
 			nm_idx = 0;
 			m_idx = 0;
@@ -6608,6 +6696,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					greedy_sort(smh, matches, m_idx, codec_array, total_codecs);
 				}
 
+				if (a_engine->read_impl.iananame) {
+					last_pt = a_engine->cur_payload_map->pt;
+				}
+
 				match = 1;
 				a_engine->codec_negotiated = 1;
 
@@ -6650,7 +6742,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						if (a_engine->rtp_session) {
 							switch_rtp_set_default_payload(a_engine->rtp_session, pmap->pt);
 						}
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Sticking with previously negotiated codec %s\n", a_engine->read_impl.iananame);
+
+						if (last_pt == a_engine->cur_payload_map->pt) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Sticking with previously negotiated codec %s\n", a_engine->read_impl.iananame);
+						} else {
+							changed_pt = 1;
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Sticking with previously negotiated codec %s but different pt %d --> %d \n", a_engine->read_impl.iananame, last_pt, a_engine->cur_payload_map->pt);
+						}
+						
 					}
 
 					pmap->rm_encoding = switch_core_session_strdup(session, (char *) mmap->rm_encoding);
@@ -6730,16 +6829,23 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (a_engine->read_impl.iananame) {
 					int z = 0;
 					a_engine->reset_codec = 1;
-					for(z = 0; z < m_idx && smh->num_negotiated_codecs < SWITCH_MAX_CODECS; z++) { 
-						if (!(!switch_core_codec_ready(&a_engine->read_codec) ||
-							((strcasecmp(matches[z].imp->iananame, a_engine->read_impl.iananame) ||
-							   matches[z].imp->microseconds_per_packet != a_engine->read_impl.microseconds_per_packet ||
-							   matches[z].imp->samples_per_second != a_engine->read_impl.samples_per_second
-							   )))) {
-							 a_engine->reset_codec = 0;
-							 switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Not resetting codec. We stick to %s\n", a_engine->read_impl.iananame);
-							 break;
-						} 
+					if (changed_pt) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Force reset codec for %s\n", a_engine->read_impl.iananame);
+						if (switch_core_media_set_codec(session, 2, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
+							match = 0;
+						}
+					} else {
+						for(z = 0; z < m_idx && smh->num_negotiated_codecs < SWITCH_MAX_CODECS; z++) { 
+							if (!(!switch_core_codec_ready(&a_engine->read_codec) ||
+								((strcasecmp(matches[z].imp->iananame, a_engine->read_impl.iananame) ||
+								matches[z].imp->microseconds_per_packet != a_engine->read_impl.microseconds_per_packet ||
+								matches[z].imp->samples_per_second != a_engine->read_impl.samples_per_second
+								)))) {
+								a_engine->reset_codec = 0;
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Not resetting codec. We stick to %s\n", a_engine->read_impl.iananame);
+								break;
+							} 
+						}
 					}
 				} else if (switch_core_media_set_codec(session, 0, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
 					match = 0;
