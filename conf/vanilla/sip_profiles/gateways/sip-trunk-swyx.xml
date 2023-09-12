@@ -5,5 +5,4 @@
 	<param name="realm" value="192.168.8.61"/>
 	<param name="register" value="flse"/>
 	<param name="context" value="Swyx-Inbound"/>
-	<param name="extension" value="1000"/>
 </gateway>
