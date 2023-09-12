@@ -2544,7 +2544,9 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 	/* Create the grammar and save it */
 	if ((status = grammar_create(&g, name, type, data, schannel->memory_pool)) == SWITCH_STATUS_SUCCESS) {
 		recognizer_data_t *r = (recognizer_data_t *) schannel->data;
-		switch_core_hash_insert(r->grammars, g->name, g);
+		if (r) {
+			switch_core_hash_insert(r->grammars, g->name, g);
+		}
 	}
 
   done:
@@ -3898,6 +3900,7 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 	speech_channel_t *schannel = (speech_channel_t *) stream->obj;
 	switch_size_t to_read = frame->codec_frame.size;
 	recognizer_data_t *r = NULL;
+	switch_status_t status;
 	
 	// Check schannel data is not NULL or destroyed
 	if (schannel) {
@@ -3909,11 +3912,14 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 	}
 
 	/* grab the data.  pad it if there isn't enough */
-	if (speech_channel_read(schannel, frame->codec_frame.buffer, &to_read, 0) == SWITCH_STATUS_SUCCESS) {
+	status = speech_channel_read(schannel, frame->codec_frame.buffer, &to_read, 0);
+	if (status == SWITCH_STATUS_SUCCESS) {
 		if (to_read < frame->codec_frame.size) {
 			memset((uint8_t *) frame->codec_frame.buffer + to_read, schannel->silence, frame->codec_frame.size - to_read);
 		}
 		frame->type |= MEDIA_FRAME_TYPE_AUDIO;
+	} else if (status == SWITCH_STATUS_FALSE) {
+		return FALSE;
 	}
 
 	switch_mutex_lock(schannel->mutex);
