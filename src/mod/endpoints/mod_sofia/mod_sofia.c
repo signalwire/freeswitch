@@ -591,6 +591,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
 				const char *phrase;
 				const char *override_sip_reason_phrase = 0;
+				const char *peer_sip_reason_phrase = 0;
 				char *added_headers = NULL;
 
 				if (tech_pvt->respond_phrase) {
@@ -599,6 +600,14 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					phrase = sip_status_phrase(sip_cause);
 				} else {
 					phrase = sip_status_phrase(500);
+				}
+
+				// use other channel phrase for sip code with no mapped status phrase
+				if (zstr(phrase)) {
+					peer_sip_reason_phrase = switch_channel_get_variable(channel, "peer_sip_reason_phrase");
+					if (zstr(tech_pvt->respond_phrase) && !zstr(peer_sip_reason_phrase)) {
+						phrase = su_strdup(nua_handle_home(tech_pvt->nh), peer_sip_reason_phrase);
+					}
 				}
 
 				override_sip_reason_phrase = switch_channel_get_variable(channel, "override_sip_reason_phrase");
