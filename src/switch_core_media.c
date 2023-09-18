@@ -11836,7 +11836,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 	}
 
 	if (!smh->owner_id) {
-		smh->owner_id = (uint32_t) switch_epoch_time_now(NULL) - port;
+		smh->owner_id = (uint32_t)(intptr_t)switch_epoch_time_now(NULL) - port;
 	}
 
 	if (!smh->session_id) {
