@@ -2814,7 +2814,7 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const char *val, int off)
 {
 	char *data;
-	switch_size_t dlen = strlen(val) * 3 + 1;
+	switch_size_t dlen = val ? strlen(val) * 3 + 1 : 1;
 	switch_xml_t variable;
 
 	if (!val) val = "";
