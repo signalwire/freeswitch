@@ -1,3 +1,4 @@
 <include>
     <X-PRE-PROCESS cmd="set" data="middleware_ip=localhost"/>
+    <X-PRE-PROCESS cmd="set" data="esl_port=7000"/>
 </include>
