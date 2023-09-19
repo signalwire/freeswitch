@@ -17993,6 +17993,74 @@ SWITCH_DECLARE(void) switch_core_media_do_2833(switch_core_session_t *session)
 	do_2833(a_engine->rtp_session);
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_media_has_mismatch_dynamic_payload_code(switch_core_session_t *session, const char *r_sdp)
+{
+	const switch_codec_implementation_t **codec_array;
+	sdp_parser_t *parser;
+	sdp_session_t *sdp;
+	switch_media_handle_t *smh;
+	sdp_rtpmap_t *map;
+	sdp_media_t *m;
+	int i, total_codecs;
+	switch_bool_t result = SWITCH_FALSE;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_FALSE;
+	}
+
+	if (!r_sdp) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Setting NULL SDP is invalid\n");
+		return SWITCH_FALSE;
+	}
+
+	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+		return SWITCH_FALSE;
+	}
+
+	if (!(sdp = sdp_session(parser))) {
+		sdp_parser_free(parser);
+		return SWITCH_FALSE;
+	}
+
+	codec_array = smh->codecs;
+	total_codecs = smh->mparams->num_codecs;
+
+	for (i = 0; i < total_codecs; i++) {
+		const switch_codec_implementation_t *imp = codec_array[i];
+
+		if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
+			continue;
+		}
+
+		// Lets compare it to the remote sdp
+		for (m = sdp->sdp_media; m; m = m->m_next) {
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				if ((imp->ianacode > 95 && map->rm_pt > 95) && !strcasecmp(imp->iananame, map->rm_encoding)) {
+					if (map->rm_pt != imp->ianacode) {
+						// Mark the result as TRUE but lets check if there are similar codec in the list
+						result = SWITCH_TRUE;
+					} else {
+						// It is possible to have multiple codec type request 
+						// this may match the correct payload number
+						result = SWITCH_FALSE;
+						break;
+					}
+				}
+			}
+		}
+		
+		if (result) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Remote SDP contains incorrect dynamic payload %s:%d\n"
+							, imp->iananame, imp->ianacode);
+			break; // We found a mismatch exit the loop
+		}
+	}
+
+	sdp_parser_free(parser);
+	return result;
+}
 
 
 /* For Emacs:

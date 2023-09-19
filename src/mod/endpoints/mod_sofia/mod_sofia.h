@@ -373,6 +373,7 @@ typedef enum {
 	TFLAG_KEEPALIVE,
 	TFLAG_SKIP_EARLY,
 	TFLAG_100_UEPOCH_SET,
+	TFLAG_RECOVER_MISMATCH_MEDIA,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -835,6 +836,7 @@ struct sofia_profile {
 	char *acl_inbound_x_token_header;
 	char *acl_proxy_x_token_header;
 	char *default_ringback;
+	char *ringback_on_mismatch_media;
 	char *ignore_reason_header_by_sip_code;
 	uint8_t rfc8760_algs_count;
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
