@@ -1795,24 +1795,8 @@ static void our_sofia_event_callback(nua_event_t event,
 			}
 		}
 	case nua_r_ack:
-		if (channel) {
-			switch_core_session_t *other_session;
-			
+		if (channel)
 			switch_channel_set_flag(channel, CF_MEDIA_ACK);
-			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
-				if (sofia_test_flag(other_tech_pvt, TFLAG_RECOVER_MISMATCH_MEDIA)) {
-					sofia_clear_flag(other_tech_pvt, TFLAG_RECOVER_MISMATCH_MEDIA);
-					if (switch_core_session_compare(session, other_session)) {
-						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-						// Only perform media renegotiation only after the inbound leg received an ACK
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(other_session), SWITCH_LOG_DEBUG, "%s Perform reinvite media on UPDATE media mismatch\n", (other_channel ? switch_channel_get_name(other_channel) : "None"));
-						switch_channel_set_flag(other_channel, CF_MEDIA_RENEG_AFTER_BRIDGE);
-					}
-				}
-				switch_core_session_rwunlock(other_session);
-			}
-		}
 		break;
 	case nua_r_shutdown:
 		if (status >= 200) {
@@ -8021,14 +8005,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),TAG_END());
 						switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 					} else {
-						if (status == 200 && r_sdp && !sofia_test_flag(tech_pvt, TFLAG_RECOVER_MISMATCH_MEDIA)) {
+						if (status == 200 && r_sdp && !switch_channel_test_flag(channel, CF_MEDIA_RENEG_AFTER_BRIDGE)) {
 							if (sip && sip->sip_cseq && sip->sip_cseq->cs_method_name && !strcasecmp(sip->sip_cseq->cs_method_name, "UPDATE")) {
 								if(switch_core_media_has_mismatch_dynamic_payload_code(session, r_sdp)) {
-									sofia_set_flag(tech_pvt, TFLAG_RECOVER_MISMATCH_MEDIA);
+									switch_channel_set_flag(channel, CF_MEDIA_RENEG_AFTER_BRIDGE);;
 								}
 							}
 
-							if(sofia_test_flag(tech_pvt, TFLAG_RECOVER_MISMATCH_MEDIA)) {
+							if(switch_channel_test_flag(channel, CF_MEDIA_RENEG_AFTER_BRIDGE)) {
 								const char* disable_ringback = NULL;
 								if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 									other_channel = switch_core_session_get_channel(other_session);
@@ -8047,14 +8031,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 											switch_channel_set_variable(other_channel, "ringback_reneg_before_bridge", ringback);
 											switch_ivr_displace_session(other_session, ringback, 0, "w");
 										}
-									}
-
-									// Check if other session is not using the same endpoint
-									if (!switch_core_session_compare(session, other_session)) {
-										// Perform immediately RE-INVITE on bridge otherwise 
-										// will have to perform RE-INVITE after ACK is received
-										// on the other session.
-										switch_channel_set_flag(channel, CF_MEDIA_RENEG_AFTER_BRIDGE);
 									}
 									
 									switch_core_session_rwunlock(other_session);

@@ -640,7 +640,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 			hmsg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
 			hmsg.from = __FILE__;
-			hmsg.numeric_arg = 1; // This will trigger media reneg on partner session
+			hmsg.numeric_arg = 0; // Setting to 1 will trigger media reneg on partner session
 			switch_core_session_receive_message(session_a, &hmsg);
 		}
 
