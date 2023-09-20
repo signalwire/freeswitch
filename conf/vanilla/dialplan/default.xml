@@ -15,6 +15,7 @@
       <context name="Trunk-Inbound">
             <extension name="FromTrunk">
                   <condition field="destination_number" expression=".">
+                        <action application="set" data="from_trunk=true"/>
                         <action application="javascript" data="Router.js" />
                   </condition>
             </extension>
