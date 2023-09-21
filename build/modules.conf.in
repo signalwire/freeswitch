@@ -1,7 +1,6 @@
 loggers/mod_console
 loggers/mod_logfile
 applications/mod_enum
-xml_int/mod_xml_rpc
 xml_int/mod_xml_curl
 xml_int/mod_xml_cdr
 event_handlers/mod_cdr_csv
