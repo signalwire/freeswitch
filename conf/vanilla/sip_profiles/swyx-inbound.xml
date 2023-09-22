@@ -1,4 +1,4 @@
-<profile name="external">
+<profile name="swyx-inbound">
     <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
     <!-- This profile is only for outbound registrations to providers -->
     <aliases>
