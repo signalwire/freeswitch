@@ -1,8 +1,0 @@
-<gateway name="Swyx">
-	<param name="username" value="freeSWITCH-Test"/>
-	<param name="password" value="EfV3QijRR5tBe2EVBgqCKTF8gofn3zVn"/>
-	<param name="proxy" value="$${external_sip_ip}"/>
-	<param name="realm" value="$${external_sip_ip}"/>
-	<param name="register" value="true"/>
-	<param name="context" value="Swyx-Inbound"/>
-</gateway>
