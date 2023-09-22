@@ -19,6 +19,9 @@
       <node type="allow" cidr="192.168.0.0/16"/>
       <node type="allow" cidr="10.0.0.0/8"/>
     </list>
+    <list name="swyx" default="allow">
+      <node type="allow" cidr="172.16.0.0/12"/>
+    </list>
 
     <!--
 	This will traverse the directory adding all users
@@ -38,4 +41,3 @@
 
   </network-lists>
 </configuration>
-
