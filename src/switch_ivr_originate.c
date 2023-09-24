@@ -2330,6 +2330,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				tmp--;
 			}
 		}
+
+		switch_event_del_header(var_event, "originate_delay_start");
 	}
 
 	if (oglobals.session) {
