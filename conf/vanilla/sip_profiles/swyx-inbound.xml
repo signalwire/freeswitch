@@ -17,6 +17,10 @@
         <param name="accept-blind-reg" value="false"/>
         <param name="parse-all-invite-headers" value="true"/>
         <param name="debug" value="0"/>
+        <!-- Send an OPTIONS packet to all registered endpoints -->
+        <param name="all-reg-options-ping" value="true"/>
+        <!-- Send an OPTIONS packet to NATed registered endpoints. Can be 'true' or 'udp-only'. -->
+        <param name="nat-options-ping" value="true"/>
         <!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
         <!-- <param name="shutdown-on-fail" value="true"/> -->
         <param name="sip-trace" value="no"/>
