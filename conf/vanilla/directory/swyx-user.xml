@@ -1,4 +1,4 @@
-<domain name="$${sip_profile}">
+<domain name="swyx-inbound">
     <user id="swyx-test">
         <params>
             <param name="password" value="correcthorsebatterystaple"/>
