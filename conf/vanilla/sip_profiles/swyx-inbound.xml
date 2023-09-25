@@ -15,7 +15,6 @@
     <settings>
         <param name="log-auth-failures" value="true"/>
         <param name="accept-blind-reg" value="false"/>
-        <param name="apply-inbound-acl" value="swyx"/>
         <param name="parse-all-invite-headers" value="true"/>
         <param name="debug" value="0"/>
         <!-- If you want FreeSWITCH to shutdown if this profile fails to load, uncomment the next line. -->
