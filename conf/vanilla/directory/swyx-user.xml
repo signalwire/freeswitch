@@ -1,0 +1,7 @@
+<domain name="$${sip_profile}">
+    <user id="swyx-test">
+        <params>
+            <param name="password" value="correcthorsebatterystaple"/>
+        </params>
+    </user>
+</domain>

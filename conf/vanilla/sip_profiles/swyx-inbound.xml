@@ -14,7 +14,7 @@
 
     <settings>
         <param name="log-auth-failures" value="true"/>
-        <param name="accept-blind-reg" value="true"/>
+        <param name="accept-blind-reg" value="false"/>
         <param name="apply-inbound-acl" value="swyx"/>
         <param name="parse-all-invite-headers" value="true"/>
         <param name="debug" value="0"/>
