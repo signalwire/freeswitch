@@ -49,10 +49,10 @@
         <!-- Name of the db to use for this profile -->
         <!--<param name="dbname" value="share_presence"/>-->
         <!--<param name="presence-hosts" value="$${domain}"/>-->
-        <param name="force-register-domain" value="swyx-inbound"/>
+        <!-- <param name="force-register-domain" value="swyx-inbound"/> -->
         <!--all inbound reg will stored in the db using this domain -->
-        <param name="force-subscription-domain" value="swyx-inbound"/>
-        <param name="force-register-db-domain" value="swyx-inbound"/>
+        <!-- <param name="force-subscription-domain" value="swyx-inbound"/>
+        <param name="force-register-db-domain" value="swyx-inbound"/> -->
 
         <!-- ************************************************* -->
 
