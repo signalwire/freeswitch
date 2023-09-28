@@ -26,8 +26,6 @@
     </domains>
 
     <settings>
-        <param name="log-auth-failures" value="true"/>
-
         <!-- inject delay between dtmf digits on send to help some slow interpreters (also per channel with rtp_digit_delay var -->
         <!-- <param name="rtp-digit-delay" value="40"/>-->
 
@@ -82,7 +80,7 @@
         <param name="watchdog-step-timeout" value="30000"/>
         <param name="watchdog-event-timeout" value="30000"/>
 
-        <param name="log-auth-failures" value="false"/>
+        <param name="log-auth-failures" value="true"/>
         <param name="forward-unsolicited-mwi-notify" value="false"/>
 
         <param name="context" value="public"/>

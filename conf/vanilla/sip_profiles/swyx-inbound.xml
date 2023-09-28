@@ -39,8 +39,7 @@
         <!--<param name="enable-100rel" value="true"/>-->
         <!--<param name="disable-srv503" value="true"/>-->
         <!-- This could be set to "passive" -->
-        <param name="local-network-acl" value="localnet.auto"/>
-        <param name="manage-presence" value="false"/>
+
 
         <!-- used to share presence info across sofia profiles
          manage-presence needs to be set to passive on this profile
@@ -50,9 +49,11 @@
         <!-- Name of the db to use for this profile -->
         <!--<param name="dbname" value="share_presence"/>-->
         <!--<param name="presence-hosts" value="$${domain}"/>-->
-        <!--<param name="force-register-domain" value="$${domain}"/>-->
+        <param name="force-register-domain" value="swyx-inbound"/>
         <!--all inbound reg will stored in the db using this domain -->
-        <!--<param name="force-register-db-domain" value="$${domain}"/>-->
+        <param name="force-subscription-domain" value="swyx-inbound"/>
+        <param name="force-register-db-domain" value="swyx-inbound"/>
+
         <!-- ************************************************* -->
 
         <!--<param name="aggressive-nat-detection" value="true"/>-->
