@@ -38,7 +38,7 @@
   -->
   <X-PRE-PROCESS cmd="include" data="vars.xml"/>
   <X-PRE-PROCESS cmd="include" data="C1_Vars.xml"/>
-  <X-PRE-PROCESS cmd="include" data="directory/*.xml"/>
+  <X-PRE-PROCESS cmd="include" data="directory/swyx-user.xml"/>
 
   <section name="configuration" description="Various Configuration">
     <X-PRE-PROCESS cmd="include" data="autoload_configs/*.xml"/>
