@@ -103,6 +103,8 @@ typedef struct icand_s {
 	switch_port_t rport;
 	char *generation;
 	uint8_t ready;
+	uint8_t responsive;
+	uint8_t use_candidate;
 } icand_t;
 
 #define MAX_CAND 50
