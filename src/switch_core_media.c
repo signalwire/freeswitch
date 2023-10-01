@@ -12050,7 +12050,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				family = strchr(smh->mparams->sipip, ':') ? "IP6" : "IP4";
 
 				if (!smh->owner_id) {
-					smh->owner_id = (uint32_t) switch_epoch_time_now(NULL) * 31821U + 13849U;
+					smh->owner_id = (uint32_t)(intptr_t)switch_epoch_time_now(NULL) * 31821U + 13849U;
 				}
 
 				if (!smh->session_id) {
