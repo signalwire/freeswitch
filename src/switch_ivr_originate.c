@@ -320,7 +320,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 				delayed_min = oglobals->originate_status[i].per_channel_delay_start;
 			}
 		}
-		early_exit_time = delayed_min - (uint32_t) elapsed;
+		early_exit_time = delayed_min - (uint32_t)(switch_time_t) elapsed;
 	}
 	for (i = 0; i < max; i++) {
 		if (oglobals->originate_status[i].peer_channel && oglobals->originate_status[i].per_channel_delay_start &&
