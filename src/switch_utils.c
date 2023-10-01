@@ -768,7 +768,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 			if (n >= 8) {
 				maskv->v6.s6_addr[i] = 0xFF;
 				n -= 8;
-			} else if (n < 8) {
+			} else if (n && n < 8) {
 				maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> n);
 				n -= n;
 			} else if (n == 0) {
