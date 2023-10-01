@@ -10526,7 +10526,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	}
 
 	if (!smh->owner_id) {
-		smh->owner_id = (uint32_t) switch_epoch_time_now(NULL) - port;
+		smh->owner_id = (uint32_t)(switch_time_t)switch_epoch_time_now(NULL) - port;
 	}
 
 	if (!smh->session_id) {
