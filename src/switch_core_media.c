@@ -2066,13 +2066,13 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		switch_mutex_init(&session->media_handle->control_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].ssrc =
-			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO] + (uint32_t) time(NULL));
+			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO] + (intptr_t) time(NULL));
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].ssrc =
-			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO] + (uint32_t) time(NULL) / 2);
+			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO] + (intptr_t) time(NULL) / 2);
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].ssrc =
-			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT] + (uint32_t) time(NULL) / 2);
+			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT] + (intptr_t) time(NULL) / 2);
 
 
 
