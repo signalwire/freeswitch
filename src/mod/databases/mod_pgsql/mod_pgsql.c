@@ -113,7 +113,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 	char *err_str = NULL;
 	int max_tries = DEFAULT_PGSQL_RETRIES;
 	int code = 0;
-	int recon = 0;
+	switch_status_t recon = SWITCH_STATUS_FALSE;
 	switch_byte_t sanity = 255;
 
 	if (handle) {
