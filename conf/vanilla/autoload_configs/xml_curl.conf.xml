@@ -6,6 +6,12 @@
                <!-- <param name="gateway-credentials" value="freeswitch:works"/>
                <param name="auth-scheme" value="basic"/> -->
           </binding>
+          <binding name="configuration">
+               <param name="gateway-url" value="http://$${middleware_ip}:3000/config" bindings="configuration"/>
+               <param name='method' value='GET' />
+               <!-- <param name="gateway-credentials" value="freeswitch:works"/>
+               <param name="auth-scheme" value="basic"/> -->
+          </binding>
           <!-- https://c1.customerfirst.se/pbx/login -->
           <!-- http://192.168.2.69:3000/pbx/login -->
           <!-- Allow to bind on a particular IP for requests sent -->
