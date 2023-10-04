@@ -1764,8 +1764,7 @@ new_req:
 		goto done;
 	}
 
-	if (!strncmp(request->method, "POST", 4) && request->content_length && request->content_type &&
-		!strncmp(request->content_type, "application/x-www-form-urlencoded", 33)) {
+    if (!strncmp(request->method, "POST", 4) && request->content_length && request->content_type) {
 
 		char *buffer = NULL;
 		switch_ssize_t len = 0, bytes = 0;
@@ -1797,7 +1796,22 @@ new_req:
 
 		*(buffer + bytes) = '\0';
 
-		kws_parse_qs(request, buffer);
+        // Supports both urlencoded and json message body in the http request
+        if (!strncmp(request->content_type, "application/x-www-form-urlencoded", 33)) {
+			kws_parse_qs(request, buffer);
+		} else if (!strncmp(request->content_type, "application/json", 16)) {
+			cJSON *json = NULL;
+			json = cJSON_Parse(buffer);
+			if (json) {
+				switch_event_set_body(stream.param_event, buffer);
+				cJSON_Delete(json);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid JSON data in message body. content_length: %ld, body: %s \n", request->content_length, buffer);
+				free(buffer);
+				goto request_err;
+			}
+		}
+
 		free(buffer);
 	}
 
