@@ -4324,8 +4324,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 		switch_sockaddr_create(&rtp_session->rtcp_from_addr, pool);
 	}
+
 	rtp_session->seq = (uint16_t) rand();
-	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL));
+	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (switch_time_t) switch_epoch_time_now(NULL));
 #ifdef DEBUG_TS_ROLLOVER
 	rtp_session->last_write_ts = TS_ROLLOVER_START;
 #endif
@@ -8061,7 +8062,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
 		if (m && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) &&
 			(rtp_session->flags[SWITCH_RTP_FLAG_RESET] || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
-			switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL)));
+			switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (switch_time_t) switch_epoch_time_now(NULL)));
 		}
 
 		if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO) && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL)) {

@@ -2066,13 +2066,13 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		switch_mutex_init(&session->media_handle->control_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].ssrc =
-			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO] + (uint32_t) time(NULL));
+			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO] + (switch_time_t) time(NULL));
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].ssrc =
-			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO] + (uint32_t) time(NULL) / 2);
+			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO] + (switch_time_t) time(NULL) / 2);
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT].ssrc =
-			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT] + (uint32_t) time(NULL) / 2);
+			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT] + (switch_time_t) time(NULL) / 2);
 
 
 
@@ -10526,7 +10526,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	}
 
 	if (!smh->owner_id) {
-		smh->owner_id = (uint32_t) switch_epoch_time_now(NULL) - port;
+		smh->owner_id = (uint32_t)(switch_time_t)switch_epoch_time_now(NULL) - port;
 	}
 
 	if (!smh->session_id) {
@@ -11836,7 +11836,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 	}
 
 	if (!smh->owner_id) {
-		smh->owner_id = (uint32_t) switch_epoch_time_now(NULL) - port;
+		smh->owner_id = (uint32_t)(switch_time_t)switch_epoch_time_now(NULL) - port;
 	}
 
 	if (!smh->session_id) {
@@ -12050,7 +12050,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				family = strchr(smh->mparams->sipip, ':') ? "IP6" : "IP4";
 
 				if (!smh->owner_id) {
-					smh->owner_id = (uint32_t) switch_epoch_time_now(NULL) * 31821U + 13849U;
+					smh->owner_id = (uint32_t)(switch_time_t) switch_epoch_time_now(NULL) * 31821U + 13849U;
 				}
 
 				if (!smh->session_id) {

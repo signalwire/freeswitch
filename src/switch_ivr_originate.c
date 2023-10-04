@@ -320,8 +320,10 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 				delayed_min = oglobals->originate_status[i].per_channel_delay_start;
 			}
 		}
-		early_exit_time = delayed_min - (uint32_t) elapsed;
+
+		early_exit_time = delayed_min - (uint32_t)(switch_time_t) elapsed;
 	}
+
 	for (i = 0; i < max; i++) {
 		if (oglobals->originate_status[i].peer_channel && oglobals->originate_status[i].per_channel_delay_start &&
 			(elapsed > oglobals->originate_status[i].per_channel_delay_start || active_channels == 0)) {
@@ -334,6 +336,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 						oglobals->originate_status[i].per_channel_timelimit_sec = 1;
 					}
 				}
+
 				if (oglobals->originate_status[i].per_channel_progress_timelimit_sec) {
 					if (oglobals->originate_status[i].per_channel_progress_timelimit_sec > early_exit_time) {
 						/* IN theory this check is not needed ( should just be if !0 then -= with no else), if its not 0 it should always be greater.... */
@@ -342,6 +345,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 						oglobals->originate_status[i].per_channel_progress_timelimit_sec = 1;
 					}
 				}
+
 				oglobals->originate_status[i].per_channel_delay_start -= delayed_min;
 			} else {
 				oglobals->originate_status[i].per_channel_delay_start = 0;
