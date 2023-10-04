@@ -1309,7 +1309,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 		}
 	}
 
-	if (oglobals->session && (read_codec = switch_core_session_get_read_codec(oglobals->session))) {
+	if ((read_codec = switch_core_session_get_read_codec(oglobals->session))) {
 		if (ringback_data && switch_is_file_path(ringback_data)) {
 			if (!(strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR))) {
 				ringback->asis++;
