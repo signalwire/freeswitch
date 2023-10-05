@@ -769,7 +769,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 		switch_inet_pton(AF_INET6, host, (unsigned char *)ip);
 
 		for (n = bits, i = 0; i < 16; i++) {
-			k = 8 + ((n - 8) & ((n - 8) >> 31)); /* k = (n > 8) ? 8 : n */
+			k = (n > 8) ? 8 : n;
 			maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> k);	/* k = 0 gives 0x00, k = 8 gives 0xFF */
 			n -= k;
 		}
