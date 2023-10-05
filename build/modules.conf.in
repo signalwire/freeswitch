@@ -26,3 +26,4 @@ languages/mod_lua
 languages/mod_v8
 say/mod_say_en
 say/mod_say_sv
+applications/mod_hiredis

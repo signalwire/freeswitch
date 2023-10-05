@@ -46,6 +46,9 @@
     <load module="mod_v8"/>
     <load module="mod_lua"/>
 
+    <!-- Databases -->
+    <load module="mod_hiredis"/>
+
     <!-- Say -->
     <load module="mod_say_en"/>
     <load module="mod_say_sv"/>
