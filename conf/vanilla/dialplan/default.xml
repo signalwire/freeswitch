@@ -16,7 +16,7 @@
             <extension name="FromTrunk">
                   <condition field="destination_number" expression=".">
                         <action application="set" data="from_trunk=true"/>
-                        <action application="javascript" data="Router.js" />
+                        <action application="socket" data="$${middleware_ip}:$${esl_port} async full"/>
                   </condition>
             </extension>
       </context>
@@ -31,12 +31,12 @@
       <context name="default">
             <extension name="Send to JS">
                   <condition field="destination_number" expression=".">
-                        <action application="javascript" data="Router.js $1" />
+                        <action application="socket" data="$${middleware_ip}:$${esl_port} async full"/>
                   </condition>
             </extension>
             <extension name="Send to JS">
                   <condition field="destination_number" expression="123456">
-                        <action application="javascript" data="Router.js" />
+                        <action application="socket" data="$${middleware_ip}:$${esl_port} async full"/>
                   </condition>
             </extension>
             <extension name="unloop">
