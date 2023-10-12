@@ -1764,55 +1764,52 @@ new_req:
 		goto done;
 	}
 
-    if (!strncmp(request->method, "POST", 4) && request->content_length && request->content_type) {
+	if (!strncmp(request->method, "POST", 4) && request->content_length && request->content_type) {
+		switch_bool_t content_type_urlencoded = SWITCH_FALSE;
+		switch_bool_t content_type_json = SWITCH_FALSE;
 
-		char *buffer = NULL;
-		switch_ssize_t len = 0, bytes = 0;
+		content_type_urlencoded = !strncmp(request->content_type, "application/x-www-form-urlencoded", 33);
+		content_type_json = !strncmp(request->content_type, "application/json", 16);
 
-		if (request->content_length && request->content_length > 10 * 1024 * 1024 - 1) {
-			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
-				"Content-Length: 0\r\n\r\n";
-			kws_raw_write(jsock->ws, data, strlen(data));
-			request->keepalive = 0;
-			goto done;
-		}
+		if (content_type_urlencoded || content_type_json) {
+			char *buffer = NULL;
+			switch_ssize_t len = 0, bytes = 0;
 
-		if (!(buffer = malloc(2 * 1024 * 1024))) {
-			goto request_err;
-		}
-
-		while(bytes < (switch_ssize_t)request->content_length) {
-			len = request->content_length - bytes;
-
-#define WS_BLOCK 1
-
-			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
+			if (request->content_length && request->content_length > 10 * 1024 * 1024 - 1) {
+				char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
+					"Content-Length: 0\r\n\r\n";
+				kws_raw_write(jsock->ws, data, strlen(data));
+				request->keepalive = 0;
 				goto done;
 			}
 
-			bytes += len;
-		}
-
-		*(buffer + bytes) = '\0';
-
-        // Supports both urlencoded and json message body in the http request
-        if (!strncmp(request->content_type, "application/x-www-form-urlencoded", 33)) {
-			kws_parse_qs(request, buffer);
-		} else if (!strncmp(request->content_type, "application/json", 16)) {
-			cJSON *json = NULL;
-			json = cJSON_Parse(buffer);
-			if (json) {
-				switch_event_set_body(stream.param_event, buffer);
-				cJSON_Delete(json);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid JSON data in message body. content_length: %ld, body: %s \n", request->content_length, buffer);
-				free(buffer);
+			if (!(buffer = malloc(2 * 1024 * 1024))) {
 				goto request_err;
 			}
-		}
 
-		free(buffer);
+			while(bytes < (switch_ssize_t)request->content_length) {
+				len = request->content_length - bytes;
+
+#define WS_BLOCK 1
+
+				if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
+					goto done;
+				}
+
+				bytes += len;
+			}
+
+			*(buffer + bytes) = '\0';
+
+			if (content_type_urlencoded) {
+				kws_parse_qs(request, buffer);
+			} else if (content_type_json) {
+				switch_event_set_body(stream.param_event, buffer);
+			}
+
+			free(buffer);
+		}
 	}
 
 	// kws_request_dump(request);
@@ -2170,7 +2167,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	add_jsock(jsock);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Starting client thread.\n", jsock->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Starting client thread.\n", jsock->name);
 
 	if ((jsock->ptype & PTYPE_CLIENT) || (jsock->ptype & PTYPE_CLIENT_SSL)) {
 		client_run(jsock);
@@ -2197,7 +2194,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 
 	jsock_flush(jsock);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Ending client thread.\n", jsock->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Ending client thread.\n", jsock->name);
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
@@ -2358,15 +2355,15 @@ static switch_status_t verto_set_media_options(verto_pvt_t *tech_pvt, verto_prof
 
 static switch_status_t verto_connect(switch_core_session_t *session, const char *method)
 {
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    jsock_t *jsock = NULL;
-    verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	jsock_t *jsock = NULL;
+	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 			
-    if (!(jsock = get_jsock(tech_pvt->jsock_uuid))) {
-        status = SWITCH_STATUS_BREAK;
-    } else {
-        cJSON *params = NULL;
-        cJSON *msg = NULL;
+	if (!(jsock = get_jsock(tech_pvt->jsock_uuid))) {
+		status = SWITCH_STATUS_BREAK;
+	} else {
+		cJSON *params = NULL;
+		cJSON *msg = NULL;
 		const char *var = NULL;
 		switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(tech_pvt->channel);
 		switch_event_header_t *hi;
@@ -2422,28 +2419,28 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
 		}
 
-        msg = jrpc_new_req(method, tech_pvt->call_id, &params);
+		msg = jrpc_new_req(method, tech_pvt->call_id, &params);
 
 		add_variables(tech_pvt, params);
 		
-        if (tech_pvt->mparams->local_sdp_str) {
-            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local %s SDP %s:\n%s\n",
+		if (tech_pvt->mparams->local_sdp_str) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local %s SDP %s:\n%s\n",
 							  method,
 							  switch_channel_get_name(tech_pvt->channel),
-                              tech_pvt->mparams->local_sdp_str);
+							  tech_pvt->mparams->local_sdp_str);
 
-            cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
+			cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 			set_call_params(params, tech_pvt);
 
-            jsock_queue_event(jsock, &msg, SWITCH_TRUE);
-        } else {
-            status = SWITCH_STATUS_FALSE;
-        }
+			jsock_queue_event(jsock, &msg, SWITCH_TRUE);
+		} else {
+			status = SWITCH_STATUS_FALSE;
+		}
 
-        switch_thread_rwlock_unlock(jsock->rwlock);
-    }
+		switch_thread_rwlock_unlock(jsock->rwlock);
+	}
 
-    return status;
+	return status;
 }
 
 switch_status_t verto_tech_media(verto_pvt_t *tech_pvt, const char *r_sdp, switch_sdp_type_t sdp_type)
@@ -2479,8 +2476,8 @@ switch_status_t verto_tech_media(verto_pvt_t *tech_pvt, const char *r_sdp, switc
 
 static switch_status_t verto_on_init(switch_core_session_t *session)
 {
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		int tries = 120;
@@ -2509,7 +2506,7 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 		}
 
 		switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
-        switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
+		switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
 		tries = 500;
 		while(--tries > 0 && switch_test_flag(tech_pvt, TFLAG_ATTACH_REQ)) {
@@ -2518,7 +2515,7 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 
 		switch_core_session_request_video_refresh(session);
 		switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
-        switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
+		switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
 		goto end;
 	}
@@ -2553,8 +2550,8 @@ static switch_state_handler_table_t verto_state_handlers = {
 	/*.on_reset */ NULL,
 	/*.on_park */ NULL,
 	/*.on_reporting */ NULL,
-    /*.on_destroy */ verto_on_destroy,
-    SSH_FLAG_STICKY
+	/*.on_destroy */ verto_on_destroy,
+	SSH_FLAG_STICKY
 };
 
 
@@ -4674,9 +4671,9 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 	int flag = 1;
 	int i;
 #ifndef WIN32
-    unsigned int len;
+	unsigned int len;
 #else
-    int len;
+	int len;
 #endif
 	jsock_type_t ptype = PTYPE_CLIENT;
 	switch_thread_data_t *td;
@@ -4833,7 +4830,7 @@ static ks_socket_t prepare_socket(ips_t *ips)
 		}
 	}
 
-    if (listen(sock, MAXPENDING) < 0) {
+	if (listen(sock, MAXPENDING) < 0) {
 		die_errno("Listen error");
 	}
 
