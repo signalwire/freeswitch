@@ -2280,10 +2280,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	} else if (!strncasecmp(cmd, "api ", 4)) {
 		struct api_command_struct acs = { 0 };
 		char *console_execute = switch_event_get_header(*event, "console_execute");
-
+		char *uuid_str = NULL;
 		char *api_cmd = cmd + 4;
 		char *arg = NULL;
 		strip_cr(api_cmd);
+
+		if ((uuid_str = switch_event_get_header(*event, "job-uuid"))) {
+			switch_copy_string(acs->uuid_str, uuid_str, sizeof(acs->uuid_str));
+		}
 
 		if (listener->allowed_api_hash) {
 			char *api_copy = strdup(api_cmd);
