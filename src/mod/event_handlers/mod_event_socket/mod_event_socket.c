@@ -2281,6 +2281,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		struct api_command_struct acs = { 0 };
 		char *console_execute = switch_event_get_header(*event, "console_execute");
 		char *api_cmd = cmd + 4;
+		char *uuid_str = switch_event_get_header(*event, "job-uuid");
 		char *arg = NULL;
 		strip_cr(api_cmd);
 
@@ -2307,6 +2308,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		if (!(acs.console_execute = switch_true(console_execute))) {
 			if ((arg = strchr(api_cmd, ' '))) {
+				*arg += *uuid_str;
 				*arg++ = '\0';
 			}
 		}
