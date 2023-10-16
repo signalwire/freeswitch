@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "switch_core_pvt.h": "c",
+    "switch.h": "c"
+  }
+}
