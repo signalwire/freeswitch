@@ -5027,10 +5027,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
 
 	// specify rtp ip by variable 
-	if (!zstr(tech_pvt->mparams) && !zstr(switch_event_get_header(var_event, "rtp_ip_v4"))) {
-        	tech_pvt->mparams.rtpip4 = switch_core_strdup(profile->pool, switch_event_get_header(var_event, "rtp_ip_v4"));
-        	tech_pvt->mparams.rtpip = tech_pvt->mparams.rtpip4;
-    	}
+ //     if (!zstr(tech_pvt->mparams) && !zstr(switch_event_get_header(var_event, "rtp_ip_v4"))) {
+ //        	tech_pvt->mparams.rtpip4 = switch_core_strdup(profile->pool, switch_event_get_header(var_event, "rtp_ip_v4"));
+ //        	tech_pvt->mparams.rtpip = tech_pvt->mparams.rtpip4;
+ //    	}
 	
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
