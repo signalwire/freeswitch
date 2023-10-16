@@ -1528,7 +1528,8 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		}
 
 		switch_snprintf(buf, sizeof(buf),
-						"TEST: test\nContent-Type: api/response\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", rlen);
+						"TEST: %s\nContent-Type: api/response\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n",
+						acs->api_cmd, rlen);
 		blen = strlen(buf);
 		switch_socket_send(acs->listener->sock, buf, &blen);
 		switch_socket_send(acs->listener->sock, reply, &rlen);
