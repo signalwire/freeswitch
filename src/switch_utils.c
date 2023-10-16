@@ -747,7 +747,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	ip_t *maskv = mask;
 	ip_t *ipv = ip;
 
-	switch_copy_string(host, string, sizeof(host)-1);
+	switch_copy_string(host, string, sizeof(host) - 1);
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
@@ -758,22 +758,20 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	bits = atoi(bit_str);
 	ipv6 = strchr(string, ':');
 	if (ipv6) {
-		int i,n;
+		int32_t i, n;
+		uint32_t k;
+
 		if (bits < 0 || bits > 128) {
 			return -2;
 		}
+
 		bits = atoi(bit_str);
 		switch_inet_pton(AF_INET6, host, (unsigned char *)ip);
-		for (n=bits,i=0 ;i < 16; i++){
-			if (n >= 8) {
-				maskv->v6.s6_addr[i] = 0xFF;
-				n -= 8;
-			} else if (n < 8) {
-				maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> n);
-				n -= n;
-			} else if (n == 0) {
-				maskv->v6.s6_addr[i] = 0x00;
-			}
+
+		for (n = bits, i = 0; i < 16; i++) {
+			k = (n > 8) ? 8 : n;
+			maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> k);	/* k = 0 gives 0x00, k = 8 gives 0xFF */
+			n -= k;
 		}
 	} else {
 		if (bits < 0 || bits > 32) {
@@ -786,6 +784,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 
 		maskv->v4 = 0xFFFFFFFF & ~(0xFFFFFFFF >> bits);
 	}
+
 	*bitp = bits;
 
 	return 0;
@@ -1161,7 +1160,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
 		if (file) {

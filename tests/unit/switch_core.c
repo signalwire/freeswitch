@@ -53,6 +53,66 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_switch_parse_cidr_v6)
+		{
+			ip_t ip, mask;
+			uint32_t bits;
+
+			fst_check(!switch_parse_cidr("fe80::/10", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 10);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0xfe);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0x80);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xc0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::/0", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 0);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::1/128", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 128);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(ip.v6.s6_addr[3], 0);
+			fst_check_int_equals(ip.v6.s6_addr[4], 0);
+			fst_check_int_equals(ip.v6.s6_addr[5], 0);
+			fst_check_int_equals(ip.v6.s6_addr[6], 0);
+			fst_check_int_equals(ip.v6.s6_addr[7], 0);
+			fst_check_int_equals(ip.v6.s6_addr[8], 0);
+			fst_check_int_equals(ip.v6.s6_addr[9], 0);
+			fst_check_int_equals(ip.v6.s6_addr[10], 0);
+			fst_check_int_equals(ip.v6.s6_addr[11], 0);
+			fst_check_int_equals(ip.v6.s6_addr[12], 0);
+			fst_check_int_equals(ip.v6.s6_addr[13], 0);
+			fst_check_int_equals(ip.v6.s6_addr[14], 0);
+			fst_check_int_equals(ip.v6.s6_addr[15], 1);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[3], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[4], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[5], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[6], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[7], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[8], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[9], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[10], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[11], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[12], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[13], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[14], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[15], 0xff);
+		}
+		FST_TEST_END()
+
 #if ENABLE_SNPRINTFV_TESTS
 		FST_TEST_BEGIN(test_snprintfv_1)
 		{
