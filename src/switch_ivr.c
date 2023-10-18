@@ -2151,7 +2151,7 @@ SWITCH_DECLARE(void) switch_ivr_check_hold(switch_core_session_t *session)
 		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
 		msg.from = __FILE__;
 
-		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);
+		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_OFFER);
 		switch_core_session_receive_message(session, &msg);
 	}
 

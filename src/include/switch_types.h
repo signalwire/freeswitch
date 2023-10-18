@@ -2656,10 +2656,12 @@ struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;
 
 typedef enum {
-	SDP_TYPE_REQUEST,
-	SDP_TYPE_RESPONSE
+	SDP_OFFER,
+	SDP_ANSWER
 } switch_sdp_type_t;
 
+#define SDP_TYPE_REQUEST SDP_OFFER
+#define SDP_TYPE_RESPONSE SDP_ANSWER
 
 typedef enum {
 	AEAD_AES_256_GCM_8,

@@ -45055,8 +45055,8 @@ public class switch_scheduler_task : global::System.IDisposable {
 namespace FreeSWITCH.Native {
 
 public enum switch_sdp_type_t {
-  SDP_TYPE_REQUEST,
-  SDP_TYPE_RESPONSE
+  SDP_OFFER,
+  SDP_ANSWER
 }
 
 }
