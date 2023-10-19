@@ -47,22 +47,32 @@ setParseFault(xmlrpc_env * const envP,
 
 
 
-#define CHECK_NAME(env,elem,name) \
-    do \
-        if (!xmlrpc_streq((name), xml_element_name(elem))) \
-            XMLRPC_FAIL2(env, XMLRPC_PARSE_ERROR, \
-             "Expected element of type <%s>, found <%s>", \
-                         (name), xml_element_name(elem)); \
-    while (0)
+static void
+validateName(xmlrpc_env *        const envP,
+             const xml_element * const elemP,
+             const char *        const name) {
 
-#define CHECK_CHILD_COUNT(env,elem,count) \
-    do \
-        if (xml_element_children_size(elem) != (count)) \
-            XMLRPC_FAIL3(env, XMLRPC_PARSE_ERROR, \
-                         "Expected <%s> to have %u children, found %u", \
-                         xml_element_name(elem), (count), \
-                         (unsigned)xml_element_children_size(elem)); \
-    while (0)
+    if (!xmlrpc_streq(name, xml_element_name(elemP)))
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR,
+            "Expected element of type <%s>, found <%s>",
+            name, xml_element_name(elemP));
+}
+
+
+
+static void
+validateChildCount(xmlrpc_env *        const envP,
+                   const xml_element * const elemP,
+                   unsigned int        const requiredCount) {
+
+    if (xml_element_children_size(elemP) != requiredCount)
+        xmlrpc_env_set_fault_formatted(
+            envP, XMLRPC_PARSE_ERROR,
+            "Expected <%s> to have %u children, found %u",
+            xml_element_name(elemP), requiredCount,
+            (unsigned)xml_element_children_size(elemP));
+}
 
 static xml_element *
 getChildByName (xmlrpc_env *  const envP,
@@ -103,56 +113,56 @@ convert_params(xmlrpc_env *        const envP,
    We use type xmlrpc_value to represent the parameter list just for
    convenience.
 -----------------------------------------------------------------------------*/
-    xmlrpc_value *array, *item;
-    int size, i;
-    xml_element **params, *param, *value;
+    xmlrpc_value * arrayP;
+    xmlrpc_value * itemP;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT(elemP != NULL);
 
-    /* Set up our error-handling preconditions. */
-    array = item = NULL;
-
     /* Allocate an array to hold our parameters. */
-    array = xmlrpc_build_value(envP, "()");
-    XMLRPC_FAIL_IF_FAULT(envP);
+    arrayP = xmlrpc_array_new(envP);
+    if (!envP->fault_occurred) {
+        /* We're responsible for checking our own element name. */
+        validateName(envP, elemP, "params");    
 
-    /* We're responsible for checking our own element name. */
-    CHECK_NAME(envP, elemP, "params");    
+        if (!envP->fault_occurred) {
+            /* Iterate over our children. */
+            unsigned int const size = xml_element_children_size(elemP);
+            xml_element ** const paramPList = xml_element_children(elemP);
 
-    /* Iterate over our children. */
-    size = xml_element_children_size(elemP);
-    params = xml_element_children(elemP);
-    for (i = 0; i < size; ++i) {
-        unsigned int const maxNest = (unsigned int)
-            xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
+            unsigned int i;
 
-        param = params[i];
-        CHECK_NAME(envP, param, "param");
-        CHECK_CHILD_COUNT(envP, param, 1);
+            for (i = 0; i < size; ++i) {
+                xml_element * const paramP = paramPList[i];
+                unsigned int const maxNest = (unsigned int)
+                    xmlrpc_limit_get(XMLRPC_NESTING_LIMIT_ID);
 
-        value = xml_element_children(param)[0];
+                validateName(envP, paramP, "param");
+                if (!envP->fault_occurred) {
+                    validateChildCount(envP, paramP, 1);
+                    if (!envP->fault_occurred) {
+                        xml_element * const valueEltP =
+                            xml_element_children(paramP)[0];
 
-        CHECK_NAME(envP, value, "value");
+                        validateName(envP, valueEltP, "value");
 
-        xmlrpc_parseValue(envP, maxNest, value, &item);
-        XMLRPC_FAIL_IF_FAULT(envP);
-
-        xmlrpc_array_append_item(envP, array, item);
-        xmlrpc_DECREF(item);
-        item = NULL;
-        XMLRPC_FAIL_IF_FAULT(envP);
+                        if (!envP->fault_occurred) {
+                            xmlrpc_parseValue(envP, maxNest, valueEltP,
+                                              &itemP);
+                            if (!envP->fault_occurred) {
+                                xmlrpc_array_append_item(envP, arrayP, itemP);
+                                xmlrpc_DECREF(itemP);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (envP->fault_occurred)
+            xmlrpc_DECREF(arrayP);
     }
+    return arrayP;
 
- cleanup:
-    if (envP->fault_occurred) {
-        if (array)
-            xmlrpc_DECREF(array);
-        if (item)
-            xmlrpc_DECREF(item);
-        return NULL;
-    }
-    return array;
 }
 
 
