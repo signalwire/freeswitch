@@ -5070,9 +5070,9 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
 	if (now) {
 		struct pres_sql_cb cb = {profile, 0};
 
-		if (profile->pres_type != PRES_TYPE_FULL) {
+		if (profile->pres_type == PRES_TYPE_NONE) {
 			if (mod_sofia_globals.debug_presence > 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "check_subs: %s is passive, skipping\n", (char *) profile->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "check_subs: %s is not presence enabled, skipping\n", (char *) profile->name);
 			}
 			return;
 		}
