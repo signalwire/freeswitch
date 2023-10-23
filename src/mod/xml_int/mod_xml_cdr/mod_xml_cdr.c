@@ -193,6 +193,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	int fd = -1;
 	uint32_t cur_try;
 	long httpRes;
+	switch_CURLcode res;
 	switch_CURL *curl_handle = NULL;
 	switch_curl_slist_t *headers = NULL;
 	switch_curl_slist_t *slist = NULL;
@@ -385,10 +386,18 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			/* overrides default 300s timeout, could be usefull if the current web server is down to prevent long time waiting for nothing */
 			/* connection_timeout = retry_timeout  */
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, !globals.delay ? 5 : (long)globals.delay);
-			switch_curl_easy_perform(curl_handle);
-			switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+			res = switch_curl_easy_perform(curl_handle);
+			if (res != CURLE_OK) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "switch_curl_easy_perform [%s] error [%d]\n", globals.urls[g_url_index], res);
+			} else {
+				res = switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+				if (res != CURLE_OK) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "switch_curl_easy_getinfo [%s] error [%d]\n", globals.urls[g_url_index], res);
+				}
+			}
+
 			switch_safe_free(destUrl);
-			if (httpRes >= 200 && httpRes <= 299) {
+			if (res == CURLE_OK && httpRes >= 200 && httpRes <= 299) {
 				goto success;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",
