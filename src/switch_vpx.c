@@ -1238,7 +1238,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 		if (context->last_received_seq && context->last_received_seq + 1 != frame->seq) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, VPX_SWITCH_LOG_LEVEL, "Packet loss detected last=%d got=%d lost=%d\n", context->last_received_seq, frame->seq, frame->seq - context->last_received_seq);
-			if (is_keyframe && context->vpx_packet_buffer) switch_buffer_zero(context->vpx_packet_buffer);
+			if (is_keyframe) switch_buffer_zero(context->vpx_packet_buffer);
 		}
 
 		context->last_received_seq = frame->seq;

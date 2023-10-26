@@ -67,8 +67,8 @@ This is the place to get answers faster and chat with other users in real time. 
 Slack Community:
   * https://signalwire.community/
 
-Mailing list:
+Mailing list (ARCHIVED):
 
-  * http://lists.freeswitch.org/mailman/listinfo/freeswitch-users
+  * http://lists.freeswitch.org/pipermail/freeswitch-users/
 
 **Thank you for using FreeSWITCH!**
