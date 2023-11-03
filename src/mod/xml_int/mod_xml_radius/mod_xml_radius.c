@@ -531,20 +531,20 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 
 						if ( regex && val ) {
                                                         switch_regex_t *re = NULL;
-                                                        int ovector[30];
+                                                        switch_regex_match_data_t *match_data = NULL;
                                                         int proceed;
                                                         char replace[1024] = "";
                                                         proceed = 0;
-                                                        proceed = switch_regex_perform(val, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+                                                        proceed = switch_regex_perform(val, regex, &re, &match_data);
                                                         if ( proceed > 0 ) {
-                                                            switch_regex_copy_substring(val, ovector, proceed, proceed - 1, replace, sizeof(replace));
+                                                            switch_regex_copy_substring(match_data, proceed - 1, replace, sizeof(replace));
 							    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "original value: %s, regex: %s, result: %s\n", val, regex, replace);
                                                             val = replace;
                                                         }
                                                         else {
 							    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "original value: %s, regex: %s, result: nomatch, value left intact\n", val, regex);
                                                         }
-                                                        switch_regex_safe_free(re);
+                                                        switch_regex_and_match_data_safe_free(re, match_data);
 						}
 
 						if ( val == NULL && val_default != NULL) {

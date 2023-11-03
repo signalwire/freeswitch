@@ -65,9 +65,9 @@ SWITCH_STANDARD_API(api_abstraction_function)
 
 		int proceed;
 		switch_regex_t *re = NULL;
-		int ovector[30];
+		switch_regex_match_data_t *match_data = NULL;
 
-		if ((proceed = switch_regex_perform(cmd, parse, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if ((proceed = switch_regex_perform(cmd, parse, &re, &match_data))) {
 			const char *api_args = NULL;
 			char *substituted = NULL;
 
@@ -78,7 +78,7 @@ SWITCH_STANDARD_API(api_abstraction_function)
 					goto end;
 				}
 				memset(substituted, 0, len);
-				switch_perform_substitution(re, proceed, arguments, cmd , substituted, len, ovector);
+				switch_perform_substitution(match_data, arguments, substituted, len);
 				api_args = substituted;
 			} else {
 				api_args = arguments;
@@ -89,7 +89,7 @@ SWITCH_STANDARD_API(api_abstraction_function)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No match for API %s  (%s != %s)\n", api_name, parse, cmd);
 		}
-		switch_regex_safe_free(re);
+		switch_regex_and_match_data_safe_free(re, match_data);
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "API %s doesn't exist inside the xml structure.  You might have forgot to reload the module after editing it\n", api_name);
