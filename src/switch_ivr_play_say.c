@@ -178,7 +178,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		char *field_expanded = NULL;
 		char *field_expanded_alloc = NULL;
 		switch_regex_t *re = NULL;
-		int proceed = 0, ovector[100];
+		switch_regex_match_data_t *match_data = NULL;
+		int proceed = 0;
 		switch_xml_t match = NULL;
 
 		searched = 1;
@@ -204,7 +205,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		if ((proceed = switch_regex_perform(field_expanded, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if ((proceed = switch_regex_perform(field_expanded, pattern, &re, &match_data))) {
 			match = switch_xml_child(input, "match");
 		} else {
 			match = switch_xml_child(input, "nomatch");
@@ -224,12 +225,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 					len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
 					if (!(substituted = malloc(len))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
-						switch_regex_safe_free(re);
+						switch_regex_and_match_data_safe_free(re, match_data);
 						switch_safe_free(field_expanded_alloc);
 						goto done;
 					}
 					memset(substituted, 0, len);
-					switch_perform_substitution(re, proceed, adata, field_expanded, substituted, len, ovector);
+					switch_perform_substitution(match_data, adata, substituted, len);
 					odata = substituted;
 				} else {
 					odata = adata;
@@ -326,7 +327,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 			}
 		}
 
-		switch_regex_safe_free(re);
+		switch_regex_and_match_data_safe_free(re, match_data);
 		switch_safe_free(field_expanded_alloc);
 
 		if (done || status != SWITCH_STATUS_SUCCESS

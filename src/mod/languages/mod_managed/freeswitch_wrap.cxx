@@ -9309,41 +9309,45 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_compile___(c
   void * jresult ;
   char *arg1 = (char *) 0 ;
   int arg2 ;
-  char **arg3 = (char **) 0 ;
-  int *arg4 = (int *) 0 ;
-  unsigned char *arg5 = (unsigned char *) 0 ;
+  int *arg3 = (int *) 0 ;
+  unsigned int *arg4 = (unsigned int *) 0 ;
+  switch_regex_compile_context_t *arg5 = (switch_regex_compile_context_t *) 0 ;
   switch_regex_t *result = 0 ;
   
   arg1 = (char *)jarg1; 
   arg2 = (int)jarg2; 
-  arg3 = (char **)jarg3; 
-  arg4 = (int *)jarg4; 
-  arg5 = (unsigned char *)jarg5; 
-  result = (switch_regex_t *)switch_regex_compile((char const *)arg1,arg2,(char const **)arg3,arg4,(unsigned char const *)arg5);
+  arg3 = (int *)jarg3; 
+  arg4 = (unsigned int *)jarg4; 
+  arg5 = (switch_regex_compile_context_t *)jarg5; 
+  result = (switch_regex_t *)switch_regex_compile((char const *)arg1,arg2,arg3,arg4,arg5);
   jresult = (void *)result; 
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_copy_substring___(char * jarg1, void * jarg2, int jarg3, int jarg4, char * jarg5, int jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_copy_substring___(void * jarg1, int jarg2, char * jarg3, void * jarg4) {
   int jresult ;
-  char *arg1 = (char *) 0 ;
-  int *arg2 = (int *) 0 ;
-  int arg3 ;
-  int arg4 ;
-  char *arg5 = (char *) 0 ;
-  int arg6 ;
+  switch_regex_match_data_t *arg1 = (switch_regex_match_data_t *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  unsigned int *arg4 = (unsigned int *) 0 ;
   int result;
   
-  arg1 = (char *)jarg1; 
-  arg2 = (int *)jarg2; 
-  arg3 = (int)jarg3; 
-  arg4 = (int)jarg4; 
-  arg5 = (char *)jarg5; 
-  arg6 = (int)jarg6; 
-  result = (int)switch_regex_copy_substring((char const *)arg1,arg2,arg3,arg4,arg5,arg6);
+  arg1 = (switch_regex_match_data_t *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (unsigned int *)jarg4; 
+  result = (int)switch_regex_copy_substring(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_match_free___(void * jarg1) {
+  void *arg1 = (void *) 0 ;
+  
+  arg1 = (void *)jarg1; 
+  switch_regex_match_free(arg1);
 }
 
 
@@ -9355,49 +9359,41 @@ SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_free___(void *
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_perform___(char * jarg1, char * jarg2, void * jarg3, void * jarg4, unsigned long jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_perform___(char * jarg1, char * jarg2, void * jarg3, void * jarg4) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   switch_regex_t **arg3 = (switch_regex_t **) 0 ;
-  int *arg4 = (int *) 0 ;
-  uint32_t arg5 ;
+  switch_regex_match_data_t **arg4 = (switch_regex_match_data_t **) 0 ;
   int result;
   
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (switch_regex_t **)jarg3; 
-  arg4 = (int *)jarg4; 
-  arg5 = (uint32_t)jarg5; 
-  result = (int)switch_regex_perform((char const *)arg1,(char const *)arg2,arg3,arg4,arg5);
+  arg4 = (switch_regex_match_data_t **)jarg4; 
+  result = (int)switch_regex_perform((char const *)arg1,(char const *)arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_perform_substitution___(void * jarg1, int jarg2, char * jarg3, char * jarg4, char * jarg5, void * jarg6, void * jarg7) {
-  switch_regex_t *arg1 = (switch_regex_t *) 0 ;
-  int arg2 ;
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_perform_substitution___(void * jarg1, char * jarg2, char * jarg3, void * jarg4) {
+  switch_regex_match_data_t *arg1 = (switch_regex_match_data_t *) 0 ;
+  char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  char *arg5 = (char *) 0 ;
-  switch_size_t arg6 ;
-  int *arg7 = (int *) 0 ;
-  switch_size_t *argp6 ;
+  switch_size_t arg4 ;
+  switch_size_t *argp4 ;
   
-  arg1 = (switch_regex_t *)jarg1; 
-  arg2 = (int)jarg2; 
+  arg1 = (switch_regex_match_data_t *)jarg1; 
+  arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  arg4 = (char *)jarg4; 
-  arg5 = (char *)jarg5; 
-  argp6 = (switch_size_t *)jarg6; 
-  if (!argp6) {
+  argp4 = (switch_size_t *)jarg4; 
+  if (!argp4) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
     return ;
   }
-  arg6 = *argp6; 
-  arg7 = (int *)jarg7; 
-  switch_perform_substitution(arg1,arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7);
+  arg4 = *argp4; 
+  switch_perform_substitution(arg1,(char const *)arg2,arg3,arg4);
 }
 
 
@@ -9431,23 +9427,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_match_partial__
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_capture_regex___(void * jarg1, int jarg2, char * jarg3, void * jarg4, char * jarg5, void * jarg6, void * jarg7) {
-  switch_regex_t *arg1 = (switch_regex_t *) 0 ;
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_capture_regex___(void * jarg1, int jarg2, char * jarg3, void * jarg4, void * jarg5) {
+  switch_regex_match_data_t *arg1 = (switch_regex_match_data_t *) 0 ;
   int arg2 ;
   char *arg3 = (char *) 0 ;
-  int *arg4 = (int *) 0 ;
-  char *arg5 = (char *) 0 ;
-  switch_cap_callback_t arg6 = (switch_cap_callback_t) 0 ;
-  void *arg7 = (void *) 0 ;
+  switch_cap_callback_t arg4 = (switch_cap_callback_t) 0 ;
+  void *arg5 = (void *) 0 ;
   
-  arg1 = (switch_regex_t *)jarg1; 
+  arg1 = (switch_regex_match_data_t *)jarg1; 
   arg2 = (int)jarg2; 
   arg3 = (char *)jarg3; 
-  arg4 = (int *)jarg4; 
-  arg5 = (char *)jarg5; 
-  arg6 = (switch_cap_callback_t)jarg6; 
-  arg7 = (void *)jarg7; 
-  switch_capture_regex(arg1,arg2,(char const *)arg3,arg4,(char const *)arg5,arg6,arg7);
+  arg4 = (switch_cap_callback_t)jarg4; 
+  arg5 = (void *)jarg5; 
+  switch_capture_regex(arg1,arg2,(char const *)arg3,arg4,arg5);
 }
 
 

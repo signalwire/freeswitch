@@ -2014,7 +2014,7 @@ SWITCH_STANDARD_API(replace_function)
 SWITCH_STANDARD_API(regex_function)
 {
 	switch_regex_t *re = NULL;
-	int ovector[30];
+	switch_regex_match_data_t *match_data = NULL;
 	int argc;
 	char *mydata = NULL, *argv[4];
 	size_t len = 0;
@@ -2054,7 +2054,7 @@ SWITCH_STANDARD_API(regex_function)
 		goto error;
 	}
 
-	proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+	proceed = switch_regex_perform(argv[0], argv[1], &re, &match_data);
 
 	if (argc > 2) {
 		char *flags = "";
@@ -2069,7 +2069,7 @@ SWITCH_STANDARD_API(regex_function)
 			switch_assert(substituted);
 			memset(substituted, 0, len);
 			switch_replace_char(argv[2], '%', '$', SWITCH_FALSE);
-			switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+			switch_perform_substitution(match_data, argv[2], substituted, len);
 
 			stream->write_function(stream, "%s", substituted);
 			free(substituted);
@@ -2091,7 +2091,7 @@ SWITCH_STANDARD_API(regex_function)
   error:
 	stream->write_function(stream, "-ERR");
   ok:
-	switch_regex_safe_free(re);
+	switch_regex_and_match_data_safe_free(re, match_data);
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -215,7 +215,7 @@ static switch_caller_extension_t *parse_dp(FILE * input, switch_core_session_t *
 	int context_hit = 0;
 	int proceed = 0;
 	switch_regex_t *re = NULL;
-	int ovector[30];
+	switch_regex_match_data_t *match_data = NULL;
 	int parens = 0;
 
 	if (!caller_profile) {
@@ -266,7 +266,7 @@ static switch_caller_extension_t *parse_dp(FILE * input, switch_core_session_t *
 
 						parens = 0;
 						proceed = 0;
-						switch_regex_safe_free(re);
+						switch_regex_and_match_data_safe_free(re, match_data);
 
 						if ((p = strstr(field, "=~"))) {
 							*p = '\0';
@@ -305,7 +305,7 @@ static switch_caller_extension_t *parse_dp(FILE * input, switch_core_session_t *
 							last_field = strdup(field_data);
 
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
-							if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+							if (!(proceed = switch_regex_perform(field_data, expression, &re, &match_data))) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
 							}
 
@@ -343,7 +343,7 @@ static switch_caller_extension_t *parse_dp(FILE * input, switch_core_session_t *
 							if (parens) {
 								len = (uint32_t) (strlen(value) + strlen(last_field) + 10) * proceed;
 								switch_zmalloc(substituted, len);
-								switch_perform_substitution(re, proceed, value, last_field, substituted, len, ovector);
+								switch_perform_substitution(match_data, value, substituted, len);
 								app_data = substituted;
 							} else {
 								app_data = value;
@@ -368,7 +368,7 @@ static switch_caller_extension_t *parse_dp(FILE * input, switch_core_session_t *
   end:
 
 	switch_safe_free(last_field);
-	switch_regex_safe_free(re);
+	switch_regex_and_match_data_safe_free(re, match_data);
 	yaml_parser_delete(&parser);
 
 	if (input) {

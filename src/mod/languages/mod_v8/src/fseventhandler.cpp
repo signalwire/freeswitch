@@ -139,9 +139,10 @@ void FSEventHandler::QueueEvent(switch_event_t *event)
 
 					if (*hp->value == '/') {
 						switch_regex_t *re = NULL;
+						switch_regex_match_data_t *match_data = NULL;
 						int ovector[30];
-						cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-						switch_regex_safe_free(re);
+						cmp = !!switch_regex_perform(hval, comp_to, &re, &match_data);
+						switch_regex_and_match_data_safe_free(re, match_data);
 					} else {
 						cmp = !strcasecmp(hval, comp_to);
 					}

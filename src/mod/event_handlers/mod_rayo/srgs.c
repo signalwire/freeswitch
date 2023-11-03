@@ -28,7 +28,8 @@
  */
 #include <switch.h>
 #include <iksemel.h>
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 #include "srgs.h"
 
@@ -179,7 +180,7 @@ struct srgs_grammar {
 	/** root rule */
 	struct srgs_node *root_rule;
 	/** compiled grammar regex */
-	pcre *compiled_regex;
+	pcre2_code *compiled_regex;
 	/** grammar in regex format */
 	char *regex;
 	/** grammar in JSGF format */
@@ -846,7 +847,7 @@ static void srgs_grammar_destroy(struct srgs_grammar *grammar)
 {
 	switch_memory_pool_t *pool = grammar->pool;
 	if (grammar->compiled_regex) {
-		pcre_free(grammar->compiled_regex);
+		pcre2_code_free(grammar->compiled_regex);
 	}
 	if (grammar->jsgf_file_name) {
 		switch_file_remove(grammar->jsgf_file_name, pool);
@@ -986,7 +987,7 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 					case '+':
 					case '(':
 					case ')':
-						/* escape special PCRE regex characters */
+						/* escape special PCRE2 regex characters */
 						stream->write_function(stream, "\\%c", node->value.string[i]);
 						break;
 					default:
@@ -1082,10 +1083,10 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 /**
  * Compile regex
  */
-static pcre *get_compiled_regex(struct srgs_grammar *grammar)
+static pcre2_code *get_compiled_regex(struct srgs_grammar *grammar)
 {
-	int erroffset = 0;
-	const char *errptr = "";
+	PCRE2_SIZE erroffset = 0;
+	int errcode = 0;
 	int options = 0;
 	const char *regex;
 
@@ -1096,7 +1097,7 @@ static pcre *get_compiled_regex(struct srgs_grammar *grammar)
 
 	switch_mutex_lock(grammar->mutex);
 	if (!grammar->compiled_regex && (regex = srgs_grammar_to_regex(grammar))) {
-		if (!(grammar->compiled_regex = pcre_compile(regex, options, &errptr, &erroffset, NULL))) {
+		if (!(grammar->compiled_regex = pcre2_compile((PCRE2_SPTR)regex, PCRE2_ZERO_TERMINATED, options, &errcode, &erroffset, NULL))) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(grammar->uuid), SWITCH_LOG_WARNING, "Failed to compile grammar regex: %s\n", regex);
 		}
 	}
@@ -1225,7 +1226,6 @@ struct srgs_grammar *srgs_parse(struct srgs_parser *parser, const char *document
 }
 
 #define MAX_INPUT_SIZE 128
-#define OVECTOR_SIZE MAX_TAGS
 #define WORKSPACE_SIZE 1024
 
 /**
@@ -1234,9 +1234,9 @@ struct srgs_grammar *srgs_parse(struct srgs_parser *parser, const char *document
  * @param input the input to check
  * @return true if end of match (no more input can be added)
  */
-static int is_match_end(pcre *compiled_regex, const char *input)
+static int is_match_end(pcre2_code *compiled_regex, const char *input)
 {
-	int ovector[OVECTOR_SIZE];
+	pcre2_match_data *match_data;
 	int input_size = strlen(input);
 	char search_input[MAX_INPUT_SIZE + 2];
 	const char *search_set = "0123456789#*ABCD";
@@ -1257,13 +1257,15 @@ static int is_match_end(pcre *compiled_regex, const char *input)
 			search = search_set;
 		}
 		search_input[input_size] = *search++;
-		result = pcre_exec(compiled_regex, NULL, search_input, input_size + 1, 0, PCRE_PARTIAL,
-			ovector, sizeof(ovector) / sizeof(ovector[0]));
+		match_data = pcre2_match_data_create_from_pattern(compiled_regex, NULL);
+		result = pcre2_match(compiled_regex, (PCRE2_SPTR)search_input, input_size + 1, 0,
+				     PCRE2_PARTIAL_SOFT, match_data, 0);
+		pcre2_match_data_free(match_data);
 		if (result > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not match end\n");
 			return 0;
 		}
-		if (result == PCRE_ERROR_PARTIAL) {
+		if (result == PCRE2_ERROR_PARTIAL) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "partial match possible - not match end\n");
 			return 0;
 		}
@@ -1282,8 +1284,8 @@ static int is_match_end(pcre *compiled_regex, const char *input)
 enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char *input, const char **interpretation)
 {
 	int result = 0;
-	int ovector[OVECTOR_SIZE];
-	pcre *compiled_regex;
+	pcre2_code *compiled_regex;
+	pcre2_match_data *match_data;
 
 	*interpretation = NULL;
 
@@ -1298,8 +1300,11 @@ enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char
 	if (!(compiled_regex = get_compiled_regex(grammar))) {
 		return SMT_NO_MATCH;
 	}
-	result = pcre_exec(compiled_regex, NULL, input, strlen(input), 0, PCRE_PARTIAL,
-		ovector, OVECTOR_SIZE);
+
+	match_data = pcre2_match_data_create_from_pattern(compiled_regex, NULL);
+
+	result = pcre2_match(compiled_regex, (PCRE2_SPTR)input, strlen(input), 0, PCRE2_PARTIAL_SOFT,
+			     match_data, NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "match = %i\n", result);
 	if (result > 0) {
@@ -1310,24 +1315,33 @@ enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char
 		/* find matching instance... */
 		for (i = 1; i <= grammar->tag_count; i++) {
 			char substring_name[16] = { 0 };
+			PCRE2_SIZE buffer_size = MAX_INPUT_SIZE + 1;
 			buffer[0] = '\0';
 			snprintf(substring_name, 16, "tag%d", i);
-			if (pcre_copy_named_substring(compiled_regex, input, ovector, result, substring_name, buffer, MAX_INPUT_SIZE) != PCRE_ERROR_NOSUBSTRING && !zstr_buf(buffer)) {
+			if (pcre2_substring_copy_byname(match_data, (PCRE2_SPTR)substring_name, (PCRE2_UCHAR *)buffer, &buffer_size) != PCRE2_ERROR_NOSUBSTRING && !zstr_buf(buffer)) {
 				*interpretation = grammar->tags[i];
 				break;
 			}
 		}
 
 		if (is_match_end(compiled_regex, input)) {
-			return SMT_MATCH_END;
+			result = SMT_MATCH_END;
+			goto exit;
 		}
-		return SMT_MATCH;
-	}
-	if (result == PCRE_ERROR_PARTIAL) {
-		return SMT_MATCH_PARTIAL;
+		result = SMT_MATCH;
+		goto exit;
 	}
 
-	return SMT_NO_MATCH;
+	if (result == PCRE2_ERROR_PARTIAL) {
+		result = SMT_MATCH_PARTIAL;
+		goto exit;
+	}
+
+	result = SMT_NO_MATCH;
+exit:
+	pcre2_match_data_free(match_data);
+
+	return result;
 }
 
 /**
