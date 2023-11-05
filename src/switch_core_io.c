@@ -146,13 +146,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	if (session->read_codec && !session->track_id && session->track_duration) {
 		if (session->read_frame_count == 0) {
 			switch_event_t *event;
-			switch_core_session_message_t msg = { 0 };
+			switch_core_session_message_t *msg = switch_core_session_alloc(session, sizeof(*msg));
 
 			session->read_frame_count = (session->read_impl.samples_per_second / session->read_impl.samples_per_packet) * session->track_duration;
 
-			msg.message_id = SWITCH_MESSAGE_HEARTBEAT_EVENT;
-			msg.numeric_arg = session->track_duration;
-			switch_core_session_receive_message(session, &msg);
+			msg->message_id = SWITCH_MESSAGE_HEARTBEAT_EVENT;
+			msg->numeric_arg = session->track_duration;
+			MESSAGE_STAMP_FFL(msg);
+			switch_core_session_queue_message(session, msg);
+
 
 			switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
 			switch_channel_event_set_data(session->channel, event);
@@ -410,10 +412,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_set_flag(session, SSF_READ_TRANSCODE);
 
 		if (!switch_test_flag(session, SSF_WARN_TRANSCODE)) {
-			switch_core_session_message_t msg = { 0 };
-
-			msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY;
-			switch_core_session_receive_message(session, &msg);
+			switch_core_session_message_t *msg = switch_core_session_alloc(session, sizeof(*msg));
+			msg->message_id = SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY;
+			MESSAGE_STAMP_FFL(msg);
+			switch_core_session_queue_message(session, msg);
 			switch_set_flag(session, SSF_WARN_TRANSCODE);
 		}
 
@@ -562,10 +564,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						status = SWITCH_STATUS_FALSE;
 						goto done;
 					} else {
-						switch_core_session_message_t msg = { 0 };
-						msg.numeric_arg = 1;
-						msg.message_id = SWITCH_MESSAGE_RESAMPLE_EVENT;
-						switch_core_session_receive_message(session, &msg);
+						switch_core_session_message_t *msg = switch_core_session_alloc(session, sizeof(*msg));
+						msg->message_id = SWITCH_MESSAGE_RESAMPLE_EVENT;
+						msg->numeric_arg = 1;
+						MESSAGE_STAMP_FFL(msg);
+						switch_core_session_queue_message(session, msg);
 
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Activating read resampler\n");
 					}
@@ -597,10 +600,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_unlock(session->resample_mutex);
 
 					{
-						switch_core_session_message_t msg = { 0 };
-						msg.numeric_arg = 0;
-						msg.message_id = SWITCH_MESSAGE_RESAMPLE_EVENT;
-						switch_core_session_receive_message(session, &msg);
+						switch_core_session_message_t *msg = switch_core_session_alloc(session, sizeof(*msg));
+						msg->message_id = SWITCH_MESSAGE_RESAMPLE_EVENT;
+						msg->numeric_arg = 0;
+						MESSAGE_STAMP_FFL(msg);
+						switch_core_session_queue_message(session, msg);
+
 					}
 
 				}
