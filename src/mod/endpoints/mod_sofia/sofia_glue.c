@@ -1079,7 +1079,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
-		switch_true(switch_channel_get_variable_dup(tech_pvt->channel, "sofia_hold_inactive", SWITCH_FALSE, -1))) {
+		switch_channel_var_true(tech_pvt->channel, "sofia_hold_inactive")) {
 		hold_char = "#";
 	}
 
@@ -1114,7 +1114,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 
-	if ((val = switch_channel_get_variable_dup(channel, "sip_require_timer", SWITCH_FALSE, -1)) && switch_false(val)) {
+	if (switch_channel_var_false(channel, "sip_require_timer")) {
 		require_timer = 0;
 	}
 
@@ -1431,7 +1431,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		if (tech_pvt->dest && (strstr(tech_pvt->dest, ";fs_nat") || strstr(tech_pvt->dest, ";received")
-							   || ((val = switch_channel_get_variable(channel, "sip_sticky_contact")) && switch_true(val)))) {
+							   || switch_channel_var_true(channel, "sip_sticky_contact"))) {
 			sofia_set_flag(tech_pvt, TFLAG_NAT);
 			tech_pvt->record_route = switch_core_session_strdup(tech_pvt->session, url_str);
 			if (!dst || !dst->route_uri) {
@@ -1504,7 +1504,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 				tech_pvt->privacy = "id";
 			} else {
-				if (!(val = switch_channel_get_variable(channel, "sip_cid_suppress_privacy_none")) || !switch_true(val)) {
+				if (switch_channel_var_true_or_default(channel, "sip_cid_suppress_privacy_none", SWITCH_TRUE)) {
 					tech_pvt->privacy = "none";
 				}
 			}
@@ -2325,6 +2325,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	rr = switch_channel_get_variable(channel, "sip_invite_record_route");
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		//int break_rfc = switch_channel_var_true(channel, "sip_recovery_break_rfc");
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_req_uri"));
 		switch_channel_set_variable(channel, "sip_handle_full_from", switch_channel_get_variable(channel, swap ? "sip_full_to" : "sip_full_from"));
 		switch_channel_set_variable(channel, "sip_handle_full_to", switch_channel_get_variable(channel, swap ? "sip_full_from" : "sip_full_to"));
@@ -2366,7 +2367,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 	switch_channel_set_variable(channel, "sip_invite_call_id", switch_channel_get_variable(channel, "sip_call_id"));
 
-	if (switch_true(switch_channel_get_variable(channel, "sip_nat_detected"))) {
+	if (switch_channel_var_true(channel, "sip_nat_detected")) {
 		switch_channel_set_variable_printf(channel, "sip_route_uri", "sip:%s@%s:%s",
 										   switch_channel_get_variable(channel, "sip_req_user"),
 										   switch_channel_get_variable(channel, "sip_network_ip"), switch_channel_get_variable(channel, "sip_network_port")
@@ -3193,7 +3194,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 
 int sofia_glue_tech_simplify(private_object_t *tech_pvt)
 {
-	const char *uuid, *network_addr_a = NULL, *network_addr_b = NULL, *simplify, *simplify_other_channel;
+	const char *uuid, *network_addr_a = NULL, *network_addr_b = NULL;
 	switch_channel_t *other_channel = NULL, *inbound_channel = NULL;
 	switch_core_session_t *other_session = NULL, *inbound_session = NULL;
 	uint8_t did_simplify = 0;
@@ -3209,17 +3210,15 @@ int sofia_glue_tech_simplify(private_object_t *tech_pvt)
 		other_channel = switch_core_session_get_channel(other_session);
 
 		if (switch_channel_test_flag(other_channel, CF_ANSWERED)) {	/* Check if the other channel is answered */
-			simplify = switch_channel_get_variable(tech_pvt->channel, "sip_auto_simplify");
-			simplify_other_channel = switch_channel_get_variable(other_channel, "sip_auto_simplify");
 
 			r = 1;
 
-			if (switch_true(simplify) && !switch_channel_test_flag(tech_pvt->channel, CF_BRIDGE_ORIGINATOR)) {
+			if (switch_channel_var_true(tech_pvt->channel, "sip_auto_simplify") && !switch_channel_test_flag(tech_pvt->channel, CF_BRIDGE_ORIGINATOR)) {
 				network_addr_a = switch_channel_get_variable(tech_pvt->channel, "network_addr");
 				network_addr_b = switch_channel_get_variable(other_channel, "network_addr");
 				inbound_session = other_session;
 				inbound_channel = other_channel;
-			} else if (switch_true(simplify_other_channel) && !switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+			} else if (switch_channel_var_true(other_channel, "sip_auto_simplify") && !switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
 				network_addr_a = switch_channel_get_variable(other_channel, "network_addr");
 				network_addr_b = switch_channel_get_variable(tech_pvt->channel, "network_addr");
 				inbound_session = tech_pvt->session;

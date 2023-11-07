@@ -932,7 +932,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
 			}
-			if (switch_true(switch_channel_get_variable(channel, "spandsp_tone_detect_stop_on_tone"))) {
+			if (switch_channel_var_true(channel, "spandsp_tone_detect_stop_on_tone")) {
 				/* all done */
 				return SWITCH_FALSE;
 			}

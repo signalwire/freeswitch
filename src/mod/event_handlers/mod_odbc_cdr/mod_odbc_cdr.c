@@ -248,8 +248,7 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Only logging B-Leg, ignoring A-leg\n");
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		const char *tmp = NULL;
-		if ((tmp = switch_channel_get_variable(channel, "odbc-cdr-ignore-leg")) && switch_true(tmp)) {
+		if (switch_channel_var_true(channel, "odbc-cdr-ignore-leg")) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "odbc-cdr-ignore-leg set to true, ignoring leg\n");
 			return SWITCH_STATUS_SUCCESS;
 		}

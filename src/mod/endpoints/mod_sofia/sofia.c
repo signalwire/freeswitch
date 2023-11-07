@@ -928,7 +928,6 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	private_object_t *tech_pvt;
 	char *extra_headers;
 	const char *call_info = NULL;
-	const char *vval = NULL;
 	const char *session_id_header = sofia_glue_session_id_header(session, profile);
 #ifdef MANUAL_BYE
 	int cause;
@@ -1045,16 +1044,15 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
 	sofia_glue_set_extra_headers(session, sip, SOFIA_SIP_BYE_HEADER_PREFIX);
 
-	if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) {
+	if (switch_channel_var_true_or_default(channel, "sip_copy_custom_headers", SWITCH_TRUE)) {
 		switch_core_session_t *nsession = NULL;
 
 		switch_core_session_get_partner(session, &nsession);
 
 		if (nsession) {
-			const char *vval;
 			switch_channel_t *nchannel = switch_core_session_get_channel(nsession);
 
-			if (!(vval = switch_channel_get_variable(nchannel, "sip_copy_custom_headers")) || switch_true(vval)) {
+			if (switch_channel_var_true_or_default(nchannel, "sip_copy_custom_headers", SWITCH_TRUE)) {
 				switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_BYE_HEADER_PREFIX_T);
 			}
 			switch_core_session_rwunlock(nsession);
@@ -1219,7 +1217,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	const char *name_var = "callee_id_name";
 	const char *num_var = "callee_id_number";
 
-	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE)) || !sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE)) {
+	if (switch_channel_var_true(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE) || !sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE)) {
 		return;
 	}
 
@@ -6755,7 +6753,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		if ((status == 180 || status == 183 || status > 199)) {
-			const char *vval;
 
 			sofia_set_accept_language_channel_variable(channel, sip);
 
@@ -6766,7 +6763,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 
 
-			if (!(vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) || switch_true(vval)) {
+			if (switch_channel_var_true_or_default(channel, "sip_copy_custom_headers", SWITCH_TRUE)) {
 				switch_core_session_t *other_session;
 
 				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
@@ -6815,9 +6812,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			char *full_contact = NULL;
 			char *invite_contact;
 			const char *br;
-			const char *v;
 
-			if ((v = switch_channel_get_variable(channel, "outbound_redirect_fatal")) && switch_true(v)) {
+			if (switch_channel_var_true(channel, "outbound_redirect_fatal")) {
 				su_home_t *home = su_home_new(sizeof(*home));
 				switch_assert(home != NULL);
 
@@ -6866,7 +6862,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_core_session_t *a_session;
 				switch_channel_t *a_channel;
 
-				const char *sip_redirect_profile, *sip_redirect_context, *sip_redirect_dialplan, *sip_redirect_fork;
+				const char *sip_redirect_profile, *sip_redirect_context, *sip_redirect_dialplan;
 
 				if ((a_session = switch_core_session_locate(br)) && (a_channel = switch_core_session_get_channel(a_session))) {
 					switch_stream_handle_t stream = { 0 };
@@ -6887,9 +6883,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						sip_redirect_dialplan = "XML";
 					}
 
-					sip_redirect_fork = switch_channel_get_variable(channel, "sip_redirect_fork");
-
-					if (switch_true(sip_redirect_fork)) {
+					if (switch_channel_var_true(channel, "sip_redirect_fork")) {
 						*separator = ',';
 					}
 
@@ -6944,11 +6938,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					}
 
 					if (sofia_test_pflag(profile, PFLAG_MANUAL_REDIRECT)) {
-						if (!switch_channel_get_variable(channel, "outbound_redirect_info")) {
+						if (!switch_channel_var_exist(channel, "outbound_redirect_info")) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s %s %s\n",
 											  p_contact->m_url->url_user, sip_redirect_dialplan, sip_redirect_context);
 
-							if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+							if (switch_channel_var_true(channel, "recording_follow_transfer")) {
 								switch_ivr_transfer_recordings(session, a_session);
 							}
 
@@ -6965,7 +6959,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n",
 										  p_contact->m_url->url_user);
 
-						if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+						if (switch_channel_var_true(channel, "recording_follow_transfer")) {
 							switch_ivr_transfer_recordings(session, a_session);
 						}
 
@@ -7521,7 +7515,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (status == 183 && !r_sdp) {
-		if ((channel && switch_true(switch_channel_get_variable(channel, "sip_ignore_183nosdp"))) || sofia_test_pflag(profile, PFLAG_IGNORE_183NOSDP)) {
+		if ((channel && switch_channel_var_true(channel, "sip_ignore_183nosdp")) || sofia_test_pflag(profile, PFLAG_IGNORE_183NOSDP)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Ignoring 183 w/o sdp\n", channel ? switch_channel_get_name(channel) : "None");
 			goto done;
 		}
@@ -7547,9 +7541,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		const char *full_to = NULL;
-		const char *var;
-		if ((var = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(var) &&
-                    !((var = switch_channel_get_variable(channel, "sip_auto_answer_suppress_notify")) && switch_true(var))) {
+		if (switch_channel_var_true(channel, "sip_auto_answer") &&
+                    switch_channel_var_true_or_default(channel, "sip_auto_answer_suppress_notify", SWITCH_TRUE)) {
 			full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));
 
 			nua_notify(nh,
@@ -7696,9 +7689,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			int send_ack = 1;
 
 			if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-				const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
-
-				if (switch_true(wait_for_ack)) {
+				if (switch_channel_var_true(channel, "sip_wait_for_aleg_ack")) {
 					switch_core_session_t *other_session;
 
 					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
@@ -7949,7 +7940,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									if (br_b) {
 										switch_core_session_t *tmp;
 
-										if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer")) &&
+										if (switch_channel_var_true(channel, "recording_follow_transfer") &&
 											(tmp = switch_core_session_locate(br_a))) {
 											switch_ivr_transfer_recordings(session, tmp);
 											switch_core_session_rwunlock(tmp);
@@ -8137,12 +8128,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_completed:
 		if (r_sdp) {
-			const char *var;
 			uint8_t match = 0, is_ok = 1, is_t38 = 0;
 
 			tech_pvt->mparams.hold_laps = 0;
 
-				if ((var = switch_channel_get_variable(channel, "sip_ignore_reinvites")) && switch_true(var)) {
+				if (switch_channel_var_true(channel, "sip_ignore_reinvites")) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ignoring Re-invite\n");
 					nua_respond(tech_pvt->nh, SIP_200_OK, TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
 					goto done;
@@ -8155,7 +8145,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((sofia_test_media_flag(profile, SCMF_DISABLE_HOLD)
-						 || ((var = switch_channel_get_variable(channel, "rtp_disable_hold")) && switch_true(var)))
+						 || switch_channel_var_true(channel, "rtp_disable_hold"))
 						&& ((switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp) || switch_stristr("inactive", r_sdp)) || tech_pvt->mparams.hold_laps)) {
 						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
 
@@ -8171,7 +8161,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						switch_core_session_message_t *msg;
 						private_object_t *other_tech_pvt;
-						int media_on_hold = switch_true(switch_channel_get_variable_dup(channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
+						int media_on_hold = switch_channel_var_true(channel, "bypass_media_resume_on_hold");
 
 						switch_core_media_clear_rtp_flag(other_session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);
 
@@ -8797,7 +8787,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 											   switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE, NULL, NULL)) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_up(channel_a)) {
 
-					if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
+					if (switch_channel_var_true(channel_a, "recording_follow_transfer")) {
 						switch_ivr_transfer_recordings(session, a_session);
 					}
 
@@ -9079,11 +9069,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						br_b = NULL;
 					}
 
-					if (channel_a && switch_true(switch_channel_get_variable(channel_a, "deny_refer_requests"))) {
+					if (channel_a && switch_channel_var_true(channel_a, "deny_refer_requests")) {
 						deny_refer_requests = 1;
 					}
 
-					if (!deny_refer_requests && channel_b && switch_true(switch_channel_get_variable(channel_b, "deny_refer_requests"))) {
+					if (!deny_refer_requests && channel_b && switch_channel_var_true(channel_b, "deny_refer_requests")) {
 						deny_refer_requests = 1;
 					}
 
@@ -9092,7 +9082,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						if ((a_session = switch_core_session_locate(br_a))) {
 							switch_channel_t *a_channel = switch_core_session_get_channel(a_session);
 
-							if (a_channel && switch_true(switch_channel_get_variable(a_channel, "deny_refer_requests"))) {
+							if (a_channel && switch_channel_var_true(a_channel, "deny_refer_requests")) {
 								deny_refer_requests = 1;
 							}
 							switch_core_session_rwunlock(a_session);
@@ -9104,7 +9094,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						if ((b_session = switch_core_session_locate(br_b))) {
 							switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 
-							if (b_channel && switch_true(switch_channel_get_variable(b_channel, "deny_refer_requests"))) {
+							if (b_channel && switch_channel_var_true(b_channel, "deny_refer_requests")) {
 								deny_refer_requests = 1;
 							}
 							switch_core_session_rwunlock(b_session);
@@ -9196,10 +9186,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							} else {
 								switch_ivr_session_transfer(a_session, "park", "inline", NULL);
 							}
-							if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer"))) {
+							if (switch_channel_var_true(channel_a, "recording_follow_transfer")) {
 								switch_ivr_transfer_recordings(session, a_session);
 							}
-							if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) && (tmpsess = switch_core_session_locate(br_a))) {
+							if (switch_channel_var_true(channel_b, "recording_follow_transfer") && (tmpsess = switch_core_session_locate(br_a))) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE,
 										  "Early transfer detected with no media, moving recording bug to other leg\n");
 								switch_ivr_transfer_recordings(b_session, tmpsess);
@@ -9215,11 +9205,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							if (b_tech_pvt && !sofia_test_flag(b_tech_pvt, TFLAG_BYE)) {
 								char *q850 = NULL;
-								const char *val = NULL;
 
 								sofia_set_flag_locked(b_tech_pvt, TFLAG_BYE);
-								val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
-								if (!val || switch_true(val)) {
+								if (switch_channel_var_true_or_default(tech_pvt->channel, "disable_q850_reason", SWITCH_TRUE)) {
 									q850 = switch_core_session_sprintf(a_session, "Q.850;cause=16;text=\"normal_clearing\"");
 								}
 								nua_bye(b_tech_pvt->nh,
@@ -9265,7 +9253,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						}
 
 
-						if (switch_true(switch_channel_get_variable(channel_a, "recording_follow_transfer")) &&
+						if (switch_channel_var_true(channel_a, "recording_follow_transfer") &&
 							(tmp = switch_core_session_locate(br_a))) {
 							switch_channel_set_variable(switch_core_session_get_channel(tmp), "transfer_disposition", "bridge");
 							switch_ivr_transfer_recordings(session, tmp);
@@ -9273,7 +9261,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						}
 
 
-						if (switch_true(switch_channel_get_variable(channel_b, "recording_follow_transfer")) &&
+						if (switch_channel_var_true(channel_b, "recording_follow_transfer") &&
 							(tmp = switch_core_session_locate(br_b))) {
 							switch_ivr_transfer_recordings(b_session, tmp);
 							switch_core_session_rwunlock(tmp);
@@ -9369,7 +9357,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								}
 
 
-								if (switch_true(switch_channel_get_variable(hup_channel, "recording_follow_transfer"))) {
+								if (switch_channel_var_true(hup_channel, "recording_follow_transfer")) {
 									switch_ivr_transfer_recordings(hup_session, t_session);
 								}
 
@@ -9623,7 +9611,6 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		switch_channel_set_variable_printf(channel, "transfer_destination", "blind:%s", exten);
 
 		if (!zstr(br) && (b_session = switch_core_session_locate(br))) {
-			const char *var;
 			switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 			switch_event_t *event = NULL;
 
@@ -9636,13 +9623,13 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				switch_channel_set_variable(b_channel, SOFIA_REFER_TO_VARIABLE, full_ref_to);
 			}
 
-			if (switch_true(switch_channel_get_variable(channel, "recording_follow_transfer"))) {
+			if (switch_channel_var_true(channel, "recording_follow_transfer")) {
 				switch_ivr_transfer_recordings(session, b_session);
 			}
 
 			switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "BLIND_TRANSFER");
 
-			if (((var = switch_channel_get_variable(channel, "confirm_blind_transfer")) && switch_true(var)) ||
+			if (switch_channel_var_true(channel, "confirm_blind_transfer") ||
 				sofia_test_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER)) {
 
 				switch_channel_set_state_flag(b_channel, CF_CONFIRM_BLIND_TRANSFER);
@@ -9962,7 +9949,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	}
 
 	if (session) {
-		const char *vval;
 
 		/* Barf if we didn't get our private */
 		assert(switch_core_session_get_private(session));
@@ -10008,7 +9994,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				data = sip->sip_payload->pl_data;
 			}
 
-			if ((vval = switch_channel_get_variable(channel, "sip_copy_custom_headers")) && switch_true(vval)) {
+			if (switch_channel_var_true(channel, "sip_copy_custom_headers")) {
 				switch_core_session_t *nsession = NULL;
 
 				switch_core_session_get_partner(session, &nsession);
@@ -10170,7 +10156,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				if (!strcasecmp(rec_header, "on")) {
 					char *file = NULL, *tmp = NULL;
 
-					if (switch_true(switch_channel_get_variable(channel, "sip_disable_recording"))) {
+					if (switch_channel_var_true(channel, "sip_disable_recording")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Record attempted but is disabled by sip_disable_recording variable.\n");
 						nua_respond(nh, 488, "Recording disabled for this channel", NUTAG_WITH_THIS_MSG(de->data->e_msg), 
 								TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());

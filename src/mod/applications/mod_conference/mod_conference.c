@@ -793,7 +793,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		if (!conference_utils_member_test_flag(imember, MFLAG_NOCHANNEL)) {
 			channel = switch_core_session_get_channel(imember->session);
 
-			if (!switch_false(switch_channel_get_variable(channel, "hangup_after_conference"))) {
+			if (!switch_channel_var_false(channel, "hangup_after_conference")) {
 				/* add this little bit to preserve the bridge cause code in case of an early media call that */
 				/* never answers */
 				if (conference_utils_test_flag(conference, CFLAG_ANSWERED)) {
@@ -1920,7 +1920,7 @@ SWITCH_STANDARD_APP(conference_function)
 	uint32_t *mid;
 
 	if (!switch_channel_test_app_flag_key("conference_silent", channel, CONF_SILENT_DONE) &&
-		(switch_channel_test_flag(channel, CF_RECOVERED) || switch_true(switch_channel_get_variable(channel, "conference_silent_entry")))) {
+		(switch_channel_test_flag(channel, CF_RECOVERED) || switch_channel_var_true(channel, "conference_silent_entry"))) {
 		switch_channel_set_app_flag_key("conference_silent", channel, CONF_SILENT_REQ);
 	}
 
@@ -2139,7 +2139,7 @@ SWITCH_STANDARD_APP(conference_function)
 						switch_channel_answer(channel);
 						switch_ivr_play_file(session, NULL, val, NULL);
 					}
-					if (!switch_false(switch_channel_get_variable(channel, "hangup_after_conference"))) {
+					if (!switch_channel_var_false(channel, "hangup_after_conference")) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 					}
 					goto done;

@@ -1007,15 +1007,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	char *ext;
 	const char *prefix;
 	displace_helper_t *dh;
-	const char *p;
 	switch_bool_t hangup_on_error = SWITCH_FALSE;
 	switch_media_bug_flag_enum_t bug_flags = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(session, &read_impl);
 
-	if ((p = switch_channel_get_variable(channel, "DISPLACE_HANGUP_ON_ERROR"))) {
-		hangup_on_error = switch_true(p);
-	}
+	hangup_on_error = switch_channel_var_true_or_default(channel, "DISPLACE_HANGUP_ON_ERROR", hangup_on_error);
 
 	if (zstr(file)) {
 		return SWITCH_STATUS_FALSE;
@@ -1459,6 +1456,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			/* Required for potential record_transfer */
 			rh->bug = bug;
 			
+			// XXX switch_true doesn't consider zstr() as true...
 			if (!rh->native && rh->fh && (zstr(var) || switch_true(var))) {
 				switch_threadattr_t *thd_attr = NULL;
 				int sanity = 200;
@@ -2485,7 +2483,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				}
 			}
 
-			if ((vval = switch_channel_get_variable(session->channel, "eavesdrop_concat_video")) && switch_true(vval)) {
+			if (switch_channel_var_true(session->channel, "eavesdrop_concat_video")) {
 				read_flags |= SMBF_READ_VIDEO_STREAM;
 				read_flags |= SMBF_WRITE_VIDEO_STREAM;
 			} else {
@@ -2976,7 +2974,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 			if ((bug = switch_channel_get_private(other_channel, file))) {
-				if (switch_true(switch_channel_get_variable(other_channel, "RECORD_TOGGLE_ON_REPEAT"))) {
+				if (switch_channel_var_true(other_channel, "RECORD_TOGGLE_ON_REPEAT")) {
 					rstatus = switch_ivr_stop_record_session(other_session, file);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(other_session), SWITCH_LOG_WARNING, "Already recording [%s]\n", file);
@@ -5023,7 +5021,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 				switch_core_asr_get_result_headers(sth->ah, &headers, &flags);
 			}
 
-			if (status == SWITCH_STATUS_SUCCESS && switch_true(switch_channel_get_variable(channel, "asr_intercept_dtmf"))) {
+			if (status == SWITCH_STATUS_SUCCESS && switch_channel_var_true(channel, "asr_intercept_dtmf")) {
 				const char *p;
 
 				if ((p = switch_stristr("<input>", xmlstr))) {
@@ -5375,7 +5373,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_codec_implementation_t read_impl = { 0 };
-	const char *p;
 	char key[512] = "";
 
 	if (sth) {
@@ -5404,7 +5401,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	sth->session = session;
 	sth->ah = ah;
 
-	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
+	if (switch_channel_var_true(channel, "fire_asr_events")) {
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
@@ -5459,9 +5456,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
-	const char *p;
 	int resume = 0;
-
 
 	if (!sth) {
 		/* No speech thread handle available yet, init speech detection first. */
@@ -5489,7 +5484,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		switch_ivr_resume_detect_speech(session);
 	}
 
-	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
+	if (switch_channel_var_true(channel, "fire_asr_events")) {
 		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 

@@ -703,7 +703,7 @@ static switch_status_t three_way_on_soft_execute(switch_core_session_t *other_se
 		/* if my_channel isn't ready, it means something else has control of it, leave it alone */
 		if (switch_channel_ready(my_channel)) {
 			const char *s;
-			if ((s = switch_channel_get_variable(my_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE)) && switch_true(s)) {
+			if (switch_channel_var_true(my_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE)) {
 				switch_ivr_park_session(my_session);
 			} else if ((s = switch_channel_get_variable(my_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE)) && !zstr(s)) {
 				int argc;

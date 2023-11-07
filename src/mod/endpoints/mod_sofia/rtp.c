@@ -646,7 +646,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames)\n",
 										  len, qlen, maxqlen);
 						switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER);
-						if (!switch_false(switch_channel_get_variable(tech_pvt->channel, "rtp_jitter_buffer_plc"))) {
+						if (!switch_channel_var_false(tech_pvt->channel, "rtp_jitter_buffer_plc")) {
 							switch_channel_set_flag(tech_pvt->channel, CF_JITTERBUFFER_PLC);
 						}
 					} else {

@@ -2879,7 +2879,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_mutex_unlock(globals.mutex);
 		}
 
-		if ((switch_true(switch_channel_get_variable(channel, "fifo_caller_exit_to_orbit")) || cd.do_orbit) && cd.orbit_exten) {
+		if ((switch_channel_var_true(channel, "fifo_caller_exit_to_orbit") || cd.do_orbit) && cd.orbit_exten) {
 			if (orbit_ann) {
 				switch_ivr_play_file(session, NULL, orbit_ann, NULL);
 			}
@@ -3660,7 +3660,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		fifo_caller_del(switch_core_session_get_uuid(session));
 	}
 
-	if (switch_true(switch_channel_get_variable(channel, "fifo_destroy_after_use"))) {
+	if (switch_channel_var_true(channel, "fifo_destroy_after_use")) {
 		do_destroy = 1;
 	}
 

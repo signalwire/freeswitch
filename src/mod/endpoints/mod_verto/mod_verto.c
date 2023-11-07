@@ -3295,7 +3295,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 			switch_core_session_rwunlock(tmp);
 		}
 
-		if (switch_true(switch_channel_get_variable(tech_pvt->channel, "recording_follow_transfer")) &&
+		if (switch_channel_var_true(tech_pvt->channel, "recording_follow_transfer") &&
 			(tmp = switch_core_session_locate(br_a))) {
 			switch_channel_set_variable(switch_core_session_get_channel(tmp), "transfer_disposition", "bridge");
 			switch_ivr_transfer_recordings(session, tmp);
@@ -3303,7 +3303,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 		}
 
 
-		if (switch_true(switch_channel_get_variable(b_tech_pvt->channel, "recording_follow_transfer")) &&
+		if (switch_channel_var_true(b_tech_pvt->channel, "recording_follow_transfer") &&
 			(tmp = switch_core_session_locate(br_b))) {
 			switch_ivr_transfer_recordings(b_session, tmp);
 			switch_core_session_rwunlock(tmp);
@@ -3350,7 +3350,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 				const char *idest = switch_channel_get_variable(hup_channel, "inline_destination");
 				ext = switch_channel_get_variable(hup_channel, "destination_number");
 
-				if (switch_true(switch_channel_get_variable(hup_channel, "recording_follow_transfer"))) {
+				if (switch_channel_var_true(hup_channel, "recording_follow_transfer")) {
 					switch_ivr_transfer_recordings(hup_session, t_session);
 				}
 
@@ -6139,7 +6139,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		if (session) {
 			switch_channel_t *ochannel = switch_core_session_get_channel(session);
 
-			if (switch_true(switch_channel_get_variable(ochannel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
+			if (switch_channel_var_true(ochannel, SWITCH_BYPASS_MEDIA_VARIABLE)) {
 				switch_channel_set_flag(channel, CF_PROXY_MODE);
 				switch_channel_set_flag(ochannel, CF_PROXY_MODE);
 				switch_channel_set_cap(channel, CC_BYPASS_MEDIA);

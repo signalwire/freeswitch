@@ -59,7 +59,7 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard HANGUP, cause: %s\n",
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 
-	if (switch_true(switch_channel_get_variable(session->channel, "log_audio_stats_on_hangup"))) {
+	if (switch_channel_var_true(session->channel, "log_audio_stats_on_hangup")) {
 		switch_rtp_stats_t *audio_stats = NULL;
 
 		switch_core_media_set_stats(session);
@@ -849,7 +849,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 
 	if ((hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE))) {
 
-		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
+		if (switch_channel_var_true(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE)) {
 			use_session = 1;
 		}
 
@@ -933,7 +933,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 
 	if ((hook_var = switch_channel_get_variable(session->channel, SWITCH_API_REPORTING_HOOK_VARIABLE))) {
 
-		if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
+		if (switch_channel_var_true(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE)) {
 			use_session = 1;
 		}
 
@@ -943,7 +943,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(cause));
 		switch_channel_event_set_data(session->channel, event);
-		if (switch_true(switch_channel_get_variable(session->channel, "hangup_complete_with_xml"))) {
+		if (switch_channel_var_true(session->channel, "hangup_complete_with_xml")) {
 			switch_xml_t cdr = NULL;
 			char *xml_cdr_text;
 

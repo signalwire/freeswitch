@@ -523,8 +523,6 @@ SWITCH_STANDARD_APP(socket_function)
 	}
 
 	if (switch_test_flag(listener, LFLAG_ASYNC)) {
-		const char *var;
-
 		if (launch_listener_thread(listener) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start listener\n");
 			return;
@@ -545,7 +543,7 @@ SWITCH_STANDARD_APP(socket_function)
 
 		if (switch_channel_get_state(channel) != CS_HIBERNATE &&
 			!switch_channel_test_flag(channel, CF_REDIRECT) && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_RESET)
-			&& (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
+			&& (switch_test_flag(listener, LFLAG_RESUME) || switch_channel_var_true(channel, "socket_resume")))  {
 			switch_channel_set_state(channel, CS_EXECUTE);
 		}
 
@@ -2634,7 +2632,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	switch_event_t *revent = NULL;
-	const char *var;
 	int locked = 1;
 
 	switch_mutex_lock(globals.listener_mutex);
@@ -2808,7 +2805,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	if (channel && switch_channel_get_state(channel) != CS_HIBERNATE &&
 		!switch_channel_test_flag(channel, CF_REDIRECT) && !switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_RESET) &&
-		(switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
+		(switch_test_flag(listener, LFLAG_RESUME) || switch_channel_var_true(channel, "socket_resume"))) {
 		switch_channel_set_state(channel, CS_RESET);
 	}
 

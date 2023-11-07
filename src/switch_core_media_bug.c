@@ -804,8 +804,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	switch_event_t *event;
 	int tap_only = 1, punt = 0, added = 0;
 
-	const char *p;
-
 	if (!zstr(function)) {
 		if ((flags & SMBF_ONE_ONLY)) {
 			switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -837,7 +835,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	*new_bug = NULL;
 
 
-	if ((p = switch_channel_get_variable(session->channel, "media_bug_answer_req")) && switch_true(p)) {
+	if (switch_channel_var_true(session->channel, "media_bug_answer_req")) {
 		flags |= SMBF_ANSWER_REQ;
 	}
 #if 0

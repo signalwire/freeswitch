@@ -3721,7 +3721,6 @@ SWITCH_STANDARD_APP(voicemail_function)
 	const char *profile_name = NULL;
 	const char *domain_name = NULL;
 	const char *id = NULL;
-	const char *auth_var = NULL;
 	const char *uuid = NULL;
 	int x = 0, check = 0, auth = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -3758,7 +3757,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 		id = argv[x++];
 	}
 
-	if ((auth_var = switch_channel_get_variable(channel, "voicemail_authorized")) && switch_true(auth_var)) {
+	if (switch_channel_var_true(channel, "voicemail_authorized")) {
 		auth = 1;
 	}
 

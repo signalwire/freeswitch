@@ -623,7 +623,6 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_xml_t alt_root = NULL, cfg, xml = NULL, xcontext, xexten = NULL;
 	char *alt_path = (char *) arg;
-	const char *hunt = NULL;
 
 	if (!caller_profile) {
 		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -671,7 +670,7 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 		}
 	}
 
-	if ((hunt = switch_channel_get_variable(channel, "auto_hunt")) && switch_true(hunt)) {
+	if (switch_channel_var_true(channel, "auto_hunt")) {
 		xexten = switch_xml_find_child(xcontext, "extension", "name", caller_profile->destination_number);
 	}
 

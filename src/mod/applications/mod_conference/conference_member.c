@@ -187,7 +187,7 @@ void conference_member_update_status_field(conference_member_t *member)
 			}
 
 			cJSON_AddItemToObject(video, "noRecover", cJSON_CreateBool(switch_channel_test_flag(member->channel, CF_NO_RECOVER)));
-			if (switch_true(switch_channel_get_variable_dup(member->channel, "video_screen_share", SWITCH_FALSE, -1))) {
+			if (switch_channel_var_true(member->channel, "video_screen_share")) {
 				cJSON_AddItemToObject(video, "screenShare", cJSON_CreateTrue());
 			}
 
@@ -779,7 +779,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		channel = switch_core_session_get_channel(member->session);
 
-		if (switch_true(switch_channel_get_variable_dup(member->channel, "video_second_screen", SWITCH_FALSE, -1))) {
+		if (switch_channel_var_true(member->channel, "video_second_screen")) {
 			conference_utils_member_set_flag(member, MFLAG_SECOND_SCREEN);
 		}
 
@@ -857,7 +857,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 				member->video_role_id = switch_core_strdup(member->pool, var);
 			}
 
-			if ((var = switch_channel_get_variable(channel, "video_use_dedicated_encoder")) && switch_true(var)) {
+			if (switch_channel_var_true(channel, "video_use_dedicated_encoder")) {
 				conference_utils_member_set_flag_locked(member, MFLAG_NO_MINIMIZE_ENCODING);
 			}
 
@@ -905,7 +905,7 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 
 		if (conference->count > 1) {
 			if (((conference->moh_sound || conference->tmp_moh_sound) && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) ||
-				(conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")))) {
+				(conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !switch_channel_var_true(channel, "conference_permanent_wait_mod_moh"))) {
 				/* stop MoH if any */
 				conference_file_stop(conference, FILE_STOP_ASYNC);
 				conference_utils_clear_flag(conference, CFLAG_NO_MOH);
@@ -1338,7 +1338,7 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 			|| (conference_utils_test_flag(conference, CFLAG_DYNAMIC) && (conference->count + conference->count_ghosts == 0))) {
 			conference_utils_set_flag(conference, CFLAG_DESTRUCT);
 		} else {
-			if (!switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")) && conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
+			if (!switch_channel_var_true(channel, "conference_permanent_wait_mod_moh") && conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
 				/* Stop MOH if any */
 				conference_file_stop(conference, FILE_STOP_ASYNC);
 			}

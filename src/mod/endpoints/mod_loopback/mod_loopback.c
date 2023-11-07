@@ -442,7 +442,6 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	loopback_private_t *tech_pvt = NULL;
 	switch_caller_extension_t *exten = NULL;
-	const char *bowout = NULL;
 	int bow = 0;
 
 	channel = switch_core_session_get_channel(session);
@@ -453,7 +452,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
-	if ((bowout = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout_on_execute")) && switch_true(bowout)) {
+	if (switch_channel_var_true(tech_pvt->channel, "loopback_bowout_on_execute")) {
 		/* loopback_bowout_on_execute variable is set */
 		bow = 1;
 	} else if ((exten = switch_channel_get_caller_extension(channel))) {
@@ -814,7 +813,7 @@ static switch_status_t find_non_loopback_bridge(switch_core_session_t *session, 
 
 			switch_channel_wait_for_state_or_greater(spchan, channel, CS_ROUTING);
 
-			if (switch_false(switch_channel_get_variable(spchan, "loopback_bowout"))) break;
+			if (switch_channel_var_false(spchan, "loopback_bowout")) break;
 
 			tech_pvt = switch_core_session_get_private(sp);
 
@@ -871,13 +870,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_channel_test_flag(tech_pvt->other_channel, CF_ANSWERED) && --tech_pvt->bowout_frame_count <= 0) {
 		const char *a_uuid = NULL;
 		const char *b_uuid = NULL;
-		const char *vetoa, *vetob;
 
-
-		vetoa = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout");
-		vetob = switch_channel_get_variable(tech_pvt->other_tech_pvt->channel, "loopback_bowout");
-
-		if ((!vetoa || switch_true(vetoa)) && (!vetob || switch_true(vetob))) {
+		if (switch_channel_var_true_or_default(tech_pvt->channel, "loopback_bowout", SWITCH_TRUE) && switch_channel_var_true_or_default(tech_pvt->other_tech_pvt->channel, "loopback_bowout", SWITCH_TRUE)) {
 			switch_core_session_t *br_a, *br_b;
 			switch_channel_t *ch_a = NULL, *ch_b = NULL;
 			int good_to_go = 0;

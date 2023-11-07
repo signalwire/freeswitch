@@ -51,7 +51,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	int pause = 100;
 	const char *group_macro_name = NULL;
 	const char *local_macro_name = macro_name;
-	switch_bool_t sound_prefix_enforced = switch_true(switch_channel_get_variable(channel, "sound_prefix_enforced"));
+	switch_bool_t sound_prefix_enforced = switch_channel_var_true(channel, "sound_prefix_enforced");
 	switch_bool_t local_sound_prefix_enforced = SWITCH_FALSE;
 
 
@@ -1308,10 +1308,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 	}
 
-	if ((var = switch_channel_get_variable(channel, "playback_timeout_as_success"))) {
-		if (switch_true(var)) {
-			timeout_as_success = SWITCH_TRUE;
-		}
+	if (switch_channel_var_true(channel, "playback_timeout_as_success")) {
+		timeout_as_success = SWITCH_TRUE;
 	}
 	if ((play_delimiter_val = switch_channel_get_variable(channel, "playback_delimiter"))) {
 		play_delimiter = *play_delimiter_val;
@@ -3038,7 +3036,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle_t lsh, *sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-	const char *timer_name, *var;
+	const char *timer_name;
 	cached_speech_handle_t *cache_obj = NULL;
 	int need_create = 1, need_alloc = 1;
 	switch_codec_implementation_t read_impl = { 0 };
@@ -3054,7 +3052,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	codec = &lcodec;
 	timer = &ltimer;
 
-	if ((var = switch_channel_get_variable(channel, SWITCH_CACHE_SPEECH_HANDLES_VARIABLE)) && switch_true(var)) {
+	if (switch_channel_var_true(channel, SWITCH_CACHE_SPEECH_HANDLES_VARIABLE)) {
 		if ((cache_obj = (cached_speech_handle_t *) switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {
 			need_create = 0;
 			if (!strcasecmp(cache_obj->tts_name, tts_name)) {
