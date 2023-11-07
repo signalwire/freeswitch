@@ -2064,6 +2064,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_DEVICE_STATE
     SWITCH_EVENT_SHUTDOWN_REQUESTED		- Shutdown of the system has been requested
     SWITCH_EVENT_ALL				- All events at once
+    SWITCH_EVENT_RECV_ACK
 </pre>
 
  */
@@ -2160,7 +2161,8 @@ typedef enum {
 	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_TEXT,
 	SWITCH_EVENT_SHUTDOWN_REQUESTED,
-	SWITCH_EVENT_ALL
+	SWITCH_EVENT_ALL,
+	SWITCH_EVENT_RECV_ACK
 } switch_event_types_t;
 
 typedef enum {

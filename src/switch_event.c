@@ -227,7 +227,8 @@ static char *EVENT_NAMES[] = {
 	"DEVICE_STATE",
 	"TEXT",
 	"SHUTDOWN_REQUESTED",
-	"ALL"
+	"ALL",
+	"RECV_ACK"
 };
 
 static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
