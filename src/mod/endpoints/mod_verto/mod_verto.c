@@ -1775,19 +1775,20 @@ new_req:
 			char *buffer = NULL;
 			switch_ssize_t len = 0, bytes = 0;
 
-			if (request->content_length && request->content_length > 10 * 1024 * 1024 - 1) {
+			if (request->content_length > 10 * 1024 * 1024 - 1) {
 				char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
 					"Content-Length: 0\r\n\r\n";
+
 				kws_raw_write(jsock->ws, data, strlen(data));
 				request->keepalive = 0;
 				goto done;
 			}
 
-			if (!(buffer = malloc(2 * 1024 * 1024))) {
+			if (!(buffer = malloc(10 * 1024 * 1024))) {
 				goto request_err;
 			}
 
-			while(bytes < (switch_ssize_t)request->content_length) {
+			while (bytes < (switch_ssize_t)request->content_length) {
 				len = request->content_length - bytes;
 
 #define WS_BLOCK 1
