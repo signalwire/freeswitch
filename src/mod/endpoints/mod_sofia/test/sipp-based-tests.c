@@ -424,7 +424,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
 			int sipp_ret;
 
-			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
+			switch_event_bind("sofia", SWITCH_EVENT_ALL, NULL, event_handler, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak-tcp.xml", "-t t1");
