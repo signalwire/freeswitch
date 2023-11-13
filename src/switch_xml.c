@@ -3204,93 +3204,274 @@ SWITCH_DECLARE(int) switch_xml_std_datetime_check(switch_xml_t xcond, int *offse
 	}
 
 	if (time_match && xdt) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		char tmpdate[80];
 		switch_size_t retsize;
 		switch_strftime(tmpdate, &retsize, sizeof(tmpdate), "%Y-%m-%d %H:%M:%S", &tm);
-		time_match = switch_fulldate_cmp(xdt, &ts);
+		switch_strdup(dup, xdt);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_fulldate_cmp(or[i], &ts);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-				"XML DateTime Check: date time[%s] =~ %s (%s)\n", tmpdate, xdt, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: date time[%s] =~ %s (%s)\n", tmpdate, matched ? matched : xdt, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xyear) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_year + 1900;
-		time_match = switch_number_cmp(xyear, test);
+		switch_strdup(dup, xyear);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: year[%d] =~ %s (%s)\n", test, xyear, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: year[%d] =~ %s (%s)\n", test, matched ? matched : xyear, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xyday) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_yday + 1;
-		time_match = switch_number_cmp(xyday, test);
+		switch_strdup(dup, xyday);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: day of year[%d] =~ %s (%s)\n", test, xyday, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: day of year[%d] =~ %s (%s)\n", test, matched ? matched : xyday, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xmon) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_mon + 1;
-		time_match = switch_number_cmp(xmon, test);
+		switch_strdup(dup, xmon);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: month[%d] =~ %s (%s)\n", test, xmon, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: month[%d] =~ %s (%s)\n", test, matched ? matched : xmon, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xmday) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_mday;
-		time_match = switch_number_cmp(xmday, test);
+		switch_strdup(dup, xmday);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: day of month[%d] =~ %s (%s)\n", test, xmday, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: day of month[%d] =~ %s (%s)\n", test, matched ? matched : xmday, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xweek) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = (int) (tm.tm_yday / 7 + 1);
-		time_match = switch_number_cmp(xweek, test);
+		switch_strdup(dup, xweek);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, xweek, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: week of year[%d] =~ %s (%s)\n", test, matched ? matched : xweek, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xmweek) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		/* calculate the day of the week of the first of the month (0-6) */
 		int firstdow = (int) (7 - (tm.tm_mday - (tm.tm_wday + 1)) % 7) % 7;
 		/* calculate the week of the month (1-6)*/
 		int test = (int) ceil((tm.tm_mday + firstdow) / 7.0);
-		time_match = switch_number_cmp(xmweek, test);
+		switch_strdup(dup, xmweek);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime: week of month[%d] =~ %s (%s)\n", test, xmweek, time_match ? "PASS" : "FAIL");
+				"XML DateTime: week of month[%d] =~ %s (%s)\n", test, matched ? matched : xmweek, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xwday) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_wday + 1;
-		time_match = switch_dow_cmp(xwday, test);
+		switch_strdup(dup, xwday);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_dow_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: day of week[%s] =~ %s (%s)\n", switch_dow_int2str(test), xwday, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: day of week[%s] =~ %s (%s)\n", switch_dow_int2str(tm.tm_wday), matched ? matched : xwday, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
+
 	if (time_match && xhour) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_hour;
-		time_match = switch_number_cmp(xhour, test);
+		switch_strdup(dup, xhour);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: hour[%d] =~ %s (%s)\n", test, xhour, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: hour[%d] =~ %s (%s)\n", test, matched ? matched : xhour, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xminute) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = tm.tm_min;
-		time_match = switch_number_cmp(xminute, test);
+		switch_strdup(dup, xminute);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: minute[%d] =~ %s (%s)\n", test, xminute, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: minute[%d] =~ %s (%s)\n", test, matched ? matched : xminute, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xminday) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = (tm.tm_hour * 60) + (tm.tm_min + 1);
-		time_match = switch_number_cmp(xminday, test);
+		switch_strdup(dup, xminday);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_number_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: minute of day[%d] =~ %s (%s)\n", test, xminday, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: minute of day[%d] =~ %s (%s)\n", test, matched ? matched : xminday, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	if (time_match && xtod) {
+		char *or[256], *dup = NULL, *matched = NULL;
+		int count;
 		int test = (tm.tm_hour * 60 * 60) + (tm.tm_min * 60) + tm.tm_sec;
 		char tmpdate[10];
+		switch_strdup(dup, xtod);
+		count = switch_separate_string(dup, '|', or, sizeof(or) / sizeof(or[0]));
+		time_match = 0;
+
+		for (int i = 0; i < count; i++) {
+			time_match = switch_tod_cmp(or[i], test);
+
+			if (time_match) {
+				matched = or[i];
+				break;
+			}
+		}
+
 		switch_snprintf(tmpdate, 10, "%d:%d:%d", tm.tm_hour, tm.tm_min, tm.tm_sec);
-		time_match = switch_tod_cmp(xtod, test);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9,
-				"XML DateTime Check: time of day[%s] =~ %s (%s)\n", tmpdate, xtod, time_match ? "PASS" : "FAIL");
+				"XML DateTime Check: time of day[%s] =~ %s (%s)\n", tmpdate, matched ? matched : xtod, time_match ? "PASS" : "FAIL");
+		switch_safe_free(dup);
 	}
 
 	return time_match;
