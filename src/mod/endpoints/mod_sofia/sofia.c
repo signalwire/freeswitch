@@ -1750,7 +1750,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				}
 
-				if (switch_event_create(&event, SWITCH_EVENT_RECV_ACK) == SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ACK_REQUEST) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ack_received", "true");
 					switch_event_fire(&event);
 				}

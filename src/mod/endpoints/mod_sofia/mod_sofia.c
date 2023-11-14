@@ -6634,6 +6634,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 		switch_goto_status(SWITCH_STATUS_TERM, err);
 	}
 
+	if (switch_event_reserve_subclass(MY_EVENT_ACK_REQUEST) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", MY_EVENT_ACK_REQUEST);
+		switch_goto_status(SWITCH_STATUS_TERM, err);
+	}
+
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;
 	switch_set_string(mod_sofia_globals.guess_mask_str, inet_ntoa(in));
@@ -6853,6 +6858,7 @@ void mod_sofia_shutdown_cleanup(void) {
 	switch_event_free_subclass(MY_EVENT_REGISTER);
 	switch_event_free_subclass(MY_EVENT_GATEWAY_ADD);
 	switch_event_free_subclass(MY_EVENT_BYE_RESPONSE);
+	switch_event_free_subclass(MY_EVENT_ACK_REQUEST);
 
 	switch_console_del_complete_func("::sofia::list_profiles");
 	switch_console_set_complete("del sofia");

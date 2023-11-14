@@ -226,7 +226,6 @@ static char *EVENT_NAMES[] = {
 	"CALL_DETAIL",
 	"DEVICE_STATE",
 	"TEXT",
-	"RECV_ACK",
 	"SHUTDOWN_REQUESTED",
 	"ALL"
 };
