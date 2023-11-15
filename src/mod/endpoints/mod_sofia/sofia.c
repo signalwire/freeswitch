@@ -1669,6 +1669,7 @@ static void our_sofia_event_callback(nua_event_t event,
 		{
 			if (channel && sip) {
 				const char *r_sdp = NULL;
+				switch_event_t *event;
 				sofia_glue_store_session_id(session, profile, sip, 0);
 
 				if (sip->sip_payload && sip->sip_payload->pl_data) {
@@ -1749,6 +1750,10 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				}
 
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ACK_REQUEST) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "ack_received", "true");
+					switch_event_fire(&event);
+				}
 
 			}
 		}
