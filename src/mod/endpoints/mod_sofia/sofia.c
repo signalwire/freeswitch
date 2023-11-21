@@ -10288,7 +10288,7 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 		const char* ua = switch_channel_get_variable(channel, "sip_user_agent");
 		if (ua &&
 			(switch_string_match(ua, strlen(ua) - 1, "OpenScape 4000", 13) == SWITCH_STATUS_SUCCESS ||
-				switch_string_match(ua, strlen(ua) - 1, "anynode", 6) == SWITCH_STATUS_SUCCESS)) {
+			 switch_string_match(ua, strlen(ua) - 1, "anynode", 7) == SWITCH_STATUS_SUCCESS)) {
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Potential update callee ID\n");
 

@@ -4270,8 +4270,8 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 				switch_channel_set_flag(smh->session->channel, CF_DTLS);
 
 			} else if (!engine->remote_ssrc && !strcasecmp(attr->a_name, "ssrc") && attr->a_value) {
-				engine->remote_ssrc = (uint32_t) atol(attr->a_value);
-
+				// engine->remote_ssrc = (uint32_t) atol(attr->a_value); Error if the remote ssrc > LONG_MAX (2147483647)
+				engine->remote_ssrc = (uint32_t) strtoul(attr->a_value, NULL, 10);
 				if (engine->rtp_session && engine->remote_ssrc) {
 					switch_rtp_set_remote_ssrc(engine->rtp_session, engine->remote_ssrc);
 				}
