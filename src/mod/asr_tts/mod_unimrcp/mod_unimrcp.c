@@ -2643,7 +2643,14 @@ static switch_status_t recog_channel_disable_all_grammars(speech_channel_t *scha
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
+	recognizer_data_t *r = NULL;
+	if (schannel) {
+		r = (recognizer_data_t *) schannel->data;	
+	}
+
+	if (!r || schannel->channel_destroyed) {
+		return SWITCH_STATUS_FALSE;
+	}
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Disabling all grammars\n", schannel->name);
 	switch_core_hash_destroy(&r->enabled_grammars);
 	switch_core_hash_init(&r->enabled_grammars);
@@ -3922,6 +3929,9 @@ static apt_bool_t recog_stream_read(mpf_audio_stream_t *stream, mpf_frame_t *fra
 		return FALSE;
 	}
 
+	if (!schannel->mutex) {
+		return FALSE;
+	}
 	switch_mutex_lock(schannel->mutex);
 	if (r->dtmf_generator_active && r->dtmf_generator) {
 		if (!mpf_dtmf_generator_put_frame(r->dtmf_generator, frame)) {
