@@ -3395,7 +3395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 			
 			if (caller_channel) {
-				if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) ||
+				if (switch_channel_test_flag(caller_channel, CF_3PCC_PROXY) || switch_channel_test_flag(caller_channel, CF_PROXY_MODE) ||
 					switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA) || switch_channel_test_flag(caller_channel, CF_DISABLE_RINGBACK)) {
 					ringback_data = NULL;
 				}
