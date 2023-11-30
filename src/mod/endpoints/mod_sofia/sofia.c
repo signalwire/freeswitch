@@ -5315,6 +5315,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_media_flag(profile, SCMF_DISABLE_RTP_AUTOADJ);
 						}
+					} else if (!strcasecmp(var, "srtp-hangup-on-error")) {
+						if (switch_true(val)) {
+							sofia_set_media_flag(profile, SCMF_SRTP_HANGUP_ON_ERROR);
+						} else {
+							sofia_clear_media_flag(profile, SCMF_SRTP_HANGUP_ON_ERROR);
+						}
 					} else if (!strcasecmp(var, "NDLB-support-asterisk-missing-srtp-auth")) {
 						if (switch_true(val)) {
 							profile->mndlb |= SM_NDLB_DISABLE_SRTP_AUTH;

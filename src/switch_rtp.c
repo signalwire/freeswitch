@@ -7169,21 +7169,19 @@ fork_done:
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 					int errs = ++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp];
-					if (rtp_session->flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] && stat != srtp_err_status_replay_old) {
+					if (stat != srtp_err_status_replay_old) {
 						char *msg;
 						switch_srtp_err_to_txt(stat, &msg);
-						if (errs >= MAX_SRTP_ERRS) {
-							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+						if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
 											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+							if (rtp_session->flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] && errs >= MAX_SRTP_ERRS) {
+								switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 											  "Ending call due to SRTP error\n");
-							switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
-						} else if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
-											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
-											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
+								switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
+							}
 						}
 					}
 					sbytes = 0;

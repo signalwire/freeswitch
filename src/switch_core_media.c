@@ -10012,6 +10012,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		flags[SWITCH_RTP_FLAG_USE_MILLISECONDS_PER_PACKET]++;
 	}
 
+	if (((val = switch_channel_get_variable(session->channel, "srtp_hangup_on_error")))) {
+		flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] = switch_true(val);
+	} else if (switch_media_handle_test_media_flag(smh, SCMF_SRTP_HANGUP_ON_ERROR)) {
+		flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR]++;
+	}
+
 	if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) {
 		smh->mparams->cng_pt = 0;
 	} else if (smh->mparams->cng_pt) {
