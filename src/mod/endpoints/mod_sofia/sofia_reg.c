@@ -211,6 +211,10 @@ void sofia_reg_truly_del_gateway(sofia_profile_t *profile)
 						profile->gateways = gateway_ptr->next;
 					}
 
+					if (profile->next_check_gateway_ptr == gateway_ptr) {
+						profile->next_check_gateway_ptr = gateway_ptr->next;
+					}
+
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
 					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_DEL) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", gateway_ptr->profile->name);
@@ -395,12 +399,19 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
 	sofia_gateway_t *gateway_ptr;
+	sofia_gateway_t *start_gateway_ptr;
 	int delta = 0;
+	int request = 0;
 
 	switch_mutex_lock(profile->gw_mutex);
 	sofia_reg_truly_del_gateway(profile);
 
-	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+	start_gateway_ptr = profile->gateways;
+	if (profile->next_check_gateway_ptr) {
+		start_gateway_ptr = profile->next_check_gateway_ptr;
+	}
+
+	for (gateway_ptr = start_gateway_ptr; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		reg_state_t ostate = gateway_ptr->state;
 		char *user_via = NULL;
 		char *register_host = NULL;
@@ -410,6 +421,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
 			gateway_ptr->expires_str = "0";
 		}
+
+		profile->next_check_gateway_ptr = gateway_ptr->next;
 
 		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED)) &&
 			!gateway_ptr->deleted) {
@@ -487,6 +500,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->state = REG_STATE_DOWN;
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			gateway_ptr->last_inactive = switch_epoch_time_now(NULL);
+			request++; // Only increment when FS sends out request
 			break;
 		case REG_STATE_UNREGED:
 			gateway_ptr->retry = 0;
@@ -541,6 +555,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			switch_safe_free(custom_headers);
 			switch_safe_free(user_via);
 			user_via = NULL;
+			request++; // Only increment when FS sends out request
 			break;
 
 		case REG_STATE_TIMEOUT:
@@ -596,6 +611,10 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		}
 		if (ostate != gateway_ptr->state) {
 			sofia_reg_fire_custom_gateway_state_event(gateway_ptr, 0, NULL);
+		}
+
+		if (profile->gateway_reg_max_cps > 0 && request >= profile->gateway_reg_max_cps) {
+			break;
 		}
 	}
 	switch_mutex_unlock(profile->gw_mutex);

@@ -3631,6 +3631,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	/* Gateway cleanup start */
 	/* Mark all gateways as deleted and set REG_STATE_UNREGISTER state on REG gateways */
 	sofia_glue_del_every_gateway(profile);
+	/* This prevent doing batch request for reg check */
+	profile->gateway_reg_max_cps = 0; 
 	/* First call will unregister and set state to DOWN so a gateway is ready for deletion */
 	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
 	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
@@ -5816,6 +5818,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->nonce_ttl = atoi(val);
 					} else if (!strcasecmp(var, "max-auth-validity") && !zstr(val)) {
 						profile->max_auth_validity = atoi(val);
+					} else if (!strcasecmp(var, "gateway-reg-max-cps")) {
+						profile->gateway_reg_max_cps = atoi(val);
 					} else if (!strcasecmp(var, "auth-require-user")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_REQUIRE_USER);
