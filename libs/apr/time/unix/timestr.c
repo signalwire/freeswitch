@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr_portable.h"
-#include "apr_time.h"
-#include "apr_lib.h"
-#include "apr_private.h"
+#include "fspr_portable.h"
+#include "fspr_time.h"
+#include "fspr_lib.h"
+#include "fspr_private.h"
 /* System Headers required for time library */
 #if APR_HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -30,27 +30,27 @@
 #endif
 /* End System Headers */
 
-APR_DECLARE_DATA const char apr_month_snames[12][4] =
+APR_DECLARE_DATA const char fspr_month_snames[12][4] =
 {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
-APR_DECLARE_DATA const char apr_day_snames[7][4] =
+APR_DECLARE_DATA const char fspr_day_snames[7][4] =
 {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
-apr_status_t apr_rfc822_date(char *date_str, apr_time_t t)
+fspr_status_t fspr_rfc822_date(char *date_str, fspr_time_t t)
 {
-    apr_time_exp_t xt;
+    fspr_time_exp_t xt;
     const char *s;
     int real_year;
 
-    apr_time_exp_gmt(&xt, t);
+    fspr_time_exp_gmt(&xt, t);
 
     /* example: "Sat, 08 Jan 2000 18:31:41 GMT" */
     /*           12345678901234567890123456789  */
 
-    s = &apr_day_snames[xt.tm_wday][0];
+    s = &fspr_day_snames[xt.tm_wday][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
@@ -59,7 +59,7 @@ apr_status_t apr_rfc822_date(char *date_str, apr_time_t t)
     *date_str++ = xt.tm_mday / 10 + '0';
     *date_str++ = xt.tm_mday % 10 + '0';
     *date_str++ = ' ';
-    s = &apr_month_snames[xt.tm_mon][0];
+    s = &fspr_month_snames[xt.tm_mon][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
@@ -87,22 +87,22 @@ apr_status_t apr_rfc822_date(char *date_str, apr_time_t t)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_ctime(char *date_str, apr_time_t t)
+fspr_status_t fspr_ctime(char *date_str, fspr_time_t t)
 {
-    apr_time_exp_t xt;
+    fspr_time_exp_t xt;
     const char *s;
     int real_year;
 
     /* example: "Wed Jun 30 21:49:08 1993" */
     /*           123456789012345678901234  */
 
-    apr_time_exp_lt(&xt, t);
-    s = &apr_day_snames[xt.tm_wday][0];
+    fspr_time_exp_lt(&xt, t);
+    s = &fspr_day_snames[xt.tm_wday][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = ' ';
-    s = &apr_month_snames[xt.tm_mon][0];
+    s = &fspr_month_snames[xt.tm_mon][0];
     *date_str++ = *s++;
     *date_str++ = *s++;
     *date_str++ = *s++;
@@ -129,8 +129,8 @@ apr_status_t apr_ctime(char *date_str, apr_time_t t)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_strftime(char *s, apr_size_t *retsize, apr_size_t max, 
-                        const char *format, apr_time_exp_t *xt)
+fspr_status_t fspr_strftime(char *s, fspr_size_t *retsize, fspr_size_t max, 
+                        const char *format, fspr_time_exp_t *xt)
 {
     struct tm tm;
     memset(&tm, 0, sizeof tm);

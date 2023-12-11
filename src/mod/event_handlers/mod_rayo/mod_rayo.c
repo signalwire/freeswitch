@@ -4765,7 +4765,7 @@ static void send_console_command(struct rayo_client *client, const char *to, con
 	iks *command = NULL;
 	iksparser *p = iks_dom_new(&command);
 
-	if (iks_parse(p, command_str, 0, 1) == IKS_OK && command) {
+	if (p && iks_parse(p, command_str, 0, 1) == IKS_OK && command) {
 		char *str;
 		iks *iq = NULL;
 
@@ -4784,9 +4784,11 @@ static void send_console_command(struct rayo_client *client, const char *to, con
 		if (!iks_find_attrib(iq, "type")) {
 			iks_insert_attrib(iq, "type", "set");
 		}
+
 		if (!iks_find_attrib(iq, "id")) {
 			iks_insert_attrib_printf(iq, "id", "console-%i", RAYO_SEQ_NEXT(client));
 		}
+
 		iks_insert_attrib(iq, "from", RAYO_JID(client));
 
 		/* send command */
@@ -4794,10 +4796,13 @@ static void send_console_command(struct rayo_client *client, const char *to, con
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, str);
 		rayo_client_command_recv(client, iq);
 		iks_delete(command);
+		iks_parser_delete(p);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "bad request xml\n");
+		if (p) {
+			iks_parser_delete(p);
+		}
 	}
-	iks_parser_delete(p);
 }
 
 /**

@@ -356,6 +356,7 @@ struct switch_file_handle {
 	switch_size_t samples_in;
 	switch_size_t samples_out;
 	int32_t vol;
+	int32_t volgranular;
 	switch_audio_resampler_t *resampler;
 	switch_buffer_t *buffer;
 	switch_byte_t *dbuf;
@@ -675,8 +676,14 @@ struct switch_codec_fmtp {
 	int bits_per_second;
 	/*! number of microseconds of media in one packet (ptime * 1000) */
 	int microseconds_per_packet;
-	/*! stereo  */
-	int stereo;
+	/*! maximum ptime in ms */
+	int max_ptime;
+	/*! minimum ptime in ms */
+	int min_ptime;
+	/*! stereo, typically bidirectional */
+	int stereo; 
+	/* sender properties (stereo) */
+	int sprop_stereo;
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
 

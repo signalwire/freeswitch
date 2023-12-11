@@ -367,7 +367,7 @@ static int cr_readln(REDIS rhnd, int start, char **line, int *idx)
 
 static int cr_receivemultibulk(REDIS rhnd, char *line)
 {
-  int bnum, blen, i, rc=0, idx=0;
+  int bnum, blen, i, idx=0;
 
   bnum = atoi(line);
 
@@ -381,7 +381,7 @@ static int cr_receivemultibulk(REDIS rhnd, char *line)
       return CREDIS_ERR_NOMEM;
   }
 
-  for (i = 0; bnum > 0 && (rc = cr_readln(rhnd, 0, &line, NULL)) > 0; i++, bnum--) {
+  for (i = 0; bnum > 0 && cr_readln(rhnd, 0, &line, NULL) > 0; i++, bnum--) {
     if (*(line++) != CR_BULK)
       return CREDIS_ERR_PROTOCOL;
 
@@ -389,7 +389,7 @@ static int cr_receivemultibulk(REDIS rhnd, char *line)
     if (blen == -1)
       rhnd->reply.multibulk.idxs[i] = -1;
     else {
-      if ((rc = cr_readln(rhnd, blen, &line, &idx)) != blen)
+      if (cr_readln(rhnd, blen, &line, &idx) != blen)
         return CREDIS_ERR_PROTOCOL;
 
       rhnd->reply.multibulk.idxs[i] = idx;

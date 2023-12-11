@@ -18,13 +18,13 @@
  * Stephen Beaulieu <hippo@be.com>
  */
  
-#include "apr_arch_thread_mutex.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
-static apr_status_t _thread_mutex_cleanup(void * data)
+static fspr_status_t _thread_mutex_cleanup(void * data)
 {
-    apr_thread_mutex_t *lock = (apr_thread_mutex_t*)data;
+    fspr_thread_mutex_t *lock = (fspr_thread_mutex_t*)data;
     if (lock->LockCount != 0) {
         /* we're still locked... */
     	while (atomic_add(&lock->LockCount , -1) > 1){
@@ -39,14 +39,14 @@ static apr_status_t _thread_mutex_cleanup(void * data)
     return APR_SUCCESS;
 }    
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_create(apr_thread_mutex_t **mutex,
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_create(fspr_thread_mutex_t **mutex,
                                                   unsigned int flags,
-                                                  apr_pool_t *pool)
+                                                  fspr_pool_t *pool)
 {
-    apr_thread_mutex_t *new_m;
-    apr_status_t stat = APR_SUCCESS;
+    fspr_thread_mutex_t *new_m;
+    fspr_status_t stat = APR_SUCCESS;
   
-    new_m = (apr_thread_mutex_t *)apr_pcalloc(pool, sizeof(apr_thread_mutex_t));
+    new_m = (fspr_thread_mutex_t *)fspr_pcalloc(pool, sizeof(fspr_thread_mutex_t));
     if (new_m == NULL){
         return APR_ENOMEM;
     }
@@ -64,24 +64,24 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_create(apr_thread_mutex_t **mutex,
      */
     new_m->nested = flags & APR_THREAD_MUTEX_NESTED;
 
-    apr_pool_cleanup_register(new_m->pool, (void *)new_m, _thread_mutex_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(new_m->pool, (void *)new_m, _thread_mutex_cleanup,
+                              fspr_pool_cleanup_null);
 
     (*mutex) = new_m;
     return APR_SUCCESS;
 }
 
 #if APR_HAS_CREATE_LOCKS_NP
-APR_DECLARE(apr_status_t) apr_thread_mutex_create_np(apr_thread_mutex_t **mutex,
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_create_np(fspr_thread_mutex_t **mutex,
                                                    const char *fname,
-                                                   apr_lockmech_e_np mech,
-                                                   apr_pool_t *pool)
+                                                   fspr_lockmech_e_np mech,
+                                                   fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }       
 #endif
   
-APR_DECLARE(apr_status_t) apr_thread_mutex_lock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_lock(fspr_thread_mutex_t *mutex)
 {
     int32 stat;
     thread_id me = find_thread(NULL);
@@ -105,12 +105,12 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_lock(apr_thread_mutex_t *mutex)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_trylock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_trylock(fspr_thread_mutex_t *mutex)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_unlock(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_unlock(fspr_thread_mutex_t *mutex)
 {
     int32 stat;
         
@@ -133,11 +133,11 @@ APR_DECLARE(apr_status_t) apr_thread_mutex_unlock(apr_thread_mutex_t *mutex)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_mutex_destroy(apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_mutex_destroy(fspr_thread_mutex_t *mutex)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     if ((stat = _thread_mutex_cleanup(mutex)) == APR_SUCCESS) {
-        apr_pool_cleanup_kill(mutex->pool, mutex, _thread_mutex_cleanup);
+        fspr_pool_cleanup_kill(mutex->pool, mutex, _thread_mutex_cleanup);
         return APR_SUCCESS;
     }
     return stat;

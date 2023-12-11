@@ -139,13 +139,10 @@ struct switch_frame_buffer_s {
 static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t *orig)
 {
 	switch_frame_node_t *np;
-	int x = 0;
 
 	switch_mutex_lock(fb->mutex);
 
 	for (np = fb->head; np; np = np->next) {
-		x++;
-
 		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
 
 			if (np == fb->head) {
@@ -1142,7 +1139,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	}
 
 	if (!zstr(file) && !zstr(convert_cmd) && !zstr(convert_ext)) {
-		if ((ext = strrchr(file, '.'))) {
+		if (strrchr(file, '.')) {
 			dupfile = strdup(file);
 			if ((ext = strrchr(dupfile, '.'))) {
 				*ext++ = '\0';
@@ -1610,6 +1607,30 @@ SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 	return args;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_is_uint_in_range(const char *str, unsigned int from, unsigned int to)
+{
+	unsigned int number;
+	const char *original_str = str;
+
+	if (str == NULL || *str == '\0' || from > to) {
+		return SWITCH_FALSE;
+	}
+
+	for (; *str != '\0'; str++) {
+		if (!isdigit(*str)) {
+			return SWITCH_FALSE;
+		}
+	}
+
+	number = atoi(original_str);
+
+	if (number < from || number > to) {
+		return SWITCH_FALSE;
+	}
+
+	return SWITCH_TRUE;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 {
 	const char *p;
@@ -1820,9 +1841,8 @@ SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf,
 {
 
 	struct addrinfo *ai;
-	int err;
 
-	if ((err = getaddrinfo(host, 0, 0, &ai))) {
+	if (getaddrinfo(host, 0, 0, &ai)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2384,7 +2404,7 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
 		}
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			if (!ip_only) {
@@ -2438,7 +2458,7 @@ SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa
 
 		return 1;
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			s16->sin6_port = s26->sin6_port;
@@ -4640,6 +4660,10 @@ SWITCH_DECLARE(switch_status_t) switch_digest_string(const char *digest_name, ch
 			}
 
 			(*digest_str)[i] = '\0';
+		} else {
+			switch_safe_free(digest);
+			*outputlen = 0;
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 

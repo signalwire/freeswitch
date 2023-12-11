@@ -62,6 +62,13 @@ struct switch_odbc_handle {
 };
 #endif
 
+uint8_t skip_autocommit_flip = 0;
+
+SWITCH_DECLARE(void) switch_odbc_skip_autocommit_flip(void)
+{
+	skip_autocommit_flip = 1;
+}
+
 SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(const char *dsn, const char *username, const char *password)
 {
 #ifdef SWITCH_HAVE_ODBC
@@ -811,6 +818,10 @@ SWITCH_DECLARE(switch_bool_t) switch_odbc_available(void)
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_SQLSetAutoCommitAttr(switch_odbc_handle_t *handle, switch_bool_t on)
 {
 #ifdef SWITCH_HAVE_ODBC
+	if (skip_autocommit_flip) {
+		return SWITCH_ODBC_SUCCESS;
+	}
+
 	if (on) {
 		return SQLSetConnectAttr(handle->con, SQL_ATTR_AUTOCOMMIT, (SQLPOINTER *) SQL_AUTOCOMMIT_ON, 0 );
 	} else {

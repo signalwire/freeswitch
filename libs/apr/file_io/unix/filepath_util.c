@@ -17,29 +17,29 @@
 
 #define APR_WANT_STRFUNC
 #define APR_WANT_MEMFUNC
-#include "apr_want.h"
+#include "fspr_want.h"
 
-#include "apr_errno.h"
-#include "apr_pools.h"
-#include "apr_strings.h"
-#include "apr_tables.h"
+#include "fspr_errno.h"
+#include "fspr_pools.h"
+#include "fspr_strings.h"
+#include "fspr_tables.h"
 
-#include "apr_private.h"
+#include "fspr_private.h"
 
-apr_status_t apr_filepath_list_split_impl(apr_array_header_t **pathelts,
+fspr_status_t fspr_filepath_list_split_impl(fspr_array_header_t **pathelts,
                                           const char *liststr,
                                           char separator,
-                                          apr_pool_t *p)
+                                          fspr_pool_t *p)
 {
     char *path, *part, *ptr;
     char separator_string[2] = { '\0', '\0' };
-    apr_array_header_t *elts;
+    fspr_array_header_t *elts;
     int nelts;
 
     separator_string[0] = separator;
     /* Count the number of path elements. We know there'll be at least
        one even if path is an empty string. */
-    path = apr_pstrdup(p, liststr);
+    path = fspr_pstrdup(p, liststr);
     for (nelts = 0, ptr = path; ptr != NULL; ++nelts)
     {
         ptr = strchr(ptr, separator);
@@ -48,14 +48,14 @@ apr_status_t apr_filepath_list_split_impl(apr_array_header_t **pathelts,
     }
 
     /* Split the path into the array. */
-    elts = apr_array_make(p, nelts, sizeof(char*));
-    while ((part = apr_strtok(path, separator_string, &ptr)) != NULL)
+    elts = fspr_array_make(p, nelts, sizeof(char*));
+    while ((part = fspr_strtok(path, separator_string, &ptr)) != NULL)
     {
         if (*part == '\0')      /* Ignore empty path components. */
             continue;
 
-        *(char**)apr_array_push(elts) = part;
-        path = NULL;            /* For the next call to apr_strtok */
+        *(char**)fspr_array_push(elts) = part;
+        path = NULL;            /* For the next call to fspr_strtok */
     }
 
     *pathelts = elts;
@@ -63,12 +63,12 @@ apr_status_t apr_filepath_list_split_impl(apr_array_header_t **pathelts,
 }
 
 
-apr_status_t apr_filepath_list_merge_impl(char **liststr,
-                                          apr_array_header_t *pathelts,
+fspr_status_t fspr_filepath_list_merge_impl(char **liststr,
+                                          fspr_array_header_t *pathelts,
                                           char separator,
-                                          apr_pool_t *p)
+                                          fspr_pool_t *p)
 {
-    apr_size_t path_size = 0;
+    fspr_size_t path_size = 0;
     char *path;
     int i;
 
@@ -91,13 +91,13 @@ apr_status_t apr_filepath_list_merge_impl(char **liststr,
         path_size += (i - 1);
 
     /* Merge the path components */
-    path = *liststr = apr_palloc(p, path_size + 1);
+    path = *liststr = fspr_palloc(p, path_size + 1);
     for (i = 0; i < pathelts->nelts; ++i)
     {
         /* ### Hmmmm. Calling strlen twice on the same string. Yuck.
-               But is is better than reallocation in apr_pstrcat? */
+               But is is better than reallocation in fspr_pstrcat? */
         const char *part = ((char**)pathelts->elts)[i];
-        apr_size_t part_size = strlen(part);
+        fspr_size_t part_size = strlen(part);
         if (part_size == 0)     /* Ignore empty path components. */
             continue;
 

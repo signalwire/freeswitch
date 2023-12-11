@@ -592,7 +592,7 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
 					file_sample_len = file_data_len / 2 / member->conference->channels;
 				} else {
-					file_sample_len = file_data_len = 0;
+					file_sample_len = 0;
 				}
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
@@ -766,7 +766,12 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 			conference->count++;
 		}
 
+
 		if (conference_utils_member_test_flag(member, MFLAG_ENDCONF)) {
+			conference->endconference_time = 0;
+		}
+
+		if (conference_utils_member_test_flag(member, MFLAG_MANDATORY_MEMBER_ENDCONF)) {
 			if (conference->end_count++) {
 				conference->endconference_time = 0;
 			}
@@ -1314,9 +1319,14 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 
 		conference_video_check_flush(member, SWITCH_FALSE);
 
+		/* End conference when any member with "endconf" flag disconnects */
 		if (conference_utils_member_test_flag(member, MFLAG_ENDCONF)) {
+			conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
+		}
+
+		/* End conference only if all mandatory members have disconnected */
+		if (conference_utils_member_test_flag(member, MFLAG_MANDATORY_MEMBER_ENDCONF)) {
 			if (!--conference->end_count) {
-				//conference_utils_set_flag_locked(conference, CFLAG_DESTRUCT);
 				conference->endconference_time = switch_epoch_time_now(NULL);
 			}
 		}

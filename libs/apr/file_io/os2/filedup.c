@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
 #include <string.h>
-#include "apr_arch_inherit.h"
+#include "fspr_arch_inherit.h"
 
-static apr_status_t file_dup(apr_file_t **new_file, apr_file_t *old_file, apr_pool_t *p)
+static fspr_status_t file_dup(fspr_file_t **new_file, fspr_file_t *old_file, fspr_pool_t *p)
 {
     int rv;
-    apr_file_t *dup_file;
+    fspr_file_t *dup_file;
 
     if (*new_file == NULL) {
-        dup_file = (apr_file_t *)apr_palloc(p, sizeof(apr_file_t));
+        dup_file = (fspr_file_t *)fspr_palloc(p, sizeof(fspr_file_t));
 
         if (dup_file == NULL) {
             return APR_ENOMEM;
@@ -45,7 +45,7 @@ static apr_status_t file_dup(apr_file_t **new_file, apr_file_t *old_file, apr_po
         return APR_FROM_OS_ERROR(rv);
     }
 
-    dup_file->fname = apr_pstrdup(dup_file->pool, old_file->fname);
+    dup_file->fname = fspr_pstrdup(dup_file->pool, old_file->fname);
     dup_file->buffered = old_file->buffered;
     dup_file->isopen = old_file->isopen;
     dup_file->flags = old_file->flags & ~APR_INHERIT;
@@ -53,8 +53,8 @@ static apr_status_t file_dup(apr_file_t **new_file, apr_file_t *old_file, apr_po
     dup_file->pipe = old_file->pipe;
 
     if (*new_file == NULL) {
-        apr_pool_cleanup_register(dup_file->pool, dup_file, apr_file_cleanup,
-                            apr_pool_cleanup_null);
+        fspr_pool_cleanup_register(dup_file->pool, dup_file, fspr_file_cleanup,
+                            fspr_pool_cleanup_null);
         *new_file = dup_file;
     }
 
@@ -63,10 +63,10 @@ static apr_status_t file_dup(apr_file_t **new_file, apr_file_t *old_file, apr_po
 
 
 
-APR_DECLARE(apr_status_t) apr_file_dup(apr_file_t **new_file, apr_file_t *old_file, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_dup(fspr_file_t **new_file, fspr_file_t *old_file, fspr_pool_t *p)
 {
   if (*new_file) {
-      apr_file_close(*new_file);
+      fspr_file_close(*new_file);
       (*new_file)->filedes = -1;
   }
 
@@ -75,23 +75,23 @@ APR_DECLARE(apr_status_t) apr_file_dup(apr_file_t **new_file, apr_file_t *old_fi
 
 
 
-APR_DECLARE(apr_status_t) apr_file_dup2(apr_file_t *new_file, apr_file_t *old_file, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_dup2(fspr_file_t *new_file, fspr_file_t *old_file, fspr_pool_t *p)
 {
   return file_dup(&new_file, old_file, p);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,
-                                            apr_file_t *old_file,
-                                            apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_setaside(fspr_file_t **new_file,
+                                            fspr_file_t *old_file,
+                                            fspr_pool_t *p)
 {
-    *new_file = (apr_file_t *)apr_palloc(p, sizeof(apr_file_t));
-    memcpy(*new_file, old_file, sizeof(apr_file_t));
+    *new_file = (fspr_file_t *)fspr_palloc(p, sizeof(fspr_file_t));
+    memcpy(*new_file, old_file, sizeof(fspr_file_t));
     (*new_file)->pool = p;
 
     if (old_file->buffered) {
-        (*new_file)->buffer = apr_palloc(p, APR_FILE_BUFSIZE);
+        (*new_file)->buffer = fspr_palloc(p, APR_FILE_BUFSIZE);
 
         if (old_file->direction == 1) {
             memcpy((*new_file)->buffer, old_file->buffer, old_file->bufpos);
@@ -101,25 +101,25 @@ APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,
         }
 
         if (old_file->mutex) {
-            apr_thread_mutex_create(&((*new_file)->mutex),
+            fspr_thread_mutex_create(&((*new_file)->mutex),
                                     APR_THREAD_MUTEX_DEFAULT, p);
-            apr_thread_mutex_destroy(old_file->mutex);
+            fspr_thread_mutex_destroy(old_file->mutex);
         }
     }
 
     if (old_file->fname) {
-        (*new_file)->fname = apr_pstrdup(p, old_file->fname);
+        (*new_file)->fname = fspr_pstrdup(p, old_file->fname);
     }
 
     if (!(old_file->flags & APR_FILE_NOCLEANUP)) {
-        apr_pool_cleanup_register(p, (void *)(*new_file), 
-                                  apr_file_cleanup,
-                                  apr_file_cleanup);
+        fspr_pool_cleanup_register(p, (void *)(*new_file), 
+                                  fspr_file_cleanup,
+                                  fspr_file_cleanup);
     }
 
     old_file->filedes = -1;
-    apr_pool_cleanup_kill(old_file->pool, (void *)old_file,
-                          apr_file_cleanup);
+    fspr_pool_cleanup_kill(old_file->pool, (void *)old_file,
+                          fspr_file_cleanup);
 
     return APR_SUCCESS;
 }

@@ -15,12 +15,12 @@
  */
 
 #include "testutil.h"
-#include "apr_strings.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_network_io.h"
-#include "apr_poll.h"
+#include "fspr_strings.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_network_io.h"
+#include "fspr_poll.h"
 
 #define SMALL_NUM_SOCKETS 3
 /* We can't use 64 here, because some platforms *ahem* Solaris *ahem* have
@@ -29,83 +29,83 @@
  */
 #define LARGE_NUM_SOCKETS 50
 
-static apr_socket_t *s[LARGE_NUM_SOCKETS];
-static apr_sockaddr_t *sa[LARGE_NUM_SOCKETS];
-static apr_pollset_t *pollset;
+static fspr_socket_t *s[LARGE_NUM_SOCKETS];
+static fspr_sockaddr_t *sa[LARGE_NUM_SOCKETS];
+static fspr_pollset_t *pollset;
 
 /* ###: tests surrounded by ifdef OLD_POLL_INTERFACE either need to be
  * converted to use the pollset interface or removed. */
 
 #ifdef OLD_POLL_INTERFACE
-static apr_pollfd_t *pollarray;
-static apr_pollfd_t *pollarray_large;
+static fspr_pollfd_t *pollarray;
+static fspr_pollfd_t *pollarray_large;
 #endif
 
-static void make_socket(apr_socket_t **sock, apr_sockaddr_t **sa, 
-                        apr_port_t port, apr_pool_t *p, abts_case *tc)
+static void make_socket(fspr_socket_t **sock, fspr_sockaddr_t **sa, 
+                        fspr_port_t port, fspr_pool_t *p, abts_case *tc)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_sockaddr_info_get(sa, "127.0.0.1", APR_UNSPEC, port, 0, p);
+    rv = fspr_sockaddr_info_get(sa, "127.0.0.1", APR_UNSPEC, port, 0, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
-    rv = apr_socket_create(sock, (*sa)->family, SOCK_DGRAM, 0, p);
+    rv = fspr_socket_create(sock, (*sa)->family, SOCK_DGRAM, 0, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
-    rv =apr_socket_bind((*sock), (*sa));
+    rv =fspr_socket_bind((*sock), (*sa));
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 }
 
 #ifdef OLD_POLL_INTERFACE
-static void check_sockets(const apr_pollfd_t *pollarray, 
-                          apr_socket_t **sockarray, int which, int pollin, 
+static void check_sockets(const fspr_pollfd_t *pollarray, 
+                          fspr_socket_t **sockarray, int which, int pollin, 
                           abts_case *tc)
 {
-    apr_status_t rv;
-    apr_int16_t event;
+    fspr_status_t rv;
+    fspr_int16_t event;
     char *str;
 
-    rv = apr_poll_revents_get(&event, sockarray[which], 
-                              (apr_pollfd_t *)pollarray);
+    rv = fspr_poll_revents_get(&event, sockarray[which], 
+                              (fspr_pollfd_t *)pollarray);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     if (pollin) {
-        str = apr_psprintf(p, "Socket %d not signalled when it should be",
+        str = fspr_psprintf(p, "Socket %d not signalled when it should be",
                            which);
         ABTS_ASSERT(tc, str, event & APR_POLLIN);
     } else {
-        str = apr_psprintf(p, "Socket %d signalled when it should not be",
+        str = fspr_psprintf(p, "Socket %d signalled when it should not be",
                            which);
         ABTS_ASSERT(tc, str, !(event & APR_POLLIN));
     }
 }
 #endif
 
-static void send_msg(apr_socket_t **sockarray, apr_sockaddr_t **sas, int which,
+static void send_msg(fspr_socket_t **sockarray, fspr_sockaddr_t **sas, int which,
                      abts_case *tc)
 {
-    apr_size_t len = 5;
-    apr_status_t rv;
+    fspr_size_t len = 5;
+    fspr_status_t rv;
 
     ABTS_PTR_NOTNULL(tc, sockarray[which]);
 
-    rv = apr_socket_sendto(sockarray[which], sas[which], 0, "hello", &len);
+    rv = fspr_socket_sendto(sockarray[which], sas[which], 0, "hello", &len);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, strlen("hello"), len);
 }
 
-static void recv_msg(apr_socket_t **sockarray, int which, apr_pool_t *p, 
+static void recv_msg(fspr_socket_t **sockarray, int which, fspr_pool_t *p, 
                      abts_case *tc)
 {
-    apr_size_t buflen = 5;
-    char *buffer = apr_pcalloc(p, sizeof(char) * (buflen + 1));
-    apr_sockaddr_t *recsa;
-    apr_status_t rv;
+    fspr_size_t buflen = 5;
+    char *buffer = fspr_pcalloc(p, sizeof(char) * (buflen + 1));
+    fspr_sockaddr_t *recsa;
+    fspr_status_t rv;
 
     ABTS_PTR_NOTNULL(tc, sockarray[which]);
 
-    apr_sockaddr_info_get(&recsa, "127.0.0.1", APR_UNSPEC, 7770, 0, p);
+    fspr_sockaddr_info_get(&recsa, "127.0.0.1", APR_UNSPEC, 7770, 0, p);
 
-    rv = apr_socket_recvfrom(recsa, sockarray[which], 0, buffer, &buflen);
+    rv = fspr_socket_recvfrom(recsa, sockarray[which], 0, buffer, &buflen);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, strlen("hello"), buflen);
     ABTS_STR_EQUAL(tc, "hello", buffer);
@@ -124,17 +124,17 @@ static void create_all_sockets(abts_case *tc, void *data)
 #ifdef OLD_POLL_INTERFACE
 static void setup_small_poll(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int i;
 
-    rv = apr_poll_setup(&pollarray, SMALL_NUM_SOCKETS, p);
+    rv = fspr_poll_setup(&pollarray, SMALL_NUM_SOCKETS, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     
     for (i = 0; i < SMALL_NUM_SOCKETS;i++){
         ABTS_INT_EQUAL(tc, 0, pollarray[i].reqevents);
         ABTS_INT_EQUAL(tc, 0, pollarray[i].rtnevents);
 
-        rv = apr_poll_socket_add(pollarray, s[i], APR_POLLIN);
+        rv = fspr_poll_socket_add(pollarray, s[i], APR_POLLIN);
         ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
         ABTS_PTR_EQUAL(tc, s[i], pollarray[i].desc.s);
     }
@@ -142,17 +142,17 @@ static void setup_small_poll(abts_case *tc, void *data)
 
 static void setup_large_poll(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int i;
 
-    rv = apr_poll_setup(&pollarray_large, LARGE_NUM_SOCKETS, p);
+    rv = fspr_poll_setup(&pollarray_large, LARGE_NUM_SOCKETS, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     
     for (i = 0; i < LARGE_NUM_SOCKETS;i++){
         ABTS_INT_EQUAL(tc, 0, pollarray_large[i].reqevents);
         ABTS_INT_EQUAL(tc, 0, pollarray_large[i].rtnevents);
 
-        rv = apr_poll_socket_add(pollarray_large, s[i], APR_POLLIN);
+        rv = fspr_poll_socket_add(pollarray_large, s[i], APR_POLLIN);
         ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
         ABTS_PTR_EQUAL(tc, s[i], pollarray_large[i].desc.s);
     }
@@ -160,10 +160,10 @@ static void setup_large_poll(abts_case *tc, void *data)
 
 static void nomessage(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int srv = SMALL_NUM_SOCKETS;
 
-    rv = apr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
+    rv = fspr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
     check_sockets(pollarray, s, 0, 0, tc);
     check_sockets(pollarray, s, 1, 0, tc);
@@ -172,12 +172,12 @@ static void nomessage(abts_case *tc, void *data)
 
 static void send_2(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int srv = SMALL_NUM_SOCKETS;
 
     send_msg(s, sa, 2, tc);
 
-    rv = apr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
+    rv = fspr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     check_sockets(pollarray, s, 0, 0, tc);
     check_sockets(pollarray, s, 1, 0, tc);
@@ -186,13 +186,13 @@ static void send_2(abts_case *tc, void *data)
 
 static void recv_2_send_1(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int srv = SMALL_NUM_SOCKETS;
 
     recv_msg(s, 2, p, tc);
     send_msg(s, sa, 1, tc);
 
-    rv = apr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
+    rv = fspr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     check_sockets(pollarray, s, 0, 0, tc);
     check_sockets(pollarray, s, 1, 1, tc);
@@ -201,12 +201,12 @@ static void recv_2_send_1(abts_case *tc, void *data)
 
 static void send_2_signaled_1(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int srv = SMALL_NUM_SOCKETS;
 
     send_msg(s, sa, 2, tc);
 
-    rv = apr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
+    rv = fspr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     check_sockets(pollarray, s, 0, 0, tc);
     check_sockets(pollarray, s, 1, 1, tc);
@@ -215,13 +215,13 @@ static void send_2_signaled_1(abts_case *tc, void *data)
 
 static void recv_1_send_0(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int srv = SMALL_NUM_SOCKETS;
 
     recv_msg(s, 1, p, tc);
     send_msg(s, sa, 0, tc);
 
-    rv = apr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
+    rv = fspr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     check_sockets(pollarray, s, 0, 1, tc);
     check_sockets(pollarray, s, 1, 0, tc);
@@ -230,13 +230,13 @@ static void recv_1_send_0(abts_case *tc, void *data)
 
 static void clear_all_signalled(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int srv = SMALL_NUM_SOCKETS;
 
     recv_msg(s, 0, p, tc);
     recv_msg(s, 2, p, tc);
 
-    rv = apr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
+    rv = fspr_poll(pollarray, SMALL_NUM_SOCKETS, &srv, 2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
     check_sockets(pollarray, s, 0, 0, tc);
     check_sockets(pollarray, s, 1, 0, tc);
@@ -245,13 +245,13 @@ static void clear_all_signalled(abts_case *tc, void *data)
 
 static void send_large_pollarray(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int lrv = LARGE_NUM_SOCKETS;
     int i;
 
     send_msg(s, sa, LARGE_NUM_SOCKETS - 1, tc);
 
-    rv = apr_poll(pollarray_large, LARGE_NUM_SOCKETS, &lrv, 
+    rv = fspr_poll(pollarray_large, LARGE_NUM_SOCKETS, &lrv, 
                   2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
@@ -267,13 +267,13 @@ static void send_large_pollarray(abts_case *tc, void *data)
 
 static void recv_large_pollarray(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int lrv = LARGE_NUM_SOCKETS;
     int i;
 
     recv_msg(s, LARGE_NUM_SOCKETS - 1, p, tc);
 
-    rv = apr_poll(pollarray_large, LARGE_NUM_SOCKETS, &lrv, 
+    rv = fspr_poll(pollarray_large, LARGE_NUM_SOCKETS, &lrv, 
                   2 * APR_USEC_PER_SEC);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
 
@@ -285,29 +285,29 @@ static void recv_large_pollarray(abts_case *tc, void *data)
 
 static void setup_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
-    rv = apr_pollset_create(&pollset, LARGE_NUM_SOCKETS, p, 0);
+    fspr_status_t rv;
+    rv = fspr_pollset_create(&pollset, LARGE_NUM_SOCKETS, p, 0);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 }
 
 static void multi_event_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
-    apr_pollfd_t socket_pollfd;
+    fspr_status_t rv;
+    fspr_pollfd_t socket_pollfd;
     int lrv;
-    const apr_pollfd_t *descs = NULL;
+    const fspr_pollfd_t *descs = NULL;
 
     ABTS_PTR_NOTNULL(tc, s[0]);
     socket_pollfd.desc_type = APR_POLL_SOCKET;
     socket_pollfd.reqevents = APR_POLLIN | APR_POLLOUT;
     socket_pollfd.desc.s = s[0];
     socket_pollfd.client_data = s[0];
-    rv = apr_pollset_add(pollset, &socket_pollfd);
+    rv = fspr_pollset_add(pollset, &socket_pollfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     send_msg(s, sa, 0, tc);
 
-    rv = apr_pollset_poll(pollset, 0, &lrv, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &lrv, &descs);
     ABTS_INT_EQUAL(tc, 0, APR_STATUS_IS_TIMEUP(rv));
     if (lrv == 1) {
         ABTS_PTR_EQUAL(tc, s[0], descs[0].desc.s);
@@ -331,24 +331,24 @@ static void multi_event_pollset(abts_case *tc, void *data)
 
     recv_msg(s, 0, p, tc);
 
-    rv = apr_pollset_poll(pollset, 0, &lrv, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &lrv, &descs);
     ABTS_INT_EQUAL(tc, 0, APR_STATUS_IS_TIMEUP(rv));
     ABTS_INT_EQUAL(tc, 1, lrv);
     ABTS_PTR_EQUAL(tc, s[0], descs[0].desc.s);
     ABTS_INT_EQUAL(tc, APR_POLLOUT, descs[0].rtnevents);
     ABTS_PTR_EQUAL(tc, s[0],  descs[0].client_data);
 
-    rv = apr_pollset_remove(pollset, &socket_pollfd);
+    rv = fspr_pollset_remove(pollset, &socket_pollfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 }
                          
 static void add_sockets_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int i;
 
     for (i = 0; i < LARGE_NUM_SOCKETS;i++){
-        apr_pollfd_t socket_pollfd;
+        fspr_pollfd_t socket_pollfd;
 
         ABTS_PTR_NOTNULL(tc, s[i]);
 
@@ -356,18 +356,18 @@ static void add_sockets_pollset(abts_case *tc, void *data)
         socket_pollfd.reqevents = APR_POLLIN;
         socket_pollfd.desc.s = s[i];
         socket_pollfd.client_data = s[i];
-        rv = apr_pollset_add(pollset, &socket_pollfd);
+        rv = fspr_pollset_add(pollset, &socket_pollfd);
         ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     }
 }
 
 static void nomessage_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int lrv;
-    const apr_pollfd_t *descs = NULL;
+    const fspr_pollfd_t *descs = NULL;
 
-    rv = apr_pollset_poll(pollset, 0, &lrv, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &lrv, &descs);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
     ABTS_INT_EQUAL(tc, 0, lrv);
     ABTS_PTR_EQUAL(tc, NULL, descs);
@@ -375,12 +375,12 @@ static void nomessage_pollset(abts_case *tc, void *data)
 
 static void send0_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
-    const apr_pollfd_t *descs = NULL;
+    fspr_status_t rv;
+    const fspr_pollfd_t *descs = NULL;
     int num;
     
     send_msg(s, sa, 0, tc);
-    rv = apr_pollset_poll(pollset, 0, &num, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &num, &descs);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, 1, num);
     ABTS_PTR_NOTNULL(tc, descs);
@@ -391,12 +391,12 @@ static void send0_pollset(abts_case *tc, void *data)
 
 static void recv0_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int lrv;
-    const apr_pollfd_t *descs = NULL;
+    const fspr_pollfd_t *descs = NULL;
 
     recv_msg(s, 0, p, tc);
-    rv = apr_pollset_poll(pollset, 0, &lrv, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &lrv, &descs);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
     ABTS_INT_EQUAL(tc, 0, lrv);
     ABTS_PTR_EQUAL(tc, NULL, descs);
@@ -404,13 +404,13 @@ static void recv0_pollset(abts_case *tc, void *data)
 
 static void send_middle_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
-    const apr_pollfd_t *descs = NULL;
+    fspr_status_t rv;
+    const fspr_pollfd_t *descs = NULL;
     int num;
     
     send_msg(s, sa, 2, tc);
     send_msg(s, sa, 5, tc);
-    rv = apr_pollset_poll(pollset, 0, &num, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &num, &descs);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, 2, num);
     ABTS_PTR_NOTNULL(tc, descs);
@@ -422,14 +422,14 @@ static void send_middle_pollset(abts_case *tc, void *data)
 
 static void clear_middle_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int lrv;
-    const apr_pollfd_t *descs = NULL;
+    const fspr_pollfd_t *descs = NULL;
 
     recv_msg(s, 2, p, tc);
     recv_msg(s, 5, p, tc);
 
-    rv = apr_pollset_poll(pollset, 0, &lrv, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &lrv, &descs);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
     ABTS_INT_EQUAL(tc, 0, lrv);
     ABTS_PTR_EQUAL(tc, NULL, descs);
@@ -437,12 +437,12 @@ static void clear_middle_pollset(abts_case *tc, void *data)
 
 static void send_last_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
-    const apr_pollfd_t *descs = NULL;
+    fspr_status_t rv;
+    const fspr_pollfd_t *descs = NULL;
     int num;
     
     send_msg(s, sa, LARGE_NUM_SOCKETS - 1, tc);
-    rv = apr_pollset_poll(pollset, 0, &num, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &num, &descs);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, 1, num);
     ABTS_PTR_NOTNULL(tc, descs);
@@ -453,13 +453,13 @@ static void send_last_pollset(abts_case *tc, void *data)
 
 static void clear_last_pollset(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int lrv;
-    const apr_pollfd_t *descs = NULL;
+    const fspr_pollfd_t *descs = NULL;
 
     recv_msg(s, LARGE_NUM_SOCKETS - 1, p, tc);
 
-    rv = apr_pollset_poll(pollset, 0, &lrv, &descs);
+    rv = fspr_pollset_poll(pollset, 0, &lrv, &descs);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_TIMEUP(rv));
     ABTS_INT_EQUAL(tc, 0, lrv);
     ABTS_PTR_EQUAL(tc, NULL, descs);
@@ -467,24 +467,24 @@ static void clear_last_pollset(abts_case *tc, void *data)
 
 static void close_all_sockets(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int i;
 
     for (i = 0; i < LARGE_NUM_SOCKETS; i++){
-        rv = apr_socket_close(s[i]);
+        rv = fspr_socket_close(s[i]);
         ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     }
 }
 
 static void pollset_remove(abts_case *tc, void *data)
 {
-    apr_status_t rv;
-    apr_pollset_t *pollset;
-    const apr_pollfd_t *hot_files;
-    apr_pollfd_t pfd;
-    apr_int32_t num;
+    fspr_status_t rv;
+    fspr_pollset_t *pollset;
+    const fspr_pollfd_t *hot_files;
+    fspr_pollfd_t pfd;
+    fspr_int32_t num;
 
-    rv = apr_pollset_create(&pollset, 5, p, 0);
+    rv = fspr_pollset_create(&pollset, 5, p, 0);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     pfd.p = p;
@@ -493,36 +493,36 @@ static void pollset_remove(abts_case *tc, void *data)
 
     pfd.desc.s = s[0];
     pfd.client_data = (void *)1;
-    rv = apr_pollset_add(pollset, &pfd);
+    rv = fspr_pollset_add(pollset, &pfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     pfd.desc.s = s[1];
     pfd.client_data = (void *)2;
-    rv = apr_pollset_add(pollset, &pfd);
+    rv = fspr_pollset_add(pollset, &pfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     pfd.desc.s = s[2];
     pfd.client_data = (void *)3;
-    rv = apr_pollset_add(pollset, &pfd);
+    rv = fspr_pollset_add(pollset, &pfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     pfd.desc.s = s[3];
     pfd.client_data = (void *)4;
-    rv = apr_pollset_add(pollset, &pfd);
+    rv = fspr_pollset_add(pollset, &pfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
-    rv = apr_pollset_poll(pollset, 1000, &num, &hot_files);
+    rv = fspr_pollset_poll(pollset, 1000, &num, &hot_files);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, 4, num);
 
     /* now remove the pollset element referring to desc s[1] */
     pfd.desc.s = s[1];
     pfd.client_data = (void *)999; /* not used on this call */
-    rv = apr_pollset_remove(pollset, &pfd);
+    rv = fspr_pollset_remove(pollset, &pfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     /* this time only three should match */
-    rv = apr_pollset_poll(pollset, 1000, &num, &hot_files);
+    rv = fspr_pollset_poll(pollset, 1000, &num, &hot_files);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, 3, num);
     ABTS_PTR_EQUAL(tc, (void *)1, hot_files[0].client_data);
@@ -535,11 +535,11 @@ static void pollset_remove(abts_case *tc, void *data)
     /* now remove the pollset elements referring to desc s[2] */
     pfd.desc.s = s[2];
     pfd.client_data = (void *)999; /* not used on this call */
-    rv = apr_pollset_remove(pollset, &pfd);
+    rv = fspr_pollset_remove(pollset, &pfd);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     /* this time only two should match */
-    rv = apr_pollset_poll(pollset, 1000, &num, &hot_files);
+    rv = fspr_pollset_poll(pollset, 1000, &num, &hot_files);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, 2, num);
     ABTS_ASSERT(tc, "Incorrect socket in result set",

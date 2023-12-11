@@ -239,6 +239,9 @@
     <!-- Or, if you have PGSQL support, you can use that -->
     <!--<param name="odbc-dsn" value="pgsql://hostaddr=127.0.0.1 dbname=freeswitch user=freeswitch password='' options='-c client_min_messages=NOTICE' application_name='freeswitch'" />-->
 
+    <!-- By default each profile will give the database 1000 ms to spin-up on load -->
+    <!--<param name="db-spin-up-wait-ms" value="1000" />-->
+
     <!--Uncomment to set all inbound calls to no media mode-->
     <!--<param name="inbound-bypass-media" value="true"/>-->
 
@@ -247,9 +250,6 @@
 
     <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
     <param name="inbound-late-negotiation" value="true"/>
-
-    <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
-    <param name="inbound-zrtp-passthru" value="true"/>
 
     <!-- this lets anything register -->
     <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->

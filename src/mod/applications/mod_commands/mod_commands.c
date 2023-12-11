@@ -1175,7 +1175,6 @@ SWITCH_STANDARD_API(group_call_function)
 SWITCH_STANDARD_API(in_group_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_group;
-	int argc;
 	char *mydata = NULL, *argv[2], *user, *domain, *dup_domain = NULL;
 	char delim = ',';
 	switch_event_t *params = NULL;
@@ -1186,7 +1185,7 @@ SWITCH_STANDARD_API(in_group_function)
 		goto end;
 	}
 
-	if ((argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if (switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0]))) < 2) {
 		goto end;
 	}
 
@@ -1229,7 +1228,6 @@ SWITCH_STANDARD_API(in_group_function)
 SWITCH_STANDARD_API(domain_data_function)
 {
 	switch_xml_t x_domain = NULL, xml_root = NULL, x_param, x_params;
-	int argc;
 	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *domain, *dup_domain = NULL;
 	char delim = ' ';
 	const char *container = "params", *elem = "param";
@@ -1240,7 +1238,7 @@ SWITCH_STANDARD_API(domain_data_function)
 		goto end;
 	}
 
-	if ((argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
+	if (switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0]))) < 3) {
 		goto end;
 	}
 
@@ -1299,7 +1297,6 @@ end:
 SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_user = NULL, x_param, x_params;
-	int argc;
 	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain, *dup_domain = NULL;
 	char delim = ' ';
 	const char *container = "params", *elem = "param";
@@ -1310,7 +1307,7 @@ SWITCH_STANDARD_API(user_data_function)
 		goto end;
 	}
 
-	if ((argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
+	if (switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0]))) < 3) {
 		goto end;
 	}
 
@@ -1564,7 +1561,6 @@ SWITCH_STANDARD_API(expand_function)
 	char *dup;
 	char *arg = NULL;
 	char *mycmd;
-	switch_status_t status;
 	const char *p;
 	switch_core_session_t *xsession;
 	char uuid[80] = "";
@@ -1603,7 +1599,7 @@ SWITCH_STANDARD_API(expand_function)
 	}
 
 	expanded = arg ? switch_event_expand_headers(stream->param_event, arg) : arg;
-	if ((status = switch_api_execute(mycmd, expanded, session, stream)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(mycmd, expanded, session, stream) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Cannot execute command\n");
 	}
 
@@ -2421,7 +2417,7 @@ SWITCH_STANDARD_API(uptime_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
+#define CTL_SYNTAX "[api_expansion [on|off]|recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -3108,7 +3104,6 @@ SWITCH_STANDARD_API(dual_transfer_function)
 SWITCH_STANDARD_API(tone_detect_session_function)
 {
 	char *argv[8] = { 0 };
-	int argc;
 	char *mydata = NULL;
 	time_t to = 0;
 	switch_core_session_t *rsession;
@@ -3122,7 +3117,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	mydata = strdup(cmd);
 	switch_assert(mydata != NULL);
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3 || !argv[0]) {
+	if (switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0])) < 3 || !argv[0]) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3230,6 +3225,7 @@ SWITCH_STANDARD_API(uuid_capture_text)
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_ivr_capture_text(tsession, switch_true(onoff));
+			switch_core_session_rwunlock(tsession);
 		} else {
 			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
 		}
@@ -4833,7 +4829,6 @@ SWITCH_STANDARD_API(session_displace_function)
 	switch_core_session_t *rsession = NULL;
 	char *mycmd = NULL, *argv[5] = { 0 };
 	char *uuid = NULL, *action = NULL, *path = NULL;
-	int argc = 0;
 	uint32_t limit = 0;
 	char *flags = NULL;
 
@@ -4841,7 +4836,7 @@ SWITCH_STANDARD_API(session_displace_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
+	if (switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 3) {
 		goto usage;
 	}
 
@@ -5368,7 +5363,6 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 {
 	struct bg_job *job = (struct bg_job *) obj;
 	switch_stream_handle_t stream = { 0 };
-	switch_status_t status;
 	char *reply, *freply = NULL;
 	switch_event_t *event;
 	char *arg;
@@ -5388,7 +5382,7 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 		*arg++ = '\0';
 	}
 
-	if ((status = switch_api_execute(job->cmd, arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(job->cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		reply = stream.data;
 	} else {
 		freply = switch_mprintf("%s: Command not found!\n", job->cmd);
@@ -5636,9 +5630,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 #define COMPLETE_SYNTAX "add <word>|del [<word>|*]"
 SWITCH_STANDARD_API(complete_function)
 {
-	switch_status_t status;
-
-	if ((status = switch_console_set_complete(cmd)) == SWITCH_STATUS_SUCCESS) {
+	if (switch_console_set_complete(cmd) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", COMPLETE_SYNTAX);
@@ -5650,9 +5642,7 @@ SWITCH_STANDARD_API(complete_function)
 #define ALIAS_SYNTAX "[add|stickyadd] <alias> <command> | del [<alias>|*]"
 SWITCH_STANDARD_API(alias_function)
 {
-	switch_status_t status;
-
-	if ((status = switch_console_set_alias(cmd)) == SWITCH_STATUS_SUCCESS) {
+	if (switch_console_set_alias(cmd) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "+OK\n");
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", ALIAS_SYNTAX);
@@ -5664,22 +5654,26 @@ SWITCH_STANDARD_API(alias_function)
 #define COALESCE_SYNTAX "[^^<delim>]<value1>,<value2>,..."
 SWITCH_STANDARD_API(coalesce_function)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *data = (char *) cmd;
 	char *mydata = NULL, *argv[256] = { 0 };
+	char *arg = (char *) cmd;
 	int argc = -1;
+	char delim = ',';
 
-	if (data && *data && (mydata = strdup(data))) {
-		argc = switch_separate_string(mydata, ',', argv,
+	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
+		arg += 2;
+		delim = *arg++;
+	}
+
+	if (!zstr(arg) && (mydata = strdup(arg))) {
+		argc = switch_separate_string(mydata, delim, argv,
 				(sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argc > 0) {
 		int i;
 		for (i = 0; i < argc; i++) {
-			if (argv[i] && *argv[i]) {
+			if (!zstr(argv[i])) {
 				stream->write_function(stream, argv[i]);
-				status = SWITCH_STATUS_SUCCESS;
 				break;
 			}
 		}
@@ -5687,7 +5681,9 @@ SWITCH_STANDARD_API(coalesce_function)
 		stream->write_function(stream, "-USAGE: %s\n", COALESCE_SYNTAX);
 	}
 
-	return status;
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
@@ -6350,7 +6346,6 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 	switch_core_session_t *psession = NULL;
 	char *mycmd = NULL, *argv[2] = { 0 };
 	char *uuid = NULL, *dtmf_data = NULL;
-	int argc = 0;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -6360,7 +6355,7 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if (switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 2) {
 		goto usage;
 	}
 
@@ -6403,7 +6398,6 @@ SWITCH_STANDARD_API(uuid_recv_dtmf_function)
 	switch_core_session_t *psession = NULL;
 	char *mycmd = NULL, *argv[2] = { 0 };
 	char *uuid = NULL, *dtmf_data = NULL;
-	int argc = 0;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -6413,7 +6407,7 @@ SWITCH_STANDARD_API(uuid_recv_dtmf_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+	if (switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 2) {
 		goto usage;
 	}
 
@@ -7758,6 +7752,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add complete add");
 	switch_console_set_complete("add complete del");
 	switch_console_set_complete("add db_cache status");
+	switch_console_set_complete("add fsctl api_expansion on");
+	switch_console_set_complete("add fsctl api_expansion off");
 	switch_console_set_complete("add fsctl debug_level");
 	switch_console_set_complete("add fsctl debug_pool");
 	switch_console_set_complete("add fsctl debug_sql");
@@ -7806,6 +7802,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown restart elegant");
 	switch_console_set_complete("add fsctl sps");
 	switch_console_set_complete("add fsctl sync_clock");
+	switch_console_set_complete("add fsctl sync_clock_when_idle");
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");

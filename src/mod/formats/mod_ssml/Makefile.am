@@ -26,6 +26,8 @@ TESTS = $(noinst_PROGRAMS)
 
 BUILT_SOURCES=$(IKS_LA)
 
-$(IKS_LA): $(IKS_DIR) $(IKS_DIR)/.update
+$(IKS_LA): $(IKS_BUILDDIR) $(IKS_DIR) $(IKS_DIR)/.update
 	@cd $(IKS_DIR) && $(MAKE)
 	@$(TOUCH_TARGET)
+
+deps: $(IKS_LA)
