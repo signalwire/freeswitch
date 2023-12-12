@@ -4219,6 +4219,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_256_HMAC_SHA1_32");
 		}
 		break;
+	case AES_CM_192_HMAC_SHA1_80:
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_80(&policy->rtp);
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_80(&policy->rtcp);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_192_HMAC_SHA1_80");
+		}
+		break;
+	case AES_CM_192_HMAC_SHA1_32:
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_32(&policy->rtp);
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_32(&policy->rtcp);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_192_HMAC_SHA1_32");
+		}
+		break;
 	case AES_CM_128_NULL_AUTH:
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy->rtp);
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy->rtcp);
@@ -4228,6 +4242,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		}
 		break;
 	default:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Missing crypto type!\n");
 		break;
 	}
 
