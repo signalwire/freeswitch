@@ -884,7 +884,6 @@ long sofia_reg_uniform_distribution(int max)
 	int result;
 	int range = max + 1;
 
-	srand((unsigned)((intptr_t) switch_thread_self() + switch_micro_time_now()));
 	result = (int)((double)rand() / (((double)RAND_MAX + (double)1) / range));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Generated random %ld, max is %d\n", (long) result, max);
@@ -894,8 +893,7 @@ long sofia_reg_uniform_distribution(int max)
 void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int interval)
 {
 	char *sql;
-	int mean = interval / 2;
-	long next, irand;
+	long next;
 	char buf[32] = "";
 	int count;
 
@@ -952,8 +950,7 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 		/* only update if needed */
 		if (count) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s\n", profile->name);
-			irand = mean + sofia_reg_uniform_distribution(interval);
-			next = (long) now + irand;
+			next = (long) now + interval;
 
 			sql = switch_mprintf("update sip_registrations set ping_expires = %ld where hostname='%q' and profile_name='%q' and ping_expires <= %ld ",
 								 next, mod_sofia_globals.hostname, profile->name, (long) now);
@@ -1524,30 +1521,11 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 
 
 		if (sip->sip_path) {
-			char *path_stripped = NULL;
-			char *path_val_to_encode = NULL;
-			su_strlst_t *path_list = su_strlst_create(nua_handle_home(nh));
-			sip_path_t *next_path = sip->sip_path;
-			for (; next_path; next_path = next_path->r_next) {
-				path_val = sip_header_as_string(nua_handle_home(nh), (void *) next_path);
-				if (path_val) {
-					path_stripped = sofia_glue_get_url_from_contact(path_val, SWITCH_TRUE);
-					su_free(nua_handle_home(nh), path_val);
-					su_strlst_dup_append(path_list, path_stripped);
-					switch_safe_free(path_stripped);
-				}
+			path_encoded = sofia_glue_get_encoded_fs_path(nh, sip->sip_path, SWITCH_TRUE);
+			if (!path_encoded) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not get fs_path str.\n");
 			}
 
-			path_val = su_strlst_join(path_list, nua_handle_home(nh), ",");
-			path_val_to_encode = su_strlst_join(path_list, nua_handle_home(nh), "%2C");
-			su_strlst_destroy(path_list);
-			if (path_val_to_encode) {
-				path_encoded_len = (int)(strlen(path_val_to_encode) * 3) + 1;
-				switch_zmalloc(path_encoded, path_encoded_len);
-				switch_copy_string(path_encoded, ";fs_path=", 10);
-				switch_url_encode(path_val_to_encode, path_encoded + 9, path_encoded_len - 9);
-				su_free(nua_handle_home(nh), path_val_to_encode);
-			}
 		} else if (is_nat) {
 			char my_contact_str[1024];
 			if (uparams) {
@@ -1784,7 +1762,6 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			     (( exp_max_deviation_var = profile->sip_expires_max_deviation )) ) {
 				if (exp_max_deviation_var > 0) {
 					int exp_deviation;
-					srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
 					/* random number between negative exp_max_deviation_var and positive exp_max_deviation_var: */
 					exp_deviation = ( rand() % ( exp_max_deviation_var * 2 ) ) - exp_max_deviation_var;
 					exptime += exp_deviation;
@@ -2032,23 +2009,26 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			sql = switch_mprintf("insert into sip_registrations "
 					"(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
-					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count, force_ping) "
-					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d, %d)",
+					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count, ping_expires, force_ping) "
+					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d, %ld, %d)",
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "",
 					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm,
-								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0, force_ping);
+								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0,
+								 (long) switch_epoch_time_now(NULL) + sofia_reg_uniform_distribution(profile->iping_seconds), force_ping);
 		} else {
 			sql = switch_mprintf("update sip_registrations set call_id='%q',"
 								 "sub_host='%q', network_ip='%q',network_port='%q',"
 								 "presence_hosts='%q', server_host='%q', orig_server_host='%q',"
 								 "hostname='%q', orig_hostname='%q',"
-								 "expires = %ld, force_ping=%d where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'",
+								 "expires = %ld, ping_expires=%ld, force_ping=%d "
+								 "where sip_user='%q' and sip_username='%q' and sip_host='%q' and contact='%q'",
 								 call_id, sub_host, network_ip, network_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
-								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin, force_ping,
-								 to_user, username, reg_host, contact_str);
+								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
+								 (long) switch_epoch_time_now(NULL) + sofia_reg_uniform_distribution(profile->iping_seconds),
+								 force_ping, to_user, username, reg_host, contact_str);
 		}
 
 		if (sql) {
@@ -2829,9 +2809,11 @@ void sofia_reg_handle_sip_r_challenge(int status,
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
 					if (!strcasecmp(var, "reverse-auth-user")) {
+						switch_safe_free(dup_user);
 						dup_user = strdup(val);
 						sip_auth_username = dup_user;
 					} else if (!strcasecmp(var, "reverse-auth-pass")) {
+						switch_safe_free(dup_pass);
 						dup_pass = strdup(val);
 						sip_auth_password = dup_pass;
 					}
@@ -2962,23 +2944,24 @@ sofia_auth_algs_t sofia_alg_str2id(char *algorithm, switch_bool_t permissive)
 
 switch_status_t sofia_make_digest(sofia_auth_algs_t use_alg, char **digest, const void *input, unsigned int *outputlen) 
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch (use_alg) 
 	{
 		case ALG_MD5:
-			switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("md5", digest, input, strlen((char *)input), outputlen);
 			break;
 		case ALG_SHA256:
-			switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha256", digest, input, strlen((char *)input), outputlen);
 			break;
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		case ALG_SHA512:
-			switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
+			status = switch_digest_string("sha512-256", digest, input, strlen((char *)input), outputlen);
 			break;
 #endif
 		default:
 			return SWITCH_STATUS_FALSE;
 	}
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,

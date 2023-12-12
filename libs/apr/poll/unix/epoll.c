@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "apr_arch_poll_private.h"
+#include "fspr_arch_poll_private.h"
 
 #ifdef POLLSET_USES_EPOLL
 
-static apr_int16_t get_epoll_event(apr_int16_t event)
+static fspr_int16_t get_epoll_event(fspr_int16_t event)
 {
-    apr_int16_t rv = 0;
+    fspr_int16_t rv = 0;
 
     if (event & APR_POLLIN)
         rv |= EPOLLIN;
@@ -37,9 +37,9 @@ static apr_int16_t get_epoll_event(apr_int16_t event)
     return rv;
 }
 
-static apr_int16_t get_epoll_revent(apr_int16_t event)
+static fspr_int16_t get_epoll_revent(fspr_int16_t event)
 {
-    apr_int16_t rv = 0;
+    fspr_int16_t rv = 0;
 
     if (event & EPOLLIN)
         rv |= APR_POLLIN;
@@ -56,18 +56,18 @@ static apr_int16_t get_epoll_revent(apr_int16_t event)
     return rv;
 }
 
-struct apr_pollset_t
+struct fspr_pollset_t
 {
-    apr_pool_t *pool;
-    apr_uint32_t nelts;
-    apr_uint32_t nalloc;
+    fspr_pool_t *pool;
+    fspr_uint32_t nelts;
+    fspr_uint32_t nalloc;
     int epoll_fd;
     struct epoll_event *pollset;
-    apr_pollfd_t *result_set;
-    apr_uint32_t flags;
+    fspr_pollfd_t *result_set;
+    fspr_uint32_t flags;
 #if APR_HAS_THREADS
     /* A thread mutex to protect operations on the rings */
-    apr_thread_mutex_t *ring_lock;
+    fspr_thread_mutex_t *ring_lock;
 #endif
     /* A ring containing all of the pollfd_t that are active */
     APR_RING_HEAD(pfd_query_ring_t, pfd_elem_t) query_ring;
@@ -78,19 +78,19 @@ struct apr_pollset_t
     APR_RING_HEAD(pfd_dead_ring_t, pfd_elem_t) dead_ring;
 };
 
-static apr_status_t backend_cleanup(void *p_)
+static fspr_status_t backend_cleanup(void *p_)
 {
-    apr_pollset_t *pollset = (apr_pollset_t *) p_;
+    fspr_pollset_t *pollset = (fspr_pollset_t *) p_;
     close(pollset->epoll_fd);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
-                                             apr_uint32_t size,
-                                             apr_pool_t *p,
-                                             apr_uint32_t flags)
+APR_DECLARE(fspr_status_t) fspr_pollset_create(fspr_pollset_t **pollset,
+                                             fspr_uint32_t size,
+                                             fspr_pool_t *p,
+                                             fspr_uint32_t flags)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int fd;
 
     fd = epoll_create(size);
@@ -99,10 +99,10 @@ APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
         return errno;
     }
 
-    *pollset = apr_palloc(p, sizeof(**pollset));
+    *pollset = fspr_palloc(p, sizeof(**pollset));
 #if APR_HAS_THREADS
     if (flags & APR_POLLSET_THREADSAFE &&
-        ((rv = apr_thread_mutex_create(&(*pollset)->ring_lock,
+        ((rv = fspr_thread_mutex_create(&(*pollset)->ring_lock,
                                        APR_THREAD_MUTEX_DEFAULT,
                                        p) != APR_SUCCESS))) {
         *pollset = NULL;
@@ -119,9 +119,9 @@ APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
     (*pollset)->flags = flags;
     (*pollset)->pool = p;
     (*pollset)->epoll_fd = fd;
-    (*pollset)->pollset = apr_palloc(p, size * sizeof(struct epoll_event));
-    apr_pool_cleanup_register(p, *pollset, backend_cleanup, backend_cleanup);
-    (*pollset)->result_set = apr_palloc(p, size * sizeof(apr_pollfd_t));
+    (*pollset)->pollset = fspr_palloc(p, size * sizeof(struct epoll_event));
+    fspr_pool_cleanup_register(p, *pollset, backend_cleanup, backend_cleanup);
+    (*pollset)->result_set = fspr_palloc(p, size * sizeof(fspr_pollfd_t));
 
     APR_RING_INIT(&(*pollset)->query_ring, pfd_elem_t, link);
     APR_RING_INIT(&(*pollset)->free_ring, pfd_elem_t, link);
@@ -130,18 +130,18 @@ APR_DECLARE(apr_status_t) apr_pollset_create(apr_pollset_t **pollset,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_destroy(apr_pollset_t *pollset)
+APR_DECLARE(fspr_status_t) fspr_pollset_destroy(fspr_pollset_t *pollset)
 {
-    return apr_pool_cleanup_run(pollset->pool, pollset, backend_cleanup);
+    return fspr_pool_cleanup_run(pollset->pool, pollset, backend_cleanup);
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
-                                          const apr_pollfd_t *descriptor)
+APR_DECLARE(fspr_status_t) fspr_pollset_add(fspr_pollset_t *pollset,
+                                          const fspr_pollfd_t *descriptor)
 {
     struct epoll_event ev;
     int ret = -1;
     pfd_elem_t *elem;
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     pollset_lock_rings();
 
@@ -150,7 +150,7 @@ APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
         APR_RING_REMOVE(elem, link);
     }
     else {
-        elem = (pfd_elem_t *) apr_palloc(pollset->pool, sizeof(pfd_elem_t));
+        elem = (pfd_elem_t *) fspr_palloc(pollset->pool, sizeof(pfd_elem_t));
         APR_RING_ELEM_INIT(elem, link);
     }
     elem->pfd = *descriptor;
@@ -180,11 +180,11 @@ APR_DECLARE(apr_status_t) apr_pollset_add(apr_pollset_t *pollset,
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t *pollset,
-                                             const apr_pollfd_t *descriptor)
+APR_DECLARE(fspr_status_t) fspr_pollset_remove(fspr_pollset_t *pollset,
+                                             const fspr_pollfd_t *descriptor)
 {
     pfd_elem_t *ep;
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
     struct epoll_event ev;
     int ret = -1;
 
@@ -224,13 +224,13 @@ APR_DECLARE(apr_status_t) apr_pollset_remove(apr_pollset_t *pollset,
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_pollset_poll(apr_pollset_t *pollset,
-                                           apr_interval_time_t timeout,
-                                           apr_int32_t *num,
-                                           const apr_pollfd_t **descriptors)
+APR_DECLARE(fspr_status_t) fspr_pollset_poll(fspr_pollset_t *pollset,
+                                           fspr_interval_time_t timeout,
+                                           fspr_int32_t *num,
+                                           const fspr_pollfd_t **descriptors)
 {
     int ret, i;
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     if (timeout > 0) {
         timeout /= 1000;
@@ -241,7 +241,7 @@ APR_DECLARE(apr_status_t) apr_pollset_poll(apr_pollset_t *pollset,
     (*num) = ret;
 
     if (ret < 0) {
-        rv = apr_get_netos_error();
+        rv = fspr_get_netos_error();
     }
     else if (ret == 0) {
         rv = APR_TIMEUP;

@@ -2353,7 +2353,6 @@ SWITCH_STANDARD_API(fifo_check_bridge_function)
 SWITCH_STANDARD_API(fifo_add_outbound_function)
 {
 	char *data = NULL, *argv[4] = { 0 };
-	int argc;
 	uint32_t priority = 0;
 
 	if (zstr(cmd)) {
@@ -2362,7 +2361,7 @@ SWITCH_STANDARD_API(fifo_add_outbound_function)
 
 	data = strdup(cmd);
 
-	if ((argc = switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 2 || !argv[0]) {
+	if (switch_separate_string(data, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) < 2 || !argv[0]) {
 		goto fail;
 	}
 

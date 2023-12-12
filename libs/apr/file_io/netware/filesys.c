@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
+#include "fspr.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
 
-apr_status_t filepath_root_case(char **rootpath, char *root, apr_pool_t *p)
+fspr_status_t filepath_root_case(char **rootpath, char *root, fspr_pool_t *p)
 {
 /* See the Windows code to figure out what to do here.
     It probably checks to make sure that the root exists 
     and case it correctly according to the file system.
 */
-    *rootpath = apr_pstrdup(p, root);
+    *rootpath = fspr_pstrdup(p, root);
     return APR_SUCCESS;
 }
 
-apr_status_t filepath_has_drive(const char *rootpath, int only, apr_pool_t *p)
+fspr_status_t filepath_has_drive(const char *rootpath, int only, fspr_pool_t *p)
 {
     char *s;
 
@@ -46,7 +46,7 @@ apr_status_t filepath_has_drive(const char *rootpath, int only, apr_pool_t *p)
     return 0;
 }
 
-apr_status_t filepath_compare_drive(const char *path1, const char *path2, apr_pool_t *p)
+fspr_status_t filepath_compare_drive(const char *path1, const char *path2, fspr_pool_t *p)
 {
     char *s1, *s2;
 
@@ -64,8 +64,8 @@ apr_status_t filepath_compare_drive(const char *path1, const char *path2, apr_po
     return -1;
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_get(char **rootpath, apr_int32_t flags,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_get(char **rootpath, fspr_int32_t flags,
+                                           fspr_pool_t *p)
 {
     char path[APR_PATH_MAX];
     char *ptr;
@@ -85,7 +85,7 @@ APR_DECLARE(apr_status_t) apr_filepath_get(char **rootpath, apr_int32_t flags,
     if (*ptr == ':') {
         ptr = path;
     }
-    *rootpath = apr_pstrdup(p, ptr);
+    *rootpath = fspr_pstrdup(p, ptr);
     if (!(flags & APR_FILEPATH_NATIVE)) {
         for (ptr = *rootpath; *ptr; ++ptr) {
             if (*ptr == '\\')
@@ -95,8 +95,8 @@ APR_DECLARE(apr_status_t) apr_filepath_get(char **rootpath, apr_int32_t flags,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_filepath_set(const char *rootpath,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_set(const char *rootpath,
+                                           fspr_pool_t *p)
 {
     if (chdir2(rootpath) != 0)
         return errno;

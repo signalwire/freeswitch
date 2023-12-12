@@ -63,7 +63,7 @@
 #include <glob.h>
 #else /* we're on windoze :( */
 /* glob functions at end of this file */
-#include <apr_file_io.h>
+#include <fspr_file_io.h>
 
 typedef struct {
 	size_t gl_pathc;			/* Count of total paths so far. */
@@ -550,15 +550,22 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 	switch_xml_root_t root = (switch_xml_root_t) xml;
 	int i = 0;
 
-	if (!root)
+	if (!root) {
 		return (const char **) SWITCH_XML_NIL;
-	while (root->xml.parent)
+	}
+
+	while (root && root->xml.parent) {
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
+	}
+
 	if (!root || !root->pi) {
 		return (const char **) SWITCH_XML_NIL;
 	}
-	while (root->pi[i] && strcmp(target, root->pi[i][0]))
+
+	while (root->pi[i] && strcmp(target, root->pi[i][0])) {
 		i++;					/* find target */
+	}
+
 	return (const char **) ((root->pi[i]) ? root->pi[i] + 1 : SWITCH_XML_NIL);
 }
 
@@ -795,7 +802,7 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		return;
 	}
 
-	if (!root->pi || !root->pi[0]) {
+	if (root->pi == (char ***)(SWITCH_XML_NIL) || !root->pi || !root->pi[0]) {
 		root->pi = (char ***) switch_must_malloc(sizeof(char **));
 		*(root->pi) = NULL;		/* first pi */
 	}
@@ -1146,7 +1153,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 				return switch_xml_err(root, d, "unclosed <!--");
 		} else if (!strncmp(s, "![CDATA[", 8)) {	/* cdata */
 			if ((s = strstr(s, "]]>"))) {
-				if (root && root->cur) {
+				if (root->cur) {
 					root->cur->flags |= SWITCH_XML_CDATA;
 				}
 				switch_xml_char_content(root, d + 8, (s += 2) - d - 10, 'c');
@@ -1213,10 +1220,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
-	if (!s)
+	if (!s) {
 		return NULL;
-	root = (switch_xml_root_t) switch_xml_parse_str(s, len);
+	}
+
+	if (!(root = (switch_xml_root_t) switch_xml_parse_str(s, len))) {
+		free(s);
+
+		return NULL;
+	}
+
 	root->dynamic = 1;			/* so we know to free s in switch_xml_free() */
+
 	return &root->xml;
 }
 
@@ -1232,9 +1247,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 
 	if (fd < 0)
 		return NULL;
-	fstat(fd, &st);
 
-	if (!st.st_size) {
+	if (fstat(fd, &st) == -1 || !st.st_size) {
 		return NULL;
 	}
 
@@ -1243,8 +1257,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	if (!(0<(l = read(fd, m, st.st_size)))
 		|| !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
 		free(m);
+
 		return NULL;
 	}
+
 	root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
 
 	return &root->xml;
@@ -1257,7 +1273,7 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	char *wp = ebuf;
 	char *ep = ebuf + elen - 1;
 
-	if (!(var = strstr(rp, "$${"))) {
+	if (!strstr(rp, "$${")) {
 		*newlen = strlen(buf);
 		return buf;
 	}
@@ -1637,14 +1653,28 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 	switch_xml_root_t root;
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
-		fstat(fd, &st);
-		if (!st.st_size) goto error;
+		if (fstat(fd, &st) == -1 || !st.st_size) {
+			close(fd);
+			goto error;
+		}
+
 		m = switch_must_malloc(st.st_size);
 
-		if (!(0<(l = read(fd, m, st.st_size)))) goto error;
-		if (!(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) goto error;
+		if (!(0 < (l = read(fd, m, st.st_size)))) {
+			free(m);
+			close(fd);
+			goto error;
+		}
+
+		if (!(root = (switch_xml_root_t)switch_xml_parse_str((char*)m, l))) {
+			free(m);
+			close(fd);
+			goto error;
+		}
+
 		root->dynamic = 1;
 		close(fd);
+
 		return &root->xml;
 	}
 
@@ -3626,19 +3656,19 @@ static int glob2(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern, char *restpattern, glob_t *pglob, size_t *limit)
 {
 	int err;
-	apr_dir_t *dirp;
-	apr_pool_t *pool;
+	fspr_dir_t *dirp;
+	fspr_pool_t *pool;
 
-	apr_pool_create(&pool, NULL);
+	fspr_pool_create(&pool, NULL);
 
 	if (pathend > pathend_last)
 		return (GLOB_ABORTED);
 	*pathend = EOS;
 	errno = 0;
 
-	if (apr_dir_open(&dirp, pathbuf, pool) != APR_SUCCESS) {
+	if (fspr_dir_open(&dirp, pathbuf, pool) != APR_SUCCESS) {
 		/* TODO: don't call for ENOENT or ENOTDIR? */
-		apr_pool_destroy(pool);
+		fspr_pool_destroy(pool);
 		if (pglob->gl_errfunc) {
 			if (pglob->gl_errfunc(pathbuf, errno) || pglob->gl_flags & GLOB_ERR)
 				return (GLOB_ABORTED);
@@ -3650,11 +3680,11 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 
 	/* Search directory for matching names. */
 	while (dirp) {
-		apr_finfo_t dp;
+		fspr_finfo_t dp;
 		unsigned char *sc;
 		char *dc;
 
-		if (apr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
+		if (fspr_dir_read(&dp, APR_FINFO_NAME, dirp) != APR_SUCCESS)
 			break;
 		if (!(dp.valid & APR_FINFO_NAME) || !(dp.name) || !strlen(dp.name))
 			break;
@@ -3677,8 +3707,8 @@ static int glob3(char *pathbuf, char *pathend, char *pathend_last, char *pattern
 	}
 
 	if (dirp)
-		apr_dir_close(dirp);
-	apr_pool_destroy(pool);
+		fspr_dir_close(dirp);
+	fspr_pool_destroy(pool);
 	return (err);
 }
 

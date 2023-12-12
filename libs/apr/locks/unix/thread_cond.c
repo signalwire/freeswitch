@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "apr.h"
+#include "fspr.h"
 
 #if APR_HAS_THREADS
 
-#include "apr_arch_thread_mutex.h"
-#include "apr_arch_thread_cond.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_arch_thread_cond.h"
 
-static apr_status_t thread_cond_cleanup(void *data)
+static fspr_status_t thread_cond_cleanup(void *data)
 {
-    apr_thread_cond_t *cond = (apr_thread_cond_t *)data;
-    apr_status_t rv;
+    fspr_thread_cond_t *cond = (fspr_thread_cond_t *)data;
+    fspr_status_t rv;
 
     rv = pthread_cond_destroy(&cond->cond);
 #ifdef PTHREAD_SETS_ERRNO
@@ -35,13 +35,13 @@ static apr_status_t thread_cond_cleanup(void *data)
     return rv;
 } 
 
-APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
-                                                 apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_create(fspr_thread_cond_t **cond,
+                                                 fspr_pool_t *pool)
 {
-    apr_thread_cond_t *new_cond;
-    apr_status_t rv;
+    fspr_thread_cond_t *new_cond;
+    fspr_status_t rv;
 
-    new_cond = apr_palloc(pool, sizeof(apr_thread_cond_t));
+    new_cond = fspr_palloc(pool, sizeof(fspr_thread_cond_t));
 
     new_cond->pool = pool;
 
@@ -52,18 +52,18 @@ APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
         return rv;
     }
 
-    apr_pool_cleanup_register(new_cond->pool,
+    fspr_pool_cleanup_register(new_cond->pool,
                               (void *)new_cond, thread_cond_cleanup,
-                              apr_pool_cleanup_null);
+                              fspr_pool_cleanup_null);
 
     *cond = new_cond;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_wait(apr_thread_cond_t *cond,
-                                               apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_wait(fspr_thread_cond_t *cond,
+                                               fspr_thread_mutex_t *mutex)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv = pthread_cond_wait(&cond->cond, &mutex->mutex);
 #ifdef PTHREAD_SETS_ERRNO
@@ -74,17 +74,17 @@ APR_DECLARE(apr_status_t) apr_thread_cond_wait(apr_thread_cond_t *cond,
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
-                                                    apr_thread_mutex_t *mutex,
-                                                    apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_timedwait(fspr_thread_cond_t *cond,
+                                                    fspr_thread_mutex_t *mutex,
+                                                    fspr_interval_time_t timeout)
 {
-    apr_status_t rv;
-    apr_time_t then;
+    fspr_status_t rv;
+    fspr_time_t then;
     struct timespec abstime;
 
-    then = apr_time_now() + timeout;
-    abstime.tv_sec = apr_time_sec(then);
-    abstime.tv_nsec = apr_time_usec(then) * 1000; /* nanoseconds */
+    then = fspr_time_now() + timeout;
+    abstime.tv_sec = fspr_time_sec(then);
+    abstime.tv_nsec = fspr_time_usec(then) * 1000; /* nanoseconds */
 
     rv = pthread_cond_timedwait(&cond->cond, &mutex->mutex, &abstime);
 #ifdef PTHREAD_SETS_ERRNO
@@ -99,9 +99,9 @@ APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
 }
 
 
-APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_signal(fspr_thread_cond_t *cond)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv = pthread_cond_signal(&cond->cond);
 #ifdef PTHREAD_SETS_ERRNO
@@ -112,9 +112,9 @@ APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_broadcast(fspr_thread_cond_t *cond)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv = pthread_cond_broadcast(&cond->cond);
 #ifdef PTHREAD_SETS_ERRNO
@@ -125,9 +125,9 @@ APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_destroy(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_destroy(fspr_thread_cond_t *cond)
 {
-    return apr_pool_cleanup_run(cond->pool, cond, thread_cond_cleanup);
+    return fspr_pool_cleanup_run(cond->pool, cond, thread_cond_cleanup);
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(thread_cond)

@@ -2020,7 +2020,6 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 	}
 
 	if (!strncasecmp(argv[2], "group", 5)) {
-		layout_group_t *lg = NULL;
 		int xx = 4;
 
 		if ((group_name = strchr(argv[2], ':'))) {
@@ -2034,7 +2033,7 @@ switch_status_t conference_api_sub_vid_layout(conference_obj_t *conference, swit
 			stream->write_function(stream, "-ERR Group name not specified.\n");
 			return SWITCH_STATUS_SUCCESS;
 		} else {
-			if (((lg = switch_core_hash_find(conference->layout_group_hash, group_name)))) {
+			if (switch_core_hash_find(conference->layout_group_hash, group_name)) {
 				if (conference_utils_test_flag(conference, CFLAG_PERSONAL_CANVAS)) {
 					stream->write_function(stream, "-ERR Change personal canvas to layout group [%s]\n", group_name);
 					conference->video_layout_group = switch_core_strdup(conference->pool, group_name);
@@ -4088,7 +4087,6 @@ switch_status_t conference_api_sub_set(conference_obj_t *conference,
 
 switch_status_t conference_api_sub_xml_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
-	int count = 0;
 	switch_hash_index_t *hi;
 	void *val;
 	switch_xml_t x_conference, x_conferences;
@@ -4107,7 +4105,6 @@ switch_status_t conference_api_sub_xml_list(conference_obj_t *conference, switch
 			x_conference = switch_xml_add_child_d(x_conferences, "conference", off++);
 			switch_assert(conference);
 
-			count++;
 			conference_xlist(conference, x_conference, off);
 
 		}
@@ -4115,7 +4112,7 @@ switch_status_t conference_api_sub_xml_list(conference_obj_t *conference, switch
 	} else {
 		x_conference = switch_xml_add_child_d(x_conferences, "conference", off++);
 		switch_assert(conference);
-		count++;
+
 		conference_xlist(conference, x_conference, off);
 	}
 

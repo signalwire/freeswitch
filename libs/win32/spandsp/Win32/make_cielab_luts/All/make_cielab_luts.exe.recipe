@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\git\freeswitch-c4b\libs\win32\spandsp\Win32\All\make_cielab_luts.exe</FullPath>
+      <FullPath>E:\C4B_Git_Repos\fs_neu\freeswitch\libs\win32\spandsp\Win32\All\make_cielab_luts.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

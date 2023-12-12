@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
+#include "fspr_private.h"
 #if BEOS_BONE /* BONE uses the unix code - woohoo */
 #include "../unix/sendrecv.c"
 #else
-#include "apr_arch_networkio.h"
-#include "apr_time.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_time.h"
 
-static apr_status_t wait_for_io_or_timeout(apr_socket_t *sock, int for_read)
+static fspr_status_t wait_for_io_or_timeout(fspr_socket_t *sock, int for_read)
 {
     struct timeval tv, *tvptr;
     fd_set fdset;
@@ -57,23 +57,23 @@ static apr_status_t wait_for_io_or_timeout(apr_socket_t *sock, int for_read)
 
 #define SEND_WAIT APR_USEC_PER_SEC / 10
 
-APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
-                                          apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_send(fspr_socket_t *sock, const char *buf,
+                                          fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
 	
     do {
         rv = send(sock->socketdes, buf, (*len), 0);
     } while (rv == -1 && errno == EINTR);
 
     if (rv == -1 && errno == EWOULDBLOCK && sock->timeout > 0) {
-        apr_int32_t snooze_val = SEND_WAIT;
-        apr_int32_t zzz = 0;  
+        fspr_int32_t snooze_val = SEND_WAIT;
+        fspr_int32_t zzz = 0;  
         
         do {
             rv = send(sock->socketdes, buf, (*len), 0);
             if (rv == -1 && errno == EWOULDBLOCK){
-                apr_sleep (snooze_val);
+                fspr_sleep (snooze_val);
                 zzz += snooze_val;
                 snooze_val += SEND_WAIT;
                 /* have we passed our timeout value */
@@ -91,17 +91,17 @@ APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf, 
-                                          apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_recv(fspr_socket_t *sock, char *buf, 
+                                          fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
    
     do {
         rv = recv(sock->socketdes, buf, (*len), 0);
     } while (rv == -1 && errno == EINTR);
 
     if (rv == -1 && errno == EWOULDBLOCK && sock->timeout > 0) {
-        apr_status_t arv = wait_for_io_or_timeout(sock, 1);
+        fspr_status_t arv = wait_for_io_or_timeout(sock, 1);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -124,20 +124,20 @@ APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf,
 
 /* BeOS doesn't have writev for sockets so we use the following instead...
  */
-APR_DECLARE(apr_status_t) apr_socket_sendv(apr_socket_t * sock, 
+APR_DECLARE(fspr_status_t) fspr_socket_sendv(fspr_socket_t * sock, 
                                            const struct iovec *vec,
-                                           apr_int32_t nvec, apr_size_t *len)
+                                           fspr_int32_t nvec, fspr_size_t *len)
 {
     *len = vec[0].iov_len;
-    return apr_socket_send(sock, vec[0].iov_base, len);
+    return fspr_socket_send(sock, vec[0].iov_base, len);
 }
 
-APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock, 
-                                            apr_sockaddr_t *where,
-                                            apr_int32_t flags, const char *buf,
-                                            apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_sendto(fspr_socket_t *sock, 
+                                            fspr_sockaddr_t *where,
+                                            fspr_int32_t flags, const char *buf,
+                                            fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
 
     do {
         rv = sendto(sock->socketdes, buf, (*len), flags,
@@ -147,7 +147,7 @@ APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock,
 
     if (rv == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)
         && sock->timeout != 0) {
-        apr_status_t arv = wait_for_io_or_timeout(sock, 0);
+        fspr_status_t arv = wait_for_io_or_timeout(sock, 0);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;
@@ -167,12 +167,12 @@ APR_DECLARE(apr_status_t) apr_socket_sendto(apr_socket_t *sock,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_socket_recvfrom(apr_sockaddr_t *from,
-                                              apr_socket_t *sock,
-                                              apr_int32_t flags, char *buf,
-                                              apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_recvfrom(fspr_sockaddr_t *from,
+                                              fspr_socket_t *sock,
+                                              fspr_int32_t flags, char *buf,
+                                              fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
 
     if (from == NULL){
         return APR_ENOMEM;
@@ -188,7 +188,7 @@ APR_DECLARE(apr_status_t) apr_socket_recvfrom(apr_sockaddr_t *from,
 
     if (rv == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) &&
         sock->timeout != 0) {
-        apr_status_t arv = wait_for_io_or_timeout(sock, 1);
+        fspr_status_t arv = wait_for_io_or_timeout(sock, 1);
         if (arv != APR_SUCCESS) {
             *len = 0;
             return arv;

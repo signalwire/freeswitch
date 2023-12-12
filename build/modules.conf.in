@@ -60,7 +60,6 @@ applications/mod_voicemail
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_tts_commandline
-#asr_tts/mod_unimrcp
 codecs/mod_amr
 #codecs/mod_amrwb
 codecs/mod_b64
@@ -87,7 +86,6 @@ dialplans/mod_dialplan_asterisk
 dialplans/mod_dialplan_xml
 #directories/mod_ldap
 #endpoints/mod_alsa
-#endpoints/mod_dingaling
 #endpoints/mod_gsmopen
 #endpoints/mod_h323
 #endpoints/mod_khomp

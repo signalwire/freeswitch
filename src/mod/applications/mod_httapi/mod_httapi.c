@@ -1419,7 +1419,7 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int get_style_method = 0;
 	char *method = NULL;
-	struct curl_httppost *formpost=NULL;
+	switch_curl_mime *formpost = NULL;
 	switch_event_t *save_params = NULL;
 	const char *put_file;
 	FILE *fd = NULL;
@@ -1476,7 +1476,7 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 
 	if (!put_file) {
-		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);
+		switch_curl_process_mime(client->params, curl_handle, &formpost);
 	}
 
 	if (formpost) {
@@ -1588,7 +1588,7 @@ static switch_status_t httapi_sync(client_t *client)
 		curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, put_file_read);
 
 	} else if (formpost) {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, formpost);
+		switch_curl_easy_setopt_mime(curl_handle, formpost);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_POST, !get_style_method);
 	}
@@ -1670,9 +1670,7 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_curl_easy_cleanup(curl_handle);
 	switch_curl_slist_free_all(headers);
 
-	if (formpost) {
-		curl_formfree(formpost);
-	}
+	switch_curl_mime_free(&formpost);
 
 	if (client->err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error encountered! [%s]\ndata: [%s]\n", client->profile->url, data);
@@ -2378,7 +2376,6 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char meta_buffer[1024] = "";
 	int fd;
-	switch_ssize_t bytes;
 
 	switch_md5_string(digest, (void *) url, strlen(url));
 
@@ -2390,7 +2387,7 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		ext = find_ext(url);
 	}
 
-	if (ext && (p = strchr(ext, '?'))) {
+	if (ext && strchr(ext, '?')) {
 		dext = strdup(ext);
 		if ((p = strchr(dext, '?'))) {
 			*p = '\0';
@@ -2402,7 +2399,7 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	context->meta_file = switch_core_sprintf(context->pool, "%s%s%s.meta", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
 
 	if (switch_file_exists(context->meta_file, context->pool) == SWITCH_STATUS_SUCCESS && ((fd = open(context->meta_file, O_RDONLY, 0)) > -1)) {
-		if ((bytes = read(fd, meta_buffer, sizeof(meta_buffer))) > 0) {
+		if (read(fd, meta_buffer, sizeof(meta_buffer)) > 0) {
 			char *p;
 
 			if ((p = strchr(meta_buffer, ':'))) {

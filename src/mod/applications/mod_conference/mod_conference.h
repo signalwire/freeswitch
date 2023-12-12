@@ -178,6 +178,7 @@ typedef enum {
 	MFLAG_NO_MINIMIZE_ENCODING,
 	MFLAG_FLUSH_BUFFER,
 	MFLAG_ENDCONF,
+	MFLAG_MANDATORY_MEMBER_ENDCONF,
 	MFLAG_HAS_AUDIO,
 	MFLAG_TALKING,
 	MFLAG_RESTART,
@@ -1110,6 +1111,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 void *SWITCH_THREAD_FUNC conference_video_muxing_thread_run(switch_thread_t *thread, void *obj);
 void *SWITCH_THREAD_FUNC conference_video_super_muxing_thread_run(switch_thread_t *thread, void *obj);
 void conference_loop_output(conference_member_t *member);
+void conference_loop_launch_input(conference_member_t *member, switch_memory_pool_t *pool);
 uint32_t conference_file_stop(conference_obj_t *conference, file_stop_t stop);
 switch_status_t conference_file_play(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async);
 void conference_member_send_all_dtmf(conference_member_t *member, conference_obj_t *conference, const char *dtmf);
@@ -1122,7 +1124,7 @@ void conference_video_canvas_del_fnode_layer(conference_obj_t *conference, confe
 void conference_video_canvas_set_fnode_layer(mcu_canvas_t *canvas, conference_file_node_t *fnode, int idx);
 void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 const char *conference_utils_combine_flag_var(switch_core_session_t *session, const char *var_name);
-int conference_loop_mapping_len();
+int conference_loop_mapping_len(void);
 void conference_api_set_agc(conference_member_t *member, const char *data);
 
 switch_status_t conference_outcall(conference_obj_t *conference,

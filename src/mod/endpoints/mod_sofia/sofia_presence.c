@@ -399,6 +399,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
+	switch_safe_free(extra_headers);
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
@@ -482,7 +483,7 @@ struct mwi_helper {
 
 static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 {
-	char *account, *dup_account, *yn, *host = NULL, *user;
+	char *account, *dup_account, *host = NULL, *user;
 	char *sql;
 	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -500,7 +501,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (!(yn = switch_event_get_header(event, "mwi-messages-waiting"))) {
+	if (!switch_event_get_header(event, "mwi-messages-waiting")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
 		return;
 	}
@@ -1620,7 +1621,6 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Event Thread Started\n");
 
 	while (mod_sofia_globals.running == 1) {
-		int count = 0;
 
 		if (switch_queue_pop(mod_sofia_globals.presence_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event = (switch_event_t *) pop;
@@ -1655,7 +1655,6 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 			}
 
 			switch_event_destroy(&event);
-			count++;
 		}
 	}
 
@@ -3755,7 +3754,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	if ((sub_max_deviation_var = profile->sip_subscription_max_deviation)) {
 		int sub_deviation;
-		srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
 		/* random negative number between 0 and negative sub_max_deviation_var: */
 		sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
 		if ( (exp_delta + sub_deviation) > 45 ) {
@@ -4325,7 +4323,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_event_fire(&event);
 	}
 
- end:
 
 	if (strcasecmp(event, "call-info") && strcasecmp(event, "line-seize")) {
 
@@ -4406,6 +4403,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 	}
+
+ end:
 
 	if (event) {
 		su_free(nua_handle_get_home(nh), event);

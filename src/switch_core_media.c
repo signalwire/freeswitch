@@ -43,7 +43,6 @@
 #include <stdbool.h>
 
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
-static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
 static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp, switch_sdp_type_t sdp_type);
 static void gen_ice(switch_core_session_t *session, switch_media_type_t type, const char *ip, switch_port_t port);
 //#define GOOGLE_ICE
@@ -111,7 +110,7 @@ struct switch_rtp_text_factory_s {
 };
 
 
-typedef struct switch_rtp_engine_s {
+struct switch_rtp_engine_s {
 	switch_secure_settings_t ssec[CRYPTO_INVALID+1];
 	switch_rtp_crypto_key_type_t crypto_type;
 
@@ -148,10 +147,6 @@ typedef struct switch_rtp_engine_s {
 	char *proxy_sdp_ip;
 	switch_port_t proxy_sdp_port;
 
-
-	/** ZRTP **/
-	char *local_sdp_zrtp_hash;
-	char *remote_sdp_zrtp_hash;
 
 	payload_map_t *cur_payload_map;
 	payload_map_t *payload_map;
@@ -209,7 +204,7 @@ typedef struct switch_rtp_engine_s {
 	void *engine_user_data;
 	int8_t engine_function_running;
 	switch_frame_buffer_t *write_fb;
-} switch_rtp_engine_t;
+};
 
 #define MAX_REJ_STREAMS 10
 
@@ -369,39 +364,6 @@ static int get_channels(const char *name, int dft)
 	return dft ? dft : 1;
 }
 
-static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session, switch_media_type_t type)
-{
-	switch_rtp_engine_t *aleg_engine;
-	switch_rtp_engine_t *bleg_engine;
-
-	if (!aleg_session->media_handle || !bleg_session->media_handle) return;
-	aleg_engine = &aleg_session->media_handle->engines[type];
-	bleg_engine = &bleg_session->media_handle->engines[type];
-
-
-
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG1,
-					  "Deciding whether to pass zrtp-hash between a-leg and b-leg\n");
-
-	if (!(switch_channel_test_flag(aleg_session->channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG1,
-						  "CF_ZRTP_PASSTHRU_REQ not set on a-leg, so not propagating zrtp-hash\n");
-		return;
-	}
-
-	if (aleg_engine->remote_sdp_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG, "Passing a-leg remote zrtp-hash (audio) to b-leg\n");
-		bleg_engine->local_sdp_zrtp_hash = switch_core_session_strdup(bleg_session, aleg_engine->remote_sdp_zrtp_hash);
-		switch_channel_set_variable(bleg_session->channel, "l_sdp_audio_zrtp_hash", bleg_engine->local_sdp_zrtp_hash);
-	}
-
-	if (bleg_engine->remote_sdp_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(aleg_session->channel), SWITCH_LOG_DEBUG, "Passing b-leg remote zrtp-hash (audio) to a-leg\n");
-		aleg_engine->local_sdp_zrtp_hash = switch_core_session_strdup(aleg_session, bleg_engine->remote_sdp_zrtp_hash);
-		switch_channel_set_variable(aleg_session->channel, "l_sdp_audio_zrtp_hash", aleg_engine->local_sdp_zrtp_hash);
-	}
-}
-
 SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session)
 {
 	switch_media_handle_t *smh;
@@ -444,101 +406,6 @@ SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *
 
 	return fps;
 }
-
-SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session)
-{
-	_switch_core_media_pass_zrtp_hash2(aleg_session, bleg_session, SWITCH_MEDIA_TYPE_AUDIO);
-	_switch_core_media_pass_zrtp_hash2(aleg_session, bleg_session, SWITCH_MEDIA_TYPE_VIDEO);
-	_switch_core_media_pass_zrtp_hash2(aleg_session, bleg_session, SWITCH_MEDIA_TYPE_TEXT);
-}
-
-
-SWITCH_DECLARE(void) switch_core_media_pass_zrtp_hash(switch_core_session_t *session)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	switch_core_session_t *other_session;
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Deciding whether to pass zrtp-hash between legs\n");
-	if (!(switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ))) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "CF_ZRTP_PASSTHRU_REQ not set, so not propagating zrtp-hash\n");
-		return;
-	} else if (!(switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS)) {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "No partner channel found, so not propagating zrtp-hash\n");
-		return;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Found peer channel; propagating zrtp-hash if set\n");
-		switch_core_media_pass_zrtp_hash2(session, other_session);
-		switch_core_session_rwunlock(other_session);
-	}
-}
-
-SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session_t *session, switch_media_type_t type, switch_bool_t local)
-{
-	switch_rtp_engine_t *engine;
-	if (!session->media_handle) return NULL;
-
-	engine = &session->media_handle->engines[type];
-
-	if (local) {
-		return engine->local_sdp_zrtp_hash;
-	}
-
-
-	return engine->remote_sdp_zrtp_hash;
-
-}
-
-static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_rtp_engine_t *audio_engine;
-	switch_rtp_engine_t *video_engine;
-	switch_rtp_engine_t *text_engine;
-	sdp_media_t *m;
-	sdp_attribute_t *attr;
-	int got_audio = 0, got_video = 0, got_text = 0;
-
-	if (!session->media_handle) return;
-
-	audio_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	video_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO];
-	text_engine = &session->media_handle->engines[SWITCH_MEDIA_TYPE_TEXT];
-
-
-	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, "Looking for zrtp-hash\n");
-	for (m = sdp->sdp_media; m; m = m->m_next) {
-		if (got_audio && got_video && got_text) break;
-		if (m->m_port && ((m->m_type == sdp_media_audio && !got_audio)
-						  || (m->m_type == sdp_media_video && !got_video))) {
-			for (attr = m->m_attributes; attr; attr = attr->a_next) {
-				if (zstr(attr->a_name)) continue;
-				if (strcasecmp(attr->a_name, "zrtp-hash") || !(attr->a_value)) continue;
-				if (m->m_type == sdp_media_audio) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found audio zrtp-hash; setting r_sdp_audio_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_audio_zrtp_hash", attr->a_value);
-					audio_engine->remote_sdp_zrtp_hash = switch_core_session_strdup(session, attr->a_value);
-					got_audio++;
-				} else if (m->m_type == sdp_media_video) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found video zrtp-hash; setting r_sdp_video_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_video_zrtp_hash", attr->a_value);
-					video_engine->remote_sdp_zrtp_hash = switch_core_session_strdup(session, attr->a_value);
-					got_video++;
-				} else if (m->m_type == sdp_media_text) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG,
-									  "Found text zrtp-hash; setting r_sdp_video_zrtp_hash=%s\n", attr->a_value);
-					switch_channel_set_variable(channel, "r_sdp_text_zrtp_hash", attr->a_value);
-					text_engine->remote_sdp_zrtp_hash = switch_core_session_strdup(session, attr->a_value);
-					got_text++;
-				}
-				switch_channel_set_flag(channel, CF_ZRTP_HASH);
-				break;
-			}
-		}
-	}
-}
-
 
 static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m)
 {
@@ -1303,7 +1170,7 @@ static uint32_t parse_lifetime_mki(const char **p, const char *end)
 					val += ((**p) - '0') * i;
 				}
 				res |= (val & 0x000000ff);					/* MKI_SIZE */
-			} else if (isdigit(*(field_begin + 1)) && (field_begin + 2) && (*(field_begin + 2) == '^') && (field_begin + 3) && isdigit(*(field_begin + 3))) {
+			} else if (isdigit(*(field_begin + 1)) && (*(field_begin + 2) == '^') && isdigit(*(field_begin + 3))) {
 				res |= (CRYPTO_KEY_MATERIAL_LIFETIME << 24);
 				val = ((uint32_t) (*(field_begin + 1) - '0')) << 8;
 				res |= val;									/* LIFETIME base. */
@@ -2353,7 +2220,7 @@ SWITCH_DECLARE(switch_core_media_params_t *) switch_core_media_get_mparams(switc
 	return smh->mparams;
 }
 
-SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
+SWITCH_DECLARE(switch_status_t) switch_core_media_prepare_codecs(switch_core_session_t *session, switch_bool_t force)
 {
 	const char *abs, *codec_string = NULL;
 	const char *ocodec = NULL, *val;
@@ -2363,11 +2230,11 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!force && (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA))) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (force) {
@@ -2375,7 +2242,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	}
 
 	if (smh->mparams->num_codecs) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	ocodec = switch_channel_get_variable(session->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE);
@@ -2419,6 +2286,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 	smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 	smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, smh->fmtp, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void check_jb(switch_core_session_t *session, const char *input, int32_t jb_msec, int32_t maxlen, switch_bool_t silent)
@@ -2881,8 +2749,18 @@ static void check_media_timeout_params(switch_core_session_t *session, switch_rt
 
 	if (switch_rtp_ready(engine->rtp_session) && engine->media_timeout) {
 		switch_rtp_set_media_timeout(engine->rtp_session, engine->media_timeout);
-	}
+		if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+			/* the values are in milliseconds, not in seconds as the deprecated rtp_timeout_sec */
+			engine->max_missed_packets = (engine->read_impl.samples_per_second * engine->media_timeout / 1000) / engine->read_impl.samples_per_packet;
 
+			switch_rtp_set_max_missed_packets(engine->rtp_session, engine->max_missed_packets);
+			if (!engine->media_hold_timeout) {
+				engine->media_hold_timeout = engine->media_timeout * 10;
+			}
+
+			engine->max_missed_hold_packets = (engine->read_impl.samples_per_second * engine->media_hold_timeout / 1000) / engine->read_impl.samples_per_packet;
+		}
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,
@@ -3179,7 +3057,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 							uint32_t codec_ms = (int) (engine->read_frame.timestamp -
 													   engine->last_ts) / (engine->read_impl.samples_per_second / 1000);
 							if (engine->last_seq && (int) (engine->read_frame.seq - engine->last_seq) > 1) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[%s]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s). \n", is_vbr?"VBR":"CBR", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[CBR]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s). \n",  codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
 								codec_ms = codec_ms / (int) (engine->read_frame.seq - engine->last_seq);
 							}
 
@@ -3202,9 +3080,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 									if (codec_ms > 120) {	/* yeah right */
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-														  "[%s]: Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
+														  "[CBR]: Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
 														  "That seems hard to believe so I am going to go on ahead and um ignore that, mmkay?\n",
-														  is_vbr?"VBR":"CBR",
 														  (int) codec_ms);
 										engine->check_frames = MAX_CODEC_CHECK_FRAMES;
 										goto skip;
@@ -3214,8 +3091,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 									if (codec_ms != engine->cur_payload_map->codec_ms) {
 										switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-														  "[%s]: Asynchronous PTIME not supported, changing our end from %d to %d\n",
-														  is_vbr?"VBR":"CBR",
+														  "[CBR]: Asynchronous PTIME not supported, changing our end from %d to %d\n",
 														  (int) engine->cur_payload_map->codec_ms,
 														  (int) codec_ms
 														  );
@@ -3245,7 +3121,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 								   engine->last_ts) / (engine->read_impl.samples_per_second / 1000);
 
 						if (engine->last_seq && (int) (engine->read_frame.seq - engine->last_seq) > 1) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[%s]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s)\n", is_vbr?"VBR":"CBR", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[VBR]: Correcting calculated ptime value from [%d] to [%d] to compensate for [%d] lost packet(s)\n", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
 								codec_ms = codec_ms / (int) (engine->read_frame.seq - engine->last_seq);
 						}
 
@@ -3264,8 +3140,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 							if (codec_ms > 120) {
 								/*will show too many times with packet loss*/
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3,
-												  "[%s]: Remote party is trying to send timestamps that suggest an increment of [%d] ms per packet, which is too high. Ignoring.\n",
-												   is_vbr?"VBR":"CBR",
+												  "[VBR]: Remote party is trying to send timestamps that suggest an increment of [%d] ms per packet, which is too high. Ignoring.\n",
 												  (int) codec_ms);
 								engine->last_ts = engine->read_frame.timestamp;
 								engine->last_seq = engine->read_frame.seq;
@@ -3274,8 +3149,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 							if (codec_ms != engine->cur_payload_map->codec_ms) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-												  "[%s]: Packet size change detected. Remote PTIME changed from [%d] to [%d]\n",
-												  is_vbr?"VBR":"CBR",
+												  "[VBR]: Packet size change detected. Remote PTIME changed from [%d] to [%d]\n",
 												  (int) engine->cur_payload_map->codec_ms,
 												  (int) codec_ms
 												  );
@@ -3727,11 +3601,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	int resetting = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
-	switch_time_t start = switch_micro_time_now();
 
 	switch_assert(session);
 
-retry:
+	switch_core_session_lock_codec_write(session);
+	switch_core_session_lock_codec_read(session);
+
 	switch_mutex_lock(session->codec_init_mutex);
 
 	if (!(smh = session->media_handle)) {
@@ -3753,17 +3628,7 @@ retry:
 			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
 			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
 
-			if (switch_core_session_try_reset(session, 0, 0) != SWITCH_STATUS_SUCCESS) {
-				switch_time_t elapsed = switch_micro_time_now() - start;
-				if (elapsed > 1000000) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not reset session in %"SWITCH_TIME_T_FMT" us. Give up.\n", elapsed);
-					switch_goto_status(SWITCH_STATUS_FALSE, end);
-				}
-
-				switch_mutex_unlock(session->codec_init_mutex);
-				switch_yield(10000);
-				goto retry;
-			}
+			switch_core_session_reset(session, 0, 0);
 
 			switch_channel_audio_sync(session->channel);
 
@@ -3777,9 +3642,6 @@ retry:
 							  a_engine->cur_payload_map->codec_ms,
 							  a_engine->cur_payload_map->rm_rate);
 
-			switch_yield(a_engine->read_impl.microseconds_per_packet);
-			switch_core_session_lock_codec_write(session);
-			switch_core_session_lock_codec_read(session);
 			resetting = 1;
 			switch_yield(a_engine->read_impl.microseconds_per_packet);
 			switch_core_codec_destroy(&a_engine->read_codec);
@@ -3893,11 +3755,12 @@ retry:
 
 	if (resetting) {
 	    switch_channel_execute_on(session->channel, "execute_on_audio_change");
-	    switch_core_session_unlock_codec_write(session);
-	    switch_core_session_unlock_codec_read(session);
 	}
 
 	switch_mutex_unlock(session->codec_init_mutex);
+
+	switch_core_session_unlock_codec_read(session);
+	switch_core_session_unlock_codec_write(session);
 
 	return status;
 }
@@ -4304,10 +4167,15 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 
 				argc = switch_split(data, ' ', fields);
 
+				if (argc < 6 || !switch_is_uint_in_range(fields[1], 1, MAX_CAND_IDX_COUNT)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+					continue;
+				}
+
 				cid = fields[1] ? atoi(fields[1]) - 1 : 0;
 
-				if (argc < 6 || engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
+				if (engine->ice_in.cand_idx[cid] >= MAX_CAND - 1) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Too many candidates\n");
 					continue;
 				}
 
@@ -4387,7 +4255,7 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 	
  relay:
 	
-	for (cid = 0; cid < 2; cid++) {
+	for (cid = 0; cid < MAX_CAND_IDX_COUNT; cid++) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Searching for %s candidate.\n", cid ? "rtcp" : "rtp");
 
 		for (ai = 0; ai < engine->cand_acl_count; ai++) {
@@ -4636,19 +4504,28 @@ struct matches {
 	int codec_idx;
 };
 
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 static void greedy_sort(switch_media_handle_t *smh, struct matches *matches, int m_idx, const switch_codec_implementation_t **codec_array, int total_codecs)
 {
 	int j = 0, f = 0, g;
 	struct matches mtmp[MAX_MATCHES] = { { 0 } };
+
+	m_idx = MIN(m_idx, MAX_MATCHES);
+
 	for(j = 0; j < m_idx; j++) {
 		*&mtmp[j] = *&matches[j];
-					}
-	for (g = 0; g < smh->mparams->num_codecs && g < total_codecs; g++) {
+	}
+
+	for (g = 0; g < smh->mparams->num_codecs && g < total_codecs && f < MAX_MATCHES; g++) {
 		const switch_codec_implementation_t *imp = codec_array[g];
 
 		for(j = 0; j < m_idx; j++) {
-			if (mtmp[j].imp == imp) {
+			if (mtmp[j].imp && mtmp[j].imp == imp) {
 				*&matches[f++] = *&mtmp[j];
+				mtmp[j].imp = NULL;
 			}
 		}
 	}
@@ -4899,7 +4776,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, saw_video = 0, got_avp = 0, got_video_avp = 0, got_video_savp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0, got_text = 0, got_text_crypto = 0, got_msrp = 0;
+	int got_crypto = 0, got_video_crypto = 0, got_audio = 0, saw_audio = 0, saw_video = 0, got_avp = 0, got_savp = 0, got_udptl = 0, got_webrtc = 0, got_text = 0, got_text_crypto = 0, got_msrp = 0;
 	int scrooge = 0;
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
@@ -5032,9 +4909,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_set_variable(session->channel, "t38_broken_boolean", "true");
 	}
 
-	switch_core_media_find_zrtp_hash(session, sdp);
-	switch_core_media_pass_zrtp_hash(session);
-
 	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL);
 	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 	check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, NULL);
@@ -5098,14 +4972,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
 			if (m->m_type == sdp_media_audio) {
 				got_savp++;
-			} else {
-				got_video_savp++;
 			}
 		} else if (m->m_proto == sdp_proto_rtp) {
 			if (m->m_type == sdp_media_audio) {
 				got_avp++;
-			} else {
-				got_video_avp++;
 			}
 		} else if (m->m_proto == sdp_proto_udptl) {
 			got_udptl++;
@@ -5637,6 +5507,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						} else if (!strcasecmp(map->rm_encoding, "opus")) {
 							map_channels = 1;
 						}
+
+						if (codec_fmtp.max_ptime) {
+							maxptime = codec_fmtp.max_ptime;
+						}
 					}
 				}
 
@@ -5684,6 +5558,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate) {
 							/* ptime does not match */
 							match = 0;
+
+							if (nm_idx >= MAX_MATCHES) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+												  "Audio Codec Compare [%s:%d:%u:%u:%d:%u:%d] was not saved as a near-match. Too many. Ignoring.\n",
+												  imp->iananame, imp->ianacode, codec_rate, imp->actual_samples_per_second, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
+								continue;
+							}
 
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Audio Codec Compare [%s:%d:%u:%d:%u:%d] is saved as a near-match\n",
@@ -6293,9 +6174,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 										  imp->iananame, map->rm_pt);
 
 						m_idx++;
+
+						if (m_idx >= MAX_MATCHES) {
+							break;
+						}
 					}
 
 					vmatch = 0;
+				}
+
+				if (m_idx >= MAX_MATCHES) {
+					break;
 				}
 			}
 
@@ -6656,7 +6545,6 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
 			int media_on_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
-			int media_on_hold_b = 0;
 			int bypass_after_hold_a = 0;
 			int bypass_after_hold_b = 0;
 
@@ -6665,7 +6553,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			}
 
 			if (b_channel) {
-				if ((media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1)))) {
+				if (switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1))) {
 					bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
 				}
 			}
@@ -6801,10 +6689,6 @@ SWITCH_DECLARE(void) switch_core_session_write_blank_video(switch_core_session_t
 	if (!width) width = 352;
 	if (!height) height = 288;
 	if (!fps) fps = 15;
-
-	if (!(width && height && fps)) {
-		return;
-	}
 
 	fr.packet = buf;
 	fr.packetlen = buflen;
@@ -7547,7 +7431,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
 	switch_media_handle_t *smh;
-	uint32_t loops = 0, xloops = 0, vloops = 0;
+	uint32_t loops = 0, xloops = 0;
 	switch_image_t *blank_img = NULL;
 	switch_frame_t fr = { 0 };
 	unsigned char *buf = NULL;
@@ -7671,8 +7555,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_cond_next();
 			continue;
 		}
-
-		vloops++;
 
 		send_blank = blank_enabled || switch_channel_test_flag(channel, CF_VIDEO_ECHO);
 
@@ -8709,8 +8591,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 	switch_core_media_set_video_codec(session, 0);
 
-
-	memset(flags, 0, sizeof(flags));
 	flags[SWITCH_RTP_FLAG_DATAWAIT]++;
 
 	if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(session->channel, CF_AVPF) &&
@@ -8871,7 +8751,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											   a_engine->cur_payload_map->remote_sdp_ip,
 											   a_engine->cur_payload_map->remote_sdp_port,
 											   a_engine->cur_payload_map->pt,
-											   a_engine->read_impl.samples_per_packet,
+											   strcasecmp("opus", a_engine->read_impl.iananame) ? a_engine->read_impl.samples_per_packet : 
+											   a_engine->read_impl.samples_per_second * (a_engine->read_impl.microseconds_per_packet / 1000) / 1000,
 											   a_engine->cur_payload_map->codec_ms * 1000,
 											   flags, timer_name, &err, switch_core_session_get_pool(session),
 											   0, 0);
@@ -9133,16 +9014,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->remote_sdp_port);
 		switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, a_engine->cur_payload_map->remote_sdp_ip);
 		switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-
-
-		if (switch_channel_test_flag(session->channel, CF_ZRTP_PASSTHRU)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating ZRTP PROXY MODE\n");
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Disable NOTIMER_DURING_BRIDGE\n");
-			switch_channel_clear_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating audio UDPTL mode\n");
-			switch_rtp_udptl_mode(a_engine->rtp_session);
-		}
-
 
 
 	text:
@@ -9441,12 +9312,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_channel_set_variable_printf(session->channel, "rtp_use_text_ssrc", "%u", t_engine->ssrc);
 
 				switch_core_session_apply_crypto(session, SWITCH_MEDIA_TYPE_TEXT);
-
-
-				if (switch_channel_test_flag(session->channel, CF_ZRTP_PASSTHRU)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating text UDPTL mode\n");
-					switch_rtp_udptl_mode(t_engine->rtp_session);
-				}
 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TEXT RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
@@ -9771,11 +9636,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_core_session_apply_crypto(session, SWITCH_MEDIA_TYPE_VIDEO);
 
 
-				if (switch_channel_test_flag(session->channel, CF_ZRTP_PASSTHRU)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Activating video UDPTL mode\n");
-					switch_rtp_udptl_mode(v_engine->rtp_session);
-				}
-
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "VIDEO RTP REPORTS ERROR: [%s]\n", switch_str_nil(err));
 				switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
@@ -9868,7 +9728,6 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	const char *local_sdp_audio_zrtp_hash;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
 	int include_external;
@@ -9907,7 +9766,8 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
 		const switch_codec_implementation_t *imp = smh->codecs[i];
 		int this_ptime = (imp->microseconds_per_packet / 1000);
-
+		payload_map_t *pmap;
+		
 		if (!strcasecmp(imp->iananame, "ilbc") || !strcasecmp(imp->iananame, "isac") ) {
 			this_ptime = 20;
 		}
@@ -9932,7 +9792,18 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			continue;
 		}
 
+
+		switch_mutex_lock(smh->sdp_mutex);
+		for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+			if (pmap->negotiated && !strcasecmp(imp->iananame, pmap->iananame)) {
+				smh->ianacodes[i] = pmap->pt;
+				break;
+			}
+		}
+		switch_mutex_unlock(smh->sdp_mutex);
+		
 		already_did[smh->ianacodes[i]] = 1;
+
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), " %d", smh->ianacodes[i]);
 	}
 
@@ -10212,13 +10083,6 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=ptime:%d\r\n", cur_ptime);
 	}
 
-	local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
-
-	if (local_sdp_audio_zrtp_hash) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding audio a=zrtp-hash:%s\n", local_sdp_audio_zrtp_hash);
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=zrtp-hash:%s\r\n", local_sdp_audio_zrtp_hash);
-	}
-
 	if (!zstr(sr)) {
 		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=%s\r\n", sr);
 	}
@@ -10366,9 +10230,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_event_t *map = NULL, *ptmap = NULL;
 	//const char *b_sdp = NULL;
 	//const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
-	const char *local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
-	const char *local_sdp_video_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_TRUE);
-	const char *local_sdp_text_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_TRUE);
 	const char *tmp;
 	switch_rtp_engine_t *a_engine, *v_engine, *t_engine;
 	switch_media_handle_t *smh;
@@ -10805,13 +10666,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 
-		if (local_sdp_audio_zrtp_hash) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding audio a=zrtp-hash:%s\r\n",
-							  local_sdp_audio_zrtp_hash);
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\r\n",
-							local_sdp_audio_zrtp_hash);
-		}
-
 		if (!zstr(sr)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=%s\r\n", sr);
 		}
@@ -11114,13 +10968,21 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							continue;
 						}
 
-						if (smh->ianacodes[i] < 128) {
-							if (already_did[smh->ianacodes[i]]) {
-								continue;
-							}
-							already_did[smh->ianacodes[i]] = 1;
+						if (smh->ianacodes[i] >= 128 || already_did[smh->ianacodes[i]]) {
+							continue;
 						}
 
+						switch_mutex_lock(smh->sdp_mutex);
+						for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+							if (pmap->negotiated && !strcasecmp(imp->iananame, pmap->iananame)) {
+								smh->ianacodes[i] = pmap->pt;
+								break;
+							}
+						}
+						switch_mutex_unlock(smh->sdp_mutex);
+		
+						already_did[smh->ianacodes[i]] = 1;
+						
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->ianacodes[i]);
 
 						if (!ptime) {
@@ -11477,12 +11339,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 
-				if (local_sdp_video_zrtp_hash) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\r\n", local_sdp_video_zrtp_hash);
-				}
-
-
 				if (switch_channel_test_flag(session->channel, CF_DTLS) ||
 					!switch_channel_test_flag(session->channel, CF_SECURE) ||
 					smh->crypto_mode == CRYPTO_MODE_MANDATORY || smh->crypto_mode == CRYPTO_MODE_FORBIDDEN) {
@@ -11821,12 +11677,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						}
 					}
 					//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\r\n");
-				}
-
-
-				if (local_sdp_text_zrtp_hash) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding text a=zrtp-hash:%s\n", local_sdp_text_zrtp_hash);
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\r\n", local_sdp_text_zrtp_hash);
 				}
 
 
@@ -12188,7 +12038,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				char o_line[1024] = "";
 
 				if (oe >= pe) {
-					bad = 5;
+					bad = 4;
 					goto end;
 				}
 
@@ -12244,7 +12094,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			p += 8;
 
 			if (p >= pe) {
-				bad = 4;
+				bad = 6;
 				goto end;
 			}
 
@@ -12252,7 +12102,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += 8;
 
 			if (q >= qe) {
-				bad = 5;
+				bad = 7;
 				goto end;
 			}
 
@@ -12261,13 +12111,13 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(port_buf);
 
 			if (q >= qe) {
-				bad = 6;
+				bad = 8;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 				if (p >= pe) {
-					bad = 7;
+					bad = 9;
 					goto end;
 				}
 				p++;
@@ -12308,14 +12158,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			p += 8;
 
 			if (p >= pe) {
-				bad = 8;
+				bad = 10;
 				goto end;
 			}
 
 			q += 8;
 
 			if (q >= qe) {
-				bad = 9;
+				bad = 11;
 				goto end;
 			}
 
@@ -12323,14 +12173,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(vport_buf);
 
 			if (q >= qe) {
-				bad = 10;
+				bad = 12;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 
 				if (p >= pe) {
-					bad = 11;
+					bad = 13;
 					goto end;
 				}
 
@@ -12338,7 +12188,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			}
 
 			has_video++;
-		} else if (!strncmp("m=text ", p, 8) && *(p + 8) != '0') {
+		} else if (!strncmp("m=text ", p, 7) && *(p + 7) != '0') {
 			if (!has_text) {
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_TEXT, 1);
 				clear_pmaps(t_engine);
@@ -12367,18 +12217,18 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				//TEXT switch_core_media_set_text_codec(session, SWITCH_FALSE);
 			}
 
-			strncpy(q, p, 8);
-			p += 8;
+			strncpy(q, p, 7);
+			p += 7;
 
 			if (p >= pe) {
-				bad = 8;
+				bad = 14;
 				goto end;
 			}
 
-			q += 8;
+			q += 7;
 
 			if (q >= qe) {
-				bad = 9;
+				bad = 15;
 				goto end;
 			}
 
@@ -12386,14 +12236,14 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			q += strlen(tport_buf);
 
 			if (q >= qe) {
-				bad = 10;
+				bad = 16;
 				goto end;
 			}
 
 			while (p && *p && (*p >= '0' && *p <= '9')) {
 
 				if (p >= pe) {
-					bad = 11;
+					bad = 17;
 					goto end;
 				}
 
@@ -12407,12 +12257,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		while (p && *p && *p != '\n') {
 
 			if (p >= pe) {
-				bad = 12;
+				bad = 18;
 				goto end;
 			}
 
 			if (q >= qe) {
-				bad = 13;
+				bad = 19;
 				goto end;
 			}
 
@@ -12420,12 +12270,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		}
 
 		if (p >= pe) {
-			bad = 14;
+			bad = 20;
 			goto end;
 		}
 
 		if (q >= qe) {
-			bad = 15;
+			bad = 21;
 			goto end;
 		}
 
@@ -12602,7 +12452,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_media_params(switch_core_sessi
 				*val++ = '\0';
 			}
 
-			if (name && val) {
+			if (val) {
 				if (!strcmp(name, "aspect")) {
 					aspect = val;
 					vid++;
@@ -13593,16 +13443,12 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_session_t *session, const char *r_sdp,
 															  switch_sdp_type_t sdp_type, const char *codec_string)
 {
-
-	
-
 	sdp_parser_t *parser;
 	sdp_session_t *sdp;
-	switch_media_handle_t *smh;
 
 	switch_assert(session);
 
-	if (!(smh = session->media_handle)) {
+	if (!session->media_handle) {
 		return;
 	}
 
@@ -13623,7 +13469,6 @@ SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_sessio
 
 		sdp_parser_free(parser);
 	}
-
 }
 
 
@@ -13747,9 +13592,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 			break;
 		}
 	}
-
-	switch_core_media_find_zrtp_hash(session, sdp);
-	switch_core_media_pass_zrtp_hash(session);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		ptime = dptime;
@@ -14424,7 +14266,7 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 	switch_size_t len;
 	const char *i;
 	char *o;
-	int in_m = 0, m_tally = 0, slash = 0;
+	int in_m = 0, slash = 0;
 	int number = 0, skip = 0;
 	int remove = !strcasecmp(cmd, "remove");
 	int only = !strcasecmp(cmd, "only");
@@ -14458,7 +14300,6 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 
 		if (*i == 'm' && *(i+1) == '=') {
 			in_m = 1;
-			m_tally++;
 		}
 
 		if (in_m) {
@@ -15162,7 +15003,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_io_event_hook_video_read_frame_t *ptr;
-	uint32_t loops = 0;
 	switch_media_handle_t *smh;
 	int is_keyframe = 0;
 
@@ -15173,8 +15013,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 
  top:
-
-	loops++;
 
 	if (switch_channel_down_nosig(session->channel)) {
 		return SWITCH_STATUS_FALSE;
@@ -16031,7 +15869,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (!(switch_core_codec_ready(session->write_codec) && switch_core_codec_ready(frame->codec))) goto error;
 
-	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
+	if (frame->codec && session->write_codec->implementation != frame->codec->implementation) {
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id ||
 			session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
 			ptime_mismatch = TRUE;
@@ -16596,7 +16434,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	return status;
 }
 
+SWITCH_DECLARE(switch_rtp_engine_t *) switch_core_media_get_engine(switch_core_session_t *session, int media_type)
+{
+    if (!session) return NULL;
 
+    return &session->media_handle->engines[media_type];
+}
+
+SWITCH_DECLARE(switch_codec_t*) switch_core_media_get_codec(switch_core_session_t *session, switch_media_type_t type)
+{
+    switch_rtp_engine_t *engine = switch_core_media_get_engine(session, type);
+
+    if (!engine) return NULL;
+
+    return &engine->read_codec;
+}
 
 /* For Emacs:
  * Local Variables:

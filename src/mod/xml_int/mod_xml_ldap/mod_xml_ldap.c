@@ -721,8 +721,10 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
                                 case XML_LDAP_DIRECTORY:
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "from cb got %s=%s\n", hi->name, hi->value);
                                         if (!strncmp(hi->name, "user", strlen(hi->name))) {
+                                                switch_safe_free(dir_exten);
                                                 dir_exten = strdup(hi->value);
                                         } else if (!strncmp(hi->name, "domain", strlen(hi->name))) {
+                                                switch_safe_free(dir_domain);
                                                 dir_domain = strdup(hi->value);
                                         }
                                         break;

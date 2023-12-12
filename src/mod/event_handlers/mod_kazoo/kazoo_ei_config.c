@@ -53,7 +53,6 @@ static int read_cookie_from_file(char *filename) {
 	char cookie[MAXATOMLEN + 1];
 	char *end;
 	struct stat buf;
-	ssize_t res;
 
 	if (!stat(filename, &buf)) {
 		if ((buf.st_mode & S_IRWXG) || (buf.st_mode & S_IRWXO)) {
@@ -70,7 +69,7 @@ static int read_cookie_from_file(char *filename) {
 			return 2;
 		}
 
-		if ((res = read(fd, cookie, MAXATOMLEN)) < 1) {
+		if (read(fd, cookie, MAXATOMLEN) < 1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to read cookie file %s : %d.\n", filename, errno);
 		}
 
@@ -565,13 +564,16 @@ switch_status_t kazoo_config_fetch_handler(kazoo_config_ptr definitions, kazoo_c
 	switch_memory_pool_t *pool = NULL;
 
 	char *name = (char *) switch_xml_attr_soft(cfg, "name");
+
 	if (zstr(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "missing name in profile\n");
+
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error allocation pool for new profile : %s\n", name);
+
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -583,6 +585,7 @@ switch_status_t kazoo_config_fetch_handler(kazoo_config_ptr definitions, kazoo_c
 	fetch_section = switch_xml_parse_section_string(name);
 
 	if ((params = switch_xml_child(cfg, "params")) != NULL) {
+
 		for (param = switch_xml_child(params, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -606,7 +609,9 @@ switch_status_t kazoo_config_fetch_handler(kazoo_config_ptr definitions, kazoo_c
 	}
 
 	if (fetch_section == SWITCH_XML_SECTION_RESULT) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Fetch Profile[%s] invalid fetch-section: %s\n", name, switch_xml_toxml(cfg, SWITCH_FALSE));
+		char *tmp = switch_xml_toxml(cfg, SWITCH_FALSE);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Fetch Profile[%s] invalid fetch-section: %s\n", name, tmp);
+		free(tmp);
 		goto err;
 	}
 
@@ -623,17 +628,20 @@ switch_status_t kazoo_config_fetch_handler(kazoo_config_ptr definitions, kazoo_c
 		}
 	}
 
-	if(ptr)
+	if (ptr) {
 		*ptr = profile;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "fetch handler profile %s successfully configured\n", name);
+
 	return SWITCH_STATUS_SUCCESS;
 
  err:
 	/* Cleanup */
-    if(pool) {
-    	switch_core_destroy_memory_pool(&pool);
-    }
+	if(pool) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+
 	return SWITCH_STATUS_GENERR;
 
 }

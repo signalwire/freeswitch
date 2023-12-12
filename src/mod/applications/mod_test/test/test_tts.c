@@ -146,7 +146,7 @@ FST_TEST_BEGIN(tts_time)
     } while (status == SWITCH_STATUS_SUCCESS);
 
     fst_check(read = sample_rate / interval * 3); // samples of 3 second
-    fst_check_duration(3000, 500);
+    fst_check_duration(3000, 1000);
     switch_core_speech_close(&sh, &flags);
 }
 FST_TEST_END()

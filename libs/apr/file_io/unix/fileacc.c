@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include "apr_strings.h"
-#include "apr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_arch_file_io.h"
 
-/* A file to put ALL of the accessor functions for apr_file_t types. */
+/* A file to put ALL of the accessor functions for fspr_file_t types. */
 
-APR_DECLARE(apr_status_t) apr_file_name_get(const char **fname,
-                                           apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_name_get(const char **fname,
+                                           fspr_file_t *thefile)
 {
     *fname = thefile->fname;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_int32_t) apr_file_flags_get(apr_file_t *f)
+APR_DECLARE(fspr_int32_t) fspr_file_flags_get(fspr_file_t *f)
 {
     return f->flags;
 }
 
 #if !defined(OS2) && !defined(WIN32)
-mode_t apr_unix_perms2mode(apr_fileperms_t perms)
+mode_t fspr_unix_perms2mode(fspr_fileperms_t perms)
 {
     mode_t mode = 0;
 
@@ -68,9 +68,9 @@ mode_t apr_unix_perms2mode(apr_fileperms_t perms)
     return mode;
 }
 
-apr_fileperms_t apr_unix_mode2perms(mode_t mode)
+fspr_fileperms_t fspr_unix_mode2perms(mode_t mode)
 {
-    apr_fileperms_t perms = 0;
+    fspr_fileperms_t perms = 0;
 
     if (mode & S_ISUID)
         perms |= APR_USETID;
@@ -105,15 +105,15 @@ apr_fileperms_t apr_unix_mode2perms(mode_t mode)
 }
 #endif
 
-APR_DECLARE(apr_status_t) apr_file_data_get(void **data, const char *key,
-                                           apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_file_data_get(void **data, const char *key,
+                                           fspr_file_t *file)
 {    
-    return apr_pool_userdata_get(data, key, file->pool);
+    return fspr_pool_userdata_get(data, key, file->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_data_set(apr_file_t *file, void *data,
+APR_DECLARE(fspr_status_t) fspr_file_data_set(fspr_file_t *file, void *data,
                                            const char *key,
-                                           apr_status_t (*cleanup)(void *))
+                                           fspr_status_t (*cleanup)(void *))
 {    
-    return apr_pool_userdata_set(data, key, cleanup, file->pool);
+    return fspr_pool_userdata_set(data, key, cleanup, file->pool);
 }

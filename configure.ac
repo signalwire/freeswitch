@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.8-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.10-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [8-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [10-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -248,7 +248,7 @@ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT([disable-static])
 
 #Check for compiler vendor
 AX_COMPILER_VENDOR
@@ -582,7 +582,7 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-for luaversion in luajit lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
+for luaversion in luajit lua5.3 lua-5.3 lua53 lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
   PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
   if test ${have_lua} = yes; then
     break
@@ -601,13 +601,6 @@ have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
-AC_ARG_ENABLE(zrtp,
-	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
-if test "x$enable_zrtp" = "xyes" ; then
-   LIBS="-lpthread $LIBS"
-   APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
-fi
-
 PA_LIBS=
 
 PKG_CHECK_MODULES(JACK, jack, have_jack=yes, have_jack=no)
@@ -621,8 +614,6 @@ PA_LIBS+=-lasound
 fi
 
 AC_SUBST(PA_LIBS)
-
-AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
@@ -665,12 +656,13 @@ AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 case $host in
      *-darwin*)
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/libpq/lib/pkgconfig
+	path_push_unique PKG_CONFIG_PATH /usr/local/opt/openssl/lib/pkgconfig
      ;;
 esac
 
 if test "$PKG_CONFIG" = "no" \
 	|| test x"$enable_core_pgsql_pkgconfig" = x"no" \
-	|| ! pkg-config libpq; then
+	|| ! pkg-config --modversion libpq > /dev/null; then
 	if test "$PG_CONFIG" != "no"; then
 		AC_MSG_CHECKING([for PostgreSQL libraries via pg_config])
 		POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
@@ -682,7 +674,6 @@ if test "$PKG_CONFIG" = "no" \
 		POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $3 }'`
 	fi
 else
-
 	AC_MSG_CHECKING([for PostgreSQL libraries via pkg_config])
 	POSTGRESQL_CFLAGS="`$PKG_CONFIG --cflags libpq`"
 	POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
@@ -725,7 +716,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.6],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.15],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
@@ -844,8 +835,6 @@ PKG_CHECK_MODULES([STIRSHAKEN], [stirshaken],[
 
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
-AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
-AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
@@ -883,7 +872,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h sys/time.h])
 
 # Solaris 11 privilege management
 AS_CASE([$host],
@@ -1090,8 +1079,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp 
-#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed mod_managedcore
+# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
+#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1363,7 +1352,21 @@ PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
 PKG_CHECK_MODULES([SHOUT], [shout >= 2.2.2],[
-  AM_CONDITIONAL([HAVE_SHOUT],[true])],[
+  AM_CONDITIONAL([HAVE_SHOUT],[true])
+  SHOUT_VERSION="`$PKG_CONFIG --modversion shout`"
+  SHOUT_MAJOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f1`"
+  SHOUT_MINOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f2`"
+  SHOUT_PATCH_VERSION="`echo $SHOUT_VERSION | cut -d. -f3`"
+  test -n "$SHOUT_PATCH_VERSION" || SHOUT_PATCH_VERSION=0
+  AC_MSG_NOTICE([SHOUT version: $SHOUT_VERSION])
+  AC_MSG_NOTICE([SHOUT major version: $SHOUT_MAJOR_VERSION])
+  AC_MSG_NOTICE([SHOUT minor version: $SHOUT_MINOR_VERSION])
+  AC_MSG_NOTICE([SHOUT patch version: $SHOUT_PATCH_VERSION])
+  AC_SUBST([SHOUT_VERSION])
+  AC_SUBST([SHOUT_MAJOR_VERSION])
+  AC_SUBST([SHOUT_MINOR_VERSION])
+  AC_SUBST([SHOUT_PATCH_VERSION])
+  ],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SHOUT],[false])])
 
 mp3lame=false
@@ -1529,26 +1532,32 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
+PKG_CHECK_MODULES([KS], [libks2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
-    if module_enabled mod_verto; then
-      AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
-    else
-      if module_enabled mod_signalwire; then
-        AC_MSG_ERROR([You need to either install libks or disable mod_signalwire in modules.conf])
+  PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
+    AM_CONDITIONAL([HAVE_KS],[true])],[
+      if module_enabled mod_verto; then
+        AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_verto in modules.conf])
       else
-        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        if module_enabled mod_signalwire; then
+          AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_signalwire in modules.conf])
+        else
+          AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        fi
       fi
-    fi
+  ])
 ])
 
-PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-    if module_enabled mod_signalwire; then
-      AC_MSG_ERROR([You need to either install signalwire-client-c or disable mod_signalwire in modules.conf])
-    else
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
-    fi
+  PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+    AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install signalwire-client-c2 or signalwire-client-c or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+      fi
+  ])
 ])
 
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
@@ -1970,6 +1979,22 @@ else
 	AC_MSG_WARN([python3 support disabled, building mod_python3 will fail!])
 fi
 
+# pcap lib for unit-testing
+AC_MSG_CHECKING(libpcap)
+AC_CHECK_PROG(HAVE_PCAP_CONFIG,pcap-config,[true],[false])
+if test x"$HAVE_PCAP_CONFIG" = x"true"; then
+   AC_MSG_RESULT(yes)
+   PCAP_CONFIG=pcap-config
+   PCAP_LIBS="`$PCAP_CONFIG --libs`"
+   PCAP_CFLAGS="`$PCAP_CONFIG --cflags`"
+   AM_CONDITIONAL([HAVE_PCAP], [true])
+else
+   AC_MSG_RESULT(no)
+   AM_CONDITIONAL([HAVE_PCAP], [false])
+fi
+AC_SUBST([PCAP_CFLAGS])
+AC_SUBST([PCAP_LIBS])
+
 #
 # SNMP checks for mod_snmp
 #
@@ -2130,7 +2155,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
-		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
@@ -2159,7 +2183,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_dingaling/Makefile
 		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
 		src/mod/endpoints/mod_khomp/Makefile
@@ -2318,15 +2341,7 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-if test "$use_system_aprutil" != "yes"; then
-   AC_CONFIG_SUBDIRS([libs/apr-util])
-fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/unimrcp])
-if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp])
-fi
 
 case $host in
    *-openbsd*|*-netbsd*)
