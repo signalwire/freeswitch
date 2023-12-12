@@ -36795,12 +36795,12 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_perform_mark_
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_check_zrtp___(void * jarg1) {
-  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
-  
-  arg1 = (switch_channel_t *)jarg1; 
-  switch_channel_check_zrtp(arg1);
-}
+//SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_check_zrtp___(void * jarg1) {
+//  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+//  
+//  arg1 = (switch_channel_t *)jarg1; 
+//  switch_channel_check_zrtp(arg1);
+//}
 
 
 SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_channel_perform_acknowledge_call___(void * jarg1, char * jarg2, char * jarg3, int jarg4) {

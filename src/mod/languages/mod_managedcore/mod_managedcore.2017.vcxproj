@@ -44,7 +44,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <CLRSupport>false</CLRSupport>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -111,7 +111,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\6.0.15\runtimes\win-x64\native;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\8.0.0\runtimes\win-x64\native;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -130,7 +130,7 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalOptions>/ignore:4248 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalLibraryDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\6.0.15\runtimes\win-x64\native;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\8.0.0\runtimes\win-x64\native;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -162,7 +162,7 @@
     </Midl>
     <ClCompile>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\6.0.15\runtimes\win-x64\native;..\..\..\..\libs\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\8.0.0\runtimes\win-x64\native;..\..\..\..\libs\apr\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
@@ -179,7 +179,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalOptions>/ignore:4248 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>libnethost.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Ws2_32.lib;Iphlpapi.lib;Winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\6.0.15\runtimes\win-x64\native;$(curlLibDir)\binaries\$(Platform)\$(LibraryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Host.win-x64\8.0.0\runtimes\win-x64\native;$(curlLibDir)\binaries\$(Platform)\$(LibraryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
