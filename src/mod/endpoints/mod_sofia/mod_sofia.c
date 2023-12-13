@@ -488,7 +488,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DESTROY)) {
 		sofia_set_flag(tech_pvt, TFLAG_BYE);
 	} else if (tech_pvt->nh && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-		char reason[128] = "";
+		char *reason = switch_core_session_sprintf(session, "");
 		char *bye_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_BYE_HEADER_PREFIX);
 		const char *val = NULL;
 		const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
@@ -499,15 +499,15 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 		if (!val || switch_false(val)) {
 			if ((val = switch_channel_get_variable(tech_pvt->channel, "sip_reason"))) {
-				switch_snprintf(reason, sizeof(reason), "%s", val);
+				reason = switch_core_session_sprintf(session, "%s", val);
 			} else {
 				if ((switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE)
 					&& !switch_true(switch_channel_get_variable(channel, "ignore_completed_elsewhere"))) {
-					switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
+					reason = switch_core_session_sprintf(session, "SIP;cause=200;text=\"Call completed elsewhere\"");
 				} else if (cause > 0 && cause < 128) {
-					switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+					reason = switch_core_session_sprintf(session, "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				} else {
-					switch_snprintf(reason, sizeof(reason), "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+					reason = switch_core_session_sprintf(session, "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				}
 			}
 		}

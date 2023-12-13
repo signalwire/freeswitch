@@ -1719,20 +1719,13 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		}
 	}
 
-	if (node) {
-		status = SWITCH_STATUS_SUCCESS;
+	*packet = node->packet;
+	*len = node->len;
+	jb->last_len = *len;
+	packet->header.version = 2;
+	hide_node(node, SWITCH_TRUE);
 
-		*packet = node->packet;
-		*len = node->len;
-		jb->last_len = *len;
-		packet->header.version = 2;
-		hide_node(node, SWITCH_TRUE);
-
-		jb_debug(jb, 2, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
-
-	} else {
-		status = SWITCH_STATUS_MORE_DATA;
-	}
+	jb_debug(jb, 2, "GET packet ts:%u seq:%u %s\n", ntohl(packet->header.ts), ntohs(packet->header.seq), packet->header.m ? " <MARK>" : "");
 
  end:
 

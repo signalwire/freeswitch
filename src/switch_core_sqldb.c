@@ -2065,6 +2065,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 	switch_status_t status;
 	uint32_t ttl = 0;
 	uint32_t i;
+	switch_status_t res;
 
 	if (!zstr(qm->pre_trans_execute)) {
 		switch_cache_db_execute_sql_real(qm->event_db, qm->pre_trans_execute, &errmsg);
@@ -2126,7 +2127,8 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 
 		for (i = 0; (qm->max_trans == 0 || ttl <= qm->max_trans) && (i < qm->numq); i++) {
 			switch_mutex_lock(qm->mutex);
-			switch_queue_trypop(qm->sql_queue[i], &pop);
+			res = switch_queue_trypop(qm->sql_queue[i], &pop);
+			(void)res;
 			switch_mutex_unlock(qm->mutex);
 			if (pop) break;
 		}
@@ -2138,6 +2140,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 				switch_mutex_unlock(qm->mutex);
 				ttl++;
 			}
+
 			switch_safe_free(pop);
 			if (status != SWITCH_STATUS_SUCCESS) break;
 		} else {
@@ -2152,7 +2155,6 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 			switch_safe_free(errmsg);
 		}
 	}
-
 
  end:
 
@@ -2190,11 +2192,11 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		}
 	}
 
-
 	switch_mutex_lock(qm->mutex);
 	for (i = 0; i < qm->numq; i++) {
 		qm->written[i] = qm->pre_written[i];
 	}
+
 	switch_mutex_unlock(qm->mutex);
 
 	return ttl;
