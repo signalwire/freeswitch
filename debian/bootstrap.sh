@@ -335,7 +335,7 @@ Build-Depends:
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.15),
+ bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.17),
  libspandsp3-dev,
 # used to format the private freeswitch apt-repo key properly
  gnupg,
@@ -374,7 +374,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: amd64 armhf
-Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.15)
+Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.17)
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)
