@@ -26316,6 +26316,18 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_icand_t_ready_get___")]
   public static extern byte icand_t_ready_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_icand_t_responsive_set___")]
+  public static extern void icand_t_responsive_set(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_icand_t_responsive_get___")]
+  public static extern byte icand_t_responsive_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_icand_t_use_candidate_set___")]
+  public static extern void icand_t_use_candidate_set(global::System.Runtime.InteropServices.HandleRef jarg1, byte jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_icand_t_use_candidate_get___")]
+  public static extern byte icand_t_use_candidate_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_icand_t___")]
   public static extern global::System.IntPtr new_icand_t();
 
@@ -28335,6 +28347,26 @@ public class icand_t : global::System.IDisposable {
     } 
     get {
       byte ret = freeswitchPINVOKE.icand_t_ready_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public byte responsive {
+    set {
+      freeswitchPINVOKE.icand_t_responsive_set(swigCPtr, value);
+    } 
+    get {
+      byte ret = freeswitchPINVOKE.icand_t_responsive_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public byte use_candidate {
+    set {
+      freeswitchPINVOKE.icand_t_use_candidate_set(swigCPtr, value);
+    } 
+    get {
+      byte ret = freeswitchPINVOKE.icand_t_use_candidate_get(swigCPtr);
       return ret;
     } 
   }
