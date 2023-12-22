@@ -320,8 +320,10 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 				delayed_min = oglobals->originate_status[i].per_channel_delay_start;
 			}
 		}
-		early_exit_time = delayed_min - (uint32_t) elapsed;
+
+		early_exit_time = delayed_min - (uint32_t)(switch_time_t) elapsed;
 	}
+
 	for (i = 0; i < max; i++) {
 		if (oglobals->originate_status[i].peer_channel && oglobals->originate_status[i].per_channel_delay_start &&
 			(elapsed > oglobals->originate_status[i].per_channel_delay_start || active_channels == 0)) {
@@ -334,6 +336,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 						oglobals->originate_status[i].per_channel_timelimit_sec = 1;
 					}
 				}
+
 				if (oglobals->originate_status[i].per_channel_progress_timelimit_sec) {
 					if (oglobals->originate_status[i].per_channel_progress_timelimit_sec > early_exit_time) {
 						/* IN theory this check is not needed ( should just be if !0 then -= with no else), if its not 0 it should always be greater.... */
@@ -342,6 +345,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 						oglobals->originate_status[i].per_channel_progress_timelimit_sec = 1;
 					}
 				}
+
 				oglobals->originate_status[i].per_channel_delay_start -= delayed_min;
 			} else {
 				oglobals->originate_status[i].per_channel_delay_start = 0;
@@ -1305,7 +1309,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 		}
 	}
 
-	if (oglobals->session && (read_codec = switch_core_session_get_read_codec(oglobals->session))) {
+	if ((read_codec = switch_core_session_get_read_codec(oglobals->session))) {
 		if (ringback_data && switch_is_file_path(ringback_data)) {
 			if (!(strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR))) {
 				ringback->asis++;
@@ -4961,9 +4965,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_orig_and_bridge(switch_cor
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 
-		if (peer_session) {
-			switch_core_session_rwunlock(peer_session);
-		}
+		switch_core_session_rwunlock(peer_session);
 	}
 
 	return status;
@@ -5026,9 +5028,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_orig_and_bridge(switch_core_session_t
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 
-		if (peer_session) {
-			switch_core_session_rwunlock(peer_session);
-		}
+		switch_core_session_rwunlock(peer_session);
 	}
 
 	return status;

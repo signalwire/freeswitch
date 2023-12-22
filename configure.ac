@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.10-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.11-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [10-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [11-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -716,7 +716,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.15],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.17],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])

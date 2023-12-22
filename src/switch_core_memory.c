@@ -501,9 +501,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 #if APR_POOL_DEBUG
 		fspr_pool_destroy_debug(tmp_pool, func);
 #else
-		fspr_pool_destroy(tmp_pool);
+		if (tmp_pool) {
+			fspr_pool_destroy(tmp_pool);
+		}
 #endif
 #ifdef USE_MEM_LOCK
+
 		switch_mutex_unlock(memory_manager.mem_lock);
 #endif
 	}
