@@ -1898,6 +1898,8 @@ authed:
 
 			rule = rule->next;
 		}
+
+		switch_safe_free(re);
 	}
 
 	switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", request->uri);
