@@ -42,6 +42,7 @@ RUN wget --no-verbose --http-user=signalwire --http-password=${TOKEN} \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
 # Add anything else here
 
 ## Ports
