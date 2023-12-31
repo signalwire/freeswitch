@@ -1042,23 +1042,7 @@ static const char *basic_gets(int *cnt)
 	return command_buf;
 }
 
-static const char *banner =
-	".=======================================================.\n"
-    "|            _____ ____     ____ _     ___              |\n"
-    "|           |  ___/ ___|   / ___| |   |_ _|             |\n"
-    "|           | |_  \\___ \\  | |   | |    | |              |\n"
-    "|           |  _|  ___) | | |___| |___ | |              |\n"
-    "|           |_|   |____/   \\____|_____|___|             |\n"
-	"|                                                       |\n"
-	".=======================================================.\n"
-    "| Anthony Minessale II, Ken Rice,                       |\n"
-    "| Michael Jerris, Travis Cross                          |\n"
-    "| FreeSWITCH (http://www.freeswitch.org)                |\n"
-    "| Paypal Donations Appreciated: paypal@freeswitch.org   |\n"
-    "| Brought to you by ClueCon http://www.cluecon.com/     |\n"
-    ".=======================================================.\n"
-    "\n";
-
+static const char *banner = "";
 static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream, int color)
