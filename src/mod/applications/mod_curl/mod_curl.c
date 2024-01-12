@@ -104,8 +104,13 @@ struct http_sendfile_data_obj {
 	char *extrapost_elements;
 	switch_CURL *curl_handle;
 	char *cacert;
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	curl_mime *mime;
+	curl_mimepart *part;
+#else
 	struct curl_httppost *formpost;
 	struct curl_httppost *lastptr;
+#endif
 	uint8_t flags; /* This is for where to send output of the curl_sendfile commands */
 	switch_stream_handle_t *stream;
 	char *sendfile_response;
@@ -456,8 +461,19 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 	curl_easy_setopt(http_data->curl_handle, CURLOPT_WRITEFUNCTION, http_sendfile_response_callback);
 	curl_easy_setopt(http_data->curl_handle, CURLOPT_WRITEDATA, (void *) http_data);
 
+	/* Initial http_data->mime */
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	http_data->mime = curl_mime_init(http_data->curl_handle);
+#endif
+
 	/* Add the file to upload as a POST form field */
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	http_data->part = curl_mime_addpart(http_data->mime);
+	curl_mime_name(http_data->part, http_data->filename_element_name);
+	curl_mime_filedata(http_data->part, http_data->filename_element);
+#else
 	curl_formadd(&http_data->formpost, &http_data->lastptr, CURLFORM_COPYNAME, http_data->filename_element_name, CURLFORM_FILE, http_data->filename_element, CURLFORM_END);
+#endif
 
 	if(!zstr(http_data->extrapost_elements))
 	{
@@ -476,16 +492,32 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 			if(argc2 == 2) {
 				switch_url_decode(argv2[0]);
 				switch_url_decode(argv2[1]);
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+				http_data->part = curl_mime_addpart(http_data->mime);
+				curl_mime_name(http_data->part, argv2[0]);
+				curl_mime_data(http_data->part, argv2[1], CURL_ZERO_TERMINATED);
+#else
 				curl_formadd(&http_data->formpost, &http_data->lastptr, CURLFORM_COPYNAME, argv2[0], CURLFORM_COPYCONTENTS, argv2[1], CURLFORM_END);
+#endif
 			}
 		}
 	}
 
 	/* Fill in the submit field too, even if this isn't really needed */
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	http_data->part = curl_mime_addpart(http_data->mime);
+	curl_mime_name(http_data->part, "submit");
+	curl_mime_data(http_data->part, "or_die", CURL_ZERO_TERMINATED);
+#else
 	curl_formadd(&http_data->formpost, &http_data->lastptr, CURLFORM_COPYNAME, "submit", CURLFORM_COPYCONTENTS, "or_die", CURLFORM_END);
+#endif
 
 	/* what URL that receives this POST */
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	curl_easy_setopt(http_data->curl_handle, CURLOPT_MIMEPOST, http_data->mime);
+#else
 	curl_easy_setopt(http_data->curl_handle, CURLOPT_HTTPPOST, http_data->formpost);
+#endif
 
 	// This part actually fires off the curl, captures the HTTP response code, and then frees up the handle.
 	curl_easy_perform(http_data->curl_handle);
@@ -494,7 +526,11 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 	curl_easy_cleanup(http_data->curl_handle);
 
 	// Clean up the form data from POST
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
+	curl_mime_free(http_data->mime);
+#else
 	curl_formfree(http_data->formpost);
+#endif
 }
 
 static switch_status_t http_sendfile_test_file_open(http_sendfile_data_t *http_data, switch_event_t *event)

@@ -241,7 +241,6 @@ static switch_xml_t lua_fetch(const char *section,
 	if (!zstr(globals.xml_handler)) {
 		L = lua_init();
 		const char *str;
-		int error;
 
 		mycmd = strdup(globals.xml_handler);
 		switch_assert(mycmd);
@@ -266,7 +265,7 @@ static switch_xml_t lua_fetch(const char *section,
 			mod_lua_conjure_event(L, params, "params", 1);
 		}
 
-		if((error = lua_parse_and_execute(L, mycmd, NULL))){
+		if(lua_parse_and_execute(L, mycmd, NULL)){
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LUA script parse/execute error!\n");
 		    goto end;
 		}
@@ -522,7 +521,6 @@ SWITCH_STANDARD_API(lua_api_function)
 {
 
 	char *mycmd;
-	int error;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "");
@@ -541,7 +539,7 @@ SWITCH_STANDARD_API(lua_api_function)
 			mod_lua_conjure_event(L, stream->param_event, "env", 1);
 		}
 
-		if ((error = lua_parse_and_execute(L, mycmd, session))) {
+		if (lua_parse_and_execute(L, mycmd, session)) {
 			char * http = switch_event_get_header(stream->param_event, "http-uri");
 			if (http && (!strncasecmp(http, "/api/", 5) || !strncasecmp(http, "/webapi/", 8))) {
 					/* api -> fs api streams the Content-Type e.g. text/html or text/xml               */

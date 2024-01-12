@@ -46,9 +46,10 @@ find_distro () {
   case "$1" in
     experimental) echo "sid";;
     unstable) echo "sid";;
-    testing) echo "buster";;
-    stable) echo "stretch";;
-    oldstable) echo "jessie";;
+    experimental) echo "bookworm";;
+    testing) echo "bullseye";;
+    stable) echo "buster";;
+    oldstable) echo "stretch";;
     *) echo "$1";;
   esac
 }
@@ -56,9 +57,10 @@ find_distro () {
 find_suite () {
   case "$1" in
     sid) echo "unstable";;
-    buster) echo "testing";;
-    stretch) echo "stable";;
-    jessie) echo "oldstable";;
+    bookworm) echo "experimental";;
+    bullseye) echo "testing";;
+    buster) echo "stable";;
+    stretch) echo "oldstable";;
     *) echo "$1";;
   esac
 }

@@ -82,9 +82,6 @@
  * <dt>-6</dt>
  * <dd>Query IP6 addresses (AAAA records).
  * </dd>
- * <dt>-v</dt>
- * <dd>Be verbatim.
- * </dd>
  * <dt></dt>
  * <dd>
  * </dd>
@@ -143,6 +140,8 @@
 #include "sofia-sip/su_alloc.h"
 #include "sofia-sip/su_string.h"
 #include "sofia-sip/hostdomain.h"
+#include "sip-dig.h"
+#include "mod_sofia.h"
 
 char const name[] = "sip-dig";
 
@@ -151,52 +150,6 @@ char const name[] = "sip-dig";
 #include <string.h>
 #include <stdio.h>
 
-enum { N_TPORT = 16 };
-
-struct transport { char const *name, *service, *srv; };
-
-struct dig {
-	sres_resolver_t *sres;
-
-	unsigned preference, ip4, ip6, sips, print;
-
-	struct transport tports[N_TPORT + 1];
-};
-
-int dig_naptr(struct dig *dig, char const *host, double weight, switch_stream_handle_t *stream);
-
-int dig_all_srvs(struct dig *dig, char const *tport, char const *host,
-				 double weight, switch_stream_handle_t *stream);
-
-int dig_srv(struct dig *dig, char const *tport, char const *host,
-			double weight, switch_stream_handle_t *stream);
-
-int dig_srv_at(struct dig *dig,
-			   char const *tport, sres_record_t **answers,
-			   double weight, int pweight,
-			   int priority, switch_stream_handle_t *stream);
-
-int dig_addr(struct dig *dig,
-			 char const *tport, char const *host, char const *port,
-			 double weight, switch_stream_handle_t *stream);
-
-void print_addr_results(struct transport const *tports,
-						char const *tport, char const *tport2,
-						sres_record_t **answers, int type, int af,
-						char const *port,
-						double weight, int preference, switch_stream_handle_t *stream);
-
-void print_result(char const *addr, char const *port, char const *tport,
-				  double weight,
-				  unsigned preference,
-				  switch_stream_handle_t *stream);
-
-int prepare_transport(struct dig *dig, char const *tport);
-
-int count_transports(struct dig *dig,
-					 char const *tp1,
-					 char const *tp2);
-
 void _usage(int exitcode, switch_stream_handle_t *stream)
 {
 	stream->write_function(stream, "%s", "usage: sofia_dig [OPTIONS] [@dnsserver] uri\n");
@@ -204,10 +157,48 @@ void _usage(int exitcode, switch_stream_handle_t *stream)
 
 #define usage(_x) _usage(_x, stream); goto fail
 
+switch_bool_t verify_ip(sres_record_t **answers, const char *ip, switch_bool_t ipv6) 
+{
+	char addr[64];
+	int i;
+
+	if (!answers) {
+		return SWITCH_FALSE;
+	}
+
+	if (!*answers) {
+		return SWITCH_FALSE;
+	}
+
+	for (i = 0; answers[i]; i++) {
+		if (ipv6) {
+			if (answers[i]->sr_record->r_type != sres_type_aaaa)
+				continue;
+		} else {
+			if (answers[i]->sr_record->r_type != sres_type_a)
+				continue;
+		}
+		if (answers[i]->sr_record->r_status != 0)
+			continue;
+
+		if (ipv6) {
+			su_inet_ntop(AF_INET6, &answers[i]->sr_aaaa->aaaa_addr, addr, sizeof addr);
+		} else {
+			su_inet_ntop(AF_INET, &answers[i]->sr_a->a_addr, addr, sizeof addr);
+		}
+
+		if (ip && !strcmp(addr, ip)) {
+			return SWITCH_TRUE;
+		}
+	}
+
+	return SWITCH_FALSE;
+}
+
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
 
 {
-	int o_sctp = 1, o_tls_sctp = 1, o_verbatim = 1;
+	int o_sctp = 1, o_tls_sctp = 1;
 	int family = 0, multiple = 0;
 	char const *string;
 	url_t *uri = NULL;
@@ -253,9 +244,7 @@ switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_cor
 	}
 
 	while (argv[i] && argv[i][0] == '-') {
-		if (strcmp(argv[i], "-v") == 0) {
-			o_verbatim++;
-		} else if (strcmp(argv[i], "-6") == 0) {
+		if (strcmp(argv[i], "-6") == 0) {
 			dig->ip6 = ++family;
 		} else if (strcmp(argv[i], "-4") == 0) {
 			dig->ip4 = ++family;
@@ -608,6 +597,27 @@ int dig_naptr(struct dig *dig,
 	return count;
 }
 
+switch_bool_t dig_all_srvs_simple(struct dig *dig,
+								char const *host, char const *ip, switch_bool_t ipv6)
+{
+	sres_record_t **answers;
+	char *domain = su_strcat(NULL, dig->tports[0].srv, host);
+	switch_bool_t ret;
+	int error = -1;
+
+	if (domain) {
+		error = sres_blocking_query(dig->sres, sres_type_srv, domain, 0, &answers);
+		free(domain);
+	}
+
+	if (error >= 0) {
+		ret = dig_srv_at_simple_verify(dig, dig->tports[0].name, answers, ip, ipv6);
+		if (ret) return SWITCH_TRUE;
+	}
+
+	return SWITCH_FALSE;
+}
+
 int dig_all_srvs(struct dig *dig,
 				 char const *tport,
 				 char const *host,
@@ -735,6 +745,36 @@ int dig_srv(struct dig *dig,
 	return count;
 }
 
+switch_bool_t dig_srv_at_simple_verify(struct dig *dig,
+			char const *tport,
+			sres_record_t **answers, const char *ip, switch_bool_t ipv6)
+{
+	int i;
+	sres_record_t **retanswers = { 0 };
+
+	if (!answers) {
+		return SWITCH_FALSE;
+	}
+
+	for (i = 0; answers[i]; i++) {
+		sres_srv_record_t const *srv = answers[i]->sr_srv;
+		if (srv->srv_record->r_type != sres_type_srv)
+			continue;
+		if (srv->srv_record->r_status != 0)
+			continue;
+		retanswers = dig_addr_simple(dig, srv->srv_target, ipv6?sres_type_aaaa:sres_type_a);
+		if (verify_ip(retanswers, ip, ipv6)) {
+			sres_free_answers(dig->sres, retanswers);
+			return SWITCH_TRUE;
+		}
+	}
+
+	if (retanswers && *retanswers) {
+		sres_free_answers(dig->sres, retanswers);
+	}
+	return SWITCH_FALSE;
+}
+
 int dig_srv_at(struct dig *dig,
 			   char const *tport,
 			   sres_record_t **answers,
@@ -758,12 +798,26 @@ int dig_srv_at(struct dig *dig,
 		if (srv->srv_priority != priority)
 			continue;
 		snprintf(port, sizeof port, "%u", srv->srv_port);
-
 		count += dig_addr(dig, tport, srv->srv_target, port,
 						  weight * srv->srv_weight / pweight, stream);
 	}
 
 	return count;
+}
+
+sres_record_t ** dig_addr_simple(struct dig *dig,
+								char const *host,
+								uint16_t type) 
+{
+	sres_record_t **answers = NULL;
+	int error;
+
+	error = sres_blocking_query(dig->sres, type, host, 0, &answers);
+	if (error < 0) {
+		return NULL;
+	}
+
+	return answers;
 }
 
 int dig_addr(struct dig *dig,

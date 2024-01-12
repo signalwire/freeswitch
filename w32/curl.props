@@ -65,7 +65,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(curlLibDir)\binaries\$(Platform)\$(LibraryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>curl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>curl.lib;Wldap32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 

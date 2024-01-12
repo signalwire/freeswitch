@@ -786,15 +786,26 @@ struct fsv_file_context {
 	switch_file_t *fd;
 	char *path;
 	switch_mutex_t *mutex;
+	switch_queue_t *video_queue;
+	switch_codec_t video_codec;
+	switch_image_t *last_img;
+	switch_bool_t no_video_decode;
+	uint8_t video_packet_buffer[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
 typedef struct fsv_file_context fsv_file_context;
+
+typedef struct fsv_file_video_packet_s {
+	uint8_t *data;
+	uint32_t len;
+} fsv_file_video_packet_t;
 
 static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *path)
 {
 	fsv_file_context *context;
 	char *ext;
 	unsigned int flags = 0;
+	const char *video_codec = NULL;
 
 	if ((ext = strrchr(path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -827,6 +838,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 		return SWITCH_STATUS_GENERR;
 	}
 
+	switch_queue_create(&context->video_queue, 500, handle->memory_pool);
+
 	context->path = switch_core_strdup(handle->memory_pool, path);
 
 	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
@@ -836,8 +849,6 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 	}
 
 	handle->samples = 0;
-	// handle->samplerate = 8000;
-	// handle->channels = 1;
 	handle->format = 0;
 	handle->sections = 0;
 	handle->seekable = 0;
@@ -845,6 +856,8 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 	handle->pos = 0;
 	handle->private_info = context;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
+
+	context->no_video_decode = switch_true(switch_event_get_header(handle->params, "no_video_decode"));
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		struct file_header h;
@@ -855,7 +868,9 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 		h.version = VERSION;
 		h.created = switch_micro_time_now();
 
-		switch_set_string(h.video_codec_name, "H264"); /* FIXME: hard coded */
+		video_codec = switch_event_get_header(handle->params, "video_codec_name");
+		if (zstr(video_codec)) video_codec = "VP8";
+		switch_set_string(h.video_codec_name, video_codec);
 
 		h.audio_rate = handle->samplerate;
 		h.audio_ptime = 20; /* FIXME: hard coded */
@@ -879,7 +894,27 @@ static switch_status_t fsv_file_open(switch_file_handle_t *handle, const char *p
 		}
 
 		handle->samplerate = h.audio_rate;
+		handle->channels = h.channels;
+		video_codec = switch_core_strdup(handle->memory_pool, h.video_codec_name);
 	}
+
+	if (video_codec && !context->no_video_decode) {
+		if (switch_core_codec_init(&context->video_codec,
+								video_codec,
+								NULL,
+								NULL,
+								90000,
+								0,
+								0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								NULL, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Video Codec Activation Failed\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Video Codec [%s] ready\n", video_codec);
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "File opened [%s] %dhz [%d] channels, no_video_decode=%s\n",
+		path, handle->samplerate, handle->channels, context->no_video_decode ? "true" : "false");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -908,6 +943,20 @@ static switch_status_t fsv_file_close(switch_file_handle_t *handle)
 		context->fd = NULL;
 	}
 
+	if (switch_test_flag(&context->video_codec, SWITCH_CODEC_FLAG_READY)) {
+		switch_core_codec_destroy(&context->video_codec);
+	}
+
+	if (context->video_queue) {
+		void *pop;
+
+		while (switch_queue_trypop(context->video_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			free(pop);
+		}
+	}
+
+	switch_img_free(&context->last_img);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -920,7 +969,7 @@ static switch_status_t fsv_file_seek(switch_file_handle_t *handle, unsigned int 
 static switch_status_t fsv_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	switch_status_t status;
-	size_t need = *len;
+	size_t need = *len * 2;
 	uint32_t size;
 	size_t bytes = sizeof(size);
 	fsv_file_context *context = handle->private_info;
@@ -934,14 +983,30 @@ again:
 	}
 
 	if (size & VID_BIT) { /* video */
-		*len = size & ~VID_BIT;
-		/* TODO: read video data */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "discarding video data %d\n", (int)*len);
-		status = switch_file_read(context->fd, data, len);
+		uint8_t *video_data = malloc(sizeof(size) + size);
+		switch_size_t read_size;
 
-		if (status != SWITCH_STATUS_SUCCESS) {
+		switch_assert(video_data);
+		size &= ~VID_BIT;
+		read_size = size;
+		*(uint32_t *)video_data = size;
+
+		status = switch_file_read(context->fd, video_data + sizeof(size), &read_size);
+
+		if (status != SWITCH_STATUS_SUCCESS || read_size != size) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				"read error status=%d size=%u read_size=%" SWITCH_SIZE_T_FMT "\n",
+				status, size, read_size);
+			free(video_data);
 			goto end;
 		}
+
+		switch_mutex_lock(context->mutex);
+		if (switch_queue_trypush(context->video_queue, video_data) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "queue overflow!!\n");
+			free(video_data);
+		}
+		switch_mutex_unlock(context->mutex);
 
 		handle->pos += *len + bytes;
 		goto again;
@@ -959,6 +1024,126 @@ again:
 	*len /= 2;
 
 end:
+
+	return status;
+}
+
+static switch_status_t fsv_file_read_video(switch_file_handle_t *handle, switch_frame_t *frame, switch_video_read_flag_t flags)
+{
+	fsv_file_context *context = handle->private_info;
+	switch_image_t *dup = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	void *video_packet = NULL;
+	switch_time_t start = switch_time_now();
+	switch_status_t decode_status = SWITCH_STATUS_MORE_DATA;
+	int new_img = 0;
+
+	if ((flags & SVR_CHECK)) {
+		switch_goto_status(SWITCH_STATUS_BREAK, end);
+	}
+
+	if (context->no_video_decode) { // read video without decode
+		uint32_t size;
+		switch_rtp_hdr_t *rtp;
+
+		while (1) {
+			switch_mutex_lock(context->mutex);
+			status = switch_queue_trypop(context->video_queue, &video_packet);
+			switch_mutex_unlock(context->mutex);
+
+			if (status != SWITCH_STATUS_SUCCESS || !video_packet) {
+				switch_safe_free(video_packet);
+				if (flags & SVR_BLOCK) {
+					if (switch_time_now() - start < 33000) {
+						switch_yield(10000);
+						continue;
+					}
+				}
+				return SWITCH_STATUS_BREAK;
+			}
+
+			break;
+		}
+
+		size = *(uint32_t *)video_packet;
+		if (size > sizeof(context->video_packet_buffer)) {
+			free(video_packet);
+			return SWITCH_STATUS_BREAK;
+		}
+
+		memcpy(context->video_packet_buffer, (uint8_t *)video_packet + sizeof(uint32_t), size);
+		free(video_packet);
+		video_packet = NULL;
+
+		rtp = (switch_rtp_hdr_t *)context->video_packet_buffer;
+		frame->packet = context->video_packet_buffer;
+		frame->packetlen = size;
+		frame->data = context->video_packet_buffer + 12;
+		frame->datalen = size - 12;
+		frame->m = rtp->m;
+		frame->timestamp = ntohl(rtp->ts);
+		frame->flags = SFF_RAW_RTP | SFF_RTP_HEADER | SFF_ENCODED;
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	while (!new_img) {
+		while (decode_status == SWITCH_STATUS_MORE_DATA || decode_status == SWITCH_STATUS_SUCCESS) {
+			switch_frame_t rtp_frame = { 0 };
+			uint32_t size;
+			switch_rtp_hdr_t *rtp;
+
+			switch_mutex_lock(context->mutex);
+			status = switch_queue_trypop(context->video_queue, &video_packet);
+			switch_mutex_unlock(context->mutex);
+
+			if (status != SWITCH_STATUS_SUCCESS || !video_packet) break;
+
+			size = *(uint32_t *)video_packet;
+			rtp = (switch_rtp_hdr_t *)((uint8_t *)video_packet + sizeof(uint32_t));
+
+			rtp_frame.packet = rtp;
+			rtp_frame.packetlen = size;
+			rtp_frame.data = (uint8_t *)rtp_frame.packet + 12;
+			rtp_frame.datalen = size - 12;
+			rtp_frame.m = rtp->m;
+			rtp_frame.timestamp = ntohl(rtp->ts);
+			decode_status = switch_core_codec_decode_video(&context->video_codec, &rtp_frame);
+			rtp_frame.packet = NULL;
+			rtp_frame.data = NULL;
+			rtp_frame.datalen = 0;
+			rtp_frame.packetlen = 0;
+			free(video_packet);
+
+			if (rtp_frame.img) {
+				switch_img_copy(rtp_frame.img, &context->last_img);
+				new_img = 1;
+				break;
+			} else if (rtp_frame.m) {
+				break;
+			}
+		}
+
+		if (!(flags & SVR_BLOCK)) {
+			break;
+		}
+
+		if (switch_time_now() - start < 33000) {
+			switch_yield(10000);
+		} else {
+			break;
+		}
+	}
+
+	if (context->last_img) {
+		switch_img_copy(context->last_img, &dup);
+		frame->img = dup;
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		status = SWITCH_STATUS_BREAK;
+	}
+
+ end:
 
 	return status;
 }
@@ -1071,6 +1256,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fsv_load)
 	file_interface->file_close = fsv_file_close;
 	file_interface->file_truncate = fsv_file_truncate;
 	file_interface->file_read = fsv_file_read;
+	file_interface->file_read_video = fsv_file_read_video;
 	file_interface->file_write = fsv_file_write;
 #if 0
 	file_interface->file_write_video = fsv_file_write_video;

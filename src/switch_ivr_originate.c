@@ -124,6 +124,7 @@ typedef struct {
 	uint8_t early_media;
 	uint8_t answered;
 	uint8_t tagged;
+	uint8_t array_pos;
 	uint32_t per_channel_timelimit_sec;
 	uint32_t per_channel_progress_timelimit_sec;
 	uint32_t per_channel_delay_start;
@@ -185,15 +186,16 @@ struct key_collect {
 static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct key_collect *collect = (struct key_collect *) obj;
-	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
+	switch_channel_t *channel = NULL;
 	char buf[10] = SWITCH_BLANK_STRING;
 	switch_application_interface_t *application_interface = NULL;
 
-	if (collect->session) {
-		if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
-			return NULL;
-		}
-	} else {
+	if (!collect->session) {
+		return NULL;
+	}
+
+	channel = switch_core_session_get_channel(collect->session);
+	if (switch_core_session_read_lock(collect->session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 
@@ -231,6 +233,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			switch_channel_set_flag(channel, CF_WINNER);
 			switch_channel_set_variable(channel, "group_dial_status", "winner");
 		}
+
 		goto wbreak;
 	}
 
@@ -270,6 +273,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 			switch_ivr_play_file(collect->session, NULL, collect->error_file, NULL);
 		}
 	}
+
   wbreak:
 
 	switch_core_session_rwunlock(collect->session);
@@ -316,8 +320,10 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 				delayed_min = oglobals->originate_status[i].per_channel_delay_start;
 			}
 		}
-		early_exit_time = delayed_min - (uint32_t) elapsed;
+
+		early_exit_time = delayed_min - (uint32_t)(switch_time_t) elapsed;
 	}
+
 	for (i = 0; i < max; i++) {
 		if (oglobals->originate_status[i].peer_channel && oglobals->originate_status[i].per_channel_delay_start &&
 			(elapsed > oglobals->originate_status[i].per_channel_delay_start || active_channels == 0)) {
@@ -330,6 +336,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 						oglobals->originate_status[i].per_channel_timelimit_sec = 1;
 					}
 				}
+
 				if (oglobals->originate_status[i].per_channel_progress_timelimit_sec) {
 					if (oglobals->originate_status[i].per_channel_progress_timelimit_sec > early_exit_time) {
 						/* IN theory this check is not needed ( should just be if !0 then -= with no else), if its not 0 it should always be greater.... */
@@ -338,6 +345,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 						oglobals->originate_status[i].per_channel_progress_timelimit_sec = 1;
 					}
 				}
+
 				oglobals->originate_status[i].per_channel_delay_start -= delayed_min;
 			} else {
 				oglobals->originate_status[i].per_channel_delay_start = 0;
@@ -908,6 +916,9 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 		return -1;
 	}
 	wrote = teletone_mux_tones(ts, map);
+	if (wrote <= 0) {
+		return -1;
+	}
 
 	if (tto->channels != 1) {
 		if (tto->mux_buflen < wrote * 2 * tto->channels) {
@@ -1144,6 +1155,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 		if (read_frame && !pass) {
 
+			if (!write_frame.codec) {
+				status = SWITCH_STATUS_FALSE;
+				break;
+			}
+
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
@@ -1293,7 +1309,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 		}
 	}
 
-	if (oglobals->session && (read_codec = switch_core_session_get_read_codec(oglobals->session))) {
+	if ((read_codec = switch_core_session_get_read_codec(oglobals->session))) {
 		if (ringback_data && switch_is_file_path(ringback_data)) {
 			if (!(strrchr(ringback_data, '.') || strstr(ringback_data, SWITCH_URL_SEPARATOR))) {
 				ringback->asis++;
@@ -1459,6 +1475,7 @@ typedef struct {
 	int done;
 	switch_thread_t *thread;
 	switch_mutex_t *mutex;
+	switch_mutex_t *fence_mutex;
 	switch_dial_handle_t *dh;
 } enterprise_originate_handle_t;
 
@@ -1473,9 +1490,13 @@ struct ent_originate_ringback {
 static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thread, void *obj)
 {
 	enterprise_originate_handle_t *handle = (enterprise_originate_handle_t *) obj;
+	switch_status_t status;
 
+	switch_mutex_lock(handle->fence_mutex);
 	handle->done = 0;
-	handle->status = switch_ivr_originate(NULL, &handle->bleg, &handle->cause,
+	switch_mutex_unlock(handle->fence_mutex);
+
+	status = switch_ivr_originate(NULL, &handle->bleg, &handle->cause,
 										  handle->bridgeto, handle->timelimit_sec,
 										  handle->table,
 										  handle->cid_name_override,
@@ -1486,8 +1507,11 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_thread(switch_thread_t *thr
 										  &handle->cancel_cause,
 										  handle->dh);
 
-
+	switch_mutex_lock(handle->fence_mutex);
+	handle->status = status;
 	handle->done = 1;
+	switch_mutex_unlock(handle->fence_mutex);
+
 	switch_mutex_lock(handle->mutex);
 	switch_mutex_unlock(handle->mutex);
 
@@ -1667,7 +1691,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			getcause = 0;
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
-	} else {
+	} else if (hl) {
 		x_argc = hl->handle_idx;
 	}
 
@@ -1691,6 +1715,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			switch_dial_handle_dup(&handles[i].dh, hl->handles[i]);
 		}
 		switch_mutex_init(&handles[i].mutex, SWITCH_MUTEX_NESTED, pool);
+		switch_mutex_init(&handles[i].fence_mutex, SWITCH_MUTEX_NESTED, pool);
 		switch_mutex_lock(handles[i].mutex);
 		switch_thread_create(&handles[i].thread, thd_attr, enterprise_originate_thread, &handles[i], pool);
 	}
@@ -1732,13 +1757,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 
 		for (i = 0; i < x_argc; i++) {
 
-
+			switch_mutex_lock(handles[i].fence_mutex);
 			if (handles[i].done == 0) {
 				running++;
 			} else if (handles[i].done == 1) {
 				if (handles[i].status == SWITCH_STATUS_SUCCESS) {
 					handles[i].done = 2;
 					hp = &handles[i];
+					switch_mutex_unlock(handles[i].fence_mutex);
 					goto done;
 				} else {
 					handles[i].done = -1;
@@ -1746,6 +1772,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 			} else {
 				over++;
 			}
+
+			switch_mutex_unlock(handles[i].fence_mutex);
 
 			switch_yield(10000);
 		}
@@ -1789,7 +1817,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		if (cancel_cause && *cancel_cause > 0) {
 			handles[i].cancel_cause = *cancel_cause;
 		} else {
-			handles[i].cancel_cause = SWITCH_CAUSE_LOSE_RACE;
+			/* Was this call taken by another destination? */
+			if (hp != NULL && hp->cause == SWITCH_CAUSE_SUCCESS) {
+				/* Yes, the race was lost */
+				handles[i].cancel_cause = SWITCH_CAUSE_LOSE_RACE;
+			} else {
+				/* No, something else happened, probably Originator Cancel */
+				handles[i].cancel_cause = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+			}
 		}
 	}
 
@@ -1862,7 +1897,8 @@ typedef struct early_state early_state_t;
 static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *obj)
 {
 	early_state_t *state = (early_state_t *) obj;
-	//originate_status_t originate_status[MAX_PEERS] = { {0} };
+	originate_status_t originate_status[MAX_PEERS] = { {0} };
+	uint8_t array_pos = 0;
 	int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 	int32_t sample;
 	switch_codec_t read_codecs[MAX_PEERS] = { {0} };
@@ -1873,9 +1909,8 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	switch_frame_t *read_frame = NULL;
 	switch_codec_implementation_t read_impl = { 0 };
 
-#if 0
 	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-		switch_core_session_t *session = state->originate_status[i].peer_session;
+		switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
 		switch_channel_t *channel = NULL;
 
 		if (session) channel = switch_core_session_get_channel(session);
@@ -1885,11 +1920,12 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		}
 
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			originate_status[i].peer_session = session;
-			originate_status[i].peer_channel = channel;
+			originate_status[array_pos].peer_session = session;
+			originate_status[array_pos].peer_channel = channel;
+			originate_status[array_pos].array_pos = (uint8_t) i;
+			array_pos++;
 		}
 	}
-#endif
 	
 	if (state->oglobals->session) {
 		switch_core_session_get_read_impl(state->oglobals->session, &read_impl);
@@ -1901,9 +1937,10 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		ready = 0;
 		answered = 0;
 
-		for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-			switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
-			switch_channel_t *channel = state->oglobals->originate_status[i].peer_channel;
+		for (array_pos = 0; array_pos < MAX_PEERS && originate_status[array_pos].peer_session; array_pos++) {
+			switch_core_session_t *session = originate_status[array_pos].peer_session;
+			switch_channel_t *channel = originate_status[array_pos].peer_channel;
+			i = originate_status[array_pos].array_pos;
 
 			if (!session || !channel || !switch_channel_up(channel)) {
 				continue;
@@ -1981,9 +2018,10 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	}
 
 
-	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
-		switch_core_session_t *session = state->oglobals->originate_status[i].peer_session;
-		switch_channel_t *channel = state->oglobals->originate_status[i].peer_channel;
+	for (array_pos = 0; array_pos < MAX_PEERS && originate_status[array_pos].peer_session; array_pos++) {
+		switch_core_session_t *session = originate_status[array_pos].peer_session;
+		switch_channel_t *channel = originate_status[array_pos].peer_channel;
+		i = originate_status[array_pos].array_pos;
 
 		if (!session) continue;
 
@@ -2123,7 +2161,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (session) {
-		const char *to_var, *bypass_media = NULL, *proxy_media = NULL, *zrtp_passthru = NULL;
+		const char *to_var, *bypass_media = NULL, *proxy_media = NULL;
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
 
@@ -2138,21 +2176,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		proxy_media = switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE);
 		bypass_media = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE);
-		zrtp_passthru = switch_channel_get_variable(caller_channel, SWITCH_ZRTP_PASSTHRU_VARIABLE);
 
 		if (!zstr(proxy_media)) {
 			if (switch_true(proxy_media)) {
 				switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
 			} else if (switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 				switch_channel_clear_flag(caller_channel, CF_PROXY_MEDIA);
-			}
-		}
-
-		if (!zstr(zrtp_passthru)) {
-			if (switch_true(zrtp_passthru)) {
-				switch_channel_set_flag(caller_channel, CF_ZRTP_PASSTHRU_REQ);
-			} else if (switch_channel_test_flag(caller_channel, CF_ZRTP_PASSTHRU_REQ)) {
-				switch_channel_clear_flag(caller_channel, CF_ZRTP_PASSTHRU_REQ);
 			}
 		}
 
@@ -2523,12 +2552,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		oglobals.ignore_ring_ready = 1;
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_ring"))) {
+	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_ring")) && switch_true(var_val)) {
 		oglobals.early_ok = 0;
 		oglobals.monitor_early_media_ring = 1;
 	}
 
-	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_fail"))) {
+	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_fail")) && switch_true(var_val)) {
 		oglobals.early_ok = 0;
 		oglobals.monitor_early_media_fail = 1;
 	}
@@ -3196,6 +3225,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						l_session = NULL;
 					}
 
+					switch_channel_set_variable(oglobals.originate_status[i].peer_channel, "originate_endpoint", chan_type);
 					switch_channel_execute_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE);
 					switch_channel_api_on(oglobals.originate_status[i].peer_channel, SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE);
 				}
@@ -3478,7 +3508,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									}
 								}
 							} else {
-								if (switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
+								if (write_frame.codec && switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
 									write_frame.datalen = (uint32_t)switch_buffer_read(early_state.buffer, write_frame.data,
 																			 write_frame.codec->implementation->decoded_bytes_per_packet);
 								}
@@ -3880,8 +3910,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					}
 				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n",
-								  switch_channel_get_name(peer_channel));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s] Peer UUID: %s\n",
+								  switch_channel_get_name(peer_channel), switch_channel_get_uuid(peer_channel));
 				*cause = SWITCH_CAUSE_SUCCESS;
 
 			} else {
@@ -4935,9 +4965,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_orig_and_bridge(switch_cor
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 
-		if (peer_session) {
-			switch_core_session_rwunlock(peer_session);
-		}
+		switch_core_session_rwunlock(peer_session);
 	}
 
 	return status;
@@ -5000,9 +5028,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_orig_and_bridge(switch_core_session_t
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
 		}
 
-		if (peer_session) {
-			switch_core_session_rwunlock(peer_session);
-		}
+		switch_core_session_rwunlock(peer_session);
 	}
 
 	return status;

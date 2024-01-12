@@ -41,7 +41,6 @@
       storage_dir
       cache_dir
       core_uuid
-      zrtp_enabled
       nat_public_addr
       nat_private_addr
       nat_type
@@ -64,12 +63,6 @@
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
   <X-PRE-PROCESS cmd="set" data="rtp_sdes_suites=AEAD_AES_256_GCM_8|AEAD_AES_128_GCM_8|AES_CM_256_HMAC_SHA1_80|AES_CM_192_HMAC_SHA1_80|AES_CM_128_HMAC_SHA1_80|AES_CM_256_HMAC_SHA1_32|AES_CM_192_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_32|AES_CM_128_NULL_AUTH"/>
-  <!--
-      Enable ZRTP globally you can override this on a per channel basis
-
-      http://wiki.freeswitch.org/wiki/ZRTP (on how to enable zrtp)
-  -->
-  <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
   <!--
       NOTICE: When using SRTP it's critical that you do not offer or accept
       variable bit rate codecs, doing so would leak information and possibly
@@ -144,13 +137,13 @@
       By default without specifying any crypto suites FreeSWITCH will offer
       crypto suites from strongest to weakest accepting the strongest each
       endpoint has in common.  If you wish to force specific crypto suites you
-      can do so by appending the suites in a comma separated list in the order
+      can do so by appending the suites in a colon separated list in the order
       that you wish to offer them in.
 
       Examples:
 
-          rtp_secure_media=mandatory:AES_CM_256_HMAC_SHA1_80,AES_CM_256_HMAC_SHA1_32
-          rtp_secure_media=true:AES_CM_256_HMAC_SHA1_80,AES_CM_256_HMAC_SHA1_32
+          rtp_secure_media=mandatory:AES_CM_256_HMAC_SHA1_80:AES_CM_256_HMAC_SHA1_32
+          rtp_secure_media=true:AES_CM_256_HMAC_SHA1_80:AES_CM_256_HMAC_SHA1_32
           rtp_secure_media=optional:AES_CM_256_HMAC_SHA1_80
           rtp_secure_media=true:AES_CM_256_HMAC_SHA1_80
 

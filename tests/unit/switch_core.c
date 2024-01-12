@@ -30,13 +30,13 @@
  *
  */
 #include <switch.h>
-#include <stdlib.h>
-
 #include <test/switch_test.h>
 
 #if defined(HAVE_OPENSSL)
 #include <openssl/ssl.h>
 #endif
+
+#define ENABLE_SNPRINTFV_TESTS 0 /* Do not turn on for CI as this requires a lot of RAM */
 
 FST_CORE_BEGIN("./conf")
 {
@@ -52,6 +52,180 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+		FST_TEST_BEGIN(test_switch_parse_cidr_v6)
+		{
+			ip_t ip, mask;
+			uint32_t bits;
+
+			fst_check(!switch_parse_cidr("fe80::/10", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 10);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0xfe);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0x80);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xc0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::/0", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 0);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::1/128", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 128);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(ip.v6.s6_addr[3], 0);
+			fst_check_int_equals(ip.v6.s6_addr[4], 0);
+			fst_check_int_equals(ip.v6.s6_addr[5], 0);
+			fst_check_int_equals(ip.v6.s6_addr[6], 0);
+			fst_check_int_equals(ip.v6.s6_addr[7], 0);
+			fst_check_int_equals(ip.v6.s6_addr[8], 0);
+			fst_check_int_equals(ip.v6.s6_addr[9], 0);
+			fst_check_int_equals(ip.v6.s6_addr[10], 0);
+			fst_check_int_equals(ip.v6.s6_addr[11], 0);
+			fst_check_int_equals(ip.v6.s6_addr[12], 0);
+			fst_check_int_equals(ip.v6.s6_addr[13], 0);
+			fst_check_int_equals(ip.v6.s6_addr[14], 0);
+			fst_check_int_equals(ip.v6.s6_addr[15], 1);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[3], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[4], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[5], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[6], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[7], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[8], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[9], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[10], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[11], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[12], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[13], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[14], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[15], 0xff);
+		}
+		FST_TEST_END()
+
+#if ENABLE_SNPRINTFV_TESTS
+		FST_TEST_BEGIN(test_snprintfv_1)
+		{
+			size_t src_buf_size = 0x100000001;
+			char* src = calloc(1, src_buf_size);
+
+			if (!src) {
+				printf("bad allocation\n");
+
+				return -1;
+			}
+
+			src[0] = '\xc0';
+			memset(src + 1, '\x80', 0xffffffff);
+
+			char dst[256];
+			switch_snprintfv(dst, 256, "'%!q'", src);
+			free(src);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_snprintfv_2)
+		{
+#define STR_LEN ((0x100000001 - 3) / 2)
+
+				char* src = calloc(1, STR_LEN + 1); /* Account for NULL byte. */
+
+				if (!src) { return -1; }
+
+				memset(src, 'a', STR_LEN);
+
+				char* dst = calloc(1, STR_LEN + 3); /* Account for extra quotes and NULL byte */
+				if (!dst) { return -1; }
+
+				switch_snprintfv(dst, 2 * STR_LEN + 3, "'%q'", src);
+
+				free(src);
+				free(dst);
+		}
+		FST_TEST_END()
+#endif
+
+		FST_TEST_BEGIN(test_switch_is_number_in_range)
+		{
+			fst_check_int_equals(switch_is_uint_in_range("x5", 0, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 1, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-11", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-10", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("10", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("11", 0, 10), SWITCH_FALSE);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_md5)
+		{
+			char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
+			char test_string[] = "test";
+			switch_status_t status;
+
+			status = switch_md5_string(digest, (void *)test_string, strlen(test_string));
+
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(digest, "098f6bcd4621d373cade4e832627b4f6");
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_event_add_header_leak)
+		{
+			switch_event_t* event;
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[0]", "1");
+				switch_event_fire(&event);
+			}
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number[5000]", "12");
+				switch_event_fire(&event);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_xml_free_attr)
+		{
+			switch_xml_t parent_xml = switch_xml_new("xml");
+			switch_xml_t xml = switch_xml_add_child_d(parent_xml, "test", 1);
+			switch_xml_set_attr(xml, "a1", "v1");
+			switch_xml_set_attr_d(xml, "a2", "v2");
+			switch_xml_free(parent_xml);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_xml_set_attr)
+		{
+			switch_xml_t parent_xml = switch_xml_new("xml");
+			switch_xml_t xml = switch_xml_add_child_d(parent_xml, "test", 1);
+			switch_xml_set_attr_d(xml, "test1", "1");
+			switch_xml_set_attr(xml, "a1", "v1");
+			switch_xml_set_attr_d(xml, "a2", "v2");
+			switch_xml_set_attr(xml, "test1", NULL);
+			switch_xml_set_attr_d(xml, "test2", "2");
+			switch_xml_set_attr_d(xml, "a3", "v3");
+			switch_xml_set_attr(xml, "test2", NULL);
+			switch_xml_set_attr(xml, "a1", NULL);
+			switch_xml_set_attr(xml, "a2", NULL);
+			switch_xml_set_attr(xml, "a3", NULL);
+			switch_xml_free(parent_xml);
+		}
+		FST_TEST_END()
 
 #ifdef HAVE_OPENSSL
 		FST_TEST_BEGIN(test_md5)
@@ -223,6 +397,136 @@ FST_CORE_BEGIN("./conf")
 #endif
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_safe_atoXX)
+		{
+			fst_check_int_equals(switch_safe_atoi("1", 0), 1);
+			fst_check_int_equals(switch_safe_atoi("", 2), 0);
+			fst_check_int_equals(switch_safe_atoi(0, 3), 3);
+
+			fst_check_int_equals(switch_safe_atol("9275806", 0), 9275806);
+			fst_check_int_equals(switch_safe_atol("", 2), 0);
+			fst_check_int_equals(switch_safe_atol(0, 3), 3);
+
+			fst_check_int_equals(switch_safe_atoll("9275806", 0), 9275806);
+			fst_check_int_equals(switch_safe_atoll("", 2), 0);
+			fst_check_int_equals(switch_safe_atoll(0, 3), 3);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_dup)
+		{
+			char *magicnumber = malloc(9);
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			void *hash_val;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			snprintf(magicnumber, 9, "%s", "DEADBEEF");
+			switch_core_hash_insert_dup(hash, "test", (const char *)magicnumber);
+			snprintf(magicnumber, 9, "%s", "BAADF00D");
+
+			hi = switch_core_hash_first(hash);
+			switch_core_hash_this(hi, NULL, NULL, &hash_val);
+			fst_check_string_equals(hash_val, "DEADBEEF");
+			switch_safe_free(hash_val);
+			free(magicnumber);
+			free(hi);
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_alloc)
+		{
+			char *item;
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			void *hash_val;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			item = switch_core_hash_insert_alloc(hash, "test", 10);
+			fst_requires(item);
+			snprintf(item, 9, "%s", "DEADBEEF");
+
+			hi = switch_core_hash_first(hash);
+			switch_core_hash_this(hi, NULL, NULL, &hash_val);
+			fst_check_string_equals(hash_val, "DEADBEEF");
+			free(hi);
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+			free(item);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_core_hash_insert_pointer)
+		{
+			int i, sum = 0;
+			switch_hash_index_t *hi;
+			switch_hash_t *hash = NULL;
+			switch_core_hash_init(&hash);
+			fst_requires(hash);
+
+			for (i = 0; i < 10; i++) {
+				int *num = malloc(sizeof(int));
+				*num = i;
+				fst_check_int_equals(switch_core_hash_insert_pointer(hash, (void*)num), SWITCH_STATUS_SUCCESS);
+			}
+
+			i = 0;
+			for (hi = switch_core_hash_first(hash); hi; hi = switch_core_hash_next(&hi)) {
+				void *hash_val;
+				switch_core_hash_this(hi, NULL, NULL, &hash_val);
+				sum += *(int*)hash_val;
+				free(hash_val);
+				i++;
+			}
+
+			fst_check_int_equals(i, 10);
+			fst_check_int_equals(sum, 45);
+
+			switch_core_hash_destroy(&hash);
+			fst_requires(hash == NULL);
+		}
+		FST_TEST_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_strdup)
+		{
+			const char *val;
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(!switch_channel_get_variable_strdup(channel, "test_var_does_not_exist"));
+
+			val = switch_channel_get_variable_strdup(channel, "test_var");
+
+			fst_check(val);
+			fst_check_string_equals(val, "test_value");
+
+			free((char *)val);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_buf)
+		{
+			char buf[16] = { 0 };
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var", buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(buf, "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var_does_not_exist", buf, sizeof(buf)) == SWITCH_STATUS_FALSE);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }

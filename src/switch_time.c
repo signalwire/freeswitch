@@ -33,6 +33,7 @@
 
 #include <switch.h>
 #include <stdio.h>
+#include "private/switch_apr_pvt.h"
 #include "private/switch_core_pvt.h"
 
 #ifdef HAVE_TIMERFD_CREATE
@@ -161,7 +162,7 @@ static void do_sleep(switch_interval_time_t t)
 
 #if !defined(DARWIN)
 	if (t > 100000 || !NANO) {
-		apr_sleep(t);
+		fspr_sleep(t);
 		return;
 	}
 #endif
@@ -178,7 +179,7 @@ static void do_sleep(switch_interval_time_t t)
 	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 850;
 	nanosleep(&ts, NULL);
 #else
-	apr_sleep(t);
+	fspr_sleep(t);
 #endif
 
 #if defined(DARWIN)
@@ -412,7 +413,7 @@ typedef struct interval_timer interval_timer_t;
 static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval)
 {
 	struct itimerspec val;
-	int fd, r;
+	int fd;
 	uint64_t exp;
 
 	fd = timerfd_create(CLOCK_MONOTONIC, 0);
@@ -431,7 +432,7 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if ((r = read(fd, &exp, sizeof(exp))) < 0) {
+	if (read(fd, &exp, sizeof(exp)) < 0) {
 		close(fd);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1172,9 +1173,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
 					uint64_t exp;
-					int r;
-					r = read(tfd, &exp, sizeof(exp));
-					r++;
+					read(tfd, &exp, sizeof(exp));
+					(void)exp;
 				} else {
 					switch_time_t timediff = runtime.reference - ts;
 
@@ -1242,15 +1242,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
+
+			/* These two mutexes must be held in exact order: session_hash_mutex and then throttle_mutex. See switch_core_session_request_uuid() */
+			switch_mutex_lock(runtime.session_hash_mutex);
 			switch_mutex_lock(runtime.throttle_mutex);
 			runtime.sps_last = runtime.sps_total - runtime.sps;
 
 			if (sps_interval_ticks >= 300) {
 				runtime.sps_peak_fivemin = 0;
 				sps_interval_ticks = 0;
-				switch_mutex_lock(runtime.session_hash_mutex);
+				/* This line is protected by runtime.session_hash_mutex */
 				runtime.sessions_peak_fivemin = session_manager.session_count;
-				switch_mutex_unlock(runtime.session_hash_mutex);
 			}
 
 			sps_interval_ticks++;
@@ -1264,6 +1266,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			runtime.sps = runtime.sps_total;
 			switch_mutex_unlock(runtime.throttle_mutex);
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			tick = 0;
 		}
 #ifndef DISABLE_1MS_COND

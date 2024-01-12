@@ -42,14 +42,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 const char *codec, int rate, const char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
-	char buf[256] = "";
+	char *module_name_dup = NULL;
 	char *param = NULL;
+	int free_pool = 0;
+
+	if (!pool) {
+		if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		free_pool = 1;
+	}
 
 	if (strchr(module_name, ':')) {
-		switch_set_string(buf, module_name);
-		if ((param = strchr(buf, ':'))) {
+		module_name_dup = switch_core_strdup(pool, module_name);
+		if ((param = strchr(module_name_dup, ':'))) {
 			*param++ = '\0';
-			module_name = buf;
+			module_name = module_name_dup;
 		}
 	}
 
@@ -57,23 +65,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 
 	if ((ah->asr_interface = switch_loadable_module_get_asr_interface(module_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ASR module [%s]!\n", module_name);
+		if (free_pool) {
+			switch_core_destroy_memory_pool(&pool);
+		}
 		return SWITCH_STATUS_GENERR;
 	}
 
 	ah->flags = *flags;
 
-	if (pool) {
-		ah->memory_pool = pool;
-	} else {
-		if ((status = switch_core_new_memory_pool(&ah->memory_pool)) != SWITCH_STATUS_SUCCESS) {
-			UNPROTECT_INTERFACE(ah->asr_interface);
-			return status;
-		}
+	ah->memory_pool = pool;
+	if (free_pool) {
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FREE_POOL);
 	}
-
 	if (param) {
-		ah->param = switch_core_strdup(ah->memory_pool, param);
+		ah->param = param;
 	}
 	ah->rate = rate;
 	ah->name = switch_core_strdup(ah->memory_pool, module_name);
@@ -83,6 +88,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	status = ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
 
 	if (status != SWITCH_STATUS_SUCCESS) {
+		if (switch_test_flag(ah, SWITCH_ASR_FLAG_FREE_POOL)) {
+			switch_core_destroy_memory_pool(&ah->memory_pool);
+		}
 		UNPROTECT_INTERFACE(ah->asr_interface);
 	}
 
@@ -225,6 +233,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 	status = ah->asr_interface->asr_close(ah, flags);
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 
+	switch_safe_free(ah->dbuf);
 	switch_resample_destroy(&ah->resampler);
 
 	UNPROTECT_INTERFACE(ah->asr_interface);
@@ -252,7 +261,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 
 		switch_resample_process(ah->resampler, data, len / 2);
 		if (ah->resampler->to_len * 2 > orig_len) {
-			if (!ah->dbuf) {
+			if (ah->dbuflen < ah->resampler->to_len * 2) {
 				void *mem;
 				ah->dbuflen = ah->resampler->to_len * 2;
 				mem = realloc(ah->dbuf, ah->dbuflen);

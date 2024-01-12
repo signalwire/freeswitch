@@ -197,11 +197,9 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
 SWITCH_STANDARD_APP(stress_start_function)
 {
 	switch_media_bug_t *bug;
-	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct stress_helper *sth;
 	char *argv[6];
-	int argc;
 	char *lbuf = NULL;
 	int x = 0;
 
@@ -220,7 +218,7 @@ SWITCH_STANDARD_APP(stress_start_function)
 
 
 	if (data && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		&& switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
         if (!strncasecmp(argv[x], "read", 4)) {
             sth->read = 1;
         }
@@ -228,14 +226,12 @@ SWITCH_STANDARD_APP(stress_start_function)
 
 	sth->session = session;
 
-	if ((status = switch_core_media_bug_add(session, "stress", NULL, stress_callback, sth, 0,
-											sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_media_bug_add(session, "stress", NULL, stress_callback, sth, 0, sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}
 
 	switch_channel_set_private(channel, "_stress_", bug);
-
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_stress_load)

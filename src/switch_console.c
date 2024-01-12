@@ -722,6 +722,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 	if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");
+		switch_safe_free(dup);
 		return CC_ERROR;
 	}
 
@@ -836,7 +837,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			}
 		}
 
-		for (x = 0; x < argc && x < 11; x++) {
+		for (x = 0; x < argc; x++) {
 			if (h.words + 1 > argc) {
 				if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 					stream.write_function(&stream, "(a%d like '::%%' or a%d = '' or a%d = '%q')%q",
@@ -1848,7 +1849,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			SWITCH_STANDARD_STREAM(mystream);
 
 			if (!strcasecmp(argv[0], "stickyadd")) {
-				mystream.write_function(&mystream, "insert into complete values (1,");
+				mystream.write_function(&mystream, "insert into complete (sticky, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, hostname) values (1,");
 				for (x = 0; x < 10; x++) {
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");
@@ -1864,7 +1865,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 				switch_core_sql_exec(mystream.data);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add")) {
-				mystream.write_function(&mystream, "insert into complete values (0,");
+				mystream.write_function(&mystream, "insert into complete (sticky, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, hostname) values (0,");
 				for (x = 0; x < 10; x++) {
 					if (argv[x + 1] && !strcasecmp(argv[x + 1], "_any_")) {
 						mystream.write_function(&mystream, "%s", "'', ");

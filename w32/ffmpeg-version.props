@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <ffmpegVersion>4.1</ffmpegVersion>
+    <ffmpegVersion>5.1.3</ffmpegVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ffmpegVersionImported>true</ffmpegVersionImported>

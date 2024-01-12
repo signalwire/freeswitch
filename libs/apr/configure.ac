@@ -7,7 +7,7 @@ dnl Use ./buildconf to prepare build files and run autoconf for APR.
 AC_PREREQ(2.50)
 
 AC_INIT(build/apr_common.m4)
-AC_CONFIG_HEADER(include/arch/unix/apr_private.h)
+AC_CONFIG_HEADER(include/arch/unix/fspr_private.h)
 AC_CONFIG_AUX_DIR(build)
 
 dnl 
@@ -24,7 +24,7 @@ CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
 CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
 LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
 
-dnl Hard-coded inclusion at the tail end of apr_private.h:
+dnl Hard-coded inclusion at the tail end of fspr_private.h:
 AH_BOTTOM([
 /* switch this on if we have a BeOS version below BONE */
 #if BEOS && !HAVE_BONE_VERSION
@@ -36,7 +36,7 @@ AH_BOTTOM([
 /*
  * Include common private declarations.
  */
-#include "../apr_private_common.h"
+#include "../fspr_private_common.h"
 ])
 
 dnl Save user-defined environment settings for later restoration
@@ -95,7 +95,7 @@ APR_MKDIR_P_CHECK($apr_builders/mkdir.sh)
 
 # get our version information
 get_version="$apr_builders/get-version.sh"
-version_hdr="$apr_srcdir/include/apr_version.h"
+version_hdr="$apr_srcdir/include/fspr_version.h"
 APR_MAJOR_VERSION="`$get_version major $version_hdr APR`"
 APR_DOTTED_VERSION="`$get_version all $version_hdr APR`"
 
@@ -1169,7 +1169,7 @@ fi
 if test "$ac_cv_sizeof_int" = "4"; then
     int_value=int
 fi
-# Now we need to find what apr_int64_t (sizeof == 8) will be.
+# Now we need to find what fspr_int64_t (sizeof == 8) will be.
 # The first match is our preference.
 if test "$ac_cv_sizeof_int" = "8"; then
     int64_literal='#define APR_INT64_C(val) (val)'
@@ -1243,12 +1243,12 @@ fi
 if test "$ac_cv_type_size_t" = "yes"; then
     size_t_value="size_t"
 else
-    size_t_value="apr_int32_t"
+    size_t_value="fspr_int32_t"
 fi
 if test "$ac_cv_type_ssize_t" = "yes"; then
     ssize_t_value="ssize_t"
 else
-    ssize_t_value="apr_int32_t"
+    ssize_t_value="fspr_int32_t"
 fi
 if test "$ac_cv_socklen_t" = "yes"; then
     socklen_t_value="socklen_t"
@@ -1298,17 +1298,17 @@ else
     aprlfs=0     
 fi
 
-AC_MSG_CHECKING([which type to use for apr_off_t])
+AC_MSG_CHECKING([which type to use for fspr_off_t])
 if test "${ac_cv_sizeof_off_t}${apr_cv_use_lfs64}" = "4yes"; then
     # LFS is go!
     off_t_fmt='#define APR_OFF_T_FMT APR_INT64_T_FMT'
     off_t_value='off64_t'
-    off_t_strfn='apr_strtoi64'
+    off_t_strfn='fspr_strtoi64'
 elif test "${ac_cv_sizeof_off_t}x${ac_cv_sizeof_long}" = "4x4"; then
     # Special case: off_t may change size with _FILE_OFFSET_BITS
     # on 32-bit systems with LFS support.  To avoid compatibility
     # issues when other packages do define _FILE_OFFSET_BITS,
-    # hard-code apr_off_t to long.
+    # hard-code fspr_off_t to long.
     off_t_value=long
     off_t_fmt='#define APR_OFF_T_FMT "ld"'
     off_t_strfn='strtol'
@@ -1324,13 +1324,13 @@ elif test "$ac_cv_type_off_t" = "yes"; then
         off_t_strfn='strtoi'
     elif test "$ac_cv_sizeof_off_t" = "$ac_cv_sizeof_long_long"; then
         off_t_fmt='#define APR_OFF_T_FMT APR_INT64_T_FMT'
-        off_t_strfn='apr_strtoi64'
+        off_t_strfn='fspr_strtoi64'
     else
         AC_ERROR([could not determine the size of off_t])
     fi
 else
    # Fallback on int
-   off_t_value=apr_int32_t
+   off_t_value=fspr_int32_t
    off_t_fmt=d
    off_t_strfn='strtoi'
 fi
@@ -1440,7 +1440,7 @@ fi
 
 if test "$have_int64_strfn" = "1"; then
   AC_DEFINE_UNQUOTED(APR_INT64_STRFN, [$int64_strfn],
-      [Define as function which can be used for conversion of strings to apr_int64_t])
+      [Define as function which can be used for conversion of strings to fspr_int64_t])
 fi
 
 AC_SUBST(have_strnicmp)
@@ -1451,11 +1451,11 @@ AC_SUBST(have_strdup)
 AC_SUBST(have_strstr)
 AC_SUBST(have_memchr)
 
-if test "$off_t_strfn" = "apr_strtoi64" && test "$have_int64_strfn" = "1"; then
+if test "$off_t_strfn" = "fspr_strtoi64" && test "$have_int64_strfn" = "1"; then
     off_t_strfn=$int64_strfn
 fi
 AC_DEFINE_UNQUOTED(APR_OFF_T_STRFN, [$off_t_strfn],
-          [Define as function used for conversion of strings to apr_off_t])
+          [Define as function used for conversion of strings to fspr_off_t])
 
 dnl ----------------------------- Checking for DSO support
 echo "${nl}Checking for DSO..."
@@ -1949,7 +1949,7 @@ AC_SUBST(file_as_socket)
 
 if test "$ac_cv_func_poll $file_as_socket" = "yes 1"; then
     AC_DEFINE(WAITIO_USES_POLL, 1,
-              [Define if apr_wait_for_io_or_timeout() uses poll(2)])
+              [Define if fspr_wait_for_io_or_timeout() uses poll(2)])
 fi
 
 # Check the types only if we have gethostbyname_r
@@ -2135,7 +2135,7 @@ AC_SUBST(INCLUDE_RULES)
 AC_SUBST(INCLUDE_OUTPUTS)
 
 AC_CONFIG_FILES([Makefile
-                 include/apr.h
+                 include/fspr.h
                  build/apr_rules.mk
                  build/pkg/pkginfo
                  apr-$APR_MAJOR_VERSION-config:apr-config.in
@@ -2163,7 +2163,7 @@ dnl This section is expanded by configure UNQUOTED so variable
 dnl references must be backslash-escaped as necessary.
 
 # Commands run at the beginning of config.status:
-APR_SAVE_HEADERS="include/apr.h include/arch/unix/apr_private.h"
+APR_SAVE_HEADERS="include/fspr.h include/arch/unix/fspr_private.h"
 APR_MAJOR_VERSION=$APR_MAJOR_VERSION
 
 for apri in \${APR_SAVE_HEADERS}; do

@@ -176,7 +176,7 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 		context->autoplay = 1;
 	}
 
-	context->max = 10000;
+	context->max = 86400000;
 
 	context->exception = AcquireExceptionInfo();
 	context->image_info = AcquireImageInfo();
@@ -273,9 +273,9 @@ static switch_status_t imagick_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	if (context->lazy) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s, read the first %d page(s)", path, context->lazy);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s, read the first %d page(s)\n", path, context->lazy);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s", path);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File %s\n", path);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -384,10 +384,11 @@ static switch_status_t read_page(pdf_file_context_t *context)
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
 			free(storage);
+
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_img_from_raw(context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
+		switch_img_from_raw(&context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
 		free(storage);
 	} else {
 		switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, image->columns, image->rows, 0);
@@ -397,6 +398,8 @@ static switch_status_t read_page(pdf_file_context_t *context)
 
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
+			switch_img_free(&img);
+
 			return SWITCH_STATUS_FALSE;
 		}
 

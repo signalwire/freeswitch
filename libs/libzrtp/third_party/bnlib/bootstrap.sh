@@ -1,5 +1,0 @@
-#!/bin/sh
-
-aclocal
-autoconf
-

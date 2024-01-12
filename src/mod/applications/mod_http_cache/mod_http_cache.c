@@ -394,7 +394,9 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			goto done;
 		}
 		switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+#if !defined(LIBCURL_VERSION_NUM) || (LIBCURL_VERSION_NUM < 0x070c01)
 		switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+#endif
 		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);
@@ -782,7 +784,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Waiting for URL %s to be available\n", url);
 			u->waiters++;
 			url_cache_unlock(cache, session);
-			while(u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
+			while(!gcache.shutdown && u->status == CACHED_URL_RX_IN_PROGRESS && switch_time_now() < (u->download_time + download_timeout_ns)) {
 				switch_sleep(10 * 1000); /* 10 ms */
 			}
 			url_cache_lock(cache, session);
@@ -1168,6 +1170,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_cleanup(curl_handle);
 		close(get_data.fd);
 	} else {
+		switch_curl_easy_cleanup(curl_handle);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "open() error: %s\n", strerror(errno));
 		status = SWITCH_STATUS_GENERR;
 		goto done;
@@ -1944,13 +1947,22 @@ static switch_status_t http_file_close(switch_file_handle_t *handle)
 
 static switch_status_t http_cache_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
-    struct http_context *context = (struct http_context *)handle->private_info;
+	struct http_context *context = (struct http_context *)handle->private_info;
+	switch_status_t status;
+	
+	if (!handle->seekable) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
+		return SWITCH_STATUS_NOTIMPL;
+	}
 
-    if (!handle->seekable) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
-        return SWITCH_STATUS_NOTIMPL;
-    }
-    return switch_core_file_seek(&context->fh, cur_sample, samples, whence);
+	if ((status = switch_core_file_seek(&context->fh, cur_sample, samples, whence)) == SWITCH_STATUS_SUCCESS) {
+		handle->pos = context->fh.pos;
+		handle->offset_pos = context->fh.offset_pos;
+		handle->samples_in = context->fh.samples_in;
+		handle->samples_out = context->fh.samples_out;
+	}
+
+	return status;
 }
 
 static char *http_supported_formats[] = { "http", NULL };

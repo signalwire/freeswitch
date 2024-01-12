@@ -98,6 +98,7 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 	void *pop = NULL;
 	Event *ret = NULL;
 	switch_event_t *event;
+	switch_status_t res;
 
 	if (!ready) {
 		return NULL;
@@ -105,13 +106,15 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 
 	if (block) {
 		if (timeout > 0) {
-			switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
+			res = switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
 		} else {
-			switch_queue_pop(events, &pop);
+			res = switch_queue_pop(events, &pop);
 		}
 	} else {
-		switch_queue_trypop(events, &pop);
+		res = switch_queue_trypop(events, &pop);
 	}
+
+	(void)res;
 
 	if ((event = (switch_event_t *) pop)) {
 		ret = new Event(event, 1);
@@ -138,9 +141,7 @@ SWITCH_DECLARE(void) EventConsumer::cleanup()
 
 	node_index = 0;
 
-	if (events) {
-		switch_queue_interrupt_all(events);
-	}
+	switch_queue_interrupt_all(events);
 
 	while(switch_queue_trypop(events, &pop) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event = (switch_event_t *) pop;
@@ -1055,7 +1056,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndDetectSpeech(char *file, char *engine
 
 	char *result = NULL;
 
-	switch_status_t status = switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, NULL);
+	switch_status_t status = switch_ivr_play_and_detect_speech(session, file, engine, grammar, &result, 0, ap);
 	if (status == SWITCH_STATUS_SUCCESS) {
 		// good
 	} else if (status == SWITCH_STATUS_GENERR) {
@@ -1063,12 +1064,12 @@ SWITCH_DECLARE(char *) CoreSession::playAndDetectSpeech(char *file, char *engine
 	} else if (status == SWITCH_STATUS_NOT_INITALIZED) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ASR INIT ERROR\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ERROR\n");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "ERROR status = %d\n", status);
 	}
 
 	end_allow_threads();
 
-	return result; // remeber to free me
+	return result ? strdup(result) : NULL; // remeber to free me
 }
 
 SWITCH_DECLARE(void) CoreSession::say(const char *tosay, const char *module_name, const char *say_type, const char *say_method, const char *say_gender)

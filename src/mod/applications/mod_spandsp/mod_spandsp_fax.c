@@ -89,6 +89,7 @@ struct pvt_s {
 	t38_terminal_state_t *t38_state;
 	t38_gateway_state_t *t38_gateway_state;
 	t38_core_state_t *t38_core;
+	switch_mutex_t *mutex;
 
 	udptl_state_t *udptl_state;
 
@@ -105,6 +106,8 @@ struct pvt_s {
 	int enable_colour_to_bilevel;
 	int enable_grayscale_to_bilevel;
 	int verbose;
+	switch_log_level_t verbose_log_level;
+	FILE *trace_file;
 	int caller;
 
 	int tx_page_start;
@@ -224,7 +227,9 @@ static void *SWITCH_THREAD_FUNC timer_thread_run(switch_thread_t *thread, void *
 
 		for (pvt = t38_state_list.head; pvt; pvt = pvt->next) {
 			if (pvt->udptl_state && pvt->session && switch_channel_ready(switch_core_session_get_channel(pvt->session))) {
+				switch_mutex_lock(pvt->mutex);
 				t38_terminal_send_timeout(pvt->t38_state, samples);
+				switch_mutex_unlock(pvt->mutex);
 			}
 		}
 
@@ -270,7 +275,9 @@ static void counter_increment(void)
 void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 {
 	int fs_log_level;
-	switch_core_session_t *session = (switch_core_session_t *)user_data;
+	mod_spandsp_log_data_t *log_data = (mod_spandsp_log_data_t *)user_data;
+	switch_core_session_t *session = log_data ? log_data->session : NULL;
+	switch_log_level_t verbose_log_level = log_data ? log_data->verbose_log_level : spandsp_globals.verbose_log_level;
 
 	switch (level) {
 	case SPAN_LOG_NONE:
@@ -287,12 +294,15 @@ void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 	case SPAN_LOG_FLOW_2:
 	case SPAN_LOG_FLOW_3:
 	default:					/* SPAN_LOG_DEBUG, SPAN_LOG_DEBUG_2, SPAN_LOG_DEBUG_3 */
-		fs_log_level = SWITCH_LOG_DEBUG;
+		fs_log_level = verbose_log_level;
 		break;
 	}
 
 	if (!zstr(msg)) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), fs_log_level, "%s", msg);
+		if (log_data && log_data->trace_file) {
+			fwrite(msg, strlen(msg) * sizeof(const char), 1, log_data->trace_file);
+		}
 	}
 }
 
@@ -307,6 +317,7 @@ static int phase_b_handler(void *user_data, int result)
 	char *fax_document_total_pages = NULL;
 	pvt_t *pvt;
 	switch_event_t *event;
+	const char *total_pages_str = "";
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
@@ -343,20 +354,30 @@ static int phase_b_handler(void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_remote_model", switch_str_nil(t30_get_rx_model(pvt->t30)));
 
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "=== Negotiation Result =======================================================\n");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t30_stats.bit_rate);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t30_stats.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 status         %s\n", get_t38_status(pvt->t38_mode));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:    %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:     %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:      %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
 	if (pvt->app_mode == FUNCTION_TX) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %s\n", fax_document_total_pages);
+		total_pages_str = switch_core_session_sprintf(session, "Total fax pages:   %s\n", fax_document_total_pages);
 	}
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+		"=== Negotiation Result =======================================================\n"
+		"Remote station id: %s\n"
+		"Local station id:  %s\n"
+		"Transfer Rate:     %i\n"
+		"ECM status         %s\n"
+		"T38 status         %s\n"
+		"remote country:    %s\n"
+		"remote vendor:     %s\n"
+		"remote model:      %s\n"
+		"%s"
+		"==============================================================================\n",
+		far_ident,
+		local_ident,
+		t30_stats.bit_rate,
+		(t30_stats.error_correcting_mode) ? "on" : "off",
+		get_t38_status(pvt->t38_mode),
+		switch_str_nil(t30_get_rx_country(pvt->t30)),
+		switch_str_nil(t30_get_rx_vendor(pvt->t30)),
+		switch_str_nil(t30_get_rx_model(pvt->t30)),
+		total_pages_str);
 
 	switch_channel_execute_on(channel, "execute_on_fax_phase_b");
 
@@ -396,6 +417,7 @@ static int phase_d_handler(void *user_data, int msg)
 	char *fax_longest_bad_row_run = NULL;
 	char *fax_document_transferred_pages = NULL;
 	char *fax_document_total_pages = NULL;
+	const char *total_pages_str = "";
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	pvt_t *pvt;
@@ -468,19 +490,31 @@ static int phase_d_handler(void *user_data, int msg)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
 	if (pvt->app_mode == FUNCTION_TX) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %s\n", fax_document_total_pages);
+		total_pages_str = switch_core_session_sprintf(session, "Total fax pages:   %s\n", fax_document_total_pages);
 	}
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels (%d x %d pixels in the file)\n", t30_stats.width, t30_stats.length, t30_stats.image_width, t30_stats.image_length);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m (%d/m x %d/m in the file)\n", t30_stats.x_resolution, t30_stats.y_resolution, t30_stats.image_x_resolution, t30_stats.image_y_resolution);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_compression_to_str(t30_stats.compression), t30_stats.compression);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compressed image size = %d bytes\n", t30_stats.image_size);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad rows = %d\n", t30_stats.bad_rows);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Longest bad row run = %d\n", t30_stats.longest_bad_row_run);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+		"==== Page %s===========================================================\n"
+		"Page no = %d\n"
+		"%s"
+		"Image type = %s (%s in the file)\n"
+		"Image size = %d x %d pixels (%d x %d pixels in the file)\n"
+		"Image resolution = %d/m x %d/m (%d/m x %d/m in the file)\n"
+		"Compression = %s (%d)\n"
+		"Compressed image size = %d bytes\n"
+		"Bad rows = %d\n"
+		"Longest bad row run = %d\n"
+		"==============================================================================\n",
+		pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ",
+		(pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx,
+		total_pages_str,
+		t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type),
+		t30_stats.width, t30_stats.length, t30_stats.image_width, t30_stats.image_length,
+		t30_stats.x_resolution, t30_stats.y_resolution, t30_stats.image_x_resolution, t30_stats.image_y_resolution,
+		t4_compression_to_str(t30_stats.compression), t30_stats.compression,
+		t30_stats.image_size,
+		t30_stats.bad_rows,
+		t30_stats.longest_bad_row_run);
 
 	switch_channel_execute_on(channel, "execute_on_fax_phase_d");
 
@@ -528,6 +562,7 @@ static void phase_e_handler(void *user_data, int result)
 	switch_event_t *event;
 	const char *var;
 	char *expanded;
+	const char *fax_result_str = "";
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
@@ -542,38 +577,49 @@ static void phase_e_handler(void *user_data, int result)
 	local_ident = switch_str_nil(t30_get_tx_ident(pvt->t30));
 	far_ident = switch_str_nil(t30_get_rx_ident(pvt->t30));
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	if (result == T30_ERR_OK) {
 		if (pvt->app_mode == FUNCTION_TX) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully sent.\n");
+			fax_result_str = switch_core_session_sprintf(session, "Fax successfully sent.\n");
 		} else if (pvt->app_mode == FUNCTION_RX) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully received.\n");
+			fax_result_str = switch_core_session_sprintf(session, "Fax successfully received.\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
+			fax_result_str = switch_core_session_sprintf(session, "Fax successfully managed. How ?\n");
 		}
 		switch_channel_set_variable(channel, "fax_success", "1");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
+		fax_result_str = switch_core_session_sprintf(session, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
 		switch_channel_set_variable(channel, "fax_success", "0");
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Pages transferred: %i\n",
-					  pvt->app_mode == FUNCTION_TX ? t.pages_tx : t.pages_rx);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Total fax pages:   %i\n", t.pages_in_file);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution:  %ix%i\n", t.x_resolution, t.y_resolution);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 status         %s\n", get_t38_status(pvt->t38_mode));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:    %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:     %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:      %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+		"==============================================================================\n"
+		"%s"
+		"Remote station id: %s\n"
+		"Local station id:  %s\n"
+		"Pages transferred: %i\n"
+		"Total fax pages:   %i\n"
+		"Image resolution:  %ix%i\n"
+		"Transfer Rate:     %i\n"
+		"ECM status         %s\n"
+		"T38 status         %s\n"
+		"remote country:    %s\n"
+		"remote vendor:     %s\n"
+		"remote model:      %s\n"
+		"==============================================================================\n",
+		fax_result_str,
+		far_ident,
+		local_ident,
+		pvt->app_mode == FUNCTION_TX ? t.pages_tx : t.pages_rx,
+		t.pages_in_file,
+		t.x_resolution, t.y_resolution,
+		t.bit_rate,
+		(t.error_correcting_mode) ? "on" : "off",
+		get_t38_status(pvt->t38_mode),
+		switch_str_nil(t30_get_rx_country(pvt->t30)),
+		switch_str_nil(t30_get_rx_vendor(pvt->t30)),
+		switch_str_nil(t30_get_rx_model(pvt->t30)));
 
 	/*
 	   Set our channel variables, variables are also used in event
@@ -772,8 +818,14 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(fax_get_logging_state(fax), mod_spandsp_log_message, pvt->session);
-		span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
+		{
+			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+			log_data->session = pvt->session;
+			log_data->verbose_log_level = pvt->verbose_log_level;
+			log_data->trace_file = pvt->trace_file;
+			span_log_set_message_handler(fax_get_logging_state(fax), mod_spandsp_log_message, log_data);
+			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, log_data);
+		}
 
 		if (pvt->verbose) {
 			span_log_set_level(fax_get_logging_state(fax), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -783,7 +835,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	case T38_MODE:
 		{
 			switch_core_session_message_t msg = { 0 };
-
 			if (pvt->t38_state == NULL) {
 				pvt->t38_state = (t38_terminal_state_t *) switch_core_session_alloc(pvt->session, sizeof(t38_terminal_state_t));
 			}
@@ -822,13 +873,14 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
 			switch_core_session_receive_message(pvt->session, &msg);
 
-			/* add to timer thread processing */
-			if (!add_pvt(pvt)) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			{
+				mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+				log_data->session = pvt->session;
+				log_data->verbose_log_level = pvt->verbose_log_level;
+				log_data->trace_file = pvt->trace_file;
+				span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, log_data);
+				span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, log_data);
 			}
-
-			span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, pvt->session);
-			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
 
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -877,8 +929,14 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		t38_gateway_set_ecm_capability(pvt->t38_gateway_state, pvt->use_ecm);
 		switch_channel_set_variable(channel, "fax_ecm_requested", pvt->use_ecm ? "true" : "false");
 
-		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, pvt->session);
-		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, pvt->session);
+		{
+			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+			log_data->session = pvt->session;
+			log_data->verbose_log_level = pvt->verbose_log_level;
+			log_data->trace_file = pvt->trace_file;
+			span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, log_data);
+			span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, log_data);
+		}
 
 		if (pvt->verbose) {
 			span_log_set_level(t38_gateway_get_logging_state(pvt->t38_gateway_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -1020,6 +1078,12 @@ static switch_status_t spanfax_destroy(pvt_t *pvt)
 	if (pvt->udptl_state) {
 		udptl_release(pvt->udptl_state);
 	}
+
+	if (pvt->trace_file) {
+		fclose(pvt->trace_file);
+		pvt->trace_file = NULL;
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1092,20 +1156,33 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
 		pvt->t38_mode = T38_MODE_NEGOTIATED;
 		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38 SDP Origin = %s\n", t38_options->sdp_o_line);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxVersion = %d\n", t38_options->T38FaxVersion);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38MaxBitRate = %d\n", t38_options->T38MaxBitRate);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxFillBitRemoval = %d\n", t38_options->T38FaxFillBitRemoval);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxTranscodingMMR = %d\n", t38_options->T38FaxTranscodingMMR);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxTranscodingJBIG = %d\n", t38_options->T38FaxTranscodingJBIG);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxRateManagement = '%s'\n", t38_options->T38FaxRateManagement);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxMaxBuffer = %d\n", t38_options->T38FaxMaxBuffer);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxMaxDatagram = %d\n", t38_options->T38FaxMaxDatagram);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxUdpEC = '%s'\n", t38_options->T38FaxUdpEC);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38VendorInfo = '%s'\n", switch_str_nil(t38_options->T38VendorInfo));
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ip = '%s'\n",
-				t38_options->remote_ip ? t38_options->remote_ip : "Not specified");
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "port = %d\n", t38_options->remote_port);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+			"T38 SDP Origin = %s\n"
+			"T38FaxVersion = %d\n"
+			"T38MaxBitRate = %d\n"
+			"T38FaxFillBitRemoval = %d\n"
+			"T38FaxTranscodingMMR = %d\n"
+			"T38FaxTranscodingJBIG = %d\n"
+			"T38FaxRateManagement = '%s'\n"
+			"T38FaxMaxBuffer = %d\n"
+			"T38FaxMaxDatagram = %d\n"
+			"T38FaxUdpEC = '%s'\n"
+			"T38VendorInfo = '%s'\n"
+			"ip = '%s'\n"
+			"port = %d\n",
+			t38_options->sdp_o_line,
+			t38_options->T38FaxVersion,
+			t38_options->T38MaxBitRate,
+			t38_options->T38FaxFillBitRemoval,
+			t38_options->T38FaxTranscodingMMR,
+			t38_options->T38FaxTranscodingJBIG,
+			t38_options->T38FaxRateManagement,
+			t38_options->T38FaxMaxBuffer,
+			t38_options->T38FaxMaxDatagram,
+			t38_options->T38FaxUdpEC,
+			switch_str_nil(t38_options->T38VendorInfo),
+			t38_options->remote_ip ? t38_options->remote_ip : "Not specified",
+			t38_options->remote_port);
 
 		/* Time to practice our negotiating skills, by editing the t38_options */
 
@@ -1189,32 +1266,29 @@ static t38_mode_t request_t38(pvt_t *pvt)
 		insist = spandsp_globals.enable_t38_insist;
 	}
 
-	if ((t38_options = switch_channel_get_private(channel, "t38_options"))) {
+	if (switch_channel_get_private(channel, "t38_options")) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 				"%s already has T.38 data\n", switch_channel_get_name(channel));
 		enabled = 0;
 	}
 
-
-
 	if (enabled) {
+		if (!(t38_options = switch_channel_get_private(channel, "_preconfigured_t38_options"))) {
+			t38_options = switch_core_session_alloc(session, sizeof(*t38_options));
+			t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
+			t38_options->T38FaxVersion = 0;
+			t38_options->T38FaxFillBitRemoval = 1;
+			t38_options->T38FaxTranscodingMMR = 0;
+			t38_options->T38FaxTranscodingJBIG = 0;
+			t38_options->T38FaxRateManagement = "transferredTCF";
+			t38_options->T38FaxMaxBuffer = 2000;
+			t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
+			t38_options->T38FaxUdpEC = "t38UDPRedundancy";
+			t38_options->T38VendorInfo = "0 0 0";
+		}
 
-        if (!(t38_options = switch_channel_get_private(channel, "_preconfigured_t38_options"))) {
-            t38_options = switch_core_session_alloc(session, sizeof(*t38_options));
-            t38_options->T38MaxBitRate = (pvt->disable_v17) ? 9600 : 14400;
-            t38_options->T38FaxVersion = 0;
-            t38_options->T38FaxFillBitRemoval = 1;
-            t38_options->T38FaxTranscodingMMR = 0;
-            t38_options->T38FaxTranscodingJBIG = 0;
-            t38_options->T38FaxRateManagement = "transferredTCF";
-            t38_options->T38FaxMaxBuffer = 2000;
-            t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
-            t38_options->T38FaxUdpEC = "t38UDPRedundancy";
-            t38_options->T38VendorInfo = "0 0 0";
-        }
-
-	switch_channel_set_private(channel, "t38_options", t38_options);
-        switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
+		switch_channel_set_private(channel, "t38_options", t38_options);
+		switch_channel_set_private(channel, "_preconfigured_t38_options", NULL);
 
 		pvt->t38_mode = T38_MODE_REQUESTED;
 		switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_REQ);
@@ -1319,6 +1393,23 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		pvt->verbose = spandsp_globals.verbose;
 	}
 
+	pvt->verbose_log_level = spandsp_globals.verbose_log_level;
+	if ((tmp = switch_channel_get_variable(channel, "fax_verbose_log_level"))) {
+		switch_log_level_t verbose_log_level = switch_log_str2level(tmp);
+		if (verbose_log_level != SWITCH_LOG_INVALID) {
+			pvt->verbose_log_level = verbose_log_level;
+		}
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_trace_dir"))) {
+		const char *trace_filename = switch_core_session_sprintf(session, "%s"SWITCH_PATH_SEPARATOR"fax-%s.log", tmp, switch_core_session_get_uuid(session));
+		switch_dir_make_recursive(tmp, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session));
+		pvt->trace_file = fopen(trace_filename, "w");
+		if (pvt->trace_file) {
+			switch_channel_set_variable(channel, "fax_trace_file", trace_filename);
+		}
+	}
+
 	if ((tmp = switch_channel_get_variable(channel, "fax_force_caller"))) {
 		if (switch_true(tmp)) {
 			pvt->caller = 1;
@@ -1384,6 +1475,8 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 			pvt->tx_page_end = pvt->tx_page_start;
 		}
 	}
+
+	switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 	return pvt;
 }
@@ -1592,8 +1685,17 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					switch_core_session_message_t msg = { 0 };
 					pvt->t38_mode = T38_MODE_NEGOTIATED;
 					switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
-					spanfax_init(pvt, T38_MODE);
-					configure_t38(pvt);
+					if (spanfax_init(pvt, T38_MODE) == SWITCH_STATUS_SUCCESS) {
+						configure_t38(pvt);
+						/* add to timer thread processing */
+						if (!add_pvt(pvt)) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize Fax engine for T.38\n");
+						switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot initialize Fax engine for T.38");
+						goto done;
+					}
 
 					/* This will change the rtp stack to udptl mode */
 					msg.from = __FILE__;
@@ -1616,7 +1718,16 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					if (negotiate_t38(pvt) == T38_MODE_NEGOTIATED) {
 						/* is is safe to call this again, it was already called above in AUDIO_MODE */
 						/* but this is the only way to set up the t38 stuff */
-						spanfax_init(pvt, T38_MODE);
+						if (spanfax_init(pvt, T38_MODE) == SWITCH_STATUS_SUCCESS) {
+							/* add to timer thread processing */
+							if (!add_pvt(pvt)) {
+								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							}
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize Fax engine for T.38\n");
+							switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot initialize Fax engine for T.38");
+							goto done;
+						}
 						continue;
 					}
 				}
@@ -1634,7 +1745,9 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					/* now we know we can cast frame->packet to a udptl structure */
 					//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "READ %d udptl bytes\n", read_frame->packetlen);
 
+					switch_mutex_lock(pvt->mutex);
 					udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen);
+					switch_mutex_unlock(pvt->mutex);
 				}
 			}
 			continue;
@@ -1642,16 +1755,19 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			break;
 		}
 
+		switch_mutex_lock(pvt->mutex);
 		if (switch_test_flag(read_frame, SFF_CNG)) {
 			/* We have no real signal data for the FAX software, but we have a space in time if we have a CNG indication.
 			   Do a fill-in operation in the FAX machine, to keep things rolling along. */
 			if (fax_rx_fillin(pvt->fax_state, read_impl.samples_per_packet)) {
+				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx_fillin reported an error\n");
 				continue;
 			}
 		} else {
 			/* Pass the new incoming audio frame to the fax_rx function */
 			if (fax_rx(pvt->fax_state, (int16_t *) read_frame->data, read_frame->samples)) {
+				switch_mutex_unlock(pvt->mutex);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
 				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "fax_rx reported an error");
 				goto done;
@@ -1659,10 +1775,12 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		}
 
 		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_packet)) < 0) {
+			switch_mutex_unlock(pvt->mutex);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_tx reported an error\n");
 			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "fax_tx reported an error");
 			goto done;
 		}
+		switch_mutex_unlock(pvt->mutex);
 
 		if (!tx) {
 			/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No audio samples to send\n"); */
@@ -2141,7 +2259,7 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
 		switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "audio");
 
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n",
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s starting gateway mode to %s\n",
 				switch_channel_get_name(peer ? channel : other_channel),
 				switch_channel_get_name(peer ? other_channel : channel));
 
@@ -2274,7 +2392,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 			if (cont->hits) {
 				switch_event_t *event;
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG,
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_INFO,
 								  "Fax Tone Detected. [%s][%s]\n", cont->app, switch_str_nil(cont->data));
 
 				if (cont->callback) {

@@ -992,23 +992,5 @@
       <prompt phrase="woodlark" filename="woodlark.wav"/>
       <prompt phrase="yesteryear" filename="yesteryear.wav"/>
     </base256>
-    <zrtp>
-      <!-- Event prompts -->
-      <prompt phrase="Bienvenidos al servicio de inscripción ZRTP." filename="zrtp-enroll_welcome.wav"/>
-      <prompt phrase="Usted debe verificar la cadena de caracteres con su destino. Si no coincide, indica la presencia de una escucha telefónica." filename="zrtp-check_sas.wav"/>
-      <prompt phrase="Solo teléfonos autenticados pueden confiar en llamadas securizadas con ZRTP. Su teléfono no está autenticado con este sistema, por lo que esta llamada no estará securizada." filename="zrtp-enroll_not_sip_registered.wav"/>
-      <prompt phrase="Su teléfono indica que confía en este sistema para realizar llamadas seguras con ZRTP, no necesita hacer nada más." filename="zrtp-enroll_already_enrolled.wav"/>
-      <prompt phrase="Solo teléfonos soportando el protocolo ZRTP pueden usar esta extensión. Su teléfono no tiene ZRTP habilitado, por lo que esta llamada no estará securizada." filename="zrtp-enroll_notzrtp.wav"/>
-      <prompt phrase="Este sistema está configurado para manejar llamadas cifradas con ZRTP. Decida si permite al sistema tener la posibilidad de interceptar o monitorizar su llamada. Puede colgar una vez confirmado." filename="zrtp-enroll_confirmed.wav"/>
-      <prompt phrase="Compara verbalmente este código de autenticación con su destino." filename="zrtp-is_secure.wav"/>
-      <prompt phrase="El código de autenticación no está verificado." filename="zrtp-is_unverified.wav"/>
-      <prompt phrase="El código de autenticación está verificado." filename="zrtp-is_verified.wav"/>
-      <prompt phrase="Gracias por llamar. Adiós." filename="zrtp-thankyou_goodbye.wav"/>
-      <prompt phrase="Algún error ha ocurrido." filename="zrtp-somethings_wrong.wav"/>
-      <prompt phrase="Error." filename="zrtp-status_error.wav"/>
-      <prompt phrase="Esta llamada no está protegida." filename="zrtp-status_notsecure.wav"/>
-      <prompt phrase="Esta llamada está protegida." filename="zrtp-status_secure.wav"/>
-      <prompt phrase="Securizando su llamada." filename="zrtp-status_securing.wav"/>
-    </zrtp>
   </es_ES>
 </language>

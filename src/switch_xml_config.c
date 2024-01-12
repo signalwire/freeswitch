@@ -457,7 +457,7 @@ SWITCH_DECLARE(void) switch_xml_config_cleanup(switch_xml_config_item_t *instruc
 				char **ptr = (char **) item->ptr;
 				switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t *) item->data;
 				/* if (using_strdup) */
-				if (string_options && !string_options->pool && !string_options->length) {
+				if (!string_options || (!string_options->pool && !string_options->length)) {
 					switch_safe_free(*ptr);
 				}
 			}

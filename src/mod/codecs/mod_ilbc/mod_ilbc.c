@@ -48,7 +48,7 @@ static switch_status_t switch_ilbc_fmtp_parse(const char *fmtp, switch_codec_fmt
 
 		memset(codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 
-		if (fmtp && (mode = strstr(fmtp, "mode=")) && (mode + 5)) {
+		if (fmtp && (mode = strstr(fmtp, "mode=")) && *(mode + 5)) {
 			codec_ms = atoi(mode + 5);
 		}
 		if (!codec_ms) {

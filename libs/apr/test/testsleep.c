@@ -15,10 +15,10 @@
  */
 
 #include "time.h"
-#include "apr_thread_proc.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_lib.h"
+#include "fspr_thread_proc.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@ static void sleep_one(abts_case *tc, void *data)
     time_t posttime;
     time_t timediff;
 
-    apr_sleep(apr_time_from_sec(SLEEP_INTERVAL));
+    fspr_sleep(fspr_time_from_sec(SLEEP_INTERVAL));
     posttime = time(NULL);
 
     /* normalize the timediff.  We should have slept for SLEEP_INTERVAL, so

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_network_io.h"
-#include "apr_support.h"
-#include "apr_portable.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_network_io.h"
+#include "fspr_support.h"
+#include "fspr_portable.h"
+#include "fspr_arch_inherit.h"
 
 #ifdef HAVE_GETIFADDRS
 #include <net/if.h>
@@ -27,12 +27,12 @@
 
 #ifdef HAVE_STRUCT_IPMREQ
 /* Only UDP and Raw Sockets can be used for Multicast */
-static apr_status_t mcast_check_type(apr_socket_t *sock)
+static fspr_status_t mcast_check_type(fspr_socket_t *sock)
 {
     int type;
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_socket_type_get(sock, &type);
+    rv = fspr_socket_type_get(sock, &type);
 
     if (rv != APR_SUCCESS) {
         return rv;
@@ -45,8 +45,8 @@ static apr_status_t mcast_check_type(apr_socket_t *sock)
     }
 }
 
-static void fill_mip_v4(struct ip_mreq *mip, apr_sockaddr_t *mcast,
-                        apr_sockaddr_t *iface)
+static void fill_mip_v4(struct ip_mreq *mip, fspr_sockaddr_t *mcast,
+                        fspr_sockaddr_t *iface)
 {
     mip->imr_multiaddr = mcast->sa.sin.sin_addr;
     if (iface == NULL) {
@@ -57,7 +57,7 @@ static void fill_mip_v4(struct ip_mreq *mip, apr_sockaddr_t *mcast,
     }
 }
 
-static unsigned int find_if_index(const apr_sockaddr_t *iface)
+static unsigned int find_if_index(const fspr_sockaddr_t *iface)
 {
     unsigned int index = 0;
 #if defined(HAVE_GETIFADDRS) && APR_HAVE_IPV6
@@ -92,8 +92,8 @@ static unsigned int find_if_index(const apr_sockaddr_t *iface)
 }
 
 #if APR_HAVE_IPV6
-static void fill_mip_v6(struct ipv6_mreq *mip, const apr_sockaddr_t *mcast,
-                        const apr_sockaddr_t *iface)
+static void fill_mip_v6(struct ipv6_mreq *mip, const fspr_sockaddr_t *mcast,
+                        const fspr_sockaddr_t *iface)
 {
     memcpy(&mip->ipv6mr_multiaddr, mcast->ipaddr_ptr,
            sizeof(mip->ipv6mr_multiaddr));
@@ -107,7 +107,7 @@ static void fill_mip_v6(struct ipv6_mreq *mip, const apr_sockaddr_t *mcast,
 }
 #endif
 
-static int sock_is_ipv4(apr_socket_t *sock)
+static int sock_is_ipv4(fspr_socket_t *sock)
 {
     if (sock->local_addr->family == APR_INET)
         return 1;
@@ -115,7 +115,7 @@ static int sock_is_ipv4(apr_socket_t *sock)
 }
 
 #if APR_HAVE_IPV6
-static int sock_is_ipv6(apr_socket_t *sock)
+static int sock_is_ipv6(fspr_socket_t *sock)
 {
     if (sock->local_addr->family == APR_INET6)
         return 1;
@@ -123,12 +123,12 @@ static int sock_is_ipv6(apr_socket_t *sock)
 }
 #endif
 
-static apr_status_t do_mcast(int type, apr_socket_t *sock,
-                             apr_sockaddr_t *mcast, apr_sockaddr_t *iface,
-                             apr_sockaddr_t *source)
+static fspr_status_t do_mcast(int type, fspr_socket_t *sock,
+                             fspr_sockaddr_t *mcast, fspr_sockaddr_t *iface,
+                             fspr_sockaddr_t *source)
 {
     struct ip_mreq mip4;
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 #if APR_HAVE_IPV6
     struct ipv6_mreq mip6;
 #endif
@@ -214,10 +214,10 @@ static apr_status_t do_mcast(int type, apr_socket_t *sock,
     return rv;
 }
 
-static apr_status_t do_mcast_opt(int type, apr_socket_t *sock,
-                                 apr_byte_t value)
+static fspr_status_t do_mcast_opt(int type, fspr_socket_t *sock,
+                                 fspr_byte_t value)
 {
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     rv = mcast_check_type(sock);
 
@@ -262,10 +262,10 @@ static apr_status_t do_mcast_opt(int type, apr_socket_t *sock,
 }
 #endif
 
-APR_DECLARE(apr_status_t) apr_mcast_join(apr_socket_t *sock,
-                                         apr_sockaddr_t *join,
-                                         apr_sockaddr_t *iface,
-                                         apr_sockaddr_t *source)
+APR_DECLARE(fspr_status_t) fspr_mcast_join(fspr_socket_t *sock,
+                                         fspr_sockaddr_t *join,
+                                         fspr_sockaddr_t *iface,
+                                         fspr_sockaddr_t *source)
 {
 #if defined(IP_ADD_MEMBERSHIP) && defined(HAVE_STRUCT_IPMREQ)
     return do_mcast(IP_ADD_MEMBERSHIP, sock, join, iface, source);
@@ -274,10 +274,10 @@ APR_DECLARE(apr_status_t) apr_mcast_join(apr_socket_t *sock,
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_mcast_leave(apr_socket_t *sock,
-                                          apr_sockaddr_t *addr,
-                                          apr_sockaddr_t *iface,
-                                          apr_sockaddr_t *source)
+APR_DECLARE(fspr_status_t) fspr_mcast_leave(fspr_socket_t *sock,
+                                          fspr_sockaddr_t *addr,
+                                          fspr_sockaddr_t *iface,
+                                          fspr_sockaddr_t *source)
 {
 #if defined(IP_DROP_MEMBERSHIP) && defined(HAVE_STRUCT_IPMREQ)
     return do_mcast(IP_DROP_MEMBERSHIP, sock, addr, iface, source);
@@ -286,7 +286,7 @@ APR_DECLARE(apr_status_t) apr_mcast_leave(apr_socket_t *sock,
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_mcast_hops(apr_socket_t *sock, apr_byte_t ttl)
+APR_DECLARE(fspr_status_t) fspr_mcast_hops(fspr_socket_t *sock, fspr_byte_t ttl)
 {
 #if defined(IP_MULTICAST_TTL) && defined(HAVE_STRUCT_IPMREQ)
     return do_mcast_opt(IP_MULTICAST_TTL, sock, ttl);
@@ -295,8 +295,8 @@ APR_DECLARE(apr_status_t) apr_mcast_hops(apr_socket_t *sock, apr_byte_t ttl)
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_mcast_loopback(apr_socket_t *sock,
-                                             apr_byte_t opt)
+APR_DECLARE(fspr_status_t) fspr_mcast_loopback(fspr_socket_t *sock,
+                                             fspr_byte_t opt)
 {
 #if defined(IP_MULTICAST_LOOP) && defined(HAVE_STRUCT_IPMREQ)
     return do_mcast_opt(IP_MULTICAST_LOOP, sock, opt);
@@ -305,11 +305,11 @@ APR_DECLARE(apr_status_t) apr_mcast_loopback(apr_socket_t *sock,
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_mcast_interface(apr_socket_t *sock,
-                                              apr_sockaddr_t *iface)
+APR_DECLARE(fspr_status_t) fspr_mcast_interface(fspr_socket_t *sock,
+                                              fspr_sockaddr_t *iface)
 {
 #if defined(IP_MULTICAST_IF) && defined(HAVE_STRUCT_IPMREQ)
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
 
     if (sock_is_ipv4(sock)) {
         if (setsockopt(sock->socketdes, IPPROTO_IP, IP_MULTICAST_IF,

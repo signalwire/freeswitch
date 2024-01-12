@@ -526,7 +526,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																		 switch_originate_flag_t flags, switch_call_cause_t *cancel_cause)
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_endpoint_interface_t *endpoint_interface;
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *outgoing_profile = caller_profile;
@@ -608,7 +607,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 	if (session) {
 		for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
-			if ((status = ptr->outgoing_channel(session, var_event, caller_profile, *new_session, flags)) != SWITCH_STATUS_SUCCESS) {
+			if (ptr->outgoing_channel(session, var_event, caller_profile, *new_session, flags) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
@@ -625,6 +624,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 		const char *use_uuid;
+		const char *use_external_id;
 		switch_core_session_t *other_session = NULL;
 
 		switch_assert(peer_channel);
@@ -643,6 +643,17 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
 								  switch_channel_get_name(peer_channel), use_uuid);
+			}
+		}
+
+		if ((use_external_id = switch_event_get_header(var_event, "origination_external_id"))) {
+			if (switch_core_session_set_external_id(*new_session, use_external_id) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_DEBUG, "%s set external_id=%s\n", switch_channel_get_name(peer_channel),
+								  use_external_id);
+				switch_event_del_header(var_event, "origination_external_id");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(*new_session), SWITCH_LOG_CRIT, "%s set external_id=%s FAILED\n",
+								  switch_channel_get_name(peer_channel), use_external_id);
 			}
 		}
 
@@ -732,10 +743,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				}
 			}
 
-			if (switch_channel_test_flag(channel, CF_ZRTP_PASSTHRU_REQ)) {
-				switch_channel_set_flag(peer_channel, CF_ZRTP_PASSTHRU_REQ);
-			}
-
 			if (profile) {
 				if ((cloned_profile = switch_caller_profile_clone(*new_session, profile)) != 0) {
 					switch_channel_set_originator_caller_profile(peer_channel, cloned_profile);
@@ -792,6 +799,7 @@ static const char *message_names[] = {
 	"DEFLECT",
 	"VIDEO_REFRESH_REQ",
 	"DISPLAY",
+	"MEDIA_PARAMS",
 	"TRANSCODING_NECESSARY",
 	"AUDIO_SYNC",
 	"VIDEO_SYNC",
@@ -827,6 +835,8 @@ static const char *message_names[] = {
 	"RING_EVENT",
 	"RESAMPLE_EVENT",
 	"HEARTBEAT_EVENT",
+	"SESSION_ID",
+	"PROMPT",
 	"INVALID"
 };
 
@@ -1102,15 +1112,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_session_t *session)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
 	switch_core_session_message_t *message;
 
 	switch_assert(session != NULL);
 
-
 	if (session->message_queue) {
-		while ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+		while (switch_queue_trypop(session->message_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			message = (switch_core_session_message_t *) pop;
 			switch_ivr_process_indications(session, message);
 			switch_core_session_free_message(&message);
@@ -1339,19 +1347,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 
 SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_session_t *session)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	int x = 0;
 	void *pop;
 
 	if (session->private_event_queue) {
-		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue_pri, &pop)) == SWITCH_STATUS_SUCCESS) {
+		while (switch_queue_trypop(session->private_event_queue_pri, &pop) == SWITCH_STATUS_SUCCESS) {
 			if (pop) {
 				switch_event_t *event = (switch_event_t *) pop;
 				switch_event_destroy(&event);
 			}
 			x++;
 		}
-		while ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+		while (switch_queue_trypop(session->private_event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			if (pop) {
 				switch_event_t *event = (switch_event_t *) pop;
 				switch_event_destroy(&event);
@@ -1384,7 +1391,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_try_reset(switch_core_sessio
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_size_t has;
 
 	if (reset_read_codec) {
 		switch_core_session_set_read_codec(session, NULL);
@@ -1411,7 +1417,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_mutex_unlock(session->codec_read_mutex);
 
 	if (flush_dtmf) {
-		while ((has = switch_channel_has_dtmf(channel))) {
+		while (switch_channel_has_dtmf(channel)) {
 			switch_channel_flush_dtmf(channel);
 		}
 	}
@@ -1482,7 +1488,7 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		for (ptr = session->event_hooks.state_change; ptr; ptr = ptr->next) {
-			if ((status = ptr->state_change(session)) != SWITCH_STATUS_SUCCESS) {
+			if (ptr->state_change(session) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
@@ -1556,6 +1562,9 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
+	if ((*session)->external_id) {
+		switch_core_hash_delete(session_manager.session_table, (*session)->external_id);
+	}
 	if (session_manager.session_count) {
 		session_manager.session_count--;
 		if (session_manager.session_count == 0) {
@@ -1568,7 +1577,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	if ((*session)->plc) {
-		plc_free((*session)->plc);
+		switch_plc_free((*session)->plc);
 		(*session)->plc = NULL;
 	}
 
@@ -1591,9 +1600,8 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	}
 
 	if ((*session)->event_queue) {
-		switch_status_t status;
 		void *pop;
-		while ((status = (switch_status_t) switch_queue_trypop((*session)->event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+		while (switch_queue_trypop((*session)->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			if (pop) {
 				switch_event_t *event = (switch_event_t *) pop;
 				switch_event_destroy(&event);
@@ -1779,8 +1787,10 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 #ifdef DEBUG_THREAD_POOL
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) (intptr_t) thread);
 #endif
+			td->running = 1;
 			td->func(thread, td->obj);
-
+			td->running = 0;
+			
 			if (td->pool) {
 				switch_memory_pool_t *pool = td->pool;
 				td = NULL;
@@ -1896,6 +1906,15 @@ SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_d
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_thread_pool_wait(switch_thread_data_t *td, int ms)
+{
+	while(!td->running && --ms > 0) {
+		switch_cond_next();
+	}
+
+	return ms > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TIMEOUT;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_core_session_t *session)
 {
 	switch_status_t status = SWITCH_STATUS_INUSE;
@@ -1919,7 +1938,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 
 	return status;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session)
 {
@@ -2039,6 +2057,38 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	switch_channel_event_set_data(session->channel, event);
 	switch_event_fire(&event);
 
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_external_id(switch_core_session_t *session, const char *use_external_id)
+{
+	switch_assert(use_external_id);
+
+	if (session->external_id && !strcmp(use_external_id, session->external_id)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (strcmp(use_external_id, session->uuid_str) && switch_core_hash_find(session_manager.session_table, use_external_id)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Duplicate External ID!\n");
+		switch_mutex_unlock(runtime.session_hash_mutex);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_channel_set_variable(session->channel, "session_external_id", use_external_id);
+
+	if (session->external_id && strcmp(session->external_id, session->uuid_str)) {
+		switch_core_hash_delete(session_manager.session_table, session->external_id);
+	}
+
+	session->external_id = switch_core_session_strdup(session, use_external_id);
+
+	if (strcmp(session->external_id, session->uuid_str)) {
+		switch_core_hash_insert(session_manager.session_table, session->external_id, session);
+	}
+	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2331,11 +2381,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	int32_t sps = 0;
 
 
-	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
-		return NULL;
-	}
-
 	if (direction == SWITCH_CALL_DIRECTION_INBOUND && !switch_core_ready_inbound()) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any inbound sessions at this time.\n");
 		return NULL;
@@ -2357,6 +2402,15 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 
 	PROTECT_INTERFACE(endpoint_interface);
 
+	switch_mutex_lock(runtime.session_hash_mutex);
+	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
+		switch_mutex_unlock(runtime.session_hash_mutex);
+		UNPROTECT_INTERFACE(endpoint_interface);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+
+		return NULL;
+	}
+
 	if (!(originate_flags & SOF_NO_LIMITS)) {
 		switch_mutex_lock(runtime.throttle_mutex);
 		count = session_manager.session_count;
@@ -2364,12 +2418,14 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 		switch_mutex_unlock(runtime.throttle_mutex);
 
 		if (sps <= 0) {
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error! %d\n", session_manager.session_count);
 			UNPROTECT_INTERFACE(endpoint_interface);
 			return NULL;
 		}
 
 		if ((count + 1) > session_manager.session_limit) {
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit! %d\n", session_manager.session_limit);
 			UNPROTECT_INTERFACE(endpoint_interface);
 			return NULL;
@@ -2441,7 +2497,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue_pri, SWITCH_EVENT_QUEUE_LEN, session->pool);
 
-	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
 	session->id = session_manager.session_id++;
 	session_manager.session_count++;
@@ -2528,6 +2583,11 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
 	return session->uuid_str;
 }
 
+SWITCH_DECLARE(const char *) switch_core_session_get_external_id(switch_core_session_t *session)
+{
+	if (!session) return NULL;
+	return session->external_id;
+}
 
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 {
@@ -2785,6 +2845,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	int scope = 0;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *app_uuid = uuid_str;
+	switch_bool_t expand_variables = !switch_true(switch_channel_get_variable(session->channel, "app_disable_expand_variables"));
 
 	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
 		app_uuid = (char *)app_uuid_var;
@@ -2802,10 +2863,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	app = application_interface->interface_name;
 
 	if (arg) {
-		expanded = switch_channel_expand_variables(session->channel, arg);
+		if (expand_variables) {
+			expanded = switch_channel_expand_variables(session->channel, arg);
+		} else {
+			expanded = (char *)arg;
+		}
 	}
 
-	if (expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
+	if (expand_variables && expanded && *expanded == '%' && (*(expanded+1) == '[' || *(expanded+2) == '[')) {
 		char *p, *dup;
 		switch_event_t *ovars = NULL;
 
@@ -2941,7 +3006,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 {
 	char *dp[25];
 	char *dpstr;
-	int argc, x, count = 0;
+	int argc, x;
 	uint32_t stack_count = 0;
 	switch_caller_profile_t *profile, *new_profile, *pp = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2994,8 +3059,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 		if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 			continue;
 		}
-
-		count++;
 
 		extension = dialplan_interface->hunt_function(session, dparg, new_profile);
 		UNPROTECT_INTERFACE(dialplan_interface);

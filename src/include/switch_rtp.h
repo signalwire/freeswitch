@@ -41,9 +41,11 @@
 
 SWITCH_BEGIN_EXTERN_C
 
+#define SWITCH_RTP_HEADER_LEN sizeof(switch_rtp_hdr_t)
 #define SWITCH_RTP_MAX_BUF_LEN 16384
 #define SWITCH_RTCP_MAX_BUF_LEN 16384
 #define SWITCH_RTP_MAX_BUF_LEN_WORDS 4094 /* (max / 4) - 2 */
+#define SWITCH_RTP_MAX_PACKET_LEN (SWITCH_RTP_MAX_BUF_LEN + SWITCH_RTP_HEADER_LEN)
 //#define SWITCH_RTP_KEY_LEN 30
 //#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
@@ -101,15 +103,18 @@ typedef struct icand_s {
 	switch_port_t rport;
 	char *generation;
 	uint8_t ready;
+	uint8_t responsive;
+	uint8_t use_candidate;
 } icand_t;
 
 #define MAX_CAND 50
+#define MAX_CAND_IDX_COUNT 2
 typedef struct ice_s {
 
-	icand_t cands[MAX_CAND][2];
-	int cand_idx[2];
-	int chosen[2];
-	int is_chosen[2];
+	icand_t cands[MAX_CAND][MAX_CAND_IDX_COUNT];
+	int cand_idx[MAX_CAND_IDX_COUNT];
+	int chosen[MAX_CAND_IDX_COUNT];
+	int is_chosen[MAX_CAND_IDX_COUNT];
 	char *ufrag;
 	char *pwd;
 	char *options;
@@ -234,7 +239,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool);
+												  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
 /*!
@@ -260,7 +265,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags[], char *timer_name, const char **err, switch_memory_pool_t *pool, switch_port_t bundle_internal_ports, switch_port_t bundle_external_port);
+											  switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID], char *timer_name, const char **err, switch_memory_pool_t *pool, switch_port_t bundle_internal_ports, switch_port_t bundle_external_port);
 
 
 /*!
