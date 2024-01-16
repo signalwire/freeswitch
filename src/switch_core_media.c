@@ -10314,6 +10314,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_core_session_check_outgoing_crypto(session);
 	}
 
+	// Address SDP crypto for inbound late offer https://github.com/signalwire/freeswitch/issues/2280
+	if(!is_outbound && sdp_type == SDP_TYPE_REQUEST){
+		switch_core_session_parse_crypto_prefs(session);
+		switch_core_session_check_outgoing_crypto(session);
+	}
+
 	fmtp_out = a_engine->cur_payload_map->fmtp_out;
 	username = smh->mparams->sdp_username;
 
