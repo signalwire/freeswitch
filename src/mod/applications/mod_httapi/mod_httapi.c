@@ -2501,7 +2501,11 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 	if (save_path) {
 		while(--tries && (client->fd == 0 || client->fd == -1)) {
+			#ifdef WIN32
+			client->fd = open(save_path, O_CREAT | O_WRONLY | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR);
+			#else
 			client->fd = open(save_path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+			#endif
 		}
 
 		if (client->fd < 0) {
