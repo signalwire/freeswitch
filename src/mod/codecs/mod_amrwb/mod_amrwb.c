@@ -198,6 +198,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
+	char *fmtp_dup = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -222,7 +223,10 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		}
 
 		if (codec->fmtp_in) {
-			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			fmtp_dup = strdup(codec->fmtp_in);
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 			for (x = 0; x < argc; x++) {
 				char *data = argv[x];
 				char *arg;
@@ -272,6 +276,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					}
 				}
 			}
+			free(fmtp_dup);
 		}
 
 		if (context->enc_modes && !globals.mode_set_overwrite) {
@@ -401,12 +406,14 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 #else
 	struct amrwb_context *context = codec->private_info;
-	unsigned char *buf = encoded_data;
+	unsigned char buf[SWITCH_AMRWB_OUT_MAX_SIZE];
 	uint8_t tmp[SWITCH_AMRWB_OUT_MAX_SIZE];
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	memcpy(buf, encoded_data, encoded_data_len);
 
 	if (globals.debug) {
 		switch_amrwb_info(codec, buf, encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB decoder");
