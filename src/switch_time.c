@@ -1383,10 +1383,11 @@ SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name)
 	if (zstr(tz_name) || !TIMEZONES_LIST.hash) {
 		return NULL;
 	}
-
+	switch_mutex_lock(globals.mutex);
 	if ((value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tz_name);
 	}
+	switch_mutex_unlock(globals.mutex);
 
 	return value;
 }
