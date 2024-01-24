@@ -227,12 +227,15 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			switch_assert(fmtp_dup);
 
 			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
 			for (x = 0; x < argc; x++) {
 				char *data = argv[x];
 				char *arg;
+
 				while (*data && *data == ' ') {
 					data++;
 				}
+
 				if ((arg = strchr(data, '='))) {
 					*arg++ = '\0';
 					if (!strcasecmp(data, "octet-align")) {
@@ -268,7 +271,9 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					} else if (!strcasecmp(data, "mode-set")) {
 						int y, m_argc;
 						char *m_argv[SWITCH_AMRWB_MODES-1]; /* AMRWB has 9 modes */
+
 						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+
 						for (y = 0; y < m_argc; y++) {
 							context->enc_modes |= (1 << atoi(m_argv[y]));
 							context->enc_mode = atoi(m_argv[y]);
@@ -276,6 +281,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					}
 				}
 			}
+
 			free(fmtp_dup);
 		}
 
@@ -409,11 +415,7 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	unsigned char buf[SWITCH_AMRWB_OUT_MAX_SIZE];
 	uint8_t tmp[SWITCH_AMRWB_OUT_MAX_SIZE];
 
-	if (!context) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (encoded_data_len > SWITCH_AMRWB_OUT_MAX_SIZE) {
+	if (!context || encoded_data_len > SWITCH_AMRWB_OUT_MAX_SIZE) {
 		return SWITCH_STATUS_FALSE;
 	}
 
