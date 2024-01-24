@@ -4752,7 +4752,7 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 
 	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 
-		if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
+		if (sdp_type == SDP_TYPE_RESPONSE && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) && (switch_channel_get_callstate(session->channel) != CCS_HELD)) {
 			switch_core_media_set_smode(other_session, type, rmode, sdp_type);
 		}
 
