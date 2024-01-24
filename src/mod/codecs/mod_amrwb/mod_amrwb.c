@@ -413,6 +413,10 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (encoded_data_len > SWITCH_AMRWB_OUT_MAX_SIZE) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	memcpy(buf, encoded_data, encoded_data_len);
 
 	if (globals.debug) {

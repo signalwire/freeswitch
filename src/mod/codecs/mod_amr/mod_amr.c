@@ -487,6 +487,10 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (encoded_data_len > SWITCH_AMR_OUT_MAX_SIZE) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	memcpy(buf, encoded_data, encoded_data_len);
 
 	if (globals.debug) {
