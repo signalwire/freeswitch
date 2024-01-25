@@ -3908,7 +3908,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			}
 			stream->write_function(stream, "+OK\n");
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
-			if (gateway_ptr->state != REG_STATE_NOREG) {
+			if (gateway_ptr->state != REG_STATE_NOREG && gateway_ptr->state != REG_STATE_DOWN) {
 				gateway_ptr->retry = 0;
 				gateway_ptr->state = REG_STATE_UNREGISTER;
 				stream->write_function(stream, "+OK\n");

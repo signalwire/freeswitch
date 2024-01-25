@@ -2175,7 +2175,7 @@ void sofia_glue_gateway_list(sofia_profile_t *profile, switch_stream_handle_t *s
 void sofia_glue_del_gateway(sofia_gateway_t *gp)
 {
 	if (!gp->deleted) {
-		if (gp->state != REG_STATE_NOREG) {
+		if (gp->state != REG_STATE_NOREG && gp->state != REG_STATE_DOWN) {
 			gp->retry = 0;
 			gp->state = REG_STATE_UNREGISTER;
 		}
