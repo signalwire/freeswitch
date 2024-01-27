@@ -593,7 +593,7 @@ SWITCH_STANDARD_APP(filter_codecs_function)
 	r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 	
 	if (data && r_sdp) {
-		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST, data);
+		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_OFFER, data);
 		switch_channel_set_variable(channel, "filter_codec_string", data);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Incomplete data\n");
