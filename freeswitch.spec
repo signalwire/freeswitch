@@ -952,14 +952,14 @@ Requires:        %{name} = %{version}-%{release}
 %description event-format-cdr
 JSON and XML Logger for the FreeSWITCH open source telephony platform
 
-%package kazoo
+%package event-kazoo
 Summary:	Kazoo Module for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	erlang
+Requires:	(erlang-erts or erlang)
 BuildRequires:	erlang
 
-%description kazoo
+%description event-kazoo
 Kazoo Module for FreeSWITCH.
 
 %package event-multicast
@@ -2277,6 +2277,9 @@ fi
 %files event-format-cdr
 %{MODINSTDIR}/mod_format_cdr.so*
 
+%files event-kazoo
+%{MODINSTDIR}/mod_kazoo.so*
+
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
 
@@ -2285,9 +2288,6 @@ fi
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
-
-%files kazoo
-%{MODINSTDIR}/mod_kazoo.so*
 
 %files event-radius-cdr
 %{MODINSTDIR}/mod_radius_cdr.so*
