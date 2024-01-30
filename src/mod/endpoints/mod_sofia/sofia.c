@@ -2618,6 +2618,26 @@ void sofia_event_callback(nua_event_t event,
 
 		break;
 
+	case nua_i_prack:
+		if (sofia_private) {
+			switch_core_session_t *session;
+			if ((session = switch_core_session_locate(sofia_private->uuid))) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				if (switch_channel_var_true(channel, "apply_100rel_sync")) {
+					private_object_t *tech_pvt = switch_core_session_get_private(session);					
+					switch_mutex_lock(tech_pvt->prack_mutex);
+					if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK)) {
+						sofia_clear_flag(tech_pvt, TFLAG_PRACK_LOCK);
+						switch_thread_cond_signal(tech_pvt->prack_cond);
+					}
+					switch_mutex_unlock(tech_pvt->prack_mutex);
+				}
+				switch_core_session_rwunlock(session);
+			}
+		}
+
+		break;
+
 	default:
 		break;
 
@@ -5899,6 +5919,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 						}
+					} else if (!strcasecmp(var, "enable-100rel-sync")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_100REL_SYNC);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_100REL_SYNC);
+						}					
 					} else if (!strcasecmp(var, "enable-compact-headers")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_SIPCOMPACT);
@@ -11262,6 +11288,18 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					switch_event_destroy(&v_event);
 				}
 				goto fail;
+			}
+		}
+	}
+
+	if (sip && sip->sip_supported && !sofia_test_pflag(profile, PFLAG_DISABLE_100REL)) {
+		int supported_100rel = sip_has_feature(sip->sip_supported, "100rel");
+		if (supported_100rel) {
+			const char *sync = switch_channel_get_variable(channel, "apply_100rel_sync");
+			if (sync) {
+				switch_channel_set_variable(channel, "apply_100rel_sync", switch_true(sync) ? "true" : "false");
+			} else if (sofia_test_pflag(profile, PFLAG_ENABLE_100REL_SYNC)) {
+				switch_channel_set_variable(channel, "apply_100rel_sync", "true");
 			}
 		}
 	}
