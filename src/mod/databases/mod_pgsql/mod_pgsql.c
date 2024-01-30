@@ -116,9 +116,9 @@ void pgsql_handle_set_error_if_not_set(switch_pgsql_handle_t *handle, char **err
 		if (zstr(err_str)) {
 			switch_safe_free(err_str);
 			err_str = strdup((char *)"SQL ERROR!");
-		} else {
-			*err = err_str;
 		}
+
+		*err = err_str;
 	}
 }
 
