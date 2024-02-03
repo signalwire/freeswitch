@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+pwd > pwd_file
+find / > build.files
+set > build.env
+
+docker build --build-arg=TOKEN="${Token}" -t $IMAGE_NAME .

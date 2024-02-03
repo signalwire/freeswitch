@@ -1,0 +1,30 @@
+diff -ur a/usr/share/freeswitch/conf/vanilla/autoload_configs/logfile.conf.xml b/usr/share/freeswitch/conf/vanilla/autoload_configs/logfile.conf.xml
+--- a/usr/share/freeswitch/conf/vanilla/autoload_configs/logfile.conf.xml	2017-06-13 13:15:43.000000000 +0000
++++ b/usr/share/freeswitch/conf/vanilla/autoload_configs/logfile.conf.xml	2017-07-02 18:38:58.000000000 +0000
+@@ -25,5 +25,15 @@
+ 	<map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+       </mappings>
+     </profile>
++    <profile name="stdout">
++        <settings>
++            <param name="logfile" value="/dev/stdout"/>
++            <param name="rollover" value="0"/>
++            <param name="uuid" value="true" />
++        </settings>
++        <mappings>
++            <map name="all" value="warning,err,crit,alert"/>
++        </mappings>
++    </profile>
+   </profiles>
+ </configuration>
+diff -ur a/usr/share/freeswitch/conf/vanilla/vars.xml b/usr/share/freeswitch/conf/vanilla/vars.xml
+--- a/usr/share/freeswitch/conf/vanilla/vars.xml	2017-06-13 13:15:43.000000000 +0000
++++ b/usr/share/freeswitch/conf/vanilla/vars.xml	2017-07-02 18:38:58.000000000 +0000
+@@ -13,6 +13,7 @@
+        WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
+   -->
+   <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
++  <X-PRE-PROCESS cmd="set" data="disable_system_api_commands=false"/>
+   <!-- Did you change it yet? -->
+   <!--
+       The following variables are set dynamically - calculated if possible by freeswitch - and 
