@@ -353,7 +353,7 @@ switch_status_t mod_sms_flowroute_profile_send_message(mod_sms_flowroute_profile
 	h2o_timeout_init(msg->ctx.loop, &msg->io_timeout, 5000); /* 5 seconds */
 	h2o_multithread_register_receiver(profile->queue, msg->ctx.getaddr_receiver, h2o_hostinfo_getaddr_receiver);
 
-	msg->ctx.ssl_ctx = SSL_CTX_new(TLSv1_2_client_method());
+	msg->ctx.ssl_ctx = SSL_CTX_new(TLS_client_method());
 	SSL_CTX_load_verify_locations(msg->ctx.ssl_ctx, NULL, "/etc/ssl/certs/");
 	SSL_CTX_set_verify(msg->ctx.ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
