@@ -434,6 +434,7 @@ extern struct mod_sofia_globals mod_sofia_globals;
 typedef enum {
 	REG_FLAG_AUTHED,
 	REG_FLAG_CALLERID,
+	REG_FLAG_REGISTERED,
 
 	/* No new flags below this line */
 	REG_FLAG_MAX

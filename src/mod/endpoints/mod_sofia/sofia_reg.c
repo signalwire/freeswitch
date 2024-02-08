@@ -139,6 +139,8 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 	if (gateway_ptr->state == REG_STATE_REGED || gateway_ptr->state == REG_STATE_UNREGISTER) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
+
+		// Returning here, nua_handle and sofia_private must be clean up in event *nua_r_unregister* with proper status
 		return;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Destroying registration handle for %s\n", gateway_ptr->name);
@@ -461,22 +463,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			user_via = NULL;
 		}
 
-		if(ostate == REG_STATE_DOWN && gateway_ptr->destroy) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy sofia_private and nua_handler for gateway %s\n", gateway_ptr->name);
-
-			if (gateway_ptr->sofia_private) {
-				sofia_private_free(gateway_ptr->sofia_private);
-			}
-
-			if (gateway_ptr->nh) {
-				nua_handle_bind(gateway_ptr->nh, NULL);
-				nua_handle_destroy(gateway_ptr->nh);
-				gateway_ptr->nh = NULL;
-			}
-
-			gateway_ptr->destroy = 0;
-		}
-
 		switch (ostate) {
 		case REG_STATE_DOWN:
 		case REG_STATE_NOREG:
@@ -514,9 +500,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_UNREGISTER:
 			sofia_reg_kill_reg(gateway_ptr);
-			gateway_ptr->state = REG_STATE_DOWN;
-			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
-			gateway_ptr->last_inactive = switch_epoch_time_now(NULL);
 			request++; // Only increment when FS sends out request
 			break;
 		case REG_STATE_UNREGED:
@@ -2760,6 +2743,9 @@ void sofia_reg_handle_sip_r_register(int status,
 										  "Changing expire time to %d by request of proxy %s\n", expi, gateway->register_proxy);
 					}
 				}
+			}
+			if (!sofia_test_flag(gateway, REG_FLAG_REGISTERED)) {
+				sofia_set_flag(gateway, REG_FLAG_REGISTERED);
 			}
 			gateway->state = REG_STATE_REGISTER;
 			break;
