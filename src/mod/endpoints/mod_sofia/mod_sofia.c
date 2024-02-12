@@ -1474,8 +1474,6 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SIP_100REL_MIN_DIFF_PROGRESS_TIME 300
-
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1515,39 +1513,71 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	// for the prack before sending the final response.
 	if (switch_channel_var_true(channel, "apply_100rel_sync")) {
 		const char* message_str = "N/A";
+		uint32_t channel_flag = CF_FLAG_MAX;
 		switch (msg->message_id) {
-		case SWITCH_MESSAGE_INDICATE_RINGING:
-			message_str = "RINGING";
-		case SWITCH_MESSAGE_INDICATE_PROGRESS:
-			message_str = "PROGRESS";
-		case SWITCH_MESSAGE_INDICATE_ANSWER:
-			message_str = "ANSWER";
+		case SWITCH_MESSAGE_INDICATE_RINGING: 
 			{
-				// PRACK timeout is also based on timer t1x64
-				// to prevent deadlock, will need to time the
-				// lock based on the value of t1x64
-				uint32_t t1x64 = tech_pvt->profile->timer_t1x64 ? tech_pvt->profile->timer_t1x64 : 32000;
-				switch_mutex_lock(tech_pvt->prack_mutex);
-				if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
-							"%s Waiting for incoming PRACK! (Blocking %s message)\n", switch_channel_get_name(channel), message_str);
-					if (switch_thread_cond_timedwait(tech_pvt->prack_cond, tech_pvt->prack_mutex, t1x64 * 1000) == SWITCH_STATUS_TIMEOUT) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-							"%s Timeout on waiting for PRACK! (Unblock %s message)\n", switch_channel_get_name(channel), message_str);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
-							"%s Received PRACK! (Unblock %s message)\n", switch_channel_get_name(channel), message_str);
-					}
-				} else {
-					if (msg->message_id != SWITCH_MESSAGE_INDICATE_ANSWER) {
-						sofia_set_flag(tech_pvt, TFLAG_PRACK_LOCK);
-					}
+				message_str = "RINGING";
+				if (!sofia_test_flag(tech_pvt, TFLAG_BYE) && !switch_channel_test_flag(channel, CF_RING_READY) &&
+					!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+					channel_flag = CF_RING_READY;
 				}
-				switch_mutex_unlock(tech_pvt->prack_mutex);
+				
+			}
+			break;
+		case SWITCH_MESSAGE_INDICATE_PROGRESS:
+			{
+				message_str = "PROGRESS";
+				if (!sofia_test_flag(tech_pvt, TFLAG_BYE) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+					channel_flag = CF_EARLY_MEDIA;
+				}
+			}
+		case SWITCH_MESSAGE_INDICATE_ANSWER:
+			{
+				message_str = "ANSWER";
+				if (!sofia_test_flag(tech_pvt, TFLAG_BYE) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+					channel_flag = CF_ANSWERED;
+				}
 			}
 			break;
 		default:
 			break;
+		}
+
+		if (channel_flag != CF_FLAG_MAX) {
+			switch (msg->message_id) {
+			case SWITCH_MESSAGE_INDICATE_RINGING:
+			case SWITCH_MESSAGE_INDICATE_PROGRESS:
+			case SWITCH_MESSAGE_INDICATE_ANSWER:
+				{
+					// PRACK timeout is also based on timer t1x64
+					// to prevent deadlock, will need to time the
+					// lock based on the value of t1x64
+					uint32_t t1x64 = tech_pvt->profile->timer_t1x64 ? tech_pvt->profile->timer_t1x64 : 32000;
+					switch_mutex_lock(tech_pvt->prack_mutex);
+					if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+								"%s Waiting for incoming PRACK! (Blocking %s message)\n", switch_channel_get_name(channel), message_str);
+						if (switch_thread_cond_timedwait(tech_pvt->prack_cond, tech_pvt->prack_mutex, t1x64 * 1000) == SWITCH_STATUS_TIMEOUT) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+								"%s Timeout on waiting for PRACK! (Unblock %s message)\n", switch_channel_get_name(channel), message_str);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+								"%s Received PRACK! (Unblock %s message)\n", switch_channel_get_name(channel), message_str);
+						}
+					} else {
+						if (msg->message_id != SWITCH_MESSAGE_INDICATE_ANSWER) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+								"%s Expecting incoming PRACK! (Trigger by %s message)\n", switch_channel_get_name(channel), message_str);
+							sofia_set_flag(tech_pvt, TFLAG_PRACK_LOCK);
+						}
+					}
+					switch_mutex_unlock(tech_pvt->prack_mutex);
+				}
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
