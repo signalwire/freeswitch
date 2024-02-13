@@ -7,6 +7,9 @@ ENV LANG en_US.utf8
 # see: https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG DEBIAN_VERSION
 ARG TOKEN
+ARG WITHOUT_PERL="true"
+ARG WITHOUT_PYTHON="true"
+ARG WITHOUT_JAVA="true"
 
 # By default, install the full set of FreeSWITCH packages.  Specify an alternative with:
 #   --build-arg="FS_META_PACKAGE=freeswitch-meta-vanilla"
@@ -48,12 +51,15 @@ RUN wget --no-verbose --http-user=signalwire --http-password=${TOKEN} \
 
 #Create the new root in a separate layer 
 COPY make_root_fs.sh freeswitch-config.patch /
-RUN sh /make_root_fs.sh
+RUN if [ "$WITHOUT_PERL" = "false" ] ; then sed -i 's/WITHOUT_PERL=.*/WITHOUT_PERL=\"false\"/' make_root_fs.sh; fi && \
+    if [ "$WITHOUT_PYTHON" = "false" ] ; then sed -i 's/WITHOUT_PYTHON=.*/WITHOUT_PYTHON=\"false\"/' make_root_fs.sh; fi && \
+    if [ "$WITHOUT_JAVA" = "false" ] ; then sed -i 's/WITHOUT_JAVA=.*/WITHOUT_JAVA=\"false\"/' make_root_fs.sh; fi && \
+    sh /make_root_fs.sh
 
 FROM scratch
 ENV LANG en_US.utf8
 
-COPY --from=stage /tmp/freeswitch /
+COPY --from=stage /tmp/newroot /
 COPY docker-entrypoint.sh healthcheck.sh sounds_version.txt /
 
 # explicitly set user/group IDs

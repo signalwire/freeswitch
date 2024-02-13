@@ -28,8 +28,10 @@
 #  David Heaps <king.dopey.10111@gmail.com>
 #
 
-BUILD_ROOT=/tmp/freeswitch
+BUILD_ROOT=/tmp/newroot
 DEBFILELIST=/tmp/filelist
+PACKAGELIST="libc6 busybox erlang erlang-base ca-certificates openssl gnupg2 passwd curl"
+PACKAGESEARCH="freeswitch"
 DEBFILELIST_BINARY="$DEBFILELIST.binary"
 DEBFILELISTLINKED="$DEBFILELIST.full.linked"
 FULLLIST="$DEBFILELIST.full"
@@ -39,15 +41,6 @@ FULLFILELIST="$FULLLIST.file"
 WITHOUT_PERL="true"
 WITHOUT_PYTHON="true"
 WITHOUT_JAVA="true"
-
-fs_files_debian() {
-    PACKAGES=$(dpkg-query -f '${binary:Package}\n' -W 'freeswitch*')
-    PACKAGES="libc6 busybox erlang erlang-base ca-certificates gnupg2 passwd curl $PACKAGES"
-    for pkg in $PACKAGES
-    do
-        dpkg-query -L "$pkg" 2> /dev/null
-    done
-}
 
 filter_unnecessary_files() {
 # excluded following files and directories recursive
@@ -80,6 +73,32 @@ filter_unnecessary_files() {
     if [ "$WITHOUT_JAVA" = "true" ];then
         sed -i -e '\|^/usr/share/freeswitch/scripts/freeswitch.jar|d' $FULLLIST
     fi
+}
+
+fs_files_debian() {
+    PACKAGES="$PACKAGELIST"
+    if [ "$WITHOUT_PERL" = "false" ];then
+        PACKAGES="$PACKAGES perl-base"
+    fi
+    if [ "$WITHOUT_PYTHON" = "false" ];then
+        PACKAGES="$PACKAGES python3 python3.11-minimal"
+    fi
+    if [ "$WITHOUT_JAVA" = "false" ];then
+        PACKAGES="$PACKAGES openjdk-17-jre-headless java-common"
+    fi
+    for search in $PACKAGESEARCH; do
+        NEW_PACKAGES=$(dpkg-query -f '${binary:Package}\n' -W "*$search*")
+        PACKAGES="$NEW_PACKAGES $PACKAGES"
+    done
+
+    for pkg in $PACKAGES
+    do
+        dpkg-query -L "$pkg" >> $DEBFILELIST 2> /dev/null
+    done
+}
+
+dpkg_search_cmd() {
+    dpkg-query -f '\${binary:Package}\n' -W "*$1*"
 }
 
 clean_build() {
@@ -165,21 +184,25 @@ create_folder_structure() {
     do
         #Create the folder it's linking to at the same time, to prevent racing conditions
         FOLDER_TO_CREATE=$(readlink "$f")
+        if [ -n "$BUILD_ROOT$FOLDER_TO_CREATE" ]; then
+            mkdir -p "$BUILD_ROOT$FOLDER_TO_CREATE"
+            chown --reference="$FOLDER_TO_CREATE" "$BUILD_ROOT$FOLDER_TO_CREATE"
+            chmod --reference="$FOLDER_TO_CREATE" "$BUILD_ROOT$FOLDER_TO_CREATE"
+        fi
+
         #Get the parent folder of the link to allow for deep references
         PARENT_FOLDER=$(dirname "$f")
-        if [ -n "$FOLDER_TO_CREATE" ]; then
-            if [ ! -e "$BUILD_ROOT$PARENT_FOLDER/$FOLDER_TO_CREATE" ]; then
-                mkdir -p "$BUILD_ROOT$PARENT_FOLDER/$FOLDER_TO_CREATE"
-                chown --reference="$PARENT_FOLDER/$FOLDER_TO_CREATE" "$BUILD_ROOT$PARENT_FOLDER/$FOLDER_TO_CREATE"
-                chmod --reference="$PARENT_FOLDER/$FOLDER_TO_CREATE" "$BUILD_ROOT$PARENT_FOLDER/$FOLDER_TO_CREATE"
-            fi
-            cp -pP "$f" "$BUILD_ROOT"
-        fi        
+        if [ -n "$BUILD_ROOT$PARENT_FOLDER" ]; then
+            mkdir -p "$BUILD_ROOT$PARENT_FOLDER"
+            chown --reference="$PARENT_FOLDER" "$BUILD_ROOT$PARENT_FOLDER"
+            chmod --reference="$PARENT_FOLDER" "$BUILD_ROOT$PARENT_FOLDER"
+        fi
+        cp -pP "$f" "$BUILD_ROOT$PARENT_FOLDER"
     done
 
     #Create all remaining folders
     cat $FOLDERLIST | while IFS= read -r f
-    do
+    do 
         if [ ! -e "$BUILD_ROOT$f" ]; then
             mkdir -p "$BUILD_ROOT$f"
             chown --reference="$f" "$BUILD_ROOT$f"
@@ -213,14 +236,14 @@ make_new_root() {
     patch -p 1 < /freeswitch-config.patch
     mkdir bin
     busybox --install -s bin
+    cp -rpP /etc/ssl/certs etc/ssl
     mkdir -p etc/pki/tls/certs
-    cp /etc/ssl/certs/ca-certificates.crt etc/ssl/certs/ca-certificates.crt
     cp etc/ssl/certs/ca-certificates.crt etc/pki/tls/certs/ca-bundle.crt
 }
 
 CUR_DIR=$(pwd)
 clean_build
-fs_files_debian > $DEBFILELIST
+fs_files_debian
 sort_filelist $DEBFILELIST
 create_full_file_list
 filter_unnecessary_files
