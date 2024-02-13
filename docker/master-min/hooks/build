@@ -1,7 +1,6 @@
-#!/usr/bin/env sh
-
-pwd > pwd_file
-find / > build.files
-set > build.env
-
-docker build --build-arg=TOKEN="${Token}" -t $IMAGE_NAME .
+#!/bin/bash
+docker build --build-arg TOKEN="$Token" -t "$IMAGE_NAME" .
+docker build --build-arg TOKEN="$Token" --build-arg WITHOUT_PYTHON="false"  -t "$DOCKER_REPO:python" .
+docker build --build-arg TOKEN="$Token" --build-arg WITHOUT_JAVA="false" -t "$DOCKER_REPO:java" .
+docker build --build-arg TOKEN="$Token" --build-arg WITHOUT_PERL="false" -t "$DOCKER_REPO:perl" .
+docker build --build-arg TOKEN="$Token" --build-arg WITHOUT_PERL="false" --build-arg WITHOUT_PYTHON="false" --build-arg WITHOUT_JAVA="false" -t "$DOCKER_REPO:full" .
