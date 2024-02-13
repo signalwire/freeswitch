@@ -2747,6 +2747,10 @@ void sofia_reg_handle_sip_r_register(int status,
 			if (!sofia_test_flag(gateway, REG_FLAG_REGISTERED)) {
 				sofia_set_flag(gateway, REG_FLAG_REGISTERED);
 			}
+			if (gateway->status != SOFIA_GATEWAY_UP) {
+				gateway->status = SOFIA_GATEWAY_UP;
+				gateway->uptime = switch_time_now();
+			}
 			gateway->state = REG_STATE_REGISTER;
 			break;
 		case 100:

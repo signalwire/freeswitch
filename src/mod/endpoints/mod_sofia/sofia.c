@@ -3672,7 +3672,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	/* Mark all gateways as deleted and set REG_STATE_UNREGISTER state on REG gateways */
 	sofia_glue_del_every_gateway(profile);
 	/* This prevent doing batch request for reg check */
-	profile->gateway_reg_max_cps = 0; 
+	profile->gateway_reg_max_cps = profile->gateway_shutdown_reg_max_cps; 
 	/* First call will unregister and set state to DOWN so a gateway is ready for deletion */
 	sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
 	sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
@@ -3981,7 +3981,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		if ((gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, name)) && (gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) && !gp->deleted) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", name);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", name);
 			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 			free(pkey);
 			goto skip;
@@ -5860,6 +5860,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->max_auth_validity = atoi(val);
 					} else if (!strcasecmp(var, "gateway-reg-max-cps")) {
 						profile->gateway_reg_max_cps = atoi(val);
+					} else if (!strcasecmp(var, "gateway-shutdown-reg-max-cps")) {
+						profile->gateway_shutdown_reg_max_cps = atoi(val);
 					} else if (!strcasecmp(var, "auth-require-user")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_AUTH_REQUIRE_USER);

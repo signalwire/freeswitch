@@ -733,6 +733,7 @@ struct sofia_profile {
 	sofia_gateway_t *gateways;
 	sofia_gateway_t *next_check_gateway_ptr;
 	unsigned int gateway_reg_max_cps;
+	unsigned int gateway_shutdown_reg_max_cps;
 	unsigned int gateway_unreg_max_yield_ms;
 	//su_home_t *home;
 	switch_hash_t *chat_hash;
