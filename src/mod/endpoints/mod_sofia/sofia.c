@@ -4176,7 +4176,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 
 			if (extension_in_contact) {
 				if (rfc_5626) {
-					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d>%s" : "<sip:%s@%s:%d%s>%s";
+					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>%s" : "<sip:%s@%s:%d%s>%s";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
