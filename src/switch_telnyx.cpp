@@ -231,3 +231,10 @@ switch_bool_t switch_telnyx_sip_on_media_timeout(switch_channel_t* channel, swit
 	}
 	return SWITCH_TRUE;
 }
+
+void switch_telnyx_channel_event_set_basic_data(switch_channel_t *channel, switch_event_t *event)
+{
+	if (_event_dispatch.switch_telnyx_channel_event_set_basic_data) {
+		_event_dispatch.switch_telnyx_channel_event_set_basic_data(channel, event);
+	}
+}

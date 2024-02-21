@@ -2762,6 +2762,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_caller_profile_event_set_data(originatee_caller_profile, "Other-Leg", event);
 	}
 
+	switch_telnyx_channel_event_set_basic_data(channel, event);
 
 	switch_mutex_unlock(channel->profile_mutex);
 }
