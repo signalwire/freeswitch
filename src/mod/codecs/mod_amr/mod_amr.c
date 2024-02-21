@@ -40,6 +40,8 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load);
 SWITCH_MODULE_DEFINITION(mod_amr, mod_amr_load, NULL, NULL);
 
+#define AMR_CONFIG_OUTPUT_BUFFER 512
+
 #ifndef AMR_PASSTHROUGH
 #include "opencore-amrnb/interf_enc.h"
 #include "opencore-amrnb/interf_dec.h"
@@ -138,6 +140,13 @@ static struct {
 	switch_byte_t adjust_bitrate;
 	int debug;
 	switch_byte_t force_oa; /*force OA when originating*/
+	switch_byte_t force_be; /*force BE when originating*/
+	switch_byte_t invite_prefer_oa;
+	switch_byte_t invite_prefer_be;
+	switch_byte_t mode_set_overwrite; /*0 use highest mode, 1 overwrite with custom bitrate, 2 overwrite using default bitrate*/
+	struct amr_context context;
+	char *fmtp_extra;
+	switch_byte_t silence_supp_off;
 } globals;
 
 const int switch_amr_frame_sizes[] = {12,13,15,17,19,20,26,31,5,0,0,0,0,0,0,1};
@@ -250,6 +259,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
+	switch_core_session_t *session = codec->session;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -277,11 +287,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		 *     bandwidth-efficient operation is employed."
 		 *
 		 */
-		if (!globals.force_oa) {
-			switch_clear_flag(context, AMR_OPT_OCTET_ALIGN);
-		} else {
-			switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
-		}
+
 		if (codec->fmtp_in) {
 			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 			for (x = 0; x < argc; x++) {
@@ -334,7 +340,15 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			}
 		}
 
-		if (context->enc_modes) {
+		if (globals.force_oa) {
+			switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
+		}
+
+		if (globals.force_be) {
+			switch_clear_flag(context, AMR_OPT_OCTET_ALIGN);
+		}
+
+		if (context->enc_modes && !globals.mode_set_overwrite) {
 			/* choose the highest mode (bitrate) for high audio quality */
 			for (i = SWITCH_AMR_MODES-2; i > -1; i--) {
 				if (context->enc_modes & (1 << i)) {
@@ -352,8 +366,22 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			}
 
 		} else {
-			/* use default mode-set */
-			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", context->enc_mode);
+
+			if (globals.mode_set_overwrite == 2) {
+				fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%d", context->enc_modes);
+			} else {
+				char modes[100] = { 0 };
+				int i = 0, j = 0;
+
+				for (i = 0; SWITCH_AMR_MODES-1 > i; ++i) {
+					if (globals.context.enc_modes & (1 << i)) {
+						j++;
+						snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), j > 1 ? ",%d" : "%d", i);
+					}
+				}
+
+				fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=%s", modes);
+			}
 		}
 
 		if (globals.adjust_bitrate) {
@@ -369,6 +397,23 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
 							switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
+
+		if (!zstr(globals.fmtp_extra)) {
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, "; %s", globals.fmtp_extra);
+		}
+
+		if (globals.silence_supp_off) {
+			switch_channel_t *channel = NULL;
+			if (session) {
+				channel = switch_core_session_get_channel(session);
+				switch_assert(channel);
+				switch_channel_set_variable(channel, "suppress_cng", "true");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Turning CNG off (silence suppression off, suppress_cng=true) due to silence-supp-off=true\n");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot turn silence suppression off - session missing\n");
+			}
+		}
+
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->encoder_state = NULL;
@@ -576,12 +621,25 @@ static switch_status_t switch_amr_control(switch_codec_t *codec,
 static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 {
 	char buf[256] = { 0 };
+#ifndef AMRWB_PASSTHROUGH
+	int i = 0, j =0;
+#endif
 
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "octet-align=%d; ", octet_align);
 
 #ifndef AMR_PASSTHROUGH
 
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=%d; ", globals.default_bitrate);
+	if (globals.context.enc_modes && !globals.mode_set_overwrite) {
+			for (i = 0; SWITCH_AMR_MODES-1 > i; ++i) {
+				if (globals.context.enc_modes & (1 << i)) {
+					j++;
+					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), j > 1 ? ",%d" : "mode-set=%d", i);
+				}
+			}
+	} else {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "mode-set=%d", globals.default_bitrate);
+	}
+	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "; ");
 
 	if (globals.volte) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "max-red=0; mode-change-capability=2; ");
@@ -595,13 +653,108 @@ static char *generate_fmtp(switch_memory_pool_t *pool , int octet_align)
 	return switch_core_strdup(pool, buf);
 }
 
+static switch_status_t amr_parse_fmtp_cb(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
+{
+	/* Must return IGNORE for FS to skip this codec */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Considering AMR fmtp\n");
+
+	if (!zstr(fmtp)) {
+		int x, argc;
+		char *argv[10];
+		char *fmtp_dup = strdup(fmtp);
+
+		/* If there is no octet-align param on fmtp then default is 0 (bandwidth efficient). */
+		int oa = 0;
+
+		if (!fmtp_dup) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+		for (x = 0; x < argc; x++) {
+			char *data = argv[x];
+			char *arg;
+			while (*data == ' ') {
+				data++;
+			}
+
+			if ((arg = strchr(data, '='))) {
+				*arg++ = '\0';
+
+				if (!strcasecmp(data, "octet-align")) {
+					oa = switch_true(arg);
+				}
+			}
+		}
+		free(fmtp_dup);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AMR fmtp mode: %s\n", oa ? "octet aligned" : "bandwidth efficient");
+		if ((oa == 0 && globals.invite_prefer_oa) || (oa == 1 && globals.invite_prefer_be)) {
+			return SWITCH_STATUS_IGNORE;
+		}
+	}
+
+	/* Must return FALSE for FS to continue as if callback was not called */
+	return SWITCH_STATUS_FALSE;
+}
+
+static void mod_amr_configuration_snprintf(char *buffer, size_t buffer_len) {
+	char modes[100] = { 0 };
+	int i = 0, j = 0;
+
+	snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), "[");
+	for (i = 0; SWITCH_AMR_MODES-1 > i; ++i) {
+		if (globals.context.enc_modes & (1 << i)) {
+			j++;
+			snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), j > 1 ? ",%d" : "%d", i);
+		}
+	}
+	snprintf(modes + strlen(modes), sizeof(modes) - strlen(modes), "]");
+
+	snprintf(buffer, buffer_len,
+			"modes: %s, "
+			"mode-set-overwrite: %d, "
+			"default-bitrate: %d, "
+			"volte: %d, "
+			"adjust-bitrate: %d, "
+			"force-oa: %d, "
+			"force-be: %d, "
+			"invite-prefer-oa: %d, "
+			"invite-prefer-be: %d, "
+			"fmtp-extra: [%s], "
+			"debug: %d, "
+			"silence-supp-off: %d\n",
+			modes,
+			globals.mode_set_overwrite,
+			globals.default_bitrate,
+			globals.volte,
+			globals.adjust_bitrate,
+			globals.force_oa,
+			globals.force_be,
+			globals.invite_prefer_oa,
+			globals.invite_prefer_be,
+			!zstr(globals.fmtp_extra) ? globals.fmtp_extra : "",
+			globals.debug,
+			globals.silence_supp_off
+	);
+}
+
+static void mod_amr_configuration_stream(switch_stream_handle_t *stream)
+{
+	if (stream && stream->write_function) {
+		char buffer[AMR_CONFIG_OUTPUT_BUFFER] = { 0 };
+		mod_amr_configuration_snprintf(buffer, sizeof(buffer));
+		stream->write_function(stream, buffer);
+	}
+}
+
 #ifndef AMR_PASSTHROUGH
 
-#define AMRWB_DEBUG_SYNTAX "<on|off>"
+#define AMR_DEBUG_SYNTAX "<on|off>"
 SWITCH_STANDARD_API(mod_amr_debug)
 {
 		if (zstr(cmd)) {
-			stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
+			stream->write_function(stream, "-USAGE: %s\n", AMR_DEBUG_SYNTAX);
 		} else {
 			if (!strcasecmp(cmd, "on")) {
 				globals.debug = 1;
@@ -610,12 +763,21 @@ SWITCH_STANDARD_API(mod_amr_debug)
 				globals.debug = 0;
 				stream->write_function(stream, "AMR Debug: off\n");
 			} else {
-				stream->write_function(stream, "-USAGE: %s\n", AMRWB_DEBUG_SYNTAX);
+				stream->write_function(stream, "-USAGE: %s\n", AMR_DEBUG_SYNTAX);
 			}
 		}
 	return SWITCH_STATUS_SUCCESS;
 }
 #endif
+
+#define AMR_SHOW_SYNTAX ""
+SWITCH_STANDARD_API(mod_amr_show)
+{
+	if (stream && stream->write_function) {
+		mod_amr_configuration_stream(stream);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
 
 /* Registration */
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
@@ -623,6 +785,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	switch_codec_interface_t *codec_interface;
 	char *default_fmtp_oa = NULL;
 	char *default_fmtp_be = NULL;
+	char config_buffer[AMR_CONFIG_OUTPUT_BUFFER] = { 0 };
 
 #ifndef AMR_PASSTHROUGH
 	switch_api_interface_t *commands_api_interface;
@@ -650,6 +813,34 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 				if (!strcasecmp(var, "force-oa")) {
 					globals.force_oa = (switch_byte_t) atoi(val);
 				}
+				if (!strcasecmp(var, "force-be")) {
+					globals.force_be = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "invite-prefer-oa")) {
+					globals.invite_prefer_oa = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "invite-prefer-be")) {
+					globals.invite_prefer_be = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "mode-set")) {
+					int y, m_argc;
+					char *m_argv[SWITCH_AMR_MODES-1]; /* AMRWB has 9 modes */
+					m_argc = switch_separate_string(val, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+					for (y = 0; y < m_argc; y++) {
+						globals.context.enc_modes |= (1 << atoi(m_argv[y]));
+						globals.context.enc_mode = atoi(m_argv[y]);
+					}
+				}
+				if (!strcasecmp(var, "debug")) {
+					globals.debug = (switch_byte_t) atoi(val);
+				}
+				if (!strcasecmp(var, "fmtp-extra")) {
+					globals.fmtp_extra = switch_core_strdup(pool, val);
+					switch_assert(globals.fmtp_extra);
+				}
+				if (!strcasecmp(var, "silence-supp-off")) {
+					globals.silence_supp_off = (switch_byte_t) atoi(val);
+				}
 			}
 		}
 	}
@@ -663,13 +854,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 #ifndef AMR_PASSTHROUGH
-	SWITCH_ADD_API(commands_api_interface, "amr_debug", "Set AMR Debug", mod_amr_debug, AMRWB_DEBUG_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "amr_debug", "Set AMR Debug", mod_amr_debug, AMR_DEBUG_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "amr_show", "Show AMR configuration", mod_amr_show, AMR_SHOW_SYNTAX);
 
 	switch_console_set_complete("add amr_debug on");
 	switch_console_set_complete("add amr_debug off");
 #endif
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR / Octet Aligned");
+	codec_interface->parse_fmtp = amr_parse_fmtp_cb;
 
 	default_fmtp_oa = generate_fmtp(pool, 1);
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -691,6 +884,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 switch_amr_destroy);	/* deinitalize a codec handle using this implementation */
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR / Bandwidth Efficient");
+	codec_interface->parse_fmtp = amr_parse_fmtp_cb;
 
 	default_fmtp_be = generate_fmtp(pool, 0);
 	switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -712,6 +906,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 										 switch_amr_destroy);	/* deinitalize a codec handle using this implementation */
 
 	codec_interface->implementations->codec_control = switch_amr_control;
+	mod_amr_configuration_snprintf(config_buffer, sizeof(config_buffer));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "AMR config: %s", config_buffer);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

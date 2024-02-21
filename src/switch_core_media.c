@@ -5752,8 +5752,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int rtcp_auto_audio = 0, rtcp_auto_video = 0;
 	int got_audio_rtcp = 0, got_video_rtcp = 0;
 	switch_port_t audio_port = 0, video_port = 0;
-	int amrwb_offerings_n = 0;
-	int amrwb_offerings_rejected_n = 0;
+	int amrwb_offerings_n = 0, amr_offerings_n = 0;
+	int amrwb_offerings_rejected_n = 0, amr_offerings_rejected_n = 0;
 
 	switch_assert(session);
 
@@ -6419,6 +6419,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_codec_fmtp_t codec_fmtp = { 0 };
 				int map_channels = map->rm_params ? atoi(map->rm_params) : 1;
 				int amrwb_matched = 0;
+				int amr_matched = 0;
 
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
@@ -6495,7 +6496,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				} else {
 					switch_status_t s = SWITCH_STATUS_FALSE;
 
-					// Count AMR-WB offerings
+					// Count AMR-WB/AMR offerings
 					if (!strcasecmp(map->rm_encoding, "AMR-WB") && !amrwb_offerings_n) {
 						sdp_rtpmap_t *mp = NULL;
 						for (mp = m->m_rtpmaps; mp; mp = mp->rm_next) {
@@ -6505,6 +6506,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						}
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "There is %d AMR-WB rtpmap%s\n",
 								amrwb_offerings_n, amrwb_offerings_n == 1 ? "" : "s");
+					}
+
+					if (!strcasecmp(map->rm_encoding, "AMR") && !amr_offerings_n) {
+						sdp_rtpmap_t *mp = NULL;
+						for (mp = m->m_rtpmaps; mp; mp = mp->rm_next) {
+							if (!strcasecmp(mp->rm_encoding, "AMR")) {
+								++amr_offerings_n;
+							}
+						}
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "There is %d AMR rtpmap%s\n",
+								amr_offerings_n, amr_offerings_n == 1 ? "" : "s");
 					}
 
 					s = switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp);
@@ -6556,14 +6568,22 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 
 					/*
-					 * Check AMR-WB codec preferences in case multiple offerings are present in incoming fmtp.
+					 * Check AMR-WB/AMR codec preferences in case multiple offerings are present in incoming fmtp.
 					 * Reject match if codec ignores the candidate codec.
 					 * If this is last codec, accept it (in case of multiple, they could have been rejected but last should get matched
-					 * to any AMR-WB implementation loaded).
+					 * to any AMR-WB/AMR implementation loaded).
 					 */
 					if (!strcasecmp(map->rm_encoding, "AMR-WB")) {
 						if (amrwb_offerings_n > 1) {
 							if (amrwb_offerings_rejected_n + 1 < amrwb_offerings_n) {
+								if (SWITCH_STATUS_IGNORE == switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) {
+									match = 0;
+								}
+							}
+						}
+					} else if (!strcasecmp(map->rm_encoding, "AMR")) {
+						if (amr_offerings_n > 1) {
+							if (amr_offerings_rejected_n + 1 < amr_offerings_n) {
 								if (SWITCH_STATUS_IGNORE == switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) {
 									match = 0;
 								}
@@ -6619,6 +6639,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							amrwb_matched = 1;
 						}
 
+						if (!strcasecmp(map->rm_encoding, "AMR")) {
+							amr_matched = 1;
+						}
+
 						if (m_idx >= MAX_MATCHES) {
 							break;
 						}
@@ -6631,6 +6655,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!amrwb_matched && !strcasecmp(map->rm_encoding, "AMR-WB")) {
 					++amrwb_offerings_rejected_n;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AMR-WB codec [%s:%d:%u:%d] rejected\n",
+							rm_encoding, map->rm_pt, (int) remote_codec_rate, codec_ms);
+				}
+
+				// Count rejected AMR-WB offerings
+				if (!amr_matched && !strcasecmp(map->rm_encoding, "AMR")) {
+					++amr_offerings_rejected_n;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AMR codec [%s:%d:%u:%d] rejected\n",
 							rm_encoding, map->rm_pt, (int) remote_codec_rate, codec_ms);
 				}
 
