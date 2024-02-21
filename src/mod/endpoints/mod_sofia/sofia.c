@@ -7992,6 +7992,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
 					} else {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
+						switch_channel_set_flag(channel, CF_3PCC);
 						switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
 						switch_core_media_prepare_codecs(session, 1);
 						switch_channel_set_state(channel, CS_HIBERNATE);
