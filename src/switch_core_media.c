@@ -3754,7 +3754,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 
 	if (type == SWITCH_MEDIA_TYPE_TEXT && !switch_test_flag((&engine->read_frame), SFF_CNG)) {
-		if (engine->red_pt) {
+		if (engine->red_pt && engine->tf) {
 			unsigned char *p = engine->read_frame.data;
 
 			*(p + engine->read_frame.datalen) = '\0';
