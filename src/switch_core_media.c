@@ -1923,6 +1923,7 @@ static switch_rtp_crypto_mode_t switch_core_session_check_crypto_prefs(switch_co
 {
 	const char *var = NULL;
 	const char *val = NULL;
+	char *suites = NULL;
 
 	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 		var = "rtp_secure_media_inbound";
@@ -1941,6 +1942,10 @@ static switch_rtp_crypto_mode_t switch_core_session_check_crypto_prefs(switch_co
 		} else {
 			val = "forbidden";
 		}
+	}
+
+	if (!zstr(val) && (suites = strchr(val, ':'))) {
+		*suites++ = '\0';
 	}
 
 	if (!strcasecmp(val, "optional")) {

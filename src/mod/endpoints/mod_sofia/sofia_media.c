@@ -39,8 +39,9 @@ uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_
 	uint8_t t = 0, p = 0;
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int disable = switch_channel_var_true(channel, "disable_reinvite_sdp_validation");
 
-	if (!switch_channel_test_flag(channel, CF_REINVITE) || switch_core_media_validate_common_audio_sdp(session, r_sdp, type)) {
+	if (!switch_channel_test_flag(channel, CF_REINVITE) || (disable || switch_core_media_validate_common_audio_sdp(session, r_sdp, type))) {
 		if ((t = switch_core_media_negotiate_sdp(session, r_sdp, &p, type))) {
 			sofia_set_flag_locked(tech_pvt, TFLAG_SDP);
 		}
