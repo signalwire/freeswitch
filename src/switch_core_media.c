@@ -5279,7 +5279,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					switch_channel_set_variable(session->channel, "media_audio_mode", "recvonly");
 				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "inactive")) {
 					switch_channel_set_variable(session->channel, "media_audio_mode", "inactive");
-				} else if (!strcasecmp(attr->a_name, "recvonly")) {
+				} else if (!strcasecmp(attr->a_name, "recvonly") &&  m->m_mode != SWITCH_MEDIA_FLOW_RECVONLY;) {
 					switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
 					recvonly = 1;
 
