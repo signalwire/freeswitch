@@ -1,0 +1,46 @@
+<configuration name="gstreamer.conf" description="Gstreamer module">
+	<settings>
+		<!--file to play when calls are on hold-->
+		<param name="hold-file" value="$${hold_music}"/>
+		<!--Default dialplan and caller-id info -->
+		<param name="dialplan" value="XML"/>
+		<param name="cid-name" value="$${outbound_caller_name}"/>
+		<param name="cid-num" value="$${outbound_caller_id}"/>
+		<!--audio sample rate and interval -->
+		<param name="sample-rate" value="48000"/>
+		<param name="codec-ms" value="20"/>
+		<param name="channels" value="1"/>
+		<param name="bit-depth" value="S16LE"/>
+		<!-- Tx params for the gstreamer pipeline -->
+		<param name="tx-address" value="239.69.0.119"/>
+		<param name="tx-port" value="5004" />
+		<!-- Rx params for the in gstreamer pipeline -->
+		<param name="rx-address" value="239.69.161.58"/>
+		<param name="rx-port" value="5004" />	
+	</settings>
+	<streams>
+		<stream name="udp1">
+			<!-- Tx params for the gstreamer pipeline -->
+			<param name="tx-address" value="239.69.0.119"/>
+			<param name="tx-port" value="5004" />
+			<!-- Rx params for the in gstreamer pipeline -->
+			<param name="rx-address" value="239.69.161.58"/>
+			<param name="rx-port" value="5004" />
+			<param name="sample-rate" value="48000"/>
+			<param name="codec-ms" value="20"/>
+			<param name="channels" value="1" />
+		</stream>
+	</streams>
+	<endpoints>
+		<endpoint name="udp1-tx">
+			<param name="outstream" value="udp1:0" />
+		</endpoint>
+		<endpoint name="udp1-rx">
+			<param name="instream" value="udp1:0" />
+		</endpoint>
+		<endpoint name="udp1-txrx">
+			<param name="outstream" value="udp1:0" />
+			<param name="instream" value="udp1:0" />
+		</endpoint>
+	</endpoints>
+</configuration>
