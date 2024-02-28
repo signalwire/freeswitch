@@ -1518,6 +1518,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
+		goto end;
 	default:
 		break;
 	}
