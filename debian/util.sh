@@ -135,50 +135,94 @@ get_nightly_revision_human () {
   echo "git $(git rev-list -n1 --abbrev=7 --abbrev-commit HEAD) $(date -u '+%Y-%m-%d %H:%M:%SZ')"
 }
 
-create_orig () {
+prep_create_orig () {
   {
     set -e
+
     local OPTIND OPTARG
-    local uver="" hrev="" bundle_deps=true modules_list="" zl=9e
+    local uver="" hrev="" bundle_deps=true
+
     while getopts 'bm:nv:z:' o "$@"; do
       case "$o" in
-        m) modules_list="$OPTARG";;
+        b) ;;
+        m) ;;
         n) uver="nightly";;
         v) uver="$OPTARG";;
-        z) zl="$OPTARG";;
+        z) ;;
       esac
     done
     shift $(($OPTIND-1))
+
     if [ -z "$uver" ] || [ "$uver" = "nightly" ]; then
       uver="$(get_nightly_version)"
       hrev="$(get_nightly_revision_human)"
     fi
-    local treeish="$1" dver="$(mk_dver "$uver")"
-    local orig="../freeswitch_$dver~$(lsb_release -sc).orig.tar.xz"
+
+    local treeish="$1"
     [ -n "$treeish" ] || treeish="HEAD"
+
     check_repo_clean
     git reset --hard "$treeish"
+
+    if $bundle_deps; then
+      (cd libs && getlibs)
+    fi
+
+    ./build/set-fs-version.sh "$uver" "$hrev" # ToDo: Handle empty $hrev
+
+    echo "$uver" > .version
+  } 1>&2
+  echo "$uver"
+}
+
+create_orig () {
+  {
+    set -e
+
+    local OPTIND OPTARG
+    local bundle_deps=true modules_list="" zl=9e
+
+    local uver="$(prep_create_orig "$@")"
+
+    while getopts 'bm:nv:z:' o "$@"; do
+      case "$o" in
+        b) ;;
+        m) modules_list="$OPTARG";;
+        n) ;;
+        v) ;;
+        z) zl="$OPTARG";;
+      esac
+    done
+    shift $(($OPTIND-1))
+
+    local dver="$(mk_dver "$uver")"
+    local orig="../freeswitch_$dver~$(lsb_release -sc).orig.tar.xz"
+
     mv .gitattributes .gitattributes.orig
+
     local -a args=(-e '\bdebian-ignore\b')
     test "$modules_list" = "non-dfsg" || args+=(-e '\bdfsg-nonfree\b')
     grep .gitattributes.orig "${args[@]}" \
       | while xread l; do
       echo "$l export-ignore" >> .gitattributes
     done
+
     if $bundle_deps; then
-      (cd libs && getlibs)
       git add -f libs
     fi
-    ./build/set-fs-version.sh "$uver" "$hrev" && git add configure.ac
-    echo "$uver" > .version && git add -f .version
+
+    git add -f configure.ac .version
     git commit --allow-empty -m "nightly v$uver"
+
     git archive -v \
       --worktree-attributes \
       --format=tar \
       --prefix=freeswitch-$uver/ \
       HEAD \
       | xz -c -${zl}v > $orig
+
     mv .gitattributes.orig .gitattributes
+
     git reset --hard HEAD^ && git clean -fdx
   } 1>&2
   echo $orig
@@ -190,11 +234,12 @@ applications/mod_commands
 EOF
 }
 
-create_dsc () {
+prep_create_dsc () {
   {
     set -e
-    local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" suite_postfix="" suite_postfix_p=false zl=9
-    local modules_add=""
+
+    local OPTIND OPTARG modules_conf="" modules_add="" modules_list="" speed="normal"
+
     while getopts 'a:f:m:p:s:u:z:' o "$@"; do
       case "$o" in
         a) avoid_mods_arch="$OPTARG";;
@@ -202,46 +247,87 @@ create_dsc () {
         m) modules_list="$OPTARG";;
         p) modules_add="$modules_add $OPTARG";;
         s) speed="$OPTARG";;
-        u) suite_postfix="$OPTARG"; suite_postfix_p=true;;
-        z) zl="$OPTARG";;
+        u) ;;
+        z) ;;
       esac
     done
     shift $(($OPTIND-1))
-    local distro="$(find_distro $1)" orig="$2"
-    local suite="$(find_suite $distro)"
-    local orig_ver="$(echo "$orig" | sed -e 's/^.*_//' -e 's/\.orig\.tar.*$//')"
-    local dver="${orig_ver}-1~${distro}+1"
-    $suite_postfix_p && { suite="${distro}${suite_postfix}"; }
-    [ -x "$(which dch)" ] \
-      || err "package devscripts isn't installed"
+
+    local distro="$(find_distro $1)"
+
     if [ -n "$modules_conf" ]; then
       cp $modules_conf debian/modules.conf
     fi
+
     local bootstrap_args=""
+
     if [ -n "$modules_list" ]; then
       if [ "$modules_list" = "non-dfsg" ]; then
         bootstrap_args="-mnon-dfsg"
-      else set_modules_${modules_list}; fi
+      else
+        set_modules_${modules_list}
+      fi
     fi
+
     if test -n "$modules_add"; then
       for x in $modules_add; do
         bootstrap_args="$bootstrap_args -p${x}"
       done
     fi
+
     (cd debian && ./bootstrap.sh -a "$avoid_mods_arch" -c $distro $bootstrap_args)
+
     case "$speed" in
       paranoid) sed -i ./debian/rules \
         -e '/\.stamp-bootstrap:/{:l2 n; /\.\/bootstrap.sh -j/{s/ -j//; :l3 n; b l3}; b l2};' ;;
       reckless) sed -i ./debian/rules \
         -e '/\.stamp-build:/{:l2 n; /make/{s/$/ -j/; :l3 n; b l3}; b l2};' ;;
     esac
+  } 1>&2
+}
+
+create_dsc () {
+  {
+    set -e
+
+    prep_create_dsc "$@"
+
+    local OPTIND OPTARG suite_postfix="" suite_postfix_p=false zl=9
+
+    while getopts 'a:f:m:p:s:u:z:' o "$@"; do
+      case "$o" in
+        a) ;;
+        f) ;;
+        m) ;;
+        p) ;;
+        s) ;;
+        u) suite_postfix="$OPTARG"; suite_postfix_p=true;;
+        z) zl="$OPTARG";;
+      esac
+    done
+    shift $(($OPTIND-1))
+
+    local distro="$(find_distro $1)" orig="$2"
+    local suite="$(find_suite $distro)"
+    local orig_ver="$(echo "$orig" | sed -e 's/^.*_//' -e 's/\.orig\.tar.*$//')"
+    local dver="${orig_ver}-1~${distro}+1"
+
+    $suite_postfix_p && { suite="${distro}${suite_postfix}"; }
+
+    [ -x "$(which dch)" ] \
+      || err "package devscripts isn't installed"
+
     [ "$zl" -ge "1" ] || zl=1
-    git add debian/rules
+
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
-    git add debian/changelog && git commit -m "nightly v$orig_ver"
+
+    git add debian/rules debian/changelog && git commit -m "nightly v$orig_ver"
+
     dpkg-source -i.* -Zxz -z${zl} -b .
     dpkg-genchanges -S > ../$(dsc_base)_source.changes
+
     local dsc="../$(dsc_base).dsc"
+
     git reset --hard HEAD^ && git clean -fdx
   } 1>&2
   echo $dsc
@@ -588,7 +674,7 @@ commands:
 
   create-dbg-pkgs
 
-  create-dsc <distro> <orig-file>
+  create-dsc <distro> <orig-file> (same for 'prep-create-dsc')
 
     -f <modules.conf>
       Build only modules listed in this file
@@ -602,7 +688,7 @@ commands:
       Specify a custom suite postfix
     -z Set compression level
 
-  create-orig <treeish>
+  create-orig <treeish> (same for 'prep_create_orig')
 
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
@@ -629,7 +715,9 @@ case "$cmd" in
   build-all) build_all "$@" ;;
   build-debs) build_debs "$@" ;;
   create-dbg-pkgs) create_dbg_pkgs ;;
+  prep-create-dsc) prep_create_dsc "$@" ;;
   create-dsc) create_dsc "$@" ;;
+  prep-create-orig) prep_create_orig "$@" ;;
   create-orig) create_orig "$@" ;;
   *) usage ;;
 esac
