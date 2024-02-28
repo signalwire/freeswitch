@@ -672,8 +672,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			}
 
 			if (switch_channel_test_flag(channel, CF_STOP_BROADCAST)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Terminating broadcast(%s)\n", switch_str_nil(app_arg));
 				switch_channel_clear_flag(channel, CF_BROADCAST);
 				switch_channel_set_flag(channel, CF_BREAK);
+
+				if (app_arg && strstr(app_arg, "all")) {
+					 switch_channel_set_flag(channel, CF_BREAK_ALL);
+				}
 			}
 
 			switch_channel_audio_sync(channel);
