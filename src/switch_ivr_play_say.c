@@ -1677,6 +1677,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (f == 2) {
 					done = 1;
 				}
+
+				if (switch_channel_test_flag(channel, CF_BREAK_ALL)) {
+					switch_channel_clear_flag(channel, CF_BREAK_ALL);
+					done = 1;
+				}
+
 				status = SWITCH_STATUS_BREAK;
 				break;
 			}
