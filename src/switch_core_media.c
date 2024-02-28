@@ -14166,10 +14166,9 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO);
 
 
-	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_local_crypto_key")) && a_engine->ssec[a_engine->crypto_type].remote_crypto_key) {
+	if ((tmp = a_engine->ssec[a_engine->crypto_type].local_crypto_key) && a_engine->ssec[a_engine->crypto_type].remote_crypto_key) {
 		int idx = atoi(tmp);
 
-		a_engine->ssec[a_engine->crypto_type].local_crypto_key = switch_core_session_strdup(session, tmp);
 		switch_core_media_add_crypto(session, &a_engine->ssec[a_engine->crypto_type],SWITCH_RTP_CRYPTO_SEND);
 		switch_core_media_add_crypto(session, &a_engine->ssec[a_engine->crypto_type],SWITCH_RTP_CRYPTO_RECV);
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
