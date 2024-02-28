@@ -4,6 +4,10 @@
     <param name="listen-ip" value="::"/>
     <param name="listen-port" value="8021"/>
     <param name="password" value="ClueCon"/>
+    <param name="queue-red-thresh" value="20"/>
+    <param name="queue-yellow-thresh" value="10"/>
+    <param name="queue-green-thresh" value="5"/>
+    <param name="enable-session-flow-control" value="true"/>
     <!--<param name="apply-inbound-acl" value="loopback.auto"/>-->
     <!--<param name="stop-on-bind-error" value="true"/>-->
   </settings>

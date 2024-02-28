@@ -506,6 +506,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(_In_ switch_core_fl
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(_In_ uint32_t new_limit);
 
 /*!
+  \brief Set/Get Original Session Rate Limit
+  \param new_limit new value (if > 0)
+  \return the original session rate limit
+*/
+SWITCH_DECLARE(uint32_t) switch_core_orig_sessions_per_second(_In_ uint32_t new_limit);
+
+/*!
   \brief Set/Get Session Rate Limit
   \param new_limit new value (if > 0)
   \return the current session rate limit
