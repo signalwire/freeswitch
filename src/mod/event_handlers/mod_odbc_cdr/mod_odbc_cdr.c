@@ -52,13 +52,20 @@ typedef enum {
 	ODBC_CDR_CSV_ON_FAIL
 } odbc_cdr_write_csv_t;
 
+typedef enum {
+	ODBC_CDR_SQL_NEVER,
+	ODBC_CDR_SQL_ON_FAIL
+} odbc_cdr_write_sql_t;
+
 static struct {
 	char *odbc_dsn;
 	char *dbname;
 	char *csv_path;
 	char *csv_fail_path;
+	char *sql_fail_path;
 	odbc_cdr_log_leg_t log_leg;
 	odbc_cdr_write_csv_t write_csv;
+	odbc_cdr_write_sql_t write_sql;
 	switch_bool_t debug_sql;
 	switch_hash_t *table_hash;
 	uint32_t running;
@@ -364,6 +371,13 @@ static switch_status_t odbc_cdr_reporting(switch_core_session_t *session)
 					switch_safe_free(full_path);
 				}
 
+				if (globals.write_sql == ODBC_CDR_SQL_ON_FAIL && insert_fail == SWITCH_TRUE) {
+					full_path = switch_mprintf("%s%s%s_%s.sql", globals.sql_fail_path, SWITCH_PATH_SEPARATOR, uuid, table_name);
+					assert(full_path);
+					write_cdr(full_path, sql);
+					switch_safe_free(full_path);
+				}
+
 				switch_safe_free(sql);
 
 				switch_safe_free(stream_field.data);
@@ -414,6 +428,7 @@ static switch_status_t odbc_cdr_load_config(void)
 	globals.debug_sql = SWITCH_FALSE;
 	globals.log_leg = ODBC_CDR_LOG_BOTH;
 	globals.write_csv = ODBC_CDR_CSV_NEVER;
+	globals.write_sql = ODBC_CDR_SQL_NEVER;
 
 	if ((settings = switch_xml_child(cfg, "settings")) != NULL) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -444,10 +459,16 @@ static switch_status_t odbc_cdr_load_config(void)
 				} else if (!strcasecmp(val, "on-db-fail")) {
 					globals.write_csv = ODBC_CDR_CSV_ON_FAIL;
 				}
+			} else if (!strcasecmp(var, "write-sql") && !zstr(val)) {
+				if (!strcasecmp(val, "on-db-fail")) {
+					globals.write_sql = ODBC_CDR_SQL_ON_FAIL;
+				}
 			} else if (!strcasecmp(var, "csv-path") && !zstr(val)) {
 				globals.csv_path = switch_mprintf("%s%s", val, SWITCH_PATH_SEPARATOR);
 			} else if (!strcasecmp(var, "csv-path-on-fail") && !zstr(val)) {
 				globals.csv_fail_path = switch_mprintf("%s%s", val, SWITCH_PATH_SEPARATOR);
+			} else if (!strcasecmp(var, "sql-path-on-fail") && !zstr(val)) {
+				globals.sql_fail_path = switch_mprintf("%s%s", val, SWITCH_PATH_SEPARATOR);
 			}
 		}
 	}
