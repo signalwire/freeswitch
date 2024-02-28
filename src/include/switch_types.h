@@ -964,12 +964,19 @@ typedef enum {
 	*/
 
 
-	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12)
+	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12),
 
 	/*
 	  Leave the auto-adjust behavior enableed permenantly rather than only at appropriate times.  (IMPLICITLY sets RTP_BUG_ACCEPT_ANY_PACKETS)
 
 	 */
+
+
+	RTP_BUG_CHANGE_SSRC_ON_MARKER_ALSO_WHEN_SECURE = (1 << 13),
+
+	/*
+	  Allow SSRC change when using SRTP.
+	*/
 
 } switch_rtp_bug_flag_t;
 
