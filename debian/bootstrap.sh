@@ -335,7 +335,7 @@ Build-Depends:
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.15),
+ bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.17),
  libspandsp3-dev,
 # used to format the private freeswitch apt-repo key properly
  gnupg,
@@ -374,7 +374,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: amd64 armhf
-Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.15)
+Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.17)
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)
@@ -673,7 +673,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-event-multicast (= \${binary:Version}),
  freeswitch-mod-event-socket (= \${binary:Version}),
  freeswitch-mod-json-cdr (= \${binary:Version}),
- freeswitch-mod-kazoo (= \${binary:Version}),
  freeswitch-mod-snmp (= \${binary:Version}),
  freeswitch-mod-local-stream (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
@@ -910,7 +909,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-event-multicast-dbg (= \${binary:Version}),
  freeswitch-mod-event-socket-dbg (= \${binary:Version}),
  freeswitch-mod-json-cdr-dbg (= \${binary:Version}),
- freeswitch-mod-kazoo-dbg (= \${binary:Version}),
  freeswitch-mod-snmp-dbg (= \${binary:Version}),
  freeswitch-mod-local-stream-dbg (= \${binary:Version}),
  freeswitch-mod-native-file-dbg (= \${binary:Version}),

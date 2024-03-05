@@ -260,7 +260,9 @@
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#define inline
+#ifndef _WIN32
+#define inline /* Do not define inline for Windows to avoid warnings/errors with winsock2.h usage of inline within the latest Windows SDKs */
+#endif
 #endif
 
 #if _MSC_VER >= 1900

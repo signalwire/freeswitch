@@ -173,7 +173,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	switch_status_t qstatus;
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
-		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
+		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level && switch_test_flag(l, LFLAG_RUNNING)) {
 			switch_log_node_t *dnode = switch_log_node_dup(node);
 			qstatus = switch_queue_trypush(l->log_queue, dnode); 
 			if (qstatus == SWITCH_STATUS_SUCCESS) {
@@ -302,7 +302,7 @@ static void event_handler(switch_event_t *event)
 			}
 		}
 
-		if (l->expire_time || !switch_test_flag(l, LFLAG_EVENTS)) {
+		if (l->expire_time || !switch_test_flag(l, LFLAG_EVENTS) || !switch_test_flag(l, LFLAG_RUNNING)) {
 			last = l;
 			continue;
 		}
