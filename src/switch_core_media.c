@@ -5324,7 +5324,7 @@ static void check_stream_changes(switch_core_session_t *session, const char *r_s
 				switch_core_media_merge_sdp_codec_string(session, r_sdp, sdp_type, filter_codec_string);
 			}
 
-			if (switch_channel_test_flag(session->channel, CF_SECURE)) {
+			if (switch_channel_test_flag(session->channel, CF_SECURE) && switch_channel_test_flag(other_session->channel, CF_SECURE)) {
 				other_session->media_handle->crypto_mode = session->media_handle->crypto_mode;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: CHECK OUTGOING\n");
 				switch_core_session_check_outgoing_crypto(other_session, sdp_type);
