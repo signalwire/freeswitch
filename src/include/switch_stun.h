@@ -256,8 +256,33 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_priority(switch_stun_pa
   \param pool the memory pool to use
   \return SUCCESS or FAIL
 */
-SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
-												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip, switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
+
+/*!
+  \brief Perform a stun lookup
+  \param ip the local ip v6 to use (replaced with stun results)
+  \param port the local port to use (replaced with stun results)
+  \param stunip the ip v6 or name of the stun server
+  \param stunport the port of the stun server
+  \param err a pointer to describe errors
+  \param pool the memory pool to use
+  \return SUCCESS or FAIL
+*/
+SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv6(char **ip, switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
+
+/*!
+  \brief Perform a stun lookup
+  \param family for ip v4 or v6
+  \param ip the local ip v4 or v6 to use (replaced with stun results)
+  \param port the local port to use (replaced with stun results)
+  \param stunip the ip ip v4 or v6 or name of the stun server
+  \param stunport the port of the stun server
+  \param err a pointer to describe errors
+  \param pool the memory pool to use
+  \return SUCCESS or FAIL
+*/
+SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char **ip, switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
+
 
 /*!
   \brief Perform a stun ip lookup

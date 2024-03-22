@@ -1482,6 +1482,119 @@ SWITCH_STANDARD_API(echo_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(stun_ipv6_function)
+{ 
+	char *stun_ip = NULL;
+	char *src_ip = NULL;
+	char *ip = NULL;
+
+	switch_port_t stun_port = (switch_port_t)SWITCH_STUN_DEFAULT_PORT;
+	switch_port_t port = 0;
+
+	char *error = "";
+	char *mycmd = NULL;
+	char *p, *c = NULL;
+	char *argv[3] = {0};
+	
+	switch_memory_pool_t *pool = NULL;
+	
+	if (zstr(cmd)) {
+		stream->write_function(stream, "%s", "-STUN Failed! NO STUN SERVER\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	mycmd = strdup(cmd);
+	switch_split(mycmd, ' ', argv);
+
+	stun_ip = argv[0];
+	switch_assert(stun_ip);
+
+	src_ip = argv[1];
+
+	// valid stun info
+	// [2a01:a980:1011:40a:2191:b8e4:9954:a055]:666
+	// [2a01:a980:1011:40a:2191:b8e4:9954:a055]
+	// 2a01:a980:1011:40a:2191:b8e4:9954:a055
+	// stun.freeswitch.com:3478
+	// stun.freeswitch.com
+	if (stun_ip[0] == '['){
+		stun_ip = stun_ip++;
+		
+		if ((p = strchr(stun_ip, ']'))) {
+			int iport;
+			*p++ = '\0';
+
+			if ((p = strchr(p, ':'))) {
+				p++;
+				iport = atoi(p);
+				if (iport > 0 && iport < 0xFFFF) { 
+					stun_port = (switch_port_t)iport; 
+				}
+			} 
+		} else {
+			stream->write_function(stream, "%s", "-STUN Failed! WRONG STUN IP FORMAT\n");
+			goto end;
+		}
+	} else if ((p = strchr(stun_ip, ':'))) {
+		int iport;
+		*p++ = '\0';
+
+		if ((c = strchr(p, ':'))) { 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ip v6 without port\n");
+		} else {
+			iport = atoi(p);
+			if (iport > 0 && iport < 0xFFFF) { 
+				stun_port = (switch_port_t)iport; 
+			}
+		}
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "stun ip '%s' port '%u'\n", stun_ip, stun_port);
+
+	// valid sorce info
+	// nothing
+	// [2a01:a980:1011:40a:2191:b8e4:9954:a055]:666
+	// [2a01:a980:1011:40a:2191:b8e4:9954:a055]
+	// 2a01:a980:1011:40a:2191:b8e4:9954:a055
+	if (!zstr(src_ip)) {
+		if (src_ip[0] == '[') {
+			src_ip = src_ip++;
+
+			if ((p = strchr(src_ip, ']'))) {
+				int iport;
+				*p++ = '\0';
+
+				if ((p = strchr(p, ':'))) {
+					p++;
+					iport = atoi(p);
+					if (iport > 0 && iport < 0xFFFF) { 
+						port = (switch_port_t)iport; 
+					}
+				}
+			} else {
+				stream->write_function(stream, "%s", "-STUN Failed! WRONG SORCE IP FORMAT\n");
+				goto end;
+			}
+		} else {
+			ip = src_ip;
+		}
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "sorce ip '%s' port '%u'\n", src_ip, port);
+
+	switch_core_new_memory_pool(&pool);
+
+	if (switch_stun_lookup_ipv6(&ip, &port, stun_ip, stun_port, &error, pool) == SWITCH_STATUS_SUCCESS && ip && port)
+		stream->write_function(stream, "[%s]:%u\n", ip, port);
+	else
+		stream->write_function(stream, "-STUN Failed! [%s]\n", error);
+
+	switch_core_destroy_memory_pool(&pool);
+
+	end:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(stun_function)
 {
 	char *stun_ip = NULL;
@@ -7657,6 +7770,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "status", "Show current status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "Display formatted time of timezone", strftime_tz_api_function, "<timezone_name> [<epoch>|][format string]");
 	SWITCH_ADD_API(commands_api_interface, "stun", "Execute STUN lookup", stun_function, "<stun_server>[:port] [<source_ip>[:<source_port]]");
+	SWITCH_ADD_API(commands_api_interface, "stun_ipv6", "Execute STUN lookup. Syntax for 'ip:port' example '[2a01:a980:1011:21a:2321:b8ea:9954:a055]:1234'", stun_ipv6_function, "<stun_server>[:port] [<source_ip>[:<source_port]]");
 	SWITCH_ADD_API(commands_api_interface, "time_test", "Show time jitter", time_test_function, "<mss> [count]");
 	SWITCH_ADD_API(commands_api_interface, "timer_test", "Exercise FS timer", timer_test_function, TIMER_TEST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start tone detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
