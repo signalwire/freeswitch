@@ -1540,7 +1540,7 @@ SWITCH_STANDARD_API(stun_ipv6_function)
 		*p++ = '\0';
 
 		if ((c = strchr(p, ':'))) { 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ip v6 without port\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ip v6 without port\n");
 		} else {
 			iport = atoi(p);
 			if (iport > 0 && iport < 0xFFFF) { 
@@ -1548,7 +1548,7 @@ SWITCH_STANDARD_API(stun_ipv6_function)
 			}
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "stun ip '%s' port '%u'\n", stun_ip, stun_port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "stun ip '%s' port '%u'\n", stun_ip, stun_port);
 
 	// valid sorce info
 	// nothing
@@ -1579,7 +1579,7 @@ SWITCH_STANDARD_API(stun_ipv6_function)
 		}
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "sorce ip '%s' port '%u'\n", src_ip, port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sorce ip '%s' port '%u'\n", src_ip, port);
 
 	switch_core_new_memory_pool(&pool);
 
