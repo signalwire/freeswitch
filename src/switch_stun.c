@@ -704,7 +704,7 @@ SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_p
 
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip, switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool)
 {
-	return switch_stun_lookup_ipv4v6(SWITCH_INET, ip, port, stunip, stunport, err, pool);
+	return switch_stun_lookup_ipv4v6(SWITCH_UNSPEC, ip, port, stunip, stunport, err, pool);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv6(char **ip, switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool)
@@ -729,7 +729,8 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 	int funny = 0;
 	int size = sizeof(buf);
 	int xlen = sizeof(switch_stun_packet_header_t);
-
+	int32_t switch_family = SWITCH_UNSPEC;
+	int32_t af_family = AF_INET;
 	switch_assert(err);
 
 	if (*err && !strcmp(*err, "funny")) {
@@ -738,19 +739,27 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 
 	*err = "Success";
 
-	switch_sockaddr_info_get(&from_addr, NULL, family, 0, 0, pool);
+	if (family == SWITCH_INET) {
+		switch_family = SWITCH_INET;
+		af_family = AF_INET;
+	} else if (family == SWITCH_INET6) {
+		switch_family = SWITCH_INET6;
+		af_family = AF_INET6;
+	}
 
-	if (switch_sockaddr_info_get(&local_addr, *ip, family, *port, 0, pool) != SWITCH_STATUS_SUCCESS) {
+	switch_sockaddr_info_get(&from_addr, NULL, switch_family, 0, 0, pool);
+
+	if (switch_sockaddr_info_get(&local_addr, *ip, switch_family, *port, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Local Address Error!";
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_sockaddr_info_get(&remote_addr, stunip, family, stunport, 0, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_info_get(&remote_addr, stunip, switch_family, stunport, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Remote Address Error!";
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_socket_create(&sock, family, SOCK_DGRAM, 0, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_create(&sock, af_family, SOCK_DGRAM, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Socket Error!";
 		return SWITCH_STATUS_FALSE;
 	}
