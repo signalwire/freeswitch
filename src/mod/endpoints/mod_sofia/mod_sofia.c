@@ -1532,6 +1532,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					channel_flag = CF_EARLY_MEDIA;
 				}
 			}
+			break;
 		case SWITCH_MESSAGE_INDICATE_ANSWER:
 			{
 				message_str = "ANSWER";
