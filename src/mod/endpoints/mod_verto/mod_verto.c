@@ -1898,7 +1898,6 @@ authed:
 
 			rule = rule->next;
 		}
-
 		switch_safe_free(re);
 	}
 
