@@ -1682,9 +1682,14 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 	}
 	
-	if ((val = switch_channel_get_variable(channel, "bleg_enable_compact_headers")) && switch_true(val)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Compact headers forced by dialplan for %s\n",  switch_channel_get_name(channel));
-		nua_handle_set_nh_use_compact(tech_pvt->nh);
+	if ((val = switch_channel_get_variable(channel, "bleg_enable_compact_headers"))) {
+		if (switch_true(val)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Compact headers forced by dialplan for %s\n",  switch_channel_get_name(channel));
+			nua_handle_set_nh_use_compact(tech_pvt->nh);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "Disable compact headers forced by dialplan for %s\n",  switch_channel_get_name(channel));
+			nua_handle_set_nh_no_compact(tech_pvt->nh);
+		}
 	}
 	
 	if ((val = switch_channel_get_variable(channel, "bleg_enable_100rel")) && switch_true(val)) {
