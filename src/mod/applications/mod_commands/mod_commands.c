@@ -1518,7 +1518,7 @@ SWITCH_STANDARD_API(stun_ipv6_function)
 	// stun.freeswitch.com:3478
 	// stun.freeswitch.com
 	if (stun_ip[0] == '['){
-		stun_ip = stun_ip++;
+		stun_ip = stun_ip + 1;
 		
 		if ((p = strchr(stun_ip, ']'))) {
 			int iport;
@@ -1557,7 +1557,7 @@ SWITCH_STANDARD_API(stun_ipv6_function)
 	// 2a01:a980:1011:40a:2191:b8e4:9954:a055
 	if (!zstr(src_ip)) {
 		if (src_ip[0] == '[') {
-			src_ip = src_ip++;
+			src_ip = src_ip + 1;
 
 			if ((p = strchr(src_ip, ']'))) {
 				int iport;
