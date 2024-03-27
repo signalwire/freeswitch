@@ -741,15 +741,7 @@ void conference_event_send_rfc(conference_obj_t *conference)
 switch_status_t conference_event_add_data(conference_obj_t *conference, switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	conference_member_t *member = NULL;
-
-	for (member = conference->members; member; member = member->next) {
-		if (member->session) {
-			switch_channel_t *channel = switch_core_session_get_channel(member->session);
-			switch_channel_event_set_basic_data(channel, event);
-			break;
-		}
-	}
+	
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
