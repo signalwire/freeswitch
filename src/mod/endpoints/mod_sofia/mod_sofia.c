@@ -453,6 +453,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_mutex_lock(tech_pvt->prack_mutex);
 		if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK)) {
 			sofia_clear_flag(tech_pvt, TFLAG_PRACK_LOCK);
+			if (sofia_test_flag(tech_pvt, TFLAG_PRACK_WAIT)) {
+				sofia_clear_flag(tech_pvt, TFLAG_PRACK_WAIT);
+			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 					"%s Received Hangup while waiting PRACK: release PRACK lock\n", switch_channel_get_name(channel));
 			switch_thread_cond_signal(tech_pvt->prack_cond);
@@ -1556,10 +1559,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					// lock based on the value of t1x64
 					uint32_t t1x64 = tech_pvt->profile->timer_t1x64 ? tech_pvt->profile->timer_t1x64 : 32000;
 					switch_mutex_lock(tech_pvt->prack_mutex);
-					if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK)) {
+					if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK) && !sofia_test_flag(tech_pvt, TFLAG_PRACK_WAIT)) {
+						sofia_set_flag(tech_pvt, TFLAG_PRACK_WAIT);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
 								"%s Waiting for incoming PRACK! (Blocking %s message)\n", switch_channel_get_name(channel), message_str);
 						if (switch_thread_cond_timedwait(tech_pvt->prack_cond, tech_pvt->prack_mutex, t1x64 * 1000) == SWITCH_STATUS_TIMEOUT) {
+							sofia_clear_flag(tech_pvt, TFLAG_PRACK_WAIT);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 								"%s Timeout on waiting for PRACK! (Unblock %s message)\n", switch_channel_get_name(channel), message_str);
 						} else {

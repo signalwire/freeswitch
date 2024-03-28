@@ -375,6 +375,7 @@ typedef enum {
 	TFLAG_SKIP_EARLY,
 	TFLAG_100_UEPOCH_SET,
 	TFLAG_PRACK_LOCK,
+	TFLAG_PRACK_WAIT,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;

@@ -2641,6 +2641,9 @@ void sofia_event_callback(nua_event_t event,
 					switch_mutex_lock(tech_pvt->prack_mutex);
 					if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK)) {
 						sofia_clear_flag(tech_pvt, TFLAG_PRACK_LOCK);
+						if (sofia_test_flag(tech_pvt, TFLAG_PRACK_WAIT)) {
+							sofia_clear_flag(tech_pvt, TFLAG_PRACK_WAIT);
+						}
 						switch_thread_cond_signal(tech_pvt->prack_cond);
 					}
 					switch_mutex_unlock(tech_pvt->prack_mutex);
