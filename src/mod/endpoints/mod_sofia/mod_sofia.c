@@ -1559,6 +1559,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					// lock based on the value of t1x64
 					uint32_t t1x64 = tech_pvt->profile->timer_t1x64 ? tech_pvt->profile->timer_t1x64 : 32000;
 					switch_mutex_lock(tech_pvt->prack_mutex);
+					if (msg->message_id != SWITCH_MESSAGE_INDICATE_ANSWER && sofia_test_flag(tech_pvt, TFLAG_PRACK_WAIT)) {
+						sofia_clear_flag(tech_pvt, TFLAG_PRACK_WAIT);
+					}
 					if (sofia_test_flag(tech_pvt, TFLAG_PRACK_LOCK) && !sofia_test_flag(tech_pvt, TFLAG_PRACK_WAIT)) {
 						sofia_set_flag(tech_pvt, TFLAG_PRACK_WAIT);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
