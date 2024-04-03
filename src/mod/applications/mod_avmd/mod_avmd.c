@@ -21,6 +21,7 @@
  *
  * Eric des Courtis <eric.des.courtis@benbria.com>
  * Piotr Gregor <piotrgregor@rsyncme.org>
+ * Evgenii Buchnev <evgenii.buchnev@yabbr.io>
  *
  * mod_avmd.c -- Advanced Voicemail Detection Module
  *
@@ -173,6 +174,11 @@ struct avmd_settings {
 	enum avmd_detection_mode mode;
 	uint8_t detectors_n;
 	uint8_t detectors_lagged_n;
+	double min_freq;
+	double min_amp;
+	double max_freq;
+	double var_rsd_threshold;
+	double amp_rsd_threshold;
 };
 
 /*! Status of the beep detection */
@@ -846,6 +852,11 @@ static void avmd_set_xml_default_configuration(switch_mutex_t *mutex) {
 	avmd_globals.settings.mode = AVMD_DETECT_BOTH;
 	avmd_globals.settings.detectors_n = 36;
 	avmd_globals.settings.detectors_lagged_n = 1;
+	avmd_globals.settings.min_freq = AVMD_MIN_FREQUENCY;
+	avmd_globals.settings.max_freq = AVMD_MAX_FREQUENCY;
+	avmd_globals.settings.min_amp = AVMD_MIN_AMP;
+	avmd_globals.settings.var_rsd_threshold = AVMD_VARIANCE_RSD_THRESHOLD;
+	avmd_globals.settings.amp_rsd_threshold = AVMD_AMPLITUDE_RSD_THRESHOLD;
 
 	if (mutex != NULL) {
 		switch_mutex_unlock(avmd_globals.mutex);
@@ -886,7 +897,8 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
 	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
 	uint8_t bad_debug = 1, bad_report = 1, bad_fast = 1, bad_req_cont = 1, bad_sample_n_cont = 1,
 			bad_sample_n_to_skip = 1, bad_req_cont_amp = 1, bad_sample_n_cont_amp = 1, bad_simpl = 1,
-			bad_inbound = 1, bad_outbound = 1, bad_mode = 1, bad_detectors = 1, bad_lagged = 1, bad = 0;
+			bad_inbound = 1, bad_outbound = 1, bad_mode = 1, bad_detectors = 1, bad_lagged = 1,
+			bad_min_freq = 1, bad_max_freq = 1, bad_min_amp = 1, bad_var_rsd_threshold = 1, bad_amp_rsd_threshold = 1, bad = 0;
 
 	if (mutex != NULL) {
 		switch_mutex_lock(mutex);
@@ -953,6 +965,36 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
 				} else if (!strcmp(name, "detectors_lagged_n")) {
 					if(!avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_lagged_n, 0, UINT8_MAX)) {
 						bad_lagged = 0;
+					}
+				} else if (!strcmp(name, "min_freq")) {
+					double v = strtod(value, NULL);
+					if ((v > 0) && (v <= 20000)) { /* 0Hz to 20KHz */
+						avmd_globals.settings.min_freq = v;
+						bad_min_freq = 0;
+					}
+				} else if (!strcmp(name, "min_amp")) {
+					double v = strtod(value, NULL);
+					if ((v > 0) && (v <= UINT16_MAX)) {
+						avmd_globals.settings.min_amp = v;
+						bad_min_amp = 0;
+					}
+				} else if (!strcmp(name, "max_freq")) {
+					double v = strtod(value, NULL);
+					if ((v > 0) && (v <= 20000)) { /* 0Hz to 20KHz */
+						avmd_globals.settings.max_freq = v;
+						bad_max_freq = 0;
+					}
+				} else if (!strcmp(name, "var_rsd_threshold")) {
+					double v = strtod(value, NULL);
+					if ((v > 0) && (v <= 1)) {
+						avmd_globals.settings.var_rsd_threshold = v;
+						bad_var_rsd_threshold = 0;
+					}
+				} else if (!strcmp(name, "amp_rsd_threshold")) {
+					double v = strtod(value, NULL);
+					if ((v > 0) && (v <= 1)) {
+						avmd_globals.settings.amp_rsd_threshold = v;
+						bad_amp_rsd_threshold = 0;
 					}
 				}
 			} // for
@@ -1045,6 +1087,36 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
 		avmd_globals.settings.detectors_lagged_n = 1;
 	}
 
+	if (bad_min_freq) {
+		bad = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'min_freq' missing or invalid - using default\n");
+		avmd_globals.settings.min_freq = AVMD_MIN_FREQUENCY;
+	}
+
+	if (bad_max_freq) {
+		bad = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'max_freq' missing or invalid - using default\n");
+		avmd_globals.settings.max_freq = AVMD_MAX_FREQUENCY;
+	}
+
+	if (bad_min_amp) {
+		bad = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'min_amp' missing or invalid - using default\n");
+		avmd_globals.settings.min_amp = AVMD_MIN_AMP;
+	}
+
+	if (bad_amp_rsd_threshold) {
+		bad = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'amp_rsd_threshold' missing or invalid - using default\n");
+		avmd_globals.settings.amp_rsd_threshold = AVMD_AMPLITUDE_RSD_THRESHOLD;
+	}
+
+	if (bad_var_rsd_threshold) {
+		bad = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AVMD config parameter 'var_rsd_threshold' missing or invalid - using default\n");
+		avmd_globals.settings.var_rsd_threshold = AVMD_VARIANCE_RSD_THRESHOLD;
+	}
+
 	/**
 	 * Hint.
 	 */
@@ -1123,6 +1195,11 @@ static void avmd_show(switch_stream_handle_t *stream, switch_mutex_t *mutex) {
 	stream->write_function(stream, "sessions					   \t%"PRId64"\n", avmd_globals.session_n);
 	stream->write_function(stream, "detectors n					\t%u\n", avmd_globals.settings.detectors_n);
 	stream->write_function(stream, "detectors lagged n			 \t%u\n", avmd_globals.settings.detectors_lagged_n);
+	stream->write_function(stream, "min freq				\t%f\n", avmd_globals.settings.min_freq);
+	stream->write_function(stream, "max freq				\t%f\n", avmd_globals.settings.max_freq);
+	stream->write_function(stream, "min amplitude				\t%f\n", avmd_globals.settings.min_amp);
+	stream->write_function(stream, "var rsd threshold			\t%f\n", avmd_globals.settings.var_rsd_threshold);
+	stream->write_function(stream, "amplitude rsd threshold			\t%f\n", avmd_globals.settings.amp_rsd_threshold);
 	stream->write_function(stream, "\n\n");
 
 	if (mutex != NULL) {
@@ -1226,10 +1303,12 @@ void avmd_config_dump(avmd_session_t *s) {
 	settings = &s->settings;
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "Avmd dynamic configuration: debug [%u], report_status [%u], fast_math [%u],"
 			" require_continuous_streak [%u], sample_n_continuous_streak [%u], sample_n_to_skip [%u], require_continuous_streak_amp [%u], sample_n_continuous_streak_amp [%u],"
-		   " simplified_estimation [%u], inbound_channel [%u], outbound_channel [%u], detection_mode [%u], detectors_n [%u], detectors_lagged_n [%u]\n",
+			" simplified_estimation [%u], inbound_channel [%u], outbound_channel [%u], detection_mode [%u], detectors_n [%u], detectors_lagged_n [%u],"
+			" min_freq [%f], min_amp [%f], max_freq [%f], var_rsd_threshold [%f], amp_rsd_threshold [%f]\n",
 			settings->debug, settings->report_status, settings->fast_math, settings->require_continuous_streak, settings->sample_n_continuous_streak,
 			settings->sample_n_to_skip, settings->require_continuous_streak_amp, settings->sample_n_continuous_streak_amp,
-			settings->simplified_estimation, settings->inbound_channnel, settings->outbound_channnel, settings->mode, settings->detectors_n, settings->detectors_lagged_n);
+			settings->simplified_estimation, settings->inbound_channnel, settings->outbound_channnel, settings->mode, settings->detectors_n, settings->detectors_lagged_n,
+			settings->min_freq, settings->min_amp, settings->max_freq, settings->var_rsd_threshold, settings->amp_rsd_threshold);
 	return;
 }
 
@@ -1302,6 +1381,36 @@ static switch_status_t avmd_parse_cmd_data_one_entry(char *candidate, struct avm
 		if(avmd_parse_u8_user_input(val, &settings->detectors_lagged_n, 0, UINT8_MAX) == -1) {
 			return SWITCH_STATUS_FALSE;
 		}
+	} else if (!strcmp(key, "min_freq")) {
+		double v = strtod(val, NULL);
+		if ((v <= 0) || (v > 20000)) { /* 0Hz to 20KHz */
+			return SWITCH_STATUS_FALSE;
+		}
+		settings->min_freq = v;
+	} else if (!strcmp(key, "min_amp")) {
+		double v = strtod(val, NULL);
+		if ((v <= 0) || (v > UINT16_MAX)) {
+			return SWITCH_STATUS_FALSE;
+		}
+		settings->min_amp = v;
+	} else if (!strcmp(key, "max_freq")) {
+		double v = strtod(val, NULL);
+		if ((v <= 0) || (v > 20000)) { /* 0Hz to 20KHz */
+			return SWITCH_STATUS_FALSE;
+		}
+		settings->max_freq = v;
+	} else if (!strcmp(key, "var_rsd_threshold")) {
+		double v = strtod(val, NULL);
+		if ((v <= 0) || (v > 1)) {
+			return SWITCH_STATUS_FALSE;
+		}
+		settings->var_rsd_threshold = v;
+	} else if (!strcmp(key, "amp_rsd_threshold")) {
+		double v = strtod(val, NULL);
+		if ((v <= 0) || (v > 1)) {
+			return SWITCH_STATUS_FALSE;
+		}
+		settings->amp_rsd_threshold = v;
 	} else {
 		return SWITCH_STATUS_NOTFOUND;
 	}
@@ -1913,7 +2022,7 @@ avmd_decision_amplitude(const avmd_session_t *s, const struct avmd_buffer *b, do
 	if ((lpos >= AVMD_BEEP_LEN(s->rate) / b->resolution) && ((s->settings.require_continuous_streak_amp == 1 && (b->sma_amp_b.lpos > s->settings.sample_n_continuous_streak_amp) && (b->samples_streak_amp == 0))
 			|| (s->settings.require_continuous_streak_amp == 0 && (b->sma_amp_b.lpos > 1)))) {
 		a = fabs(b->sma_amp_b.sma);
-		if (a < AVMD_MIN_AMP) {
+		if (a < s->settings.min_amp) {
 			return 0;
 		}
 		rsd = sqrt(v) / a;
@@ -1929,7 +2038,7 @@ avmd_decision_freq(const avmd_session_t *s, const struct avmd_buffer *b, double 
 	double f, rsd;
 	size_t lpos;
 	f = AVMD_TO_HZ(s->rate, fabs(b->sma_b_fir.sma));
-	if ((f < AVMD_MIN_FREQUENCY) || (f > AVMD_MAX_FREQUENCY)) {
+	if ((f < s->settings.min_freq) || (f > s->settings.max_freq)) {
 		return 0;
 	}
 	lpos = b->sma_b.lpos;
@@ -2215,17 +2324,17 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 
 	if (((mode == AVMD_DETECT_AMP) || (mode == AVMD_DETECT_BOTH)) && (valid_amplitude == 1)) {
 		v_amp = sqa_amp_b->sma - (sma_amp_b->sma * sma_amp_b->sma); /* calculate variance of amplitude (biased estimator) */
-		if ((mode == AVMD_DETECT_AMP) && (avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1)) {
+		if ((mode == AVMD_DETECT_AMP) && (avmd_decision_amplitude(s, buffer, v_amp, s->settings.amp_rsd_threshold) == 1)) {
 			return AVMD_DETECT_AMP;
 		}
 	}
 	if (((mode == AVMD_DETECT_FREQ) || (mode == AVMD_DETECT_BOTH)) && (valid_omega == 1)) {
 		v_fir = sqa_b_fir->sma - (sma_b_fir->sma * sma_b_fir->sma); /* calculate variance of filtered samples */
-		if ((mode == AVMD_DETECT_FREQ) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1)) {
+		if ((mode == AVMD_DETECT_FREQ) && (avmd_decision_freq(s, buffer, v_fir, s->settings.var_rsd_threshold) == 1)) {
 			return AVMD_DETECT_FREQ;
 		}
 		if (mode == AVMD_DETECT_BOTH) {
-			if ((avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1))  {
+			if ((avmd_decision_amplitude(s, buffer, v_amp, s->settings.amp_rsd_threshold) == 1) && (avmd_decision_freq(s, buffer, v_fir, s->settings.var_rsd_threshold) == 1))  {
 				return AVMD_DETECT_BOTH;
 			}
 		}
