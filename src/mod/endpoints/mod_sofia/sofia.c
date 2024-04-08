@@ -4017,6 +4017,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 				*fail_908_retry_seconds = NULL,
 				*timeout_seconds = "60",
 				*auto_delete_inactive = "false",
+				*gw_down_allow_outgoing_call = "false",
 				*max_inactive_seconds = "1800",
 				*from_user = "", *from_domain = NULL, *outbound_proxy = NULL, *register_proxy = NULL, *contact_host = NULL,
 				*contact_params = "", *params = NULL, *register_transport = NULL,
@@ -4048,6 +4049,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			gateway->ib_failed_calls = 0;
 			gateway->ob_failed_calls = 0;
 			gateway->auto_delete_inactive = 1;
+			gateway->gw_down_allow_outgoing_call = 0;
 			gateway->max_inactive_seconds = 1800; // 30 mins
 			gateway->last_inactive = 0;
 			gateway->destination_prefix = "";
@@ -4187,6 +4189,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					auto_delete_inactive = val;
 				} else if (!strcmp(var, "max-inactive-seconds")) {
 					max_inactive_seconds = val;
+				} else if (!strcmp(var, "gw-down-allow-outgoing-call")) {
+					gw_down_allow_outgoing_call = val;
 				}
 			}
 
@@ -4293,6 +4297,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 				}
 			}
 
+			if (switch_true(gw_down_allow_outgoing_call)) {
+				gateway->gw_down_allow_outgoing_call = 1;
+			}
 
 			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
 			gateway->register_context = switch_core_strdup(gateway->pool, context);
