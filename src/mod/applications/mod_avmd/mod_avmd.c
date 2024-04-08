@@ -1979,6 +1979,7 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: amplitude = [%f](max [%f]) variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
 						mode, b->resolution, b->offset, d->idx, sma_amp_b->sma, b->amplitude_max, v_amp, detection_time);
 			}
+
 			switch_channel_set_variable_printf(channel, "avmd_report_amplitude", "%f", sma_amp_b->sma);
 			switch_channel_set_variable_printf(channel, "avmd_report_amplitude_max", "%f", b->amplitude_max);
 			switch_channel_set_variable_printf(channel, "avmd_report_amplitude_variance", "%f", v_amp);
@@ -2005,6 +2006,7 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: f = [%f] variance = [%f], amplitude = [%f](max [%f]) variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
 						mode, b->resolution, b->offset, d->idx, AVMD_TO_HZ(s->rate, f_sma), v_fir, sma_amp_b->sma, b->amplitude_max, v_amp, detection_time);
 			}
+
 			switch_channel_set_variable_printf(channel, "avmd_report_amplitude", "%f", sma_amp_b->sma);
 			switch_channel_set_variable_printf(channel, "avmd_report_amplitude_max", "%f", b->amplitude_max);
 			switch_channel_set_variable_printf(channel, "avmd_report_amplitude_variance", "%f", v_amp);
@@ -2015,11 +2017,12 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 		default:
 			break;
 	}
+
 	switch_channel_set_variable_printf(channel, "avmd_report_mode", "%u", mode);
 	switch_channel_set_variable_printf(channel, "avmd_report_resolution", "%u", b->resolution);
 	switch_channel_set_variable_printf(channel, "avmd_report_offset", "%u", b->offset);
 	switch_channel_set_variable_printf(channel, "avmd_report_idx", "%u", d->idx);
-	switch_channel_set_variable_printf(channel, "avmd_report_detection_time", "%" PRId64, detection_time);
+	switch_channel_set_variable_printf(channel, "avmd_report_detection_time", "%" SWITCH_TIME_T_FMT, detection_time);
 	s->state.beep_state = BEEP_DETECTED;
 }
 
