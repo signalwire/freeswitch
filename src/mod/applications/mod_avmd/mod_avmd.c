@@ -1993,6 +1993,7 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(s->session), SWITCH_LOG_INFO, "<<< AVMD - Beep Detected [%u][%u][%u][%u]: f = [%f] variance = [%f], detection time [%" PRId64 "] [us] >>>\n",
 						mode, b->resolution, b->offset, d->idx, AVMD_TO_HZ(s->rate, f_sma), v_fir, detection_time);
 			}
+
 			switch_channel_set_variable_printf(channel, "avmd_report_frequency", "%f", AVMD_TO_HZ(s->rate, f_sma));
 			switch_channel_set_variable_printf(channel, "avmd_report_frequency_variance", "%f", v_fir);
 			break;
