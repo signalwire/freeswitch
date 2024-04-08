@@ -582,7 +582,6 @@ struct sofia_gateway {
 	time_t last_inactive;
 	int32_t max_inactive_seconds;
 	int auto_delete_inactive;
-	int gw_down_allow_outgoing_call;
 	switch_event_t *ib_vars;
 	switch_event_t *ob_vars;
 	uint32_t ib_calls;

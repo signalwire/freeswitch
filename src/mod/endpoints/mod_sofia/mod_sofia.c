@@ -5126,7 +5126,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		profile = gateway_ptr->profile;
 
-		if (gateway_ptr->status != SOFIA_GATEWAY_UP && !gateway_ptr->gw_down_allow_outgoing_call) {
+		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
 			cause = SWITCH_CAUSE_GATEWAY_DOWN;
 			gateway_ptr->ob_failed_calls++;
