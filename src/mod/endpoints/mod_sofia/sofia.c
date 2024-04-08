@@ -8661,6 +8661,26 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 			}
 
+			// Ensure final response is sent on the other leg before processing t38 reinvite
+			if (is_t38) {
+				private_object_t *o_tech_pvt;
+				switch_channel_callstate_t o_callstate;
+
+				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+					o_tech_pvt = switch_core_session_get_private(other_session);
+					o_callstate = switch_channel_get_callstate(o_tech_pvt->channel);
+
+					if (o_callstate < CCS_ACTIVE || o_callstate == CCS_RING_WAIT) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Other leg still not in active state, so responding with 500.\n");
+						/* RFC3261 section 14.2 indicated 0 - 10 secs for Retry-After*/
+						nua_respond(tech_pvt->nh, SIP_500_INTERNAL_SERVER_ERROR, SIPTAG_RETRY_AFTER_STR("1"), TAG_END());
+						switch_core_session_rwunlock(other_session);
+						goto done;
+					}
+
+					switch_core_session_rwunlock(other_session);
+				}
+			}
 
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					if ((sofia_test_media_flag(profile, SCMF_DISABLE_HOLD)
