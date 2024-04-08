@@ -737,10 +737,35 @@ void conference_event_send_rfc(conference_obj_t *conference)
 
 }
 
-
 switch_status_t conference_event_add_data(conference_obj_t *conference, switch_event_t *event)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+   return conference_event_add_data_with_member(conference, event, NULL);
+}
+
+switch_status_t conference_event_add_data_with_member(conference_obj_t *conference, switch_event_t *event, conference_member_t *member)
+{
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (member && member->session) {
+		switch_channel_t *channel = switch_core_session_get_channel(member->session);
+		if (member->verbose_events) {
+			switch_channel_event_set_data(channel, event);
+		} else {
+			switch_channel_event_set_basic_data(channel, event);
+		}
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Video", "%s",
+								switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false" );
+	} else {
+		conference_member_t *first_member = NULL;
+
+		for (first_member = conference->members; first_member; first_member = first_member->next) {
+			if (first_member->session) {
+				switch_channel_t *channel = switch_core_session_get_channel(first_member->session);
+				switch_channel_event_set_basic_data(channel, event);
+				break;
+			}
+		}
+	}
 	
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", conference->domain);

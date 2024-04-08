@@ -1170,6 +1170,7 @@ typedef switch_status_t (*conference_api_member_cmd_t) (conference_member_t *, s
 typedef switch_status_t (*conference_api_text_cmd_t) (conference_obj_t *, switch_stream_handle_t *, const char *);
 
 switch_status_t conference_event_add_data(conference_obj_t *conference, switch_event_t *event);
+switch_status_t conference_event_add_data_with_member(conference_obj_t *conference, switch_event_t *event, conference_member_t *member);
 switch_status_t conference_member_add_event_data(conference_member_t *member, switch_event_t *event);
 
 cJSON *conference_cdr_json_render(conference_obj_t *conference, cJSON *req);
