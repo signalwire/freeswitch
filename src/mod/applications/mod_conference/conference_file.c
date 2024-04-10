@@ -51,8 +51,6 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 
-		conference_event_add_data(conference, event);
-
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "seconds", "%ld", (long) node->fh.samples_in / node->fh.native_rate);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->fh.samples_in / (node->fh.native_rate / 1000));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "samples", "%ld", (long) node->fh.samples_in);
@@ -75,6 +73,7 @@ switch_status_t conference_file_close(conference_obj_t *conference, conference_f
 			}
 
 		} else {
+			conference_event_add_data(conference, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
 		}
 
@@ -119,8 +118,6 @@ switch_status_t conference_speak_flush(conference_obj_t *conference, conference_
 	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
 		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 
-		conference_event_add_data(conference, event);
-
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "seconds", "%ld", (long) node->sh->samples / node->sh->native_rate);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->sh->samples / (node->sh->native_rate / 1000));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "samples", "%ld", (long) node->sh->samples);
@@ -134,6 +131,7 @@ switch_status_t conference_speak_flush(conference_obj_t *conference, conference_
 			}
 
 		} else {
+			conference_event_add_data(conference, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "speak-text-done");
 		}
 
