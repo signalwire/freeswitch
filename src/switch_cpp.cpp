@@ -106,7 +106,7 @@ SWITCH_DECLARE(Event *) EventConsumer::pop(int block, int timeout)
 
 	if (block) {
 		if (timeout > 0) {
-			res = switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 1000); // millisec rather than microsec
+			res = switch_queue_pop_timeout(events, &pop, (switch_interval_time_t) timeout * 100000); // microsececonds not milliseconds
 		} else {
 			res = switch_queue_pop(events, &pop);
 		}
