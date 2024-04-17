@@ -1096,6 +1096,7 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 		switch_thread_cond_wait(context->cond, context->cond_mutex);
 		status = libvlc_media_get_state(context->m);
 	}
+
 	switch_mutex_unlock(context->cond_mutex);
 
 	if (context->err == 1) {
