@@ -90,7 +90,7 @@ static const char *test_wait_for_chan_var(switch_channel_t *channel, const char 
 	return var;
 }
 
-static switch_bool_t has_ipv6() 
+static switch_bool_t has_ipv6(void)
 {
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
@@ -110,7 +110,7 @@ static switch_bool_t has_ipv6()
 	return SWITCH_TRUE;
 }
 
-static void register_gw()
+static void register_gw(void)
 {
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
@@ -118,7 +118,7 @@ static void register_gw()
 	switch_safe_free(stream.data);
 }
 
-static void unregister_gw()
+static void unregister_gw(void)
 {
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);

@@ -1271,7 +1271,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int sleep_val_i = 250;
 	int eof = 0;
 	switch_size_t bread = 0;
-	int l16 = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	char *file_dup;
 	char *argv[128] = { 0 };
@@ -1333,10 +1332,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	arg_recursion_check_start(args);
-
-	if (!zstr(read_impl.iananame) && !strcasecmp(read_impl.iananame, "l16")) {
-		l16++;
-	}
 
 	if (play_delimiter) {
 		file_dup = switch_core_session_strdup(session, file);
@@ -3207,6 +3202,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 	const char *other_uuid, *moh = NULL;
 	int moh_br = 0;
 	switch_input_args_t args = { 0 };
+	switch_status_t res;
+
 	args.input_callback = hold_on_dtmf;
 	args.buf = (void *) unhold_key;
 	args.buflen = (uint32_t) strlen(unhold_key);
@@ -3237,10 +3234,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			}
 
 			if (!zstr(moh) && strcasecmp(moh, "silence")) {
-				switch_ivr_play_file(session, NULL, moh, &args);
+				res = switch_ivr_play_file(session, NULL, moh, &args);
 			} else {
-				switch_ivr_collect_digits_callback(session, &args, 0, 0);
+				res = switch_ivr_collect_digits_callback(session, &args, 0, 0);
 			}
+
+			(void)res;
 
 			if (moh_br) {
 				switch_channel_stop_broadcast(other_channel);
@@ -3251,10 +3250,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 
 			return SWITCH_STATUS_SUCCESS;
 		}
-
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel %s is not in a bridge\n", switch_channel_get_name(channel));
+
 	return SWITCH_STATUS_FALSE;
 
 }

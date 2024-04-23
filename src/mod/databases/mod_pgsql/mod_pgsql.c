@@ -113,7 +113,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 	char *err_str = NULL;
 	int max_tries = DEFAULT_PGSQL_RETRIES;
 	int code = 0;
-	int recon = 0;
+	switch_status_t recon = SWITCH_STATUS_FALSE;
 	switch_byte_t sanity = 255;
 
 	if (handle) {
@@ -128,6 +128,7 @@ top:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
 		goto done;
 	}
+
 	if (!handle->con) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Connection\n");
 		goto done;
@@ -141,6 +142,7 @@ top:
 			switch_yield(1);
 			continue;
 		}
+
 		break;
 	}
 
@@ -158,6 +160,7 @@ reset:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "PQstatus returned bad connection -- reconnection failed!\n");
 			goto error;
 		}
+
 		handle->state = SWITCH_PGSQL_STATE_CONNECTED;
 		handle->sock = PQsocket(handle->con);
 	}
@@ -193,6 +196,7 @@ error:
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection could not be re-established");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The connection could not be re-established\n");
 		}
+
 		if (!max_tries) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "Giving up!");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up!\n");

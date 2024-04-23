@@ -654,6 +654,7 @@ static switch_status_t switch_opusstream_stream_decode(opus_stream_context_t *co
 					}
 					switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 				}
+				break;
 			case OP_EREAD:	/*An underlying read operation failed. This may signal a truncation attack from an <https:> source.*/
 			
 			case OP_EFAULT: /*	An internal memory allocation failed. */

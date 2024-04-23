@@ -123,12 +123,6 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
     if (cm->alloc_mi(cm, new_mi_size)) goto fail;
   }
 
-  if (cm->seg_map_alloc_size < cm->mi_rows * cm->mi_cols) {
-    // Create the segmentation map structure and set to 0.
-    free_seg_map(cm);
-    if (alloc_seg_map(cm, cm->mi_rows * cm->mi_cols)) goto fail;
-  }
-
   if (cm->above_context_alloc_cols < cm->mi_cols) {
     vpx_free(cm->above_context);
     cm->above_context = (ENTROPY_CONTEXT *)vpx_calloc(
@@ -141,6 +135,12 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
         mi_cols_aligned_to_sb(cm->mi_cols), sizeof(*cm->above_seg_context));
     if (!cm->above_seg_context) goto fail;
     cm->above_context_alloc_cols = cm->mi_cols;
+  }
+
+  if (cm->seg_map_alloc_size < cm->mi_rows * cm->mi_cols) {
+    // Create the segmentation map structure and set to 0.
+    free_seg_map(cm);
+    if (alloc_seg_map(cm, cm->mi_rows * cm->mi_cols)) goto fail;
   }
 
   if (vp9_alloc_loop_filter(cm)) goto fail;

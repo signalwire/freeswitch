@@ -554,6 +554,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_switch_core_db", "test
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_switch_ivr_originate", "tests\unit\test_switch_ivr_originate.2017.vcxproj", "{69A7464A-9B0D-4804-A108-835229DACF58}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_switch_core_codec", "tests\unit\test_switch_core_codec.2017.vcxproj", "{589A07E7-5DE5-49FD-A62C-27795B806AFB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2516,6 +2518,18 @@ Global
 		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|Win32.Build.0 = Release|Win32
 		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|x64.ActiveCfg = Release|x64
 		{69A7464A-9B0D-4804-A108-835229DACF58}.Release|x64.Build.0 = Release|x64
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.All|Win32.ActiveCfg = Debug|Win32
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.All|Win32.Build.0 = Debug|Win32
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.All|x64.ActiveCfg = Debug|x64
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.All|x64.Build.0 = Debug|x64
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Debug|Win32.Build.0 = Debug|Win32
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Debug|x64.ActiveCfg = Debug|x64
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Debug|x64.Build.0 = Debug|x64
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Release|Win32.ActiveCfg = Release|Win32
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Release|Win32.Build.0 = Release|Win32
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Release|x64.ActiveCfg = Release|x64
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2714,6 +2728,7 @@ Global
 		{0B612F84-7533-4DEC-AEDD-5C9CBCF15EAC} = {31C2761D-20E0-4BF8-98B9-E32F0D8DD6E1}
 		{580675D7-C1C9-4197-AAC5-00F64FAFDE78} = {9388C266-C3FC-468A-92EF-0CBC35941412}
 		{69A7464A-9B0D-4804-A108-835229DACF58} = {9388C266-C3FC-468A-92EF-0CBC35941412}
+		{589A07E7-5DE5-49FD-A62C-27795B806AFB} = {9388C266-C3FC-468A-92EF-0CBC35941412}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {09840DE7-9208-45AA-9667-1A71EE93BD1E}

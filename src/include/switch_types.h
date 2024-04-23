@@ -2249,7 +2249,8 @@ typedef enum {
 	SWITCH_CAUSE_BAD_IDENTITY_INFO = 821,
 	SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 822,
 	SWITCH_CAUSE_INVALID_IDENTITY = 823,
-	SWITCH_CAUSE_STALE_DATE = 824
+	SWITCH_CAUSE_STALE_DATE = 824,
+	SWITCH_CAUSE_REJECT_ALL = 825
 } switch_call_cause_t;
 
 typedef enum {
@@ -2424,6 +2425,7 @@ typedef enum {
 	SCC_VIDEO_RESET,
 	SCC_AUDIO_PACKET_LOSS,
 	SCC_AUDIO_ADJUST_BITRATE,
+	SCC_AUDIO_VAD,
 	SCC_DEBUG,
 	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
@@ -2654,10 +2656,12 @@ struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;
 
 typedef enum {
-	SDP_TYPE_REQUEST,
-	SDP_TYPE_RESPONSE
+	SDP_OFFER,
+	SDP_ANSWER
 } switch_sdp_type_t;
 
+#define SDP_TYPE_REQUEST SDP_OFFER
+#define SDP_TYPE_RESPONSE SDP_ANSWER
 
 typedef enum {
 	AEAD_AES_256_GCM_8,

@@ -130,6 +130,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_opus.c" />
+    <ClCompile Include="opus_parse.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="opus_parse.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\libs\win32\opus\opus.2017.vcxproj">

@@ -393,7 +393,9 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 			goto done;
 		}
 		switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+#if !defined(LIBCURL_VERSION_NUM) || (LIBCURL_VERSION_NUM < 0x070c01)
 		switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+#endif
 		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);

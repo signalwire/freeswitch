@@ -237,7 +237,7 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			continue;
 		}
 
-		if (switch_channel_media_up(b_channel)) {
+		if (read_frame && switch_channel_media_up(b_channel)) {
 			if (switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_cond_next();
 				continue;

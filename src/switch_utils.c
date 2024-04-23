@@ -139,13 +139,10 @@ struct switch_frame_buffer_s {
 static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t *orig)
 {
 	switch_frame_node_t *np;
-	int x = 0;
 
 	switch_mutex_lock(fb->mutex);
 
 	for (np = fb->head; np; np = np->next) {
-		x++;
-
 		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
 
 			if (np == fb->head) {
@@ -750,7 +747,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	ip_t *maskv = mask;
 	ip_t *ipv = ip;
 
-	switch_copy_string(host, string, sizeof(host)-1);
+	switch_copy_string(host, string, sizeof(host) - 1);
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
@@ -761,22 +758,20 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	bits = atoi(bit_str);
 	ipv6 = strchr(string, ':');
 	if (ipv6) {
-		int i,n;
+		int32_t i, n;
+		uint32_t k;
+
 		if (bits < 0 || bits > 128) {
 			return -2;
 		}
+
 		bits = atoi(bit_str);
 		switch_inet_pton(AF_INET6, host, (unsigned char *)ip);
-		for (n=bits,i=0 ;i < 16; i++){
-			if (n >= 8) {
-				maskv->v6.s6_addr[i] = 0xFF;
-				n -= 8;
-			} else if (n < 8) {
-				maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> n);
-				n -= n;
-			} else if (n == 0) {
-				maskv->v6.s6_addr[i] = 0x00;
-			}
+
+		for (n = bits, i = 0; i < 16; i++) {
+			k = (n > 8) ? 8 : n;
+			maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> k);	/* k = 0 gives 0x00, k = 8 gives 0xFF */
+			n -= k;
 		}
 	} else {
 		if (bits < 0 || bits > 32) {
@@ -789,6 +784,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 
 		maskv->v4 = 0xFFFFFFFF & ~(0xFFFFFFFF >> bits);
 	}
+
 	*bitp = bits;
 
 	return 0;
@@ -1164,7 +1160,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
 		if (file) {
@@ -1608,6 +1604,30 @@ SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 	}
 
 	return args;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_is_uint_in_range(const char *str, unsigned int from, unsigned int to)
+{
+	unsigned int number;
+	const char *original_str = str;
+
+	if (str == NULL || *str == '\0' || from > to) {
+		return SWITCH_FALSE;
+	}
+
+	for (; *str != '\0'; str++) {
+		if (!isdigit(*str)) {
+			return SWITCH_FALSE;
+		}
+	}
+
+	number = atoi(original_str);
+
+	if (number < from || number > to) {
+		return SWITCH_FALSE;
+	}
+
+	return SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
@@ -2383,7 +2403,7 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
 		}
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			if (!ip_only) {
@@ -2437,7 +2457,7 @@ SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa
 
 		return 1;
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			s16->sin6_port = s26->sin6_port;

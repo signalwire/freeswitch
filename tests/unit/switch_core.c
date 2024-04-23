@@ -53,6 +53,66 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_switch_parse_cidr_v6)
+		{
+			ip_t ip, mask;
+			uint32_t bits;
+
+			fst_check(!switch_parse_cidr("fe80::/10", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 10);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0xfe);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0x80);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xc0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::/0", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 0);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::1/128", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 128);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(ip.v6.s6_addr[3], 0);
+			fst_check_int_equals(ip.v6.s6_addr[4], 0);
+			fst_check_int_equals(ip.v6.s6_addr[5], 0);
+			fst_check_int_equals(ip.v6.s6_addr[6], 0);
+			fst_check_int_equals(ip.v6.s6_addr[7], 0);
+			fst_check_int_equals(ip.v6.s6_addr[8], 0);
+			fst_check_int_equals(ip.v6.s6_addr[9], 0);
+			fst_check_int_equals(ip.v6.s6_addr[10], 0);
+			fst_check_int_equals(ip.v6.s6_addr[11], 0);
+			fst_check_int_equals(ip.v6.s6_addr[12], 0);
+			fst_check_int_equals(ip.v6.s6_addr[13], 0);
+			fst_check_int_equals(ip.v6.s6_addr[14], 0);
+			fst_check_int_equals(ip.v6.s6_addr[15], 1);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[3], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[4], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[5], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[6], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[7], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[8], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[9], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[10], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[11], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[12], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[13], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[14], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[15], 0xff);
+		}
+		FST_TEST_END()
+
 #if ENABLE_SNPRINTFV_TESTS
 		FST_TEST_BEGIN(test_snprintfv_1)
 		{
@@ -94,6 +154,21 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 #endif
+
+		FST_TEST_BEGIN(test_switch_is_number_in_range)
+		{
+			fst_check_int_equals(switch_is_uint_in_range("x5", 0, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 1, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-11", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-10", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("10", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("11", 0, 10), SWITCH_FALSE);
+		}
+		FST_TEST_END()
 
 		FST_TEST_BEGIN(test_md5)
 		{
@@ -416,6 +491,42 @@ FST_CORE_BEGIN("./conf")
 			fst_requires(hash == NULL);
 		}
 		FST_TEST_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_strdup)
+		{
+			const char *val;
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(!switch_channel_get_variable_strdup(channel, "test_var_does_not_exist"));
+
+			val = switch_channel_get_variable_strdup(channel, "test_var");
+
+			fst_check(val);
+			fst_check_string_equals(val, "test_value");
+
+			free((char *)val);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_buf)
+		{
+			char buf[16] = { 0 };
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var", buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(buf, "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var_does_not_exist", buf, sizeof(buf)) == SWITCH_STATUS_FALSE);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }

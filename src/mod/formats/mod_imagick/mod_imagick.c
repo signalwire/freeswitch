@@ -384,6 +384,7 @@ static switch_status_t read_page(pdf_file_context_t *context)
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
 			free(storage);
+
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -397,6 +398,8 @@ static switch_status_t read_page(pdf_file_context_t *context)
 
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
+			switch_img_free(&img);
+
 			return SWITCH_STATUS_FALSE;
 		}
 

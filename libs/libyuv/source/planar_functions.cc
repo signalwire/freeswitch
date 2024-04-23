@@ -1185,7 +1185,7 @@ int ARGBMirror(const uint8_t* src_argb,
 // As there are 6 blenders to choose from, the caller should try to use
 // the same blend function for all pixels if possible.
 LIBYUV_API
-ARGBBlendRow GetARGBBlend() {
+ARGBBlendRow GetARGBBlend(void) {
   void (*ARGBBlendRow)(const uint8_t* src_argb, const uint8_t* src_argb1,
                        uint8_t* dst_argb, int width) = ARGBBlendRow_C;
 #if defined(HAS_ARGBBLENDROW_SSSE3)

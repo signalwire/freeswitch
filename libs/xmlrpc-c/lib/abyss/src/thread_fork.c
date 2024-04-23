@@ -3,7 +3,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#ifdef __APPLE__
+#include <sys/wait.h>
+#else
 #include <wait.h>
+#endif
 #include <signal.h>
 
 #include "xmlrpc_config.h"

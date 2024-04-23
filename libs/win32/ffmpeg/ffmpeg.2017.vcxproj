@@ -24,7 +24,6 @@
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}</ProjectGuid>
   </PropertyGroup>
-  <Import Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Project="$(CUDA_PATH)\extras\visual_studio_integration\MSBuildExtensions\CUDA *.props" />
   <Import Project="$(SolutionDir)w32\zlib.props" Condition=" '$(zlibImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\yasm.props" Condition=" '$(YasmPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\download_ffmpeg.props" Condition=" '$(downloadFfmpegPropsImported)' == '' " />
@@ -78,7 +77,7 @@
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <PreprocessorDefinitions>BUILDING_avdevice;BUILDING_avfilter;BUILDING_avformat;BUILDING_avcodec;BUILDING_avresample;BUILDING_swresample;BUILDING_swscale;BUILDING_avutil;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WC_ERR_INVALID_CHARS=0x00000080;BUILDING_avdevice;BUILDING_avfilter;BUILDING_avformat;BUILDING_avcodec;BUILDING_swresample;BUILDING_swscale;BUILDING_avutil;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|x64'">
@@ -209,6 +208,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aacenctab.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aacps_common.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aacps_fixed.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -240,6 +242,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ac3.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ac3_channel_layout_tab.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ac3_parser.c">
@@ -305,6 +310,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\adxenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\agm.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aic.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -332,6 +340,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\alsdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\amr_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\amrnbdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -348,6 +359,18 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aptx.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aptxdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aptxenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\arbc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\argo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ass.c">
@@ -392,6 +415,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\atrac9dec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\atsc_a53.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\audio_frame_queue.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -399,6 +425,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\aura.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\av1_frame_merge_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\av1_frame_split_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\av1_metadata_bsf.c">
@@ -410,6 +442,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\av1_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\av1dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avcodec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avdct.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -419,16 +457,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avpacket.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avpicture.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avrndec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avs.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avs2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avs2_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avs3_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\avuidec.c">
@@ -458,13 +499,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bintext.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bitpacked.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bitpacked_dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bitpacked_enc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bitstream.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bitstream_filter.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\bitstream_filters.c">
@@ -533,10 +574,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cbs_av1.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cbs_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cbs_h2645.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cbs_mpeg2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cbs_sei.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cbs_vp9.c">
@@ -546,6 +593,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cdgraphics.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cdtoons.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cdxl.c">
@@ -561,6 +611,15 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cfhddata.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cfhddsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cfhdenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cfhdencdsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cga_data.c">
@@ -596,7 +655,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\codec_desc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\codec2utils.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\codec_par.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cook.c">
@@ -608,10 +667,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cpia.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cscd.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cri.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cuviddec.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cri_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cscd.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\cyuv.c">
@@ -636,6 +698,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dca_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dca_sample_rate_tab.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dca_xll.c">
@@ -680,6 +745,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dfa.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dfpwmdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dfpwmenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dirac.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -719,6 +790,15 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dolby_e.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dolby_e_parse.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dolby_e_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dovi_rpu.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dpcm.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -755,6 +835,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dv.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dv_error_marker_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dv_profile.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -764,13 +847,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvaudiodec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvbsub.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvbsub_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvbsubdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvbsubenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvd_nav_parser.c">
@@ -780,6 +863,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvdsub.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dvdsub_parser.c">
@@ -813,6 +899,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dxva2_vc1.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dynamic_hdr10_plus.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dynamic_hdr_vivid.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\dxva2_vp9.c">
@@ -875,13 +967,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\faanidct.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\fastaudio.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\faxcompr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\fdctdsp.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\fft_fixed.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\fft_fixed_32.c">
@@ -906,9 +998,6 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\fic.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\file_open.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\filter_units_bsf.c">
@@ -980,6 +1069,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\g723_1.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\g723_1_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\g723_1dec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1001,7 +1093,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\gdv.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\gemdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\get_buffer.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\gif.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\gif_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\gifdec.c">
@@ -1047,6 +1148,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h263dsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h2645_parse.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h264_cabac.c">
@@ -1097,9 +1201,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h264_slice.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h2645_parse.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h264chroma.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1124,6 +1225,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h265_metadata_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h265_profile_level.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\h274.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\hap.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1131,6 +1238,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\hapqa_extract_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\hcadec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\hcom.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\hevc_cabac.c">
@@ -1241,6 +1354,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\imm4.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\imm5.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\imx.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\imx_dump_header_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1271,6 +1390,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\intrax8dsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ipu_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ituh263dec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1299,6 +1421,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\jpeg2000.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\jpeg2000_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\jpeg2000dec.c">
@@ -1406,16 +1531,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mathtables.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mdct_fixed.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mdct15.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mdct_fixed_32.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mdct_float.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mdct15.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mdec.c">
@@ -1433,7 +1555,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\metasound_data.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mf_utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mfenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\microdvddec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\midivid.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mimic.c">
@@ -1454,6 +1585,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mjpegdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mjpegdec_common.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mjpegenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1464,6 +1598,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mlp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mlp_parse.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mlp_parser.c">
@@ -1482,6 +1619,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mmvideo.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mobiclip.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\motion_est.c">
@@ -1538,6 +1678,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpeg4audio.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpeg4audio_sample_rates.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpeg4video.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1557,6 +1700,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegaudiodata.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegaudiodec_common.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegaudiodec_fixed.c">
@@ -1586,6 +1732,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegaudioenc_float.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegaudiotabs.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegpicture.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1593,6 +1742,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegvideo.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegvideo_dec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mpegvideo_enc.c">
@@ -1640,6 +1792,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\msmpeg4enc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\msp2dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\msrle.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1673,6 +1828,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\msvideo1enc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mv30.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\mvcdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1691,46 +1849,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\noise_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\notchlc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\null_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nuv.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_h264.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_hevc.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mjpeg.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mpeg12.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_mpeg4.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vc1.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vp8.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvdec_vp9.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc_h264.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\nvenc_hevc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\on2avc.c">
@@ -1748,6 +1873,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\opus_celt.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\opus_metadata_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\opus_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -1761,6 +1889,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\opusdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\opusdsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\opusenc.c">
@@ -1793,7 +1924,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcm-bluray.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcm-blurayenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcm-dvd.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcm-dvdenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcm_rechunk_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcx.c">
@@ -1802,7 +1942,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pcxenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pgs_frame_merge_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pgssubdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pgxdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\photocd.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\pictordec.c">
@@ -1830,6 +1979,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\profiles.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\prores_metadata_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\proresdata.c">
@@ -1878,6 +2030,15 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\qdrw.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\qoi_parser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\qoidec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\qoienc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\qpeg.c">
@@ -1964,6 +2125,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\rpza.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\rpzaenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\rtjpeg.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2039,6 +2203,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\scpr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\setts_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\sga.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\sgidec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2060,9 +2230,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\sinewin.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\sinewin_fixed.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\sipr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2072,13 +2239,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\sipr16k.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\siren.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\smacker.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\smc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\smvjpegdec.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\smcenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\snappy.c">
@@ -2105,6 +2275,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\speedhq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\speedhqenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\speexdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\srtdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2124,9 +2300,6 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\svq1.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\svq13.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\svq1dec.c">
@@ -2168,6 +2341,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\texturedsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\texturedspenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\tiertexseqv.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2177,19 +2353,22 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\tiff_common.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\tiff_data.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\tiffenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\tmv.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\to_upper4.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\tpeldsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\trace_headers_bsf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\truehd_core_bsf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\truemotion1.c">
@@ -2222,6 +2401,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ttaencdsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\ttmlenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\twinvq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2235,9 +2417,6 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\utils.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\utvideo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\utvideodec.c">
@@ -2282,6 +2461,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vble.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vbndec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vbnenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vc1.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2318,10 +2503,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vcr1.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\version.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\videodsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vima.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vlc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\vmdaudio.c">
@@ -2444,10 +2635,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\wavpack.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\wavpackdata.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\wavpackenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\webp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\webp_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\webvttdec.c">
@@ -2526,6 +2723,15 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\cavsdsp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\celt_pvq_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\cfhddsp_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\cfhdencdsp_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\constants.c">
@@ -2636,7 +2842,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\mpegvideoencdsp_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\opus_dsp_init.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\opusdsp_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\pixblockdsp_init.c">
@@ -2724,6 +2930,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\xan.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\xbm_parser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\xbmdec.c">
@@ -2816,9 +3025,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavdevice\dshow_pin.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavdevice\file_open.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavdevice\gdigrab.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2826,6 +3032,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavdevice\utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavdevice\version.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavdevice\vfwcap.c">
@@ -2849,16 +3058,31 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_adeclick.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_adecorrelate.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_adelay.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_adenorm.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aderivative.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_adynamicequalizer.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_adynamicsmooth.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aecho.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aemphasis.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aexciter.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_afade.c">
@@ -2874,6 +3098,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aformat.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_afreqshift.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_afwtdn.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_agate.c">
@@ -2897,6 +3127,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_anequalizer.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_anlmdn.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_anlms.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_anull.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -2906,10 +3142,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aphaser.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_apsyclip.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_apulsator.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aresample.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_arnndn.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_asdr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_asetnsamples.c">
@@ -2921,10 +3166,28 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_ashowinfo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_asoftclip.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_aspectralstats.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_astats.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_asubboost.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_asupercut.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_atempo.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_atilt.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_axcorrelate.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_biquads.c">
@@ -2952,6 +3215,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_dcshift.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_deesser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_dialoguenhance.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_drmeter.c">
@@ -2996,9 +3265,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_replaygain.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_resample.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_sidechaincompress.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3006,6 +3272,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_silenceremove.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_speechnorm.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_stereotools.c">
@@ -3026,6 +3295,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_vibrato.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_virtualbass.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\af_volume.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3036,6 +3308,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\asink_anullsink.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\asrc_afirsrc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\asrc_anoisesrc.c">
@@ -3077,6 +3352,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\avf_showfreqs.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\avf_showspatial.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\avf_showspectrum.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3095,7 +3373,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\bbox.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\boxblur.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\boxblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\buffersink.c">
@@ -3110,16 +3388,61 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\colorspacedsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn_backend_native.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_common.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn_interface.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_avgpool.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_conv2d.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_dense.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_depth2space.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_mathbinary.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_mathunary.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_maximum.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layer_pad.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_backend_native_layers.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_interface.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\dnn_io_proc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\queue.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn\safe_queue.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\dnn_filter_common.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\drawutils.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\ebur128.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\edge_common.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_bench.c">
@@ -3140,6 +3463,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_interleave.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_latency.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_loop.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3153,6 +3479,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_reverse.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_segment.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\f_select.c">
@@ -3203,7 +3532,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\pthread.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\scale.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\qp_table.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\scale_eval.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\scene_sad.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\setpts.c">
@@ -3213,6 +3548,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\split.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\src_avsynctest.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\src_movie.c">
@@ -3225,6 +3563,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vaf_spectrumsynth.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\version.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_addroi.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_alphamerge.c">
@@ -3245,6 +3589,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bbox.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bilateral.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bitplanenoise.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3257,6 +3604,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blend.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blockdetect.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_blurdetect.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bm3d.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3266,10 +3619,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_bwdif.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_cas.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_chromakey.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_ciescope.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_chromanr.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_chromashift.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_codecview.c">
@@ -3284,16 +3646,31 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorconstancy.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorcontrast.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorcorrect.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorize.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorkey.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorlevels.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colormap.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colormatrix.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colorspace.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_colortemperature.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_convolution.c">
@@ -3320,6 +3697,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_datascope.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dblur.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dctdnoiz.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3332,6 +3712,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_decimate.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dedot.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_deflicker.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3339,6 +3722,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_delogo.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_derain.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_deshake.c">
@@ -3353,6 +3739,15 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_displace.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dnn_classify.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dnn_detect.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_dnn_processing.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_drawbox.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3365,13 +3760,25 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_entropy.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_epx.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_eq.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_estdif.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_exposure.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_extractplanes.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_fade.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_feedback.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_fftdnoiz.c">
@@ -3416,16 +3823,28 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_framestep.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_freezedetect.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_freezeframes.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_fspp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_gblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_geq.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_geq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_gradfun.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_grayworld.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_guided.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hflip.c">
@@ -3443,7 +3862,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hqx.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hsvkey.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hue.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_huesaturation.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hwdownload.c">
@@ -3455,10 +3880,10 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hwupload.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hwupload_cuda.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hysteresis.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_hysteresis.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_identity.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_idet.c">
@@ -3470,7 +3895,13 @@
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_kerndeint.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_lagfun.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_lenscorrection.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_limitdiff.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_limiter.c">
@@ -3494,7 +3925,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_maskedmerge.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mcdeint.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_maskedminmax.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_maskedthreshold.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_maskfun.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_median.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mergeplanes.c">
@@ -3512,7 +3952,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mix.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_monochrome.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_morpho.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_mpdecimate.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_multiply.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_negate.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_neighbor.c">
@@ -3554,7 +4006,13 @@
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_phase.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_photosensitivity.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pixdesctest.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pixelize.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_pp.c">
@@ -3608,10 +4066,10 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scale.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scale_cuda.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scdet.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_scale_cuda.ptx.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_scroll.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_selectivecolor.c">
@@ -3623,6 +4081,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_setparams.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_shear.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_showinfo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3632,6 +4093,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_shuffleframes.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_shufflepixels.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_shuffleplanes.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3639,6 +4103,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_signature.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_siti.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_smartblur.c">
@@ -3677,19 +4144,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_thumbnail.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_thumbnail_cuda.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_thumbnail_cuda.ptx.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tile.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tinterlace.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tmidequalizer.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tonemap.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_tpad.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_transpose.c">
@@ -3698,10 +4165,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_unsharp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_uspp.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_untile.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_v360.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vaguedenoiser.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_varblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vectorscope.c">
@@ -3714,6 +4187,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vibrance.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vif.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_vignette.c">
@@ -3734,13 +4210,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_xbr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_xmedian.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_xfade.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_yadif.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_yadif_cuda.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\include_x64\libavfilter\vf_yadif_cuda.ptx.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_yaepblur.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vf_zoompan.c">
@@ -3755,6 +4234,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_cellauto.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_gradients.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_life.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3764,10 +4246,16 @@
     <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_mptestsrc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_sierpinski.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\vsrc_testsrc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\af_afir_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\af_anlmdn_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\af_volume_init.c">
@@ -3779,19 +4267,31 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\colorspacedsp_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\scene_sad_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_atadenoise_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_blend_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_bwdif_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_eq.c">
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_convolution_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_eq_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_framerate_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_fspp_init.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_fspp_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_gblur_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_gradfun_init.c">
@@ -3800,7 +4300,7 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_hflip_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_hqdn3d_init.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_hqdn3d_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_idet_init.c">
@@ -3809,7 +4309,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_limiter_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_lut3d_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_maskedclamp_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_maskedmerge_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_nlmeans_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_noise.c">
@@ -3818,31 +4327,37 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_overlay_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pp7_init.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pp7_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_psnr_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pullup_init.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pullup_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_removegrain_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_spp.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_spp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_ssim_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_stereo3d_init.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_stereo3d_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_threshold_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_tinterlace_init.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_tinterlace_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_transpose_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_v360_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_w3fdif_init.c">
@@ -3869,7 +4384,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\aadec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\aaxdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ac3dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\acedec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\acm.c">
@@ -3896,6 +4417,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\afc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\aiff.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\aiffdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3908,7 +4432,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\allformats.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\alp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\amr.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\amvenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\anm.c">
@@ -3923,6 +4453,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\apetag.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\apm.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\apngdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -3935,7 +4468,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\aqtitledec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\argo_asf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\argo_brp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\argo_cvg.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\asf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\asf_tags.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\asfcrypt.c">
@@ -3971,13 +4516,16 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\au.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\audiointerleave.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\av1.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\av1dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\avc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\avformat.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\avidec.c">
@@ -4001,6 +4549,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\avs.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\avs2dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\avs3dec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\bethsoftvid.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4008,6 +4562,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\bink.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\binka.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\bintext.c">
@@ -4067,9 +4624,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\crypto.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\cutils.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dash.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4085,19 +4639,34 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\daudenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\davs2.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dcstr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\demux.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\demux_utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\derf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dfa.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dfpwmdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dhav.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\diracdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dnxhddec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dovi_isom.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\dsfdec.c">
@@ -4157,9 +4726,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\file.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\file_open.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\filmstripdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4211,6 +4777,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ftp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\fwse.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\g722.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4259,6 +4828,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hashenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hca.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hcom.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hdsenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4269,6 +4844,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hls.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hls_sample_encryption.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\hlsenc.c">
@@ -4319,6 +4897,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\iff.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ifv.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ilbc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4337,13 +4918,22 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\img2enc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\imx.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ingenientdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ip.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ipfsgateway.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ipmovie.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ipudec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ircam.c">
@@ -4356,6 +4946,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\isom.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\isom_tags.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\iss.c">
@@ -4376,7 +4969,13 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\jacosubenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\jpegxl_probe.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\jvdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\kvag.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\latmenc.c">
@@ -4397,6 +4996,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\lrcenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\luodatdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\lvfdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4413,6 +5015,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\matroskaenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mca.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mccdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\md5proto.c">
@@ -4457,6 +5065,12 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mmst.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mods.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\moflex.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mov.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4467,6 +5081,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\movenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\movenc_ttml.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\movenccenc.c">
@@ -4520,6 +5137,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\msnwc_tcp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mspdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mtaf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4530,6 +5150,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mux.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mux_utils.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\mvdec.c">
@@ -4587,9 +5210,6 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\oggparsecelt.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\oggparsedaala.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\oggparsedirac.c">
@@ -4650,6 +5270,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\pmpdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\pp_bnk.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\prompeg.c">
@@ -4871,6 +5494,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\rtpenc_mpv.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\rtpenc_rfc4175.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\rtpenc_vc2hq.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4922,6 +5548,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\sccenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\scd.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\sdp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4934,6 +5563,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\sdxdec.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\seek.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\segafilm.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -4944,6 +5576,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\serdec.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\sga.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\shortendec.c">
@@ -5027,6 +5662,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\svag.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\svs.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\swf.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5075,6 +5713,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ttaenc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\ttmlenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\tty.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5099,9 +5740,6 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\utils.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\v210.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\vag.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5112,6 +5750,12 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\vc1testenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\version.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\vividas.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\vivo.c">
@@ -5174,6 +5818,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\westwood_aud.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\westwood_audenc.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavformat\westwood_vqa.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5234,6 +5881,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\audio_fifo.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\avsscanf.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\avstring.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5267,13 +5917,22 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\crc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\csp.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\des.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\detection_bbox.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\dict.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\display.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\dovi_meta.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\encryption_info.c">
@@ -5297,6 +5956,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\file_open.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\film_grain_params.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\fixed_dsp.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5309,19 +5971,25 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hash.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hdr_dynamic_metadata.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hdr_dynamic_vivid_metadata.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hmac.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_cuda.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_d3d11va.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_dxva2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\hwcontext_stub.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\imgutils.c">
@@ -5426,7 +6094,28 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\twofish.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\tx.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\tx_double.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\tx_float.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\tx_int32.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\utils.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\uuid.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\version.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\video_enc_params.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\x86\cpu.c">
@@ -5447,13 +6136,19 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\x86\pixelutils_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\x86\tx_float_init.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\xga_font_data.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\xtea.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libpostproc\postprocess.c">
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libpostproc\postprocess.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libpostproc\version.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswresample\audioconvert.c">
@@ -5478,6 +6173,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswresample\swresample_frame.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswresample\version.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswresample\x86\audio_convert_init.c">
@@ -5525,6 +6223,9 @@
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\utils.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\version.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\vscale.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -5541,54 +6242,6 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\yuv2rgb.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\audio_convert.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\audio_data.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\audio_mix.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\audio_mix_matrix.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\dither.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\options.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\resample.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\utils.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\x86\audio_convert.asm">
-      <Message>Assembling %(Filename)%(Extension) </Message>
-      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
-      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
-    </CustomBuild>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\x86\audio_convert_init.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\x86\audio_mix.asm">
-      <Message>Assembling %(Filename)%(Extension) </Message>
-      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
-      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
-    </CustomBuild>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\x86\audio_mix_init.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\x86\dither.asm">
-      <Message>Assembling %(Filename)%(Extension) </Message>
-      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
-      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
-    </CustomBuild>
-    <ClCompile Include="..\..\ffmpeg-$(ffmpegVersion)\libavresample\x86\dither_init.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\aacencdsp.asm">
@@ -5636,6 +6289,21 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\celt_pvq_search.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\cfhddsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\cfhdencdsp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\dcadsp.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
@@ -5666,7 +6334,7 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\flac_dsp_gpl.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\flac_dsp_gpl.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -5856,7 +6524,7 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\opus_pvq_search.asm">
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavcodec\x86\opusdsp.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6041,6 +6709,11 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\af_anlmdn.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\af_volume.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
@@ -6056,6 +6729,16 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\scene_sad.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_atadenoise.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_blend.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
@@ -6066,12 +6749,27 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_convolution.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_eq.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_framerate.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_fspp.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_fspp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_gblur.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6086,7 +6784,7 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_hqdn3d.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_hqdn3d.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6106,7 +6804,22 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_lut3d.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_maskedclamp.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_maskedmerge.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_nlmeans.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6116,7 +6829,7 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pp7.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pp7.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6126,12 +6839,12 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pullup.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_pullup.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_removegrain.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_removegrain.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6141,12 +6854,22 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_stereo3d.asm">
+    <CustomBuild Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'" Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_stereo3d.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_transpose.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_threshold.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavfilter\x86\vf_v360.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
@@ -6206,6 +6929,11 @@
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libavutil\x86\tx_float.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libswresample\x86\audio_convert.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
@@ -6237,6 +6965,21 @@
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
     </CustomBuild>
     <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\x86\scale.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\x86\scale_avx2.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\x86\yuv2yuvX.asm">
+      <Message>Assembling %(Filename)%(Extension) </Message>
+      <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
+      <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\ffmpeg-$(ffmpegVersion)\libswscale\x86\yuv_2_rgb.asm">
       <Message>Assembling %(Filename)%(Extension) </Message>
       <Command>$(YasmCommand) -I %(RelativeDir) -o $(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj "%(FullPath)"</Command>
       <Outputs>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_')).%(FileName).obj</Outputs>

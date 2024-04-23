@@ -29,7 +29,7 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_debian_distros="wheezy jessie stretch buster bullseye sid"
+supported_debian_distros="wheezy jessie stretch buster bullseye bookworm sid"
 supported_ubuntu_distros="trusty utopic xenial"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
@@ -70,6 +70,9 @@ avoid_mods_sid=(
 )
 avoid_mods_jessie=(
   directories/mod_ldap
+)
+avoid_mods_bookworm=(
+  languages/mod_python
 )
 avoid_mods_wheezy=(
   event_handlers/mod_amqp
@@ -325,14 +328,14 @@ Build-Depends:
 # configure options
  libssl1.0-dev | libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-turbo-dev | libjpeg-turbo8-dev | libjpeg62-dev | libjpeg8-dev,
- python-dev | python-dev-is-python2, python3-dev, python-all-dev, python-support (>= 0.90) | dh-python, erlang-dev, libtpl-dev (>= 1.5),
+ python-dev | python-dev-is-python2 | python-dev-is-python3, python3-dev, python-all-dev | python3-all-dev, python-support (>= 0.90) | dh-python, erlang-dev, libtpl-dev (>= 1.5),
 # documentation
  doxygen,
 # for APR (not essential for build)
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.14),
+ bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.17),
  libspandsp3-dev,
 # used to format the private freeswitch apt-repo key properly
  gnupg,
@@ -371,7 +374,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: amd64 armhf
-Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.14)
+Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.17)
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)
@@ -670,7 +673,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-event-multicast (= \${binary:Version}),
  freeswitch-mod-event-socket (= \${binary:Version}),
  freeswitch-mod-json-cdr (= \${binary:Version}),
- freeswitch-mod-kazoo (= \${binary:Version}),
  freeswitch-mod-snmp (= \${binary:Version}),
  freeswitch-mod-local-stream (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
@@ -907,7 +909,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-event-multicast-dbg (= \${binary:Version}),
  freeswitch-mod-event-socket-dbg (= \${binary:Version}),
  freeswitch-mod-json-cdr-dbg (= \${binary:Version}),
- freeswitch-mod-kazoo-dbg (= \${binary:Version}),
  freeswitch-mod-snmp-dbg (= \${binary:Version}),
  freeswitch-mod-local-stream-dbg (= \${binary:Version}),
  freeswitch-mod-native-file-dbg (= \${binary:Version}),

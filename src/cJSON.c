@@ -1104,34 +1104,32 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
     buffer->length = default_buffer_size;
     buffer->format = format;
     buffer->hooks = *hooks;
-    if (buffer->buffer == NULL)
-    {
+
+    if (buffer->buffer == NULL) {
         goto fail;
     }
 
     /* print the value */
-    if (!print_value(item, buffer))
-    {
+    if (!print_value(item, buffer)) {
         goto fail;
     }
+
     update_offset(buffer);
 
     /* check if reallocate is available */
-    if (hooks->reallocate != NULL)
-    {
+    if (hooks->reallocate != NULL) {
         printed = (unsigned char*) hooks->reallocate(buffer->buffer, buffer->offset + 1);
         if (printed == NULL) {
             goto fail;
         }
+
         buffer->buffer = NULL;
-    }
-    else /* otherwise copy the JSON over to a new buffer */
-    {
+    } else { /* otherwise copy the JSON over to a new buffer */
         printed = (unsigned char*) hooks->allocate(buffer->offset + 1);
-        if (printed == NULL)
-        {
+        if (printed == NULL) {
             goto fail;
         }
+
         memcpy(printed, buffer->buffer, cjson_min(buffer->length, buffer->offset + 1));
         printed[buffer->offset] = '\0'; /* just to be sure */
 
@@ -1142,14 +1140,8 @@ static unsigned char *print(const cJSON * const item, cJSON_bool format, const i
     return printed;
 
 fail:
-    if (buffer->buffer != NULL)
-    {
+    if (buffer->buffer != NULL) {
         hooks->deallocate(buffer->buffer);
-    }
-
-    if (printed != NULL)
-    {
-        hooks->deallocate(printed);
     }
 
     return NULL;
@@ -1942,33 +1934,41 @@ static cJSON_bool add_item_to_object(cJSON * const object, const char * const st
 
 CJSON_PUBLIC(void) cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
 {
-    add_item_to_object(object, string, item, &global_hooks, false);
+    cJSON_bool res = add_item_to_object(object, string, item, &global_hooks, false);
+    (void)res;
 }
 
 /* Add an item to an object with constant string as key */
 CJSON_PUBLIC(void) cJSON_AddItemToObjectCS(cJSON *object, const char *string, cJSON *item)
 {
-    add_item_to_object(object, string, item, &global_hooks, true);
+    cJSON_bool res = add_item_to_object(object, string, item, &global_hooks, true);
+    (void)res;
 }
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)
 {
+    cJSON_bool res;
+
     if (array == NULL)
     {
         return;
     }
 
-    add_item_to_array(array, create_reference(item, &global_hooks));
+    res = add_item_to_array(array, create_reference(item, &global_hooks));
+    (void)res;
 }
 
 CJSON_PUBLIC(void) cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *item)
 {
+    cJSON_bool res;
+
     if ((object == NULL) || (string == NULL))
     {
         return;
     }
 
-    add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
+    res = add_item_to_object(object, string, create_reference(item, &global_hooks), &global_hooks, false);
+    (void)res;
 }
 
 CJSON_PUBLIC(cJSON*) cJSON_AddNullToObject(cJSON * const object, const char * const name)

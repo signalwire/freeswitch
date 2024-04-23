@@ -75,7 +75,7 @@ struct _mapping control_mappings[] = {
 	{"deaf off", conference_loop_deaf_off}
 };
 
-int conference_loop_mapping_len()
+int conference_loop_mapping_len(void)
 {
 	return (sizeof(control_mappings)/sizeof(control_mappings[0]));
 }
@@ -1316,15 +1316,15 @@ void conference_loop_output(conference_member_t *member)
 	uint32_t flush_len;
 	uint32_t low_count, bytes;
 	call_list_t *call_list, *cp;
-	switch_codec_implementation_t read_impl = { 0 }, real_read_impl = { 0 };
+	switch_codec_implementation_t real_read_impl = { 0 };
 	int sanity;
 
-	switch_core_session_get_read_impl(member->session, &read_impl);
+	switch_core_session_get_read_impl(member->session, &member->read_impl);
 	switch_core_session_get_real_read_impl(member->session, &real_read_impl);
 
 
 	channel = switch_core_session_get_channel(member->session);
-	interval = read_impl.microseconds_per_packet / 1000;
+	interval = member->read_impl.microseconds_per_packet / 1000;
 	samples = switch_samples_per_packet(member->conference->rate, interval);
 	//csamples = samples;
 	tsamples = real_read_impl.samples_per_packet;

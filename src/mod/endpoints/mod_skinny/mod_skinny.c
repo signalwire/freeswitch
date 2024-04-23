@@ -2136,7 +2136,7 @@ void launch_skinny_profile_thread(skinny_profile_t *profile) {
 /*****************************************************************************/
 /* MODULE FUNCTIONS */
 /*****************************************************************************/
-switch_endpoint_interface_t *skinny_get_endpoint_interface()
+switch_endpoint_interface_t *skinny_get_endpoint_interface(void)
 {
 	return skinny_endpoint_interface;
 }

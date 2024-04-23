@@ -614,7 +614,7 @@ abyss_bool websocket_hook(TSession *r)
 
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "handshake error %d\n", ret);
-		return FALSE;
+		goto err;
 	}
 
 	if (switch_event_bind_removable("websocket", SWITCH_EVENT_CUSTOM, "websocket::stophook", stop_hook_event_handler, wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
@@ -696,8 +696,11 @@ abyss_bool websocket_hook(TSession *r)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wsh->down = %d, node_count = %d\n", wsh->down, node_count);
 
 	switch_yield(2000);
+
 	while (--node_count >= 0) switch_event_unbind(&nodes[node_count]);
 
+  err:
+	ws_destroy(wsh);
 	switch_safe_free(wsh);
 
 	return FALSE;

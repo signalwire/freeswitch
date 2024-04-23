@@ -1,4 +1,7 @@
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#endif
 #ifndef _GNU_SOURCE
 	#define _GNU_SOURCE  /* But only when HAVE_ASPRINTF */
 #endif

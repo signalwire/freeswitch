@@ -86,6 +86,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 
 	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0 ) {
 		mcast_socket_close(handle);
+
 		return -1;
 	}
 
@@ -103,11 +104,13 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 
 			if (setsockopt(handle->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq, sizeof(mreq)) < 0) {
 				mcast_socket_close(handle);
+
 				return -1;
 			}
 
 			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr, sizeof(handle->recv_addr)) < 0) {
 				mcast_socket_close(handle);
+
 				return -1;
 			}
 
@@ -124,7 +127,11 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 			addr_criteria.ai_flags |= AI_NUMERICHOST;
 
 			snprintf(service, sizeof(service), "%d", port);
-			getaddrinfo(host, service, &addr_criteria, &mcast_addr);
+			if (getaddrinfo(host, service, &addr_criteria, &mcast_addr) != 0) {
+				mcast_socket_close(handle);
+
+				return -1;
+			}
 
 
 			memset(&handle->recv_addr6, 0, sizeof(handle->recv_addr6));
@@ -134,11 +141,14 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 
 			memcpy(&mreq.ipv6mr_multiaddr, &((struct sockaddr_in6 *)mcast_addr->ai_addr)->sin6_addr,  sizeof(struct in6_addr));
 
+			freeaddrinfo(mcast_addr);
+
 			mreq.ipv6mr_interface = 0;
 			setsockopt(handle->sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (const char *)&mreq, sizeof(mreq));
 
 			if (bind(handle->sock, (struct sockaddr *) &handle->recv_addr6, sizeof(handle->recv_addr6)) < 0) {
 				mcast_socket_close(handle);
+
 				return -1;
 			}
 		}

@@ -29,7 +29,7 @@
 
   <Target Name="LDNSDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/libs/ldns-1.6.9-1-win.tar.gz"
+           package="http://files.freeswitch.org/downloads/libs/ldns-1.6.9-2-win.tar.gz"
            expectfileordirectory="$(BaseDir)libs\ldns\configure.ac"
            outputfolder=""
            outputfilename=""

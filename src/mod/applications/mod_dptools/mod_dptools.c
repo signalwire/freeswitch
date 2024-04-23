@@ -161,7 +161,6 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	char *string = NULL;
 	switch_channel_t *channel;
 	switch_core_session_t *use_session = act->session;
-	int x = 0;
 	char *flags = "";
 
 	if (act->target == DIGIT_TARGET_PEER || act->target == DIGIT_TARGET_BOTH) {
@@ -171,7 +170,6 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 	}
 
  top:
-	x++;
 
 	string = switch_core_session_strdup(use_session, act->string);
 	exec = 0;
@@ -595,7 +593,7 @@ SWITCH_STANDARD_APP(filter_codecs_function)
 	r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 	
 	if (data && r_sdp) {
-		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST, data);
+		switch_core_media_merge_sdp_codec_string(session, r_sdp, SDP_OFFER, data);
 		switch_channel_set_variable(channel, "filter_codec_string", data);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Incomplete data\n");
@@ -4584,7 +4582,7 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 			timeout_ms = switch_atoui(argv[3]);
 		}
 
-		if (thresh > 0 && silence_hits > 0 && listen_hits >= 0) {
+		if (thresh > 0 && silence_hits > 0) {
 			switch_ivr_wait_for_silence(session, thresh, silence_hits, listen_hits, timeout_ms, argv[4]);
 			return;
 		}

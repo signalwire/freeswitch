@@ -30,6 +30,7 @@
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Raymond Chandler <intralanman@gmail.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * Jakub Karolczyk <jakub.karolczyk@signalwire.com>
  *
  *
  * mod_av.h -- LibAV mod
@@ -38,6 +39,10 @@
 
 #ifndef MOD_AV_H
 #define MOD_AV_H
+
+#define LIBAVCODEC_V 59
+#define LIBAVFORMAT_V 59
+#define LIBAVUTIL_V 57
 
 struct mod_av_globals {
 	int debug;

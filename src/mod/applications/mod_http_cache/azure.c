@@ -279,7 +279,11 @@ switch_status_t azure_blob_finalise_put(http_profile_t *profile, const char *url
 		goto done;
 	}
 
+#if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x070c01)
+	switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+#else
 	switch_curl_easy_setopt(curl_handle, CURLOPT_PUT, 1);
+#endif
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, full_url);

@@ -153,16 +153,18 @@ static switch_status_t load_config(switch_xml_t input_cfg)
 	}
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
+
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
+			char *val_no_whitespace = switch_strip_whitespace(val);
 
 			if (!strcasecmp(var, "address")) {
-				set_global_dst_addrs(switch_strip_whitespace(val));
+				set_global_dst_addrs(val_no_whitespace);
 			} else if (!strcasecmp(var, "source_address")) {
-				set_global_src_addr(switch_strip_whitespace(val));
+				set_global_src_addr(val_no_whitespace);
 			} else if (!strcasecmp(var, "source_address_ipv6")) {
-				set_global_src_addr6(switch_strip_whitespace(val));
+				set_global_src_addr6(val_no_whitespace);
 			} else if (!strcasecmp(var, "bindings")) {
 				set_global_bindings(val);
 			} else if (!strcasecmp(var, "port")) {
@@ -183,6 +185,8 @@ static switch_status_t load_config(switch_xml_t input_cfg)
 			} else if (!strcasecmp(var, "loopback")) {
 				globals.loopback = switch_true(val);
 			}
+
+			switch_safe_free(val_no_whitespace);
 		}
 	}
 
@@ -190,6 +194,7 @@ static switch_status_t load_config(switch_xml_t input_cfg)
 
 
 	if (globals.bindings) {
+
 		for (cur = globals.bindings; cur; count++) {
 			switch_event_types_t type;
 

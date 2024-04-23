@@ -176,6 +176,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			if (bytes > XML_SCGI_MAX_BYTES) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Data too big!\n");
 				len = -1;
+				if (expanded != (char*)buf) {
+					free(expanded);
+				}
+
 				break;
 			}
 

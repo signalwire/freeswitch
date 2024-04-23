@@ -287,7 +287,10 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
 
-	mkcert(&x509, &pkey, 4096, 0, 36500);
+	if (!mkcert(&x509, &pkey, 4096, 0, 36500)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Certificate generation failed\n");
+		goto end;
+	}
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
@@ -410,7 +413,9 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 {
 	X509 *x;
 	EVP_PKEY *pk;
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	RSA *rsa;
+#endif
 	X509_NAME *name=NULL;
 
 	switch_assert(pkeyp);
@@ -432,7 +437,26 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 		x = *x509p;
 	}
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	{
+		EVP_PKEY_CTX *ctx;
+
+		ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+		/* Setup the key context */
+		if ((!ctx) || (EVP_PKEY_keygen_init(ctx) <= 0) || (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, bits) <= 0)) {
+			abort();
+			goto err;
+		}
+
+		/* Generate key */
+		if (EVP_PKEY_generate(ctx, &pk) <= 0) {
+			abort();
+			goto err;
+		}
+
+		EVP_PKEY_CTX_free(ctx);
+	}
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000
 	rsa = RSA_new();
 	{
 		static const BN_ULONG ULONG_RSA_F4 = RSA_F4;
@@ -449,11 +473,13 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	rsa = RSA_generate_key(bits, RSA_F4, NULL, NULL);
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	if (!EVP_PKEY_assign_RSA(pk, rsa)) {
 		abort();
 	}
 
 	rsa = NULL;
+#endif
 
 	X509_set_version(x, 2);
 	ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
@@ -476,13 +502,21 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	 */
 	X509_set_issuer_name(x, name);
 
-	if (!X509_sign(x, pk, EVP_sha1()))
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	if (!X509_sign(x, pk, EVP_sha256())) {
+#else
+	if (!X509_sign(x, pk, EVP_sha1())) {
+#endif
 		goto err;
+	}
 
 	*x509p = x;
 	*pkeyp = pk;
+
 	return(1);
- err:
+err:
+	ERR_print_errors_fp(stdout);
+
 	return(0);
 }
 

@@ -1998,7 +1998,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	struct ei_cnode_s ec;
 	ErlConnect conn;
 	int clientfd;
-	switch_os_socket_t epmdfd;
+	switch_os_socket_t epmdfd = SWITCH_SOCK_INVALID;
 	switch_socket_t *epmd_sock = NULL;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
