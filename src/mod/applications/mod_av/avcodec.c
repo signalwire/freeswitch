@@ -1581,7 +1581,6 @@ GCC_DIAG_ON(deprecated-declarations)
 	} else if (ret == AVERROR(EAGAIN)) {
 		/* we fully drain all the output in each encode call, so this should not ever happen */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Error sending frame to encoder - BUG, should never happen\n");
-		ret = AVERROR_BUG;
 		goto error;
 	} else if (ret < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error sending frame to encoder\n");
