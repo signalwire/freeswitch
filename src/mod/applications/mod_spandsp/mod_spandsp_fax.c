@@ -1449,7 +1449,11 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 
 		data = strdup(tmp);
 		switch_url_decode(data);
-		pvt->ident = switch_core_session_strdup(session, data);
+		if (!strcmp(data, "_undef_")) {
+			pvt->ident = "";
+		} else {
+			pvt->ident = switch_core_session_strdup(session, data);
+		}
 
 		switch_safe_free(data);
 	} else {
@@ -1461,7 +1465,11 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 
 		data = strdup(tmp);
 		switch_url_decode(data);
-		pvt->header = switch_core_session_strdup(session, data);
+		if (!strcmp(data, "_undef_")) {
+			pvt->header = "";
+		} else {
+			pvt->header = switch_core_session_strdup(session, data);
+		}
 
 		switch_safe_free(data);
 	} else {
