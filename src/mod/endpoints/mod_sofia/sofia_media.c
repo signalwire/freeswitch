@@ -32,8 +32,6 @@
 #include "mod_sofia.h"
 
 
-
-
 uint8_t sofia_media_negotiate_sdp(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t type)
 {
 	uint8_t t = 0, p = 0;
@@ -115,7 +113,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_string_stream_write(switch_stream_
 }
 
 
-static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str, const char*isup, intptr_t isup_len, switch_bool_t drop_sdp) {
+static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str, const char *isup, intptr_t isup_len, switch_bool_t drop_sdp) {
 	char *dname = switch_core_session_strdup(session, str);
 	char *dval;
 
@@ -147,10 +145,13 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 	int x = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *boundary = switch_core_session_get_uuid(session);
+	switch_bool_t allow_custom_sdp = switch_true(switch_channel_get_variable(channel, "allow_custom_sdp"));
+	switch_bool_t drop_sdp = !!sdp && !allow_custom_sdp;
 
 	char * isup = (char*)switch_channel_get_private(channel, "_isup_payload");
 	intptr_t isup_len = (intptr_t)switch_channel_get_private(channel, "_isup_payload_size");
-	
+
+
 	SWITCH_STANDARD_STREAM(stream);
 	if ((hi = switch_channel_variable_first(channel))) {
 		for (; hi; hi = hi->next) {
@@ -162,11 +163,11 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 					int i = 0;
 
 					for(i = 0; i < hi->idx; i++) {
-						process_mp(session, &stream, boundary, hi->array[i], isup, isup_len, !!sdp);
+						process_mp(session, &stream, boundary, hi->array[i], isup, isup_len, drop_sdp);
 						x++;
 					}
 				} else {
-					process_mp(session, &stream, boundary, value, isup, isup_len, !!sdp);
+					process_mp(session, &stream, boundary, value, isup, isup_len, drop_sdp);
 					x++;
 				}
 			}
@@ -176,7 +177,7 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 
 	if (x) {
 		*mp_type = switch_core_session_sprintf(session, "multipart/mixed; boundary=%s", boundary);
-		if (sdp) {
+		if (sdp && !allow_custom_sdp) {
 			switch_string_stream_write(&stream, "--%s\r\nContent-Type: application/sdp\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, strlen(sdp) + 1, sdp);
 		}
 		switch_string_stream_write(&stream, "--%s--\r\n", boundary);
