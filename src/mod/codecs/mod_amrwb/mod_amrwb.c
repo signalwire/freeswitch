@@ -191,6 +191,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	if (codec->fmtp_in) {
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 #else
 	struct amrwb_context *context = NULL;
@@ -204,6 +205,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct amrwb_context))))) {
+
 		return SWITCH_STATUS_FALSE;
 	} else {
 
@@ -296,6 +298,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 
 			/* re-create mode-set */
 			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
+
 			for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
 				if (context->enc_modes & (1 << i)) {
 					fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
@@ -312,12 +315,13 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		}
 
 		if (!globals.volte) {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d",
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		} else {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
+
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->encoder_state = NULL;
