@@ -1557,7 +1557,11 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
+#if (LIBAVCODEC_VERSION_MAJOR >= LIBAVCODEC_6_V && LIBAVCODEC_VERSION_MINOR >= LIBAVCODEC_61_V)
+		 avframe->flags |= AV_FRAME_FLAG_KEY;
+#else
 		 avframe->key_frame = 1;
+#endif
 		 context->last_keyframe_request = switch_time_now();
 	}
 
@@ -1600,9 +1604,14 @@ GCC_DIAG_ON(deprecated-declarations)
 		}
 #endif
 
+#if (LIBAVCODEC_VERSION_MAJOR >= LIBAVCODEC_6_V && LIBAVCODEC_VERSION_MINOR >= LIBAVCODEC_61_V)
+	if (context->need_key_frame && (avframe->flags & AV_FRAME_FLAG_KEY)) {
+		avframe->flags &= ~AV_FRAME_FLAG_KEY;
+#else
 	if (context->need_key_frame && avframe->key_frame == 1) {
-		avframe->pict_type = 0;
 		avframe->key_frame = 0;
+#endif
+		avframe->pict_type = 0;
 		context->need_key_frame = 0;
 	}
 

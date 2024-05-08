@@ -623,8 +623,13 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
 
 		if (codec_id == AV_CODEC_ID_H264) {
+#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+GCC_DIAG_OFF(deprecated-declarations)
+#endif
 			c->ticks_per_frame = 2;
-
+#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+GCC_DIAG_ON(deprecated-declarations)
+#endif
 
 			c->flags|=AV_CODEC_FLAG_LOOP_FILTER;   // flags=+loop
 			c->me_cmp|= 1;  // cmp=+chroma, where CHROMA = 1
@@ -3212,6 +3217,9 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 	if ((c = av_get_codec_context(mst)) && c->time_base.num) {
 		cp = av_stream_get_parser(st);
+#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+GCC_DIAG_OFF(deprecated-declarations)
+#endif
 		ticks = cp ? cp->repeat_pict + 1 : c->ticks_per_frame;
 		// mst->next_pts += ((int64_t)AV_TIME_BASE * st->codec->time_base.num * ticks) / st->codec->time_base.den;
 	}
@@ -3221,6 +3229,9 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			context->video_start_time, ticks, c ? c->ticks_per_frame : -1, st->time_base.num, st->time_base.den, c ? c->time_base.num : -1, c ? c->time_base.den : -1,
 			st->start_time, st->duration == AV_NOPTS_VALUE ? context->fc->duration / AV_TIME_BASE * 1000 : st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
+#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+GCC_DIAG_ON(deprecated-declarations)
+#endif
 
  again:
 
