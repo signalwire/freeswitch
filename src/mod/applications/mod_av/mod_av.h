@@ -42,6 +42,7 @@
 
 #define LIBAVCODEC_V 59
 #define LIBAVFORMAT_V 59
+#define LIBAVFORMAT_6_V 60
 #define LIBAVUTIL_V 57
 
 struct mod_av_globals {
