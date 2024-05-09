@@ -255,6 +255,10 @@ SWITCH_BEGIN_EXTERN_C
 
 typedef uint8_t switch_byte_t;
 
+typedef struct {
+	unsigned int value : 31;
+} switch_uint31_t;
+
 typedef enum {
 	SWITCH_PVT_PRIMARY = 0,
 	SWITCH_PVT_SECONDARY
