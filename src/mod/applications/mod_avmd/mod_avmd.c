@@ -44,7 +44,7 @@
     #define ISINF(x) (isinf(x))
 #else
     int __isnan(double);
-	int __isinf(double);
+    int __isinf(double);
     #define ISNAN(x) (__isnan(x))
     #define ISINF(x) (__isinf(x))
 #endif
@@ -223,6 +223,7 @@ struct avmd_detector {
 /*! Type that holds avmd detection session information. */
 struct avmd_session {
     char                    *session_uuid;
+    switch_core_session_t   *session;
     switch_mutex_t          *mutex;
     struct avmd_settings    settings;
     uint32_t        rate;
@@ -237,7 +238,7 @@ struct avmd_session {
     switch_mutex_t          *mutex_detectors_done;
     switch_thread_cond_t    *cond_detectors_done;
     struct avmd_detector    *detectors;
-	uint8_t closed;
+    uint8_t closed;
 };
 
 static struct avmd_globals
@@ -289,53 +290,53 @@ static uint8_t
 avmd_detection_in_progress(avmd_session_t *s);
 
 static switch_status_t avmd_launch_threads(avmd_session_t *s, switch_core_session_t *session) {
-	uint8_t                 idx;
-	struct avmd_detector    *d;
-	switch_threadattr_t     *thd_attr = NULL;
+    uint8_t                 idx;
+    struct avmd_detector    *d;
+    switch_threadattr_t     *thd_attr = NULL;
 
-	idx = 0;
-	while (idx < s->settings.detectors_n) {
-		d = &s->detectors[idx];
-		d->flag_processing_done = 1;
-		d->flag_should_exit = 0;
-		d->result = AVMD_DETECT_NONE;
-		d->lagged = 0;
-		d->lag = 0;
-		switch_threadattr_create(&thd_attr, avmd_globals.pool);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
+    idx = 0;
+    while (idx < s->settings.detectors_n) {
+        d = &s->detectors[idx];
+        d->flag_processing_done = 1;
+        d->flag_should_exit = 0;
+        d->result = AVMD_DETECT_NONE;
+        d->lagged = 0;
+        d->lag = 0;
+        switch_threadattr_create(&thd_attr, avmd_globals.pool);
+        switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+        if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+            return SWITCH_STATUS_FALSE;
+        }
 
-		if (s->settings.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "AVMD: started thread idx=%u\n", idx);
-		}
+        if (s->settings.debug) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "AVMD: started thread idx=%u\n", idx);
+        }
 
-		++idx;
-	}
+        ++idx;
+    }
 
-	idx = 0;
-	while (idx < s->settings.detectors_lagged_n) {
-		d = &s->detectors[s->settings.detectors_n + idx];
-		d->flag_processing_done = 1;
-		d->flag_should_exit = 0;
-		d->result = AVMD_DETECT_NONE;
-		d->lagged = 1;
-		d->lag = idx + 1;
-		switch_threadattr_create(&thd_attr, avmd_globals.pool);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_FALSE;
-		}
+    idx = 0;
+    while (idx < s->settings.detectors_lagged_n) {
+        d = &s->detectors[s->settings.detectors_n + idx];
+        d->flag_processing_done = 1;
+        d->flag_should_exit = 0;
+        d->result = AVMD_DETECT_NONE;
+        d->lagged = 1;
+        d->lag = idx + 1;
+        switch_threadattr_create(&thd_attr, avmd_globals.pool);
+        switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+        if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+            return SWITCH_STATUS_FALSE;
+        }
 
-		if (s->settings.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "AVMD: started lagged thread idx=%u\n", s->settings.detectors_n + idx);
-		}
+        if (s->settings.debug) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "AVMD: started lagged thread idx=%u\n", s->settings.detectors_n + idx);
+        }
 
-		++idx;
-	}
+        ++idx;
+    }
 
-	return SWITCH_STATUS_SUCCESS;
+    return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t avmd_init_buffer(struct avmd_buffer *b, size_t buf_sz, uint8_t resolution, uint8_t offset, switch_core_session_t *fs_session) {
@@ -409,6 +410,7 @@ static switch_status_t init_avmd_session_data(avmd_session_t *avmd_session, swit
         goto end;
     }
     avmd_session->session_uuid = switch_core_session_strdup(fs_session, switch_core_session_get_uuid(fs_session));
+    avmd_session->session = fs_session;
     avmd_session->pos = 0;
     avmd_session->f = 0.0;
     avmd_session->state.last_beep = 0;
@@ -486,9 +488,9 @@ static void avmd_session_close(avmd_session_t *s) {
     struct avmd_detector    *d;
     switch_status_t         status;
 
-	if (!s || s->closed) {
-		return;
-	}
+    if (!s || s->closed) {
+        return;
+    }
 
     s->closed = 1;
 
@@ -504,15 +506,18 @@ static void avmd_session_close(avmd_session_t *s) {
     while (idx < (s->settings.detectors_n + s->settings.detectors_lagged_n)) {
         d = &s->detectors[idx];
         switch_mutex_lock(d->mutex);
-        d->flag_processing_done = 0;
-        d->flag_should_exit = 1;
-        d->samples = 0;
-        switch_thread_cond_signal(d->cond_start_processing);
-        switch_mutex_unlock(d->mutex);
+        if (d->thread != NULL) {
+            d->flag_processing_done = 0;
+            d->flag_should_exit = 1;
+            d->samples = 0;
+            switch_thread_cond_signal(d->cond_start_processing);
+            switch_mutex_unlock(d->mutex);
 
-        switch_thread_join(&status, d->thread);
-        d->thread = NULL;
-
+            switch_thread_join(&status, d->thread);
+            d->thread = NULL;
+        } else {
+            switch_mutex_unlock(d->mutex);
+        }
         switch_mutex_destroy(d->mutex);
         switch_thread_cond_destroy(d->cond_start_processing);
         ++idx;
@@ -524,57 +529,54 @@ static void avmd_session_close(avmd_session_t *s) {
 }
 
 static switch_bool_t avmd_media_bug_init(avmd_session_t *avmd_session) {
-	switch_codec_t          *read_codec;
-	switch_codec_t          *write_codec;
-	switch_core_session_t   *session;
-	switch_channel_t        *channel = NULL;
+    switch_codec_t          *read_codec;
+    switch_codec_t          *write_codec;
+    switch_core_session_t   *session = avmd_session->session;
+    switch_channel_t        *channel = NULL;
 
-	session = switch_core_session_locate(avmd_session->session_uuid);
-	if (session == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(avmd_session->session_uuid), SWITCH_LOG_ERROR, "No FreeSWITCH session assigned!\n");
-		return SWITCH_FALSE;
-	}
+    if (session == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_UUID_LOG(avmd_session->session_uuid), SWITCH_LOG_ERROR, "No FreeSWITCH session assigned!\n");
+        return SWITCH_FALSE;
+    }
 
-	channel = switch_core_session_get_channel(session);
-	if (channel == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
-		switch_core_session_rwunlock(session);
-		return SWITCH_FALSE;
-	}
+    channel = switch_core_session_get_channel(session);
+    if (channel == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No channel for FreeSWITCH session!\n");
+        return SWITCH_FALSE;
+    }
 
-	if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
-		read_codec = switch_core_session_get_read_codec(session);
-		if (read_codec == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No read codec assigned, default session rate to 8000 samples/s\n");
-			avmd_session->rate = 8000;
-		} else {
-			if (read_codec->implementation == NULL) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No read codec implementation assigned, default session rate to 8000 samples/s\n");
-				avmd_session->rate = 8000;
-			} else {
-				avmd_session->rate = read_codec->implementation->samples_per_second;
-			}
-		}
-	}
-	if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_session->settings.inbound_channnel == 1)) {
-		write_codec = switch_core_session_get_write_codec(session);
-		if (write_codec == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No write codec assigned, default session rate to 8000 samples/s\n");
-			avmd_session->rate = 8000;
-		} else {
-			if (write_codec->implementation == NULL) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No write codec implementation assigned, default session rate to 8000 samples/s\n");
-				avmd_session->rate = 8000;
-			} else {
-				avmd_session->rate = write_codec->implementation->samples_per_second;
-			}
-		}
-	}
-	avmd_session->start_time = switch_micro_time_now();
-	/* avmd_session->vmd_codec.channels =  read_codec->implementation->number_of_channels; */
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_INFO, "Avmd session initialized, [%u] samples/s\n", avmd_session->rate);
-	switch_core_session_rwunlock(session);
-	return SWITCH_TRUE;
+    if ((SWITCH_CALL_DIRECTION_OUTBOUND == switch_channel_direction(channel)) && (avmd_session->settings.outbound_channnel == 1)) {
+        read_codec = switch_core_session_get_read_codec(session);
+        if (read_codec == NULL) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No read codec assigned, default session rate to 8000 samples/s\n");
+            avmd_session->rate = 8000;
+        } else {
+            if (read_codec->implementation == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No read codec implementation assigned, default session rate to 8000 samples/s\n");
+                avmd_session->rate = 8000;
+            } else {
+                avmd_session->rate = read_codec->implementation->samples_per_second;
+            }
+        }
+    }
+    if ((SWITCH_CALL_DIRECTION_INBOUND == switch_channel_direction(channel)) && (avmd_session->settings.inbound_channnel == 1)) {
+        write_codec = switch_core_session_get_write_codec(session);
+        if (write_codec == NULL) {
+            switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No write codec assigned, default session rate to 8000 samples/s\n");
+            avmd_session->rate = 8000;
+        } else {
+            if (write_codec->implementation == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "No write codec implementation assigned, default session rate to 8000 samples/s\n");
+                avmd_session->rate = 8000;
+            } else {
+                avmd_session->rate = write_codec->implementation->samples_per_second;
+            }
+        }
+    }
+    avmd_session->start_time = switch_micro_time_now();
+    /* avmd_session->vmd_codec.channels =  read_codec->implementation->number_of_channels; */
+    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_INFO, "Avmd session initialized, [%u] samples/s\n", avmd_session->rate);
+    return SWITCH_TRUE;
 }
 
 /*! \brief The callback function that is called when new audio data becomes available.
@@ -584,62 +586,67 @@ static switch_bool_t avmd_media_bug_init(avmd_session_t *avmd_session) {
  * @return The success or failure of the function.
  */
 static switch_bool_t avmd_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type) {
-	avmd_session_t *avmd_session;
-	switch_frame_t *frame;
-	switch_bool_t ret = SWITCH_TRUE;
-	int lock_flag = (type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE);
+    avmd_session_t *avmd_session;
+    switch_frame_t *frame;
+    switch_bool_t ret = SWITCH_TRUE;
+    int lock_flag = (type != SWITCH_ABC_TYPE_INIT) && (type != SWITCH_ABC_TYPE_CLOSE);
 
-	avmd_session = (avmd_session_t *) user_data;
-	if (avmd_session == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No avmd session assigned!\n");
-		return SWITCH_FALSE;
-	}
-	switch_mutex_lock(avmd_globals.mutex);
-	if (avmd_session->closed) {
-		switch_mutex_unlock(avmd_globals.mutex);
-		return ret;
-	}
-	switch_mutex_unlock(avmd_globals.mutex);
-	if (lock_flag) {
-		switch_mutex_lock(avmd_session->mutex);
-	}
+    if(type == SWITCH_ABC_TYPE_DESTROY_USER_DATA) {
+        // SKIP this state since avmd_session is allocated via session pool
+        return SWITCH_TRUE;
+    }
 
-	switch (type) {
+    avmd_session = (avmd_session_t *) user_data;
+    if (avmd_session == NULL) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No avmd session assigned!\n");
+        return SWITCH_FALSE;
+    }
+    switch_mutex_lock(avmd_globals.mutex);
+    if (avmd_session->closed) {
+        switch_mutex_unlock(avmd_globals.mutex);
+        return ret;
+    }
+    switch_mutex_unlock(avmd_globals.mutex);
+    if (lock_flag) {
+        switch_mutex_lock(avmd_session->mutex);
+    }
 
-		case SWITCH_ABC_TYPE_INIT:
-			ret = avmd_media_bug_init(avmd_session);
-			break;
+    switch (type) {
 
-		case SWITCH_ABC_TYPE_READ_REPLACE:
-			frame = switch_core_media_bug_get_read_replace_frame(bug);
-			avmd_process(avmd_session, frame, AVMD_READ_REPLACE);
-			break;
+        case SWITCH_ABC_TYPE_INIT:
+            ret = avmd_media_bug_init(avmd_session);
+            break;
 
-		case SWITCH_ABC_TYPE_WRITE_REPLACE:
-			frame = switch_core_media_bug_get_write_replace_frame(bug);
-			avmd_process(avmd_session, frame, AVMD_WRITE_REPLACE);
-			break;
+        case SWITCH_ABC_TYPE_READ_REPLACE:
+            frame = switch_core_media_bug_get_read_replace_frame(bug);
+            avmd_process(avmd_session, frame, AVMD_READ_REPLACE);
+            break;
 
-		case SWITCH_ABC_TYPE_CLOSE:
+        case SWITCH_ABC_TYPE_WRITE_REPLACE:
+            frame = switch_core_media_bug_get_write_replace_frame(bug);
+            avmd_process(avmd_session, frame, AVMD_WRITE_REPLACE);
+            break;
 
-			switch_mutex_lock(avmd_globals.mutex);
-			avmd_session_close(avmd_session);
+        case SWITCH_ABC_TYPE_CLOSE:
 
-			if (avmd_globals.session_n > 0) {
-				--avmd_globals.session_n;
-			}
-			switch_mutex_unlock(avmd_globals.mutex);
-			break;
+            switch_mutex_lock(avmd_globals.mutex);
+            avmd_session_close(avmd_session);
 
-		default:
-			break;
-	}
+            if (avmd_globals.session_n > 0) {
+                --avmd_globals.session_n;
+            }
+            switch_mutex_unlock(avmd_globals.mutex);
+            break;
 
-	if (lock_flag) {
-		switch_mutex_unlock(avmd_session->mutex);
-	}
+        default:
+            break;
+    }
 
-	return ret;
+    if (lock_flag) {
+        switch_mutex_unlock(avmd_session->mutex);
+    }
+
+    return ret;
 }
 
 static switch_status_t avmd_register_all_events(void) {
@@ -881,180 +888,180 @@ static void avmd_set_xml_outbound_configuration(switch_mutex_t *mutex) {
 }
 
 static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
-	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
-	uint8_t bad_debug = 1, bad_report = 1, bad_fast = 1, bad_req_cont = 1, bad_sample_n_cont = 1,
-			bad_sample_n_to_skip = 1, bad_req_cont_amp = 1, bad_sample_n_cont_amp = 1, bad_simpl = 1,
-			bad_inbound = 1, bad_outbound = 1, bad_mode = 1, bad_detectors = 1, bad_lagged = 1, bad = 0;
+    switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
+    uint8_t bad_debug = 1, bad_report = 1, bad_fast = 1, bad_req_cont = 1, bad_sample_n_cont = 1,
+            bad_sample_n_to_skip = 1, bad_req_cont_amp = 1, bad_sample_n_cont_amp = 1, bad_simpl = 1,
+            bad_inbound = 1, bad_outbound = 1, bad_mode = 1, bad_detectors = 1, bad_lagged = 1, bad = 0;
 
-	if (mutex != NULL) {
-		switch_mutex_lock(mutex);
-	}
+    if (mutex != NULL) {
+        switch_mutex_lock(mutex);
+    }
 
-	if ((xml = switch_xml_open_cfg("avmd.conf", &cfg, NULL)) != NULL) {
+    if ((xml = switch_xml_open_cfg("avmd.conf", &cfg, NULL)) != NULL) {
 
-		if ((x_lists = switch_xml_child(cfg, "settings"))) {
-			for (x_list = switch_xml_child(x_lists, "param"); x_list; x_list = x_list->next) {
-				const char *name = switch_xml_attr(x_list, "name");
-				const char *value = switch_xml_attr(x_list, "value");
+        if ((x_lists = switch_xml_child(cfg, "settings"))) {
+            for (x_list = switch_xml_child(x_lists, "param"); x_list; x_list = x_list->next) {
+                const char *name = switch_xml_attr(x_list, "name");
+                const char *value = switch_xml_attr(x_list, "value");
 
-				if (zstr(name)) {
-					continue;
-				}
-				if (zstr(value)) {
-					continue;
-				}
+                if (zstr(name)) {
+                    continue;
+                }
+                if (zstr(value)) {
+                    continue;
+                }
 
-				if (!strcmp(name, "debug")) {
-					avmd_globals.settings.debug = switch_true(value) ? 1 : 0;
-					bad_debug = 0;
-				} else if (!strcmp(name, "report_status")) {
-					avmd_globals.settings.report_status = switch_true(value) ? 1 : 0;
-					bad_report = 0;
-				} else if (!strcmp(name, "fast_math")) {
-					avmd_globals.settings.fast_math = switch_true(value) ? 1 : 0;
-					bad_fast = 0;
-				} else if (!strcmp(name, "require_continuous_streak")) {
-					avmd_globals.settings.require_continuous_streak = switch_true(value) ? 1 : 0;
-					bad_req_cont = 0;
-				} else if (!strcmp(name, "sample_n_continuous_streak")) {
-					if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_continuous_streak, 0, UINT16_MAX)) {
-						bad_sample_n_cont = 0;
-					}
-				} else if (!strcmp(name, "sample_n_to_skip")) {
-					if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_to_skip, 0, UINT16_MAX)) {
-						bad_sample_n_to_skip = 0;
-					}
-				} else if (!strcmp(name, "require_continuous_streak_amp")) {
-					avmd_globals.settings.require_continuous_streak_amp = switch_true(value) ? 1 : 0;
-					bad_req_cont_amp = 0;
-				} else if (!strcmp(name, "sample_n_continuous_streak_amp")) {
-					if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_continuous_streak_amp, 0, UINT16_MAX)) {
-						bad_sample_n_cont_amp = 0;
-					}
-				} else if (!strcmp(name, "simplified_estimation")) {
-					avmd_globals.settings.simplified_estimation = switch_true(value) ? 1 : 0;
-					bad_simpl = 0;
-				} else if (!strcmp(name, "inbound_channel")) {
-					avmd_globals.settings.inbound_channnel = switch_true(value) ? 1 : 0;
-					bad_inbound = 0;
-				} else if (!strcmp(name, "outbound_channel")) {
-					avmd_globals.settings.outbound_channnel = switch_true(value) ? 1 : 0;
-					bad_outbound = 0;
-				} else if (!strcmp(name, "detection_mode")) {
-					if(!avmd_parse_u8_user_input(value, (uint8_t*)&avmd_globals.settings.mode, 0, 2)) {
-						bad_mode = 0;
-					}
-				} else if (!strcmp(name, "detectors_n")) {
-					if(!avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_n, 0, UINT8_MAX)) {
-						bad_detectors = 0;
-					}
-				} else if (!strcmp(name, "detectors_lagged_n")) {
-					if(!avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_lagged_n, 0, UINT8_MAX)) {
-						bad_lagged = 0;
-					}
-				}
-			} // for
-		} // if list
+                if (!strcmp(name, "debug")) {
+                    avmd_globals.settings.debug = switch_true(value) ? 1 : 0;
+                    bad_debug = 0;
+                } else if (!strcmp(name, "report_status")) {
+                    avmd_globals.settings.report_status = switch_true(value) ? 1 : 0;
+                    bad_report = 0;
+                } else if (!strcmp(name, "fast_math")) {
+                    avmd_globals.settings.fast_math = switch_true(value) ? 1 : 0;
+                    bad_fast = 0;
+                } else if (!strcmp(name, "require_continuous_streak")) {
+                    avmd_globals.settings.require_continuous_streak = switch_true(value) ? 1 : 0;
+                    bad_req_cont = 0;
+                } else if (!strcmp(name, "sample_n_continuous_streak")) {
+                    if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_continuous_streak, 0, UINT16_MAX)) {
+                        bad_sample_n_cont = 0;
+                    }
+                } else if (!strcmp(name, "sample_n_to_skip")) {
+                    if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_to_skip, 0, UINT16_MAX)) {
+                        bad_sample_n_to_skip = 0;
+                    }
+                } else if (!strcmp(name, "require_continuous_streak_amp")) {
+                    avmd_globals.settings.require_continuous_streak_amp = switch_true(value) ? 1 : 0;
+                    bad_req_cont_amp = 0;
+                } else if (!strcmp(name, "sample_n_continuous_streak_amp")) {
+                    if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.sample_n_continuous_streak_amp, 0, UINT16_MAX)) {
+                        bad_sample_n_cont_amp = 0;
+                    }
+                } else if (!strcmp(name, "simplified_estimation")) {
+                    avmd_globals.settings.simplified_estimation = switch_true(value) ? 1 : 0;
+                    bad_simpl = 0;
+                } else if (!strcmp(name, "inbound_channel")) {
+                    avmd_globals.settings.inbound_channnel = switch_true(value) ? 1 : 0;
+                    bad_inbound = 0;
+                } else if (!strcmp(name, "outbound_channel")) {
+                    avmd_globals.settings.outbound_channnel = switch_true(value) ? 1 : 0;
+                    bad_outbound = 0;
+                } else if (!strcmp(name, "detection_mode")) {
+                    if(!avmd_parse_u8_user_input(value, (uint8_t*)&avmd_globals.settings.mode, 0, 2)) {
+                        bad_mode = 0;
+                    }
+                } else if (!strcmp(name, "detectors_n")) {
+                    if(!avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_n, 0, UINT8_MAX)) {
+                        bad_detectors = 0;
+                    }
+                } else if (!strcmp(name, "detectors_lagged_n")) {
+                    if(!avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_lagged_n, 0, UINT8_MAX)) {
+                        bad_lagged = 0;
+                    }
+                }
+            } // for
+        } // if list
 
-		switch_xml_free(xml);
-	} // if open OK
+        switch_xml_free(xml);
+    } // if open OK
 
-	if (bad_debug) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'debug' missing or invalid - using default\n");
-		avmd_globals.settings.debug = 0;
-	}
+    if (bad_debug) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'debug' missing or invalid - using default\n");
+        avmd_globals.settings.debug = 0;
+    }
 
-	if (bad_report) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'report_status' missing or invalid - using default\n");
-		avmd_globals.settings.report_status = 1;
-	}
+    if (bad_report) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'report_status' missing or invalid - using default\n");
+        avmd_globals.settings.report_status = 1;
+    }
 
-	if (bad_fast) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'fast_math' missing or invalid - using default\n");
-		avmd_globals.settings.fast_math = 0;
-	}
+    if (bad_fast) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'fast_math' missing or invalid - using default\n");
+        avmd_globals.settings.fast_math = 0;
+    }
 
-	if (bad_req_cont) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'require_continuous_streak' missing or invalid - using default\n");
-		avmd_globals.settings.require_continuous_streak = 1;
-	}
+    if (bad_req_cont) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'require_continuous_streak' missing or invalid - using default\n");
+        avmd_globals.settings.require_continuous_streak = 1;
+    }
 
-	if (bad_sample_n_cont) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_continuous_streak' missing or invalid - using default\n");
-		avmd_globals.settings.sample_n_continuous_streak = 3;
-	}
+    if (bad_sample_n_cont) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_continuous_streak' missing or invalid - using default\n");
+        avmd_globals.settings.sample_n_continuous_streak = 3;
+    }
 
-	if (bad_sample_n_to_skip) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_to_skip' missing or invalid - using default\n");
-		avmd_globals.settings.sample_n_to_skip = 0;
-	}
+    if (bad_sample_n_to_skip) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_to_skip' missing or invalid - using default\n");
+        avmd_globals.settings.sample_n_to_skip = 0;
+    }
 
-	if (bad_req_cont_amp) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'require_continuous_streak_amp' missing or invalid - using default\n");
-		avmd_globals.settings.require_continuous_streak_amp = 1;
-	}
+    if (bad_req_cont_amp) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'require_continuous_streak_amp' missing or invalid - using default\n");
+        avmd_globals.settings.require_continuous_streak_amp = 1;
+    }
 
-	if (bad_sample_n_cont_amp) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_continuous_streak_amp' missing or invalid - using default\n");
-		avmd_globals.settings.sample_n_continuous_streak_amp = 3;
-	}
+    if (bad_sample_n_cont_amp) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'sample_n_continuous_streak_amp' missing or invalid - using default\n");
+        avmd_globals.settings.sample_n_continuous_streak_amp = 3;
+    }
 
-	if (bad_simpl) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'simplified_estimation' missing or invalid - using default\n");
-		avmd_globals.settings.simplified_estimation = 1;
-	}
+    if (bad_simpl) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'simplified_estimation' missing or invalid - using default\n");
+        avmd_globals.settings.simplified_estimation = 1;
+    }
 
-	if (bad_inbound) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'inbound_channel' missing or invalid - using default\n");
-		avmd_globals.settings.inbound_channnel = 0;
-	}
+    if (bad_inbound) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'inbound_channel' missing or invalid - using default\n");
+        avmd_globals.settings.inbound_channnel = 0;
+    }
 
-	if (bad_outbound) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'outbound_channel' missing or invalid - using default\n");
-		avmd_globals.settings.outbound_channnel = 1;
-	}
+    if (bad_outbound) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'outbound_channel' missing or invalid - using default\n");
+        avmd_globals.settings.outbound_channnel = 1;
+    }
 
-	if (bad_mode) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detection_mode' missing or invalid - using default\n");
-		avmd_globals.settings.mode = AVMD_DETECT_BOTH;
-	}
+    if (bad_mode) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detection_mode' missing or invalid - using default\n");
+        avmd_globals.settings.mode = AVMD_DETECT_BOTH;
+    }
 
-	if (bad_detectors) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_n' missing or invalid - using default\n");
-		avmd_globals.settings.detectors_n = 36;
-	}
+    if (bad_detectors) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_n' missing or invalid - using default\n");
+        avmd_globals.settings.detectors_n = 36;
+    }
 
-	if (bad_lagged) {
-		bad = 1;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_lagged_n' missing or invalid - using default\n");
-		avmd_globals.settings.detectors_lagged_n = 1;
-	}
+    if (bad_lagged) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_lagged_n' missing or invalid - using default\n");
+        avmd_globals.settings.detectors_lagged_n = 1;
+    }
 
-	/**
-	 * Hint.
-	 */
-	if (bad) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Type 'avmd show' to display default settings. Type 'avmd ' + TAB for autocompletion.\n");
-	}
+    /**
+     * Hint.
+     */
+    if (bad) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Type 'avmd show' to display default settings. Type 'avmd ' + TAB for autocompletion.\n");
+    }
 
-	if (mutex != NULL) {
-		switch_mutex_unlock(mutex);
-	}
+    if (mutex != NULL) {
+        switch_mutex_unlock(mutex);
+    }
 
-	return SWITCH_STATUS_SUCCESS;
+    return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t avmd_load_xml_inbound_configuration(switch_mutex_t *mutex) {
@@ -1448,8 +1455,8 @@ SWITCH_STANDARD_APP(avmd_start_app) {
             switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to set dynamic parameteres for avmd session. Unknown error\n");
             goto end;
     }
-	
-	report = avmd_session->settings.report_status;
+    
+    report = avmd_session->settings.report_status;
 
     status = init_avmd_session_data(avmd_session, session, avmd_globals.mutex);
     if (status != SWITCH_STATUS_SUCCESS) {
@@ -1973,7 +1980,7 @@ avmd_decision_freq(const avmd_session_t *s, const struct avmd_buffer *b, double 
 }
 
 static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mode, const struct avmd_detector *d) {
-    switch_core_session_t *session;
+    switch_core_session_t *session = s->session;
     switch_channel_t    *channel;
     switch_time_t       detection_time;
     double      f_sma = 0.0;
@@ -1988,7 +1995,6 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
 
     switch_time_t now = switch_micro_time_now();
 
-    session = switch_core_session_locate(s->session_uuid);
     if(session == NULL) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is NULL.\n");
         return;
@@ -2038,8 +2044,6 @@ static void avmd_report_detection(avmd_session_t *s, enum avmd_detection_mode mo
             break;
     }
     s->state.beep_state = BEEP_DETECTED;
-
-    switch_core_session_rwunlock(session);
 }
 
 static uint8_t
@@ -2099,9 +2103,9 @@ static void avmd_process(avmd_session_t *s, switch_frame_t *frame, uint8_t direc
         return;
     }
 
-	if (s->settings.debug) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->session_uuid), SWITCH_LOG_INFO, "AVMD: processing frame [%zu], direction=%s\n", s->frame_n, direction == AVMD_READ_REPLACE ? "READ" : "WRITE");
-	}
+    if (s->settings.debug) {
+        switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->session_uuid), SWITCH_LOG_INFO, "AVMD: processing frame [%zu], direction=%s\n", s->frame_n, direction == AVMD_READ_REPLACE ? "READ" : "WRITE");
+    }
 
     if (s->detection_start_time == 0) {
         s->detection_start_time = switch_micro_time_now();              /* start detection timer */
