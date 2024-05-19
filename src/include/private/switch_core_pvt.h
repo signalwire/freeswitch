@@ -287,6 +287,7 @@ struct switch_runtime {
 	char *event_channel_key_separator;
 	uint32_t max_audio_channels;
 	switch_call_cause_t shutdown_cause;
+	uint32_t orig_sps_total;
 };
 
 extern struct switch_runtime runtime;

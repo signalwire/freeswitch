@@ -2613,6 +2613,15 @@ SWITCH_DECLARE(double) switch_core_idle_cpu(void)
 	return runtime.profile_time;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_orig_sessions_per_second(uint32_t new_limit)
+{
+    if (new_limit) {
+        runtime.orig_sps_total = new_limit;
+    }
+
+    return runtime.orig_sps_total;
+}
+
 SWITCH_DECLARE(uint32_t) switch_core_sessions_per_second(uint32_t new_limit)
 {
 	if (new_limit) {

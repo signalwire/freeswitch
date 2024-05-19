@@ -33,6 +33,7 @@
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 100000
+#define MAX_EVENT_QUEUE_LEN 100000
 #define MAX_MISSED 500
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
@@ -100,6 +101,8 @@ struct listener {
 	switch_pollfd_t *pollfd;
 	uint8_t lock_acquired;
 	uint8_t finished;
+	uint32_t orig_sps;
+	float prev_eq_util;
 };
 
 typedef struct listener listener_t;
@@ -131,6 +134,11 @@ static struct {
 	uint32_t id;
 	int nat_map;
 	int stop_on_bind_error;
+	uint8_t queue_red_thresh;
+	uint8_t queue_yellow_thresh;
+	uint8_t queue_green_thresh;
+	int session_flow_control;
+	uint8_t cooldown_delay;
 } prefs;
 
 
@@ -268,12 +276,22 @@ static switch_status_t expire_listener(listener_t ** listener)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define EVENT_QUEUE_COOLDOWN_DELAY   200
+
 static void event_handler(switch_event_t *event)
 {
 	switch_event_t *clone = NULL;
 	listener_t *l, *lp, *last = NULL;
 	time_t now = switch_epoch_time_now(NULL);
 	switch_status_t qstatus;
+
+	uint32_t eq_size;
+	float    eq_util;
+	uint32_t cur_sps;
+	uint32_t new_sps;
+	float    max_eq_util = 0;
+	float    prev_max_eq_util = 0;
+	uint32_t max_orig_sps = switch_core_orig_sessions_per_second(0);
 
 	switch_assert(event != NULL);
 
@@ -290,6 +308,32 @@ static void event_handler(switch_event_t *event)
 
 		l = lp;
 		lp = lp->next;
+
+		// If event queue monitoring and maximum number of sessions throttling is enabled (via config parameter)
+		//
+		if (prefs.session_flow_control) {
+           
+			// 1 - figure out event queue utilization of this listener
+			//
+			eq_size = switch_queue_size(l->event_queue);
+			eq_util = ((float)eq_size / (float)MAX_EVENT_QUEUE_LEN) * 100;
+
+			// 2 - get the maximum event queue utilization among all listeners
+			//
+			if (eq_util > max_eq_util) {
+				max_eq_util = eq_util;
+			}
+
+			// 3 - get the maximum event queue utilization from the previous scan
+			//
+			if (l->prev_eq_util > prev_max_eq_util) {
+				prev_max_eq_util = l->prev_eq_util;
+			}
+
+			// 4 - record event queue utilizatoin we determined for this listener
+			//
+			l->prev_eq_util = eq_util;
+		}
 
 		if (switch_test_flag(l, LFLAG_STATEFUL) && (l->expire_time || (l->timeout && now - l->last_flush > l->timeout))) {
 			if (expire_listener(&l) == SWITCH_STATUS_SUCCESS) {
@@ -409,6 +453,61 @@ static void event_handler(switch_event_t *event)
 		}
 		last = l;
 	}
+
+	// If event queue monitoring and maximum number of sessions throttling is enabled (via config parameter)
+	//
+	if (prefs.session_flow_control) {
+
+		// If we are not in the cooldown period after the latest maximum number of sessions throttling
+		//
+		if (!prefs.cooldown_delay) {
+			cur_sps = switch_core_sessions_per_second(0);
+
+			if (max_eq_util > (float)prefs.queue_red_thresh) {
+
+				// If we are above red threshold for event queue utilization - we are always throttling
+				//
+				new_sps = cur_sps/10;
+
+				if (new_sps) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "== [> %d]: max_eq_util: %f, cur_sps: %d, new_sps: %d\n",
+									  prefs.queue_red_thresh, max_eq_util, cur_sps, new_sps);
+					switch_core_sessions_per_second(new_sps);
+					prefs.cooldown_delay = EVENT_QUEUE_COOLDOWN_DELAY;
+				}
+			}
+			else if ((max_eq_util > (float)prefs.queue_yellow_thresh) && (prev_max_eq_util <= (float)prefs.queue_yellow_thresh)) {
+
+				// We are only throttling maximum number of session if we are above yellow threshold and we are transitioned her
+				// from below yellow threshold. We are not throttling if we are isolating within red/yellow thresholds bend
+				//
+				new_sps = cur_sps/2;
+
+				if (new_sps) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "== [> %d]: max_eq_util: %f, cur_sps: %d, new_sps: %d\n",
+									  prefs.queue_yellow_thresh, max_eq_util, cur_sps, new_sps);
+					switch_core_sessions_per_second(new_sps);
+					prefs.cooldown_delay = EVENT_QUEUE_COOLDOWN_DELAY;
+				}
+			}
+			else if (max_eq_util < (float)prefs.queue_green_thresh) {
+
+				// Restore the original maximum number of sessions if event queue utilization dropped below green threshold
+				//
+				if (cur_sps < max_orig_sps) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "== [< %d]: max_eq_util: %f, cur_sps: %d, max_orig_sps: %d\n",
+									  prefs.queue_green_thresh, max_eq_util, cur_sps, max_orig_sps);
+					switch_core_sessions_per_second(max_orig_sps);
+				}
+			}
+			else {
+			}
+		}
+		else {
+			prefs.cooldown_delay--;
+		}
+	}
+
 	switch_mutex_unlock(globals.listener_mutex);
 }
 
@@ -497,8 +596,11 @@ SWITCH_STANDARD_APP(socket_function)
 	}
 
 	switch_thread_rwlock_create(&listener->rwlock, switch_core_session_get_pool(session));
-	switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, switch_core_session_get_pool(session));
+
+	switch_queue_create(&listener->event_queue, MAX_EVENT_QUEUE_LEN, switch_core_session_get_pool(session));
 	switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, switch_core_session_get_pool(session));
+
+	listener->orig_sps = switch_core_sessions_per_second(0);
 
 	listener->sock = new_sock;
 	listener->pool = switch_core_session_get_pool(session);
@@ -891,8 +993,11 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
 		switch_set_flag(listener, LFLAG_ALLOW_LOG);
-		switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener->pool);
+
+		switch_queue_create(&listener->event_queue, MAX_EVENT_QUEUE_LEN, listener->pool);
 		switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener->pool);
+
+		listener->orig_sps = switch_core_sessions_per_second(0);
 
 		if (loglevel) {
 			switch_log_level_t ltype = switch_log_str2level(loglevel);
@@ -2875,6 +2980,9 @@ static int config(void)
 
 	memset(&prefs, 0, sizeof(prefs));
 
+	// By default we want session flow control to be enabled
+	prefs.session_flow_control = 1;
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 	} else {
@@ -2903,6 +3011,14 @@ static int config(void)
 					}
 				} else if (!strcasecmp(var, "stop-on-bind-error")) {
 					prefs.stop_on_bind_error = switch_true(val) ? 1 : 0;
+				} else if (!strcasecmp(var, "queue-red-thresh")) {
+					prefs.queue_red_thresh = (uint8_t)atoi(val);
+				} else if (!strcasecmp(var, "queue-yellow-thresh")) {
+					prefs.queue_yellow_thresh = (uint8_t)atoi(val);
+				} else if (!strcasecmp(var, "queue-green-thresh")) {
+					prefs.queue_green_thresh = (uint8_t)atoi(val);
+				} else if (!strcasecmp(var, "enable-session-flow-control")) {
+					prefs.session_flow_control = switch_true(val) ? 1 : 0;
 				}
 			}
 		}
@@ -2932,6 +3048,23 @@ static int config(void)
 	if (!prefs.port) {
 		prefs.port = 8021;
 	}
+
+	if (!prefs.queue_red_thresh) {
+		prefs.queue_red_thresh = 20;
+	}
+
+	if (!prefs.queue_yellow_thresh) {
+		prefs.queue_yellow_thresh = 10;
+	}
+
+	if (!prefs.queue_green_thresh) {
+		prefs.queue_green_thresh = 5;
+	}
+
+	prefs.cooldown_delay = 0;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "YANB: queue_red_thresh: %d, queue_yellow_thresh: %d, queue_green_thresh: %d, session_flow_control: %d\n", 
+					  prefs.queue_red_thresh, prefs.queue_yellow_thresh, prefs.queue_green_thresh, prefs.session_flow_control);
 
 	return 0;
 }
@@ -3027,8 +3160,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		}
 
 		switch_thread_rwlock_create(&listener->rwlock, listener_pool);
-		switch_queue_create(&listener->event_queue, MAX_QUEUE_LEN, listener_pool);
+
+		switch_queue_create(&listener->event_queue, MAX_EVENT_QUEUE_LEN, listener_pool);
 		switch_queue_create(&listener->log_queue, MAX_QUEUE_LEN, listener_pool);
+
+		listener->orig_sps = switch_core_sessions_per_second(0);
 
 		listener->sock = inbound_socket;
 		listener->pool = listener_pool;
