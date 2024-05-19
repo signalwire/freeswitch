@@ -183,6 +183,11 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!async && (conference->conf_fnode_cnt >= 200)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Way too many files to play in the queue already: %d\n", conference->conf_fnode_cnt);
+		return SWITCH_STATUS_IGNORE;
+	}
+
 	if (channel) {
 		if ((expanded = switch_channel_expand_variables(channel, file)) != file) {
 			file = expanded;
@@ -398,6 +403,8 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 		} else {
 			conference->fnode = fnode;
 		}
+
+		conference->conf_fnode_cnt++;
 	}
 
 	switch_mutex_unlock(conference->mutex);
@@ -498,6 +505,7 @@ switch_status_t conference_close_open_files(conference_obj_t *conference)
 			x++;
 		}
 		conference->fnode = NULL;
+		conference->conf_fnode_cnt = 0;
 	}
 
 	if (conference->async_fnode) {

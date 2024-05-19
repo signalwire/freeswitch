@@ -764,6 +764,9 @@ typedef struct conference_obj {
 	int mux_paused;
 	char *video_codec_config_profile_name;
 	int heartbeat_period_sec;
+
+	uint32_t conf_fnode_cnt;
+
 } conference_obj_t;
 
 /* Relationship with another member */

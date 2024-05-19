@@ -314,10 +314,8 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 				switch_media_flow_t video_media_flow;
 				
-				if ((!floor_holder || (imember->id != conference->floor_holder && imember->score_iir > SCORE_IIR_SPEAKING_MAX && (conference->floor_holder_score_iir < SCORE_IIR_SPEAKING_MIN)))) {// &&
-					//(!conference_utils_test_flag(conference, CFLAG_VID_FLOOR) || switch_channel_test_flag(channel, CF_VIDEO))) {
+				if ((!floor_holder || (imember->id != conference->floor_holder && imember->score_iir > SCORE_IIR_SPEAKING_MAX && (conference->floor_holder_score_iir < SCORE_IIR_SPEAKING_MIN)))) {
 
-		
 					if (!conference_utils_member_test_flag(imember, MFLAG_DED_VID_LAYER) || conference_utils_test_flag(conference, CFLAG_DED_VID_LAYER_AUDIO_FLOOR)) {
 						conference_member_set_floor_holder(conference, imember, 0);
 						floor_holder = conference->floor_holder;
@@ -757,6 +755,13 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			fnode = NULL;
 			switch_core_destroy_memory_pool(&pool);
 			switch_mutex_unlock(conference->file_mutex);
+
+			if (conference->conf_fnode_cnt) {
+				conference->conf_fnode_cnt--;
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Conference fnode counter is already 0\n");
+			}
 		}
 
 		if (!conference->end_count && conference->endconference_time &&
@@ -1031,6 +1036,8 @@ switch_status_t conference_say(conference_obj_t *conference, const char *text, u
 	} else {
 		conference->fnode = fnode;
 	}
+
+	conference->conf_fnode_cnt++;
 
 	fnode->sh = conference->sh;
 	if (*text == '#') {
@@ -3631,6 +3638,7 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 	conference->agc_change_factor = 2;
 	conference->agc_period_len = 500 / conference->interval;
 
+	conference->conf_fnode_cnt = 0;
 
 	if (agc_level) {
 		tmp = atoi(agc_level);
