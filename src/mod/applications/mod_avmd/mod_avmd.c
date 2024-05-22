@@ -57,6 +57,8 @@
 
 #include "avmd_fast_acosf.h"
 
+#include "prometheus_metrics.h"
+
 
 /*! Calculate how many audio samples per ms based on the rate */
 #define AVMD_SAMPLES_PER_MS(r, m) ((r) / (1000/(m)))
@@ -103,7 +105,7 @@
 #define AVMD_AMPLITUDE_RSD_THRESHOLD (0.0148)
 
 /*! Syntax of the API call. */
-#define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | load [inbound|outbound] | reload | show >"
+#define AVMD_SYNTAX "<uuid> < start | stop | set [inbound|outbound|default] | get [sessions|detectors] | load [inbound|outbound] | reload | show >"
 
 /*! Number of expected parameters in api call. */
 #define AVMD_PARAMS_API_MIN 1u
@@ -247,6 +249,7 @@ static struct avmd_globals
     struct avmd_settings    settings;
     switch_memory_pool_t    *pool;
     size_t                  session_n;
+    size_t                  detectors_n;
 } avmd_globals;
 
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame, uint8_t direction);
@@ -635,6 +638,14 @@ static switch_bool_t avmd_callback(switch_media_bug_t *bug, void *user_data, swi
             if (avmd_globals.session_n > 0) {
                 --avmd_globals.session_n;
             }
+
+            if (avmd_globals.detectors_n > 0) {
+                avmd_globals.detectors_n -= (avmd_session->settings.detectors_n + avmd_session->settings.detectors_lagged_n);
+                if (avmd_globals.detectors_n < 0) avmd_globals.detectors_n = 0;
+            }
+
+            prometheus_update_active_sessions(avmd_globals.session_n);
+            prometheus_update_detectors(avmd_globals.detectors_n);
             switch_mutex_unlock(avmd_globals.mutex);
             break;
 
@@ -1203,11 +1214,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avmd_load) {
     SWITCH_ADD_APP(app_interface, "avmd","Beep detection", "Advanced detection of voicemail beeps", avmd_start_function, AVMD_SYNTAX, SAF_NONE);
 
     SWITCH_ADD_API(api_interface, "avmd", "Voicemail beep detection", avmd_api_main, AVMD_SYNTAX);
+    
+    prometheus_init(module_interface, api_interface, pool);
 
     switch_console_set_complete("add avmd ::console::list_uuid ::[start:stop");
     switch_console_set_complete("add avmd set inbound");    /* set inbound = 1, outbound = 0 */
     switch_console_set_complete("add avmd set outbound");   /* set inbound = 0, outbound = 1 */
     switch_console_set_complete("add avmd set default");    /* restore to factory settings */
+    switch_console_set_complete("add avmd get sessions");    /* set inbound = 1, outbound = 0 */
+    switch_console_set_complete("add avmd get detectors");   /* set inbound = 0, outbound = 1 */
     switch_console_set_complete("add avmd load inbound");   /* reload + set inbound */
     switch_console_set_complete("add avmd load outbound");  /* reload + set outbound */
     switch_console_set_complete("add avmd reload");         /* reload XML (it loads from FS installation
@@ -1541,6 +1556,10 @@ SWITCH_STANDARD_APP(avmd_start_app) {
 
     switch_mutex_lock(avmd_globals.mutex);
     ++avmd_globals.session_n;
+    avmd_globals.detectors_n += (avmd_session->settings.detectors_n + avmd_session->settings.detectors_lagged_n);
+
+    prometheus_update_active_sessions(avmd_globals.session_n);
+    prometheus_update_detectors(avmd_globals.detectors_n);
     switch_mutex_unlock(avmd_globals.mutex);
 
     switch_channel_set_private(channel, "_avmd_", bug); /* Set the avmd tag to detect an existing avmd media bug */
@@ -1675,6 +1694,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_avmd_shutdown) {
     }
 #endif
 
+    prometheus_destroy();
+
     switch_event_unbind_callback(avmd_reloadxml_event_handler);
     switch_mutex_unlock(avmd_globals.mutex);
     switch_mutex_destroy(avmd_globals.mutex);
@@ -1784,6 +1805,21 @@ SWITCH_STANDARD_API(avmd_api_main) {
                 stream->write_function(stream, "+OK\n reset to factory settings\n\n");
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Reset to factory settings\n");
             }
+        } else {
+            stream->write_function(stream, "-ERR, set command: bad syntax!\n-USAGE: %s\n\n", AVMD_SYNTAX);
+        }
+        goto end;
+    }
+    if (strcasecmp(command, "get") == 0) {
+        if (argc != 2) {
+            stream->write_function(stream, "-ERR, set command takes 1 parameter!\n-USAGE: %s\n\n", AVMD_SYNTAX);
+            goto end;
+        }
+        command = argv[1];
+        if (strcasecmp(command, "sessions") == 0) {
+            stream->write_function(stream, "%d", avmd_globals.session_n);
+        } else if (strcasecmp(command, "detectors") == 0) {
+            stream->write_function(stream, "%d", avmd_globals.detectors_n);
         } else {
             stream->write_function(stream, "-ERR, set command: bad syntax!\n-USAGE: %s\n\n", AVMD_SYNTAX);
         }
@@ -2286,7 +2322,7 @@ avmd_detector_func(switch_thread_t *thread, void *arg) {
     pos = s->pos;
     while (1) {
         switch_mutex_lock(d->mutex);
-        while ((d->flag_processing_done == 1) && (d->flag_should_exit == 0)) {
+        if ((d->flag_processing_done == 1) && (d->flag_should_exit == 0)) {
             switch_thread_cond_wait(d->cond_start_processing, d->mutex);
         }
         /* master set processing_done flag to 0 or thread should exit */
@@ -2298,24 +2334,28 @@ avmd_detector_func(switch_thread_t *thread, void *arg) {
         offset = d->buffer.offset;
         samples = d->samples;
 
-        if (d->lagged == 1) {
-            if (d->lag > 0) {
-                --d->lag;
-                goto done;
-            }
-            pos += AVMD_P;
-        }
-
-        switch_mutex_unlock(d->mutex);
-        sample_n = 1;
-        while (sample_n <= samples) {
-            if (((sample_n + offset) % resolution) == 0) {
-                res = avmd_process_sample(d->s, &s->b, sample_n, pos, d);
-                if (res != AVMD_DETECT_NONE) {
-                    break;
+        if (samples) {
+            if (d->lagged == 1) {
+                if (d->lag > 0) {
+                    --d->lag;
+                    goto done;
                 }
+                pos += AVMD_P;
             }
-            ++sample_n;
+
+            switch_mutex_unlock(d->mutex);
+            sample_n = 1;
+            while (sample_n <= samples) {
+                if (((sample_n + offset) % resolution) == 0) {
+                    res = avmd_process_sample(d->s, &s->b, sample_n, pos, d);
+                    if (res != AVMD_DETECT_NONE) {
+                        break;
+                    }
+                }
+                ++sample_n;
+            }
+        } else {
+            switch_mutex_unlock(d->mutex);
         }
         switch_mutex_lock(d->mutex);
 done:
