@@ -1835,6 +1835,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								  "Operation not permitted on an inbound non-answered call leg!\n");
 			} else {
 				const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+				const char *rr = switch_channel_get_variable(channel, "sip_invite_record_route");
 				full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active),
 						   TAG_IF(!zstr(rr), SIPTAG_ROUTE_STR(rr), SIPTAG_ROUTE(rr)),
