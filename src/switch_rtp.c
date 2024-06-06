@@ -8520,9 +8520,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
-				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes);
+				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], send_msg, &sbytes);
 			} else {
-				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], send_msg, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
 			}
 
 			if (stat) {
@@ -9044,9 +9044,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
-				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes);
+				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg, &sbytes);
 			} else {
-				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
 			}
 
 			if (stat) {
