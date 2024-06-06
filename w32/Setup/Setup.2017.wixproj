@@ -1032,6 +1032,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHConfFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1045,6 +1046,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHSoundFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1058,6 +1060,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHhtdocsFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1071,6 +1074,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHimagesFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1084,6 +1088,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHfontsFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1097,6 +1102,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHgrammarFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1111,6 +1117,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHBaseDir">
     </HeatDirectory>
   </Target>
