@@ -4517,7 +4517,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_sockaddr_create(&rtp_session->rtcp_from_addr, pool);
 	}
 
-	rtp_session->seq = (uint16_t) rand();
+	rtp_session->seq = (uint16_t) switch_rand();
 	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (switch_time_t) switch_epoch_time_now(NULL));
 #ifdef DEBUG_TS_ROLLOVER
 	rtp_session->last_write_ts = TS_ROLLOVER_START;
