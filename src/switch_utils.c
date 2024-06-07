@@ -4828,6 +4828,8 @@ SWITCH_DECLARE(int) switch_rand(void)
 	if (!BCRYPT_SUCCESS(status)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptGenRandom failed with status %d\n", status);
 
+		BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
 		return 1;
 	}
 
@@ -4855,6 +4857,8 @@ SWITCH_DECLARE(int) switch_rand(void)
 		error_msg[sizeof(error_msg) - 1] = '\0';
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read failed: %s\n", error_msg);
+
+		close(random_fd);
 
 		return 1;
 	}
