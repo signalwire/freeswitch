@@ -3370,11 +3370,12 @@ SWITCH_DECLARE(void) switch_channel_set_bridge_time(switch_channel_t *channel)
 
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel)
 {
+	switch_mutex_lock(channel->profile_mutex);
 	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
-		switch_mutex_lock(channel->profile_mutex);
 		channel->caller_profile->times->hungup = switch_micro_time_now();
-		switch_mutex_unlock(channel->profile_mutex);
 	}
+
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 
