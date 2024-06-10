@@ -4890,6 +4890,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	} else {
 		policy->key = (uint8_t *) crypto_key->keysalt;
+		rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI] = 0;
 	}
 
 	policy->next = NULL;
