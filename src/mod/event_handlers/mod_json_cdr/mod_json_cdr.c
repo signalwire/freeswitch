@@ -274,6 +274,7 @@ void destroy_cdr_data(cdr_data_t *data)
 	switch_safe_free(data->uuid);
 	switch_safe_free(data->filename);
 	switch_safe_free(data->logdir);
+	switch_safe_free(data->tmpdir);
 	switch_safe_free(data);
 }
 
