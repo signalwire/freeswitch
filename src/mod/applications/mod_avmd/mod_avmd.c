@@ -175,6 +175,7 @@ struct avmd_settings {
     enum avmd_detection_mode mode;
     uint8_t     detectors_n;
     uint8_t     detectors_lagged_n;
+    uint16_t    detectors_idle_time;
 };
 
 /*! Status of the beep detection */
@@ -305,7 +306,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s, switch_core_sessio
         d->result = AVMD_DETECT_NONE;
         d->lagged = 0;
         d->lag = 0;
-        switch_threadattr_create(&thd_attr, avmd_globals.pool);
+        switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
         switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
         if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
             return SWITCH_STATUS_FALSE;
@@ -326,7 +327,7 @@ static switch_status_t avmd_launch_threads(avmd_session_t *s, switch_core_sessio
         d->result = AVMD_DETECT_NONE;
         d->lagged = 1;
         d->lag = idx + 1;
-        switch_threadattr_create(&thd_attr, avmd_globals.pool);
+        switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
         switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
         if (switch_thread_create(&d->thread, thd_attr, avmd_detector_func, d, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
             return SWITCH_STATUS_FALSE;
@@ -491,11 +492,14 @@ static void avmd_session_close(avmd_session_t *s) {
     struct avmd_detector    *d;
     switch_status_t         status;
 
+    switch_mutex_lock(avmd_globals.mutex);
     if (!s || s->closed) {
+        switch_mutex_unlock(avmd_globals.mutex);
         return;
     }
 
     s->closed = 1;
+    switch_mutex_unlock(avmd_globals.mutex);
 
     switch_mutex_lock(s->mutex);
 
@@ -632,9 +636,9 @@ static switch_bool_t avmd_callback(switch_media_bug_t *bug, void *user_data, swi
 
         case SWITCH_ABC_TYPE_CLOSE:
 
-            switch_mutex_lock(avmd_globals.mutex);
             avmd_session_close(avmd_session);
 
+            switch_mutex_lock(avmd_globals.mutex);
             if (avmd_globals.session_n > 0) {
                 --avmd_globals.session_n;
             }
@@ -862,6 +866,7 @@ static void avmd_set_xml_default_configuration(switch_mutex_t *mutex) {
     avmd_globals.settings.mode = AVMD_DETECT_BOTH;
     avmd_globals.settings.detectors_n = 36;
     avmd_globals.settings.detectors_lagged_n = 1;
+    avmd_globals.settings.detectors_idle_time = 60;
 
     if (mutex != NULL) {
         switch_mutex_unlock(avmd_globals.mutex);
@@ -902,7 +907,8 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
     switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL;
     uint8_t bad_debug = 1, bad_report = 1, bad_fast = 1, bad_req_cont = 1, bad_sample_n_cont = 1,
             bad_sample_n_to_skip = 1, bad_req_cont_amp = 1, bad_sample_n_cont_amp = 1, bad_simpl = 1,
-            bad_inbound = 1, bad_outbound = 1, bad_mode = 1, bad_detectors = 1, bad_lagged = 1, bad = 0;
+            bad_inbound = 1, bad_outbound = 1, bad_mode = 1, bad_detectors = 1, bad_lagged = 1, bad = 0,
+            bad_idle_time = 1;
 
     if (mutex != NULL) {
         switch_mutex_lock(mutex);
@@ -969,6 +975,10 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
                 } else if (!strcmp(name, "detectors_lagged_n")) {
                     if(!avmd_parse_u8_user_input(value, &avmd_globals.settings.detectors_lagged_n, 0, UINT8_MAX)) {
                         bad_lagged = 0;
+                    }
+                } else if (!strcmp(name, "detectors_idle_time")) {
+                    if(!avmd_parse_u16_user_input(value, &avmd_globals.settings.detectors_idle_time, 0, UINT16_MAX)) {
+                        bad_idle_time = 0;
                     }
                 }
             } // for
@@ -1059,6 +1069,12 @@ static switch_status_t avmd_load_xml_configuration(switch_mutex_t *mutex) {
         bad = 1;
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_lagged_n' missing or invalid - using default\n");
         avmd_globals.settings.detectors_lagged_n = 1;
+    }
+
+    if (bad_idle_time) {
+        bad = 1;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AVMD config parameter 'detectors_idle_time' missing or invalid - using default\n");
+        avmd_globals.settings.detectors_idle_time = 60;
     }
 
     /**
@@ -1319,6 +1335,10 @@ static switch_status_t avmd_parse_cmd_data_one_entry(char *candidate, struct avm
         if(avmd_parse_u8_user_input(val, &settings->detectors_lagged_n, 0, UINT8_MAX) == -1) {
             return SWITCH_STATUS_FALSE;
         }
+    } else if (!strcmp(key, "detectors_idle_time")) {
+        if(avmd_parse_u16_user_input(val, &settings->detectors_idle_time, 0, UINT16_MAX) == -1) {
+            return SWITCH_STATUS_FALSE;
+        }
     } else {
         return SWITCH_STATUS_NOTFOUND;
     }
@@ -1514,9 +1534,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         status = SWITCH_STATUS_FALSE;
 
         switch_mutex_unlock(avmd_session->mutex);
-        switch_mutex_lock(avmd_globals.mutex);
         avmd_session_close(avmd_session);
-        switch_mutex_unlock(avmd_globals.mutex);
         goto end;
     }
 
@@ -1526,9 +1544,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
             status = SWITCH_STATUS_FALSE;
 
             switch_mutex_unlock(avmd_session->mutex);
-            switch_mutex_lock(avmd_globals.mutex);
             avmd_session_close(avmd_session);
-            switch_mutex_unlock(avmd_globals.mutex);
             goto end;
         }
     }
@@ -1538,9 +1554,7 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to add media bug!\n");
 
         switch_mutex_unlock(avmd_session->mutex);
-        switch_mutex_lock(avmd_globals.mutex);
         avmd_session_close(avmd_session);
-        switch_mutex_unlock(avmd_globals.mutex);
         goto end;
     }
 
@@ -1549,7 +1563,6 @@ SWITCH_STANDARD_APP(avmd_start_app) {
         switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to start detection threads\n");
        
         switch_mutex_unlock(avmd_session->mutex);
-        switch_channel_set_private(channel, "_avmd_", NULL);
         switch_core_media_bug_remove(session, &bug);
         goto end;
     }
@@ -2322,8 +2335,14 @@ avmd_detector_func(switch_thread_t *thread, void *arg) {
     pos = s->pos;
     while (1) {
         switch_mutex_lock(d->mutex);
-        if ((d->flag_processing_done == 1) && (d->flag_should_exit == 0)) {
-            switch_thread_cond_wait(d->cond_start_processing, d->mutex);
+        while ((d->flag_processing_done == 1) && (d->flag_should_exit == 0)) {
+            if (s->settings.detectors_idle_time > 0) {
+                if (switch_thread_cond_timedwait(d->cond_start_processing, d->mutex, (s->settings.detectors_idle_time * 1000 * 1000)) == SWITCH_STATUS_TIMEOUT) {
+                    switch_log_printf(SWITCH_CHANNEL_UUID_LOG(s->session_uuid), SWITCH_LOG_WARNING, "Avmd detector idle timeout! [idx:%d]!\n", d->idx);
+                }
+            } else {
+                switch_thread_cond_wait(d->cond_start_processing, d->mutex);
+            }
         }
         /* master set processing_done flag to 0 or thread should exit */
         if (d->flag_should_exit == 1) {
