@@ -345,11 +345,13 @@ SWITCH_DECLARE(void) switch_core_dump_variables(switch_stream_handle_t *stream)
 {
 	switch_event_header_t *hi;
 
-	switch_mutex_lock(runtime.global_mutex);
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);
+
 	for (hi = runtime.global_vars->headers; hi; hi = hi->next) {
 		stream->write_function(stream, "%s=%s\n", hi->name, hi->value);
 	}
-	switch_mutex_unlock(runtime.global_mutex);
+
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
 }
 
 SWITCH_DECLARE(const char *) switch_core_get_hostname(void)
