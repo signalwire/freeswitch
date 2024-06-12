@@ -5185,11 +5185,13 @@ static void process_device_hup(switch_channel_t *channel)
 	switch_device_record_t *drec = NULL;
 	switch_device_node_t *node;
 
+	switch_mutex_lock(globals.device_mutex);
 	if (!channel->device_node) {
+		switch_mutex_unlock(globals.device_mutex);
+
 		return;
 	}
 
-	switch_mutex_lock(globals.device_mutex);
 	node = channel->device_node;
 	drec = channel->device_node->parent;
 
