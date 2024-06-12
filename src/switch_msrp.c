@@ -562,30 +562,48 @@ void dump_buffer(const char *buf, switch_size_t len, int line, int is_send)
 {
 	int i, j, k = 0;
 	char buff[MSRP_BUFF_SIZE * 2];
-	// return;
-	for(i=0,j=0; i<len; i++) {
+
+	for (i = 0, j = 0; i < len; i++) {
 		if (buf[i] == '\0') {
+			if (j + 1 >= sizeof(buff)) break;
+
 			buff[j++] = '\\';
 			buff[j++] = '0';
-		} else if(buf[i] == '\r') {
+		} else if (buf[i] == '\r') {
+			if (j + 1 >= sizeof(buff)) break;
+
 			buff[j++] = '\\';
 			buff[j++] = 'r';
-		} else if(buf[i] == '\n') {
+		} else if (buf[i] == '\n') {
+			if (j + 2 >= sizeof(buff)) break;
+
 			buff[j++] = '\\';
 			buff[j++] = 'n';
 			buff[j++] = '\n';
 			k = 0;
-		}
-		 else {
+		} else {
+			if (j >= sizeof(buff)) break;
+
 			buff[j++] = buf[i];
 		}
-		if ((++k) %80 == 0) buff[j++] = '\n';
-		if (j >= MSRP_BUFF_SIZE * 2) break;
+
+		if ((++k) % 80 == 0) {
+			if (j + 1 >= sizeof(buff)) break;
+
+			buff[j++] = '\n';
+		}
+
+		if (j >= sizeof(buff)) break;
 	}
 
-	buff[j] = '\0';
-	switch_log_printf(SWITCH_CHANNEL_LOG, is_send ? SWITCH_LOG_NOTICE: SWITCH_LOG_INFO,
-		"%d: %s [%" SWITCH_SIZE_T_FMT "] bytes [\n%s]\n", line, is_send? "SEND" : "RECV", len, buff);
+	if (j >= sizeof(buff)) {
+		buff[sizeof(buff) - 1] = '\0';
+	} else {
+		buff[j] = '\0';
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, is_send ? SWITCH_LOG_NOTICE : SWITCH_LOG_INFO,
+					  "%d: %s [%" SWITCH_SIZE_T_FMT "] bytes [\n%s]\n", line, is_send ? "SEND" : "RECV", len, buff);
 }
 
 char *find_delim(char *buf, int len, const char *delim)
