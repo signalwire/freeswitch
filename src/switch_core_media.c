@@ -14675,7 +14675,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
 	switch_timer_t *timer;
 	switch_media_handle_t *smh;
-	switch_image_t *dup_img = NULL, *img = frame->img;
+	switch_image_t *dup_img = NULL, *img = NULL;
 	switch_status_t encode_status;
 	switch_frame_t write_frame = {0};
 	switch_rtp_engine_t *v_engine = NULL;
@@ -14735,6 +14735,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		switch_core_media_gen_key_frame(smh->session);
 		smh->video_last_key_time = now;
 	}
+
+	img = frame->img;
 
 	if (!img) {
 		switch_status_t vstatus;
