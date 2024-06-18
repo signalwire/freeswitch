@@ -206,7 +206,9 @@ SWITCH_DECLARE(switch_vad_state_t) switch_vad_process(switch_vad_t *vad, int16_t
 			j += vad->channels;
 		}
 
-		score = (uint32_t) (energy / (samples / vad->divisor));
+		if (samples && vad->divisor && samples >= vad->divisor) {
+			score = (uint32_t)(energy / (samples / vad->divisor));
+		}
 #ifdef SWITCH_HAVE_FVAD
 	}
 #endif

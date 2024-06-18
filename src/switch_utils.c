@@ -4811,6 +4811,67 @@ done:
 	return status;
 }
 
+SWITCH_DECLARE(int) switch_rand(void)
+{
+	uint32_t random_number = 0;
+#ifdef WIN32
+	BCRYPT_ALG_HANDLE hAlgorithm = NULL;
+	NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptOpenAlgorithmProvider failed with status %d\n", status);
+
+		return 1;
+	}
+
+	status = BCryptGenRandom(hAlgorithm, (PUCHAR)&random_number, sizeof(random_number), 0);
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptGenRandom failed with status %d\n", status);
+
+		BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
+		return 1;
+	}
+
+	BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
+	/* Make sure we return from 0 to RAND_MAX */
+	return (random_number & 0x7FFF);
+#elif defined(__unix__) || defined(__APPLE__)
+	int random_fd = open("/dev/urandom", O_RDONLY);
+	ssize_t result;
+	char error_msg[100];
+
+	if (random_fd == -1) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open failed: %s\n", error_msg);
+
+		return 1;
+	}
+
+	result = read(random_fd, &random_number, sizeof(random_number));
+	if (result < 0) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read failed: %s\n", error_msg);
+
+		close(random_fd);
+
+		return 1;
+	}
+	
+	close(random_fd);
+
+	/* Make sure we return from 0 to RAND_MAX */
+	return (random_number & 0x7FFF);
+#else
+	return rand();
+#endif
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c
