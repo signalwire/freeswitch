@@ -51,18 +51,9 @@ deb [signed-by=${GPG_KEY}] https://${REPO_DOMAIN}/repo/deb/rpi/debian-dev ${CODE
 deb-src [signed-by=${GPG_KEY}] https://${REPO_DOMAIN}/repo/deb/rpi/debian-dev ${CODENAME} main
 EOF
 
-RUN --mount=type=secret,id=REPO_PASSWORD \
-  printf "machine ${REPO_DOMAIN} " > ~/.netrc && \
-  printf "login ${REPO_USERNAME} " >> ~/.netrc && \
-  printf "password " >> ~/.netrc && \
-  cat /run/secrets/REPO_PASSWORD >> ~/.netrc && \
-  cp -f ~/.netrc /etc/apt/auth.conf
-
 RUN git config --global --add safe.directory '*' \
     && git config --global user.name "${MAINTAINER_NAME}" \
     && git config --global user.email "${MAINTAINER_EMAIL}"
-
-RUN curl --netrc -o ${GPG_KEY} https://${REPO_DOMAIN}/repo/deb/rpi/debian-dev/signalwire-freeswitch-repo.gpg
 
 # Bootstrap and Build
 COPY . ${DATA_DIR}
@@ -72,9 +63,25 @@ RUN echo "export VERSION=$(cat ./build/next-release.txt | tr -d '\n')" | tee -a 
 RUN . ~/.env && ./debian/util.sh prep-create-orig -n -V${VERSION}-${BUILD_NUMBER}-${GIT_SHA} -x
 RUN . ~/.env && ./debian/util.sh prep-create-dsc -a armhf ${CODENAME}
 
-RUN apt-get -q update && \
-    mk-build-deps --install --remove debian/control --tool "apt-get -y --no-install-recommends" && \
-    apt-get -y -f install
+RUN --mount=type=secret,id=REPO_PASSWORD \
+    printf "machine ${REPO_DOMAIN} "  > /etc/apt/auth.conf && \
+    printf "login ${REPO_USERNAME} " >> /etc/apt/auth.conf && \
+    printf "password "               >> /etc/apt/auth.conf && \
+    cat /run/secrets/REPO_PASSWORD   >> /etc/apt/auth.conf && \
+    curl \
+        --fail \
+        --netrc-file /etc/apt/auth.conf \
+        --output ${GPG_KEY} \
+        --silent \
+        https://${REPO_DOMAIN}/repo/deb/rpi/debian-dev/signalwire-freeswitch-repo.gpg && \
+    file ${GPG_KEY} && \
+    apt-get --quiet update && \
+    mk-build-deps \
+        --install \
+        --remove debian/control \
+        --tool "apt-get --yes --no-install-recommends" && \
+    apt-get --yes --fix-broken install && \
+    rm -f /etc/apt/auth.conf
 
 ENV DEB_BUILD_OPTIONS="parallel=1"
 RUN . ~/.env && dch -b -M -v "${VERSION}-${BUILD_NUMBER}-${GIT_SHA}~${CODENAME}" \
