@@ -63,7 +63,7 @@ RUN echo "export VERSION=$(cat ./build/next-release.txt | tr -d '\n')" | tee -a 
 RUN . ~/.env && ./debian/util.sh prep-create-orig -n -V${VERSION}-${BUILD_NUMBER}-${GIT_SHA} -x
 RUN . ~/.env && ./debian/util.sh prep-create-dsc ${CODENAME}
 
-RUN --mount=type=secret,id=REPO_PASSWORD \
+RUN --mount=type=secret,id=REPO_PASSWORD,required=true \
     printf "machine ${REPO_DOMAIN} "  > /etc/apt/auth.conf && \
     printf "login ${REPO_USERNAME} " >> /etc/apt/auth.conf && \
     printf "password "               >> /etc/apt/auth.conf && \
@@ -72,7 +72,6 @@ RUN --mount=type=secret,id=REPO_PASSWORD \
         --fail \
         --netrc-file /etc/apt/auth.conf \
         --output ${GPG_KEY} \
-        --silent \
         https://${REPO_DOMAIN}/repo/deb/debian-unstable/signalwire-freeswitch-repo.gpg && \
     file ${GPG_KEY} && \
     apt-get --quiet update && \

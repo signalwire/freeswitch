@@ -1,6 +1,12 @@
 name: Build and Distribute
 
 on:
+  pull_request_target:
+    types:
+      - ready_for_review
+    paths:
+      - '**'
+      - '!.github/'
   pull_request:
   push:
     branches:
@@ -23,7 +29,7 @@ jobs:
         run: |
           JSON="[]"
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "pull_request_target" ]]; then
             JSON=$(jq -n '[
               {
                 "version": "bookworm",
