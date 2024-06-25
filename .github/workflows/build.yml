@@ -93,7 +93,7 @@ jobs:
       PROXY_URL: ${{ secrets.PROXY_URL }}
       USERNAME: ${{ secrets.USERNAME }}
       TELEPORT_TOKEN: ${{ secrets.TELEPORT_TOKEN }}
-      REPO_USERNAME: 'signalwire'
+      REPO_USERNAME: 'SWUSERNAME'
       REPO_PASSWORD: ${{ secrets.REPOTOKEN }}
 
   meta:

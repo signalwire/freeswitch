@@ -8,7 +8,6 @@ ARG MAINTAINER_EMAIL="andrey@signalwire.com"
 # Credentials
 ARG REPO_DOMAIN=freeswitch.signalwire.com
 ARG REPO_USERNAME=user
-ARG REPO_PASSWORD=password
 
 ARG BUILD_NUMBER=42
 ARG GIT_SHA=0000000000
@@ -69,6 +68,7 @@ RUN --mount=type=secret,id=REPO_PASSWORD,required=true \
     printf "login ${REPO_USERNAME} " >> /etc/apt/auth.conf && \
     printf "password "               >> /etc/apt/auth.conf && \
     cat /run/secrets/REPO_PASSWORD   >> /etc/apt/auth.conf && \
+    sha512sum /run/secrets/REPO_PASSWORD && \
     curl \
         --fail \
         --netrc-file /etc/apt/auth.conf \
