@@ -7,7 +7,6 @@ on:
     paths:
       - '**'
       - '!.github/'
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.head_ref || github.ref }}
