@@ -35,7 +35,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_flowroute_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_flowroute_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sms_flowroute, mod_sms_flowroute_load, mod_sms_flowroute_shutdown, NULL);
 
-static mod_sms_flowroute_globals_t mod_sms_flowroute_globals;
+mod_sms_flowroute_globals_t mod_sms_flowroute_globals;
 
 static void on_accept(h2o_socket_t *listener, const char *error)
 {
@@ -107,7 +107,7 @@ static void *SWITCH_THREAD_FUNC mod_sms_flowroute_profile_event_thread(switch_th
 		timeout_entry.cb = mod_sms_flowroute_profile_event_thread_on_timeout;
 		h2o_timeout_link(profile->h2o_context.loop, &timeout, &timeout_entry);
 
-		h2o_evloop_run(profile->h2o_context.loop);
+		h2o_evloop_run(profile->h2o_context.loop, INT32_MAX);
 
 		h2o_timeout_unlink(&timeout_entry);
 		h2o_timeout_dispose(profile->h2o_context.loop, &timeout);
@@ -176,7 +176,7 @@ static int mod_sms_flowroute_profile_request_handler(h2o_handler_t *handler, h2o
 
 	request->res.status = 200;
 	request->res.reason = "OK";
-	h2o_add_header(&request->pool, &request->res.headers, H2O_TOKEN_CONTENT_TYPE, H2O_STRLIT("text/plain; charset=utf-8"));
+	h2o_add_header(&request->pool, &request->res.headers, H2O_TOKEN_CONTENT_TYPE, NULL, H2O_STRLIT("text/plain; charset=utf-8"));
 	h2o_start_response(request, &generator);
 	h2o_send(request, &body, 1, 1);
 
@@ -277,7 +277,7 @@ static int on_body(h2o_http1client_t *client, const char *errstr)
 }
 
 static h2o_http1client_body_cb on_head(h2o_http1client_t *client, const char *errstr, int minor_version, int status, h2o_iovec_t msg_iovec,
-								h2o_http1client_header_t *headers, size_t num_headers)
+								struct st_h2o_header_t *headers, size_t num_headers, int rlen)
 {
 	size_t i;
 	switch_log_level_t loglevel = SWITCH_LOG_DEBUG;
@@ -296,7 +296,7 @@ static h2o_http1client_body_cb on_head(h2o_http1client_t *client, const char *er
 	switch_log_printf(SWITCH_CHANNEL_LOG, loglevel, "HTTP/1.%d %d %.*s\n", minor_version, status, (int)msg_iovec.len, msg_iovec.base);
 	for (i = 0; i != num_headers; ++i) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, loglevel, "%.*s: %.*s\n",
-						  (int)headers[i].name_len, headers[i].name, (int)headers[i].value_len, headers[i].value);
+						  (int)headers[i].name->len, headers[i].name->base, (int)headers[i].value.len, headers[i].value.base);
 	}
 
 	if (errstr == h2o_http1client_error_is_eos) {
@@ -353,7 +353,7 @@ switch_status_t mod_sms_flowroute_profile_send_message(mod_sms_flowroute_profile
 	h2o_timeout_init(msg->ctx.loop, &msg->io_timeout, 5000); /* 5 seconds */
 	h2o_multithread_register_receiver(profile->queue, msg->ctx.getaddr_receiver, h2o_hostinfo_getaddr_receiver);
 
-	msg->ctx.ssl_ctx = SSL_CTX_new(TLSv1_2_client_method());
+	msg->ctx.ssl_ctx = SSL_CTX_new(TLS_client_method());
 	SSL_CTX_load_verify_locations(msg->ctx.ssl_ctx, NULL, "/etc/ssl/certs/");
 	SSL_CTX_set_verify(msg->ctx.ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
