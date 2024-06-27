@@ -105,9 +105,10 @@ do_select:
         sock->options |= APR_INCOMPLETE_READ;
     }
     (*len) = rv;
-    if (rv == 0) {
+    if (rv == 0 && sock->type == SOCK_STREAM) {
         return APR_EOF;
     }
+
     return APR_SUCCESS;
 }
 
