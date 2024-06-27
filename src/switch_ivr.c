@@ -4344,7 +4344,8 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 	char *r = NULL;
 	switch_event_t *params = NULL;
 	switch_regex_t *re = NULL;
-	int proceed = 0, ovector[100];
+	switch_regex_match_data_t *match_data = NULL;
+	int proceed = 0;
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
@@ -4376,8 +4377,8 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 			const char *proto = switch_xml_attr(x_exten, "proto");
 
 			if (!zstr(regex) && !zstr(proto)) {
-				proceed = switch_regex_perform(exten_name, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-				switch_regex_safe_free(re);
+				proceed = switch_regex_perform(exten_name, regex, &re, &match_data);
+				switch_regex_and_match_data_safe_free(re, match_data);
 
 				if (proceed) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n",
