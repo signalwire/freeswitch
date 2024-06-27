@@ -38,7 +38,7 @@
     <ProjectGuid>{03207781-0D1C-4DB3-A71D-45C608F28DBD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libspeexdsp</ProjectName>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(SolutionDir)\w32\download_speex.props" Condition=" '$(downloadspeexPropsImported)' == '' " />
