@@ -106,6 +106,22 @@ char * pgsql_handle_get_error(switch_pgsql_handle_t *handle)
 	return err_str;
 }
 
+void pgsql_handle_set_error_if_not_set(switch_pgsql_handle_t *handle, char **err)
+{
+	char *err_str;
+
+	if (err && !(*err)) {
+		err_str = pgsql_handle_get_error(handle);
+
+		if (zstr(err_str)) {
+			switch_safe_free(err_str);
+			err_str = strdup((char *)"SQL ERROR!");
+		}
+
+		*err = err_str;
+	}
+}
+
 static int db_is_up(switch_pgsql_handle_t *handle)
 {
 	int ret = 0;
@@ -553,8 +569,14 @@ switch_status_t pgsql_handle_exec_detailed(const char *file, const char *func, i
 		goto error;
 	}
 
-	return pgsql_finish_results(handle);
+	if (pgsql_finish_results(handle) != SWITCH_STATUS_SUCCESS) {
+		goto error;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
 error:
+	pgsql_handle_set_error_if_not_set(handle, err);
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -626,6 +648,7 @@ done:
 
 	pgsql_free_result(&result);
 	if (pgsql_finish_results(handle) != SWITCH_STATUS_SUCCESS) {
+		pgsql_handle_set_error_if_not_set(handle, err);
 		sstatus = SWITCH_STATUS_FALSE;
 	}
 
@@ -634,7 +657,7 @@ done:
 error:
 
 	pgsql_free_result(&result);
-
+	pgsql_handle_set_error_if_not_set(handle, err);
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -1042,6 +1065,7 @@ switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char
 	return SWITCH_STATUS_SUCCESS;
 error:
 
+	pgsql_handle_set_error_if_not_set(handle, err);
 	return SWITCH_STATUS_FALSE;
 }
 
