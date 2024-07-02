@@ -4655,7 +4655,7 @@ static switch_bool_t is_mdns(const char *ip)
 }
 
 //?
-static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m)
+static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_session_t *sdp, sdp_media_t *m, switch_sdp_type_t sdp_type)
 {
 	switch_rtp_engine_t *engine = &smh->engines[type];
 	sdp_attribute_t *attr = NULL, *attrs[2] = { 0 };
@@ -4782,6 +4782,11 @@ static switch_status_t check_ice(switch_media_handle_t *smh, switch_media_type_t
 					smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 				}
 #endif
+			} else if (!strcasecmp(attr->a_name, "ice-lite")) {
+				if (sdp_type == SDP_TYPE_REQUEST && switch_channel_var_true(smh->session->channel, "ice_lite")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "ice-lite found in sdp offer. Disabling ice-lite for sdp answer!\n");
+					switch_channel_set_variable(smh->session->channel, "ice_lite", "false");
+				}
 			} else if (!strcasecmp(attr->a_name, "candidate")) {
 				switch_channel_set_flag(smh->session->channel, CF_ICE);
 
@@ -5909,9 +5914,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_core_media_find_zrtp_hash(session, sdp);
 	switch_core_media_pass_zrtp_hash(session);
 
-	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL);
-	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
-	check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, NULL);
+	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL, sdp_type);
+	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL, sdp_type);
+	check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, NULL, sdp_type);
 
 	if ((sdp->sdp_connection && sdp->sdp_connection->c_address && !strcmp(sdp->sdp_connection->c_address, "0.0.0.0"))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "RFC2543 from March 1999 called; They want their 0.0.0.0 hold method back.....\n");
@@ -6924,7 +6929,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 
 				if (match) {
-					if (check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, m) == SWITCH_STATUS_FALSE) {
+					if (check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, m, sdp_type) == SWITCH_STATUS_FALSE) {
 						match = 0;
 						got_audio = 0;
 					} else {
@@ -7128,7 +7133,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_TEXT, 1);
 			}
 
-			check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, m);
+			check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, m, sdp_type);
 			//parse rtt
 
 		} else if (m->m_type == sdp_media_video) {
@@ -7433,7 +7438,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 
 				if (switch_core_media_set_video_codec(session, 0) == SWITCH_STATUS_SUCCESS) {
-					if (check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m) == SWITCH_STATUS_FALSE) {
+					if (check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m, sdp_type) == SWITCH_STATUS_FALSE) {
 						vmatch = 0;
 					}
 				}
