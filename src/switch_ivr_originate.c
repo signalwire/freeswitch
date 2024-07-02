@@ -579,7 +579,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, uint32_t len, 
 			if (oglobals->sending_ringback == 1) {
 				send_ringback++;
 				pindex = (uint32_t) i;
-			} else if (!oglobals->sent_ring && oglobals->ignore_early_media == 2 && len == 1 && caller_channel && !oglobals->ignore_ring_ready) {
+			} else if (!oglobals->sent_ring && (oglobals->ignore_early_media == 2 || oglobals->ignore_early_media == 5) && len == 1 && caller_channel && !oglobals->ignore_ring_ready) {
 				switch_channel_pass_callee_id(oglobals->originate_status[0].peer_channel, caller_channel);
 				switch_channel_ring_ready(caller_channel);
 				oglobals->sent_ring = 1;
@@ -2532,6 +2532,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		} else if (!strcmp(var_val, "ring_ready")) {
 			oglobals.early_ok = 0;
 			oglobals.ignore_early_media = 2;
+		} else if (!strcmp(var_val, "consume_and_ring")) {
+			oglobals.early_ok = 0;
+			oglobals.ignore_early_media = 5;
 		}
 	}
 
@@ -3278,7 +3281,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_channel_add_state_handler(oglobals.originate_status[i].peer_channel, table);
 				}
 
-				if (oglobals.monitor_early_media_ring || oglobals.monitor_early_media_fail || oglobals.ignore_early_media == 4) {
+				if (oglobals.monitor_early_media_ring || oglobals.monitor_early_media_fail || (oglobals.ignore_early_media == 4 || oglobals.ignore_early_media == 5)) {
 					switch_channel_set_flag(oglobals.originate_status[i].peer_channel, CF_CONSUME_ON_ORIGINATE);
 				}
 
