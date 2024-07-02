@@ -6408,6 +6408,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			if (!got_rtcp_mux) {
 				a_engine->rtcp_mux = -1;
+			} else {
+				const char *use_rtcp_mux = switch_channel_get_variable(smh->session->channel, "rtcp_mux");
+				if (zstr(use_rtcp_mux) || switch_true(use_rtcp_mux)) {
+					a_engine->rtcp_mux = 1;
+					a_engine->remote_rtcp_port = audio_port;
+				}
 			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
