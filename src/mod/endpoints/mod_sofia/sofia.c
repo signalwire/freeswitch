@@ -9574,9 +9574,37 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		char *rep = NULL;
 
 		if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
-			exten = switch_core_session_sprintf(session, "%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
+			if (!zstr(refer_to->r_url->url_user)) {
+				exten = switch_core_session_sprintf(session, "%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
+			}
 		} else {
 			exten = (char *) refer_to->r_url->url_user;
+		}
+
+		if (zstr(exten)) {
+			const char * to_user = switch_channel_get_variable(tech_pvt->channel, "sip_to_user");
+			if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
+				if (!zstr(to_user)) {
+					exten = switch_core_session_sprintf(session, "%s@%s", to_user
+						, switch_channel_get_variable(tech_pvt->channel, "sip_to_host"));
+				}
+			} else {
+				exten = (char *) to_user;
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Transfer REFER-TO header user is empty replacing with DIALOG TO user [%s]\n", (!zstr(exten) ? exten : "<N/A>"));
+		}
+
+		if (!zstr(exten)) {
+			if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
+				if (!zstr(from->a_url->url_user)) {
+					exten = switch_core_session_sprintf(session, "%s@%s"
+						, (char *) from->a_url->url_user
+						, (char *) from->a_url->url_host);
+				}
+			} else {
+				exten = (char *) from->a_url->url_user;
+			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Transfer TO header user is empty replacing with REFER FROM user [%s]\n", (!zstr(exten) ? exten : "<N/A>"));
 		}
 
 		if (refer_to->r_url->url_params) {
