@@ -926,6 +926,10 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 				stream.write_function(&stream, "Geolocation: %s\r\n", value);
 			}
 
+			if (!strcasecmp(name, SOFIA_REFER_BY_VARIABLE)) {
+				stream.write_function(&stream, "Referred-By: %s\r\n", value);
+			}
+
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
 				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 					const char *hname = name + strlen(prefix);
