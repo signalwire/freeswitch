@@ -14753,11 +14753,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				switch_channel_set_variable(session->channel, "absolute_codec_string", NULL);
 
 				if (*msg->string_arg == '=') {
-					switch_channel_set_variable(session->channel, "codec_string", msg->string_arg);
-				} else {
-					switch_channel_set_variable_printf(session->channel,
-													   "codec_string", "=%s", switch_channel_get_variable(session->channel, "ep_codec_string"));
+					switch_core_media_merge_sdp_codec_string(session, switch_channel_get_variable(session->channel, SWITCH_R_SDP_VARIABLE), SDP_TYPE_REQUEST, msg->string_arg);
 				}
+
+				switch_channel_set_variable_printf(session->channel,
+													   "codec_string", "=%s", switch_channel_get_variable(session->channel, "ep_codec_string"));
 				
 				a_engine->codec_negotiated = 0;
 				v_engine->codec_negotiated = 0;
