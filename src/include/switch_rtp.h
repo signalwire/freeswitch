@@ -682,6 +682,8 @@ SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_core_session_t*) switch_rtp_get_core_session(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) do_2833(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_status_t) switch_rtp_transcode(switch_codec_t *codec_in, switch_codec_t *codec_out, char *payload_in, uint32_t len_in, char *payload_out, uint32_t *len_out, uint32_t rate_in, uint32_t rate_out);
+
+SWITCH_DECLARE(void) switch_rtp_set_rtcp_passthru_timeout(switch_rtp_t *rtp_session, int timeout);
 /*!
   \}
 */

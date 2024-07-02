@@ -661,6 +661,8 @@ struct sofia_profile {
 	uint32_t rtpip_next6;
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
+	char *rtcp_audio_passthru_timeout_msec;
+	char *rtcp_video_passthru_timeout_msec;
 
 	char *sdp_username;
 	char *sipip;

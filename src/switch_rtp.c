@@ -501,6 +501,7 @@ struct switch_rtp {
 	uint32_t hot_hits;
 	uint32_t sync_packets;
 	int rtcp_interval;
+	int rtcp_passthru_timeout;
 	int rtcp_sent_packets;
 	switch_bool_t rtcp_fresh_frame;
 
@@ -2197,8 +2198,12 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	const int MAX_MISORDER = 100;
 	const int RTP_SEQ_MOD = (1<<16);
 
-	if(!rtp_session->rtcp_sock_output || !rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] || rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] || !rtp_session->rtcp_interval)
+	if(!rtp_session->rtcp_sock_output || !rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP])
 		return 0; /* do not process RTCP in current state */
+
+	if((rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] || !rtp_session->rtcp_interval) && !rtp_session->rtcp_passthru_timeout) {
+		return 0; /* do not process RTCP only rtcp_passthru_timeout is not set*/
+	}
 
 	pkt_seq = (uint16_t) ntohs((uint16_t) rtp_session->last_rtp_hdr.seq);
 
@@ -2443,6 +2448,30 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "TIME UP\n");
 		rtcp_cyclic = 1;
 		rtcp_ok = 1;
+	}
+
+	if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] && rtp_session->rtcp_passthru_timeout
+		&& (rtp_session->rtcp_last_sent && (int)((now - rtp_session->rtcp_last_sent) / 1000) > rtp_session->rtcp_passthru_timeout)) {
+		switch_core_session_t *other_session = NULL;
+		rtp_session->rtcp_interval = rtp_session->rtcp_passthru_timeout; // The RTCP timeout will be used as rtcp interval
+		rtcp_cyclic = 1;
+		rtcp_ok = 1;
+		// Remove RTCP Passthru
+		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "No RTCP received after %dms. Disabling passthru mode!\n", rtp_session->rtcp_passthru_timeout);
+		if (rtp_session->session && switch_core_session_get_partner(rtp_session->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+			switch_rtp_t* other_rtp_session = NULL;
+			if ((other_rtp_session = switch_channel_get_private(other_channel, "__rtcp_audio_rtp_session")) &&
+				switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(other_rtp_session->session), SWITCH_LOG_WARNING, "Disabling passthru mode for partner session %s -> %s!\n"
+					, switch_core_session_get_name(rtp_session->session), switch_core_session_get_name(other_rtp_session->session));
+				other_rtp_session->rtcp_interval = rtp_session->rtcp_interval;
+				switch_rtp_clear_flag(other_rtp_session, SWITCH_RTP_FLAG_RTCP_PASSTHRU);
+			}
+			switch_core_session_rwunlock(other_session);
+		}
 	}
 
 	if (rtcp_ok && using_ice(rtp_session)) {
@@ -6102,6 +6131,16 @@ SWITCH_DECLARE(void) switch_rtp_set_invalid_handler(switch_rtp_t *rtp_session, s
 	rtp_session->invalid_handler = on_invalid;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_rtcp_passthru_timeout(switch_rtp_t *rtp_session, int timeout)
+{
+	rtp_session->rtcp_passthru_timeout = timeout;
+}
+
+SWITCH_DECLARE(void) switch_rtp_set_rtcp_interval(switch_rtp_t *rtp_session, int interval)
+{
+	rtp_session->rtcp_interval = interval;
+}
+
 SWITCH_DECLARE(void) switch_rtp_set_flags(switch_rtp_t *rtp_session, switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID])
 {
 	int i;
@@ -6195,6 +6234,7 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 		if (old_flag) {
 			switch_rtp_pause_jitter_buffer(rtp_session, SWITCH_FALSE);
 		}
+		rtp_session->rtcp_passthru_timeout = 0;
 	} else if (flag == SWITCH_RTP_FLAG_DTMF_ON) {
 		rtp_session->stats.inbound.last_processed_seq = 0;
 	} else if (flag == SWITCH_RTP_FLAG_PAUSE) {
@@ -8551,6 +8591,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 						switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 						const char *uuid = switch_channel_get_partner_uuid(channel);
+
+						if (rtp_session->rtcp_passthru_timeout) {
+							// Since FS received a RTCP, disable the passthru timeout.
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "RTCP received before %dms. Disabling timeout in passthru mode!\n", rtp_session->rtcp_passthru_timeout);
+							rtp_session->rtcp_passthru_timeout = 0;
+						}
 
 						if (uuid) {
 							switch_core_session_t *other_session;
