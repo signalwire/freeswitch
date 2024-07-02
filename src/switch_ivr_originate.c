@@ -168,6 +168,7 @@ typedef struct {
 
 
 typedef enum {
+	IDX_INCOMPATIBLE = -6,
 	IDX_XFER = -5,
 	IDX_KEY_CANCEL = -4,
 	IDX_TIMEOUT = -3,
@@ -2327,6 +2328,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		const char *cdr_var;
 		const char *json_cdr_var;
 
+		if (switch_channel_var_true(caller_channel, "rtp_remote_use_srtp")) {
+			const char *rtp_secure_media = NULL;
+			if (switch_channel_direction(caller_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+				rtp_secure_media = switch_channel_get_variable(caller_channel, "rtp_secure_media_inbound");
+				if (zstr(rtp_secure_media)) {
+					rtp_secure_media = switch_channel_get_variable(caller_channel, "rtp_secure_media");
+				}
+			}
+
+			// Validate if inbound session forbids SRTP otherwise lets terminate the call immediately
+			if(!zstr(rtp_secure_media) && !strncasecmp("forbidden", rtp_secure_media, 9)) {
+				oglobals.idx = IDX_INCOMPATIBLE;
+				reason = force_reason = SWITCH_CAUSE_INCOMPATIBLE_DESTINATION;
+				switch_goto_status(SWITCH_STATUS_FALSE, done);
+			}
+		}
+
 		if (switch_channel_var_true(caller_channel, "originate_xfer_zombie")) {
 			switch_channel_set_flag(caller_channel, CF_XFER_ZOMBIE);
 			oglobals.early_ok = 0;
@@ -3081,6 +3099,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									  chan_type, switch_channel_cause2str(reason));
 					if (local_var_event) switch_event_destroy(&local_var_event);
 
+					if (caller_channel) {
+						switch_channel_set_variable(caller_channel, "last_bridge_hangup_cause", switch_channel_cause2str(reason));
+					}
+
 					if (fail_on_single_reject_var) {
 						const char *cause_str = switch_channel_cause2str(reason);
 						int neg = *fail_on_single_reject_var == '!';
@@ -3099,6 +3121,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 					}
 					continue;
+				} else {
+					if (caller_channel) {
+						switch_channel_set_variable(caller_channel, "last_bridge_hangup_cause", NULL);
+					}
 				}
 
 				if (switch_core_session_read_lock(new_session) != SWITCH_STATUS_SUCCESS) {
@@ -4137,7 +4163,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				} else if (oglobals.idx == IDX_TIMEOUT) {
 					*cause = SWITCH_CAUSE_NO_ANSWER;
-				} else {
+				} else if (oglobals.idx == IDX_INCOMPATIBLE) {
+					*cause = SWITCH_CAUSE_INCOMPATIBLE_DESTINATION;
+				}else {
 					if (oglobals.idx == IDX_XFER) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
 										  "Originate Resulted in Attended Transfer Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
@@ -4248,6 +4276,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS || oglobals.idx == IDX_XFER) {
+				goto outer_for;
+			} else if (status == SWITCH_STATUS_FALSE || oglobals.idx == IDX_INCOMPATIBLE) {
 				goto outer_for;
 			} else {
 				int ok = 1;
@@ -4377,7 +4407,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 		switch_channel_clear_flag(caller_channel, CF_XFER_ZOMBIE);
 
-		if (hangup_on_single_reject) {
+		if (hangup_on_single_reject || oglobals.idx == IDX_INCOMPATIBLE) {
 			switch_channel_hangup(caller_channel, *cause);
 		}
 	}

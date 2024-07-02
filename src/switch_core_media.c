@@ -15217,8 +15217,15 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 	switch_core_media_find_zrtp_hash(session, sdp);
 	switch_core_media_pass_zrtp_hash(session);
 
+	// Set Remote flag SRTP to false before parsing the sdp media
+	switch_channel_set_variable(channel, "rtp_remote_use_srtp", "false");
+
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		ptime = dptime;
+
+		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
+			switch_channel_set_variable(channel, "rtp_remote_use_srtp", "true");
+		}
 
 		if ((m->m_type == sdp_media_audio || m->m_type == sdp_media_video) && m->m_port) {
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
