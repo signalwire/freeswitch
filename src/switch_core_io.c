@@ -647,6 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
+			int bp_cng = switch_test_flag(read_frame, SFF_CNG);
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 			for (bp = session->bugs; bp; bp = bp->next) {
@@ -677,6 +678,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						bp->read_demux_frame = NULL;
 						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_REPLACE)) == SWITCH_TRUE) {
 							read_frame = bp->read_replace_frame_out;
+						}
+
+						// Check if updated read_frame is a CNG
+						if (!bp_cng && switch_test_flag(read_frame, SFF_CNG)) {
+							flag |= SFF_CNG;
 						}
 					}
 				}
@@ -874,6 +880,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	} else {
 		if (flag & SFF_CNG) {
 			switch_set_flag((*frame), SFF_CNG);
+		} else {
+			switch_clear_flag((*frame), SFF_CNG);
 		}
 		if (session->bugs) {
 			switch_media_bug_t *bp;

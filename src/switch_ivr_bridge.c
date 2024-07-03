@@ -383,6 +383,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *banner_file = NULL;
 	int played_banner = 0, banner_counter = 0;
 	int pass_val = 0, last_pass_val = 0;
+	int sent_cng = 0, sent_cng_interval = 0;
+	switch_time_t last_sent_cng = 0;
+	const char *bridge_forward_cng_interval = NULL;
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	struct vid_helper vh = { 0 };
@@ -475,6 +478,26 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: accept_cng %p\n", (void*)session_a);
 #endif
 		switch_channel_set_flag(chan_b, CF_ACCEPT_CNG);
+	}
+
+	if (switch_channel_var_true(chan_a, "bridge_forward_cng_once")) {
+#if DEBUG_RTP
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: forward_cng %p\n", (void*)session_a);
+#endif
+		switch_channel_set_flag(chan_b, CF_FORWARD_CNG_ONCE);
+	}
+
+	if ((bridge_forward_cng_interval = switch_channel_get_variable(chan_a, "bridge_forward_cng_interval"))) {
+		if (switch_true(bridge_forward_cng_interval)) {
+			sent_cng_interval = 5000;
+		} else {
+			if ((sent_cng_interval = atoi(bridge_forward_cng_interval)) < 0) {
+				sent_cng_interval = 0;
+			}
+		}
+		if (sent_cng_interval > 0) {
+			switch_channel_set_flag(chan_b, CF_FORWARD_CNG_ONCE);
+		}
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
@@ -991,7 +1014,21 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: skip write frame, reason: CF_ACCEPT_CNG %p %p -> %p\n", (void*)session_b, (void*)session_a, (void*)session_b);
 #endif
 					continue;
+				} else if (switch_channel_test_flag(chan_b, CF_FORWARD_CNG_ONCE)) {
+					if (!sent_cng && !last_sent_cng) {
+						sent_cng = 1;
+						if (sent_cng_interval) {
+							last_sent_cng = switch_time_now();
+						}
+					} else if (sent_cng && last_sent_cng && ((switch_time_now() - last_sent_cng) / 1000) > sent_cng_interval) {
+						last_sent_cng = switch_time_now();
+					} else {
+						continue;
+					}
 				}
+			} else {
+				sent_cng = 0;
+				last_sent_cng = 0;
 			}
 
 			if (switch_channel_test_flag(chan_a, CF_BRIDGE_NOWRITE)) {
