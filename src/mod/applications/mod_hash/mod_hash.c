@@ -469,7 +469,7 @@ SWITCH_STANDARD_APP(hash_function)
 	switch_safe_free(hash_key);
 }
 
-#define HASH_API_USAGE "insert|insert_ifempty|select|delete|delete_ifmatch/realm/key[/value]"
+#define HASH_API_USAGE "insert|insert_ifempty|select|delete|delete_ifmatch|select_limit|delete_limit/realm/key[/value]"
 SWITCH_STANDARD_API(hash_api_function)
 {
 	int argc = 0;
@@ -547,6 +547,23 @@ SWITCH_STANDARD_API(hash_api_function)
 			stream->write_function(stream, "%s", value);
 		}
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
+	} else if (!strcasecmp(argv[0], "select_limit")) {
+		limit_hash_item_t *item = NULL;
+		switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
+		if ((item = switch_core_hash_find(globals.limit_hash, hash_key))) {
+			stream->write_function(stream, "%d", item->total_usage);
+		}
+		switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
+	} else if (!strcasecmp(argv[0], "delete_limit")) {
+		limit_hash_item_t *item = NULL;
+		switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
+		if ((item = switch_core_hash_find(globals.limit_hash, hash_key))) {
+			switch_core_hash_delete(globals.limit_hash, hash_key);
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERR Not found\n");
+		}
+		switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 	} else {
 		goto usage;
 	}
