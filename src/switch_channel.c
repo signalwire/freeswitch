@@ -3764,9 +3764,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_execute_on_value(switch_channel_t
 	}
 	
 	if (bg) {
-		status = switch_core_session_execute_application_async(channel->session, app, arg);
+		status = switch_core_session_execute_application_async(channel->session, app, expanded);
 	} else {
-		status = switch_core_session_execute_application(channel->session, app, arg);
+		status = switch_core_session_execute_application(channel->session, app, expanded);
 	}
 
 	if (expanded && expanded != arg) {
