@@ -322,6 +322,13 @@ typedef enum {
 	PFLAG_SDP_MEDIA_STRICT_FMT,
 	PFLAG_ALWAYS_BRIDGE_EARLY_MEDIA,
 	PFLAG_ENABLE_100REL_SYNC,
+	PFLAG_IGNORE_SDP_ICE,
+	PFLAG_DISABLE_RTP_AUTO_ADJUST,
+	PFLAG_SUPPRESS_CNG,
+	PFLAG_FORCE_RTCP_PASSTHRU,
+	PFLAG_RTP_SECURE_MEDIA_MKI,
+	PFLAG_RTP_SECURE_MEDIA,
+	PFLAG_SKIP_EMPTY_RTP_SECURE_MEDIA_MKI,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -664,6 +671,7 @@ struct sofia_profile {
 	char *rtcp_video_interval_msec;
 	char *rtcp_audio_passthru_timeout_msec;
 	char *rtcp_video_passthru_timeout_msec;
+	char *rtp_secure_media;
 
 	char *sdp_username;
 	char *sipip;

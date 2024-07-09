@@ -87,7 +87,7 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 */
 static switch_status_t sofia_on_init(switch_core_session_t *session)
 {
-	const char *hval = NULL;
+	const char *hval = NULL, *rtcp_audio_interval_msec = NULL, *rtp_secure_media = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -137,6 +137,36 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
+	}
+
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_IGNORE_SDP_ICE)) {
+		switch_channel_set_variable(tech_pvt->channel, "ignore_sdp_ice", "true");
+	}
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTO_ADJUST)) {
+		switch_channel_set_variable(tech_pvt->channel, "disable_rtp_auto_adjust", "true");
+	}
+ 
+	rtcp_audio_interval_msec = switch_channel_get_variable(tech_pvt->channel, "rtcp_audio_interval_msec");
+	if (!zstr(rtcp_audio_interval_msec)) {
+		switch_channel_set_variable(tech_pvt->channel, "rtcp_audio_interval_msec", rtcp_audio_interval_msec);
+	}
+
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
+		switch_channel_set_variable(tech_pvt->channel, "suppress_cng", "true");
+	}
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_FORCE_RTCP_PASSTHRU)) {
+		switch_channel_set_variable(tech_pvt->channel, "rtp_secure_media_mki", "true");
+	}
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_SECURE_MEDIA_MKI)) {
+		switch_channel_set_variable(tech_pvt->channel, "rtp_secure_media_mki", "true");
+	}
+
+	rtp_secure_media = switch_channel_get_variable(channel, "rtp_secure_media");
+	if (!zstr(rtp_secure_media)) {
+		switch_channel_set_variable(tech_pvt->channel, "rtp_secure_media", rtp_secure_media);
+	}
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SKIP_EMPTY_RTP_SECURE_MEDIA_MKI)) {
+		switch_channel_set_variable(tech_pvt->channel, "skip_empty_rtp_secure_media_mki", "true");
 	}
 
   end:

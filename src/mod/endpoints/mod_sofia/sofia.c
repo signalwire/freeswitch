@@ -4933,6 +4933,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->tls_verify_depth = 2;
 					profile->tls_enable_dh = 0;
 					profile->tls_verify_date = SWITCH_TRUE;
+					sofia_clear_pflag(profile, PFLAG_IGNORE_SDP_ICE);
+					sofia_clear_pflag(profile, PFLAG_DISABLE_RTP_AUTO_ADJUST);
+					sofia_clear_pflag(profile, PFLAG_SUPPRESS_CNG);
+					sofia_clear_pflag(profile, PFLAG_FORCE_RTCP_PASSTHRU);
+					sofia_clear_pflag(profile, PFLAG_RTP_SECURE_MEDIA_MKI);
+					sofia_clear_pflag(profile, PFLAG_SKIP_EMPTY_RTP_SECURE_MEDIA_MKI);
 				} else {
 
 					/* you could change profile->foo here if it was a minor change like context or dialplan ... */
@@ -6451,6 +6457,44 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "disable_recovery_record_route_fixup")) {
 						profile->disable_recovery_record_route_fixup = atoi(val);
+					} else if (!strcasecmp(var, "ignore_sdp_ice")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_IGNORE_SDP_ICE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_IGNORE_SDP_ICE);
+						}
+					} else if (!strcasecmp(var, "disable_rtp_auto_adjust")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_DISABLE_RTP_AUTO_ADJUST);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_DISABLE_RTP_AUTO_ADJUST);
+						}
+					} else if (!strcasecmp(var, "suppress_cng")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SUPPRESS_CNG);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SUPPRESS_CNG);
+						}
+					} else if (!strcasecmp(var, "force_rtcp_passthru")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_FORCE_RTCP_PASSTHRU);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_FORCE_RTCP_PASSTHRU);
+						}
+					} else if (!strcasecmp(var, "rtp_secure_media_mki")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_SECURE_MEDIA_MKI);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_SECURE_MEDIA_MKI);
+						}
+					} else if (!strcasecmp(var, "rtp_secure_media") && !zstr(val)) {
+						profile->rtp_secure_media = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "skip_empty_rtp_secure_media_mki")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SKIP_EMPTY_RTP_SECURE_MEDIA_MKI);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SKIP_EMPTY_RTP_SECURE_MEDIA_MKI);
+						}
 					}
 				}
 
