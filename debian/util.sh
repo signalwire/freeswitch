@@ -203,11 +203,16 @@ create_orig () {
     done
     shift $(($OPTIND-1))
 
-    local orig
+    local commit_epoch=$(git log -1 --format=%ct)
+    local source_date=$(date -u -d @$commit_epoch +'%Y-%m-%d %H:%M:%S')
+
+    local orig git_archive_prefix
     if $auto_orig; then
       orig="../freeswitch_$(debian/version-omit_revision.pl).orig.tar.xz"
+      git_archive_prefix="freeswitch/"
     else
       orig="../freeswitch_$(mk_dver "$uver")~$(lsb_release -sc).orig.tar.xz"
+      git_archive_prefix="freeswitch-$uver/"
     fi
 
     mv .gitattributes .gitattributes.orig
@@ -226,12 +231,32 @@ create_orig () {
     git add -f configure.ac .version
     git commit --allow-empty -m "nightly v$uver"
 
+    local tmpsrcdir="$(mktemp -d)"
     git archive -v \
       --worktree-attributes \
       --format=tar \
-      --prefix=freeswitch-$uver/ \
-      HEAD \
-      | xz -c -${zl}v > $orig
+      --prefix=$git_archive_prefix \
+      HEAD | tar --extract --directory="$tmpsrcdir"
+
+    # https://www.gnu.org/software/tar/manual/html_section/Reproducibility.html
+    tar \
+      --sort=name \
+      --format=posix \
+      --pax-option='exthdr.name=%d/PaxHeaders/%f' \
+      --pax-option='delete=atime,delete=ctime' \
+      --clamp-mtime \
+      --mtime="$source_date" \
+      --numeric-owner \
+      --owner=0 \
+      --group=0 \
+      --mode='go+u,go-w' \
+      --create \
+      --directory="$tmpsrcdir" \
+      . | xz -v -c -${zl} > "$orig" && \
+    rm -rf "$tmpsrcdir"
+
+    echo "Source archive checksum:"
+    sha256sum $orig
 
     mv .gitattributes.orig .gitattributes
 
