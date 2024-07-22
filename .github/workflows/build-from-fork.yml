@@ -1,0 +1,59 @@
+name: Build from fork
+
+on:
+  pull_request:
+    # types:
+    #   - ready_for_review
+    paths:
+      - '**'
+      - '!.github/'
+
+concurrency:
+  group: ${{ github.head_ref || github.ref }}
+
+jobs:
+  get-nonce:
+    # if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: freeswitch-repo-auth-client
+    outputs:
+      nonce: ${{ steps.get-nonce.outputs.nonce }}
+    steps:
+      - name: Get Nonce
+        id: get-nonce
+        uses: signalwire/actions-template/.github/actions/repo-auth-client-nonce@pat
+
+  get-token:
+    runs-on: ubuntu-latest
+    needs: get-nonce
+    outputs:
+      token: ${{ steps.get-token.outputs.token }}
+    steps:
+      - name: Get Token
+        id: get-token
+        uses: signalwire/actions-template/.github/actions/repo-auth-client-token@pat
+        env:
+          NONCE: ${{ needs.get-nonce.outputs.nonce }}
+
+  deb:
+    name: 'DEB'
+    needs: get-token
+    permissions:
+      contents: read
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        os:
+          - debian
+        version:
+          - bookworm
+        platform:
+          - name: amd64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - name: DEBUG
+        shell: bash
+        run: |
+          echo ${{ needs.get-token.outputs.token }}
+          exit 1
