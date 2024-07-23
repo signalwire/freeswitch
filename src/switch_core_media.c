@@ -554,7 +554,7 @@ static switch_t38_options_t * switch_core_media_process_udptl(switch_core_sessio
 		t38_options->T38FaxVersion = 0;
 		t38_options->T38MaxBitRate = 14400;
 		t38_options->T38FaxRateManagement = switch_core_session_strdup(session, "transferredTCF");
-		t38_options->T38FaxUdpEC = switch_core_session_strdup(session, "t38UDPRedundancy");
+		t38_options->T38FaxUdpEC = NULL;
 		t38_options->T38FaxMaxBuffer = 500;
 		t38_options->T38FaxMaxDatagram = 500;
 	}
@@ -594,6 +594,28 @@ static switch_t38_options_t * switch_core_media_process_udptl(switch_core_sessio
 			t38_options->T38FaxUdpEC = switch_core_session_strdup(session, attr->a_value);
 		} else if (!strcasecmp(attr->a_name, "T38VendorInfo") && attr->a_value) {
 			t38_options->T38VendorInfo = switch_core_session_strdup(session, attr->a_value);
+		}
+	}
+
+	if (zstr(t38_options->T38FaxUdpEC)) {
+		const char* udpfec = switch_channel_get_variable(session->channel, "fax_t38_udpfec_answer_default");
+		if (zstr(udpfec)) {
+			udpfec = switch_channel_get_variable(session->channel, "fax_t38_udpfec_default");
+		}
+
+		if (!zstr(udpfec)) {
+			if (!strcasecmp(udpfec, "t38UDPRedundancy")) {
+				t38_options->T38FaxUdpEC = switch_core_session_strdup(session, "t38UDPRedundancy");
+			} else if (!strcasecmp(udpfec, "t38UDPFEC")) {
+				t38_options->T38FaxUdpEC = switch_core_session_strdup(session, "t38UDPFEC");
+			} else if (!strcasecmp(udpfec, "none") || !strcasecmp(udpfec, "null")) {
+				t38_options->T38FaxUdpEC = NULL;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(session->channel), SWITCH_LOG_DEBUG, "Unrecognized t38 default udpfec: %s\n", udpfec);
+			}
+		} else {
+			// Default behavior is default to t38UDPRedundancy
+			t38_options->T38FaxUdpEC = switch_core_session_strdup(session, "t38UDPRedundancy");
 		}
 	}
 
@@ -13332,6 +13354,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 	char buf[2048] = "";
 	char max_buf[128] = "";
 	char max_data[128] = "";
+	char udp_ec[128] = "";
 	const char *ip;
 	uint32_t port;
 	const char *family = "IP4";
@@ -13418,8 +13441,9 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 		switch_snprintf(max_data, sizeof(max_data), "a=T38FaxMaxDatagram:%d\r\n", t38_options->T38FaxMaxDatagram);
 	};
 
-
-
+	if (t38_options->T38FaxUdpEC) {
+		switch_snprintf(udp_ec, sizeof(udp_ec), "a=T38FaxUdpEC:%s\r\n", t38_options->T38FaxUdpEC);
+	}
 
 	if (broken_boolean) {
 		bit_removal_on = "a=T38FaxFillBitRemoval:1\r\n";
@@ -13448,7 +13472,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 					"a=T38FaxRateManagement:%s\r\n"
 					"%s"
 					"%s"
-					"a=T38FaxUdpEC:%s\r\n",
+					"%s",
 					//"a=T38VendorInfo:%s\r\n",
 					port,
 					t38_options->T38FaxVersion,
@@ -13459,7 +13483,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 					t38_options->T38FaxRateManagement,
 					max_buf,
 					max_data,
-					t38_options->T38FaxUdpEC
+					udp_ec
 					//t38_options->T38VendorInfo ? t38_options->T38VendorInfo : "0 0 0"
 					);
 
