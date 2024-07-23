@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - v1.10
     paths:
       - "**"
   workflow_dispatch:
@@ -15,7 +16,7 @@ concurrency:
 jobs:
   excludes:
     name: 'Excludes'
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     outputs:
       deb: ${{ steps.deb.outputs.excludes }}
@@ -49,7 +50,7 @@ jobs:
 
   deb:
     name: 'DEB'
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       id-token: write
       contents: read
