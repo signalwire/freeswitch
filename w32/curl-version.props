@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <curlVersion>7.88.0</curlVersion>
+    <curlBuildNumber>1</curlBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <curlVersionImported>true</curlVersionImported>
