@@ -185,6 +185,10 @@ typedef struct {
 	char body[SWITCH_RTCP_MAX_BUF_LEN];
 } rtcp_msg_t;
 
+typedef struct {
+	switch_rtcp_hdr_t header;
+	uint32_t ssrc;
+} sdes_ssrc_t;
 
 typedef enum {
 	VAD_FIRE_TALK = (1 << 0),
@@ -2228,9 +2232,9 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		struct switch_rtcp_report_block *rtcp_report_block = NULL;
 		switch_size_t rtcp_bytes = sizeof(struct switch_rtcp_hdr_s)+sizeof(uint32_t); /* add size of the packet header and the ssrc */
 		switch_rtcp_hdr_t *sdes;
+		sdes_ssrc_t *sdes_ssrc;
 		uint8_t *p;
 		switch_size_t sdes_bytes = sizeof(struct switch_rtcp_hdr_s);
-		uint32_t *ssrc;
 		switch_rtcp_sdes_unit_t *unit;
 		switch_bool_t is_only_receiver = FALSE;
 
@@ -2426,14 +2430,13 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 		//SDES + CNAME
 		p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
-		sdes = (switch_rtcp_hdr_t *) p;
+		sdes_ssrc = (sdes_ssrc_t *) p;
+		sdes = &sdes_ssrc->header;
 		sdes->version = 2;
 		sdes->type = _RTCP_PT_SDES;
 		sdes->count = 1;
 		sdes->p = 0;
-		p = (uint8_t *) (sdes) + sdes_bytes;
-		ssrc = (uint32_t *) p;
-		*ssrc = htonl(rtp_session->ssrc);
+		sdes_ssrc->ssrc = htonl(rtp_session->ssrc);
 		sdes_bytes += sizeof(uint32_t);
 
 
