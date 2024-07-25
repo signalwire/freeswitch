@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  unit-tests_1:
+    name: "unit-tests (group 1)"
+    uses: ./.github/workflows/unit-test.yml
+    with:
+      total-groups: 2
+      current-group: 1
+    secrets: inherit
+
+  unit-tests_2:
+    name: "unit-tests (group 2)"
+    uses: ./.github/workflows/unit-test.yml
+    with:
+      total-groups: 2
+      current-group: 2
+    secrets: inherit
+
+  scan-build:
+    runs-on: ubuntu-latest
+    container:
+      image: signalwire/freeswitch-public-base:bookworm
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      options: --privileged
+    env:
+      REPOTOKEN: ${{ secrets.REPOTOKEN }}
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf && \
+          apt-get update && \
+          apt-get -y remove \
+            libsofia-sip-ua0 \
+            libspandsp-dev && \
+          apt-get -y install \
+            autoconf \
+            libsofia-sip-ua-dev \
+            libspandsp3-dev && \
+          rm -rf /etc/apt/auth.conf
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: /__w/freeswitch/freeswitch
+
+      - name: Bootstrap
+        shell: bash
+        working-directory: /__w/freeswitch/freeswitch
+        run: |
+          ./bootstrap.sh -j || exit 1
+
+      - name: Scan-build FreeSwitch
+        shell: bash
+        working-directory: /__w/freeswitch/freeswitch
+        run: |
+          cp build/modules.conf.most modules.conf && \
+          echo 'codecs/mod_openh264' >> modules.conf && \
+          sed -i \
+            -e '/mod_mariadb/s/^#//g' \
+            -e '/mod_v8/s/^#//g' \
+            -e '/mod_ilbc/s/^/#/g' \
+            -e '/mod_isac/s/^/#/g' \
+            -e '/mod_mp4/s/^/#/g' \
+            -e '/mod_mongo/s/^/#/g' \
+            -e '/mod_pocketsphinx/s/^/#/g' \
+            -e '/mod_sangoma_codec/s/^/#/g' \
+            -e '/mod_siren/s/^/#/g' \
+            -e '/mod_avmd/s/^/#/g' \
+            -e '/mod_basic/s/^/#/g' \
+            -e '/mod_cdr_mongodb/s/^/#/g' \
+            -e '/mod_cv/s/^/#/g' \
+            -e '/mod_erlang_event/s/^/#/g' \
+            -e '/mod_perl/s/^/#/g' \
+            -e '/mod_rtmp/s/^/#/g' \
+            -e '/mod_unimrcp/s/^/#/g' \
+            -e '/mod_xml_rpc/s/^/#/g' \
+          modules.conf && \
+          ./configure && \
+          ./scan_build.sh
