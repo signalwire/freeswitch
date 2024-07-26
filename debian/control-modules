@@ -264,10 +264,10 @@ Module: applications/mod_vmd
 Description: Voicemail detection
  This module detects voicemail beeps at any frequency in O(1) time.
 
-Module: applications/mod_voicemail
-Description: Voicemail
- This module provides a voicemail system.
-Depends: ssmtp | mail-transport-agent
+#Module: applications/mod_voicemail
+#Description: Voicemail
+# This module provides a voicemail system.
+#Depends: ssmtp | mail-transport-agent
 
 Module: applications/mod_voicemail_ivr
 Description: Voicemail IVR
