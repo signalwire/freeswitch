@@ -34,6 +34,7 @@
  */
 
 #include "mod_spandsp.h"
+#include <spandsp/version.h>
 
 #define TDD_LEAD 10
 
@@ -152,6 +153,10 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
 }
 
+#if defined(SPANDSP_RELEASE_DATE) && (SPANDSP_RELEASE_DATE > 20120902)
+#define V18_MODE_5BIT_4545 V18_MODE_WEITBRECHT_5BIT_4545
+#define V18_MODE_5BIT_50   V18_MODE_WEITBRECHT_5BIT_50
+#endif
 static int get_v18_mode(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -213,7 +218,11 @@ switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const c
 		return SWITCH_STATUS_FALSE;
 	}
 
+#if defined(SPANDSP_RELEASE_DATE) && (SPANDSP_RELEASE_DATE > 20120902)
+	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL, NULL, NULL);
+#else
 	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
+#endif
 
 
 	v18_put(tdd_state, text, -1);
@@ -260,7 +269,11 @@ switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const
 	}
 
 	pvt->session = session;
+#if defined(SPANDSP_RELEASE_DATE) && (SPANDSP_RELEASE_DATE > 20120902)
+	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL, NULL, NULL);
+#else
 	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
+#endif
 	pvt->head_lead = TDD_LEAD;
 
 	v18_put(pvt->tdd_state, text, -1);
@@ -338,7 +351,11 @@ switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
 	}
 
 	pvt->session = session;
+#if defined(SPANDSP_RELEASE_DATE) && (SPANDSP_RELEASE_DATE > 20120902)
+	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, pvt, NULL, NULL);
+#else
 	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, pvt);
+#endif
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_decode", NULL,
 						tdd_decode_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
