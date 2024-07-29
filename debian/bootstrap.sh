@@ -121,6 +121,7 @@ libfreeswitch-dev
 freeswitch-doc
 freeswitch-lang
 freeswitch-timezones
+c4b-freeswitch-meta-all
 )
 
 if [ ${use_sysvinit} = "true" ]; then
@@ -991,6 +992,52 @@ Description: documentation for FreeSWITCH
  .
  This package contains Doxygen-produced documentation for FreeSWITCH.
  It may be an empty package at the moment.
+
+Package: c4b-freeswitch-meta-all
+Architecture: amd64 armhf
+Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
+ freeswitch-init,
+ freeswitch-lang (= \${binary:Version}),
+ freeswitch-meta-codecs (= \${binary:Version}),
+ freeswitch-meta-conf (= \${binary:Version}),
+ freeswitch-meta-lang (= \${binary:Version}),
+ freeswitch-meta-mod-say (= \${binary:Version}),
+ freeswitch-mod-callcenter (= \${binary:Version}),
+ freeswitch-mod-commands (= \${binary:Version}),
+ freeswitch-mod-conference (= \${binary:Version}),
+ freeswitch-mod-console (= \${binary:Version}),
+ freeswitch-mod-dialplan-xml (= \${binary:Version}),
+ freeswitch-mod-dptools (= \${binary:Version}),
+ freeswitch-mod-event-socket (= \${binary:Version}),
+ freeswitch-mod-expr (= \${binary:Version}),
+ freeswitch-mod-fifo (= \${binary:Version}),
+ freeswitch-mod-fsv (= \${binary:Version}),
+ freeswitch-mod-hash (= \${binary:Version}),
+ freeswitch-mod-local-stream (= \${binary:Version}),
+ freeswitch-mod-logfile (= \${binary:Version}),
+ freeswitch-mod-loopback (= \${binary:Version}),
+ freeswitch-mod-lua (= \${binary:Version}),
+ freeswitch-mod-managedcore (= \${binary:Version}),
+ freeswitch-mod-native-file (= \${binary:Version}),
+ freeswitch-mod-opus (= \${binary:Version}),
+ freeswitch-mod-png (= \${binary:Version}),
+ freeswitch-mod-siren (= \${binary:Version}),
+ freeswitch-mod-sndfile (= \${binary:Version}),
+ freeswitch-mod-sofia (= \${binary:Version}),
+ freeswitch-mod-spandsp (= \${binary:Version}),
+ freeswitch-mod-tone-stream (= \${binary:Version}),
+ freeswitch-mod-verto (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
+ freeswitch-timezones (= \${binary:Version}),
+Recommends:
+Suggests:
+ freeswitch-mod-vmd (= \${binary:Version}),
+ freeswitch-mod-vlc (= \${binary:Version}),
+Description: Cross-Platform Scalable Multi-Protocol Soft Switch
+ $(debian_wrap "${fs_description}")
+ .
+ Reduced freeswitch with mod managed core component.
 
 ## misc
 
