@@ -8267,11 +8267,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		int external = (flags && *flags & SFF_EXTERNAL);
 		/* Normalize the timestamps to our own base by generating a made up starting point then adding the measured deltas to that base
-		   so if the timestamps and ssrc of the source change, it will not break the other end's jitter bufffer / decoder etc *cough* CHROME *cough*
+		   so if the timestamps and ssrc of the source change, it will not break the other end's jitter buffer / decoder etc *cough* CHROME *cough*
 		 */
 
 		if (!rtp_session->ts_norm.ts) {
-			rtp_session->ts_norm.ts = (uint32_t) rand() % 1000000 + 1;
+			rtp_session->ts_norm.ts = (uint32_t) switch_rand() % 1000000 + 1;
 		}
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc || rtp_session->ts_norm.last_external != external) {
