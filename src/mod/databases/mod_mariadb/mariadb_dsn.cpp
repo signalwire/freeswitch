@@ -81,7 +81,7 @@ public:
 					std::string value = pair[1];
 
 					if ("server" == key || "host" == key) {
-						_host = value;
+						_host = std::move(value);
 					} else if ("uid" == key || "user" == key || "username" == key) {
 						_user = std::move(value);
 					} else if ("pwd" == key || "passwd" == key || "password" == key) {
