@@ -83,11 +83,11 @@ public:
 					if ("server" == key || "host" == key) {
 						_host = value;
 					} else if ("uid" == key || "user" == key || "username" == key) {
-						_user = value;
+						_user = std::move(value);
 					} else if ("pwd" == key || "passwd" == key || "password" == key) {
-						_passwd = value;
+						_passwd = std::move(value);
 					} else if ("database" == key || "db" == key) {
-						_db = value;
+						_db = std::move(value);
 					} else if ("port" == key) {
 						_port = std::stoi(value);
 					} else if ("option" == key || "options" == key) {
