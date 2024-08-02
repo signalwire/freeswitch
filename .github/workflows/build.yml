@@ -31,17 +31,20 @@ jobs:
               {
                 "version": "bookworm",
                 "platform": {
-                  "name": "amd64"
-                }
-              },
-              {
-                "version": "bookworm",
-                "platform": {
                   "name": "arm64v8"
                 }
               },
               {
-                "version": "bullseye"
+                "version": "bullseye",
+                "platform": {
+                  "name": "amd64"
+                }
+              },
+              {
+                "version": "bullseye",
+                "platform": {
+                  "name": "arm32v7"
+                }
               }
             ]')
           fi
@@ -66,7 +69,6 @@ jobs:
         version:
           - bookworm
           - bullseye
-          - buster
         platform:
           - name: amd64
             runner: ubuntu-latest
