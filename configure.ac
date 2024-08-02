@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.11-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.12-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [11-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [12-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -2208,7 +2208,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_fail2ban/Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
-		src/mod/event_handlers/mod_kazoo/Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile

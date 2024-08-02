@@ -1160,7 +1160,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), switch_rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
 		if (file) {
@@ -2015,7 +2015,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 	}
 
   doh:
-	if (tmp_socket > 0) {
+	if (tmp_socket >= 0) {
 		close(tmp_socket);
 	}
 #endif
@@ -4809,6 +4809,67 @@ cleanup:
 #endif
 done:
 	return status;
+}
+
+SWITCH_DECLARE(int) switch_rand(void)
+{
+	uint32_t random_number = 0;
+#ifdef WIN32
+	BCRYPT_ALG_HANDLE hAlgorithm = NULL;
+	NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptOpenAlgorithmProvider failed with status %d\n", status);
+
+		return 1;
+	}
+
+	status = BCryptGenRandom(hAlgorithm, (PUCHAR)&random_number, sizeof(random_number), 0);
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptGenRandom failed with status %d\n", status);
+
+		BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
+		return 1;
+	}
+
+	BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
+	/* Make sure we return from 0 to SWITCH_RAND_MAX */
+	return (random_number & (SWITCH_RAND_MAX));
+#elif defined(__unix__) || defined(__APPLE__)
+	int random_fd = open("/dev/urandom", O_RDONLY);
+	ssize_t result;
+	char error_msg[100];
+
+	if (random_fd == -1) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open failed: %s\n", error_msg);
+
+		return 1;
+	}
+
+	result = read(random_fd, &random_number, sizeof(random_number));
+	if (result < 0) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read failed: %s\n", error_msg);
+
+		close(random_fd);
+
+		return 1;
+	}
+	
+	close(random_fd);
+
+	/* Make sure we return from 0 to SWITCH_RAND_MAX */
+	return (random_number & (SWITCH_RAND_MAX));
+#else
+	return rand();
+#endif
 }
 
 /* For Emacs:

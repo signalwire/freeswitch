@@ -97,13 +97,14 @@ name: scan-build
 
 steps:
     - name: bootstrap
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       commands:
+      - apt-get update && apt-get -yq install autoconf
       - ./bootstrap.sh -j
 
     - name: configure
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -140,7 +141,7 @@ steps:
       - ./configure
 
     - name: scan-build
-      image: signalwire/freeswitch-public-base:bullseye
+      image: signalwire/freeswitch-public-base:bookworm
       pull: always
       environment:
         REPOTOKEN:
@@ -152,7 +153,7 @@ steps:
       - export REPOTOKEN=''
       - rm -rf /etc/apt/auth.conf
       - mkdir -p scan-build
-      - echo '#!/bin/bash\nscan-build-11 -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
+      - echo '#!/bin/bash\nscan-build-14 --force-analyze-debug-code -o ./scan-build/ make -j`nproc --all` |& tee ./scan-build-result.txt\nexitstatus=$${PIPESTATUS[0]}\necho $$exitstatus > ./scan-build-status.txt\n' > scan.sh
       - chmod +x scan.sh
       - ./scan.sh
       - exitstatus=`cat ./scan-build-status.txt`
@@ -178,6 +179,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 780e4aaee61e3683ea4a8d6fe5131f7c9e62ebad727546013f18df0fca80d705
+hmac: 7e5f6cafc88da0be59243daf47a2a5607ff00b45f441ce4c1041d4b690e8a853
 
 ...

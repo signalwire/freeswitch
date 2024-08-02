@@ -2129,6 +2129,46 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_LOST_BURST_CAPTURE_get___() 
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_uint31_t_value_set___(void * jarg1, unsigned int jarg2) {
+  switch_uint31_t *arg1 = (switch_uint31_t *) 0 ;
+  unsigned int arg2 ;
+  
+  arg1 = (switch_uint31_t *)jarg1; 
+  arg2 = (unsigned int)jarg2; 
+  if (arg1) (arg1)->value = arg2;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_uint31_t_value_get___(void * jarg1) {
+  unsigned int jresult ;
+  switch_uint31_t *arg1 = (switch_uint31_t *) 0 ;
+  unsigned int result;
+  
+  arg1 = (switch_uint31_t *)jarg1; 
+  result = (unsigned int) ((arg1)->value);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_new_switch_uint31_t___() {
+  void * jresult ;
+  switch_uint31_t *result = 0 ;
+  
+  result = (switch_uint31_t *)new switch_uint31_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_delete_switch_uint31_t___(void * jarg1) {
+  switch_uint31_t *arg1 = (switch_uint31_t *) 0 ;
+  
+  arg1 = (switch_uint31_t *)jarg1; 
+  delete arg1;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_dtmf_t_digit_set___(void * jarg1, char jarg2) {
   switch_dtmf_t *arg1 = (switch_dtmf_t *) 0 ;
   char arg2 ;
@@ -3356,6 +3396,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_MAX_MANAGEMENT_BUFFER
   int result;
   
   result = (int)(1024*8);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_RAND_MAX_get___() {
+  int jresult ;
+  int result;
+  
+  result = (int)(0x7fff);
   jresult = result; 
   return jresult;
 }
@@ -23517,6 +23567,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_memory_usage_strea
   arg1 = (switch_stream_handle_t *)jarg1; 
   result = (char *)switch_memory_usage_stream(arg1);
   jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_rand___() {
+  int jresult ;
+  int result;
+  
+  result = (int)switch_rand();
+  jresult = result; 
   return jresult;
 }
 
