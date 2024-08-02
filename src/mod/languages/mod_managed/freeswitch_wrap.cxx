@@ -3401,6 +3401,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_MAX_MANAGEMENT_BUFFER
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_RAND_MAX_get___() {
+  int jresult ;
+  int result;
+  
+  result = (int)(0x7fff);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_error_period_t_start_set___(void * jarg1, long long jarg2) {
   error_period *arg1 = (error_period *) 0 ;
   int64_t arg2 ;
