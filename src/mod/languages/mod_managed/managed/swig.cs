@@ -15184,6 +15184,7 @@ else
   public static readonly int SWITCH_MAX_STATE_HANDLERS = freeswitchPINVOKE.SWITCH_MAX_STATE_HANDLERS_get();
   public static readonly int SWITCH_CORE_QUEUE_LEN = freeswitchPINVOKE.SWITCH_CORE_QUEUE_LEN_get();
   public static readonly int SWITCH_MAX_MANAGEMENT_BUFFER_LEN = freeswitchPINVOKE.SWITCH_MAX_MANAGEMENT_BUFFER_LEN_get();
+  public static readonly int SWITCH_RAND_MAX = freeswitchPINVOKE.SWITCH_RAND_MAX_get();
   public static readonly int SWITCH_RTP_CNG_PAYLOAD = freeswitchPINVOKE.SWITCH_RTP_CNG_PAYLOAD_get();
   public static readonly int SWITCH_MEDIA_TYPE_TOTAL = freeswitchPINVOKE.SWITCH_MEDIA_TYPE_TOTAL_get();
   public static readonly int SWITCH_SOCK_INVALID = freeswitchPINVOKE.SWITCH_SOCK_INVALID_get();
@@ -16291,6 +16292,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_MAX_MANAGEMENT_BUFFER_LEN_get___")]
   public static extern int SWITCH_MAX_MANAGEMENT_BUFFER_LEN_get();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_RAND_MAX_get___")]
+  public static extern int SWITCH_RAND_MAX_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_error_period_t_start_set___")]
   public static extern void switch_error_period_t_start_set(global::System.Runtime.InteropServices.HandleRef jarg1, long jarg2);
