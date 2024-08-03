@@ -1745,8 +1745,8 @@ SWITCH_STANDARD_APP(msrp_send_file_function)
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	switch_file_t *fd;
 	const char *filename = data;
-	switch_size_t len = 1024;
-	char buf[1024];
+	switch_size_t len = 4096;
+	char buf[4096];
 	int sanity = 10;
 
 	if (!(msrp_session = switch_core_media_get_msrp_session(session))) {
