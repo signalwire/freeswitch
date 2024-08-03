@@ -8218,7 +8218,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			int delta = rtp_session->ts - rtp_session->last_write_ts;
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-				((!rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (abs(delta) > rtp_session->samples_per_interval * 10))
+				((rtp_session->flags[SWITCH_RTP_FLAG_RESET] && (abs(delta) > rtp_session->samples_per_interval * 10))
 				|| rtp_session->ts == rtp_session->samples_per_interval)) {
 				m++;
 			}
@@ -8254,7 +8254,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 		/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
-		if (m && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) &&
+		if (m && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) &&
+			(!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) || rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER_ALSO_WHEN_SECURE) &&
 			(rtp_session->flags[SWITCH_RTP_FLAG_RESET] || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
 			switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (switch_time_t) switch_epoch_time_now(NULL)));
 		}
