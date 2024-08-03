@@ -368,6 +368,7 @@ static void presence_ping(const char *event_channel)
 {
 	switch_console_callback_match_t *matches;
 	const char *val = event_channel;
+	int eventFired = 0;
 
 	if (val) {
 		if (!strcasecmp(val, "presence")) {
@@ -396,6 +397,7 @@ static void presence_ping(const char *event_channel)
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Call-State-Number", "%d", callstate);
 					switch_channel_event_set_data(channel, event);
 					switch_event_fire(&event);
+					eventFired++;
 				}
 
 				switch_core_session_rwunlock(session);
@@ -403,6 +405,16 @@ static void presence_ping(const char *event_channel)
 		}
 
 		switch_console_free_matches(&matches);
+	}
+
+	/* probe presence status */
+	if (val && !eventFired) {
+		switch_event_t *sevent;
+		if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto", "any");
+			switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s", val);
+			switch_event_fire(&sevent);
+		}
 	}
 }
 
@@ -6657,14 +6669,66 @@ static void presence_event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (!verto_globals.enable_presence || zstr(presence_id)) {
+	if (!verto_globals.enable_presence) {
 		return;
+	}
+
+	if (event->event_id == SWITCH_EVENT_PRESENCE_IN) {
+		const char *from = switch_event_get_header(event, "from");
+		if (zstr(from)) {
+			return;
+		}
+		event_channel = switch_mprintf("presence.%s", from);
+	}
+	else if (event->event_id == SWITCH_EVENT_PRESENCE_PROBE) {
+		const char *from = switch_event_get_header(event, "from");
+		jsock_t *jsock;
+		verto_profile_t *profile;
+		int found = 0;
+		switch_event_t *sevent;
+
+		if (zstr(from)) {
+			return;
+		}
+
+		switch_mutex_lock(verto_globals.mutex);
+		for(profile = verto_globals.profile_head; profile; profile = profile->next) {
+			switch_mutex_lock(profile->mutex);
+			for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
+				if (jsock->ready && !zstr(jsock->uid) && !strcmp(from, jsock->uid)) {
+					found = 1;
+					break;
+				}
+			}
+			switch_mutex_unlock(profile->mutex);
+			if (found) break;
+		}
+		switch_mutex_unlock(verto_globals.mutex);
+
+		if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "proto", VERTO_CHAT_PROTO);
+			switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s", from);
+			if (!found) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "presence ping, %s not connected\n", from);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "status", "Unregistered");
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "presence ping, %s  connected\n", from);
+				switch_event_add_header_string(sevent, SWITCH_STACK_BOTTOM, "status", "Registered");
+			}
+			switch_event_fire(&sevent);
+		}
+		return ;
+	}
+	else {
+		if (zstr(presence_id)) {
+			return;
+		}
+		event_channel = switch_mprintf("presence.%s", presence_id);
 	}
 
 	msg = cJSON_CreateObject();
 	data = json_add_child_obj(msg, "data", NULL);
-
-	event_channel = switch_mprintf("presence.%s", presence_id);
 
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 	add_it("channelCallState", "channel-call-state");
@@ -6681,6 +6745,19 @@ static void presence_event_handler(switch_event_t *event)
 	add_it("presenceCallDirection", "presence-call-direction");
 	add_it("channelPresenceID", "channel-presence-id");
 	add_it("channelPresenceData", "channel-presence-data");
+
+	/* presence in */
+	add_it("rpid", "rpid");
+	add_it("status", "status");
+	add_it("event_type", "event_type");
+	add_it("alt_event_type", "alt_event_type");
+	add_it("presence-call-info", "presence-call-info");
+	add_it("call-id", "call-id");
+	add_it("unique-id", "unique-id");
+	add_it("channel-state", "channel-state");
+	add_it("answer-state", "answer-state");
+	add_it("astate-state", "astate-state");
+	add_it("presence-call-direction", "presence-call-direction");
 
 	for(hp = event->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "PD-", 3)) {
@@ -6891,6 +6968,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	if (verto_globals.enable_presence) {
 		switch_event_bind(modname, SWITCH_EVENT_CHANNEL_CALLSTATE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
+		switch_event_bind(modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
+		switch_event_bind(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
 	}
 
 	if (verto_globals.enable_fs_events) {
