@@ -1543,7 +1543,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			exptime = 30;
 		}
 
-		if (port) {
+		if (port && profile->server_rport_level == 0) {
 			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 		}
 
@@ -1659,11 +1659,12 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			}
 
 			if (!is_tcp && !is_tls && (zstr(network_ip) || !switch_check_network_list_ip(network_ip, profile->local_network)) &&
-				profile->server_rport_level >= 2 && sip->sip_user_agent &&
+				((profile->server_rport_level == 3 && sip->sip_user_agent &&
 				sip->sip_user_agent->g_string &&
 				( !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) ||
 				  !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) ||
-				  !strncasecmp(sip->sip_user_agent->g_string, "ADTRAN_Total_Access", 19) )) {
+				  !strncasecmp(sip->sip_user_agent->g_string, "ADTRAN_Total_Access", 19) ))
+				  || (profile->server_rport_level == 1 || profile->server_rport_level == 2))) {
 				if (sip->sip_via) {
 					const char *host = sip->sip_via->v_host;
 					const char *c_port = sip->sip_via->v_port;
