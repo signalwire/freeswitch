@@ -35,6 +35,7 @@
 #include <switch_stun.h>
 #include <switch_nat.h>
 #include "private/switch_core_pvt.h"
+#include <fspr_network_io.h>
 #include <switch_curl.h>
 #include <errno.h>
 #include <sofia-sip/sdp.h>
@@ -273,6 +274,71 @@ struct switch_media_handle_s {
 	switch_time_t last_text_frame;
 
 };
+
+void packet_stats_init(packet_stats_t *stats, int latency, int count) {
+	stats->max = latency;
+	stats->average = latency;
+	stats->count = count;
+}
+#define _VOR1(v) ((v)?(v):1)
+void packet_stats_update(packet_stats_t *stats, int latency)
+{
+	if (stats->count >= UINT32_MAX)
+		return;
+	stats->count++;
+
+	if (stats->count == 1)
+		packet_stats_init(stats, latency, 1);
+	if (stats->max < latency)
+		stats->max = latency;
+
+	if (stats->count > 1) {
+		float delta;
+		delta = latency - stats->average;
+		stats->average += delta/_VOR1(stats->count);
+	}
+}
+
+void packet_stats_print(switch_core_session_t *session) {
+	if (session->stats.io_info.in_remote_addr && session->stats.io_info.out_local_addr
+		       && !session->stats.reported) {
+		char in_ipbuf[48];
+		char in_l_ipbuf[48];
+		char out_ipbuf[48];
+		char out_l_ipbuf[48];
+		const char *v=NULL;
+
+		switch_channel_set_variable_printf(session->channel, "packet_stats_report",
+			"{"
+			"\"in\" : { \"ssrc\": \"0x%08X\", \"remote_socket\": \"%s:%u\", \"local_socket\": \"%s:%u\""
+			", \"codec\": \"%s\", \"count\": %u, \"plc\": %u}"
+			","
+			"\"out\" : { \"ssrc\": \"0x%08X\", \"remote_socket\": \"%s:%u\", \"local_socket\": \"%s:%u\""
+			", \"codec\": \"%s\", \"count\": %u, \"max\": %d, \"avg\": %.2f }}",
+			session->stats.io_info.in_ssrc,
+               switch_get_addr(in_ipbuf, sizeof(in_ipbuf), session->stats.io_info.in_remote_addr),
+               session->stats.io_info.in_remote_addr->port,
+               switch_get_addr(in_l_ipbuf, sizeof(in_ipbuf), session->stats.io_info.in_local_addr),
+               session->stats.io_info.in_local_addr->port,
+			session->stats.io_info.in_codec,
+			session->stats.in_count,
+			session->stats.in_plc,
+			session->stats.io_info.out_ssrc,
+               switch_get_addr(out_ipbuf, sizeof(out_ipbuf), session->stats.io_info.out_remote_addr),
+               session->stats.io_info.out_local_addr->port,
+               switch_get_addr(out_l_ipbuf, sizeof(out_ipbuf), session->stats.io_info.out_local_addr),
+               session->stats.io_info.out_remote_addr->port,
+			session->stats.io_info.out_codec,
+			session->stats.count,
+			session->stats.max,
+			session->stats.average
+		);
+		v = switch_channel_get_variable_dup(session->channel,"packet_stats_report", SWITCH_FALSE, -1);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "[packet_stats_report] %s\n", v);
+		session->stats.reported = true;
+
+	}
+}
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
 	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
@@ -15802,7 +15868,6 @@ SWITCH_DECLARE(switch_msrp_session_t *) switch_core_media_get_msrp_session(switc
 	return session->media_handle->msrp_session;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
 																int stream_id)
 {
@@ -16161,6 +16226,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		goto done;
 	}
 
+	write_frame->received_ts = frame->received_ts;
 	if (session->write_codec) {
 		if (!ptime_mismatch && write_frame->codec && write_frame->codec->implementation &&
 			write_frame->codec->implementation->decoded_bytes_per_packet == session->write_impl.decoded_bytes_per_packet) {
@@ -16436,6 +16502,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
   error:
+	if (frame->received_ts > 0) {
+		int64_t d = (switch_micro_time_now() - frame->received_ts)/1000;
+		if (d > 2000) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "excessive delay[%ld]-[%ld]=[%ldms] seq[%u]ssrc[0x%08X]\n",
+					(int64_t)(switch_micro_time_now()/1000), (int64_t)(frame->received_ts/1000), d, ntohs(frame->seq), frame->ssrc);
+		}
+		packet_stats_update(&session->stats, d);
+	}
+	session->stats.io_info.out_codec = write_frame->codec->implementation->iananame;
+	session->stats.io_info.in_codec = frame->codec->implementation->iananame;
 
 	switch_mutex_unlock(session->write_codec->mutex);
 	switch_mutex_unlock(frame->codec->mutex);
