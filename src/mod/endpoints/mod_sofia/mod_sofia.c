@@ -1482,6 +1482,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			sofia_clear_flag(tech_pvt, TFLAG_EARLY_MEDIA);
 		}
 		goto end;
+	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
+		// There doesn't seem to be anything needing to be done, so let's skip the mutex deadlock in issue 2290
+		goto end;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
