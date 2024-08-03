@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>ffmpeg</ProjectName>
     <RootNamespace>ffmpeg</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{BC1FD72E-1CD5-4525-A7F5-17C5740BFDED}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(SolutionDir)w32\zlib.props" Condition=" '$(zlibImported)' == '' " />
@@ -6986,15 +6986,15 @@
     </CustomBuild>
   </ItemGroup>
   <Choose>
-     <When Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'">
-     <ItemGroup>
+    <When Condition=" '$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264'">
+      <ItemGroup>
         <ProjectReference Include="..\libx264\libx264.2017.vcxproj">
           <Project>{20179127-853b-4fe9-b7c0-9e817e6a3a72}</Project>
         </ProjectReference>
-     </ItemGroup>
-     </When>
-     <Otherwise>
-     </Otherwise>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+    </Otherwise>
   </Choose>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
