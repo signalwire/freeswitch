@@ -95,5 +95,6 @@
 
   <recv request="BYE"></recv>
 
+  <pause milliseconds="2000"/>
 
 </scenario>

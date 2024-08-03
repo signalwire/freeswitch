@@ -249,7 +249,6 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 
 		FST_TEARDOWN_BEGIN()
 		{
-				switch_sleep(200 * 1000);
 		}
 		FST_TEARDOWN_END()
 
@@ -697,8 +696,8 @@ skiptest:
 				kill_sipp();
 			}
 		}
+		switch_yield(10 * 1000 * 1000); /* timer-T1X64 */
 		FST_TEST_END()
-
 	}
 	FST_MODULE_END()
 }
