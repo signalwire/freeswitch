@@ -22,7 +22,7 @@
     <ProjectName>test_switch_core</ProjectName>
     <RootNamespace>test_switch_core</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{EF62B845-A0CE-44FD-B8E6-475FE87D06C3}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
