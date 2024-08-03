@@ -1,0 +1,111 @@
+name: Unit tests
+
+on:
+  workflow_call:
+    inputs:
+      total-groups:
+        description: 'Total number of test groups'
+        required: true
+        type: number
+      current-group:
+        description: 'Current test group number'
+        required: true
+        type: number
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: signalwire/freeswitch-public-base:bookworm
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      options: --privileged
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      ASAN_OPTIONS: log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
+
+    steps:
+      - name: Override core_pattern
+        shell: bash
+        run: |
+          cat /proc/sys/kernel/core_pattern
+          echo '/cores/core.%s.%E.%e.%p.%t' > /proc/sys/kernel/core_pattern
+          cat /proc/sys/kernel/core_pattern
+
+      - name: Install dependencies
+        shell: bash
+        env:
+          REPOTOKEN: ${{ secrets.REPOTOKEN }}
+        run: |
+          echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf && \
+          apt-get update && \
+          apt-get -y remove \
+            libsofia-sip-ua0 \
+            libspandsp-dev && \
+          apt-get -y install \
+            libspandsp3-dev && \
+          rm -rf /etc/apt/auth.conf
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: /__w/freeswitch/freeswitch
+
+      - name: Bootstrap
+        shell: bash
+        working-directory: /__w/freeswitch/freeswitch
+        run: |
+          ./bootstrap.sh -j || exit 1
+
+      - name: Checkout Sofia-Sip
+        uses: actions/checkout@v4
+        with:
+          repository: freeswitch/sofia-sip
+          path: /__w/freeswitch/freeswitch/sofia-sip
+
+      - name: Build sofia-sip
+        shell: bash
+        working-directory: /__w/freeswitch/freeswitch/sofia-sip
+        run: |
+          ./autogen.sh && \
+          ./configure.gnu && \
+          make -j$(nproc --all) install
+
+      - name: Build FreeSwitch
+        shell: bash
+        working-directory: /__w/freeswitch/freeswitch
+        run: |
+          echo 'codecs/mod_openh264' >> modules.conf && \
+          sed -i \
+            -e '/applications\/mod_http_cache/s/^#//g' \
+            -e '/event_handlers\/mod_rayo/s/^#//g' \
+            -e '/formats\/mod_opusfile/s/^#//g' \
+            -e '/languages\/mod_lua/s/^#//g' \
+          modules.conf && \
+          ./configure \
+            --enable-address-sanitizer \
+            --enable-fake-dlclose && \
+          make -j$(nproc --all) |& tee ./unit-tests-build-result.txt
+
+          echo ${PIPESTATUS[0]} > ./build-status.txt
+          if ! test "$(cat ./build-status.txt | tr -d '[:space:]')" -eq 0; then
+            exit "$(cat ./build-status.txt | tr -d '[:space:]')"
+          fi
+          make install
+
+      - name: Run tests
+        shell: bash
+        working-directory: /__w/freeswitch/freeswitch/tests/unit
+        run: |
+          ./run-tests.sh ${{ inputs.total-groups }} ${{ inputs.current-group }}
+          mkdir logs && (mv log_run-tests_*.html logs || true) && (mv backtrace_*.txt logs || true)
+          ./collect-test-logs.sh
+
+      - name: Notify result
+        if: failure()
+        uses: signalwire/actions-template/.github/actions/notify-ci-result@main
+        with:
+          for: "run_tests"
+          test_logs_path: /__w/freeswitch/freeswitch/tests/unit
+          test_artifacts_suffix: "-${{ inputs.current-group }}"

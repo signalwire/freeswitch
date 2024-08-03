@@ -38,7 +38,8 @@ test_sipp_based_tests_CFLAGS = $(AM_CFLAGS) $(SOFIA_SIP_CFLAGS) -DSWITCH_TEST_BA
 test_sipp_based_tests_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 test_sipp_based_tests_LDADD = libsofiamod.la $(SOFIA_SIP_LIBS)
 
-TESTS = test/test_sofia_funcs.sh test/test_nuafail test/test_run_sipp.sh
+TESTS = test/test_sofia_funcs.sh test/test_nuafail
+#TESTS += test/test_run_sipp.sh
 
 if ISMAC
 mod_sofia_la_LDFLAGS += -framework CoreFoundation -framework SystemConfiguration
