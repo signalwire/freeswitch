@@ -2292,8 +2292,8 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 				qm->skip_wait--;
 				switch_mutex_unlock(qm->cond2_mutex);
 			} else {
-				switch_mutex_unlock(qm->cond2_mutex);
 				switch_thread_cond_wait(qm->cond, qm->cond_mutex);
+				switch_mutex_unlock(qm->cond2_mutex);
 			}
 		}
 
