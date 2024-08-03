@@ -35,9 +35,9 @@ copy ..\..\apr-util\xml\expat\lib\expat.h.in ..\..\apr-util\xml\expat\lib\expat.
 copy ..\..\apr-util\xml\expat\lib\config.hnw ..\..\apr-util\xml\expat\lib\config.h
 copy ..\..\apr-util\include\private\apu_select_dbm.hw ..\..\apr-util\include\private\apu_select_dbm.h
 
-@echo Fixing up the pcre headers
-copy ..\..\pcre\config.hw ..\..\pcre\config.h
-copy ..\..\pcre\pcre.hw ..\..\pcre\pcre.h
+@echo Fixing up the pcre2 headers
+copy ..\..\pcre2\config.hw ..\..\pcre2\config.h
+copy ..\..\pcre2\pcre2.hw ..\..\pcre2\pcre2.h
 
 @echo Generating the import list...
 set MWCIncludes=..\include;..\include\arch\netware;..\include\arch\unix;..\..\apr-util\include;+%NovellLibC%
