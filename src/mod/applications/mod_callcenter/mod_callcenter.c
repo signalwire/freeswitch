@@ -2417,7 +2417,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch (atoi(res)) {
 		case 0: /* Ok, someone else took it, or user hanged up already */
 			/* However, if we had reserved this agent, we should release them */
-			cc_agent_update("state_if_reserved", cc_agent_state2str(CC_AGENT_STATE_WAITING), h->agent_name);
+			cc_agent_update("state_if_reserved", cc_agent_state2str(CC_AGENT_STATE_WAITING), agent_name);
 			return 1;
 			/* We default to default even if more entry is returned... Should never happen	anyway */
 		default: /* Go ahead, start thread to try to bridge these 2 caller */
