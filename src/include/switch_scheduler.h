@@ -66,8 +66,8 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 												   switch_scheduler_func_t func,
 												   const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags);
 
-SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task();
-SWITCH_DECLARE(uint32_t) switch_scheduler_get_active_task();
+SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task(void);
+SWITCH_DECLARE(uint32_t) switch_scheduler_get_active_task(void);
 SWITCH_DECLARE(void) switch_scheduler_print_task(switch_stream_handle_t *stream);
 	
 /*!

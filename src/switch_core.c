@@ -288,11 +288,11 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 	return runtime.console;
 }
 
-SWITCH_DECLARE(void) switch_core_global_mutex_lock()
+SWITCH_DECLARE(void) switch_core_global_mutex_lock(void)
 {
 	switch_mutex_lock(runtime.global_mutex);
 }
-SWITCH_DECLARE(void) switch_core_global_mutex_unlock()
+SWITCH_DECLARE(void) switch_core_global_mutex_unlock(void)
 {
 	switch_mutex_unlock(runtime.global_mutex);
 }
@@ -2653,12 +2653,12 @@ SWITCH_DECLARE(void) switch_core_set_last_seen_previous(switch_interval_time_t l
 	runtime.last_seen_previous = last_seen;
 }
 
-SWITCH_DECLARE(switch_interval_time_t) switch_core_get_last_seen()
+SWITCH_DECLARE(switch_interval_time_t) switch_core_get_last_seen(void)
 {
 	return runtime.last_seen;
 }
 
-SWITCH_DECLARE(switch_interval_time_t) switch_core_get_last_seen_previous()
+SWITCH_DECLARE(switch_interval_time_t) switch_core_get_last_seen_previous(void)
 {
 	return runtime.last_seen_previous;
 }
@@ -3130,7 +3130,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void)
 	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
 
-void switch_core_sqldb_destroy()
+void switch_core_sqldb_destroy(void)
 {
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();
@@ -3687,7 +3687,7 @@ SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t
 	}
 }
 
-SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port(void)
 {
 	uint16_t start_port = 0;
 
@@ -3698,7 +3698,7 @@ SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()
 	return start_port;
 }
 
-SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port()
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port(void)
 {
 	uint16_t end_port = 0;
 

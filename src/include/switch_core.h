@@ -506,7 +506,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(_In_ switch_core_fl
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(_In_ uint32_t new_limit);
 
 SWITCH_DECLARE(void) switch_core_session_drop_udp_invites(switch_bool_t drop);
-SWITCH_DECLARE(switch_bool_t) switch_core_session_will_drop_udp_invites();
+SWITCH_DECLARE(switch_bool_t) switch_core_session_will_drop_udp_invites(void);
 
 /*!
   \brief Set/Get Session Rate Limit
@@ -2466,9 +2466,9 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
 
 SWITCH_DECLARE(void) switch_core_set_last_seen(switch_time_t last_seen);
-SWITCH_DECLARE(switch_time_t) switch_core_get_last_seen();
+SWITCH_DECLARE(switch_time_t) switch_core_get_last_seen(void);
 SWITCH_DECLARE(void) switch_core_set_last_seen_previous(switch_time_t last_seen);
-SWITCH_DECLARE(switch_time_t) switch_core_get_last_seen_previous();
+SWITCH_DECLARE(switch_time_t) switch_core_get_last_seen_previous(void);
 
 /*!
   \brief send a control message to the core
@@ -2946,8 +2946,8 @@ SWITCH_DECLARE(void) switch_core_autobind_cpu(void);
 SWITCH_DECLARE(switch_status_t) switch_core_session_start_text_thread(switch_core_session_t *session);
 
 SWITCH_DECLARE(void) switch_enable_dump_cores(int enabled);
-SWITCH_DECLARE(void) switch_core_global_mutex_lock();
-SWITCH_DECLARE(void) switch_core_global_mutex_unlock();
+SWITCH_DECLARE(void) switch_core_global_mutex_lock(void);
+SWITCH_DECLARE(void) switch_core_global_mutex_unlock(void);
 
 SWITCH_DECLARE(const char *) switch_core_get_event_channel_key_separator(void);
 

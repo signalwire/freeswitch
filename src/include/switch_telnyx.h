@@ -48,12 +48,12 @@ typedef struct switch_telnyx_event_dispatch_s {
 } switch_telnyx_event_dispatch_t;
 
 SWITCH_DECLARE(void) switch_telnyx_init(switch_memory_pool_t *pool);
-SWITCH_DECLARE(void) switch_telnyx_deinit();
+SWITCH_DECLARE(void) switch_telnyx_deinit(void);
 SWITCH_DECLARE(int) switch_telnyx_hangup_cause_to_sip(switch_core_session_t *session, switch_call_cause_t cause);
 SWITCH_DECLARE(switch_bool_t) switch_telnyx_sofia_on_init(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_telnyx_sofia_on_hangup(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_telnyx_channel_on_answer(switch_core_session_t *session);
-SWITCH_DECLARE(switch_telnyx_event_dispatch_t*) switch_telnyx_event_dispatch();
+SWITCH_DECLARE(switch_telnyx_event_dispatch_t*) switch_telnyx_event_dispatch(void);
 SWITCH_DECLARE(void) switch_telnyx_on_set_variable(switch_channel_t* channel, const char* name, const char* value);
 SWITCH_DECLARE(int) switch_telnyx_call_recover(switch_core_session_t* session);
 SWITCH_DECLARE(void) switch_telnyx_on_channel_recover(switch_channel_t* channel);

@@ -2784,7 +2784,7 @@ SWITCH_DECLARE(void) switch_core_session_drop_udp_invites(switch_bool_t drop)
 {
 	session_manager.drop_udp_invites = drop;
 }
-SWITCH_DECLARE(switch_bool_t) switch_core_session_will_drop_udp_invites()
+SWITCH_DECLARE(switch_bool_t) switch_core_session_will_drop_udp_invites(void)
 {
 	return session_manager.drop_udp_invites;
 }
