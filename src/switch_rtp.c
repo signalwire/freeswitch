@@ -5039,7 +5039,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_ssrc(switch_rtp_t *rtp_session, u
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc)
 {
 	if (!rtp_session) return SWITCH_STATUS_FALSE;
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Assign remote ssrc (current: %u, new: %u)\n", rtp_session->remote_ssrc, ssrc);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Assign remote ssrc (current: %u, new: %u)\n", rtp_session->remote_ssrc, ssrc);
 	rtp_session->remote_ssrc = ssrc;
 	rtp_session->flags[SWITCH_RTP_FLAG_DETECT_SSRC] = 0;
 	return SWITCH_STATUS_SUCCESS;
@@ -5138,7 +5138,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_MILLISECONDS_PER_PACKET)) {
 		ms_per_packet = ms_per_pkt / 1000;
 		us_per_packet = ms_per_pkt;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Nop, ms per packet is actually %ums, %uus\n", ms_per_packet, us_per_packet);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Nop, ms per packet is actually %ums, %uus\n", ms_per_packet, us_per_packet);
 	}	
 
 	switch_rtp_set_interval(rtp_session, ms_per_pkt, samples_per_interval);
@@ -6850,7 +6850,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				uint32_t ssrc = ntohl(rtp_session->last_rtp_hdr.ssrc);
 
 				if (rtp_session->remote_ssrc != ssrc && ssrc) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Assign remote ssrc (current: %u, new: %u, local: %u)\n", rtp_session->remote_ssrc, ssrc, rtp_session->ssrc);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Assign remote ssrc (current: %u, new: %u, local: %u)\n", rtp_session->remote_ssrc, ssrc, rtp_session->ssrc);
 					rtp_session->remote_ssrc = ssrc;
 				}
 			}
