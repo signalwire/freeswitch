@@ -599,7 +599,7 @@ static void phase_e_handler(void *user_data, int result)
 			prometheus_increment_tx_fax_success();
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully sent.\n");
 		} else if (pvt->app_mode == FUNCTION_RX) {
-			prometheus_increment_tx_fax_failure();
+			prometheus_increment_rx_fax_success();
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully received.\n");
 		} else {
 			fax_result_str = switch_core_session_sprintf(session, "Fax successfully managed. How ?\n");
@@ -607,7 +607,7 @@ static void phase_e_handler(void *user_data, int result)
 		switch_channel_set_variable(channel, "fax_success", "1");
 	} else {
 		if (pvt->app_mode == FUNCTION_TX) {
-			prometheus_increment_rx_fax_success();
+			prometheus_increment_tx_fax_failure();
 		} else if (pvt->app_mode == FUNCTION_RX) {
 			prometheus_increment_rx_fax_failure();
 		}
