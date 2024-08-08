@@ -190,10 +190,102 @@ typedef enum { /* FMT Values for PSFB Payload Types http://www.iana.org/assignme
 	_RTCP_PSFB_AFB   = 15 /* AFB Application layer FB */
 } rtcp_psfb_t;
 
+/* Extended Report Block Framework */
+typedef struct switch_rtcp_xr_rb_header {
+	uint8_t bt; /* Block type */
+	uint8_t specific; /* Type specific data */
+	uint16_t length; /* Block length */
+} switch_rtcp_xr_rb_header;
 
+/* XR Packet Format */
+typedef struct switch_rtcp_xr_packet {
+	uint32_t ssrc; /* Sender SSRC */
+	switch_rtcp_xr_rb_header rb_header; /* Report Block header */
+} switch_rtcp_xr_packet;
+
+/* Receiver Reference Time Report Block */
+typedef struct switch_rtcp_xr_rb_rr_time {
+	switch_rtcp_xr_rb_header header; /* Block header */
+	uint32_t ntp_sec; /* NTP timestamp, most significant word */
+	uint32_t ntp_frac; /* NTP timestamp, least significant word */
+} switch_rtcp_xr_rb_rr_time;
+
+/* Statistics Summary Report Block */
+typedef struct switch_rtcp_xr_rb_stats {
+	switch_rtcp_xr_rb_header header; /* Block header */
+	uint32_t ssrc; /* Receiver SSRC */
+	uint16_t begin_seq; /* Begin RTP sequence reported */
+	uint16_t end_seq; /* End RTP sequence reported */
+	uint32_t lost_packets; /* Number of packet lost in this interval */
+	uint32_t dup_packets; /* Number of duplicated packet in this interval */
+	uint32_t min_jitter; /* Minimum jitter in this interval */
+	uint32_t max_jitter; /* Maximum jitter in this interval */
+	uint32_t mean_jitter; /* Average jitter in this interval */
+	uint32_t dev_jitter; /* Jitter deviation in this interval */
+	uint32_t min_ttl_or_hl:8; /* Minimum ToH in this interval */
+	uint32_t max_ttl_or_hl:8; /* Maximum ToH in this interval */
+	uint32_t mean_ttl_or_hl:8; /* Average ToH in this interval */
+	uint32_t dev_ttl_or_hl:8; /* ToH deviation in this interval */
+} switch_rtcp_xr_rb_stats;
+
+/* VoIP Metrics Report Block */
+typedef struct switch_rtcp_xr_rb_voip_metrics {
+    switch_rtcp_xr_rb_header header; /* Block header */
+    uint32_t ssrc; /* Receiver SSRC */
+    uint8_t loss_rate; /* Packet loss rate */
+    uint8_t discard_rate; /* Packet discarded rate */
+    uint8_t burst_density; /* Burst density */
+    uint8_t gap_density; /* Gap density */
+    uint16_t burst_duration; /* Burst duration */
+    uint16_t gap_duration; /* Gap duration */
+    uint16_t round_trip_delay;/* Round trip delay */
+    uint16_t end_system_delay; /* End system delay */
+    uint8_t signal_level; /* Signal level */
+    uint8_t noise_level; /* Noise level */
+    uint8_t rerl; /* Residual Echo Return Loss */
+    uint8_t gmin; /* The gap threshold */
+    uint8_t r_factor; /* Voice quality metric carried over this RTP session */
+    uint8_t ext_r_factor; /* Voice quality metric carried outside of this RTP session */
+    uint8_t mos_lq; /* Mean Opinion Score for Listening Quality */
+    uint8_t mos_cq; /* Mean Opinion Score for Conversation Quality */
+    uint8_t rx_config; /* Receiver configuration */
+    uint8_t reserved2; /* Not used */
+    uint16_t jb_nominal; /* Current delay by jitter buffer */
+    uint16_t jb_maximum; /* Maximum delay by jitter buffer */
+    uint16_t jb_abs_max; /* Maximum possible delay by jitter buffer */
+} switch_rtcp_xr_rb_voip_metrics;
+
+typedef enum { /* Extended Report Blocks */
+	XR_LOSS_RLE     = 1, /* Loss RLE */
+	XR_DUP_RLE      = 2, /* Duplicate RLE */
+	XR_RCPT_TIMES   = 3, /* Packet Receipt Time */
+	XR_RR_TIME      = 4, /* Receiver Reference Time */
+	XR_DLRR         = 5, /* DLRR */
+	XR_STATS        = 6, /* Statistics Summary */
+	XR_VOIP_METRICS = 7  /* VoIP Metrics */
+} switch_rtcp_xr_block_types;
+
+typedef struct switch_rtcp_xr_report {
+	uint8_t xr_pt;
+	union {
+		switch_rtcp_xr_rb_voip_metrics *voip_metrics;
+		switch_rtcp_xr_rb_stats *stats;
+		switch_rtcp_xr_rb_rr_time *rr_time;
+	} report_data;
+} switch_rtcp_xr_report;
+
+typedef struct switch_rtcp_report_data {
+	rtcp_pt_t rtcp_type;
+	uint32_t ssrc;
+	uint16_t xr_count;
+	union {
+		struct switch_rtcp_report_block *report_block;
+		switch_rtcp_xr_report *xr_blocks;
+	} rtcp_data;
+} switch_rtcp_report_data_t;
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session, switch_rtp_crypto_direction_t direction, uint32_t index, switch_secure_settings_t *ssec);
-typedef void (*rtcp_probe_func)(switch_channel_t*, switch_rtp_t *, rtcp_pt_t, switch_bool_t, struct switch_rtcp_report_block*, struct switch_rtcp_sender_info*);
+typedef void (*rtcp_probe_func)(switch_channel_t*, switch_rtp_t *, switch_bool_t, switch_rtcp_report_data_t *, struct switch_rtcp_sender_info *);
 typedef void (*rtp_create_probe_func)(switch_rtp_t *, switch_channel_t*);
 
 SWITCH_DECLARE(void) switch_rtp_set_rtcp_probe(switch_rtp_t * rtp_session, rtcp_probe_func probe);

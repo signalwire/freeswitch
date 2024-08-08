@@ -137,7 +137,7 @@ typedef struct switch_core_media_params_s {
 	char *rtcp_audio_interval_msec;
 	char *rtcp_video_interval_msec;
 	char *rtcp_text_interval_msec;
-
+	switch_bool_t offer_rtcp_xr;
 
 	char *extrtpip;
 	char *rtpip;

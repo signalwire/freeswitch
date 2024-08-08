@@ -2529,8 +2529,11 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		}
 
 		if (report_sent && rtp_session->rtcp_probe) {
+			switch_rtcp_report_data_t report_data;
 			rtcp_pt_t type = (rtp_session->stats.rtcp.sent_pkt_count || force_send_rr) ? _RTCP_PT_RR : _RTCP_PT_SR;
 			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+			report_data.rtcp_type = type;
+			report_data.rtcp_data.report_block = rtcp_report_block;
 			if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
 #ifdef DEBUG_HOMER
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "[ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u]\n",
@@ -2553,7 +2556,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 							type, ntohl(rtcp_report_block->ssrc), ntohl(rtcp_report_block->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc);
 #endif
 					}
-					rtp_session->rtcp_probe(channel, rtp_session, type, TRUE, rtcp_report_block, rtcp_sender_info);
+					rtp_session->rtcp_probe(channel, rtp_session, TRUE, &report_data, rtcp_sender_info);
 				}
 			}
 		}
@@ -7565,6 +7568,95 @@ static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 	}
 }
 
+static switch_status_t process_rtcp_xr_report(switch_rtcp_report_data_t *report_data, switch_rtp_t *rtp_session, rtcp_msg_t *msg, switch_size_t bytes)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const switch_rtcp_xr_packet *packet = (switch_rtcp_xr_packet *) msg->body;
+	const switch_rtcp_xr_rb_header *header = &packet->rb_header;
+	uint16_t plen = ntohs(msg->header.length);
+	uint16_t blen = 0;
+	uint16_t count = 0;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
+					  "RTCP XR packet bytes %" SWITCH_SIZE_T_FMT " ssrc %u type %02x block len %d\n",
+					  bytes, ntohl(packet->ssrc), header->bt & 0xff, plen);
+
+	report_data->ssrc = packet->ssrc;
+
+	if (plen + 1 > bytes) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+						  "RTCP XR packet too short!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* Count the number of report blocks */
+	while ((int32_t *)header < (int32_t *)msg->body + plen) {
+		blen = ntohs(header->length);
+		if (blen) {
+			++count;
+		}
+		header = (switch_rtcp_xr_rb_header *)((int32_t *)header + blen + 1);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Found %d report blocks\n", count);
+
+	if (!count) {
+		/* No report blocks found */
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "No report blocks found\n");
+		return status;
+	}
+
+	report_data->xr_count = count;
+	switch_malloc(report_data->rtcp_data.xr_blocks, sizeof(switch_rtcp_xr_report) * count);
+	header = &packet->rb_header;
+	count = 0;
+
+	/* Parse the report blocks */
+	while ((int32_t *)header < (int32_t *)msg->body + plen) {
+		blen = ntohs(header->length);
+
+		/* Skip any block with length == 0 */
+		if (blen) {
+			switch (header->bt) {
+				case XR_RR_TIME: {
+					switch_rtcp_xr_rb_rr_time *rr_time = (switch_rtcp_xr_rb_rr_time *) header;
+					uint32_t lsr = ntohl(rr_time->ntp_sec);
+					uint32_t dlsr = ntohl(rr_time->ntp_frac);
+					uint32_t rtt = 0;
+
+					if (lsr) {
+						rtt = (switch_micro_time_now() - lsr) - dlsr;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
+										  "RTCP XR RR Time: LSR: %u DLSR: %u RTT: %u\n",
+										  lsr, dlsr, rtt);
+					}
+					report_data->rtcp_data.xr_blocks[count].xr_pt = header->bt;
+					report_data->rtcp_data.xr_blocks[count].report_data.rr_time = rr_time;
+					}
+					break;
+				case XR_VOIP_METRICS: {
+					switch_rtcp_xr_rb_voip_metrics *voip_metrics = (switch_rtcp_xr_rb_voip_metrics *) header;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,
+						"RTCP XR VoIP metrics: loss rate: %02x rt delay: %d es delay: %d \n", voip_metrics->loss_rate, voip_metrics->round_trip_delay, voip_metrics->end_system_delay);
+					report_data->rtcp_data.xr_blocks[count].xr_pt = header->bt;
+					report_data->rtcp_data.xr_blocks[count].report_data.voip_metrics = voip_metrics;
+				}
+				break;
+				case XR_STATS: {
+					switch_rtcp_xr_rb_stats *stats = (switch_rtcp_xr_rb_stats *) header;
+					report_data->rtcp_data.xr_blocks[count].xr_pt = header->bt;
+					report_data->rtcp_data.xr_blocks[count].report_data.stats = stats;
+				}
+				default:
+					break;
+			}
+			++count;
+		}
+		header = (switch_rtcp_xr_rb_header *)((int32_t *)header + blen + 1);
+	}
+	return status;
+}
+
 static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t *msg, switch_size_t bytes)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -7624,7 +7716,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 	} else {
 		struct switch_rtcp_report_block *report;
 
-		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR) {
+		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR || msg->header.type == _RTCP_PT_XR) {
 			int i;
 #ifdef DEBUG_RTCP
 			switch_time_t now = switch_micro_time_now();
@@ -7635,7 +7727,8 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			double rtt_now = 0;
 			uint8_t rtt_valid = 0;
 			int rtt_increase = 0, packet_loss_increase=0;
-      struct switch_rtcp_sender_info *rtcp_sender_info = 0;
+			struct switch_rtcp_sender_info *rtcp_sender_info = 0;
+			switch_rtcp_report_data_t report_data = {0};
 
 			//if (msg->header.type == _RTCP_PT_SR && rtp_session->ice.ice_user) {
 			//	rtp_session->send_rr = 1;
@@ -7643,7 +7736,9 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			lsr_now = calc_local_lsr_now();
 
-			if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
+			if (msg->header.type == _RTCP_PT_XR) {
+				status = process_rtcp_xr_report(&report_data, rtp_session, msg, bytes);
+			} else if (msg->header.type == _RTCP_PT_SR) { /* Sender report */
 				struct switch_rtcp_sender_report* sr = (struct switch_rtcp_sender_report*)msg->body;
 
 				rtp_session->stats.rtcp.packet_count = ntohl(sr->sender_info.pc);
@@ -7681,11 +7776,15 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 				rtp_session->rtcp_frame.octect_count = ntohl(sr->sender_info.oc);
 
 				report = &sr->report_block;
+				report_data.ssrc = report->ssrc;
+				report_data.rtcp_data.report_block = report;
 			} else { /* Receiver report */
 				struct switch_rtcp_receiver_report* rr = (struct switch_rtcp_receiver_report*)msg->body;
 				packet_ssrc = rr->ssrc;
 				//memset(&rtp_session->rtcp_frame, 0, sizeof(rtp_session->rtcp_frame));
 				report = &rr->report_block;
+				report_data.ssrc = report->ssrc;
+				report_data.rtcp_data.report_block = report;
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG3,"Received a RR with %d report blocks, " \
 								  "length in words = %d, " \
@@ -7698,31 +7797,36 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 			
 			if (rtp_session->rtcp_probe) {
 				switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+				report_data.rtcp_type = msg->header.type;
 				if (channel && switch_channel_test_flag(channel, CF_ENABLE_RTCP_PROBE)) {
 #ifdef DEBUG_HOMER
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "[not ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u local ssrc=%u]\n",
 						msg->header.type, ntohl(report->ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc, rtp_session->ssrc);
 #endif
-					if (ntohl(report->ssrc) != rtp_session->ssrc) {
+					if (ntohl(report_data.ssrc) != rtp_session->ssrc && report_data.rtcp_type != _RTCP_PT_XR) {
 #ifdef DEBUG_HOMER
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u does not match local ssrc=%u\n",
-							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report->ssrc), rtp_session->ssrc);
+							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report_data.ssrc), rtp_session->ssrc);
 #endif
-					} else if (RTCP_BUG_SSRC == ntohl(report->ssrc)) {
+					} else if (RTCP_BUG_SSRC == ntohl(report_data.ssrc)) {
 #ifdef DEBUG_HOMER
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Skip RTCP probe report for %s with pt=%u and probably sloppy jitter of %u, as ssrc=%u matches RTCP bug ssrc=%u\n",
-							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report->ssrc), RTCP_BUG_SSRC);
+							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report_data.ssrc), RTCP_BUG_SSRC);
 #endif
 					} else {
 						if (ntohl(report->jitter) > HIGH_JITTER_LOG_THRESHOLD) {
 #ifdef DEBUG_HOMER
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "(huge jitter) [not ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u local ssrc=%u]\n",
-								msg->header.type, ntohl(report->ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc, rtp_session->ssrc);
+								msg->header.type, ntohl(report_data.ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc, rtp_session->ssrc);
 #endif
 						}
-						rtp_session->rtcp_probe(channel, rtp_session, msg->header.type, FALSE, report, rtcp_sender_info);
+						rtp_session->rtcp_probe(channel, rtp_session, FALSE, &report_data, rtcp_sender_info);
 					}
 				}
+			}
+
+			if (report_data.xr_count > 0) {
+				switch_safe_free(report_data.rtcp_data.xr_blocks)
 			}
 
 			for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
