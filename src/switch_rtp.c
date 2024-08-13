@@ -7714,9 +7714,8 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 		}
 		
 	} else {
-		struct switch_rtcp_report_block *report;
-
 		if (msg->header.type == _RTCP_PT_SR || msg->header.type == _RTCP_PT_RR || msg->header.type == _RTCP_PT_XR) {
+			struct switch_rtcp_report_block *report = NULL;
 			int i;
 #ifdef DEBUG_RTCP
 			switch_time_t now = switch_micro_time_now();
@@ -7814,7 +7813,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 							rtp_type(rtp_session), msg->header.type, ntohl(report->jitter), ntohl(report_data.ssrc), RTCP_BUG_SSRC);
 #endif
 					} else {
-						if (ntohl(report->jitter) > HIGH_JITTER_LOG_THRESHOLD) {
+						if (report && ntohl(report->jitter) > HIGH_JITTER_LOG_THRESHOLD) {
 #ifdef DEBUG_HOMER
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "(huge jitter) [not ours] RTCP probe report block (pt=%u, ssrc=%u, ia_jitter=%u) [type=%s remote_ssrc=%u peer_ssrc=%u local ssrc=%u]\n",
 								msg->header.type, ntohl(report_data.ssrc), ntohl(report->jitter), rtp_type(rtp_session), rtp_session->remote_ssrc, rtp_session->stats.rtcp.peer_ssrc, rtp_session->ssrc);
@@ -7827,6 +7826,10 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 			if (report_data.xr_count > 0) {
 				switch_safe_free(report_data.rtcp_data.xr_blocks)
+			}
+
+			if (!report) {
+				return status; // we received only XR report in this packet, do not calculate internal stats
 			}
 
 			for (i = 0; i < (int)msg->header.count && i < MAX_REPORT_BLOCKS ; i++) {
