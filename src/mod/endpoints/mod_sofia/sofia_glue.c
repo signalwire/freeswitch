@@ -1475,8 +1475,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
 
-		if ((val = switch_channel_get_variable(channel, "sip_cid_type"))) {
-			cid_type = sofia_cid_name2type(val);
+		if (tech_pvt->profile->force_cid_type != CID_TYPE_NONE) {
+			cid_type = tech_pvt->profile->force_cid_type;
+		} else {
+			if ((val = switch_channel_get_variable(channel, "sip_cid_type"))) {
+				cid_type = sofia_cid_name2type(val);
+			}
 		}
 
 		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) && switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
@@ -1508,7 +1512,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		switch (cid_type) {
 		case CID_TYPE_PID:
-			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+			if ((tech_pvt->profile->force_cid_type == CID_TYPE_PID) || switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 				if (zstr(tech_pvt->caller_profile->caller_id_name) || !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 					tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "<sip:%s@%s%s%s>",
 																		use_number, rpid_domain,

@@ -5260,6 +5260,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->presence_hosts = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "caller-id-type")) {
 						profile->cid_type = sofia_cid_name2type(val);
+					} else if (!strcasecmp(var, "force-caller-id-type")) {
+						if (!strcasecmp(val, "pai")) {
+							profile->force_cid_type = CID_TYPE_PID;
+						} else {
+							profile->force_cid_type = CID_TYPE_NONE;
+						}
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "record-path")) {

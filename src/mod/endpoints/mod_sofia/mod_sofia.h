@@ -701,6 +701,7 @@ struct sofia_profile {
 	int sip_user_ping_max;
 	int sip_user_ping_min;
 	sofia_cid_type_t cid_type;
+	sofia_cid_type_t force_cid_type;
 	switch_core_media_dtmf_t dtmf_type;
 	int auto_restart;
 	switch_port_t sip_port;
