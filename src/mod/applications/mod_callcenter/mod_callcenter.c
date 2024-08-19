@@ -1168,7 +1168,32 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			}
 			switch_safe_free(sql);
 		}
+		
+	} else if (!strcasecmp(key, "state_if_reserved")) {
+		if (cc_agent_str2state(value) == CC_AGENT_STATE_UNKNOWN) {
+			result = CC_STATUS_AGENT_INVALID_STATE;
+			goto done;
+		} else {
+			sql = switch_mprintf("UPDATE agents SET state = '%q' WHERE name = '%q' AND state = '%q' AND status IN ('%q', '%q')",
+					value, agent,
+					cc_agent_state2str(CC_AGENT_STATE_RESERVED),
+					cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE),
+					cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND));
 
+			if (cc_execute_sql_affected_rows(sql) > 0) {
+				result = CC_STATUS_SUCCESS;
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-state-change");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-State", value);
+					switch_event_fire(&event);
+				}
+			} else {
+				result = CC_STATUS_AGENT_NOT_FOUND;
+			}
+			switch_safe_free(sql);
+		}
+		
 	} else {
 		result = CC_STATUS_INVALID_KEY;
 		goto done;
@@ -2391,6 +2416,8 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	switch (atoi(res)) {
 		case 0: /* Ok, someone else took it, or user hanged up already */
+			/* However, if we had reserved this agent, we should release them */
+			cc_agent_update("state_if_reserved", cc_agent_state2str(CC_AGENT_STATE_WAITING), h->agent_name);
 			return 1;
 			/* We default to default even if more entry is returned... Should never happen	anyway */
 		default: /* Go ahead, start thread to try to bridge these 2 caller */
