@@ -830,16 +830,6 @@ PostgreSQL native support for FreeSWITCH.
 #				FreeSWITCH Endpoint Modules
 ######################################################################################################################
 
-#%package endpoint-gsmopen
-#Summary:        Generic GSM endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-gsmopen
-#GSMopen is an endpoint (channel driver) that allows an SMS to be sent or 
-#received from FreeSWITCH as well as incoming and outgoing GSM voice calls.
-#SMS is handled via the standard CHAT API in FreeSWITCH.
-
 #%package endpoint-h323
 #Summary:        H.323 endpoint support for FreeSWITCH open source telephony platform
 #Group:          System/Libraries
@@ -1438,7 +1428,7 @@ ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323 endpoints/mod_khomp 
  
 ######################################################################################################################
 #
@@ -2190,9 +2180,6 @@ fi
 #						FreeSWITCH endpoint Modules
 #
 ######################################################################################################################
-
-#%files endpoint-gsmopen
-#%{MODINSTDIR}/mod_gsmopen.so*
 
 #%files endpoint-h323
 #%{MODINSTDIR}/mod_h323.so*

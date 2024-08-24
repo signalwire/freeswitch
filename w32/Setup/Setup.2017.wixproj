@@ -521,14 +521,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_gsmopen\mod_gsmopen.2017.vcxproj">
-      <Name>mod_gsmopen</Name>
-      <Project>{74b120ff-6935-4dfe-a142-cdb6bea99c90}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\endpoints\mod_loopback\mod_loopback.2017.vcxproj">
       <Name>mod_loopback</Name>
       <Project>{b3f424ec-3d8f-417c-b244-3919d5e1a577}</Project>
