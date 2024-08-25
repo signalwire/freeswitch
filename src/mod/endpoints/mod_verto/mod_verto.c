@@ -1320,7 +1320,7 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	switch_channel_set_flag(tech_pvt->channel, CF_REATTACHED);
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 	switch_channel_set_flag(tech_pvt->channel, CF_RECOVERING);
-	switch_core_media_gen_local_sdp(tech_pvt->session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
+	switch_core_media_gen_local_sdp(tech_pvt->session, SDP_OFFER, NULL, 0, NULL, 0);
 	switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
 	switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 	switch_core_session_request_video_refresh(tech_pvt->session);
@@ -2405,7 +2405,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 				}
 			}
 
-			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
+			switch_core_media_gen_local_sdp(session, SDP_OFFER, NULL, 0, NULL, 0);
 		}
 
         msg = jrpc_new_req(method, tech_pvt->call_id, &params);
@@ -2641,7 +2641,7 @@ static switch_status_t verto_media(switch_core_session_t *session)
 	switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 
 	if (tech_pvt->r_sdp) {
-		if (verto_tech_media(tech_pvt, tech_pvt->r_sdp, SDP_TYPE_REQUEST) != SWITCH_STATUS_SUCCESS) {
+		if (verto_tech_media(tech_pvt, tech_pvt->r_sdp, SDP_OFFER) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 			return SWITCH_STATUS_FALSE;
 		}
@@ -2653,7 +2653,7 @@ static switch_status_t verto_media(switch_core_session_t *session)
 		return status;
 	}
 
-	switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+	switch_core_media_gen_local_sdp(session, SDP_ANSWER, NULL, 0, NULL, 0);
 
 	if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -2963,7 +2963,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, sdp);
 		switch_channel_set_variable(tech_pvt->channel, "verto_client_address", jsock->name);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", switch_channel_get_name(tech_pvt->channel), sdp);
-		switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_RESPONSE);
+		switch_core_media_set_sdp_codec_string(session, sdp, SDP_ANSWER);
 
 		if (!switch_channel_var_true(switch_core_session_get_channel(session),"verto_skip_set_user")) {
 			switch_ivr_set_user(session, jsock->uid);
@@ -2978,7 +2978,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
 			pass_sdp(tech_pvt);
 		} else {
-			if (verto_tech_media(tech_pvt, tech_pvt->r_sdp, SDP_TYPE_RESPONSE) != SWITCH_STATUS_SUCCESS) {
+			if (verto_tech_media(tech_pvt, tech_pvt->r_sdp, SDP_ANSWER) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 				cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CODEC ERROR"));
 				err = 1;
@@ -3448,8 +3448,8 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 			//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 			//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-			if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_REQUEST)) {
-				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+			if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_OFFER)) {
+				switch_core_media_gen_local_sdp(session, SDP_ANSWER, NULL, 0, NULL, 0);
 		
 				if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "MEDIA ERROR");
@@ -3606,8 +3606,8 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
 	//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
-	if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE)) {
-		//switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+	if (switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_ANSWER)) {
+		//switch_core_media_gen_local_sdp(session, SDP_ANSWER, NULL, 0, NULL, 0);
 		
 		if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "MEDIA ERROR");
@@ -4020,7 +4020,7 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	tech_pvt->channel = channel;
 	tech_pvt->jsock_uuid = switch_core_session_strdup(session, jsock->uuid_str);
 	tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
-	switch_core_media_set_sdp_codec_string(session, sdp, SDP_TYPE_REQUEST);
+	switch_core_media_set_sdp_codec_string(session, sdp, SDP_OFFER);
 	switch_core_session_set_private_class(session, tech_pvt, SWITCH_PVT_SECONDARY);
 
 	tech_pvt->call_id = switch_core_session_strdup(session, call_id);

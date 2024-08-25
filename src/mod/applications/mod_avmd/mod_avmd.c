@@ -2130,9 +2130,7 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 	sma_buffer_t *sqa_amp_b = &buffer->sqa_amp_b;
 
 	if (sample_to_skip_n > 0) {
-		sample_to_skip_n--;
-		valid_amplitude = 0;
-		valid_omega = 0;
+
 		return AVMD_DETECT_NONE;
 	}
 
@@ -2145,14 +2143,14 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 				RESET_SMA_BUFFER(sma_amp_b);
 				RESET_SMA_BUFFER(sqa_amp_b);
 				buffer->samples_streak_amp = s->settings.sample_n_continuous_streak_amp;
-				sample_to_skip_n = s->settings.sample_n_to_skip;
 			}
 		} else {
 			if (ISINF(amplitude)) {
 				amplitude = buffer->amplitude_max;
 			}
+
 			if (valid_amplitude == 1) {
-				APPEND_SMA_VAL(sma_amp_b, amplitude);			   /* append amplitude */
+				APPEND_SMA_VAL(sma_amp_b, amplitude);		/* append amplitude */
 				APPEND_SMA_VAL(sqa_amp_b, amplitude * amplitude);
 				if (s->settings.require_continuous_streak_amp == 1) {
 					if (buffer->samples_streak_amp > 0) {
@@ -2161,6 +2159,7 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 					}
 				}
 			}
+
 			if (sma_amp_b->sma > buffer->amplitude_max) {
 				buffer->amplitude_max = sma_amp_b->sma;
 			}
@@ -2176,9 +2175,7 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 				RESET_SMA_BUFFER(sma_b_fir);
 				RESET_SMA_BUFFER(sqa_b_fir);
 				buffer->samples_streak = s->settings.sample_n_continuous_streak;
-				sample_to_skip_n = s->settings.sample_n_to_skip;
 			}
-			sample_to_skip_n = s->settings.sample_n_to_skip;
 		} else if (omega < -0.99999 || omega > 0.99999) {
 			valid_omega = 0;
 			if (s->settings.require_continuous_streak == 1) {
@@ -2187,7 +2184,6 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 				RESET_SMA_BUFFER(sma_b_fir);
 				RESET_SMA_BUFFER(sqa_b_fir);
 				buffer->samples_streak = s->settings.sample_n_continuous_streak;
-				sample_to_skip_n = s->settings.sample_n_to_skip;
 			}
 		} else {
 			if (valid_omega) {
@@ -2216,20 +2212,26 @@ static enum avmd_detection_mode avmd_process_sample(avmd_session_t *s, circ_buff
 	if (((mode == AVMD_DETECT_AMP) || (mode == AVMD_DETECT_BOTH)) && (valid_amplitude == 1)) {
 		v_amp = sqa_amp_b->sma - (sma_amp_b->sma * sma_amp_b->sma); /* calculate variance of amplitude (biased estimator) */
 		if ((mode == AVMD_DETECT_AMP) && (avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1)) {
+
 			return AVMD_DETECT_AMP;
 		}
 	}
+
 	if (((mode == AVMD_DETECT_FREQ) || (mode == AVMD_DETECT_BOTH)) && (valid_omega == 1)) {
 		v_fir = sqa_b_fir->sma - (sma_b_fir->sma * sma_b_fir->sma); /* calculate variance of filtered samples */
 		if ((mode == AVMD_DETECT_FREQ) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1)) {
+
 			return AVMD_DETECT_FREQ;
 		}
+
 		if (mode == AVMD_DETECT_BOTH) {
-			if ((avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1))  {
+			if ((avmd_decision_amplitude(s, buffer, v_amp, AVMD_AMPLITUDE_RSD_THRESHOLD) == 1) && (avmd_decision_freq(s, buffer, v_fir, AVMD_VARIANCE_RSD_THRESHOLD) == 1)) {
+
 				return AVMD_DETECT_BOTH;
 			}
 		}
 	}
+
 	return AVMD_DETECT_NONE;
 }
 

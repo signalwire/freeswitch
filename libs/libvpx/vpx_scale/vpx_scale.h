@@ -11,6 +11,8 @@
 #ifndef VPX_VPX_SCALE_VPX_SCALE_H_
 #define VPX_VPX_SCALE_VPX_SCALE_H_
 
+#include <assert.h>
+
 #include "vpx_scale/yv12config.h"
 
 extern void vpx_scale_frame(YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst,
