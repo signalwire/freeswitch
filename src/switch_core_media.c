@@ -5517,7 +5517,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				for (i = 0; i < smh->mparams->num_codecs && i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
-					uint32_t codec_rate = imp->samples_per_second;
+					uint32_t codec_rate = imp->actual_samples_per_second;
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
