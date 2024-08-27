@@ -53,7 +53,6 @@ applications/mod_video_filter
 applications/mod_vmd
 applications/mod_voicemail
 applications/mod_voicemail_ivr
-#asr_tts/mod_cepstral
 asr_tts/mod_flite
 asr_tts/mod_pocketsphinx
 asr_tts/mod_tts_commandline

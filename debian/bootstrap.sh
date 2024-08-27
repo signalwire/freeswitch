@@ -42,7 +42,6 @@ avoid_mods=(
   applications/mod_rad_auth
   applications/mod_skel
   applications/mod_cluechoo
-  asr_tts/mod_cepstral
   codecs/mod_com_g729
   codecs/mod_openh264
   codecs/mod_siren

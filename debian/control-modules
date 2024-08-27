@@ -269,10 +269,6 @@ Description: Voicemail IVR
 
 ## mod/asr_tts
 
-Module: asr_tts/mod_cepstral
-Description: mod_cepstral
- Adds mod_cepstral.
-
 Module: asr_tts/mod_flite
 Description: mod_flite
  Adds mod_flite.
