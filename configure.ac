@@ -1079,7 +1079,7 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
+# Untested modules : mod_osp mod_soundtouch mod_opal mod_h323 mod_khomp 
 #                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
@@ -2171,7 +2171,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_mp4v/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
-		src/mod/codecs/mod_sangoma_codec/Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile

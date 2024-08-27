@@ -1582,12 +1582,6 @@ Files: libs/libcodec2/src/pack.c
 Copyright: 2010 Perens LLC <bruce@perens.com>
 License: GPL-3+
 
-Files: src/mod/codecs/mod_sangoma_codec/mod_sangoma_codec.c
- src/include/switch_profile.h
- src/switch_profile.c
-Copyright: 2009,2010, Sangoma Technologies
-License: BSD-3-clause
-
 Files: src/mod/codecs/mod_isac/*
 Copyright: 2011-2012 The WebRTC project authors
 License: BSD-3-clause

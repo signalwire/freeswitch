@@ -29,17 +29,11 @@
 #
 ######################################################################################################################
 # Module build settings
-%define build_sng_isdn 0
-%define build_sng_ss7 0
-%define build_sng_tc 0
 %define build_py26_esl 0
 %define build_timerfd 0
 %define build_mod_esl 0
 %define build_mod_v8 0
 
-%{?with_sang_tc:%define build_sng_tc 1 }
-%{?with_sang_isdn:%define build_sng_isdn 1 }
-%{?with_sang_ss7:%define build_sng_ss7 1 }
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
@@ -746,19 +740,6 @@ BuildRequires:  opus-devel >= 1.1
 %description codec-opus
 OPUS Codec support for FreeSWITCH open source telephony platform
 
-%if %{build_sng_tc}
-%package sangoma-codec
-Summary:	Sangoma D100 and D500 Codec Card Support
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-Requires: sng-tc-linux
-BuildRequires: sng-tc-linux
-
-%description sangoma-codec
-Sangoma D100 and D500 Codec Card Support
-
-%endif
-
 %package codec-silk
 Summary:        Silk Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1394,9 +1375,6 @@ CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora"
 #
-%if %{build_sng_tc}
-CODECS_MODULES+="codecs/mod_sangoma_codec"
-%endif
 
 ######################################################################################################################
 #
@@ -1648,17 +1626,6 @@ cd ../..
 #
 ######################################################################################################################
 
-%if %{build_sng_ss7}
-#do not delete a thing
-%else
-%{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_ss7*
-%endif
-%if %{build_sng_isdn}
-#do not delete a thing
-%else
-%{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_isdn*
-%endif
-
 %{__rm} -f %{buildroot}/%{LIBDIR}/*.la
 %{__rm} -f %{buildroot}/%{MODINSTDIR}/*.la
 
@@ -1886,7 +1853,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/redis.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/skinny.conf.xml
@@ -2139,11 +2105,6 @@ fi
 %files codec-opus
 %{MODINSTDIR}/mod_opus.so*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opus.conf.xml
-
-%if %{build_sng_tc}
-%files sangoma-codec
-%{MODINSTDIR}/mod_sangoma_codec.so*
-%endif
 
 %files codec-silk
 %{MODINSTDIR}/mod_silk.so*

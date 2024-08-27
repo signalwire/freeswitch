@@ -360,11 +360,6 @@ Description: mod_opus
  Adds mod_opus.
 Build-Depends: libopus-dev
 
-Module: codecs/mod_sangoma_codec
-Description: mod_sangoma_codec
- Adds mod_sangoma_codec.
-Build-Depends: libsngtc-dev
-
 Module: codecs/mod_silk
 Description: mod_silk
  Adds mod_silk.
