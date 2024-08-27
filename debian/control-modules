@@ -130,12 +130,6 @@ Description: HTTP GET with caching
  This module provides an API for making HTTP GET requests where the
  result is cached.
 
-Module: applications/mod_ladspa
-Description: LADSPA
- This module provides an API for accessing LADSPA plugins.
-Build-Depends: ladspa-sdk
-Suggests: tap-plugins, swh-plugins, autotalent
-
 Module: applications/mod_lcr
 Description: LCR
  This module adds a facility for least-cost routing.
