@@ -149,16 +149,6 @@ Description: MongoDB
  This module provides an interface to MongoDB.
 Build-Depends: libmongoc-dev
 
-Module: applications/mod_mp4
-Section: contrib/comm
-Description: MP4 video support
- This module adds support for MP4 video playback.
-Build-Depends: libmp4v2-dev
-
-Module: applications/mod_mp4v2
-Description: Adds mod_mp4v2
- Adds mod_mp4v2.
-
 Module: applications/mod_nibblebill
 Description: Nibblebill
  This module allows for real-time accounting of a cash balance and
@@ -332,10 +322,6 @@ Build-Depends: libilbc-dev
 Module: codecs/mod_isac
 Description: mod_isac
  Adds mod_isac.
-
-Module: codecs/mod_mp4v
-Description: mod_mp4v
- Adds mod_mp4v.
 
 Module: codecs/mod_openh264
 Description: Adds mod_openh264

@@ -35,8 +35,6 @@ supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
-  applications/mod_mp4
-  applications/mod_mp4v2
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
@@ -712,7 +710,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
  freeswitch-mod-isac (= \${binary:Version}),
- freeswitch-mod-mp4v (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
@@ -738,7 +735,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g729-dbg (= \${binary:Version}),
  freeswitch-mod-h26x-dbg (= \${binary:Version}),
  freeswitch-mod-isac-dbg (= \${binary:Version}),
- freeswitch-mod-mp4v-dbg (= \${binary:Version}),
  freeswitch-mod-opus-dbg (= \${binary:Version}),
  freeswitch-mod-silk-dbg (= \${binary:Version}),
  freeswitch-mod-spandsp-dbg (= \${binary:Version}),

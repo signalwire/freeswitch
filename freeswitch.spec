@@ -722,14 +722,6 @@ Requires:       %{name} = %{version}-%{release}
 %description codec-vpx
 iSAC Codec support for FreeSWITCH open source telephony platform
 
-%package codec-mp4v
-Summary:        MP4V Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-mp4v
-MP4V Video Codec support for FreeSWITCH open source telephony platform
-
 %package codec-opus
 Summary:        Opus Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1351,7 +1343,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
-		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
+		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora"
 #
 
@@ -2074,9 +2066,6 @@ fi
 
 %files codec-isac
 %{MODINSTDIR}/mod_isac.so*
-
-%files codec-mp4v
-%{MODINSTDIR}/mod_mp4v.so*
 
 %files codec-opus
 %{MODINSTDIR}/mod_opus.so*
