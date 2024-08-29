@@ -1573,14 +1573,6 @@ Files: libs/libcodec2/src/pack.c
 Copyright: 2010 Perens LLC <bruce@perens.com>
 License: GPL-3+
 
-Files: src/mod/codecs/mod_isac/*
-Copyright: 2011-2012 The WebRTC project authors
-License: BSD-3-clause
-
-Files: src/mod/codecs/mod_isac/mod_isac.c
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
-License: MPL-1.1
-
 Files: libs/srtp/*
 Copyright: 2001-2006, Cisco Systems, Inc.
  2005 Ingate Systems AB

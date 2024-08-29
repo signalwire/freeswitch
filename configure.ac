@@ -2157,7 +2157,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_h26x/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
-		src/mod/codecs/mod_isac/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
 		src/mod/codecs/mod_silk/Makefile

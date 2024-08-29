@@ -706,21 +706,13 @@ BuildRequires:  ilbc2-devel
 %description codec-ilbc
 iLBC Codec support for FreeSWITCH open source telephony platform
 
-%package codec-isac
-Summary:        iSAC Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-isac
-iSAC Codec support for FreeSWITCH open source telephony platform
-
 %package codec-vpx
 Summary:        vp8 Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description codec-vpx
-iSAC Codec support for FreeSWITCH open source telephony platform
+VP8 Codec support for FreeSWITCH open source telephony platform
 
 %package codec-opus
 Summary:        Opus Codec support for FreeSWITCH open source telephony platform
@@ -1343,7 +1335,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
-		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_opus codecs/mod_silk \
+		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora"
 #
 
@@ -2063,9 +2055,6 @@ fi
 
 %files codec-ilbc
 %{MODINSTDIR}/mod_ilbc.so*
-
-%files codec-isac
-%{MODINSTDIR}/mod_isac.so*
 
 %files codec-opus
 %{MODINSTDIR}/mod_opus.so*
