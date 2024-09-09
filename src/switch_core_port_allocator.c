@@ -155,7 +155,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 		uint32_t tries = 0;
 
 		/* randomly pick a port */
-		index = rand() % alloc->track_len;
+		index = switch_rand() % alloc->track_len;
 
 		/* if it is used walk up the list to find a free one */
 		while (alloc->track[index] && tries < alloc->track_len) {

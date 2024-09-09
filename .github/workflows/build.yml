@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - v1.10
     paths:
       - "**"
   workflow_dispatch:
@@ -14,6 +15,8 @@ concurrency:
 
 jobs:
   excludes:
+    name: 'Excludes'
+    # if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     outputs:
       deb: ${{ steps.deb.outputs.excludes }}
@@ -28,17 +31,20 @@ jobs:
               {
                 "version": "bookworm",
                 "platform": {
-                  "name": "amd64"
-                }
-              },
-              {
-                "version": "bookworm",
-                "platform": {
                   "name": "arm64v8"
                 }
               },
               {
-                "version": "bullseye"
+                "version": "bullseye",
+                "platform": {
+                  "name": "amd64"
+                }
+              },
+              {
+                "version": "bullseye",
+                "platform": {
+                  "name": "arm32v7"
+                }
               }
             ]')
           fi
@@ -47,6 +53,7 @@ jobs:
 
   deb:
     name: 'DEB'
+    # if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       id-token: write
       contents: read
@@ -62,7 +69,6 @@ jobs:
         version:
           - bookworm
           - bullseye
-          - buster
         platform:
           - name: amd64
             runner: ubuntu-latest
@@ -87,7 +93,7 @@ jobs:
       PROXY_URL: ${{ secrets.PROXY_URL }}
       USERNAME: ${{ secrets.USERNAME }}
       TELEPORT_TOKEN: ${{ secrets.TELEPORT_TOKEN }}
-      REPO_USERNAME: 'signalwire'
+      REPO_USERNAME: 'SWUSERNAME'
       REPO_PASSWORD: ${{ secrets.REPOTOKEN }}
 
   meta:

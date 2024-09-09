@@ -1160,7 +1160,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), switch_rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
 		if (file) {
@@ -2015,7 +2015,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 	}
 
   doh:
-	if (tmp_socket > 0) {
+	if (tmp_socket >= 0) {
 		close(tmp_socket);
 	}
 #endif
@@ -4835,8 +4835,8 @@ SWITCH_DECLARE(int) switch_rand(void)
 
 	BCryptCloseAlgorithmProvider(hAlgorithm, 0);
 
-	/* Make sure we return from 0 to RAND_MAX */
-	return (random_number & 0x7FFF);
+	/* Make sure we return from 0 to SWITCH_RAND_MAX */
+	return (random_number & (SWITCH_RAND_MAX));
 #elif defined(__unix__) || defined(__APPLE__)
 	int random_fd = open("/dev/urandom", O_RDONLY);
 	ssize_t result;
@@ -4865,8 +4865,8 @@ SWITCH_DECLARE(int) switch_rand(void)
 	
 	close(random_fd);
 
-	/* Make sure we return from 0 to RAND_MAX */
-	return (random_number & 0x7FFF);
+	/* Make sure we return from 0 to SWITCH_RAND_MAX */
+	return (random_number & (SWITCH_RAND_MAX));
 #else
 	return rand();
 #endif

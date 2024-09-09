@@ -599,6 +599,13 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
+/* Check if RAND_MAX is a power of 2 minus 1 or in other words all bits set */
+#if ((RAND_MAX) & ((RAND_MAX) + 1)) == 0 && (RAND_MAX) != 0
+#define SWITCH_RAND_MAX RAND_MAX
+#else
+#define SWITCH_RAND_MAX 0x7fff
+#endif
+
 typedef enum {
 	SWITCH_RW_READ,
 	SWITCH_RW_WRITE
