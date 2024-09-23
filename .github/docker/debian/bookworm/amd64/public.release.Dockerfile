@@ -46,8 +46,8 @@ RUN echo "export CODENAME=${CODENAME}" | tee ~/.env && \
     chmod +x ~/.env
 
 RUN . ~/.env && cat <<EOF > /etc/apt/sources.list.d/freeswitch.list
-deb [signed-by=${GPG_KEY}] https://${REPO_DOMAIN}/repo/deb/debian-release ${CODENAME} main
-deb-src [signed-by=${GPG_KEY}] https://${REPO_DOMAIN}/repo/deb/debian-release ${CODENAME} main
+deb [signed-by=${GPG_KEY}] https://${REPO_DOMAIN}/repo/deb/freeswitch-1.8 ${CODENAME} main
+deb-src [signed-by=${GPG_KEY}] https://${REPO_DOMAIN}/repo/deb/freeswitch-1.8 ${CODENAME} main
 EOF
 
 RUN git config --global --add safe.directory '*' \
