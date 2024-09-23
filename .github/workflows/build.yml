@@ -14,15 +14,14 @@ concurrency:
   group: ${{ github.head_ref || github.ref }}
 
 jobs:
-  excludes:
-    name: 'Excludes'
-    # if: github.event.pull_request.head.repo.full_name == github.repository
+  preconfig:
     runs-on: ubuntu-latest
     outputs:
       deb: ${{ steps.deb.outputs.excludes }}
+      release: ${{ steps.release.outputs.release }}
     steps:
-      - id: deb
-        name: Generate Matrix excludes for DEB
+      - name: Generate Matrix excludes for DEB
+        id: deb
         run: |
           JSON="[]"
 
@@ -51,14 +50,30 @@ jobs:
 
           echo "excludes=$(echo $JSON | jq -c .)" | tee -a $GITHUB_OUTPUT
 
-  deb:
-    name: 'DEB'
-    # if: github.event.pull_request.head.repo.full_name == github.repository
+      - name: Get release type based on branch
+        id: release
+        run: |
+          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            if [[ '${{ github.base_ref }}' == 'master' ]]; then
+              echo 'release=unstable' | tee -a $GITHUB_OUTPUT
+            elif [[ '${{ github.base_ref }}' == 'v1.10' ]]; then
+              echo 'release=release' | tee -a $GITHUB_OUTPUT
+            fi
+          elif [[ '${{ github.ref }}' == 'refs/heads/master' ]]; then
+            echo 'release=unstable' | tee -a $GITHUB_OUTPUT
+          elif [[ '${{ github.ref }}' == 'refs/heads/v1.10' ]]; then
+            echo 'release=release' | tee -a $GITHUB_OUTPUT
+          else
+            exit 1
+          fi
+
+  deb-public:
+    name: 'DEB-PUBLIC'
     permissions:
       id-token: write
       contents: read
     needs:
-      - excludes
+      - preconfig
     uses: signalwire/actions-template/.github/workflows/cicd-docker-build-and-distribute.yml@main
     strategy:
       # max-parallel: 1
@@ -76,16 +91,18 @@ jobs:
             runner: linux-arm64-4-core-public
           - name: arm64v8
             runner: linux-arm64-4-core-public
-        exclude: ${{ fromJson(needs.excludes.outputs.deb) }}
+        release:
+          - ${{ needs.preconfig.outputs.release }}
+        exclude: ${{ fromJson(needs.preconfig.outputs.deb) }}
     with:
       RUNNER: ${{ matrix.platform.runner }}
       ARTIFACTS_PATTERN: '.*\.(deb|dsc|changes|tar.bz2|tar.gz|tar.lzma|tar.xz)$'
-      DOCKERFILE: .github/docker/${{ matrix.os }}/${{ matrix.version }}/${{ matrix.platform.name }}/Dockerfile
+      DOCKERFILE: .github/docker/${{ matrix.os }}/${{ matrix.version }}/${{ matrix.platform.name }}/public.${{ matrix.release }}.Dockerfile
       MAINTAINER: 'Andrey Volk <andrey@signalwire.com>'
-      META_FILE_PATH_PREFIX: /var/www/freeswitch/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
+      META_FILE_PATH_PREFIX: /var/www/freeswitch/public/${{ matrix.release }}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
       PLATFORM: ${{ matrix.platform.name }}
-      REPO_DOMAIN: freeswitch.signalwire.com
-      TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-artifact
+      REPO_DOMAIN: 'freeswitch.signalwire.com'
+      TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-${{ matrix.release }}-artifact
       UPLOAD_BUILD_ARTIFACTS: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.title, ':upload-artifacts') }}
     secrets:
       GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
@@ -100,13 +117,13 @@ jobs:
     name: 'Publish build data to meta-repo'
     if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.title, ':upload-artifacts') }}
     needs:
-      - deb
+      - deb-public
     permissions:
       id-token: write
       contents: read
     uses: signalwire/actions-template/.github/workflows/meta-repo-content.yml@main
     with:
-      META_CONTENT: '/var/www/freeswitch/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}'
+      META_CONTENT: '/var/www/freeswitch/public/{release,unstable}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}'
       META_REPO: signalwire/bamboo_gha_trigger
       META_REPO_BRANCH: trigger/freeswitch/${{ github.ref_name }}
     secrets:
