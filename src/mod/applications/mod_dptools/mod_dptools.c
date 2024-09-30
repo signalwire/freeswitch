@@ -4393,12 +4393,26 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			if (!strcasecmp(pvar, "dial-string")) {
 				dest = val;
 			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
+				char *expanded = NULL;
+
 				if (!var_event) {
 					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
 				} else {
 					switch_event_del_header(var_event, pvar + 9);
 				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
+				
+				if (session) {
+					switch_channel_t *channel = switch_core_session_get_channel(session);
+					expanded = switch_channel_expand_variables(channel, val);
+				} else if (var_event) {
+					expanded = switch_event_expand_headers(var_event, val);
+				}
+
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, expanded);
+
+				if (expanded && expanded != val) {
+					switch_safe_free(expanded);
+				}
 			}
 		}
 	}
