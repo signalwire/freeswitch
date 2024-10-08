@@ -8176,7 +8176,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 	sdp_port = engine->local_sdp_port;
 
 	/* Check if NAT is detected  */
-	if (!zstr(smh->mparams->remote_ip) && switch_core_media_check_nat(smh, smh->mparams->remote_ip)) {
+	if ((!zstr(smh->mparams->remote_ip) && switch_core_media_check_nat(smh, smh->mparams->remote_ip))
+	||(engine->cur_payload_map && !zstr(engine->cur_payload_map->remote_sdp_ip) && switch_core_media_check_nat(smh, engine->cur_payload_map->remote_sdp_ip))) {
 		/* Yes, map the port through switch_nat */
 		switch_nat_add_mapping(engine->local_sdp_port, SWITCH_NAT_UDP, &sdp_port, SWITCH_FALSE);
 
@@ -10714,7 +10715,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\r\n",
 							tmp1, ice_out->cands[0][0].transport, c1,
-							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+							//ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+							a_engine->local_sdp_ip, a_engine->local_sdp_port
 							);
 
 			if (include_external && !zstr(smh->mparams->extsipip)) {
@@ -10725,8 +10727,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 			if (!zstr(a_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
-				strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-				&& a_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+				(strcmp(a_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
+				|| a_engine->local_sdp_port != ice_out->cands[0][0].con_port)) {
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\r\n",
 								tmp2, ice_out->cands[0][0].transport, c3,
