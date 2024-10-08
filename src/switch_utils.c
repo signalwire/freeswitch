@@ -1076,7 +1076,7 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 		l64[(int) switch_b64_table[i]] = (char) i;
 	}
 
-	for (ip = in; ip && *ip; ip++) {
+	for (ip = in; ip && *ip && (*ip != '='); ip++) {
 		c = l64[(int) *ip];
 		if (c == -1) {
 			continue;
