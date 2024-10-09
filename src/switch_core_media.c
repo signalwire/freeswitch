@@ -10805,20 +10805,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(session->channel, CF_AVPF) || (mult && switch_false(mult))) {
 			char *bp = buf;
-			int both = (switch_channel_test_flag(session->channel, CF_AVPF) || switch_channel_test_flag(session->channel, CF_DTLS)) ? 0 : 1;
 
 			if ((!a_engine->no_crypto && switch_channel_test_flag(session->channel, CF_SECURE)) ||
 				switch_channel_test_flag(session->channel, CF_DTLS)) {
 				generate_m(session, buf, SDPBUFLEN, port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 1, sdp_type);
 				bp = (buf + strlen(buf));
-
-				if (smh->crypto_mode == CRYPTO_MODE_MANDATORY) {
-					both = 0;
-				}
-
-			}
-
-			if (both) {
+			} else {
 				generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 0, sdp_type);
 			}
 
@@ -10839,7 +10831,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				if (cur_ptime != this_ptime) {
 					char *bp = buf;
-					int both = 1;
 
 					cur_ptime = this_ptime;
 
@@ -10847,17 +10838,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						switch_channel_test_flag(session->channel, CF_DTLS)) {
 						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 1, sdp_type);
 						bp = (buf + strlen(buf));
-
-						if (smh->crypto_mode == CRYPTO_MODE_MANDATORY) {
-							both = 0;
-						}
-					}
-
-					if (switch_channel_test_flag(session->channel, CF_AVPF) || switch_channel_test_flag(session->channel, CF_DTLS)) {
-						both = 0;
-					}
-
-					if (both) {
+					} else {
 						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 0, sdp_type);
 					}
 				}
