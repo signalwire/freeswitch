@@ -1323,7 +1323,7 @@ PKG_CHECK_MODULES([TPL], [libtpl >= 1.5],[
 
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
-PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
+PKG_CHECK_MODULES([PCRE2], [libpcre2-8 >=  10.00])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
