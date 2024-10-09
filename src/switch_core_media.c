@@ -12529,7 +12529,7 @@ static int check_engine(switch_rtp_engine_t *engine)
 
 	status = switch_rtp_zerocopy_read_frame(engine->rtp_session, &engine->read_frame, flags);
 
-	if (!SWITCH_READ_ACCEPTABLE(status)) {
+	if (SWITCH_READ_ACCEPTABLE(status)) {
 		return 0;
 	}
 
