@@ -227,14 +227,6 @@ FreeSWITCH development files
 ######################################################################################################################
 #				FreeSWITCH Application Modules
 ######################################################################################################################
-%package application-abstraction
-Summary:	FreeSWITCH mod_abstraction
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-abstraction
-Provide an abstraction to FreeSWITCH API calls
-
 %package application-avmd
 Summary:	FreeSWITCH voicemail detector
 Group:          System/Libraries
@@ -1205,7 +1197,6 @@ The Python ESL module allows for native interaction with FreeSWITCH over the eve
 Summary:        Basic vanilla config set for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	freeswitch-application-abstraction
 Requires:	freeswitch-application-avmd
 Requires:	freeswitch-application-blacklist
 Requires:	freeswitch-application-callcenter
@@ -1299,7 +1290,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #						Application Modules
 #
 ######################################################################################################################
-APPLICATION_MODULES_AC="applications/mod_abstraction applications/mod_avmd applications/mod_blacklist \
+APPLICATION_MODULES_AC="applications/mod_avmd applications/mod_blacklist \
 			applications/mod_callcenter  applications/mod_cidlookup \
 			applications/mod_commands applications/mod_conference applications/mod_curl"
 APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applications/mod_distributor \
@@ -1758,7 +1749,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/extensions.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/mime.types
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/abstraction.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amrwb.conf.xml
@@ -1885,9 +1875,6 @@ fi
 #						Application Packages
 #
 ######################################################################################################################
-%files application-abstraction
-%{MODINSTDIR}/mod_abstraction.so*
-
 %files application-avmd
 %{MODINSTDIR}/mod_avmd.so*
 

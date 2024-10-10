@@ -3,11 +3,6 @@
 
 ## mod/applications
 
-Module: applications/mod_abstraction
-Description: Abstraction layer for APIs
- This module provides a way to create new API functions via regex
- rewriting.
-
 Module: applications/mod_av
 Description: mod_av
  Adds mod_av.
