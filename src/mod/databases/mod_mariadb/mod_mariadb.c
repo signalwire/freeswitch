@@ -641,7 +641,7 @@ switch_status_t mariadb_send_query(mariadb_handle_t *handle, const char* sql)
 				switch_safe_free(err_str);
 				/* We are waiting for 500 ms and random time is not more than 500 ms.
 				  This is necessary so that the delay on the primary and secondary servers does not coincide and deadlock does not occur again. */
-				switch_yield(500 + (rand() & 511));
+				switch_yield(500 + (switch_rand() & 511));
 				goto again;
 			}
 

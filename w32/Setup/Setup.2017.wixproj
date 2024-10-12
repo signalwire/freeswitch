@@ -13,7 +13,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>FreeSWITCH</OutputName>
     <OutputType>Package</OutputType>
-    <CertificateThumbprint>bf386393c880967b00adbc438aee534de6211774</CertificateThumbprint>
+    <CertificateThumbprint>076ce3c57198fc39443bd87f4aab86dac0aab62d</CertificateThumbprint>
     <TimestampUrl>http://timestamp.comodoca.com</TimestampUrl>
     <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x86\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='x86' ">$(WindowsSDK80Path)bin\x86\signtool.exe</SignToolPath>
     <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x64\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='AMD64' ">$(WindowsSDK80Path)bin\x64\signtool.exe</SignToolPath>
@@ -1032,6 +1032,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHConfFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1045,6 +1046,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHSoundFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1058,6 +1060,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHhtdocsFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1071,6 +1074,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHimagesFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1084,6 +1088,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHfontsFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1097,6 +1102,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHgrammarFilesDir">
     </HeatDirectory>
     <HeatDirectory
@@ -1111,6 +1117,7 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHBaseDir">
     </HeatDirectory>
   </Target>
