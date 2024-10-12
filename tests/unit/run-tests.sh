@@ -3,26 +3,27 @@
 # "print_tests" returns relative paths to all the tests
 TESTS=$(make -s -C ../.. print_tests)
 
-echo "-----------------------------------------------------------------";
-echo "Starting tests";
-echo "Tests found: ${TESTS}";
-echo "-----------------------------------------------------------------";
-echo "Starting" > pids.txt
-for i in $TESTS
+chunks=${1:-1}
+chunk_number=${2:-1}
+
+IFS=$'\n' read -d '' -r -a lines <<< "$TESTS"
+
+result=""
+for ((i=chunk_number-1; i<${#lines[@]}; i+=chunks))
 do
-    echo "Testing $i" ;
-    ./test.sh "$i" &
-    pid=($!)
-    pids+=($pid)
-    echo "$pid $i" >> pids.txt
-    echo "----------------" ;
+  result+="${lines[$i]}"$'\n'
 done
 
-for pid in "${pids[@]}"
-do
-  echo "$pid waiting" >> pids.txt
-  wait "$pid"
-  echo "$pid finished" >> pids.txt
-done
+TESTS=$result
+
+echo "-----------------------------------------------------------------";
+echo "Starting tests on $(nproc --all) processors";
+echo "Tests found: ${TESTS}";
+echo "-----------------------------------------------------------------";
+
+make -f run-tests.mk TEST_LIST=$TESTS
+
+echo "Timing results:"
+cat test_times.log
 
 echo "Done running tests!"

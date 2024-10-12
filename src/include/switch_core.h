@@ -1822,6 +1822,17 @@ SWITCH_DECLARE(void) switch_core_session_unlock_codec_write(_In_ switch_core_ses
 SWITCH_DECLARE(void) switch_core_session_lock_codec_read(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_unlock_codec_read(_In_ switch_core_session_t *session);
 
+/*!
+  \brief Lock codec read mutex and codec write mutex using trylock in an infinite loop
+  \param session session to lock the codec in
+*/
+SWITCH_DECLARE(void) switch_core_codec_lock_full(switch_core_session_t *session);
+
+/*!
+  \brief Unlock codec read mutex and codec write mutex
+  \param session session to unlock the codec in
+*/
+SWITCH_DECLARE(void) switch_core_codec_unlock_full(switch_core_session_t *session);
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_real_read_impl(switch_core_session_t *session, switch_codec_implementation_t *impp);
