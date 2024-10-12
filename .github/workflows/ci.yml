@@ -10,20 +10,31 @@ on:
       - synchronize
 
 jobs:
-  unit-tests_1:
-    name: "unit-tests (group 1)"
-    uses: ./.github/workflows/unit-test.yml
-    with:
-      total-groups: 2
-      current-group: 1
-    secrets: inherit
+  unit-tests-pre-config:
+    runs-on: ubuntu-latest
+    env:
+      TOTAL_GROUPS: 2
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        shell: bash
+        run: |
+          MATRIX=$(jq -c -n --argjson groups "${{ env.TOTAL_GROUPS }}" \
+            '{
+              include: [range(1; $groups + 1) | {group: ., total: $groups}]
+            }')
+          echo "matrix=$MATRIX" | tee -a $GITHUB_OUTPUT
 
-  unit-tests_2:
-    name: "unit-tests (group 2)"
+  unit-tests:
+    needs: unit-tests-pre-config
+    strategy:
+      matrix: ${{ fromJson(needs.unit-tests-pre-config.outputs.matrix) }}
+    name: "unit-tests (group ${{ matrix.group }})"
     uses: ./.github/workflows/unit-test.yml
     with:
-      total-groups: 2
-      current-group: 2
+      total-groups: ${{ matrix.total }}
+      current-group: ${{ matrix.group }}
     secrets: inherit
 
   scan-build:
