@@ -3601,8 +3601,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 
 	switch_assert(session);
 
-	switch_core_session_lock_codec_write(session);
-	switch_core_session_lock_codec_read(session);
+	switch_core_codec_lock_full(session);
 
 	switch_mutex_lock(session->codec_init_mutex);
 
@@ -3756,8 +3755,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 
 	switch_mutex_unlock(session->codec_init_mutex);
 
-	switch_core_session_unlock_codec_read(session);
-	switch_core_session_unlock_codec_write(session);
+	switch_core_codec_unlock_full(session);
 
 	return status;
 }
