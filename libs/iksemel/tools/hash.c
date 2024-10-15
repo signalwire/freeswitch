@@ -138,7 +138,7 @@ hash_print (hash *h, char *title_fmt, char *line_fmt)
 void
 hash_delete (hash *h)
 {
-	iks_stack_delete (h->s);
+	iks_stack_delete (&h->s);
 	free (h->table);
 	free (h);
 }
