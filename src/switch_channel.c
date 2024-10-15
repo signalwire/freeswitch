@@ -3072,11 +3072,13 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 
 	switch_assert(channel != NULL);
 
+	switch_mutex_lock(channel->state_mutex);
 	if (index >= SWITCH_MAX_STATE_HANDLERS || index > channel->state_handler_index) {
+		switch_mutex_unlock(channel->state_mutex);
+
 		return NULL;
 	}
 
-	switch_mutex_lock(channel->state_mutex);
 	h = channel->state_handlers[index];
 	switch_mutex_unlock(channel->state_mutex);
 
@@ -3085,12 +3087,13 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 
 SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler)
 {
-	int index, i = channel->state_handler_index;
+	int index, i;
 	const switch_state_handler_table_t *new_handlers[SWITCH_MAX_STATE_HANDLERS] = { 0 };
 
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->state_mutex);
+	i = channel->state_handler_index;
 	channel->state_handler_index = 0;
 
 	if (state_handler) {
