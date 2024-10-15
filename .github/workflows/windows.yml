@@ -1,0 +1,27 @@
+name: Windows
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [master, v1.10]
+jobs:
+  x64:
+    runs-on: windows-2019
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build
+      run: msbuild Freeswitch.2017.sln -t:build -verbosity:minimal -property:Configuration=Release -property:Platform=x64
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: MSI Package
+        path: D:\a\freeswitch\freeswitch\x64\*.msi
