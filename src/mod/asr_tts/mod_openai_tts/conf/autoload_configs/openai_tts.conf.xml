@@ -1,0 +1,30 @@
+<configuration name="openai_tts.conf" description="">
+    <settings>
+        <!-- openai api settings -->
+        <param name="api-url" value="https://api.openai.com/v1/audio/speech" />
+        <param name="api-key" value="---YOUR-API-KEY---" />
+
+        <!-- curl settings -->
+        <param name="connect-timeout" value="10" />
+        <param name="request-timeout" value="25" />
+        <param name="file-size-max" value="2097152" />
+        <param name="log-http-errors" value="true" />
+    <!-- <param name="proxy" value="http://proxy:port" /> -->
+    <!-- <param name="proxy-credentials" value="" /> -->
+    <!-- <param name="user-agent" value="Mozilla/1.0" /> -->
+
+        <!-- cache -->
+        <param name="cache-path" value="/tmp/openai-tts-cache" />
+        <param name="cache-enable" value="false" />
+
+        <!-- service settings -->
+        <param name="encoding" value="mp3" />
+        <param name="voice-name-as-language" value="true" />
+    </settings>
+
+    <models>
+        <model language="en" voice="alloy" model="tts-1" />
+        <model language="ru" voice="alloy" model="tts-1" />
+    </models>
+
+</configuration>
