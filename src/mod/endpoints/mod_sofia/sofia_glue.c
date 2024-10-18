@@ -1334,7 +1334,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		from_str = sofia_overcome_sip_uri_weakness(session, invite_from_uri ? invite_from_uri : use_from_str, 0, SWITCH_TRUE, invite_from_params, NULL);
 		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params, NULL);
 
-		switch_channel_set_variable(channel, "sip_outgoing_contact_uri", invite_contact);
+		//switch_channel_set_variable(channel, "sip_outgoing_contact_uri", invite_contact);
 
 		/*
 		  Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
@@ -1586,9 +1586,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	holdstr = sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? hold_char : "";
 
 	if (!switch_channel_get_variable(channel, "sofia_profile_name")) {
-		switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
-		switch_channel_set_variable(channel, "recovery_profile_name", tech_pvt->profile->name);
-		switch_channel_set_variable(channel, "sofia_profile_url", tech_pvt->profile->url);
+		//switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
+		//switch_channel_set_variable(channel, "recovery_profile_name", tech_pvt->profile->name);
+		//switch_channel_set_variable(channel, "sofia_profile_url", tech_pvt->profile->url);
 	}
 
 	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);

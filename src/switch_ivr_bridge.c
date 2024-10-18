@@ -1443,7 +1443,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
-			switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
+			//switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
 
 			if (switch_channel_up_nosig(other_channel)) {
 				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
@@ -1552,7 +1552,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 
 	switch_channel_set_variable(caller_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 	switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
-	switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
+	//switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	switch_channel_set_flag_recursive(caller_channel, CF_BRIDGE_ORIGINATOR);
 	switch_channel_clear_flag(peer_channel, CF_BRIDGE_ORIGINATOR);
@@ -1681,7 +1681,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_state(peer_channel, CS_CONSUME_MEDIA);
 		}
 
-		switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
+		//switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(session));
 
 		switch_channel_set_bridge_time(caller_channel);
 		switch_channel_set_bridge_time(peer_channel);
@@ -1874,7 +1874,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
-	switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(peer_session));
+	//switch_channel_set_variable(peer_channel, "call_uuid", switch_core_session_get_uuid(peer_session));
 
 	if (br && switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));

@@ -1394,7 +1394,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "early");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", status);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", "EARLY");
+						//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", "EARLY");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "astate", "early");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "early");
 					} else {
@@ -1406,7 +1406,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", status);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", "ACTIVE");
+						//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-State", "ACTIVE");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "astate", "confirmed");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
 					}

@@ -328,9 +328,9 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ?
 								   "inbound" : "outbound");
 
-	switch_snprintf(header_name, sizeof(header_name), "%s-Logical-Direction", prefix);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ?
-								   "inbound" : "outbound");
+	//switch_snprintf(header_name, sizeof(header_name), "%s-Logical-Direction", prefix);
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ?
+	//							   "inbound" : "outbound");
 
 	if (!zstr(caller_profile->username)) {
 		switch_snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
@@ -380,34 +380,34 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->destination_number);
 	}
-	if (!zstr(caller_profile->uuid)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
-	}
-	if (!zstr(caller_profile->source)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
-	}
-	if (!zstr(caller_profile->transfer_source)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Transfer-Source", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->transfer_source);
-	}
-	if (!zstr(caller_profile->context)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->context);
-	}
-	if (!zstr(caller_profile->rdnis)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->rdnis);
-	}
-	if (!zstr(caller_profile->chan_name)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->chan_name);
-	}
-	if (!zstr(caller_profile->profile_index)) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Index", prefix);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->profile_index);
-	}
+	//if (!zstr(caller_profile->uuid)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
+	//}
+	//if (!zstr(caller_profile->source)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
+	//}
+	//if (!zstr(caller_profile->transfer_source)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-Transfer-Source", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->transfer_source);
+	//}
+	//if (!zstr(caller_profile->context)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->context);
+	//}
+	//if (!zstr(caller_profile->rdnis)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->rdnis);
+	//}
+	//if (!zstr(caller_profile->chan_name)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->chan_name);
+	//}
+	//if (!zstr(caller_profile->profile_index)) {
+	//	switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Index", prefix);
+	//	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->profile_index);
+	//}
 
 	if (caller_profile->soft) {
 		profile_node_t *pn;
@@ -429,8 +429,8 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 
 
 	if (times) {
-		switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Created-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->profile_created);
+		//switch_snprintf(header_name, sizeof(header_name), "%s-Profile-Created-Time", prefix);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->profile_created);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->created);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
@@ -440,19 +440,20 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Progress-Media-Time", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->progress_media);
 		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hungup);
-		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->transferred);
-		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Resurrect-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->resurrected);
-		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Bridged-Time", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->bridged);
-		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Last-Hold", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->last_hold);
-		switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hold-Accum", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hold_accum);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hungup);
+		//switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->transferred);
+		//switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Resurrect-Time", prefix);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->resurrected);
+		//switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Bridged-Time", prefix);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->bridged);
+		//switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Last-Hold", prefix);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->last_hold);
+		//switch_snprintf(header_name, sizeof(header_name), "%s-Channel-Hold-Accum", prefix);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, times->hold_accum);
 	}
 
+	/*
 	switch_snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "true" : "false");
 
@@ -461,6 +462,7 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "true" : "false");
+	*/
 }
 
 SWITCH_DECLARE(switch_status_t) switch_caller_extension_clone(switch_caller_extension_t **new_ext, switch_caller_extension_t *orig,
