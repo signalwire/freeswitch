@@ -518,7 +518,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 		if (switch_channel_test_flag(channel, CF_ANSWERED) || sofia_test_flag(tech_pvt, TFLAG_ANS)) {
 			if (!tech_pvt->got_bye) {
-				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
+				//switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -536,7 +536,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 				if (!tech_pvt->got_bye) {
-					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
+					//switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
 					switch_channel_set_variable(channel, "sip_invite_failure_status", "487");
 					switch_channel_set_variable(channel, "sip_invite_failure_phrase", "CANCEL");
 				}
@@ -613,7 +613,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 				if (!tech_pvt->got_bye) {
-					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
+					//switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					char *cid = generate_pai_str(tech_pvt);
@@ -4982,8 +4982,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 	}
 
-	switch_channel_set_variable_printf(nchannel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
-	switch_channel_set_variable(nchannel, "sip_profile_name", profile_name);
+	//switch_channel_set_variable_printf(nchannel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
+	//switch_channel_set_variable(nchannel, "sip_profile_name", profile_name);
 
 	if (switch_stristr("fs_path", tech_pvt->dest)) {
 		char *remote_host = NULL;
@@ -5035,7 +5035,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			}
 		}
 	}
-	switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
+	//switch_channel_set_variable(nchannel, "sip_destination_url", tech_pvt->dest);
 #if 0
 	dest_num = switch_core_session_strdup(nsession, dest);
 	if ((p = strchr(dest_num, '@'))) {

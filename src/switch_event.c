@@ -102,7 +102,7 @@ static int DISPATCH_THREAD_COUNT = 0;
 static int EVENT_CHANNEL_DISPATCH_THREAD_COUNT = 0;
 static int EVENT_CHANNEL_DISPATCH_THREAD_STARTING = 0;
 static int SYSTEM_RUNNING = 0;
-static uint64_t EVENT_SEQUENCE_NR = 0;
+//static uint64_t EVENT_SEQUENCE_NR = 0;
 #ifdef SWITCH_EVENT_RECYCLE
 static switch_queue_t *EVENT_RECYCLE_QUEUE = NULL;
 static switch_queue_t *EVENT_HEADER_RECYCLE_QUEUE = NULL;
@@ -1975,30 +1975,30 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 	char date[80] = "";
 	switch_size_t retsize;
 	switch_time_t ts = switch_micro_time_now();
-	uint64_t seq;
+	//uint64_t seq;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
-	seq = ++EVENT_SEQUENCE_NR;
+	//seq = ++EVENT_SEQUENCE_NR;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", switch_core_get_hostname());
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Switchname", switch_core_get_switchname());
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
 
 	switch_time_exp_lt(&tm, ts);
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
-	switch_rfc822_date(date, ts);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
+	//switch_rfc822_date(date, ts);
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Date-Timestamp", "%" SWITCH_UINT64_T_FMT, (uint64_t) ts);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
+	//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Sequence", "%" SWITCH_UINT64_T_FMT, seq);
+	//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
+	//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Sequence", "%" SWITCH_UINT64_T_FMT, seq);
 
 
 }

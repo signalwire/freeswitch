@@ -1095,7 +1095,7 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 	}
 
 	tech_pvt->got_bye = 1;
-	switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_bye");
+	//switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_bye");
 
 	return;
 }
@@ -1643,7 +1643,7 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_i_cancel:
 
 		if (sip && channel) {
-			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
+			//switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_cancel");
 			switch_channel_set_variable(channel, "sip_invite_failure_status", "487");
 			switch_channel_set_variable(channel, "sip_invite_failure_phrase", "CANCEL");
 
@@ -2668,7 +2668,7 @@ void event_handler(switch_event_t *event)
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "Caller-Caller-ID-Name", switch_event_get_header_nil(event, "Orig-Caller-Caller-ID-Name"));
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "Caller-Caller-ID-Number", switch_event_get_header_nil(event, "Orig-Caller-Caller-ID-Number"));
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "Caller-Destination-Number", switch_event_get_header_nil(event, "Orig-Caller-Destination-Number"));
-			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "Caller-Direction", switch_event_get_header_nil(event, "Orig-Caller-Direction"));
+			//switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "Caller-Direction", switch_event_get_header_nil(event, "Orig-Caller-Direction"));
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "Caller-Username", switch_event_get_header_nil(event, "Orig-Caller-Username"));
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "channel-state", switch_event_get_header_nil(event, "orig-channel-state"));
 			switch_event_add_header_string(pevent, SWITCH_STACK_BOTTOM, "force-status", switch_event_get_header_nil(event, "orig-force-status"));
@@ -6617,9 +6617,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		if (de && de->data && de->data->e_msg) {
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
-			switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
-			switch_channel_set_variable(channel, "sip_reply_host", network_ip);
-			switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
+			//switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
+			//switch_channel_set_variable(channel, "sip_reply_host", network_ip);
+			//switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
 
 			switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
 			switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
@@ -6650,7 +6650,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		if (status > 299) {
-			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_refuse");
+			//switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_refuse");
 		}
 
 		if (status >= 400) {
@@ -10742,7 +10742,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	channel = tech_pvt->channel = switch_core_session_get_channel(session);
 
-	switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
+	//switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
 	switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
 	switch_channel_set_variable_printf(channel, "sip_network_port", "%d", network_port);
 	switch_channel_set_variable_printf(channel, "sip_invite_stamp", "%" SWITCH_TIME_T_FMT, sip_invite_time);
@@ -10864,10 +10864,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			set_variable_sip_param(channel, "from", sip->sip_from->a_params);
 		}
 
-		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
-		switch_channel_set_variable(channel, "sofia_profile_url", profile->url);
-		switch_channel_set_variable(channel, "recovery_profile_name", profile->name);
-		switch_channel_set_variable(channel, "sofia_profile_domain_name", profile->domain_name);
+		//switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
+		//switch_channel_set_variable(channel, "sofia_profile_url", profile->url);
+		//switch_channel_set_variable(channel, "recovery_profile_name", profile->name);
+		//switch_channel_set_variable(channel, "sofia_profile_domain_name", profile->domain_name);
 
 		if (!zstr(sip->sip_from->a_display)) {
 			displayname = sip->sip_from->a_display;

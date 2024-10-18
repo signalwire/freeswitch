@@ -2034,9 +2034,9 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].crypto_type = CRYPTO_INVALID;
 
 
-		switch_channel_set_variable(session->channel, "video_media_flow", "disabled");
-		switch_channel_set_variable(session->channel, "audio_media_flow", "disabled");
-		switch_channel_set_variable(session->channel, "text_media_flow", "disabled");
+		//switch_channel_set_variable(session->channel, "video_media_flow", "disabled");
+		//switch_channel_set_variable(session->channel, "audio_media_flow", "disabled");
+		//switch_channel_set_variable(session->channel, "text_media_flow", "disabled");
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].smode = SWITCH_MEDIA_FLOW_DISABLED;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].smode = SWITCH_MEDIA_FLOW_DISABLED;
@@ -2280,7 +2280,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_prepare_codecs(switch_core_ses
 	}
 
 	tmp_codec_string = switch_core_session_strdup(smh->session, codec_string);
-	switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
+	//switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 	smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 	smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, smh->fmtp, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
 	return SWITCH_STATUS_SUCCESS;
@@ -4549,73 +4549,73 @@ static void restore_pmaps(switch_rtp_engine_t *engine)
 	}
 }
 
-static const char *media_flow_varname(switch_media_type_t type)
-{
-	const char *varname = "invalid";
+//static const char *media_flow_varname(switch_media_type_t type)
+//{
+//	const char *varname = "invalid";
+//
+//	switch(type) {
+//	case SWITCH_MEDIA_TYPE_AUDIO:
+//		varname = "audio_media_flow";
+//		break;
+//	case SWITCH_MEDIA_TYPE_VIDEO:
+//		varname = "video_media_flow";
+//		break;
+//	case SWITCH_MEDIA_TYPE_TEXT:
+//		varname = "text_media_flow";
+//		break;
+//	}
+//
+//	return varname;
+//}
 
-	switch(type) {
-	case SWITCH_MEDIA_TYPE_AUDIO:
-		varname = "audio_media_flow";
-		break;
-	case SWITCH_MEDIA_TYPE_VIDEO:
-		varname = "video_media_flow";
-		break;
-	case SWITCH_MEDIA_TYPE_TEXT:
-		varname = "text_media_flow";
-		break;
-	}
+//static const char *remote_media_flow_varname(switch_media_type_t type)
+//{
+//	const char *varname = "invalid";
+//
+//	switch(type) {
+//	case SWITCH_MEDIA_TYPE_AUDIO:
+//		varname = "remote_audio_media_flow";
+//		break;
+//	case SWITCH_MEDIA_TYPE_VIDEO:
+//		varname = "remote_video_media_flow";
+//		break;
+//	case SWITCH_MEDIA_TYPE_TEXT:
+//		varname = "remote_text_media_flow";
+//		break;
+//	}
+//
+//	return varname;
+//}
 
-	return varname;
-}
-
-static const char *remote_media_flow_varname(switch_media_type_t type)
-{
-	const char *varname = "invalid";
-
-	switch(type) {
-	case SWITCH_MEDIA_TYPE_AUDIO:
-		varname = "remote_audio_media_flow";
-		break;
-	case SWITCH_MEDIA_TYPE_VIDEO:
-		varname = "remote_video_media_flow";
-		break;
-	case SWITCH_MEDIA_TYPE_TEXT:
-		varname = "remote_text_media_flow";
-		break;
-	}
-
-	return varname;
-}
-
-static void media_flow_get_mode(switch_media_flow_t smode, const char **mode_str, switch_media_flow_t *opp_mode)
-{
-	const char *smode_str = "";
-	switch_media_flow_t opp_smode = smode;
-
-	switch(smode) {
-	case SWITCH_MEDIA_FLOW_SENDONLY:
-		opp_smode = SWITCH_MEDIA_FLOW_RECVONLY;
-		smode_str = "sendonly";
-		break;
-	case SWITCH_MEDIA_FLOW_RECVONLY:
-		opp_smode = SWITCH_MEDIA_FLOW_SENDONLY;
-		smode_str = "recvonly";
-		break;
-	case SWITCH_MEDIA_FLOW_INACTIVE:
-		smode_str = "inactive";
-		break;
-	case SWITCH_MEDIA_FLOW_DISABLED:
-		smode_str = "disabled";
-		break;
-	case SWITCH_MEDIA_FLOW_SENDRECV:
-		smode_str = "sendrecv";
-		break;
-	}
-
-	*mode_str = smode_str;
-	*opp_mode = opp_smode;
-	
-}
+//static void media_flow_get_mode(switch_media_flow_t smode, const char **mode_str, switch_media_flow_t *opp_mode)
+//{
+//	const char *smode_str = "";
+//	switch_media_flow_t opp_smode = smode;
+//
+//	switch(smode) {
+//	case SWITCH_MEDIA_FLOW_SENDONLY:
+//		opp_smode = SWITCH_MEDIA_FLOW_RECVONLY;
+//		smode_str = "sendonly";
+//		break;
+//	case SWITCH_MEDIA_FLOW_RECVONLY:
+//		opp_smode = SWITCH_MEDIA_FLOW_SENDONLY;
+//		smode_str = "recvonly";
+//		break;
+//	case SWITCH_MEDIA_FLOW_INACTIVE:
+//		smode_str = "inactive";
+//		break;
+//	case SWITCH_MEDIA_FLOW_DISABLED:
+//		smode_str = "disabled";
+//		break;
+//	case SWITCH_MEDIA_FLOW_SENDRECV:
+//		smode_str = "sendrecv";
+//		break;
+//	}
+//
+//	*mode_str = smode_str;
+//	*opp_mode = opp_smode;
+//	
+//}
 
 static void check_stream_changes(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type)
 {
@@ -4687,7 +4687,7 @@ SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session,
 {
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *engine;
-	const char *varname = NULL, *smode_str = NULL;
+	//const char *varname = NULL, *smode_str = NULL;
 	switch_media_flow_t old_smode, opp_smode = smode;
 	switch_core_session_t *other_session;
 	int pass_codecs = 0;
@@ -4698,15 +4698,15 @@ SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session,
 
 	engine = &smh->engines[type];
 
-	varname = media_flow_varname(type);
+	//varname = media_flow_varname(type);
 	
-	media_flow_get_mode(smode, &smode_str, &opp_smode);
+	//media_flow_get_mode(smode, &smode_str, &opp_smode);
 
 	old_smode = engine->smode;
 
 	engine->smode = smode;
 
-	switch_channel_set_variable(session->channel, varname, smode_str);
+	//switch_channel_set_variable(session->channel, varname, smode_str);
 
 	if (switch_channel_var_true(session->channel, "rtp_pass_codecs_on_reinvite") || engine->pass_codecs) {
 		pass_codecs = 1;
@@ -4731,8 +4731,8 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 {
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *engine;
-	const char *varname = NULL, *rmode_str = NULL;
-	switch_media_flow_t opp_rmode = rmode;
+	//const char *varname = NULL, *rmode_str = NULL;
+	//switch_media_flow_t opp_rmode = rmode;
 	switch_core_session_t *other_session = NULL;
 
 	if (!(smh = session->media_handle)) {
@@ -4741,8 +4741,8 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 
 	engine = &smh->engines[type];
 	
-	varname = remote_media_flow_varname(type);
-	media_flow_get_mode(rmode, &rmode_str, &opp_rmode);
+	//varname = remote_media_flow_varname(type);
+	//media_flow_get_mode(rmode, &rmode_str, &opp_rmode);
 
 	if (engine->rmode != rmode) {
 		engine->pass_codecs = 1;
@@ -4759,7 +4759,7 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 		switch_core_session_rwunlock(other_session);
 	}
 
-	switch_channel_set_variable(session->channel, varname, rmode_str);
+	//switch_channel_set_variable(session->channel, varname, rmode_str);
 }
 
 //?
@@ -6313,7 +6313,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		payload_map_t *pmap;
 
 		a_engine->rmode = SWITCH_MEDIA_FLOW_DISABLED;
-		switch_channel_set_variable(smh->session->channel, "audio_media_flow", "inactive");
+		//switch_channel_set_variable(smh->session->channel, "audio_media_flow", "inactive");
 
 
 		pmap = switch_core_media_add_payload_map(session,
@@ -8220,9 +8220,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_choose_port(switch_core_sessio
 	engine->adv_sdp_ip = smh->mparams->adv_sdp_audio_ip = smh->mparams->extrtpip = switch_core_session_strdup(session, use_ip);
 
 	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
-		switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, engine->local_sdp_ip);
-		switch_channel_set_variable_printf(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, "%d", sdp_port);
-		switch_channel_set_variable(session->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, engine->adv_sdp_ip);
+		//switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, engine->local_sdp_ip);
+		//switch_channel_set_variable_printf(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, "%d", sdp_port);
+		//switch_channel_set_variable(session->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, engine->adv_sdp_ip);
 	} else if (type == SWITCH_MEDIA_TYPE_VIDEO) {
 		switch_channel_set_variable(session->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, engine->adv_sdp_ip);
 		switch_channel_set_variable_printf(session->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, "%d", sdp_port);
@@ -8669,9 +8669,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->local_sdp_port);
-	switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, a_engine->local_sdp_ip);
-	switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
-	switch_channel_set_variable(session->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, a_engine->adv_sdp_ip);
+	//switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, a_engine->local_sdp_ip);
+	//switch_channel_set_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
+	//switch_channel_set_variable(session->channel, SWITCH_ADVERTISED_MEDIA_IP_VARIABLE, a_engine->adv_sdp_ip);
 
 	if (a_engine->rtp_session && is_reinvite) {
 		const char *rport = NULL;
@@ -10185,7 +10185,7 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 
 	if (smh->sdp_mutex) switch_mutex_lock(smh->sdp_mutex);
 	smh->mparams->local_sdp_str = dup ? switch_core_session_strdup(session, sdp_str) : (char *) sdp_str;
-	switch_channel_set_variable(session->channel, "rtp_local_sdp_str", smh->mparams->local_sdp_str);
+	//switch_channel_set_variable(session->channel, "rtp_local_sdp_str", smh->mparams->local_sdp_str);
 	if (smh->sdp_mutex) switch_mutex_unlock(smh->sdp_mutex);
 }
 
@@ -14061,8 +14061,8 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_codec_string"))) {
-		const char *vtmp = switch_channel_get_variable(session->channel, "rtp_last_video_codec_string");
-		switch_channel_set_variable_printf(session->channel, "rtp_use_codec_string", "%s%s%s", tmp, vtmp ? "," : "", vtmp ? vtmp : "");
+		//const char *vtmp = switch_channel_get_variable(session->channel, "rtp_last_video_codec_string");
+		//switch_channel_set_variable_printf(session->channel, "rtp_use_codec_string", "%s%s%s", tmp, vtmp ? "," : "", vtmp ? vtmp : "");
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_string"))) {

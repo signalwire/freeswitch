@@ -177,7 +177,7 @@ static void switch_core_standard_on_destroy(switch_core_session_t *session)
 
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
-	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
+	//switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
 
@@ -229,7 +229,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard ROUTING\n", switch_channel_get_name(session->channel));
 
-	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
+	//switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	if ((switch_channel_test_flag(session->channel, CF_ANSWERED) ||
 		 switch_channel_test_flag(session->channel, CF_EARLY_MEDIA) ||
@@ -324,7 +324,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	switch_channel_clear_flag(session->channel, CF_RECOVERING);
 
-	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
+	//switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	if (switch_channel_get_variable(session->channel, "recovered") && !switch_channel_test_flag(session->channel, CF_RECOVERED)) {
 		switch_channel_set_flag(session->channel, CF_RECOVERED);
@@ -792,8 +792,8 @@ static void api_hook(switch_core_session_t *session, const char *hook_var, int u
 
 SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *session, switch_bool_t force)
 {
-	switch_call_cause_t cause = switch_channel_get_cause(session->channel);
-	switch_call_cause_t cause_q850 = switch_channel_get_cause_q850(session->channel);
+	//switch_call_cause_t cause = switch_channel_get_cause(session->channel);
+	//switch_call_cause_t cause_q850 = switch_channel_get_cause_q850(session->channel);
 	int proceed = 1;
 	int global_proceed = 1;
 	int do_extra_handlers = 1;
@@ -836,8 +836,8 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 
 	switch_channel_stop_broadcast(session->channel);
 
-	switch_channel_set_variable(session->channel, "hangup_cause", switch_channel_cause2str(cause));
-	switch_channel_set_variable_printf(session->channel, "hangup_cause_q850", "%d", cause_q850);
+	//switch_channel_set_variable(session->channel, "hangup_cause", switch_channel_cause2str(cause));
+	//switch_channel_set_variable_printf(session->channel, "hangup_cause_q850", "%d", cause_q850);
 	//switch_channel_presence(session->channel, "unknown", switch_channel_cause2str(cause), NULL);
 
 	switch_channel_set_timestamps(session->channel);
