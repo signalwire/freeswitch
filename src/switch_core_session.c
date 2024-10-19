@@ -2941,13 +2941,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	switch_channel_set_variable_var_check(channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE, expanded, SWITCH_FALSE);
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, NULL);
 
-	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID-Name", app_uuid_name);
-		switch_event_fire(&event);
+	if (strcmp(application_interface->interface_name, "set") == 0
+		|| strcmp(application_interface->interface_name, "export") == 0
+		|| strcmp(application_interface->interface_name, "park") == 0
+		|| strcmp(application_interface->interface_name, "acknowledge_call") == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+			"%s drop Application event\n", application_interface->interface_name);
+	}
+	else {
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID", app_uuid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-UUID-Name", app_uuid_name);
+			switch_event_fire(&event);
+		}
 	}
 
 	switch_channel_clear_flag(session->channel, CF_BREAK);
