@@ -100,6 +100,7 @@ struct switch_event {
 	unsigned long key;
 	struct switch_event *next;
 	int flags;
+	int use_count;
 };
 
 typedef struct switch_serial_event_s {

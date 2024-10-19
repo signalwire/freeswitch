@@ -383,7 +383,11 @@ static void event_handler(switch_event_t *event)
 		}
 
 		if (send) {
-			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+			clone = event;
+			clone->use_count += 1;
+			
+			//if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
+			if (clone) {
 				qstatus = switch_queue_trypush(l->event_queue, clone); 
 				if (qstatus == SWITCH_STATUS_SUCCESS) {
 					if (l->lost_events) {
@@ -401,7 +405,9 @@ static void event_handler(switch_event_t *event)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Killing listener because of too many lost events. Lost [%d] Queue size[%u/%u]\n", l->lost_events, qsize, MAX_QUEUE_LEN);
 						kill_listener(l, "killed listener because of lost events\n");
 					}
-					switch_event_destroy(&clone);
+					//switch_event_destroy(&clone);
+					clone->use_count -= 1;
+
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_ERROR, "Memory Error!\n");

@@ -418,8 +418,10 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 		}
 		switch_thread_rwlock_unlock(RWLOCK);
 	}
-
-	switch_event_destroy(event);
+	(*event)->use_count -= 1;
+	if((*event)->use_count <= 0){
+		switch_event_destroy(event);
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_running(void)
@@ -782,7 +784,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 		(*event)->subclass_name = DUP(subclass_name);
 		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", subclass_name);
 	}
-
+	(*event)->event_id;
+	(*event)->use_count = 1;
 	return SWITCH_STATUS_SUCCESS;
 }
 
