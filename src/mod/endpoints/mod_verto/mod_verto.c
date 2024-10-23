@@ -3076,9 +3076,11 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-		tech_pvt->remote_hangup_cause = cause;
-		switch_channel_set_variable(tech_pvt->channel, "verto_hangup_disposition", "recv_bye");
-		switch_channel_hangup(tech_pvt->channel, cause);
+		if (tech_pvt) {
+			tech_pvt->remote_hangup_cause = cause;
+			switch_channel_set_variable(tech_pvt->channel, "verto_hangup_disposition", "recv_bye");
+			switch_channel_hangup(tech_pvt->channel, cause);
+		}
 
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL ENDED"));
 		cJSON_AddItemToObject(obj, "causeCode", cJSON_CreateNumber(cause));
