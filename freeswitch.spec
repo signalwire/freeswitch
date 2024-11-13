@@ -535,15 +535,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_spy, implements userspy application which provides 
 persistent eavesdrop on all channels bridged to a certain user
 
-%package application-stress
-Summary:	FreeSWITCH mod_stress
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-stress
-Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a 
-person's voice and generates FreeSWITCH events based on that data. 
-
 %package application-translate
 Summary:	FreeSWITCH mod_translate
 Group:          System/Libraries
@@ -1228,7 +1219,6 @@ Requires:	freeswitch-application-snapshot
 Requires:	freeswitch-application-snom
 Requires:	freeswitch-application-soundtouch
 Requires:	freeswitch-application-spy
-Requires:	freeswitch-application-stress
 Requires:	freeswitch-application-valet_parking
 Requires:	freeswitch-application-video_filter
 Requires:	freeswitch-application-voicemail
@@ -1307,7 +1297,7 @@ APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/
 			applications/mod_redis applications/mod_rss "
 
 APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
-			applications/mod_spandsp applications/mod_spy applications/mod_stress \
+			applications/mod_spandsp applications/mod_spy \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr applications/mod_video_filter"
 
@@ -1979,9 +1969,6 @@ fi
 
 %files application-spy
 %{MODINSTDIR}/mod_spy.so*
-
-%files application-stress
-%{MODINSTDIR}/mod_stress.so*
 
 %files application-translate
 %{MODINSTDIR}/mod_translate.so*

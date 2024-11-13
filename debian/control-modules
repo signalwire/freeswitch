@@ -223,10 +223,6 @@ Module: applications/mod_spy
 Description: UserSpy
  This module adds the ability to monitor the audio of a channel.
 
-Module: applications/mod_stress
-Description: Voice stress detection
- This module attempts to detect voice stress on an audio channel.
-
 Module: applications/mod_translate
 Description: Number translation
  This module implements number translation.
