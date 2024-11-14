@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>libav</ProjectName>
     <RootNamespace>libav</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{841C345F-FCC7-4F64-8F54-0281CEABEB01}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\w32\yasm.props" Condition=" '$(YasmPropsImported)' == '' " />
