@@ -47,7 +47,6 @@ avoid_mods=(
   endpoints/mod_khomp
   endpoints/mod_opal
   endpoints/mod_reference
-  endpoints/mod_unicall
   event_handlers/mod_smpp
   event_handlers/mod_event_zmq
   formats/mod_webm
