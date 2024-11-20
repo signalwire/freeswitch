@@ -5829,6 +5829,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			if (best_te) {
 				smh->mparams->te_rate = best_te_rate;
+				switch_channel_set_variable_printf(session->channel, "rtp_2833_send_rate", "%d", smh->mparams->te_rate);
 
 				if (smh->mparams->dtmf_type == DTMF_AUTO || smh->mparams->dtmf_type == DTMF_2833 ||
 					switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) {
@@ -14073,6 +14074,10 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_2833_recv_payload"))) {
 		smh->mparams->recv_te = (switch_payload_t)atoi(tmp);
+	}
+
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_2833_send_rate"))) {
+		smh->mparams->te_rate = atoi(tmp);
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_rate"))) {
