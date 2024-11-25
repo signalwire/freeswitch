@@ -1,10 +1,12 @@
 #!/usr/bin/perl
 
 use strict;
+use warnings;
 use Getopt::Long;
 use XML::Entities;
 use HTML::Entities;
 
+require "./fix-tzstr.pl";
 
 my $base   = "/usr/share/zoneinfo";
 my $output = "timezones.conf.xml";
@@ -18,7 +20,7 @@ my $res = GetOptions(
     "base=s" => \$base,
     "debug+" => \$debug,
     "help"   => \$help,
-    "output" => \$output
+    "output=s" => \$output
 );
 if ( !$res || $help ) {
     print "$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf.xml] [--debug] [--help]\n";
@@ -64,7 +66,9 @@ foreach my $name ( sort( keys(%name_to_file) ) ) {
         next;
     }
 
-    $zones{$name} = pop(@strings);
+    my $tzstr = fixTzstr( pop(@strings), $name );
+
+    $zones{$name} = $tzstr;
 }
 
 open( my $out, ">$output" );
@@ -83,7 +87,7 @@ foreach my $zone ( sort( keys(%zones) ) ) {
     }
     $lastprefix = $newprefix;
 
-    print $out "\t<zone name=\"$zone\" value=\"$str\" />\n";
+    print $out " " x 8, "<zone name=\"$zone\" value=\"$str\" />\n";
 }
 print $out " " x 4, "</timezones>\n";
 print $out "</configuration>\n";

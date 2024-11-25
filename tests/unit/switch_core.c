@@ -53,6 +53,107 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_switch_rand)
+		{
+			int i, c = 0;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLet's generate a few random numbers.\n");
+
+			for (i = 0; i < 10; i++) {
+				uint32_t rnd = switch_rand();
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Random number %d\n", rnd);
+
+				if (rnd == 1) {
+					c++;
+				}
+			}
+
+			/* We do not expect all random numbers to be 1 all 10 times. That would mean we have an error OR we are lucky to have 10 random ones! */
+			fst_check(c < 10);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_uint31_t_overflow)
+		{
+			switch_uint31_t x;
+			uint32_t overflow;
+
+			x.value = 0x7fffffff;
+			x.value++;
+
+			fst_check_int_equals(x.value, 0);
+			x.value++;
+			fst_check_int_equals(x.value, 1);
+			x.value -= 2;
+			fst_check_int_equals(x.value, 0x7fffffff);
+
+			overflow = (uint32_t)0x7fffffff + 1;
+			x.value = overflow;
+			fst_check_int_equals(x.value, 0);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_parse_cidr_v6)
+		{
+			ip_t ip, mask;
+			uint32_t bits;
+
+			fst_check(!switch_parse_cidr("fe80::/10", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 10);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0xfe);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0x80);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xc0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::/0", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 0);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::1/128", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 128);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(ip.v6.s6_addr[3], 0);
+			fst_check_int_equals(ip.v6.s6_addr[4], 0);
+			fst_check_int_equals(ip.v6.s6_addr[5], 0);
+			fst_check_int_equals(ip.v6.s6_addr[6], 0);
+			fst_check_int_equals(ip.v6.s6_addr[7], 0);
+			fst_check_int_equals(ip.v6.s6_addr[8], 0);
+			fst_check_int_equals(ip.v6.s6_addr[9], 0);
+			fst_check_int_equals(ip.v6.s6_addr[10], 0);
+			fst_check_int_equals(ip.v6.s6_addr[11], 0);
+			fst_check_int_equals(ip.v6.s6_addr[12], 0);
+			fst_check_int_equals(ip.v6.s6_addr[13], 0);
+			fst_check_int_equals(ip.v6.s6_addr[14], 0);
+			fst_check_int_equals(ip.v6.s6_addr[15], 1);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[3], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[4], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[5], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[6], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[7], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[8], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[9], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[10], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[11], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[12], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[13], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[14], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[15], 0xff);
+		}
+		FST_TEST_END()
+
 #if ENABLE_SNPRINTFV_TESTS
 		FST_TEST_BEGIN(test_snprintfv_1)
 		{

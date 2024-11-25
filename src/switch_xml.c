@@ -1726,6 +1726,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		if ( rename(new_file_tmp,new_file) ) {
 			goto done;
 		}
+
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
 			if ((xml = switch_xml_parse_fd(fd))) {
 				if (strcmp(abs, SWITCH_GLOBAL_filenames.conf_name)) {
@@ -1733,8 +1734,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 					new_file = NULL;
 				}
 			}
+
 			close(fd);
-			fd = -1;
 		}
 	}
 
@@ -1745,10 +1746,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	if (write_fd) {
 		fclose(write_fd);
 		write_fd = NULL;
-	}
-
-	if (fd > -1) {
-		close(fd);
 	}
 
 	switch_safe_free(new_file_tmp);
@@ -2272,7 +2269,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 		switch_event_destroy(&my_params);
 	}
 
-	if (status != SWITCH_STATUS_SUCCESS && root && *root) {
+	if (status != SWITCH_STATUS_SUCCESS && *root) {
 		switch_xml_free(*root);
 		*root = NULL;
 		*domain = NULL;

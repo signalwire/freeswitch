@@ -553,6 +553,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	switch_hash_index_t *hi;
 	const void *var;
 	void *val;
+	switch_status_t res;
 
 	if (switch_core_test_flag(SCF_MINIMAL)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -565,7 +566,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	unsub_all_switch_event_channel();
 
 	if (EVENT_CHANNEL_DISPATCH_QUEUE) {
-		switch_queue_trypush(EVENT_CHANNEL_DISPATCH_QUEUE, NULL);
+		res = switch_queue_trypush(EVENT_CHANNEL_DISPATCH_QUEUE, NULL);
+		(void)res;
 		switch_queue_interrupt_all(EVENT_CHANNEL_DISPATCH_QUEUE);
 	}
 
@@ -573,9 +575,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch queues\n");
 
 		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-			switch_queue_trypush(EVENT_DISPATCH_QUEUE, NULL);
+			res = switch_queue_trypush(EVENT_DISPATCH_QUEUE, NULL);
+			(void)res;
 		}
-
 
 		switch_queue_interrupt_all(EVENT_DISPATCH_QUEUE);
 
@@ -595,6 +597,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		if (THREAD_COUNT == last) {
 			x++;
 		}
+
 		last = THREAD_COUNT;
 	}
 

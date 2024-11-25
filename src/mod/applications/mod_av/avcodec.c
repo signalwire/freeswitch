@@ -906,7 +906,7 @@ static void fs_rtp_parse_h263_rfc2190(h264_codec_context_t *context, AVPacket *p
 #if (LIBAVCODEC_VERSION_MAJOR < LIBAVCODEC_V)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Should Not Happen!!! mb_info_pos=%d mb_info_count=%d mb_info_size=%d\n", mb_info_pos, mb_info_count, mb_info_size);
 #else
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Should Not Happen!!! mb_info_pos=%d mb_info_count=%d mb_info_size=%ld\n", mb_info_pos, mb_info_count, mb_info_size);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Should Not Happen!!! mb_info_pos=%d mb_info_count=%d mb_info_size=%"SWITCH_SIZE_T_FMT"\n", mb_info_pos, mb_info_count, mb_info_size);
 #endif
 				}
 			}
@@ -1581,7 +1581,6 @@ GCC_DIAG_ON(deprecated-declarations)
 	} else if (ret == AVERROR(EAGAIN)) {
 		/* we fully drain all the output in each encode call, so this should not ever happen */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Error sending frame to encoder - BUG, should never happen\n");
-		ret = AVERROR_BUG;
 		goto error;
 	} else if (ret < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error sending frame to encoder\n");

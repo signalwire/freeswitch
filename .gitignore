@@ -187,7 +187,7 @@ ipch/
 /w32/Setup/obj
 *dSYM*
 
-/UpgradeLog.*
+/UpgradeLog*.*
 /_UpgradeReport_Files/
 *.aps
 /w32/Library/switch_version.inc

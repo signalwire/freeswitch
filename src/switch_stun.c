@@ -135,7 +135,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 	max = (int) strlen(set);
 
 	for (x = 0; x < len; x++) {
-		int j = (int) (max * 1.0 * rand() / (RAND_MAX + 1.0));
+		int j = (int) (max * 1.0 * switch_rand() / (SWITCH_RAND_MAX + 1.0));
 		buf[x] = set[j];
 	}
 }
@@ -401,13 +401,17 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_s
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, switch_stun_packet_header_t *header, char *ipstr, switch_size_t iplen, uint16_t *port)
 {
 	switch_stun_ip_t *ip;
+	switch_stun_ipv6_t *ipv6;
 	uint8_t x, *i;
 	char *p = ipstr;
 
 	ip = (switch_stun_ip_t *) attribute->value;
 
 	if (ip->family == 2) {
-		uint8_t *v6addr = (uint8_t *) &ip->address;
+		uint8_t *v6addr;
+
+		ipv6 = (switch_stun_ipv6_t *)attribute->value;
+		v6addr = (uint8_t *) &ipv6->address;
 		v6_xor(v6addr, (uint8_t *)header->id);
 		inet_ntop(AF_INET6, v6addr, ipstr, iplen);
 	} else {
@@ -696,8 +700,11 @@ SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_p
 {
 	switch_sockaddr_t *addr = NULL;
 	char buf[30];
+	switch_status_t res;
 
-	switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, 0, 0, pool);
+	res = switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, 0, 0, pool);
+	(void)res;
+
 	return switch_core_strdup(pool, switch_str_nil(switch_get_addr(buf, sizeof(buf), addr)));
 
 }
@@ -729,6 +736,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 	int funny = 0;
 	int size = sizeof(buf);
 	int xlen = sizeof(switch_stun_packet_header_t);
+	switch_status_t res;
 	int32_t switch_family = SWITCH_UNSPEC;
 	int32_t af_family = AF_INET;
 	switch_assert(err);
@@ -747,25 +755,30 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 		af_family = AF_INET6;
 	}
 
-	switch_sockaddr_info_get(&from_addr, NULL, switch_family, 0, 0, pool);
+	res = switch_sockaddr_info_get(&from_addr, NULL, switch_family, 0, 0, pool);
+	(void)res;
 
 	if (switch_sockaddr_info_get(&local_addr, *ip, switch_family, *port, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Local Address Error!";
+
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_sockaddr_info_get(&remote_addr, stunip, switch_family, stunport, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Remote Address Error!";
+
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_socket_create(&sock, af_family, SOCK_DGRAM, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Socket Error!";
+
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_socket_bind(sock, local_addr) != SWITCH_STATUS_SUCCESS) {
 		*err = "Bind Error!";
+
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -797,7 +810,6 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 	*ip = NULL;
 	*port = 0;
 
-
 	for (;;) {
 		bytes = sizeof(buf);
 		if (switch_socket_recvfrom(from_addr, sock, 0, (char *) &buf, &bytes) == SWITCH_STATUS_SUCCESS && bytes > 0) {
@@ -808,10 +820,12 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 			*err = "Timeout";
 			switch_socket_shutdown(sock, SWITCH_SHUTDOWN_READWRITE);
 			switch_socket_close(sock);
+
 			return SWITCH_STATUS_TIMEOUT;
 		}
 		switch_cond_next();
 	}
+
 	switch_socket_close(sock);
 
 	if (funny) {
@@ -821,13 +835,14 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 	packet = switch_stun_packet_parse(start, size);
 	if (!packet) {
 		*err = "Invalid STUN/ICE packet";
+
 		return SWITCH_STATUS_FALSE;
 	}
+
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
 	switch_stun_packet_first_attribute(packet, attr);
 	switch_assert(attr);
-
 
 	do {
 		switch (attr->type) {
@@ -836,6 +851,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 				switch_stun_ip_t *tmp = (switch_stun_ip_t *) attr->value;
 				tmp->address ^= ntohl(0xabcdabcd);
 			}
+
 			switch_stun_packet_attribute_get_mapped_address(attr, rip, sizeof(rip), &rport);
 			break;
 		case SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS:
@@ -849,12 +865,15 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup_ipv4v6(int32_t family, char *
 		if (!switch_stun_packet_next_attribute(attr, end_buf)) {
 			break;
 		}
+
 		xlen += 4 + switch_stun_attribute_padded_length(attr);
+
 	} while (xlen <= packet->header.length);
 
 	if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
 		*ip = switch_core_strdup(pool, rip);
 		*port = rport;
+
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		*err = "Invalid Reply";
