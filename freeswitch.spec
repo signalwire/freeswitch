@@ -514,18 +514,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_snom, an application for controlling the functionality 
 and appearance of the programmable softkeys on Snom phones
 
-%package application-soundtouch
-Summary:	FreeSWITCH mod_soundtouch
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-BuildRequires:  soundtouch-devel >= 1.7.1
-
-%description application-soundtouch
-Provides FreeSWITCH mod_soundtouch, uses the soundtouch library, which can do
-pitch shifting and other audio effects, so you can pipe the audio of a call
-(or any other channel audio) through this module and achieve those effects. You
-can specifically adjust pitch, rate, and tempo.
-
 %package application-spy
 Summary:	FreeSWITCH mod_spy
 Group:          System/Libraries
@@ -1217,7 +1205,6 @@ Requires:	freeswitch-application-signalwire
 Requires:	freeswitch-application-sms
 Requires:	freeswitch-application-snapshot
 Requires:	freeswitch-application-snom
-Requires:	freeswitch-application-soundtouch
 Requires:	freeswitch-application-spy
 Requires:	freeswitch-application-valet_parking
 Requires:	freeswitch-application-video_filter
@@ -1296,7 +1283,7 @@ APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/
 			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
 			applications/mod_redis applications/mod_rss "
 
-APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
+APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom \
 			applications/mod_spandsp applications/mod_spy \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr applications/mod_video_filter"
@@ -1962,9 +1949,6 @@ fi
 
 %files application-snom
 %{MODINSTDIR}/mod_snom.so*
-
-%files application-soundtouch
-%{MODINSTDIR}/mod_soundtouch.so*
 
 %files application-spy
 %{MODINSTDIR}/mod_spy.so*
