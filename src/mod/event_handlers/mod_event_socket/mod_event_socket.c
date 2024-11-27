@@ -108,6 +108,7 @@ static struct {
 	switch_mutex_t *listener_mutex;
 	switch_event_node_t *node;
 	int debug;
+	int log_recv_cmd
 } globals;
 
 static struct {
@@ -1726,6 +1727,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		goto done;
 	}
 
+	if (globals.log_recv_cmd > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Received from %s:%d: %s", listener->remote_ip, listener->remote_port, cmd);
+	}
+
 	if (switch_stristr("unload", cmd) && switch_stristr("mod_event_socket", cmd)) {
 		cmd = unload_cheat;
 	} else if (switch_stristr("reload", cmd) && switch_stristr("mod_event_socket", cmd)) {
@@ -2887,6 +2892,8 @@ static int config(void)
 					set_pref_ip(val);
 				} else if (!strcmp(var, "debug")) {
 					globals.debug = atoi(val);
+				} else if (!strcmp(var, "log-recv-cmd")) {
+					globals.log_recv_cmd = switch_true(val) ? 1 : 0;
 				} else if (!strcmp(var, "nat-map")) {
 					if (switch_true(val) && switch_nat_get_type()) {
 						prefs.nat_map = 1;
