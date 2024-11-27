@@ -108,7 +108,7 @@ static struct {
 	switch_mutex_t *listener_mutex;
 	switch_event_node_t *node;
 	int debug;
-	int log_recv_cmd
+	int log_recv_cmd;
 } globals;
 
 static struct {
