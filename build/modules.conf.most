@@ -39,7 +39,6 @@ applications/mod_signalwire
 applications/mod_sms
 applications/mod_snapshot
 applications/mod_snom
-applications/mod_sonar
 applications/mod_spandsp
 applications/mod_spy
 applications/mod_test

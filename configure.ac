@@ -2127,7 +2127,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_snapshot/Makefile
 		src/mod/applications/mod_snom/Makefile
-		src/mod/applications/mod_sonar/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
 		src/mod/applications/mod_test/Makefile

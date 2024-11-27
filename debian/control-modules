@@ -205,11 +205,6 @@ Module: applications/mod_snom
 Description: SNOM specific features
  This module implements features specific to SNOM phones.
 
-Module: applications/mod_sonar
-Description: Sonar ping timer
- This module measures the latency on an audio link by sending audible
- audio sonar pings.
-
 Module: applications/mod_spandsp
 Description: SpanDSP
  This module implements spandsp fax, dsp, and codec functionality.
