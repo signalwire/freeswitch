@@ -79,11 +79,26 @@ jobs:
           ./collect-test-logs.sh --dir logs --print
 
       - name: Upload Unit-Test logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-logs
+          name: test-results-${{ github.sha }}-${{ github.run_number }}
           path: ${{ steps.unit_tests.outputs.logs_path }}
           retention-days: 3
           if-no-files-found: ignore
           compression-level: 9
+
+      # ToDo: TestMe
+      # - name: Notify run tests result to slack
+      #   if: |
+      #     failure() &&
+      #     github.event_name == 'push' &&
+      #     (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10') &&
+      #     secrets.SLACK_DEVOPS_CI_CHANNEL != '' &&
+      #     secrets.SLACK_WEBHOOK_URL != ''
+      #   uses: signalwire/actions-template/.github/actions/slack@main
+      #   with:
+      #     CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}
+      #     MESSAGE: Unit-Tests ${{ github.repository }} > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>. Some tests are failing.
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -82,6 +82,8 @@ else
 	fi
 
 	echo "*** $log was saved"
+
+	exit $exitstatus
 fi
 
 echo ""

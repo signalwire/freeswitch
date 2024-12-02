@@ -76,3 +76,29 @@ jobs:
         working-directory: freeswitch
         run: |
           ./ci.sh -t scan-build -a validate -c freeswitch -p "$GITHUB_WORKSPACE/freeswitch"
+
+      # ToDo: FixMe
+      # - name: Upload Scan-Build logs
+      #   if: failure()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: scan-build-logs
+      #     path: freeswitch
+      #     retention-days: 3
+      #     if-no-files-found: ignore
+      #     compression-level: 9
+
+      # ToDo: TestMe
+      # - name: Notify run tests result to slack
+      #   if: |
+      #     failure() &&
+      #     github.event_name == 'push' &&
+      #     (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10') &&
+      #     secrets.SLACK_DEVOPS_CI_CHANNEL != '' &&
+      #     secrets.SLACK_WEBHOOK_URL != ''
+      #   uses: signalwire/actions-template/.github/actions/slack@main
+      #   with:
+      #     CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}
+      #     MESSAGE: Scan-Build ${{ github.repository }} > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>. Static analysis failed.
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
