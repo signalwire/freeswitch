@@ -505,15 +505,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_snapshot, allows recording a sliding window of audio 
 and taking snapshots to disk. 
 
-%package application-snom
-Summary:	FreeSWITCH mod_snom
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-snom
-Provides FreeSWITCH mod_snom, an application for controlling the functionality 
-and appearance of the programmable softkeys on Snom phones
-
 %package application-spy
 Summary:	FreeSWITCH mod_spy
 Group:          System/Libraries
@@ -1204,7 +1195,6 @@ Requires:	freeswitch-application-rss
 Requires:	freeswitch-application-signalwire
 Requires:	freeswitch-application-sms
 Requires:	freeswitch-application-snapshot
-Requires:	freeswitch-application-snom
 Requires:	freeswitch-application-spy
 Requires:	freeswitch-application-valet_parking
 Requires:	freeswitch-application-video_filter
@@ -1283,7 +1273,7 @@ APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/
 			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
 			applications/mod_redis applications/mod_rss "
 
-APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom \
+APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
 			applications/mod_spandsp applications/mod_spy \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr applications/mod_video_filter"
@@ -1946,9 +1936,6 @@ fi
 
 %files application-snapshot
 %{MODINSTDIR}/mod_snapshot.so*
-
-%files application-snom
-%{MODINSTDIR}/mod_snom.so*
 
 %files application-spy
 %{MODINSTDIR}/mod_spy.so*
