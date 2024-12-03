@@ -146,6 +146,7 @@ build_freeswitch()
 			scan-build-14 \
 				--force-analyze-debug-code \
 				--status-bugs \
+				--keep-empty \
 				-o ./scan-build/ \
 				make --no-keep-going -j$(nproc --all) |& tee ./scan-build-result.txt
 			build_status=${PIPESTATUS[0]}
@@ -159,6 +160,10 @@ build_freeswitch()
 				echo "scan-build: compilation failed!"
 				exit $build_status
 			fi
+
+			# DEBUG: scan-build failed
+			echo "scan-build: bugs found!" > ./scan-build-result.txt
+			exit 1
 
 			;;
 		*)
@@ -183,7 +188,7 @@ validate_freeswitch()
 			exit 0
 			;;
 		"scan-build")
-			REPORT_PATH=$(find scan-build* -mindepth 1 -type d)
+			REPORT_PATH=$(find scan-build/* -mindepth 1 -type d)
 			if [ -n "$REPORT_PATH" ]; then
 				echo "Found analysis report at: $REPORT_PATH"
 

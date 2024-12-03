@@ -78,15 +78,15 @@ jobs:
           ./ci.sh -t scan-build -a validate -c freeswitch -p "$GITHUB_WORKSPACE/freeswitch"
 
       # ToDo: FixMe
-      # - name: Upload Scan-Build logs
-      #   if: failure()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: scan-build-logs
-      #     path: freeswitch
-      #     retention-days: 3
-      #     if-no-files-found: ignore
-      #     compression-level: 9
+      - name: Upload Scan-Build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-build-logs
+          path: freeswitch/scan-build
+          retention-days: 3
+          if-no-files-found: ignore
+          compression-level: 9
 
       # ToDo: TestMe
       # - name: Notify run tests result to slack
