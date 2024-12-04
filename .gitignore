@@ -145,7 +145,6 @@ Release/
 /src/mod/applications/mod_nibblebill/Makefile
 /src/mod/applications/mod_osp/Makefile
 /src/mod/applications/mod_osp/Makefile.in
-/src/mod/applications/mod_rss/Makefile
 /src/mod/applications/mod_snipe_hunt/Makefile
 /src/mod/applications/mod_test/test/Makefile
 /src/mod/applications/mod_test/test/Makefile.in
