@@ -1,0 +1,22 @@
+<configuration name="piper_tts.conf" description="">
+    <settings>
+        <!--
+            а simple cache system, allows to reuse already spoken text
+        -->
+        <param name="cache-path" value="/tmp/piper-tts-cache" />
+        <param name="cache-enable" value="false" />
+
+        <!-- change this with your actual paths -->
+        <param name="piper-bin" value="/opt/piper/lib/piper" />
+        <param name="piper-opts" value="" />
+
+        <!-- allows to use speak 'voice' as a language code -->
+        <param name="voice-name-as-language" value="true" />
+    </settings>
+
+    <models>
+        <model language="en" model="/opt/piper/models/en_US-lessac-medium.onnx" />
+        <model language="ru" model="/opt/piper/models/ru_RU-irina-medium.onnx" />
+    </models>
+
+</configuration>
