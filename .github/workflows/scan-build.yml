@@ -83,7 +83,6 @@ jobs:
         with:
           name: scan-build-logs
           path: freeswitch/scan-build
-          retention-days: 3
           if-no-files-found: ignore
           compression-level: 9
 

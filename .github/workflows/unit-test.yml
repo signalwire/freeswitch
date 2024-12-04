@@ -120,7 +120,6 @@ jobs:
         with:
           name: test-results-${{ github.sha }}-${{ github.run_number }}-${{ inputs.current-group }}-of-${{ inputs.total-groups }}
           path: ${{ inputs.working-directory }}/logs
-          retention-days: 3
           if-no-files-found: ignore
           compression-level: 9
 
