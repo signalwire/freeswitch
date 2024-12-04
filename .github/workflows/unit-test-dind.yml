@@ -84,7 +84,6 @@ jobs:
         with:
           name: test-results-${{ github.sha }}-${{ github.run_number }}
           path: ${{ steps.unit_tests.outputs.logs_path }}
-          retention-days: 3
           if-no-files-found: ignore
           compression-level: 9
 
