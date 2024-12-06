@@ -742,7 +742,8 @@ static void do_normal_probe(switch_event_t *event)
 
 								 "left join sip_dialogs on "
 								 "sip_dialogs.hostname = sip_registrations.hostname and sip_dialogs.profile_name = sip_registrations.profile_name and ("
-								 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
+								 "sip_dialogs.presence_id = concat(sip_registrations.sip_user, '@', sip_registrations.sub_host) "
+//								 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
 								 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
 								 "and sip_dialogs.sip_from_host = sip_registrations.sip_host)) "
 
@@ -751,11 +752,13 @@ static void do_normal_probe(switch_event_t *event)
 								 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
 								 "sip_registrations.profile_name=sip_presence.profile_name) "
 								 "where sip_registrations.hostname='%q' and sip_registrations.profile_name='%q' and sip_dialogs.call_info_state != 'seized' "
-								 "and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+								 "and (sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+//								 "and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 								 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
-								 "))",
+//								 "))",
+								 ")))",
 								 dh.status, dh.rpid, switch_str_nil(sub_call_id),
-								 switch_sql_concat(), switch_sql_concat(),
+//								 switch_sql_concat(), switch_sql_concat(),
 								 mod_sofia_globals.hostname, profile->name, probe_euser, probe_host,  probe_euser, probe_host, probe_host);
 
 
@@ -881,9 +884,11 @@ static void do_dialog_probe(switch_event_t *event)
 							 "(sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
 							 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 							 "where sip_dialogs.hostname='%q' and sip_dialogs.profile_name='%q' and "
-							 "sip_dialogs.call_info_state != 'seized' and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+//							 "sip_dialogs.call_info_state != 'seized' and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+							 "sip_dialogs.call_info_state != 'seized' and (sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 							 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
-							 "or sip_registrations.presence_hosts like '%%%q%%'))",
+//							 "or sip_registrations.presence_hosts like '%%%q%%'))",
+							 "or sip_registrations.presence_hosts like '%%%q%%')))",
 							 probe_euser, probe_host,
 							 sub_call_id, probe_host,
 							 mod_sofia_globals.hostname, profile->name,
@@ -1189,7 +1194,8 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 												 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and "
 												 "sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 												 "sip_subscriptions.profile_name=sip_presence.profile_name and "
-												 "sip_presence.profile_name=sip_subscriptions.profile_name) "
+//												 "sip_presence.profile_name=sip_subscriptions.profile_name) "
+												 "sip_subscriptions.hostname = sip_presence.hostname) "
 												 "where sip_subscriptions.hostname='%q' and sip_subscriptions.profile_name='%q' and "
 												 "sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'",
 												 switch_str_nil(status), switch_str_nil(rpid), mod_sofia_globals.hostname, profile->name, from);
@@ -2112,12 +2118,15 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 
 #define SOFIA_PRESENCE_COLLISION_DELTA 50
 #define SOFIA_PRESENCE_ROLLOVER_YEAR (86400 * 365 * SOFIA_PRESENCE_COLLISION_DELTA)
+// static uint32_t check_presence_epoch(void)
 static switch_uint31_t check_presence_epoch(void)
 {
 	time_t now = switch_epoch_time_now(NULL);
-	switch_uint31_t callsequence = { .value = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA) };
+	// uint32_t callsequence = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
+    switch_uint31_t callsequence = { .value = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA) };
 
-	if (!mod_sofia_globals.presence_year || callsequence.value >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
+	// if (!mod_sofia_globals.presence_year || callsequence >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
+    if (!mod_sofia_globals.presence_year || callsequence.value >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
 		struct tm tm;
 		switch_mutex_lock(mod_sofia_globals.mutex);
 		tm = *(localtime(&now));
@@ -2125,7 +2134,9 @@ static switch_uint31_t check_presence_epoch(void)
 		if (tm.tm_year != mod_sofia_globals.presence_year) {
 			mod_sofia_globals.presence_epoch = (uint32_t)now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
 			mod_sofia_globals.presence_year = tm.tm_year;
-			callsequence.value = (uint32_t)(((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
+			// callsequence = (uint32_t)(((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
+            callsequence.value = (uint32_t)(((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
+
 		}
 
 		switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -2136,17 +2147,23 @@ static switch_uint31_t check_presence_epoch(void)
 
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 {
-	switch_uint31_t callsequence;
+	// uint32_t callsequence;
+    switch_uint31_t callsequence;
 	int diff = 0;
 
 	switch_mutex_lock(profile->ireg_mutex);
 
 	callsequence = check_presence_epoch();
 
-	if (profile->last_cseq.value) {
+	// if (profile->last_cseq) {
+    if (profile->last_cseq.value) {
 		diff = (int)callsequence.value - (int)profile->last_cseq.value;
+		// diff = callsequence - profile->last_cseq;
+        diff = (int)callsequence.value - (int)profile->last_cseq.value;
 		if (diff <= 0 && diff > -100000) {
-			callsequence.value = ++profile->last_cseq.value;
+			// callsequence = ++profile->last_cseq;
+            callsequence.value = ++profile->last_cseq.value;
+
 		}
 	}
 
@@ -2154,7 +2171,10 @@ uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 
 	switch_mutex_unlock(profile->ireg_mutex);
 
-	return (uint32_t)callsequence.value;
+	// return callsequence;
+    return (uint32_t)callsequence.value;
+
+
 }
 
 
@@ -2998,9 +3018,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						if (switch_true(switch_event_get_header(helper->event, "Presence-Privacy"))) {
 							stream.write_function(&stream, "<remote>\n<identity display=\"Anonymous\">sip:anonymous@anonymous.invalid</identity>\n");
 						} else {
-							stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n",
-												  from_name ? from_name : clean_from_user, clean_from_user,
-												  host);
+							stream.write_function(&stream, "<remote>\n<identity display=\"Anonymous\">sip:anonymous@anonymous.invalid</identity>\n");
+//							stream.write_function(&stream, "<remote>\n<identity display=\"%s\">sip:%s@%s</identity>\n",
+//												  from_name ? from_name : clean_from_user, clean_from_user,
+//												  host);
 						}
 						stream.write_function(&stream, "<target uri=\"sip:**%s@%s\"/>\n", clean_to_user, host);
 						stream.write_function(&stream, "</remote>\n");
@@ -3771,38 +3792,42 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 
 	if (!strcmp("as-feature-event", event)) {
-		sip_authorization_t const *authorization = NULL;
-		auth_res_t auth_res = AUTH_FORBIDDEN;
+//		sip_authorization_t const *authorization = NULL;
+//		auth_res_t auth_res = AUTH_FORBIDDEN;
 		char key[128] = "";
 		switch_event_t *v_event = NULL;
 
+		if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
+			if (v_event) {
+				switch_event_destroy(&v_event);
+			}
 
-		if (sip->sip_authorization) {
-			authorization = sip->sip_authorization;
-		} else if (sip->sip_proxy_authorization) {
-			authorization = sip->sip_proxy_authorization;
-		}
-
-		if (authorization) {
-			char network_ip[80];
-			int network_port;
-			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
-			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
-											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, network_port, &v_event, 0,
-											REG_REGISTER, to_user, NULL, NULL, NULL);
-			if (v_event) switch_event_destroy(&v_event);
-		} else if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
-			if (v_event) switch_event_destroy(&v_event);
-			goto end;
-		}
-
-		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
-			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+//		if (sip->sip_authorization) {
+//			authorization = sip->sip_authorization;
+//		} else if (sip->sip_proxy_authorization) {
+//			authorization = sip->sip_proxy_authorization;
+//		}
+//
+//		if (authorization) {
+//			char network_ip[80];
+//			int network_port;
+//			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+//			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
+//											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, network_port, &v_event, 0,
+//											REG_REGISTER, to_user, NULL, NULL, NULL);
+//			if (v_event) switch_event_destroy(&v_event);
+//		} else if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
+//			if (v_event) switch_event_destroy(&v_event);
+//			goto end;
+//		}
+//
+//		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+//			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
 		}
 	} else if (sofia_test_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS)) {
-		sip_authorization_t const *authorization = NULL;
-		auth_res_t auth_res = AUTH_FORBIDDEN;
+//		sip_authorization_t const *authorization = NULL;
+//		auth_res_t auth_res = AUTH_FORBIDDEN;
 		char keybuf[128] = "";
 		char *key;
 		size_t keylen;
@@ -3811,29 +3836,31 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		key = keybuf;
 		keylen = sizeof(keybuf);
 
-		if (sip->sip_authorization) {
-			authorization = sip->sip_authorization;
-		} else if (sip->sip_proxy_authorization) {
-			authorization = sip->sip_proxy_authorization;
-		}
+//		if (sip->sip_authorization) {
+//			authorization = sip->sip_authorization;
+//		} else if (sip->sip_proxy_authorization) {
+//			authorization = sip->sip_proxy_authorization;
+//		}
+//
+//		if (authorization) {
+//			char network_ip[80];
+//			int network_port;
+//			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+//			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
+//											(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, network_port, NULL, 0,
+//											REG_INVITE, NULL, NULL, NULL, NULL);
+//		} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
 
-		if (authorization) {
-			char network_ip[80];
-			int network_port;
-			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
-			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
-											(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, network_port, NULL, 0,
-											REG_INVITE, NULL, NULL, NULL, NULL);
-		} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
+		if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
 			if (v_event) {
 				switch_event_destroy(&v_event);
 			}
-
-			goto end;
-		}
-
-		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
-			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+//
+//			goto end;
+//		}
+//
+//		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+//			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
 		}
 	}
@@ -4777,8 +4804,8 @@ void sofia_presence_handle_sip_i_message(int status,
 		}
 
 		if (sofia_test_pflag(profile, PFLAG_AUTH_MESSAGES)) {
-			sip_authorization_t const *authorization = NULL;
-			auth_res_t auth_res = AUTH_FORBIDDEN;
+//			sip_authorization_t const *authorization = NULL;
+//			auth_res_t auth_res = AUTH_FORBIDDEN;
 			char keybuf[128] = "";
 			char *key;
 			size_t keylen;
@@ -4787,29 +4814,32 @@ void sofia_presence_handle_sip_i_message(int status,
 			key = keybuf;
 			keylen = sizeof(keybuf);
 
-			if (sip->sip_authorization) {
-				authorization = sip->sip_authorization;
-			} else if (sip->sip_proxy_authorization) {
-				authorization = sip->sip_proxy_authorization;
-			}
+//			if (sip->sip_authorization) {
+//				authorization = sip->sip_authorization;
+//			} else if (sip->sip_proxy_authorization) {
+//				authorization = sip->sip_proxy_authorization;
+//			}
+//
+//			if (authorization) {
+//				char network_ip[80];
+//				int network_port;
+//				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+//				auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
+//												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, network_port, NULL, 0,
+//												REG_INVITE, NULL, NULL, NULL, NULL);
+//			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
 
-			if (authorization) {
-				char network_ip[80];
-				int network_port;
-				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
-				auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
-												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, network_port, NULL, 0,
-												REG_INVITE, NULL, NULL, NULL, NULL);
-			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
+			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
+
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}
-
-				goto end;
-			}
-
-			if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
-				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+//
+//				goto end;
+//			}
+//
+//			if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+//				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 				goto end;
 			}
 
