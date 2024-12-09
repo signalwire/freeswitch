@@ -1,0 +1,80 @@
+name: Build from fork
+
+on:
+  pull_request:
+    # types:
+    #   - ready_for_review
+    paths:
+      - '**'
+      - '!.github/'
+
+concurrency:
+  group: ${{ github.head_ref || github.ref }}
+
+jobs:
+  get-nonce:
+    # if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: freeswitch-repo-auth-client
+    outputs:
+      nonce: ${{ steps.get-nonce.outputs.nonce }}
+    steps:
+      - name: Get Nonce
+        id: get-nonce
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@pat
+        with:
+          mode: nonce
+
+  issue-token:
+    runs-on: ubuntu-latest
+    needs: get-nonce
+    outputs:
+      token: ${{ steps.issue-token.outputs.token }}
+    steps:
+      - name: Issue Token
+        id: issue-token
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@pat
+        env:
+          NONCE: ${{ needs.get-nonce.outputs.nonce }}
+        with:
+          mode: issue
+
+  deb:
+    name: 'DEB'
+    needs: issue-token
+    permissions:
+      contents: read
+    strategy:
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        os:
+          - debian
+        version:
+          - bookworm
+        platform:
+          - name: amd64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - name: DEBUG
+        shell: bash
+        run: |
+          echo ${{ needs.issue-token.outputs.token }}
+          exit 1
+
+  revoke-token:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - issue-token
+      - deb
+    outputs:
+      token: ${{ steps.issue-token.outputs.token }}
+    steps:
+      - name: Revoke Token
+        id: revoke-token
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@pat
+        env:
+          TOKEN: ${{ needs.issue-token.outputs.token }}
+        with:
+          mode: revoke
