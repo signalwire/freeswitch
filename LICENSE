@@ -1321,10 +1321,6 @@ Files: src/mod/event_handlers/mod_cdr_mongodb/driver/src/md5.[ch]
 Copyright: 1999, 2000, 2002 Aladdin Enterprises.
 License: zlib/libpng
 
-Files: src/mod/event_handlers/mod_radius_cdr/mod_radius_cdr.h
-Copyright: 2006, Author: Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>
-License: MPL-1.1
-
 Files: src/mod/say/mod_say_??/mod_say_??.c
  scripts/c/socket2me/socket2me.c
  src/mod/xml_int/mod_xml_scgi/xml_scgi_server.pl
