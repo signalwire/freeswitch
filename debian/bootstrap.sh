@@ -335,7 +335,7 @@ Build-Depends:
 # documentation
  doxygen,
 # for APR (not essential for build)
- uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
+ uuid-dev, libexpat1-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
  bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.17),
