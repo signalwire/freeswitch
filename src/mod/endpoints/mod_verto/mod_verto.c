@@ -1893,10 +1893,12 @@ authed:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "%d request [%s] matched expr [%s]\n", proceed, request->uri, expression);
 				request->uri = rule->value;
+				switch_regex_safe_free(re);
 				break;
 			}
 
 			rule = rule->next;
+			switch_regex_safe_free(re);
 		}
 	}
 
