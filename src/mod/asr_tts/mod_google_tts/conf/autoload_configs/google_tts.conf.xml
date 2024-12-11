@@ -1,0 +1,29 @@
+<configuration name="google_tts.conf" description="">
+    <settings>
+        <!-- google api settings -->
+        <param name="api-url" value="https://texttospeech.googleapis.com/v1/text:synthesize?fields=audioContent&key=${api-key}" />
+        <param name="api-key" value="---YOUR-API-KEY---" />
+
+        <!-- curl settings -->
+        <param name="connect-timeout" value="5" />
+        <param name="request-timeout" value="10" />
+        <param name="file-size-max" value="2097152" />
+        <param name="log-http-errors" value="true" />
+   <!-- <param name="proxy" value="http://proxy:port" /> -->
+   <!-- <param name="proxy-credentials" value="" /> -->
+   <!-- <param name="user-agent" value="Mozilla/1.0" /> -->
+
+        <!-- cache -->
+        <param name="cache-path" value="/tmp/google-tts-cache" />
+        <param name="cache-enable" value="false" />
+
+        <!-- service settings -->
+        <!-- encoding: [mp3, wav, ulaw, alaw] -->
+        <param name="encoding" value="mp3" />
+        <!-- default gender, [male, female] -->
+        <param name="gender" value="female" />
+        <!-- allows to use speak 'voice' as a language code -->
+        <param name="voice-name-as-language" value="true" />
+
+    </settings>
+</configuration>
