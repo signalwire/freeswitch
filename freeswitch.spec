@@ -110,10 +110,9 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
-Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -450,14 +449,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for 
 FreeSWITCH to allow real-time debiting of credit or cash from a database 
 while calls are in progress.
-
-%package application-rad_auth
-Summary:	FreeSWITCH mod_rad_auth
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-rad_auth
-Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
 
 %package application-redis
 Summary:	FreeSWITCH mod_redis
@@ -1252,7 +1243,7 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill \
 			applications/mod_redis "
 
 APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
@@ -1899,9 +1890,6 @@ fi
 
 %files application-nibblebill
 %{MODINSTDIR}/mod_nibblebill.so*
-
-%files application-rad_auth
-%{MODINSTDIR}/mod_rad_auth.so*
 
 %files application-redis
 %{MODINSTDIR}/mod_redis.so*

@@ -36,7 +36,6 @@ avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
   applications/mod_osp
-  applications/mod_rad_auth
   applications/mod_skel
   applications/mod_cluechoo
   codecs/mod_com_g729
