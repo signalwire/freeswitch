@@ -74,19 +74,17 @@ jobs:
         id: release
         run: |
           if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            if [[ '${{ github.base_ref }}' == 'master' ]]; then
-              echo 'release=unstable' | tee -a $GITHUB_OUTPUT
-            elif [[ '${{ github.base_ref }}' == 'v1.10' ]]; then
+            if [[ '${{ github.base_ref }}' == 'v1.10' ]]; then
               echo 'release=release' | tee -a $GITHUB_OUTPUT
+            else
+              echo 'release=unstable' | tee -a $GITHUB_OUTPUT
             fi
           elif [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
             echo 'release=${{ inputs.release }}' | tee -a $GITHUB_OUTPUT
-          elif [[ '${{ github.ref }}' == 'refs/heads/master' ]]; then
-            echo 'release=unstable' | tee -a $GITHUB_OUTPUT
           elif [[ '${{ github.ref }}' == 'refs/heads/v1.10' ]]; then
             echo 'release=release' | tee -a $GITHUB_OUTPUT
           else
-            exit 1
+            echo 'release=unstable' | tee -a $GITHUB_OUTPUT
           fi
 
   get-nonce:
