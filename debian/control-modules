@@ -706,10 +706,6 @@ Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libldap2-dev, libsasl2-dev
 
-Module: xml_int/mod_xml_radius
-Description: mod_xml_radius
- Adds mod_xml_radius
-
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc
  Adds mod_xml_rpc.
