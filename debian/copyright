@@ -1484,18 +1484,6 @@ Copyright: 2010 Ilnitskiy Mixim (max.h323@gmail.com)
  2010 Georgiewskiy Yuriy (bottleman@icf.org.ru)
 License: MPL-1.1
 
-Files: src/mod/endpoints/mod_khomp/*
-Copyright: 2007-2010 Khomp Ind. & Com.
-License: MPL-1.1 or LGPL-2.1+
-
-Files: src/mod/endpoints/mod_khomp/mod_khomp.cpp
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
-License: MPL-1.1
-
-Files: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
-Copyright: 1998 Doug Rabson
-License: BSD-2-clause
-
 Files: src/mod/languages/mod_java/modjava.c
 Copyright: 2007, Damjan Jovanovic <d a m j a n d o t j o v a t g m a i l d o t c o m>
 License: MPL-1.1
