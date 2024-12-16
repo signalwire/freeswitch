@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -188,6 +188,7 @@
     <ClCompile Include="$(BaseDir)libs\spandsp\src\g711.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\g722.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\g726.c" />
+    <ClCompile Include="$(BaseDir)libs\spandsp\src\godard.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\gsm0610_decode.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\gsm0610_encode.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\gsm0610_long_term.c" />
@@ -254,11 +255,19 @@
     <ClCompile Include="$(BaseDir)libs\spandsp\src\v42.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\v42bis.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\v8.c" />
+    <ClCompile Include="$(BaseDir)libs\spandsp\src\v80.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\vector_float.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\vector_int.c" />
     <ClCompile Include="$(BaseDir)libs\spandsp\src\msvc\gettimeofday.c" />
+    <ClCompile Include="$(BaseDir)libs\spandsp\src\sprt.c" />
+    <ClCompile Include="$(BaseDir)libs\spandsp\src\v150_1.c" />
+    <ClCompile Include="$(BaseDir)libs\spandsp\src\v150_1_sse.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v34_local.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v34_tables.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v34_superconstellation_map.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v150_1_local.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\ademco_contactid.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\adsi.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\alloc.h" />
@@ -290,6 +299,7 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\g711.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\g722.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\g726.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\godard.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\gsm0610.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\hdlc.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\ima_adpcm.h" />
@@ -309,6 +319,8 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\schedule.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\sig_tone.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\silence_gen.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\sprt.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\stdbool.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\super_tone_rx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\super_tone_tx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\swept_tone.h" />
@@ -335,6 +347,9 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\timing.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\tone_detect.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\tone_generate.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\unaligned.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v150_1.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v150_1_sse.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v17rx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v17tx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v18.h" />
@@ -346,6 +361,7 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v42.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v42bis.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v8.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\v80.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\vector_float.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\vector_int.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\version.h" />
@@ -383,6 +399,7 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\schedule.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\sig_tone.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\silence_gen.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\sprt.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\super_tone_rx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\super_tone_tx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\swept_tone.h" />
@@ -405,6 +422,8 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\timezone.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\tone_detect.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\tone_generate.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v150_1.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v150_1_sse.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v17rx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v17tx.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v18.h" />
@@ -416,6 +435,7 @@
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v42.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v42bis.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v8.h" />
+    <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\private\v80.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp\expose.h" />
     <ClInclude Include="$(BaseDir)libs\spandsp\src\spandsp.h" />
     <CustomBuild Include="$(BaseDir)libs\spandsp\src\msvc\spandsp.h">
@@ -463,6 +483,18 @@
     <ProjectReference Include="make_t43_gray_code_tables.2017.vcxproj">
       <Project>{eddb8ab9-c53e-44c0-a620-0e86c2cbd5d5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_convolutional_coders.2017.vcxproj">
+      <Project>{368924d6-ac75-42ae-9d64-7e3eb3fd109c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_probe_signals.2017.vcxproj">
+      <Project>{d33e088b-0a1a-498e-b825-9e49040e28df}</Project>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_shell_map.2017.vcxproj">
+      <Project>{4a1ca87f-32ef-428e-8d55-7f0d6d91516b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="make_v34_tx_pre_emphasis_filters.2017.vcxproj">
+      <Project>{97035e2a-392e-40d1-b27d-da700a1fdb49}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

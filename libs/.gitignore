@@ -618,5 +618,7 @@ mariadb-connector-c-*/
 mariadb-connector-c-*
 /spandsp*/
 /spandsp*
+win32/spandsp/filters.csv
 win32/spandsp/spandsp.h
+win32/spandsp/v34_tx_pre_emphasis_filters.h
 win32/spandsp/win32

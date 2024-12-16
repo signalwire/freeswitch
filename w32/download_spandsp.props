@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
+    <Import Project="spandsp-version.props" Condition=" '$(SpandspVersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup>
@@ -29,7 +30,7 @@
 
   <Target Name="SpandspDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="https://github.com/freeswitch/spandsp/archive/0d2e6ac65e0e8f53d652665a743015a88bf048d4.zip"
+           package="https://github.com/freeswitch/spandsp/archive/$(SpandspVersion).zip"
            expectfileordirectory="$(BaseDir)libs\spandsp\configure.ac"
            outputfolder=""
            outputfilename="spandsp-$(SpandspVersion).zip"

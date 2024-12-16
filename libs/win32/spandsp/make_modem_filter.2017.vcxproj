@@ -79,6 +79,26 @@
 "$(TargetPath)" -m V.27ter2400 -t &gt;"..\..\spandsp\src\v27ter_tx_2400_floating_rrc.h"
 "$(TargetPath)" -m V.27ter4800 -t &gt;"..\..\spandsp\src\v27ter_tx_4800_floating_rrc.h"
 
+"$(TargetPath)" -m V.34_2400 -r &gt;"..\..\spandsp\src\v34_rx_2400_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2400_high -r &gt;"..\..\spandsp\src\v34_rx_2400_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2743 -r &gt;"..\..\spandsp\src\v34_rx_2743_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2743_high -r &gt;"..\..\spandsp\src\v34_rx_2743_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2800 -r &gt;"..\..\spandsp\src\v34_rx_2800_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_2800_high -r &gt;"..\..\spandsp\src\v34_rx_2800_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3000 -r &gt;"..\..\spandsp\src\v34_rx_3000_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3000_high -r &gt;"..\..\spandsp\src\v34_rx_3000_high_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3200 -r &gt;"..\..\spandsp\src\v34_rx_3200_low_carrier_rrc.h"
+"$(TargetPath)" -m V.34_3200_high -r &gt;"..\..\spandsp\src\v34_rx_3200_high_carrier_rrc.h"
+
+
+"$(TargetPath)" -m V.34_2400   -t &gt;"..\..\spandsp\src\v34_tx_2400_rrc.h"
+"$(TargetPath)" -m V.34_2743   -t &gt;"..\..\spandsp\src\v34_tx_2743_rrc.h"
+"$(TargetPath)" -m V.34_2800   -t &gt;"..\..\spandsp\src\v34_tx_2800_rrc.h"
+"$(TargetPath)" -m V.34_3000   -t &gt;"..\..\spandsp\src\v34_tx_3000_rrc.h"
+"$(TargetPath)" -m V.34_3200   -t &gt;"..\..\spandsp\src\v34_tx_3200_rrc.h"
+"$(TargetPath)" -m V.34_3429   -t &gt;"..\..\spandsp\src\v34_tx_3429_rrc.h"
+
+
 "$(TargetPath)" -m V.29 -r &gt;"..\..\spandsp\src\v29rx_rrc.h"
 "$(TargetPath)" -m V.29 -r &gt;"..\..\spandsp\src\v29rx_floating_rrc.h"
 "$(TargetPath)" -m V.29 -t &gt;"..\..\spandsp\src\v29tx_rrc.h"
