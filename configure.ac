@@ -705,9 +705,9 @@ PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   ])
 ])
 
-PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
+PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.1.1],[
   AM_CONDITIONAL([HAVE_SPANDSP],[true])],[
-    AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
+    AC_MSG_ERROR([no usable spandsp; please install spandsp4 devel package or equivalent])
 ])
 
 PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.17],[
