@@ -62,6 +62,48 @@ static switch_status_t get_file_size(switch_file_handle_t *fh, const char **stri
 	return status;
 }
 
+
+SWITCH_DECLARE(const char *) switch_core_absolute_filepath(const char *file, switch_core_session_t *session)
+{
+	const char *prefix = NULL;
+	char *ext;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
+		if (!switch_is_file_path(file)) {
+			char *tfile = NULL;
+			char *e;
+
+			if (*file == '[') {
+				tfile = switch_core_session_strdup(session, file);
+				if ((e = switch_find_end_paren(tfile, '[', ']'))) {
+					*e = '\0';
+					file = e + 1;
+				} else {
+					tfile = NULL;
+				}
+			}
+
+			if (!(prefix = switch_channel_get_variable(channel, "sound_prefix"))) {
+				prefix = SWITCH_GLOBAL_dirs.base_dir;
+			}
+
+			file = switch_core_session_sprintf(session, "%s%s%s%s%s", switch_str_nil(tfile), tfile ? "]" : "", prefix, SWITCH_PATH_SEPARATOR, file);
+		}
+		if ((ext = strrchr(file, '.'))) {
+			ext++;
+		} else {
+			switch_codec_implementation_t read_impl = { 0 };
+			switch_core_session_get_read_impl(session, &read_impl);
+			ext = read_impl.iananame;
+			file = switch_core_session_sprintf(session, "%s.%s", file, ext);
+		}
+	}
+
+	return file;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
 															  switch_file_handle_t *fh,
 															  const char *file_path,
