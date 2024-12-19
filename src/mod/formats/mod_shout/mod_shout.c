@@ -619,7 +619,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 			}
 		} else {
 			memset(mp3buf, 0, 128);
-			shout_send(context->shout, mp3buf, 128);
+			ret = shout_send(context->shout, mp3buf, 128);
 		}
 
 		shout_sync(context->shout);
