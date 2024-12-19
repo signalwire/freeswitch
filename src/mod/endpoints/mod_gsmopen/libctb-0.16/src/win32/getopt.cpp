@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        win32/getopt.cpp
 // Purpose:
-// Author:      unknown, I found it in the internet
+// Author:      Henry Spencer
 // Id:          $Id: getopt.cpp,v 1.1.1.1 2004/11/24 10:30:11 jb Exp $
-// Copyright:   (c) 2001 ?
-// Licence:     (I think Open Source)
+// Copyright:   (c) 1984 Henry Spencer
+// Licence:     public domain
 /////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
