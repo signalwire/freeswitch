@@ -2156,7 +2156,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
-		src/mod/codecs/mod_theora/Makefile
 		src/mod/databases/mod_mariadb/Makefile
 		src/mod/databases/mod_pgsql/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile

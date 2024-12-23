@@ -308,10 +308,6 @@ Module: codecs/mod_skel_codec
 Description: Adds mod_skel_codec
  Adds mod_skel_codec.
 
-Module: codecs/mod_theora
-Description: mod_theora
- Adds mod_theora.
-
 Module: codecs/mod_yuv
 Description: Adds mod_yuv
  Adds mod_yuv.
