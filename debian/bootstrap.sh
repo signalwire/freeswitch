@@ -46,7 +46,6 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   event_handlers/mod_smpp
-  event_handlers/mod_event_zmq
   formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap
