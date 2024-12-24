@@ -588,10 +588,6 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 ##
 ## helper targets
 ##
-yaml-files:
-	@echo `mkdir $(DESTDIR)$(confdir)/yaml 2>/dev/null`
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(confdir)/yaml
-
 vm-sync:
 	test -d $(DESTDIR)$(confdir) || $(mkinstalldirs) $(DESTDIR)$(confdir)
 	test -d $(DESTDIR)$(confdir)/lang || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang
