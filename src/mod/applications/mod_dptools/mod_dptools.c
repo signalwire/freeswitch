@@ -5322,6 +5322,130 @@ static switch_status_t file_url_file_write(switch_file_handle_t *handle, void *d
 
 /* Registration */
 
+/**
+ * TTS playback state
+ */
+struct tts_context {
+	/** handle to TTS engine */
+	switch_speech_handle_t sh;
+	/** TTS flags */
+	switch_speech_flag_t flags;
+	/** maximum number of samples to read at a time */
+	int max_frame_size;
+	/** done flag */
+	int done;
+};
+
+/**
+ * Do TTS as file format
+ * @param handle
+ * @param path the inline SSML
+ * @return SWITCH_STATUS_SUCCESS if opened
+ */
+static switch_status_t tts_file_open(switch_file_handle_t *handle, const char *path)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	struct tts_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
+	char *arg_string = switch_core_strdup(handle->memory_pool, path);
+	char *args[3] = { 0 };
+	int argc = switch_separate_string(arg_string, '|', args, (sizeof(args) / sizeof(args[0])));
+	char *module;
+	char *voice;
+	char *document;
+
+	/* path is module:(optional)profile|voice|{param1=val1,param2=val2}TTS document */
+	if (argc != 3) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	module = args[0];
+	voice = args[1];
+	document = args[2];
+
+	memset(context, 0, sizeof(*context));
+	context->flags = SWITCH_SPEECH_FLAG_NONE;
+	if ((status = switch_core_speech_open(&context->sh, module, voice, handle->samplerate, handle->interval, handle->channels, &context->flags, NULL)) == SWITCH_STATUS_SUCCESS) {
+		if (handle->params) {
+			const char *channel_uuid = switch_event_get_header(handle->params, "channel-uuid");
+
+			if (!zstr(channel_uuid)) {
+				switch_core_speech_text_param_tts(&context->sh, "channel-uuid", channel_uuid);
+			}
+		}
+
+		if ((status = switch_core_speech_feed_tts(&context->sh, document, &context->flags)) == SWITCH_STATUS_SUCCESS) {
+			handle->channels = 1;
+			handle->samples = 0;
+			handle->format = 0;
+			handle->sections = 0;
+			handle->seekable = 0;
+			handle->speed = 0;
+			context->max_frame_size = handle->samplerate / 1000 * SWITCH_MAX_INTERVAL;
+
+			if ((context->sh.flags & SWITCH_SPEECH_FLAG_MULTI)) {
+				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_DONE;
+				switch_core_speech_feed_tts(&context->sh, "DONE", &flags);
+			}
+		} else {
+			switch_core_speech_close(&context->sh, &context->flags);
+		}
+	}
+
+	handle->private_info = context;
+
+	return status;
+}
+
+/**
+ * Read audio from TTS engine
+ * @param handle
+ * @param data
+ * @param len
+ * @return
+ */
+static switch_status_t tts_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	struct tts_context *context = (struct tts_context *)handle->private_info;
+	switch_size_t rlen;
+
+	if (*len > context->max_frame_size) {
+		*len = context->max_frame_size;
+	}
+
+	rlen = *len * 2; /* rlen (bytes) = len (samples) * 2 */
+
+	if (!context->done) {
+		context->flags = SWITCH_SPEECH_FLAG_BLOCKING;
+		if ((status = switch_core_speech_read_tts(&context->sh, data, &rlen, &context->flags))) {
+			context->done = 1;
+		}
+	} else {
+		switch_core_speech_flush_tts(&context->sh);
+		memset(data, 0, rlen);
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	*len = rlen / 2; /* len (samples) = rlen (bytes) / 2 */
+
+	return status;
+}
+
+/**
+ * Close TTS engine
+ * @param handle
+ * @return SWITCH_STATUS_SUCCESS
+ */
+static switch_status_t tts_file_close(switch_file_handle_t *handle)
+{
+	struct tts_context *context = (struct tts_context *)handle->private_info;
+
+	switch_core_speech_close(&context->sh, &context->flags);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static char *tts_supported_formats[] = { "tts", NULL };
 static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 static char *file_url_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
@@ -6464,6 +6588,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	file_interface->file_write = file_url_file_write;
 	file_interface->file_seek = file_url_file_seek;
 
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = tts_supported_formats;
+	file_interface->file_open = tts_file_open;
+	file_interface->file_close = tts_file_close;
+	file_interface->file_read = tts_file_read;
 
 	error_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	error_endpoint_interface->interface_name = "error";
