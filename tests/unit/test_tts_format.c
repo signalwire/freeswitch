@@ -31,9 +31,8 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
-FST_CORE_BEGIN(".")
-
-FST_MODULE_BEGIN(mod_ssml, test_tts_format)
+FST_CORE_BEGIN("./conf_tts_format")
+FST_SUITE_BEGIN(test_tts_format)
 
 FST_SETUP_BEGIN()
 {
@@ -61,6 +60,5 @@ FST_SESSION_BEGIN(tts_channel_uuid)
 }
 FST_SESSION_END()
 
-FST_MODULE_END()
-
+FST_SUITE_END()
 FST_CORE_END()
