@@ -2823,6 +2823,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	}
 
 	switch_core_speech_feed_tts(sh, text, &flags);
+
+	if ((sh->flags & SWITCH_SPEECH_FLAG_MULTI)) {
+		flags = SWITCH_SPEECH_FLAG_DONE;
+		switch_core_speech_feed_tts(sh, "DONE", &flags);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Speaking text: %s\n", text);
 	switch_safe_free(tmp);
 	text = NULL;
