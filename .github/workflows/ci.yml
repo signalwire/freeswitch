@@ -4,18 +4,45 @@ on:
   push:
     branches:
       - master
+      - v1.10
   pull_request:
     types:
       - opened
       - synchronize
+  workflow_dispatch:
+    inputs:
+      freeswitch_ref:
+        description: 'FreeSWITCH repository ref'
+        required: false
+        type: string
+      sofia-sip_ref:
+        description: 'Sofia-Sip repository ref'
+        required: false
+        type: string
+      dind:
+        description: 'Run tests using Docker-in-Docker'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  CI_BASE_STATIC_IMAGE: signalwire/freeswitch-public-ci-base:bookworm-amd64
+  DOCKER_BUILD_SUMMARY: false
+  DOCKER_BUILD_CHECKS_ANNOTATIONS: false
+  DOCKER_BUILD_RECORD_UPLOAD: false
 
 jobs:
   unit-tests-pre-config:
+    if: ${{ !inputs.dind }}
+    name: "Unit-tests pre-config"
     runs-on: ubuntu-latest
     env:
       TOTAL_GROUPS: 2
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      container-image: ${{ steps.set-vars.outputs.container-image }}
+      working-directory: ${{ steps.set-vars.outputs.working-directory }}
+      tests-only: ${{ steps.set-vars.outputs.tests-only }}
     steps:
       - id: set-matrix
         shell: bash
@@ -25,81 +52,52 @@ jobs:
               include: [range(1; $groups + 1) | {group: ., total: $groups}]
             }')
           echo "matrix=$MATRIX" | tee -a $GITHUB_OUTPUT
+      - id: set-vars
+        shell: bash
+        run: |
+          echo "tests-only=false" >> $GITHUB_OUTPUT
+          echo "working-directory=freeswitch/tests/unit" >> $GITHUB_OUTPUT
+          echo "container-image=$CI_BASE_STATIC_IMAGE" >> $GITHUB_OUTPUT
 
   unit-tests:
-    needs: unit-tests-pre-config
+    if: ${{ !inputs.dind }}
+    name: "Unit-tests (group ${{ matrix.group }})"
+    needs:
+      - unit-tests-pre-config
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.unit-tests-pre-config.outputs.matrix) }}
-    name: "unit-tests (group ${{ matrix.group }})"
     uses: ./.github/workflows/unit-test.yml
     with:
       total-groups: ${{ matrix.total }}
       current-group: ${{ matrix.group }}
+      container-image: ${{ needs.unit-tests-pre-config.outputs.container-image }}
+      working-directory: ${{ needs.unit-tests-pre-config.outputs.working-directory }}
+      tests-only: ${{ fromJson(needs.unit-tests-pre-config.outputs.tests-only) }}
+    secrets: inherit
+
+  validate-unit-tests:
+    if: ${{ always() && !inputs.dind }}
+    name: "Validate Unit-tests"
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check unit tests status
+        run: |
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            exit 1
+          fi
+
+  unit-tests-dind:
+    if: ${{ inputs.dind }}
+    name: "Unit-tests D-in-D"
+    uses: ./.github/workflows/unit-test-dind.yml
+    with:
+      freeswitch_ref: ${{ inputs.freeswitch_ref }}
+      sofia-sip_ref: ${{ inputs.sofia-sip_ref }}
     secrets: inherit
 
   scan-build:
-    runs-on: ubuntu-latest
-    container:
-      image: signalwire/freeswitch-public-base:bookworm
-      credentials:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-      options: --privileged
-    env:
-      REPOTOKEN: ${{ secrets.REPOTOKEN }}
-      DEBIAN_FRONTEND: noninteractive
-
-    steps:
-      - name: Install dependencies
-        shell: bash
-        run: |
-          echo "machine freeswitch.signalwire.com password $REPOTOKEN" > /etc/apt/auth.conf && \
-          apt-get update && \
-          apt-get -y remove \
-            libsofia-sip-ua0 \
-            libspandsp-dev && \
-          apt-get -y install \
-            autoconf \
-            libsofia-sip-ua-dev \
-            libspandsp3-dev && \
-          rm -rf /etc/apt/auth.conf
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          path: /__w/freeswitch/freeswitch
-
-      - name: Bootstrap
-        shell: bash
-        working-directory: /__w/freeswitch/freeswitch
-        run: |
-          ./bootstrap.sh -j || exit 1
-
-      - name: Scan-build FreeSwitch
-        shell: bash
-        working-directory: /__w/freeswitch/freeswitch
-        run: |
-          cp build/modules.conf.most modules.conf && \
-          echo 'codecs/mod_openh264' >> modules.conf && \
-          sed -i \
-            -e '/mod_mariadb/s/^#//g' \
-            -e '/mod_v8/s/^#//g' \
-            -e '/mod_ilbc/s/^/#/g' \
-            -e '/mod_isac/s/^/#/g' \
-            -e '/mod_mp4/s/^/#/g' \
-            -e '/mod_mongo/s/^/#/g' \
-            -e '/mod_pocketsphinx/s/^/#/g' \
-            -e '/mod_sangoma_codec/s/^/#/g' \
-            -e '/mod_siren/s/^/#/g' \
-            -e '/mod_avmd/s/^/#/g' \
-            -e '/mod_basic/s/^/#/g' \
-            -e '/mod_cdr_mongodb/s/^/#/g' \
-            -e '/mod_cv/s/^/#/g' \
-            -e '/mod_erlang_event/s/^/#/g' \
-            -e '/mod_perl/s/^/#/g' \
-            -e '/mod_rtmp/s/^/#/g' \
-            -e '/mod_unimrcp/s/^/#/g' \
-            -e '/mod_xml_rpc/s/^/#/g' \
-          modules.conf && \
-          ./configure && \
-          ./scan_build.sh
+    name: "Scan Build"
+    uses: ./.github/workflows/scan-build.yml
+    secrets: inherit
