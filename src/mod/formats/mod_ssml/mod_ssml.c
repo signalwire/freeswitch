@@ -949,6 +949,11 @@ static switch_status_t tts_file_open(switch_file_handle_t *handle, const char *p
 			handle->seekable = 0;
 			handle->speed = 0;
 			context->max_frame_size = handle->samplerate / 1000 * SWITCH_MAX_INTERVAL;
+
+			if ((context->sh.flags & SWITCH_SPEECH_FLAG_MULTI)) {
+				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_DONE;
+				switch_core_speech_feed_tts(&context->sh, "DONE", &flags);
+			}
 		} else {
 			switch_core_speech_close(&context->sh, &context->flags);
 		}
