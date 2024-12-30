@@ -1,0 +1,8 @@
+
+<extension name="curl-tts">
+    <condition field="destination_number" expression="^(3123)$">
+	<action application="answer"/>
+	<action application="speak" data="curl|en|Hello world!"/>
+	<action application="hangup"/>
+    </condition>
+</extension>
