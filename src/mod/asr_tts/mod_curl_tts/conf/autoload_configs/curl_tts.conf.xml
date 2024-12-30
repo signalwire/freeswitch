@@ -1,0 +1,22 @@
+<configuration name="curl_tts.conf" description="">
+    <settings>
+        <param name="api-url" value="http://127.0.0.1/default_tts" />
+        <!-- <param name="api-key" value="YOUR-API-KEY" /> -->
+
+        <!-- curl settings -->
+        <param name="connect-timeout" value="10" />
+        <param name="request-timeout" value="25" />
+        <param name="file-size-max" value="2097152" />
+        <param name="log-http-errors" value="true" />
+	<param name="voice-name-as-language" value="true" />
+    <!-- <param name="proxy" value="http://proxy:port" /> -->
+    <!-- <param name="proxy-credentials" value="" /> -->
+    <!-- <param name="user-agent" value="Mozilla/1.0" /> -->
+
+        <!-- cache -->
+        <param name="cache-path" value="/tmp/curl-tts-cache" />
+        <param name="cache-enable" value="false" />
+
+    </settings>
+
+</configuration>
