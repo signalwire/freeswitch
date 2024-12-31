@@ -255,9 +255,6 @@ libs/sofia-sip*
 
 src/mod/applications/mod_test/test/test_asr
 src/mod/applications/mod_test/test/test_tts
-src/mod/event_handlers/mod_rayo/test/test_iks
-src/mod/event_handlers/mod_rayo/test/test_nlsml
-src/mod/event_handlers/mod_rayo/test/test_srgs
 src/mod/applications/mod_http_cache/test/Makefile
 src/mod/applications/mod_http_cache/test/Makefile.in
 src/mod/applications/mod_http_cache/test/test-suite.log
@@ -266,7 +263,6 @@ src/mod/applications/mod_http_cache/test/test_aws.log
 src/mod/applications/mod_http_cache/test/test_aws.trs
 src/mod/formats/mod_sndfile/test/test_sndfile
 src/mod/formats/mod_sndfile/test/test_sndfile_conf
-src/mod/formats/mod_ssml/test/test_tts_format
 src/mod/*/*/test/*.log
 src/mod/*/*/test/*.trs
 src/mod/*/*/test/[0-9]*/*

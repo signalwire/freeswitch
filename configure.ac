@@ -2210,7 +2210,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
-		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
@@ -2222,7 +2221,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
-		src/mod/formats/mod_ssml/Makefile
 		src/mod/formats/mod_tone_stream/Makefile
 		src/mod/formats/mod_vlc/Makefile
 		src/mod/formats/mod_portaudio_stream/Makefile
@@ -2339,7 +2337,6 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-AC_CONFIG_SUBDIRS([libs/iksemel])
 
 case $host in
    *-openbsd*|*-netbsd*)

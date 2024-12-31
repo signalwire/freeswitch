@@ -35,8 +35,6 @@
 %define build_py26_esl 0
 %define build_timerfd 0
 %define build_mod_esl 0
-%define build_mod_rayo 1
-%define build_mod_ssml 1
 %define build_mod_v8 0
 
 %{?with_sang_tc:%define build_sng_tc 1 }
@@ -984,17 +982,6 @@ Requires:        %{name} = %{version}-%{release}
 %description event-radius-cdr
 RADIUS Logger for the FreeSWITCH open source telephony platform
 
-%if %{build_mod_rayo}
-%package event-rayo
-Summary:        Rayo (XMPP 3PCC) server for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:	%{name} = %{version}-%{release}
-
-%description event-rayo
-Rayo 3PCC for FreeSWITCH.  http://rayo.org   http://xmpp.org/extensions/xep-0327.html
-Rayo is an XMPP protocol extension for third-party control of telephone calls.
-%endif
-
 %package event-snmp
 Summary:	SNMP stats reporter for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1086,16 +1073,6 @@ BuildRequires:	opusfile-devel >= 0.5
 
 %description format-opusfile
 Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
-
-%if %{build_mod_ssml}
-%package format-ssml
-Summary:        Adds Speech Synthesis Markup Language (SSML) parser format for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description format-ssml
-mod_ssml is a FreeSWITCH module that renders SSML into audio.  This module requires a text-to-speech module for speech synthesis.
-%endif
 
 %package format-tone-stream
 Summary:	Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
@@ -1472,9 +1449,6 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_radius_cdr \
 			event_handlers/mod_snmp"
-%if %{build_mod_rayo}
-EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
-%endif
 
 #### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
@@ -1484,9 +1458,6 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile formats/mod_portaudio_stream \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
-%if %{build_mod_ssml}
-FORMATS_MODULES+=" formats/mod_ssml"
-%endif
 
 ######################################################################################################################
 #
@@ -2278,11 +2249,6 @@ fi
 %files event-radius-cdr
 %{MODINSTDIR}/mod_radius_cdr.so*
 
-%if %{build_mod_rayo}
-%files event-rayo 
-%{MODINSTDIR}/mod_rayo.so*
-%endif
-
 %files event-snmp
 %{MODINSTDIR}/mod_snmp.so*
 
@@ -2309,11 +2275,6 @@ fi
 
 %files format-mod-shout
 %{MODINSTDIR}/mod_shout.so*
-
-%if %{build_mod_ssml}
-%files format-ssml
-%{MODINSTDIR}/mod_ssml.so*
-%endif
 
 %files format-tone-stream
 %{MODINSTDIR}/mod_tone_stream.so*
