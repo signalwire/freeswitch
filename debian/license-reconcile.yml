@@ -65,18 +65,6 @@ Rules:
    Matches: The\sauthor\sdisclaims\scopyright\sto\sthis\ssource\scode.
    License: public-domain
   -
-   Glob: libs/apr-util/crypto/apr_md5.c
-   Matches: Licensed\sunder\sthe\sApache\sLicense,\sVersion\s2.0
-   Matches: THE\sBEER-WARE\sLICENSE
-   License: RSA and Apache-2.0 and Beerware
-   Copyright: 1991-1992, RSA Data Security, Inc.
-   Copyright: 2000-2005 The Apache Software Foundation or its licensors
-   Copyright: phk@login.dknet.dk
-  -
-   Glob: libs/apr-util/*/apr_md[45].[ch]
-   Matches: Copyright\s\(C\)\s1991-2,\sRSA\sData\sSecurity,\sInc.
-   Copyright: 1991-1992, RSA Data Security, Inc.
-  -
    Glob: libs/apr/file_io/unix/mktemp.c
    Matches:  The\sASF\slicenses\sthis\sfile\sto\sYou\sunder\sthe\sApache\sLicense,\sVersion\s2.0
    Matches:  Copyright\s\(c\)\s1987,\s1993
@@ -104,17 +92,6 @@ Rules:
    Matches: Copyright\s\(c\)\s1992,\s1993
    Matches:  The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.
    Copyright: 1992, 1993 The Regents of the University of California.
-  -
-   Glob: libs/apr-util/ldap/apr_ldap_url.c
-   Matches: Copyright\s2000-2005\sThe\sApache\sSoftware\sFoundation\sor\sits\slicensors
-   Copyright: 2000-2005 The Apache Software Foundation or its licensors
-   Matches: Copyright\s1998-2002\sThe\sOpenLDAP\sFoundation
-   Copyright: 1998-2002 The OpenLDAP Foundation
-   Matches: Copyright\s\(c\)\s1992-1996\sRegents\sof\sthe\sUniversity\sof\sMichigan.
-   Copyright: 1992-1996 Regents of the University of Michigan.
-   Matches: http://www.OpenLDAP.org/license.html\sor\sin\sfile\sLICENSE\sin\sthe
-   License: Apache-2.0 and OpenLDAP and BSD-like
-   Justification: silly hack to shut up the 'by' problem
   -
    Glob: libs/js/*
    Matches: Version:\sMPL\s1.1/GPL\s2.0/LGPL\s2.1
