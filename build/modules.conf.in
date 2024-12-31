@@ -110,7 +110,6 @@ event_handlers/mod_event_socket
 #event_handlers/mod_json_cdr
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_odbc_cdr
-#event_handlers/mod_rayo
 #event_handlers/mod_smpp
 #event_handlers/mod_snmp
 #event_handlers/mod_event_zmq
@@ -122,7 +121,6 @@ formats/mod_png
 #formats/mod_shell_stream
 #formats/mod_shout
 formats/mod_sndfile
-#formats/mod_ssml
 formats/mod_tone_stream
 #formats/mod_vlc
 #formats/mod_opusfile

@@ -67,7 +67,6 @@ configure_freeswitch()
 			echo 'codecs/mod_openh264' >> modules.conf
 			sed -i \
 				-e '/applications\/mod_http_cache/s/^#//g' \
-				-e '/event_handlers\/mod_rayo/s/^#//g' \
 				-e '/formats\/mod_opusfile/s/^#//g' \
 				-e '/languages\/mod_lua/s/^#//g' \
 				modules.conf

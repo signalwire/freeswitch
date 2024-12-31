@@ -550,11 +550,6 @@ Module: event_handlers/mod_radius_cdr
 Description: mod_radius_cdr
  Adds mod_radius_cdr.
 
-Module: event_handlers/mod_rayo
-Description: mod_rayo
- Adds mod_rayo.
-Depends: freeswitch-mod-ssml (= ${binary:Version})
-
 Module: event_handlers/mod_smpp
 Description: mod_snmp
  Adds mod_snmp.
@@ -603,10 +598,6 @@ Description: mod_sndfile
  Adds mod_sndfile.
 Build-Depends: libsndfile1-dev, libflac-dev, libogg-dev,
  libvorbis-dev
-
-Module: formats/mod_ssml
-Description: mod_ssml
- Adds mod_ssml.
 
 Module: formats/mod_tone_stream
 Description: mod_tone_stream
