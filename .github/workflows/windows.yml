@@ -1,0 +1,28 @@
+name: Windows
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [master, release]
+jobs:
+  x64:
+    runs-on: windows-2019
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build
+      run: msbuild Freeswitch.2017.sln -t:build -verbosity:minimal -property:Configuration=Release -property:Platform=x64
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: MSI Package
+        path: D:\a\freeswitch\freeswitch\x64\*.msi
+      if: contains(github.event.pull_request.title, ':upload-artifacts') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10'

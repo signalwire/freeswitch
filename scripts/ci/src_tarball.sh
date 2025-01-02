@@ -58,7 +58,6 @@ mkdir -p ${src_repo}/../src_dist
 mv -f ${dst_name}.tar.* ${src_repo}/../src_dist
 mv -f $dst_name.zip ${src_repo}/../src_dist
 cp -f ${dst_dir}/freeswitch.spec ${src_repo}/../src_dist
-cp -f ${dst_dir}/freeswitch-config-rayo.spec ${src_repo}/../src_dist
 
 rm -rf ${dst_name}.tar $dst_dir
 

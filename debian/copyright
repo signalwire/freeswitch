@@ -1202,10 +1202,6 @@ Files: src/include/switch_cpp.h
 Copyright: 2007 Yossi Neiman <freeswitch@cartissolutions.com>
 License: MPL-1.1  (well, maybe -- it refers to a COPYING file, so probably docs/COPYING, in which case MPL-1.1)
 
-Files: libs/iksemel/*
-Copyright: 2000-2007 Gurer Ozen <madcat@e-kolay.net>
-License: LGPL-2.1
-
 Files: libs/apr*/*
 Copyright: 2000-2005 The Apache Software Foundation or its licensors
  1991-1992, RSA Data Security, Inc.
@@ -1519,7 +1515,6 @@ License: MPL-1.1
 
 Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
  src/mod/languages/mod_lua/lua-mode.el
- libs/iksemel/ltmain.sh
 Copyright: 1995-2007 Free Software Foundation, Inc.
 License: GPL-2+
 

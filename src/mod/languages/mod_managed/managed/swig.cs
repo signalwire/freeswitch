@@ -9283,6 +9283,14 @@ else
     freeswitchPINVOKE.switch_core_session_unlock_codec_read(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
+  public static void switch_core_codec_lock_full(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_codec_lock_full(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
+  public static void switch_core_codec_unlock_full(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_codec_unlock_full(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
   public static switch_status_t switch_core_session_get_read_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_read_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
     return ret;
@@ -19313,6 +19321,12 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_session_unlock_codec_read___")]
   public static extern void switch_core_session_unlock_codec_read(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_codec_lock_full___")]
+  public static extern void switch_core_codec_lock_full(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_codec_unlock_full___")]
+  public static extern void switch_core_codec_unlock_full(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_core_session_get_read_impl___")]
   public static extern int switch_core_session_get_read_impl(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);

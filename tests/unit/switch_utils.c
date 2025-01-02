@@ -80,6 +80,49 @@ FST_TEST_BEGIN(b64)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(b64_pad2)
+{
+    switch_size_t size;
+    char str[] = {0, 0, 0, 0};
+    unsigned char b64_str[128];
+    char decoded_str[128];
+	int i;
+    switch_status_t status = switch_b64_encode((unsigned char *)str, sizeof(str), b64_str, sizeof(b64_str));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "b64_str: %s\n", b64_str);
+    fst_check(status == SWITCH_STATUS_SUCCESS);
+    fst_check_string_equals((const char *)b64_str, "AAAAAA==");
+
+    size = switch_b64_decode((const char *)b64_str, decoded_str, sizeof(decoded_str));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "decoded_str: %s\n", decoded_str);
+    fst_check_string_equals(decoded_str, str);
+    fst_check(size == sizeof(str) + 1);
+	for (i = 0; i < sizeof(str); i++) {
+		fst_check(decoded_str[i] == str[i]);
+	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(b64_pad1)
+{
+    switch_size_t size;
+    char str[] = {0, 0, 0, 0, 0};
+    unsigned char b64_str[128];
+    char decoded_str[128];
+	int i;
+    switch_status_t status = switch_b64_encode((unsigned char *)str, sizeof(str), b64_str, sizeof(b64_str));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "b64_str: %s\n", b64_str);
+    fst_check(status == SWITCH_STATUS_SUCCESS);
+    fst_check_string_equals((const char *)b64_str, "AAAAAAA=");
+
+    size = switch_b64_decode((const char *)b64_str, decoded_str, sizeof(decoded_str));
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "decoded_str: %s\n", decoded_str);
+    fst_check_string_equals(decoded_str, str);
+    fst_check(size == sizeof(str) + 1);
+		for (i = 0; i < sizeof(str); i++) {
+		fst_check(decoded_str[i] == str[i]);
+	}
+}
+FST_TEST_END()
 
 FST_SUITE_END()
 
