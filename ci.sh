@@ -96,7 +96,6 @@ configure_freeswitch()
 				-e '/mod_mp4/s/^/#/g' \
 				-e '/mod_mongo/s/^/#/g' \
 				-e '/mod_pocketsphinx/s/^/#/g' \
-				-e '/mod_sangoma_codec/s/^/#/g' \
 				-e '/mod_siren/s/^/#/g' \
 				-e '/mod_avmd/s/^/#/g' \
 				-e '/mod_basic/s/^/#/g' \

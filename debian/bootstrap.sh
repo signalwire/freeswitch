@@ -46,7 +46,6 @@ avoid_mods=(
   codecs/mod_com_g729
   codecs/mod_openh264
   codecs/mod_siren
-  codecs/mod_sangoma_codec
   codecs/mod_skel_codec
   endpoints/mod_h323
   endpoints/mod_khomp
