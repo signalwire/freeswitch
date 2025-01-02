@@ -175,7 +175,6 @@ BuildLog.htm
 
 !/libs/win32/
 !/libs/speex/win32/
-!/src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/win32/
 *.suo
 *.sdf
 x64/

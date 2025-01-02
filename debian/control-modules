@@ -428,11 +428,6 @@ Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
 
-Module: endpoints/mod_gsmopen
-Description: mod_gsmopen
- Adds mod_gsmopen.
-Build-Depends: libx11-dev
-
 Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
