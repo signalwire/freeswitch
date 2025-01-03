@@ -60,6 +60,9 @@ applications/mod_voicemail
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_tts_commandline
+#asr_tts/mod_google_tts
+#asr_tts/mod_openai_tts
+#asr_tts/mod_piper_tts
 codecs/mod_amr
 #codecs/mod_amrwb
 codecs/mod_b64
