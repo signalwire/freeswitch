@@ -2501,7 +2501,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 {
 	char *ret = NULL;
 
-	if (switch_stristr("polycom", user_agent)) {
+	if (switch_stristr("poly", user_agent)) {
 		*ct = "application/xpidf+xml";
 
 		/* If unknown/none prpid is provided, just show the user as online. */
