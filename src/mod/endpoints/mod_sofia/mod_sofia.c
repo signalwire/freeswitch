@@ -4454,7 +4454,6 @@ SWITCH_STANDARD_API(sofia_function)
 		"                     check_sync [<call_id> | <[user]@domain>]\n"
 		"                     [register | unregister] [<gateway name> | all]\n"
 		"                     killgw <gateway name>\n"
-		"                     [stun-auto-disable | stun-enabled] [true | false]]\n"
 		"                     siptrace <on|off>\n"
 		"                     capture  <on|off>\n"
 		"                     watchdog <on|off>\n\n"
