@@ -26,6 +26,7 @@
 * Anthony Minessale II <anthm@freeswitch.org>
 * Neal Horman <neal at wanlink dot com>
 * Tihomir Culjaga <tculjaga@gmail.com>
+* Andrey Petrov <dalfos@mail.ru>
 *
 * mod_rad_auth.c -- module for radius authorization/authentication
 *
@@ -62,6 +63,16 @@ struct config_client
 typedef struct config_vsas CONFIG_VSAS;
 typedef struct config_client CONFIG_CLIENT;
 
+struct config_clients
+{
+	char* name;
+	CONFIG_CLIENT* client;
+
+	struct config_clients *pNext;
+};
+
+typedef struct config_clients CONFIG_CLIENTS;
+
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rad_authshutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_rad_authruntime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_rad_authload);
@@ -69,6 +80,7 @@ SWITCH_MODULE_DEFINITION(mod_rad_auth, mod_rad_authload, mod_rad_authshutdown, N
 
 CONFIG_VSAS* CONFIGVSAS;
 CONFIG_CLIENT* CONFIGCLIENT;
+CONFIG_CLIENTS* CONFIGCLIENTS;
 
 void free_radius_auth_value_pair(VALUE_PAIR *send, VALUE_PAIR *received, rc_handle *rh)
 {
@@ -259,7 +271,7 @@ int radius_auth_test(switch_channel_t *channel, char* username1, char* passwd1, 
 
 }
 
-int radius_auth(switch_channel_t *channel, char* called_number, char* username, char* password , char* auth_result/*, char* biling_model, char* credit_amount, char* currency, char* preffered_lang*/)
+int radius_auth(switch_channel_t *channel, char* called_number, char* username, char* password, char* client, char* auth_result/*, char* biling_model, char* credit_amount, char* currency, char* preffered_lang*/)
 {
 	int result = OK_RC;
 	VALUE_PAIR *send = NULL;
@@ -288,7 +300,21 @@ int radius_auth(switch_channel_t *channel, char* called_number, char* username, 
 
 #if EMBENDED_CONFIG
 
+		CONFIG_CLIENTS* PCONFIGCLIENTS = CONFIGCLIENTS;
 		CONFIG_CLIENT* PCONFIGCLIENT = CONFIGCLIENT;
+
+		if (client != NULL)
+		{
+			for (CONFIG_CLIENTS* x_config_clients = PCONFIGCLIENTS; x_config_clients; x_config_clients = x_config_clients->pNext)
+			{
+				if (strcmp(x_config_clients->name, client) == 0)
+				{
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "selected client: %s\n", x_config_clients->name);
+					PCONFIGCLIENT = x_config_clients->client;
+					break;
+				}
+			}
+		}
 
 		rh = rc_new();
 		if (rh == NULL)
@@ -696,8 +722,8 @@ SWITCH_STANDARD_APP(auth_function)
 		in_password_expanded = switch_channel_expand_variables(channel, in_password);
 
 
-		if (radius_auth(channel, in_called_number_expanded, in_username_expanded, in_password_expanded ,
-				auth_result/*, biling_model, credit_amount, currency, preffered_lang*/) != OK_RC)
+		if (radius_auth(channel, in_called_number_expanded, in_username_expanded, in_password_expanded,
+				NULL, auth_result/*, biling_model, credit_amount, currency, preffered_lang*/) != OK_RC)
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "An error occured during radius authorization.\n");
 		}
@@ -727,6 +753,199 @@ SWITCH_STANDARD_APP(auth_function)
 	}
 }
 
+SWITCH_STANDARD_APP(auth_function_client)
+{
+	char* in_called_number = NULL;
+	char *in_username = NULL;
+	char *in_password = NULL;
+	char* in_client = NULL;
+
+	char *out_auth_result = NULL;
+	/*char *out_biling_model = NULL;
+	char *out_credit_amount = NULL;
+	char *out_currency = NULL;
+	char *out_preffered_lang = NULL;*/
+
+	char auth_result[STR_LENGTH + 1];
+	/*char biling_model[STR_LENGTH + 1];
+	char credit_amount[STR_LENGTH + 1];
+	char currency[STR_LENGTH + 1];
+	char preffered_lang[STR_LENGTH + 1];*/
+
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	memset(auth_result, 0, STR_LENGTH);
+	/*memset(biling_model, 0, STR_LENGTH);
+	memset(credit_amount, 0, STR_LENGTH);
+	memset(currency, 0, STR_LENGTH);
+	memset(preffered_lang, 0, STR_LENGTH);*/
+
+	if (switch_strlen_zero(data))
+	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+			"No variable name specified.\n");
+	}
+	else
+	{
+
+		char *in_called_number_expanded = NULL;
+		char *in_username_expanded = NULL;
+		char *in_password_expanded = NULL;
+		char* in_client_expanded = NULL;
+
+
+		in_called_number = switch_core_session_strdup(session, data);
+
+		in_username = strchr(in_called_number, ',');
+
+		if (in_username)
+		{
+			*in_username++ = '\0';
+			if (switch_strlen_zero(in_username))
+			{
+				in_username = NULL;
+			}
+		}
+
+		in_password = strchr(in_username, ',');
+
+		if (in_password)
+		{
+			*in_password++ = '\0';
+			if (switch_strlen_zero(in_password))
+			{
+				in_password = NULL;
+			}
+		}
+
+		in_client = strchr(in_password, ',');
+
+		if (in_client)
+		{
+			*in_client++ = '\0';
+			if (switch_strlen_zero(in_client))
+			{
+				in_client = NULL;
+			}
+		}
+
+		out_auth_result = strchr(in_client, ',');
+
+		if (out_auth_result)
+		{
+			*out_auth_result++ = '\0';
+			if (switch_strlen_zero(out_auth_result))
+			{
+				out_auth_result = NULL;
+			}
+		}
+
+		/*out_biling_model = strchr(out_auth_result, ',');
+
+		if (out_biling_model)
+		{
+			*out_biling_model++ = '\0';
+			if (switch_strlen_zero(out_biling_model))
+			{
+				out_biling_model = NULL;
+			}
+		}
+
+		out_credit_amount = strchr(out_biling_model, ',');
+
+		if (out_credit_amount)
+		{
+			*out_credit_amount++ = '\0';
+			if (switch_strlen_zero(out_credit_amount))
+			{
+				out_credit_amount = NULL;
+			}
+		}
+
+		out_currency = strchr(out_credit_amount, ',');
+
+		if (out_currency)
+		{
+			*out_currency++ = '\0';
+			if (switch_strlen_zero(out_currency))
+			{
+				out_currency = NULL;
+			}
+		}
+
+		out_preffered_lang = strchr(out_currency, ',');
+
+		if (out_preffered_lang)
+		{
+			*out_preffered_lang++ = '\0';
+			if (switch_strlen_zero(out_preffered_lang))
+			{
+				out_preffered_lang = NULL;
+			}
+		}*/
+
+		if (in_called_number)
+			in_called_number = extract_in_variable(in_called_number);
+
+		in_username = extract_in_variable(in_username);
+		in_password = extract_in_variable(in_password);
+		in_client = extract_in_variable(in_client);
+		out_auth_result = extract_out_variable(out_auth_result);
+		/*out_biling_model = extract_out_variable(out_biling_model);
+		out_credit_amount = extract_out_variable(out_credit_amount);
+		out_currency = extract_out_variable(out_currency);
+		out_preffered_lang = extract_out_variable(out_preffered_lang);*/
+
+		if (!in_username || !in_password || !in_client)
+		{
+			//todo: throw Exception
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Syntax error.\n" );
+			return;
+		}
+
+		if (in_called_number)
+			in_called_number_expanded = switch_channel_expand_variables(channel, in_called_number);
+
+		in_username_expanded = switch_channel_expand_variables(channel, in_username);
+		in_password_expanded = switch_channel_expand_variables(channel, in_password);
+		in_client_expanded = switch_channel_expand_variables(channel, in_client);
+
+
+		if (radius_auth(channel, in_called_number_expanded, in_username_expanded, in_password_expanded,
+				in_client_expanded, auth_result/*, biling_model, credit_amount, currency, preffered_lang*/) != OK_RC)
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "An error occured during radius authorization.\n");
+		}
+
+
+		switch_channel_set_variable(channel, out_auth_result, auth_result);
+
+		/*switch_channel_set_variable(channel, out_biling_model, biling_model);
+		switch_channel_set_variable(channel, out_credit_amount, credit_amount);
+		switch_channel_set_variable(channel, out_currency, currency);
+		switch_channel_set_variable(channel, out_preffered_lang, preffered_lang);*/
+
+		if (in_called_number && in_called_number_expanded && in_called_number_expanded != in_called_number)
+		{
+			switch_safe_free(in_called_number_expanded);
+		}
+
+		if (in_username_expanded && in_username_expanded != in_username)
+		{
+			switch_safe_free(in_username_expanded);
+		}
+
+		if (in_password_expanded && in_password_expanded != in_password)
+		{
+			switch_safe_free(in_password_expanded);
+		}
+
+		if (in_client_expanded && in_client_expanded != in_client)
+		{
+			switch_safe_free(in_client_expanded);
+		}
+	}
+}
 
 
 
@@ -734,6 +953,7 @@ switch_status_t load_config()
 {
 	CONFIG_VSAS* PCONFIGVSAS = NULL;
 	CONFIG_CLIENT* PCONFIGCLIENT = NULL;
+	CONFIG_CLIENTS* PCONFIGCLIENTS = NULL;
 
 	char *cf = "rad_auth.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -749,6 +969,7 @@ switch_status_t load_config()
 
 	CONFIGVSAS = NULL;
 	CONFIGCLIENT = NULL;
+	CONFIGCLIENTS = NULL;
 
 	switch_event_create(&params, SWITCH_EVENT_MESSAGE);
 	switch_assert(params);
@@ -825,9 +1046,9 @@ switch_status_t load_config()
 		}
 	}
 
-
-	if ((settings = switch_xml_child(cfg, "client")))
+	for (settings = switch_xml_child(cfg, "client"); settings; settings = settings->next)
 	{
+		CONFIGCLIENT = NULL;
 		for (param = switch_xml_child(settings, "param"); param; param
 			= param->next)
 		{
@@ -855,6 +1076,28 @@ switch_status_t load_config()
 
 			PCONFIGCLIENT->pNext = NULL;
 		}
+		if (CONFIGCLIENT != NULL)
+		{
+			if (CONFIGCLIENTS == NULL)
+			{
+				CONFIGCLIENTS = malloc(sizeof(CONFIG_CLIENTS));
+				PCONFIGCLIENTS = CONFIGCLIENTS;
+			}
+			else
+			{
+				PCONFIGCLIENTS->pNext = malloc(sizeof(CONFIG_CLIENTS));
+				PCONFIGCLIENTS = PCONFIGCLIENTS->pNext;
+			}
+
+			name = (char *) switch_xml_attr_soft(settings, "name");
+
+			PCONFIGCLIENTS->name = (char*) malloc(STR_LENGTH + 1);
+			strncpy(PCONFIGCLIENTS->name, name, STR_LENGTH);
+
+			PCONFIGCLIENTS->client = CONFIGCLIENT;
+
+			PCONFIGCLIENTS->pNext = NULL;
+		}
 	}
 
 	switch_xml_free(xml);
@@ -871,6 +1114,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rad_authload)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "auth_function", NULL, NULL, auth_function, "in <USERNAME>, in <PASSWORD>, out <AUTH_RESULT>, out <BILING_MODEL>, out <CREDIT_AMOUNT>, out <CURRENCY>, out <PREFFERED_LANG>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "auth_function_client", NULL, NULL, auth_function_client, "in <CALLED_NUMBER>, in <USERNAME>, in <PASSWORD>, in <CLIENT>, out <AUTH_RESULT>", SAF_SUPPORT_NOMEDIA);
+	//SWITCH_ADD_APP(app_interface, "auth_function_client", NULL, NULL, auth_function_client, "in <CALLED_NUMBER>, in <USERNAME>, in <PASSWORD>, in <CLIENT>, out <AUTH_RESULT>, out <BILING_MODEL>, out <CREDIT_AMOUNT>, out <CURRENCY>, out <PREFFERED_LANG>", SAF_SUPPORT_NOMEDIA);
 
 	load_config();
 
@@ -888,10 +1133,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_rad_authruntime)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rad_authshutdown)
 {
 	CONFIG_VSAS* PCONFIGVSAS = CONFIGVSAS;
-	CONFIG_CLIENT* PCONFIGCLIENT = CONFIGCLIENT;
+	CONFIG_CLIENT* PCONFIGCLIENT = NULL;
+	CONFIG_CLIENTS* PCONFIGCLIENTS = CONFIGCLIENTS;
 
 	CONFIG_VSAS* tmpVSAS = NULL;
 	CONFIG_CLIENT* tmpCLIENT = NULL;
+	CONFIG_CLIENTS* tmpCLIENTS = NULL;
 
 	while(PCONFIGVSAS)
 	{
@@ -911,24 +1158,37 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rad_authshutdown)
 
 	CONFIGVSAS = NULL;
 
-
-	while(PCONFIGCLIENT)
+	while(PCONFIGCLIENTS)
 	{
-		if (PCONFIGCLIENT->name)
-			free(PCONFIGCLIENT->name);
-		PCONFIGCLIENT->name = NULL;
+		PCONFIGCLIENT = PCONFIGCLIENTS->client;
+		while(PCONFIGCLIENT)
+		{
+			if (PCONFIGCLIENT->name)
+				free(PCONFIGCLIENT->name);
+			PCONFIGCLIENT->name = NULL;
 
-		if (PCONFIGCLIENT->value)
-			free(PCONFIGCLIENT->value);
-		PCONFIGCLIENT->value = NULL;
+			if (PCONFIGCLIENT->value)
+				free(PCONFIGCLIENT->value);
+			PCONFIGCLIENT->value = NULL;
 
-		tmpCLIENT = PCONFIGCLIENT;
-		PCONFIGCLIENT = PCONFIGCLIENT->pNext;
+			tmpCLIENT = PCONFIGCLIENT;
+			PCONFIGCLIENT = PCONFIGCLIENT->pNext;
 
-		free(tmpCLIENT);
+			free(tmpCLIENT);
+		}
+		if (PCONFIGCLIENTS->name)
+			free(PCONFIGCLIENTS->name);
+		PCONFIGCLIENTS->name = NULL;
+		PCONFIGCLIENTS->client = NULL;
+
+		tmpCLIENTS = PCONFIGCLIENTS;
+		PCONFIGCLIENTS = PCONFIGCLIENTS->pNext;
+
+		free(tmpCLIENTS);
 	}
 
 	CONFIGCLIENT = NULL;
+	CONFIGCLIENTS = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }
