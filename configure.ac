@@ -1893,6 +1893,15 @@ then
 		fi
 		AC_MSG_RESULT([$PYTHON3_VER])
 
+		AC_MSG_CHECKING([for python3 sysconfig])
+		python3_result="`$PYTHON3 -c 'import sysconfig;' 2>&1`"
+		if test -z "$python3_result" ; then
+						python3_has_sysconfig="yes"
+		else
+						python3_has_sysconfig="no"
+		fi
+		AC_MSG_RESULT([$python3_has_sysconfig])
+
 		AC_MSG_CHECKING([for python3 distutils])
 		python3_result="`$PYTHON3 -c 'import distutils;' 2>&1`"
 		if test -z "$python3_result" ; then
@@ -1902,10 +1911,14 @@ then
 		fi
 		AC_MSG_RESULT([$python3_has_distutils])
 
-		if test "$python3_has_distutils" != "no" ; then
+		if test "$python3_has_distutils" != "no" -o "$python3_has_sysconfig" != "no" ; then
 			AC_MSG_CHECKING([location of python3 site-packages])
 
-			PYTHON3_SITE_DIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
+			if test "$python3_has_sysconfig" = "yes"; then
+				PYTHON3_SITE_DIR="`$PYTHON3 -c 'import sysconfig; print(sysconfig.get_paths()[[\"purelib\"]]);'`"
+			else
+				PYTHON3_SITE_DIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
+			fi
 
 			if test -z "$PYTHON3_SITE_DIR" ; then
 				AC_MSG_ERROR([Unable to detect python3 site-packages path])
@@ -1918,11 +1931,18 @@ then
 			#
 			# python3 distutils found, get settings from python3 directly
 			#
-			PYTHON3_CFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
-			PYTHON3_LDFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]); print(\" \".join(libs));'`"
-			PYTHON3_LIB="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); print(\"python\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]);'`"
-			PYTHON3_LIBDIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
-
+			if test "$python3_has_sysconfig" = "yes"; then
+				PYTHON3_CFLAGS="`$PYTHON3 -c 'import sysconfig; flags = [\"-I\" + sysconfig.get_paths()[\"include\"], \"-I\" + sysconfig.get_paths()[\"platinclude\"], \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]; print(\" \".join(flags))' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
+				PYTHON3_LDFLAGS="`$PYTHON3 -c 'import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]); print(\" \".join(libs));'`"
+				PYTHON3_LIB="`$PYTHON3 -c 'import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); print(\"python\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]);'`"
+				PYTHON3_LIBDIR="`$PYTHON3 -c 'import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
+			else
+				PYTHON3_CFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
+				PYTHON3_LDFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]); print(\" \".join(libs));'`"
+				PYTHON3_LIB="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); print(\"python\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]);'`"
+				PYTHON3_LIBDIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
+			fi
+      
 			# handle python3 being installed into /usr/local
 			AC_MSG_CHECKING([python3 libdir])
 			if test -z "`echo $PYTHON3_LIBDIR | grep "/usr/lib"`" ; then
