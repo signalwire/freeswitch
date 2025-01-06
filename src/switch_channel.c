@@ -2706,6 +2706,17 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Call-UUID", switch_core_session_get_uuid(channel->session));
 	}
 
+        //<<--- cyracom changes for -- cliq and tenfold
+        if ((v = switch_channel_get_variable_dup(channel, "c_linked_id", SWITCH_FALSE, -1))) {
+           switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Linked-Id", v);
+        }
+	        
+        if ((v = switch_channel_get_variable_dup(channel, "c_direction", SWITCH_FALSE, -1))) {
+           switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Actual-Caller-Direction", v);
+	}
+	// ----- cytracom changes ---->>
+	
+
 	if (switch_channel_down_nosig(channel)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "hangup");
 	} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {

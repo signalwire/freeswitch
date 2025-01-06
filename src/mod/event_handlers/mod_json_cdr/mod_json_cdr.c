@@ -373,8 +373,11 @@ static void process_cdr(cdr_data_t *data)
 			if (cur_try > 0) {
 				switch_yield(globals.delay * 1000000);
 			}
-
-			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], data->uuid);
+            		//<<--- cytracom change to support elastic 5.6 ----
+	                //destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], data->uuid);
+            		destUrl = switch_mprintf("%s/%s", globals.urls[globals.url_index], data->uuid);
+            		// --- cytracom change --->>
+			
 			switch_curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
 			if (!strncasecmp(destUrl, "https", 5)) {

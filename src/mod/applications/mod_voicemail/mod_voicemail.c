@@ -49,7 +49,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown);
 SWITCH_MODULE_DEFINITION(mod_voicemail, mod_voicemail_load, mod_voicemail_shutdown, NULL);
 #define VM_EVENT_MAINT "vm::maintenance"
 
-#define VM_MAX_GREETINGS 9
+#define VM_MAX_GREETINGS 1 // Cytracom only support greeting_1 now
 #define VM_EVENT_QUEUE_SIZE 50000
 
 static switch_status_t voicemail_inject(const char *data, switch_core_session_t *session);
@@ -156,6 +156,7 @@ struct vm_profile {
 	char *tone_spec;
 	char *storage_dir;
 	switch_bool_t storage_dir_shared;
+	char *name_file_path_prefix;
 	char *callback_dialplan;
 	char *callback_context;
 	char *email_body;
@@ -633,6 +634,8 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 						   &profile->storage_dir, "", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "storage-dir-shared", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
 						   &profile->storage_dir_shared, SWITCH_FALSE, NULL, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "name-file-path-prefix", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
+						   &profile->name_file_path_prefix, "/var/media/fs_voicemail", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "callback-dialplan", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->callback_dialplan, "XML", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "callback-context", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
@@ -2210,7 +2213,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 				if (!strcmp(input, profile->main_menu_key)) {
 					vm_check_state = VM_CHECK_MENU;
-				} else if (!strcmp(input, profile->choose_greeting_key)) {
+				} else if (!strcmp(input, profile->choose_greeting_key) && (VM_MAX_GREETINGS > 1)) { // Cytracom only supports greeting_1 now
 					int num;
 					switch_input_args_t greeting_args = { 0 };
 					greeting_args.input_callback = cancel_on_dtmf;
@@ -2267,9 +2270,13 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_safe_free(file_path);
 				} else if (!strcmp(input, profile->record_greeting_key)) {
 					int num;
-					TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
+					if (VM_MAX_GREETINGS > 1) { // Cytracom only support greeting_1 now
+						TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
+						num = atoi(input);
+					} else {
+						num = 1;
+					}
 
-					num = atoi(input);
 					if (num < 1 || num > VM_MAX_GREETINGS) {
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
 					} else {
@@ -3497,6 +3504,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	switch_snprintfv(sql, sizeof(sql), "select * from voicemail_prefs where username='%q' and domain='%q'", id, domain_name);
 	vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
+
+	// Cytracom change - Override the name_path from SQL voicemail_prefs with the name_path from the voicemail.conf.xml file, because SQL isn't always synced.
+	switch_snprintf(cbt.name_path, sizeof(cbt.name_path), "%s/%s/%s/recorded_name.wav", profile->name_file_path_prefix, domain_name, id);
 
 	if (!vm_ext) {
 		vm_ext = profile->file_ext;
