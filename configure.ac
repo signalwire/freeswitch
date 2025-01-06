@@ -1080,7 +1080,7 @@ fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
 # Untested modules : mod_osp mod_soundtouch mod_opal mod_h323 mod_khomp 
-#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+#                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -2150,7 +2150,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_vmd/Makefile
 		src/mod/applications/mod_voicemail/Makefile
 		src/mod/applications/mod_voicemail_ivr/Makefile
-		src/mod/asr_tts/mod_cepstral/Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
