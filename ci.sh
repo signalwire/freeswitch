@@ -93,7 +93,6 @@ configure_freeswitch()
 			sed -i \
 				-e '/mod_ilbc/s/^/#/g' \
 				-e '/mod_isac/s/^/#/g' \
-				-e '/mod_mp4/s/^/#/g' \
 				-e '/mod_mongo/s/^/#/g' \
 				-e '/mod_pocketsphinx/s/^/#/g' \
 				-e '/mod_siren/s/^/#/g' \
