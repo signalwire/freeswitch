@@ -85,7 +85,6 @@ dialplans/mod_dialplan_xml
 #endpoints/mod_khomp
 endpoints/mod_loopback
 #endpoints/mod_opal
-#endpoints/mod_portaudio
 endpoints/mod_rtc
 #endpoints/mod_rtmp
 endpoints/mod_skinny
@@ -111,7 +110,6 @@ event_handlers/mod_event_socket
 formats/mod_local_stream
 formats/mod_native_file
 formats/mod_png
-#formats/mod_portaudio_stream
 #formats/mod_shell_stream
 #formats/mod_shout
 formats/mod_sndfile

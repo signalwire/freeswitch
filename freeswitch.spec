@@ -827,17 +827,6 @@ PostgreSQL native support for FreeSWITCH.
 #%description endpoint-khomp
 #Khomp hardware endpoint support for FreeSWITCH open source telephony platform.
 
-%package endpoint-portaudio
-Summary:        PortAudio endpoint support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:	alsa-lib
-BuildRequires:	alsa-lib-devel
-BuildRequires:	portaudio-devel
-
-%description endpoint-portaudio
-PortAudio endpoint support for FreeSWITCH open source telephony platform.
-
 %package endpoint-rtmp
 Summary:        RTPM Endpoint support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1000,15 +989,6 @@ The native file module is designed to make it easy to play sound files where no
 transcoding is necessary. The default FreeSWITCH sound files are in wav format.
 Generally, these require transcoding when being played to callers. However, if
 a native format sound file is available then FreeSWITCH can use it. 
-
-%package format-portaudio-stream
-Summary:	PortAudio Media Steam support for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:	%{name} = %{version}-%{release}
-BuildRequires:	portaudio-devel
-
-%description format-portaudio-stream
-Portaudio Streaming interface Audio for FreeSWITCH
 
 %package format-shell-stream
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
@@ -1288,7 +1268,6 @@ Requires:	freeswitch-codec-siren
 Requires:	freeswitch-database-pgsql
 Requires:	freeswitch-format-local-stream
 Requires:	freeswitch-format-native-file
-Requires:	freeswitch-format-portaudio-stream
 Requires:	freeswitch-format-tone-stream
 Requires:	freeswitch-lang-en
 
@@ -1403,7 +1382,7 @@ DIRECTORIES_MODULES=""
 #
 ######################################################################################################################
 ENDPOINTS_MODULES=" \
-			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
+			endpoints/mod_loopback endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
 ## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323 endpoints/mod_khomp 
@@ -1424,7 +1403,7 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 #					File and Audio Format Handlers
 #
 ######################################################################################################################
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile formats/mod_portaudio_stream \
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
 
 ######################################################################################################################
@@ -1845,7 +1824,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/oreka.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/osp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pocketsphinx.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/portaudio.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/post_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pre_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/presence_map.conf.xml
@@ -2146,9 +2124,6 @@ fi
 #%files endpoint-khomp
 #%{MODINSTDIR}/mod_khomp.so*
 
-%files endpoint-portaudio
-%{MODINSTDIR}/mod_portaudio.so*
-
 %files endpoint-rtmp
 %{MODINSTDIR}/mod_rtmp.so*
 
@@ -2212,9 +2187,6 @@ fi
 
 %files format-opusfile
 %{MODINSTDIR}/mod_opusfile.so*
-
-%files format-portaudio-stream
-%{MODINSTDIR}/mod_portaudio_stream.so*
 
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*

@@ -427,11 +427,6 @@ Description: mod_opal
  Adds mod_opal.
 Build-Depends: libopal-dev
 
-Module: endpoints/mod_portaudio
-Description: mod_portaudio
- Adds mod_portaudio.
-Build-Depends: portaudio19-dev
-
 Module: endpoints/mod_reference
 Description: mod_reference
  Adds mod_reference.
@@ -553,11 +548,6 @@ Description: mod_native_file
 Module: formats/mod_png
 Description: Adds mod_png
  Adds mod_png.
-
-Module: formats/mod_portaudio_stream
-Description: mod_portaudio_stream
- Adds mod_portaudio_stream.
-Build-Depends: portaudio19-dev
 
 Module: formats/mod_shell_stream
 Description: mod_shell_stream

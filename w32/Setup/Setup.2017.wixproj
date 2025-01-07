@@ -529,14 +529,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_portaudio\mod_PortAudio.2017.vcxproj">
-      <Name>mod_PortAudio</Name>
-      <Project>{5fd31a25-5d83-4794-8bee-904dad84ce71}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\endpoints\mod_rtc\mod_rtc.2017.vcxproj">
       <Name>mod_rtc</Name>
       <Project>{3884add2-91d0-4cd6-86d3-d5fb2d4aab9e}</Project>

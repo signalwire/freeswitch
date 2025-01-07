@@ -1533,15 +1533,6 @@ Files: src/mod/endpoints/mod_skinny/*.p[lm]
 Copyright: 2010, Mathieu Parent <math.parent@gmail.com>
 License: Perl
 
-Files: src/mod/endpoints/mod_portaudio/*
-Copyright: 1999-2000 Ross Bencina and Phil Burk
- 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
-License: MIT/X11 (BSD like)
-
-Files: src/mod/endpoints/mod_portaudio/mod_portaudio.c
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
-License: MPL-1.1
-
 Files: src/mod/endpoints/mod_sofia/sip-dig.c
 Copyright: 2006 Nokia Corporation
 License: LGPL-2.1+

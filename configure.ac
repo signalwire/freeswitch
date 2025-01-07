@@ -1261,7 +1261,6 @@ case $host in
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
-        path_push_unique PKG_CONFIG_PATH /usr/local/opt/portaudio/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ffmpeg/lib/pkgconfig/
        ;;
 esac
@@ -1328,9 +1327,6 @@ PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
-PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
-  AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
@@ -2182,7 +2178,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_khomp/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
-		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_reference/Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
@@ -2217,7 +2212,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_sndfile/Makefile
 		src/mod/formats/mod_tone_stream/Makefile
 		src/mod/formats/mod_vlc/Makefile
-		src/mod/formats/mod_portaudio_stream/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
 		src/mod/languages/mod_managed/Makefile

@@ -592,8 +592,6 @@ srtp/build/compile
 /sqlite-*/
 /sqlite/
 /ldns/
-/portaudio/
-portaudio.*.log
 apr/configure
 libyuv/Makefile
 libyuv/convert
