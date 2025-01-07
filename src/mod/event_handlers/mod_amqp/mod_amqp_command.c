@@ -231,7 +231,7 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 	}
 
 	/* Construct the api response */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Preparing api command response: [%s]\n", (char *)stream.data);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Preparing api command response: [%s]\n", (char *)stream.data);
 	message = cJSON_CreateObject();
 
 	cJSON_AddItemToObject(message, "output", cJSON_CreateString((const char *) stream.data));

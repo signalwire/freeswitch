@@ -185,6 +185,10 @@ typedef struct {
 	char body[SWITCH_RTCP_MAX_BUF_LEN];
 } rtcp_msg_t;
 
+typedef struct {
+	switch_rtcp_hdr_t header;
+	uint32_t ssrc;
+} sdes_ssrc_t;
 
 typedef enum {
 	VAD_FIRE_TALK = (1 << 0),
@@ -2228,9 +2232,9 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		struct switch_rtcp_report_block *rtcp_report_block = NULL;
 		switch_size_t rtcp_bytes = sizeof(struct switch_rtcp_hdr_s)+sizeof(uint32_t); /* add size of the packet header and the ssrc */
 		switch_rtcp_hdr_t *sdes;
+		sdes_ssrc_t *sdes_ssrc;
 		uint8_t *p;
 		switch_size_t sdes_bytes = sizeof(struct switch_rtcp_hdr_s);
-		uint32_t *ssrc;
 		switch_rtcp_sdes_unit_t *unit;
 		switch_bool_t is_only_receiver = FALSE;
 
@@ -2426,14 +2430,13 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 		//SDES + CNAME
 		p = (uint8_t *) (&rtp_session->rtcp_send_msg) + rtcp_bytes;
-		sdes = (switch_rtcp_hdr_t *) p;
+		sdes_ssrc = (sdes_ssrc_t *) p;
+		sdes = &sdes_ssrc->header;
 		sdes->version = 2;
 		sdes->type = _RTCP_PT_SDES;
 		sdes->count = 1;
 		sdes->p = 0;
-		p = (uint8_t *) (sdes) + sdes_bytes;
-		ssrc = (uint32_t *) p;
-		*ssrc = htonl(rtp_session->ssrc);
+		sdes_ssrc->ssrc = htonl(rtp_session->ssrc);
 		sdes_bytes += sizeof(uint32_t);
 
 
@@ -3374,7 +3377,20 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		return 0;
 	}
 
-	if (is_ice && !rtp_session->ice.cand_responsive) {
+	if (is_ice && !(rtp_session->ice.type & ICE_LITE) && !rtp_session->ice.cand_responsive) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG6, "Got DTLS packet but candidate is not responsive\n");
+
+		return 0;
+	}
+
+	if (is_ice && !switch_cmp_addr(rtp_session->from_addr, rtp_session->ice.addr, SWITCH_TRUE)) {
+		char tmp_buf1[80] = "";
+		char tmp_buf2[80] = "";
+		const char *host_from = switch_get_addr(tmp_buf1, sizeof(tmp_buf1), rtp_session->from_addr);
+		const char *host_ice_cur_addr = switch_get_addr(tmp_buf2, sizeof(tmp_buf2), rtp_session->ice.addr);
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG5, "Got DTLS packet from [%s] whilst current ICE negotiated address is [%s]. Ignored.\n", host_from, host_ice_cur_addr);
+
 		return 0;
 	}
 
@@ -4219,6 +4235,20 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_256_HMAC_SHA1_32");
 		}
 		break;
+	case AES_CM_192_HMAC_SHA1_80:
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_80(&policy->rtp);
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_80(&policy->rtcp);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_192_HMAC_SHA1_80");
+		}
+		break;
+	case AES_CM_192_HMAC_SHA1_32:
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_32(&policy->rtp);
+		srtp_crypto_policy_set_aes_cm_192_hmac_sha1_32(&policy->rtcp);
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_192_HMAC_SHA1_32");
+		}
+		break;
 	case AES_CM_128_NULL_AUTH:
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy->rtp);
 		srtp_crypto_policy_set_aes_cm_128_null_auth(&policy->rtcp);
@@ -4228,6 +4258,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		}
 		break;
 	default:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Missing crypto type!\n");
 		break;
 	}
 
@@ -4486,7 +4517,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_sockaddr_create(&rtp_session->rtcp_from_addr, pool);
 	}
 
-	rtp_session->seq = (uint16_t) rand();
+	rtp_session->seq = (uint16_t) switch_rand();
 	rtp_session->ssrc = (uint32_t) ((intptr_t) rtp_session + (switch_time_t) switch_epoch_time_now(NULL));
 #ifdef DEBUG_TS_ROLLOVER
 	rtp_session->last_write_ts = TS_ROLLOVER_START;
@@ -8236,11 +8267,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		int external = (flags && *flags & SFF_EXTERNAL);
 		/* Normalize the timestamps to our own base by generating a made up starting point then adding the measured deltas to that base
-		   so if the timestamps and ssrc of the source change, it will not break the other end's jitter bufffer / decoder etc *cough* CHROME *cough*
+		   so if the timestamps and ssrc of the source change, it will not break the other end's jitter buffer / decoder etc *cough* CHROME *cough*
 		 */
 
 		if (!rtp_session->ts_norm.ts) {
-			rtp_session->ts_norm.ts = (uint32_t) rand() % 1000000 + 1;
+			rtp_session->ts_norm.ts = (uint32_t) switch_rand() % 1000000 + 1;
 		}
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc || rtp_session->ts_norm.last_external != external) {
@@ -8489,9 +8520,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
-				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes);
+				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], send_msg, &sbytes);
 			} else {
-				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &send_msg->header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], send_msg, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
 			}
 
 			if (stat) {
@@ -9013,9 +9044,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND_MKI]) {
-				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes);
+				stat = srtp_protect(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg, &sbytes);
 			} else {
-				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg.header, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
+				stat = srtp_protect_mki(rtp_session->send_ctx[rtp_session->srtp_idx_rtp], &rtp_session->write_msg, &sbytes, 1, SWITCH_CRYPTO_MKI_INDEX);
 			}
 
 			if (stat) {

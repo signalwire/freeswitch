@@ -29,19 +29,11 @@
 #
 ######################################################################################################################
 # Module build settings
-%define build_sng_isdn 0
-%define build_sng_ss7 0
-%define build_sng_tc 0
 %define build_py26_esl 0
 %define build_timerfd 0
 %define build_mod_esl 0
-%define build_mod_rayo 1
-%define build_mod_ssml 1
 %define build_mod_v8 0
 
-%{?with_sang_tc:%define build_sng_tc 1 }
-%{?with_sang_isdn:%define build_sng_isdn 1 }
-%{?with_sang_ss7:%define build_sng_ss7 1 }
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
@@ -140,7 +132,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.15
+BuildRequires: sofia-sip-devel >= 1.13.17
 BuildRequires: spandsp3-devel >= 3.0
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
@@ -748,19 +740,6 @@ BuildRequires:  opus-devel >= 1.1
 %description codec-opus
 OPUS Codec support for FreeSWITCH open source telephony platform
 
-%if %{build_sng_tc}
-%package sangoma-codec
-Summary:	Sangoma D100 and D500 Codec Card Support
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-Requires: sng-tc-linux
-BuildRequires: sng-tc-linux
-
-%description sangoma-codec
-Sangoma D100 and D500 Codec Card Support
-
-%endif
-
 %package codec-silk
 Summary:        Silk Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -831,16 +810,6 @@ PostgreSQL native support for FreeSWITCH.
 ######################################################################################################################
 #				FreeSWITCH Endpoint Modules
 ######################################################################################################################
-
-#%package endpoint-gsmopen
-#Summary:        Generic GSM endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-gsmopen
-#GSMopen is an endpoint (channel driver) that allows an SMS to be sent or 
-#received from FreeSWITCH as well as incoming and outgoing GSM voice calls.
-#SMS is handled via the standard CHAT API in FreeSWITCH.
 
 #%package endpoint-h323
 #Summary:        H.323 endpoint support for FreeSWITCH open source telephony platform
@@ -952,16 +921,6 @@ Requires:        %{name} = %{version}-%{release}
 %description event-format-cdr
 JSON and XML Logger for the FreeSWITCH open source telephony platform
 
-%package kazoo
-Summary:	Kazoo Module for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:	%{name} = %{version}-%{release}
-Requires:	erlang
-BuildRequires:	erlang
-
-%description kazoo
-Kazoo Module for FreeSWITCH.
-
 %package event-multicast
 Summary:	Multicast Event System for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -993,17 +952,6 @@ Requires:        %{name} = %{version}-%{release}
 
 %description event-radius-cdr
 RADIUS Logger for the FreeSWITCH open source telephony platform
-
-%if %{build_mod_rayo}
-%package event-rayo
-Summary:        Rayo (XMPP 3PCC) server for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:	%{name} = %{version}-%{release}
-
-%description event-rayo
-Rayo 3PCC for FreeSWITCH.  http://rayo.org   http://xmpp.org/extensions/xep-0327.html
-Rayo is an XMPP protocol extension for third-party control of telephone calls.
-%endif
 
 %package event-snmp
 Summary:	SNMP stats reporter for the FreeSWITCH open source telephony platform
@@ -1096,16 +1044,6 @@ BuildRequires:	opusfile-devel >= 0.5
 
 %description format-opusfile
 Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
-
-%if %{build_mod_ssml}
-%package format-ssml
-Summary:        Adds Speech Synthesis Markup Language (SSML) parser format for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description format-ssml
-mod_ssml is a FreeSWITCH module that renders SSML into audio.  This module requires a text-to-speech module for speech synthesis.
-%endif
 
 %package format-tone-stream
 Summary:	Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
@@ -1437,9 +1375,6 @@ CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora"
 #
-%if %{build_sng_tc}
-CODECS_MODULES+="codecs/mod_sangoma_codec"
-%endif
 
 ######################################################################################################################
 #
@@ -1471,7 +1406,7 @@ ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323 endpoints/mod_khomp 
  
 ######################################################################################################################
 #
@@ -1480,11 +1415,8 @@ ENDPOINTS_MODULES=" \
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
 			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
-			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_kazoo event_handlers/mod_radius_cdr \
+			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_radius_cdr \
 			event_handlers/mod_snmp"
-%if %{build_mod_rayo}
-EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
-%endif
 
 #### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
@@ -1494,9 +1426,6 @@ EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile formats/mod_portaudio_stream \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
-%if %{build_mod_ssml}
-FORMATS_MODULES+=" formats/mod_ssml"
-%endif
 
 ######################################################################################################################
 #
@@ -1697,17 +1626,6 @@ cd ../..
 #
 ######################################################################################################################
 
-%if %{build_sng_ss7}
-#do not delete a thing
-%else
-%{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_ss7*
-%endif
-%if %{build_sng_isdn}
-#do not delete a thing
-%else
-%{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_isdn*
-%endif
-
 %{__rm} -f %{buildroot}/%{LIBDIR}/*.la
 %{__rm} -f %{buildroot}/%{MODINSTDIR}/*.la
 
@@ -1891,7 +1809,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_mongodb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_sqlite.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cepstral.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference_layouts.conf.xml
@@ -1916,7 +1833,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/http_cache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/java.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/kazoo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/lcr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/local_stream.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/logfile.conf.xml
@@ -1936,12 +1852,10 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/redis.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/skinny.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/smpp.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sms_flowroute.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sndfile.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sofia.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/spandsp.conf.xml
@@ -2190,11 +2104,6 @@ fi
 %{MODINSTDIR}/mod_opus.so*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opus.conf.xml
 
-%if %{build_sng_tc}
-%files sangoma-codec
-%{MODINSTDIR}/mod_sangoma_codec.so*
-%endif
-
 %files codec-silk
 %{MODINSTDIR}/mod_silk.so*
 
@@ -2230,9 +2139,6 @@ fi
 #						FreeSWITCH endpoint Modules
 #
 ######################################################################################################################
-
-#%files endpoint-gsmopen
-#%{MODINSTDIR}/mod_gsmopen.so*
 
 #%files endpoint-h323
 #%{MODINSTDIR}/mod_h323.so*
@@ -2286,16 +2192,8 @@ fi
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
 
-%files kazoo
-%{MODINSTDIR}/mod_kazoo.so*
-
 %files event-radius-cdr
 %{MODINSTDIR}/mod_radius_cdr.so*
-
-%if %{build_mod_rayo}
-%files event-rayo 
-%{MODINSTDIR}/mod_rayo.so*
-%endif
 
 %files event-snmp
 %{MODINSTDIR}/mod_snmp.so*
@@ -2323,11 +2221,6 @@ fi
 
 %files format-mod-shout
 %{MODINSTDIR}/mod_shout.so*
-
-%if %{build_mod_ssml}
-%files format-ssml
-%{MODINSTDIR}/mod_ssml.so*
-%endif
 
 %files format-tone-stream
 %{MODINSTDIR}/mod_tone_stream.so*

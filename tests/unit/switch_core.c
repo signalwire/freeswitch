@@ -53,6 +53,47 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_switch_rand)
+		{
+			int i, c = 0;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLet's generate a few random numbers.\n");
+
+			for (i = 0; i < 10; i++) {
+				uint32_t rnd = switch_rand();
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Random number %d\n", rnd);
+
+				if (rnd == 1) {
+					c++;
+				}
+			}
+
+			/* We do not expect all random numbers to be 1 all 10 times. That would mean we have an error OR we are lucky to have 10 random ones! */
+			fst_check(c < 10);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_uint31_t_overflow)
+		{
+			switch_uint31_t x;
+			uint32_t overflow;
+
+			x.value = 0x7fffffff;
+			x.value++;
+
+			fst_check_int_equals(x.value, 0);
+			x.value++;
+			fst_check_int_equals(x.value, 1);
+			x.value -= 2;
+			fst_check_int_equals(x.value, 0x7fffffff);
+
+			overflow = (uint32_t)0x7fffffff + 1;
+			x.value = overflow;
+			fst_check_int_equals(x.value, 0);
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(test_switch_parse_cidr_v6)
 		{
 			ip_t ip, mask;

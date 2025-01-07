@@ -26,7 +26,6 @@ applications/mod_hash
 #applications/mod_hiredis
 applications/mod_httapi
 #applications/mod_http_cache
-#applications/mod_ladspa
 #applications/mod_lcr
 #applications/mod_memcache
 #applications/mod_mongo
@@ -41,7 +40,6 @@ applications/mod_httapi
 #applications/mod_rss
 applications/mod_signalwire
 applications/mod_sms
-#applications/mod_sms_flowroute
 #applications/mod_snapshot
 #applications/mod_snom
 #applications/mod_sonar
@@ -56,7 +54,6 @@ applications/mod_valet_parking
 #applications/mod_vmd
 applications/mod_voicemail
 #applications/mod_voicemail_ivr
-#asr_tts/mod_cepstral
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_tts_commandline
@@ -75,7 +72,6 @@ codecs/mod_h26x
 #codecs/mod_isac
 #codecs/mod_mp4v
 codecs/mod_opus
-#codecs/mod_sangoma_codec
 #codecs/mod_silk
 #codecs/mod_siren
 #codecs/mod_theora
@@ -86,7 +82,6 @@ dialplans/mod_dialplan_asterisk
 dialplans/mod_dialplan_xml
 #directories/mod_ldap
 #endpoints/mod_alsa
-#endpoints/mod_gsmopen
 #endpoints/mod_h323
 #endpoints/mod_khomp
 endpoints/mod_loopback
@@ -110,8 +105,6 @@ event_handlers/mod_event_socket
 #event_handlers/mod_json_cdr
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_odbc_cdr
-#event_handlers/mod_kazoo
-#event_handlers/mod_rayo
 #event_handlers/mod_smpp
 #event_handlers/mod_snmp
 #event_handlers/mod_event_zmq
@@ -123,7 +116,6 @@ formats/mod_png
 #formats/mod_shell_stream
 #formats/mod_shout
 formats/mod_sndfile
-#formats/mod_ssml
 formats/mod_tone_stream
 #formats/mod_vlc
 #formats/mod_opusfile

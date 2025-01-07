@@ -72,7 +72,6 @@
     <!--<load module="mod_fsk"/>-->
     <!--<load module="mod_spy"/>-->
     <!--<load module="mod_sms"/>-->
-    <!--<load module="mod_sms_flowroute"/>-->
     <!--<load module="mod_smpp"/>-->
     <!--<load module="mod_random"/>-->
     <load module="mod_httapi"/>
@@ -80,9 +79,6 @@
 
     <!-- SNOM Module -->
     <!--<load module="mod_snom"/>-->
-
-    <!-- This one only works on Linux for now -->
-    <!--<load module="mod_ladspa"/>-->
 
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
@@ -129,7 +125,6 @@
     <!-- ASR /TTS -->
     <!-- <load module="mod_flite"/> -->
     <!-- <load module="mod_pocketsphinx"/> -->
-    <!-- <load module="mod_cepstral"/> -->
     <!-- <load module="mod_tts_commandline"/> -->
     <!-- <load module="mod_rss"/> -->
 

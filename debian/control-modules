@@ -130,12 +130,6 @@ Description: HTTP GET with caching
  This module provides an API for making HTTP GET requests where the
  result is cached.
 
-Module: applications/mod_ladspa
-Description: LADSPA
- This module provides an API for accessing LADSPA plugins.
-Build-Depends: ladspa-sdk
-Suggests: tap-plugins, swh-plugins, autotalent
-
 Module: applications/mod_lcr
 Description: LCR
  This module adds a facility for least-cost routing.
@@ -275,10 +269,6 @@ Description: Voicemail IVR
 
 ## mod/asr_tts
 
-Module: asr_tts/mod_cepstral
-Description: mod_cepstral
- Adds mod_cepstral.
-
 Module: asr_tts/mod_flite
 Description: mod_flite
  Adds mod_flite.
@@ -360,11 +350,6 @@ Description: mod_opus
  Adds mod_opus.
 Build-Depends: libopus-dev
 
-Module: codecs/mod_sangoma_codec
-Description: mod_sangoma_codec
- Adds mod_sangoma_codec.
-Build-Depends: libsngtc-dev
-
 Module: codecs/mod_silk
 Description: mod_silk
  Adds mod_silk.
@@ -427,11 +412,6 @@ Module: endpoints/mod_alsa
 Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
-
-Module: endpoints/mod_gsmopen
-Description: mod_gsmopen
- Adds mod_gsmopen.
-Build-Depends: libx11-dev
 
 Module: endpoints/mod_h323
 Description: mod_h323
@@ -542,12 +522,6 @@ Module: event_handlers/mod_json_cdr
 Description: mod_json_cdr
  Adds mod_json_cdr.
 
-Module: event_handlers/mod_kazoo
-Description: mod_kazoo
- Adds mod_kazoo.
-Build-Depends: erlang-dev
-Depends: erlang
-
 Module: event_handlers/mod_odbc_cdr
 Description: mod_odbc_cdr
  Adds mod_odbc_cdr.
@@ -555,11 +529,6 @@ Description: mod_odbc_cdr
 Module: event_handlers/mod_radius_cdr
 Description: mod_radius_cdr
  Adds mod_radius_cdr.
-
-Module: event_handlers/mod_rayo
-Description: mod_rayo
- Adds mod_rayo.
-Depends: freeswitch-mod-ssml (= ${binary:Version})
 
 Module: event_handlers/mod_smpp
 Description: mod_snmp
@@ -609,10 +578,6 @@ Description: mod_sndfile
  Adds mod_sndfile.
 Build-Depends: libsndfile1-dev, libflac-dev, libogg-dev,
  libvorbis-dev
-
-Module: formats/mod_ssml
-Description: mod_ssml
- Adds mod_ssml.
 
 Module: formats/mod_tone_stream
 Description: mod_tone_stream

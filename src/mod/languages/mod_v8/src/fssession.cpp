@@ -671,7 +671,7 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 		String::Utf8Value str(info[2]);
 		tmp = js_safe_str(*str);
 		if (!zstr(tmp.c_str())) {
-			phrase_lang = tmp;
+			phrase_lang = std::move(tmp);
 		}
 	}
 

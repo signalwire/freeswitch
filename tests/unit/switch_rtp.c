@@ -187,7 +187,7 @@ FST_TEARDOWN_END()
 		 
 		switch_core_media_prepare_codecs(session, SWITCH_FALSE);
 		   
-		match = switch_core_media_negotiate_sdp(session, r_sdp, &p, SDP_TYPE_REQUEST);
+		match = switch_core_media_negotiate_sdp(session, r_sdp, &p, SDP_OFFER);
 		fst_requires(match == 1);
 
 		status = switch_core_media_choose_ports(session, SWITCH_TRUE, SWITCH_FALSE);

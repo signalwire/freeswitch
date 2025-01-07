@@ -20,7 +20,9 @@ ARG FS_META_PACKAGE=freeswitch-meta-all
 # https://github.com/docker-library/postgres/blob/master/9.4/Dockerfile
 
 # explicitly set user/group IDs
-RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 freeswitch
+ARG FREESWITCH_UID=499
+ARG FREESWITCH_GID=499
+RUN groupadd -r freeswitch --gid=${FREESWITCH_GID} && useradd -r -g freeswitch --uid=${FREESWITCH_UID} freeswitch
 
 # make the "en_US.UTF-8" locale so freeswitch will be utf-8 enabled by default
 RUN apt-get update -qq \
