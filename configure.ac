@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.10-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.10.13-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [10-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [13-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -582,7 +582,7 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-for luaversion in luajit lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
+for luaversion in luajit lua5.3 lua-5.3 lua53 lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
   PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
   if test ${have_lua} = yes; then
     break
@@ -716,7 +716,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.15],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.17],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
@@ -1079,8 +1079,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
-#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+# Untested modules : mod_osp mod_soundtouch mod_opal mod_h323 mod_khomp 
+#                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1261,7 +1261,6 @@ case $host in
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
-        path_push_unique PKG_CONFIG_PATH /usr/local/opt/portaudio/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ffmpeg/lib/pkgconfig/
        ;;
 esac
@@ -1328,9 +1327,6 @@ PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
-PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
-  AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
@@ -1352,7 +1348,21 @@ PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
 PKG_CHECK_MODULES([SHOUT], [shout >= 2.2.2],[
-  AM_CONDITIONAL([HAVE_SHOUT],[true])],[
+  AM_CONDITIONAL([HAVE_SHOUT],[true])
+  SHOUT_VERSION="`$PKG_CONFIG --modversion shout`"
+  SHOUT_MAJOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f1`"
+  SHOUT_MINOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f2`"
+  SHOUT_PATCH_VERSION="`echo $SHOUT_VERSION | cut -d. -f3`"
+  test -n "$SHOUT_PATCH_VERSION" || SHOUT_PATCH_VERSION=0
+  AC_MSG_NOTICE([SHOUT version: $SHOUT_VERSION])
+  AC_MSG_NOTICE([SHOUT major version: $SHOUT_MAJOR_VERSION])
+  AC_MSG_NOTICE([SHOUT minor version: $SHOUT_MINOR_VERSION])
+  AC_MSG_NOTICE([SHOUT patch version: $SHOUT_PATCH_VERSION])
+  AC_SUBST([SHOUT_VERSION])
+  AC_SUBST([SHOUT_MAJOR_VERSION])
+  AC_SUBST([SHOUT_MINOR_VERSION])
+  AC_SUBST([SHOUT_PATCH_VERSION])
+  ],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SHOUT],[false])])
 
 mp3lame=false
@@ -1518,26 +1528,32 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
+PKG_CHECK_MODULES([KS], [libks2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
-    if module_enabled mod_verto; then
-      AC_MSG_ERROR([You need to either install libks or disable mod_verto in modules.conf])
-    else
-      if module_enabled mod_signalwire; then
-        AC_MSG_ERROR([You need to either install libks or disable mod_signalwire in modules.conf])
+  PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
+    AM_CONDITIONAL([HAVE_KS],[true])],[
+      if module_enabled mod_verto; then
+        AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_verto in modules.conf])
       else
-        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        if module_enabled mod_signalwire; then
+          AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_signalwire in modules.conf])
+        else
+          AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        fi
       fi
-    fi
+  ])
 ])
 
-PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-    if module_enabled mod_signalwire; then
-      AC_MSG_ERROR([You need to either install signalwire-client-c or disable mod_signalwire in modules.conf])
-    else
-      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
-    fi
+  PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+    AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install signalwire-client-c2 or signalwire-client-c or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+      fi
+  ])
 ])
 
 PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
@@ -2099,13 +2115,10 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
-		src/mod/applications/mod_ladspa/Makefile
 		src/mod/applications/mod_lcr/Makefile
 		src/mod/applications/mod_limit/Makefile
 		src/mod/applications/mod_memcache/Makefile
 		src/mod/applications/mod_mongo/Makefile
-		src/mod/applications/mod_mp4/Makefile
-		src/mod/applications/mod_mp4v2/Makefile
 		src/mod/applications/mod_nibblebill/Makefile
 		src/mod/applications/mod_oreka/Makefile
 		src/mod/applications/mod_osp/Makefile
@@ -2117,7 +2130,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
-		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
 		src/mod/applications/mod_snom/Makefile
 		src/mod/applications/mod_sonar/Makefile
@@ -2131,7 +2143,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_vmd/Makefile
 		src/mod/applications/mod_voicemail/Makefile
 		src/mod/applications/mod_voicemail_ivr/Makefile
-		src/mod/asr_tts/mod_cepstral/Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
@@ -2142,16 +2153,12 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_clearmode/Makefile
 		src/mod/codecs/mod_codec2/Makefile
 		src/mod/codecs/mod_com_g729/Makefile
-		src/mod/codecs/mod_dahdi_codec/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_h26x/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
-		src/mod/codecs/mod_isac/Makefile
-		src/mod/codecs/mod_mp4v/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
-		src/mod/codecs/mod_sangoma_codec/Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
@@ -2163,12 +2170,10 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
 		src/mod/endpoints/mod_khomp/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
-		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_reference/Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
@@ -2188,10 +2193,8 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_fail2ban/Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
-		src/mod/event_handlers/mod_kazoo/Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
-		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
@@ -2203,10 +2206,8 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
-		src/mod/formats/mod_ssml/Makefile
 		src/mod/formats/mod_tone_stream/Makefile
 		src/mod/formats/mod_vlc/Makefile
-		src/mod/formats/mod_portaudio_stream/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
 		src/mod/languages/mod_managed/Makefile
@@ -2320,7 +2321,6 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-AC_CONFIG_SUBDIRS([libs/iksemel])
 
 case $host in
    *-openbsd*|*-netbsd*)

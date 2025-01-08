@@ -101,7 +101,7 @@ static void handle_SIGTERM(int sig)
 }
 
 /* kill a freeswitch process running in background mode */
-static int freeswitch_kill_background()
+static int freeswitch_kill_background(void)
 {
 	FILE *f;					/* FILE handle to open the pid file */
 	char path[PATH_MAX] = "";		/* full path of the PID file */

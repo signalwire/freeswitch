@@ -135,6 +135,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{"UNSUPPORTED_CERTIFICATE", SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE},
 	{"INVALID_IDENTITY", SWITCH_CAUSE_INVALID_IDENTITY},
 	{"STALE_DATE", SWITCH_CAUSE_STALE_DATE},
+	{"REJECT_ALL", SWITCH_CAUSE_REJECT_ALL},
 	{NULL, 0}
 };
 
@@ -1019,6 +1020,24 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *c
 	switch_mutex_unlock(channel->profile_mutex);
 
 	return r;
+}
+
+SWITCH_DECLARE(const char *) switch_channel_get_variable_strdup(switch_channel_t *channel, const char *varname)
+{
+	const char *value = switch_channel_get_variable_dup(channel, varname, SWITCH_FALSE, -1);
+
+	return value ? (const char *)strdup(value) : NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variable_buf(switch_channel_t *channel, const char *varname, char *buf, switch_size_t buflen)
+{
+	const char *value = switch_channel_get_variable_dup(channel, varname, SWITCH_FALSE, -1);
+
+	if (value && buf && buflen && switch_copy_string(buf, value, buflen)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname)
@@ -3053,12 +3072,12 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 
 	switch_assert(channel != NULL);
 
-	if (index >= SWITCH_MAX_STATE_HANDLERS || index > channel->state_handler_index) {
-		return NULL;
+	switch_mutex_lock(channel->state_mutex);
+
+	if (index < SWITCH_MAX_STATE_HANDLERS && index <= channel->state_handler_index) {
+		h = channel->state_handlers[index];
 	}
 
-	switch_mutex_lock(channel->state_mutex);
-	h = channel->state_handlers[index];
 	switch_mutex_unlock(channel->state_mutex);
 
 	return h;
@@ -3066,12 +3085,13 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 
 SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler)
 {
-	int index, i = channel->state_handler_index;
+	int index, i;
 	const switch_state_handler_table_t *new_handlers[SWITCH_MAX_STATE_HANDLERS] = { 0 };
 
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->state_mutex);
+	i = channel->state_handler_index;
 	channel->state_handler_index = 0;
 
 	if (state_handler) {

@@ -704,7 +704,7 @@ done:
 	return status;
 }
 
-static switch_status_t load_config()
+static switch_status_t load_config(void)
 {
 	char *cf = "signalwire.conf";
 	switch_xml_t cfg, xml;
@@ -1390,7 +1390,7 @@ static void mod_signalwire_state_register(void)
 	}
 }
 
-static void mod_signalwire_state_ready()
+static void mod_signalwire_state_ready(void)
 {
 	if (globals.profile_update) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Signalwire SIP profile update initiated\n");

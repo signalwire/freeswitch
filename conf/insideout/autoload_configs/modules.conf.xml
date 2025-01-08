@@ -29,7 +29,6 @@
     <!-- Endpoints -->
     <!-- <load module="mod_dingaling"/> -->
     <!-- <load module="mod_iax"/> -->
-    <!-- <load module="mod_portaudio"/> -->
     <!-- <load module="mod_alsa"/> -->
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
@@ -88,7 +87,6 @@
     <!-- ASR /TTS -->
     <!-- <load module="mod_flite"/> -->
     <!-- <load module="mod_pocketsphinx"/> -->
-    <!-- <load module="mod_cepstral"/> -->
     <!-- <load module="mod_openmrcp"/> -->
     <!-- <load module="mod_rss"/> -->
     

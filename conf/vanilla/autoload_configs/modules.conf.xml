@@ -36,7 +36,6 @@
 
     <!-- Endpoints -->
     <!-- <load module="mod_dingaling"/> -->
-    <!-- <load module="mod_portaudio"/> -->
     <!-- <load module="mod_alsa"/> -->
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
@@ -72,7 +71,6 @@
     <!--<load module="mod_fsk"/>-->
     <!--<load module="mod_spy"/>-->
     <!--<load module="mod_sms"/>-->
-    <!--<load module="mod_sms_flowroute"/>-->
     <!--<load module="mod_smpp"/>-->
     <!--<load module="mod_random"/>-->
     <load module="mod_httapi"/>
@@ -80,9 +78,6 @@
 
     <!-- SNOM Module -->
     <!--<load module="mod_snom"/>-->
-
-    <!-- This one only works on Linux for now -->
-    <!--<load module="mod_ladspa"/>-->
 
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
@@ -98,7 +93,6 @@
     <!--<load module="mod_h26x"/>-->
     <load module="mod_b64"/>
     <!--<load module="mod_siren"/>-->
-    <!--<load module="mod_isac"/>-->
     <load module="mod_opus"/>
 
     <!-- File Format Interfaces -->
@@ -129,7 +123,6 @@
     <!-- ASR /TTS -->
     <!-- <load module="mod_flite"/> -->
     <!-- <load module="mod_pocketsphinx"/> -->
-    <!-- <load module="mod_cepstral"/> -->
     <!-- <load module="mod_tts_commandline"/> -->
     <!-- <load module="mod_rss"/> -->
 

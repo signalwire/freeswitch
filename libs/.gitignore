@@ -58,32 +58,6 @@ opal
 /esl/Release/
 /flite-*/
 /freeradius-client-*/
-/iksemel/build/compile
-/iksemel/doc/Makefile
-/iksemel/doc/Makefile.in
-/iksemel/include/config.h
-/iksemel/include/Makefile
-/iksemel/include/Makefile.in
-/iksemel/include/stamp-h1
-/iksemel/Makefile
-/iksemel/Makefile.in
-/iksemel/src/Makefile
-/iksemel/src/Makefile.in
-/iksemel/test/Makefile
-/iksemel/test/Makefile.in
-/iksemel/test/tst-dom
-/iksemel/test/tst-filter
-/iksemel/test/tst-iks
-/iksemel/test/tst-ikstack
-/iksemel/test/tst-jid
-/iksemel/test/tst-md5
-/iksemel/test/tst-sax
-/iksemel/test/tst-sha
-/iksemel/tools/ikslint
-/iksemel/tools/iksperf
-/iksemel/tools/iksroster
-/iksemel/tools/Makefile
-/iksemel/tools/Makefile.in
 /ilbc/config-h.in
 /ilbc/doc/Makefile
 /ilbc/doc/Makefile.in
@@ -600,7 +574,6 @@ opal
 /v8-*.zip
 
 # build products we should remove
-!/iksemel/ltmain.sh
 !/libg722_1/config/depcomp
 !/libg722_1/config/missing
 !/tiff-*/config/depcomp
@@ -619,10 +592,7 @@ srtp/build/compile
 /sqlite-*/
 /sqlite/
 /ldns/
-/portaudio/
-portaudio.*.log
 apr/configure
-iksemel/configure
 libyuv/Makefile
 libyuv/convert
 srtp/configure
