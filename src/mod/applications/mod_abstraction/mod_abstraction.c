@@ -36,29 +36,72 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_abstraction_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_abstraction_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_abstraction_load);
 
+switch_api_interface_t *api_interface = NULL;
+switch_application_interface_t *app_interface = NULL;
+
 const char *global_cf = "abstraction.conf";
+
+typedef enum {
+        ABS_TYPE_API = 0,
+        ABS_TYPE_APP = 1
+} abs_type_t;
+
 
 /* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
 SWITCH_MODULE_DEFINITION(mod_abstraction, mod_abstraction_load, mod_abstraction_shutdown, NULL);
 
-SWITCH_STANDARD_API(api_abstraction_function)
-{
-	const char *api_name = switch_event_get_header(stream->param_event, "API-Command");
-	switch_xml_t cfg, xml, x_apis, x_api;
+switch_status_t gen_abstraction_function(abs_type_t type, const char *cmd, const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream) {
+	const char *api_name = NULL;
+	switch_channel_t *channel = NULL;
+	switch_xml_t cfg = NULL, xml = NULL, x_apis, x_api;
+	const char *xml_cat = NULL, *xml_entry = NULL;
+
+	switch (type) {
+		case ABS_TYPE_API:
+			api_name = switch_event_get_header(stream->param_event, "API-Command");
+			xml_cat = "apis";
+			xml_entry = "api";
+			break;
+		case ABS_TYPE_APP:
+			if (!session) {
+				return SWITCH_STATUS_FALSE ;
+			}
+
+			channel = switch_core_session_get_channel(session);
+
+			if (!channel) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel not found\n");
+				goto end;
+			}
+			// current_application
+			api_name = switch_channel_get_variable(channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "APP %s DETECTED\n", api_name);
+
+			xml_cat = "apps";
+			xml_entry = "app";
+			break;
+		default:
+			return SWITCH_STATUS_FALSE;
+	}
+
+	if (zstr(api_name)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "APP COULDN'T FIND THE APP NAME\n");
+		goto end;
+	}
 
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		goto end;
 	}
 
-	if (!(x_apis = switch_xml_child(cfg, "apis"))) {
+	if (!(x_apis = switch_xml_child(cfg, xml_cat))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No apis group\n");
 		goto end;
 	}
 
-	if ((x_api = switch_xml_find_child_multi(x_apis, "api", "name", api_name , NULL))) {
+	if ((x_api = switch_xml_find_child_multi(x_apis, xml_entry, "name", api_name , NULL))) {
 		const char *parse = switch_xml_attr_soft(x_api, "parse");
 		const char *destination = switch_xml_attr_soft(x_api, "destination");
 		const char *arguments = switch_xml_attr_soft(x_api, "argument");
@@ -66,7 +109,7 @@ SWITCH_STANDARD_API(api_abstraction_function)
 		int proceed;
 		switch_regex_t *re = NULL;
 		int ovector[30];
-
+		if (!cmd) cmd = "";
 		if ((proceed = switch_regex_perform(cmd, parse, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 			const char *api_args = NULL;
 			char *substituted = NULL;
@@ -83,7 +126,14 @@ SWITCH_STANDARD_API(api_abstraction_function)
 			} else {
 				api_args = arguments;
 			}
-			switch_api_execute(destination, api_args, session, stream);
+			switch(type) {
+				case ABS_TYPE_API:
+					switch_api_execute(destination, api_args, session, stream);
+					break;
+				case ABS_TYPE_APP:
+					switch_core_session_execute_application(session, destination, api_args);
+					break;
+			}
 
 			switch_safe_free(substituted);
 		} else {
@@ -103,12 +153,22 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(api_abstraction_function)
+{
+	return gen_abstraction_function(ABS_TYPE_API, cmd, NULL, session, stream);
+}
+
+SWITCH_STANDARD_APP(app_abstraction_function)
+{
+	gen_abstraction_function(ABS_TYPE_APP, data, NULL, session, NULL);
+}
+
+
 /* Macro expands to: switch_status_t mod_abstraction_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_abstraction_load)
 {
 	switch_status_t status = SWITCH_STATUS_TERM;
-	switch_api_interface_t *api_interface;
-	switch_xml_t cfg, xml, x_apis, x_api;
+	switch_xml_t cfg = NULL, xml = NULL, x_apis, x_api;
 	int count = 0;
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -122,15 +182,38 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_abstraction_load)
 	if (!(x_apis = switch_xml_child(cfg, "apis"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No apis group\n");
 		goto end;
+	} else {
+
+		for (x_api = switch_xml_child(x_apis, "api"); x_api; x_api = x_api->next) {
+			const char *name = switch_xml_attr_soft(x_api, "name");
+			const char *description = switch_xml_attr_soft(x_api, "description");
+			const char *syntax = switch_xml_attr_soft(x_api, "syntax");
+			char *name_dup = switch_core_strdup(pool, name);
+			char *description_dup = switch_core_strdup(pool, description);
+			char *syntax_dup = switch_core_strdup(pool, syntax);
+
+			SWITCH_ADD_API(api_interface, name_dup, description_dup, api_abstraction_function, syntax_dup);
+			count++;
+
+		}
 	}
+	if (!(x_apis = switch_xml_child(cfg, "apps"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No apps group\n");
+		goto end;
+	} else {
 
-	for (x_api = switch_xml_child(x_apis, "api"); x_api; x_api = x_api->next) {
-		const char *name = switch_xml_attr_soft(x_api, "name");
-		const char *description = switch_xml_attr_soft(x_api, "description");
-		const char *syntax = switch_xml_attr_soft(x_api, "syntax");
-		SWITCH_ADD_API(api_interface, name, description, api_abstraction_function, syntax);
-		count++;
+		for (x_api = switch_xml_child(x_apis, "app"); x_api; x_api = x_api->next) {
+			const char *name = switch_xml_attr_soft(x_api, "name");
+			const char *description = switch_xml_attr_soft(x_api, "description");
+			const char *syntax = switch_xml_attr_soft(x_api, "syntax");
+                        char *name_dup = switch_core_strdup(pool, name);
+                        char *description_dup = switch_core_strdup(pool, description);
+                        char *syntax_dup = switch_core_strdup(pool, syntax);
 
+			SWITCH_ADD_APP(app_interface, name_dup, description_dup, description_dup, app_abstraction_function, syntax_dup, SAF_NONE);
+			count++;
+
+		}
 	}
 	if (count > 0) {
 		status = SWITCH_STATUS_SUCCESS;
