@@ -29,7 +29,6 @@ applications/mod_http_cache
 applications/mod_lcr
 applications/mod_memcache
 applications/mod_mongo
-applications/mod_mp4
 applications/mod_nibblebill
 applications/mod_oreka
 #applications/mod_osp
@@ -62,13 +61,11 @@ codecs/mod_b64
 codecs/mod_bv
 codecs/mod_codec2
 #codecs/mod_com_g729
-codecs/mod_dahdi_codec
 codecs/mod_g723_1
 codecs/mod_g729
 codecs/mod_h26x
 codecs/mod_ilbc
 codecs/mod_isac
-codecs/mod_mp4v
 codecs/mod_opus
 codecs/mod_silk
 codecs/mod_siren
@@ -84,7 +81,6 @@ directories/mod_ldap
 #endpoints/mod_khomp
 endpoints/mod_loopback
 #endpoints/mod_opal
-endpoints/mod_portaudio
 endpoints/mod_rtc
 endpoints/mod_rtmp
 endpoints/mod_skinny
@@ -108,7 +104,6 @@ formats/mod_imagick
 formats/mod_local_stream
 formats/mod_native_file
 formats/mod_png
-formats/mod_portaudio_stream
 formats/mod_shell_stream
 formats/mod_shout
 formats/mod_sndfile

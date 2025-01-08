@@ -341,16 +341,6 @@
     </extension>
 
     <!--
-	 This extension is used by mod_portaudio so you can pa call sip:someone@example.com
-	 mod_portaudio will pass the entire string to the dialplan for routing.
-    -->
-    <extension name="sip_uri">
-      <condition field="destination_number" expression="^sip:(.*)$">
-	<action application="bridge" data="sofia/${use_profile}/$1"/>
-      </condition>
-    </extension>
-
-    <!--
 	start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
     -->
     <extension name="nb_conferences">

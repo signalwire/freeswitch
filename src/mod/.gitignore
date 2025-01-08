@@ -33,9 +33,6 @@
 /codecs/mod_vp8/Makefile
 /dialplans/mod_dialplan_asterisk/Makefile
 /dialplans/mod_dialplan_xml/Makefile
-/endpoints/mod_portaudio/Makefile
-/endpoints/mod_portaudio/Makefile.in
-/endpoints/mod_portaudio/mod_portaudio.log
 /endpoints/mod_skinny/Makefile
 /endpoints/mod_skinny/Makefile.in
 /endpoints/mod_skinny/mod_skinny.log
@@ -45,9 +42,6 @@
 /event_handlers/mod_erlang_event/Makefile
 /event_handlers/mod_event_socket/Makefile
 /formats/mod_native_file/Makefile
-/formats/mod_portaudio_stream/Makefile
-/formats/mod_portaudio_stream/Makefile.in
-/formats/mod_portaudio_stream/mod_portaudio_stream.log
 /formats/mod_tone_stream/Makefile
 /languages/mod_java/Makefile
 /languages/mod_java/classes/

@@ -151,7 +151,6 @@ Release/
 /src/mod/applications/mod_test/test/Makefile.in
 /src/mod/codecs/mod_com_g729/Makefile
 /src/mod/codecs/mod_com_g729/Makefile.in
-/src/mod/codecs/mod_dahdi_codec/Makefile
 /src/mod/dialplans/mod_dialplan_directory/Makefile
 /src/mod/formats/mod_shell_stream/Makefile
 /src/mod/languages/mod_lua/mod_lua_wrap.cpp.orig

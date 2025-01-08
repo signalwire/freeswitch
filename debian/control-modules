@@ -149,16 +149,6 @@ Description: MongoDB
  This module provides an interface to MongoDB.
 Build-Depends: libmongoc-dev
 
-Module: applications/mod_mp4
-Section: contrib/comm
-Description: MP4 video support
- This module adds support for MP4 video playback.
-Build-Depends: libmp4v2-dev
-
-Module: applications/mod_mp4v2
-Description: Adds mod_mp4v2
- Adds mod_mp4v2.
-
 Module: applications/mod_nibblebill
 Description: Nibblebill
  This module allows for real-time accounting of a cash balance and
@@ -311,10 +301,6 @@ Module: codecs/mod_com_g729
 Description: mod_com_g729
  Adds mod_com_g729.
 
-Module: codecs/mod_dahdi_codec
-Description: mod_dahdi_codec
- Adds mod_dahdi_codec.
-
 Module: codecs/mod_g723_1
 Description: mod_g723_1
  Adds mod_g723_1.
@@ -336,10 +322,6 @@ Build-Depends: libilbc-dev
 Module: codecs/mod_isac
 Description: mod_isac
  Adds mod_isac.
-
-Module: codecs/mod_mp4v
-Description: mod_mp4v
- Adds mod_mp4v.
 
 Module: codecs/mod_openh264
 Description: Adds mod_openh264
@@ -430,11 +412,6 @@ Module: endpoints/mod_opal
 Description: mod_opal
  Adds mod_opal.
 Build-Depends: libopal-dev
-
-Module: endpoints/mod_portaudio
-Description: mod_portaudio
- Adds mod_portaudio.
-Build-Depends: portaudio19-dev
 
 Module: endpoints/mod_reference
 Description: mod_reference
@@ -557,11 +534,6 @@ Description: mod_native_file
 Module: formats/mod_png
 Description: Adds mod_png
  Adds mod_png.
-
-Module: formats/mod_portaudio_stream
-Description: mod_portaudio_stream
- Adds mod_portaudio_stream.
-Build-Depends: portaudio19-dev
 
 Module: formats/mod_shell_stream
 Description: mod_shell_stream
