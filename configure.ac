@@ -2135,7 +2135,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_soundtouch/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
-		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile

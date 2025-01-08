@@ -43,7 +43,6 @@ applications/mod_sms
 #applications/mod_soundtouch
 applications/mod_spandsp
 #applications/mod_spy
-#applications/mod_stress
 applications/mod_test
 #applications/mod_translate
 applications/mod_valet_parking
