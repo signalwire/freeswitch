@@ -319,10 +319,6 @@ Description: mod_ilbc
  Adds mod_ilbc.
 Build-Depends: libilbc-dev
 
-Module: codecs/mod_isac
-Description: mod_isac
- Adds mod_isac.
-
 Module: codecs/mod_openh264
 Description: Adds mod_openh264
  Adds mod_openh264.

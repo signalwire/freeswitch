@@ -65,7 +65,6 @@ codecs/mod_g723_1
 codecs/mod_g729
 codecs/mod_h26x
 codecs/mod_ilbc
-codecs/mod_isac
 codecs/mod_opus
 codecs/mod_silk
 codecs/mod_siren
