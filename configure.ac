@@ -2176,7 +2176,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_sofia/Makefile
-		src/mod/endpoints/mod_unicall/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_amqp/Makefile

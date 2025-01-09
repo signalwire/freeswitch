@@ -420,10 +420,6 @@ Module: endpoints/mod_sofia
 Description: mod_sofia
  Adds mod_sofia.
 
-Module: endpoints/mod_unicall
-Description: mod_unicall
- Adds mod_unicall.
-
 Module: endpoints/mod_verto
 Description: Adds mod_verto.
  Adds mod_verto.
