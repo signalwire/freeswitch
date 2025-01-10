@@ -201,10 +201,6 @@ Description: Snapshot
  This module can record a sliding window of audio and take snapshots
  to disk.
 
-Module: applications/mod_snom
-Description: SNOM specific features
- This module implements features specific to SNOM phones.
-
 Module: applications/mod_spandsp
 Description: SpanDSP
  This module implements spandsp fax, dsp, and codec functionality.

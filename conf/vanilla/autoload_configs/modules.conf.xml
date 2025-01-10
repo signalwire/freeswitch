@@ -75,9 +75,6 @@
     <load module="mod_httapi"/>
     <!--<load module="mod_translate"/>-->
 
-    <!-- SNOM Module -->
-    <!--<load module="mod_snom"/>-->
-
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
     <load module="mod_dialplan_xml"/>
