@@ -210,11 +210,6 @@ Description: Sonar ping timer
  This module measures the latency on an audio link by sending audible
  audio sonar pings.
 
-Module: applications/mod_soundtouch
-Description: Soundtouch
- This module implements example media bugs.
-Build-Depends: libsoundtouch-dev
-
 Module: applications/mod_spandsp
 Description: SpanDSP
  This module implements spandsp fax, dsp, and codec functionality.

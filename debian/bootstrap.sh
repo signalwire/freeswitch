@@ -78,7 +78,6 @@ avoid_mods_wheezy=(
   applications/mod_hiredis
   formats/mod_shout
   applications/mod_sonar
-  applications/mod_soundtouch
   formats/mod_vlc
 )
 avoid_mods_trusty=(
@@ -547,7 +546,6 @@ Recommends:
  freeswitch-mod-snapshot (= \${binary:Version}),
  freeswitch-mod-snom (= \${binary:Version}),
  freeswitch-mod-sonar (= \${binary:Version}),
- freeswitch-mod-soundtouch (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-spy (= \${binary:Version}),
  freeswitch-mod-valet-parking (= \${binary:Version}),
@@ -636,7 +634,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-snapshot (= \${binary:Version}),
  freeswitch-mod-snom (= \${binary:Version}),
  freeswitch-mod-sonar (= \${binary:Version}),
- freeswitch-mod-soundtouch (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
  freeswitch-mod-spy (= \${binary:Version}),
  freeswitch-mod-translate (= \${binary:Version}),
@@ -862,7 +859,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-snapshot-dbg (= \${binary:Version}),
  freeswitch-mod-snom-dbg (= \${binary:Version}),
  freeswitch-mod-sonar-dbg (= \${binary:Version}),
- freeswitch-mod-soundtouch-dbg (= \${binary:Version}),
  freeswitch-mod-spandsp-dbg (= \${binary:Version}),
  freeswitch-mod-spy-dbg (= \${binary:Version}),
  freeswitch-mod-translate-dbg (= \${binary:Version}),
