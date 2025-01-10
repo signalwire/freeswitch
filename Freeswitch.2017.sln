@@ -398,8 +398,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_sms", "src\mod\applicat
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xmlrpc-c", "xmlrpc-c", "{9DE35039-A8F6-4FBF-B1B6-EB527F802411}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_redis", "src\mod\applications\mod_redis\mod_redis.2017.vcxproj", "{886B5E9D-F2C2-4AF2-98C8-EF98C4C770E6}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "libs\win32\libjpeg\libjpeg.2017.vcxproj", "{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "abyss", "libs\win32\xmlrpc-c\abyss.2017.vcxproj", "{D2396DD7-7D38-473A-ABB7-6F96D65AE1B9}"

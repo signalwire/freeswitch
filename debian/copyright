@@ -1537,10 +1537,6 @@ Files: src/mod/applications/mod_fsk/fsk.[ch]
 Copyright: 2005 Robert Krten
 License: BSD-2-clause
 
-Files: src/mod/applications/mod_redis/credis.[ch]
-Copyright: 2009-2010, Jonas Romfelt <jonas at romfelt dot se>
-License: BSD-3-clause
-
 Files: src/mod/applications/mod_*vmd/mod_vmd.c
  src/mod/applications/mod_avmd/mod_avmd.c
 Copyright: 2008-2010, Eric des Courtis <eric.des.courtis@benbria.com>

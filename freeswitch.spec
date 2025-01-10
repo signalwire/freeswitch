@@ -459,15 +459,6 @@ Requires:       %{name} = %{version}-%{release}
 %description application-rad_auth
 Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
 
-%package application-redis
-Summary:	FreeSWITCH mod_redis
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-redis
-Provides FreeSWITCH mod_redis, access to the redis key value pair db system from
-FreeSWITCH
-
 %package application-rss
 Summary:	FreeSWITCH mod_rss
 Group:          System/Libraries
@@ -1271,7 +1262,7 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
 			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
-			applications/mod_redis applications/mod_rss "
+			applications/mod_rss "
 
 APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
 			applications/mod_spandsp applications/mod_spy \
@@ -1921,9 +1912,6 @@ fi
 
 %files application-rad_auth
 %{MODINSTDIR}/mod_rad_auth.so*
-
-%files application-redis
-%{MODINSTDIR}/mod_redis.so*
 
 %files application-rss
 %{MODINSTDIR}/mod_rss.so*

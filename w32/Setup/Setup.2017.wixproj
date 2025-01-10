@@ -281,14 +281,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_redis\mod_redis.2017.vcxproj">
-      <Name>mod_redis</Name>
-      <Project>{886b5e9d-f2c2-4af2-98c8-ef98c4c770e6}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_rss\mod_rss.2017.vcxproj">
       <Name>mod_rss</Name>
       <Project>{b69247fa-ecd6-40ed-8e44-5ca6c3baf9a4}</Project>
