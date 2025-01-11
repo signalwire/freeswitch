@@ -178,10 +178,6 @@ Description: Redis limit backend
  This module provides a mechanism to use Redis as a backend data
  store.
 
-Module: applications/mod_rss
-Description: RSS browser
- This module provides an RSS browser.
-
 Module: applications/mod_skel
 Description: Adds mod_skel
  Adds mod_skel.
