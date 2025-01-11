@@ -420,8 +420,6 @@ opal
 /sofia-sip/win32/Makefile
 /sofia-sip/win32/Makefile.in
 /sounds/
-/soundtouch/
-/soundtouch-*/
 /sphinxbase-*/
 /srtp/aes_tables
 /srtp/config_in.h

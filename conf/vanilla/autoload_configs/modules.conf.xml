@@ -41,7 +41,6 @@
     <load module="mod_loopback"/>
     <!-- <load module="mod_woomera"/> -->
     <!-- <load module="mod_freetdm"/> -->
-    <!-- <load module="mod_unicall"/> -->
     <!-- <load module="mod_skinny"/> -->
     <!-- <load module="mod_khomp"/>   -->
     <load module="mod_rtc"/>
@@ -76,9 +75,6 @@
     <load module="mod_httapi"/>
     <!--<load module="mod_translate"/>-->
 
-    <!-- SNOM Module -->
-    <!--<load module="mod_snom"/>-->
-
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
     <load module="mod_dialplan_xml"/>
@@ -93,7 +89,6 @@
     <!--<load module="mod_h26x"/>-->
     <load module="mod_b64"/>
     <!--<load module="mod_siren"/>-->
-    <!--<load module="mod_isac"/>-->
     <load module="mod_opus"/>
 
     <!-- File Format Interfaces -->
@@ -125,7 +120,6 @@
     <!-- <load module="mod_flite"/> -->
     <!-- <load module="mod_pocketsphinx"/> -->
     <!-- <load module="mod_tts_commandline"/> -->
-    <!-- <load module="mod_rss"/> -->
 
     <!-- Say -->
     <load module="mod_say_en"/>

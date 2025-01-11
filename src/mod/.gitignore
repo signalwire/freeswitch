@@ -21,9 +21,6 @@
 /applications/mod_spandsp/Makefile
 /applications/mod_spandsp/Makefile.in
 /applications/mod_spandsp/mod_spandsp.log
-/applications/mod_stress/Makefile
-/applications/mod_stress/Makefile.in
-/applications/mod_stress/mod_stress.log
 /applications/mod_translate/Makefile
 /applications/mod_valet_parking/Makefile
 /applications/mod_voicemail/Makefile
@@ -60,7 +57,6 @@
 /say/mod_say_ru/Makefile
 /timers/mod_posix_timer/Makefile
 /timers/mod_timerfd/Makefile
-/endpoints/mod_unicall/Makefile
 */*/Makefile.in
 */*/Makefile
 */*/mod_*.log

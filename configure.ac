@@ -1079,7 +1079,7 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_opal mod_h323 mod_khomp 
+# Untested modules : mod_osp mod_opal mod_h323 mod_khomp 
 #                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
@@ -1468,10 +1468,6 @@ AM_CONDITIONAL([HAVE_CODEC2],[$codec2])
 PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
-
-PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
-  AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
 
 flite="true"
 PKG_CHECK_MODULES([FLITE], [flite >= 2],[],[
@@ -2088,7 +2084,6 @@ AC_CONFIG_FILES([Makefile
 		tests/unit/Makefile
 		src/Makefile
 		src/mod/Makefile
-		src/mod/applications/mod_abstraction/Makefile
 		src/mod/applications/mod_avmd/Makefile
 		src/mod/applications/mod_bert/Makefile
 		src/mod/applications/mod_blacklist/Makefile
@@ -2126,17 +2121,12 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_rad_auth/Makefile
 		src/mod/applications/mod_random/Makefile
 		src/mod/applications/mod_redis/Makefile
-		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_snom/Makefile
-		src/mod/applications/mod_sonar/Makefile
-		src/mod/applications/mod_soundtouch/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
-		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile
@@ -2157,7 +2147,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_h26x/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
-		src/mod/codecs/mod_isac/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
 		src/mod/codecs/mod_silk/Makefile
@@ -2179,7 +2168,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_sofia/Makefile
-		src/mod/endpoints/mod_unicall/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_amqp/Makefile

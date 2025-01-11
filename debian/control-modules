@@ -3,11 +3,6 @@
 
 ## mod/applications
 
-Module: applications/mod_abstraction
-Description: Abstraction layer for APIs
- This module provides a way to create new API functions via regex
- rewriting.
-
 Module: applications/mod_av
 Description: mod_av
  Adds mod_av.
@@ -183,10 +178,6 @@ Description: Redis limit backend
  This module provides a mechanism to use Redis as a backend data
  store.
 
-Module: applications/mod_rss
-Description: RSS browser
- This module provides an RSS browser.
-
 Module: applications/mod_skel
 Description: Adds mod_skel
  Adds mod_skel.
@@ -206,20 +197,6 @@ Description: Snapshot
  This module can record a sliding window of audio and take snapshots
  to disk.
 
-Module: applications/mod_snom
-Description: SNOM specific features
- This module implements features specific to SNOM phones.
-
-Module: applications/mod_sonar
-Description: Sonar ping timer
- This module measures the latency on an audio link by sending audible
- audio sonar pings.
-
-Module: applications/mod_soundtouch
-Description: Soundtouch
- This module implements example media bugs.
-Build-Depends: libsoundtouch-dev
-
 Module: applications/mod_spandsp
 Description: SpanDSP
  This module implements spandsp fax, dsp, and codec functionality.
@@ -227,10 +204,6 @@ Description: SpanDSP
 Module: applications/mod_spy
 Description: UserSpy
  This module adds the ability to monitor the audio of a channel.
-
-Module: applications/mod_stress
-Description: Voice stress detection
- This module attempts to detect voice stress on an audio channel.
 
 Module: applications/mod_translate
 Description: Number translation
@@ -318,10 +291,6 @@ Section: non-free/comm
 Description: mod_ilbc
  Adds mod_ilbc.
 Build-Depends: libilbc-dev
-
-Module: codecs/mod_isac
-Description: mod_isac
- Adds mod_isac.
 
 Module: codecs/mod_openh264
 Description: Adds mod_openh264
@@ -432,10 +401,6 @@ Description: mod_skinny
 Module: endpoints/mod_sofia
 Description: mod_sofia
  Adds mod_sofia.
-
-Module: endpoints/mod_unicall
-Description: mod_unicall
- Adds mod_unicall.
 
 Module: endpoints/mod_verto
 Description: Adds mod_verto.

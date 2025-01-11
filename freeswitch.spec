@@ -227,14 +227,6 @@ FreeSWITCH development files
 ######################################################################################################################
 #				FreeSWITCH Application Modules
 ######################################################################################################################
-%package application-abstraction
-Summary:	FreeSWITCH mod_abstraction
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-abstraction
-Provide an abstraction to FreeSWITCH API calls
-
 %package application-avmd
 Summary:	FreeSWITCH voicemail detector
 Group:          System/Libraries
@@ -476,15 +468,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_redis, access to the redis key value pair db system from
 FreeSWITCH
 
-%package application-rss
-Summary:	FreeSWITCH mod_rss
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-rss
-Provides FreeSWITCH mod_rss, edisrse and read an XML based RSS feed, then read
-the entries aloud via a TTS engine
-
 %package application-signalwire
 Summary:	FreeSWITCH mod_signalwire
 Group:          System/Libraries
@@ -513,27 +496,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_snapshot, allows recording a sliding window of audio 
 and taking snapshots to disk. 
 
-%package application-snom
-Summary:	FreeSWITCH mod_snom
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-snom
-Provides FreeSWITCH mod_snom, an application for controlling the functionality 
-and appearance of the programmable softkeys on Snom phones
-
-%package application-soundtouch
-Summary:	FreeSWITCH mod_soundtouch
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-BuildRequires:  soundtouch-devel >= 1.7.1
-
-%description application-soundtouch
-Provides FreeSWITCH mod_soundtouch, uses the soundtouch library, which can do
-pitch shifting and other audio effects, so you can pipe the audio of a call
-(or any other channel audio) through this module and achieve those effects. You
-can specifically adjust pitch, rate, and tempo.
-
 %package application-spy
 Summary:	FreeSWITCH mod_spy
 Group:          System/Libraries
@@ -542,15 +504,6 @@ Requires:       %{name} = %{version}-%{release}
 %description application-spy
 Provides FreeSWITCH mod_spy, implements userspy application which provides 
 persistent eavesdrop on all channels bridged to a certain user
-
-%package application-stress
-Summary:	FreeSWITCH mod_stress
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-stress
-Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a 
-person's voice and generates FreeSWITCH events based on that data. 
 
 %package application-translate
 Summary:	FreeSWITCH mod_translate
@@ -706,21 +659,13 @@ BuildRequires:  ilbc2-devel
 %description codec-ilbc
 iLBC Codec support for FreeSWITCH open source telephony platform
 
-%package codec-isac
-Summary:        iSAC Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-isac
-iSAC Codec support for FreeSWITCH open source telephony platform
-
 %package codec-vpx
 Summary:        vp8 Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description codec-vpx
-iSAC Codec support for FreeSWITCH open source telephony platform
+VP8 Codec support for FreeSWITCH open source telephony platform
 
 %package codec-opus
 Summary:        Opus Codec support for FreeSWITCH open source telephony platform
@@ -1213,7 +1158,6 @@ The Python ESL module allows for native interaction with FreeSWITCH over the eve
 Summary:        Basic vanilla config set for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	freeswitch-application-abstraction
 Requires:	freeswitch-application-avmd
 Requires:	freeswitch-application-blacklist
 Requires:	freeswitch-application-callcenter
@@ -1238,14 +1182,10 @@ Requires:	freeswitch-application-limit
 Requires:	freeswitch-application-memcache
 Requires:	freeswitch-application-nibblebill
 Requires:	freeswitch-application-redis
-Requires:	freeswitch-application-rss
 Requires:	freeswitch-application-signalwire
 Requires:	freeswitch-application-sms
 Requires:	freeswitch-application-snapshot
-Requires:	freeswitch-application-snom
-Requires:	freeswitch-application-soundtouch
 Requires:	freeswitch-application-spy
-Requires:	freeswitch-application-stress
 Requires:	freeswitch-application-valet_parking
 Requires:	freeswitch-application-video_filter
 Requires:	freeswitch-application-voicemail
@@ -1307,7 +1247,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #						Application Modules
 #
 ######################################################################################################################
-APPLICATION_MODULES_AC="applications/mod_abstraction applications/mod_avmd applications/mod_blacklist \
+APPLICATION_MODULES_AC="applications/mod_avmd applications/mod_blacklist \
 			applications/mod_callcenter  applications/mod_cidlookup \
 			applications/mod_commands applications/mod_conference applications/mod_curl"
 APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applications/mod_distributor \
@@ -1321,10 +1261,10 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
 			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
-			applications/mod_redis applications/mod_rss "
+			applications/mod_redis "
 
-APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
-			applications/mod_spandsp applications/mod_spy applications/mod_stress \
+APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
+			applications/mod_spandsp applications/mod_spy \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr applications/mod_video_filter"
 
@@ -1343,7 +1283,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
-		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_opus codecs/mod_silk \
+		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora"
 #
 
@@ -1766,7 +1706,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/extensions.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/mime.types
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/abstraction.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amrwb.conf.xml
@@ -1820,7 +1759,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pre_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/presence_map.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/redis.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
@@ -1834,7 +1772,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/timezones.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/translate.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
@@ -1893,9 +1830,6 @@ fi
 #						Application Packages
 #
 ######################################################################################################################
-%files application-abstraction
-%{MODINSTDIR}/mod_abstraction.so*
-
 %files application-avmd
 %{MODINSTDIR}/mod_avmd.so*
 
@@ -1980,9 +1914,6 @@ fi
 %files application-redis
 %{MODINSTDIR}/mod_redis.so*
 
-%files application-rss
-%{MODINSTDIR}/mod_rss.so*
-
 %files application-signalwire
 %{MODINSTDIR}/mod_signalwire.so*
 
@@ -1992,17 +1923,8 @@ fi
 %files application-snapshot
 %{MODINSTDIR}/mod_snapshot.so*
 
-%files application-snom
-%{MODINSTDIR}/mod_snom.so*
-
-%files application-soundtouch
-%{MODINSTDIR}/mod_soundtouch.so*
-
 %files application-spy
 %{MODINSTDIR}/mod_spy.so*
-
-%files application-stress
-%{MODINSTDIR}/mod_stress.so*
 
 %files application-translate
 %{MODINSTDIR}/mod_translate.so*
@@ -2063,9 +1985,6 @@ fi
 
 %files codec-ilbc
 %{MODINSTDIR}/mod_ilbc.so*
-
-%files codec-isac
-%{MODINSTDIR}/mod_isac.so*
 
 %files codec-opus
 %{MODINSTDIR}/mod_opus.so*
