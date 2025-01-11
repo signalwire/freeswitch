@@ -173,10 +173,6 @@ Description: Entropy extraction
  This module extracts entropy from FreeSWITCH and feeds it into
  /dev/random.
 
-Module: applications/mod_rss
-Description: RSS browser
- This module provides an RSS browser.
-
 Module: applications/mod_skel
 Description: Adds mod_skel
  Adds mod_skel.

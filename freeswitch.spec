@@ -459,15 +459,6 @@ Requires:       %{name} = %{version}-%{release}
 %description application-rad_auth
 Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
 
-%package application-rss
-Summary:	FreeSWITCH mod_rss
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-rss
-Provides FreeSWITCH mod_rss, edisrse and read an XML based RSS feed, then read
-the entries aloud via a TTS engine
-
 %package application-signalwire
 Summary:	FreeSWITCH mod_signalwire
 Group:          System/Libraries
@@ -1182,7 +1173,6 @@ Requires:	freeswitch-application-limit
 Requires:	freeswitch-application-memcache
 Requires:	freeswitch-application-nibblebill
 Requires:	freeswitch-application-redis
-Requires:	freeswitch-application-rss
 Requires:	freeswitch-application-signalwire
 Requires:	freeswitch-application-sms
 Requires:	freeswitch-application-snapshot
@@ -1261,8 +1251,7 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
-			applications/mod_rss "
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth"
 
 APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
 			applications/mod_spandsp applications/mod_spy \
@@ -1760,7 +1749,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pre_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/presence_map.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/redis.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
@@ -1912,9 +1900,6 @@ fi
 
 %files application-rad_auth
 %{MODINSTDIR}/mod_rad_auth.so*
-
-%files application-rss
-%{MODINSTDIR}/mod_rss.so*
 
 %files application-signalwire
 %{MODINSTDIR}/mod_signalwire.so*

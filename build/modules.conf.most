@@ -33,7 +33,6 @@ applications/mod_oreka
 #applications/mod_osp
 applications/mod_prefix
 #applications/mod_rad_auth
-applications/mod_rss
 applications/mod_signalwire
 applications/mod_sms
 applications/mod_snapshot
