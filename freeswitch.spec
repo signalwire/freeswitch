@@ -871,14 +871,6 @@ Requires:	%{name} = %{version}-%{release}
 %description event-json-cdr
 JSON CDR Logger for FreeSWITCH.
 
-%package event-radius-cdr
-Summary:        RADIUS Logger for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description event-radius-cdr
-RADIUS Logger for the FreeSWITCH open source telephony platform
-
 %package event-snmp
 Summary:	SNMP stats reporter for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1326,7 +1318,7 @@ ENDPOINTS_MODULES=" \
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
 			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
-			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_radius_cdr \
+			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
 
 #### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
@@ -2074,9 +2066,6 @@ fi
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
-
-%files event-radius-cdr
-%{MODINSTDIR}/mod_radius_cdr.so*
 
 %files event-snmp
 %{MODINSTDIR}/mod_snmp.so*
