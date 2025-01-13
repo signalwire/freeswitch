@@ -164,10 +164,6 @@ Description: Longest prefix match search
  This module provides a data store with fast lookups by the longest
  prefix match (LPM) rule.
 
-Module: applications/mod_rad_auth
-Description: RADIUS AA
- This module implements RADIUS Authentication and Authorization.
-
 Module: applications/mod_random
 Description: Entropy extraction
  This module extracts entropy from FreeSWITCH and feeds it into
@@ -463,10 +459,6 @@ Module: event_handlers/mod_odbc_cdr
 Description: mod_odbc_cdr
  Adds mod_odbc_cdr.
 
-Module: event_handlers/mod_radius_cdr
-Description: mod_radius_cdr
- Adds mod_radius_cdr.
-
 Module: event_handlers/mod_smpp
 Description: mod_snmp
  Adds mod_snmp.
@@ -704,10 +696,6 @@ Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libldap2-dev, libsasl2-dev
-
-Module: xml_int/mod_xml_radius
-Description: mod_xml_radius
- Adds mod_xml_radius
 
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc

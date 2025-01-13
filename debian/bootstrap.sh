@@ -36,7 +36,6 @@ avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
   applications/mod_osp
-  applications/mod_rad_auth
   applications/mod_skel
   applications/mod_cluechoo
   codecs/mod_com_g729
@@ -52,7 +51,6 @@ avoid_mods=(
   formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap
-  xml_int/mod_xml_radius
 )
 avoid_mods_armhf=(
   languages/mod_v8
@@ -81,17 +79,14 @@ avoid_mods_wheezy=(
 )
 avoid_mods_trusty=(
   event_handlers/mod_amqp
-  loggers/mod_raven
 )
 avoid_mods_utopic=(
   directories/mod_ldap
-  loggers/mod_raven
 )
 avoid_mods_xenial=(
   event_handlers/mod_ldap
   event_handlers/mod_amqp
   asr_tts/mod_flite
-  loggers/mod_raven
 )
 manual_pkgs=(
 freeswitch-all

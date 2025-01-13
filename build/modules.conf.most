@@ -32,7 +32,6 @@ applications/mod_nibblebill
 applications/mod_oreka
 #applications/mod_osp
 applications/mod_prefix
-#applications/mod_rad_auth
 applications/mod_signalwire
 applications/mod_sms
 applications/mod_snapshot
@@ -88,7 +87,6 @@ event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 event_handlers/mod_format_cdr
 event_handlers/mod_json_cdr
-#event_handlers/mod_radius_cdr
 event_handlers/mod_odbc_cdr
 event_handlers/mod_snmp
 #event_handlers/mod_event_zmq
@@ -136,6 +134,5 @@ timers/mod_timerfd
 xml_int/mod_xml_cdr
 xml_int/mod_xml_curl
 xml_int/mod_xml_ldap
-#xml_int/mod_xml_radius
 xml_int/mod_xml_rpc
 xml_int/mod_xml_scgi

@@ -32,7 +32,6 @@ applications/mod_httapi
 #applications/mod_oreka
 #applications/mod_osp
 #applications/mod_prefix
-#applications/mod_rad_auth
 applications/mod_signalwire
 applications/mod_sms
 #applications/mod_snapshot
@@ -90,7 +89,6 @@ event_handlers/mod_event_socket
 #event_handlers/mod_fail2ban
 #event_handlers/mod_format_cdr
 #event_handlers/mod_json_cdr
-#event_handlers/mod_radius_cdr
 #event_handlers/mod_odbc_cdr
 #event_handlers/mod_smpp
 #event_handlers/mod_snmp
@@ -118,7 +116,6 @@ loggers/mod_console
 #loggers/mod_graylog2
 loggers/mod_logfile
 loggers/mod_syslog
-#loggers/mod_raven
 #say/mod_say_de
 say/mod_say_en
 #say/mod_say_es
@@ -142,7 +139,6 @@ say/mod_say_en
 xml_int/mod_xml_cdr
 #xml_int/mod_xml_curl
 #xml_int/mod_xml_ldap
-#xml_int/mod_xml_radius
 xml_int/mod_xml_rpc
 xml_int/mod_xml_scgi
 
