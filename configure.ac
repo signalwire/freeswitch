@@ -1079,7 +1079,7 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_opal mod_h323 mod_khomp 
+# Untested modules : mod_osp mod_opal mod_h323
 #                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
@@ -2160,7 +2160,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
 		src/mod/endpoints/mod_h323/Makefile
-		src/mod/endpoints/mod_khomp/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
 		src/mod/endpoints/mod_reference/Makefile

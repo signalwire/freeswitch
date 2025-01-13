@@ -747,14 +747,6 @@ PostgreSQL native support for FreeSWITCH.
 #%description endpoint-h323
 #H.323 endpoint support for FreeSWITCH open source telephony platform
 
-#%package endpoint-khomp
-#Summary:        khomp endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-khomp
-#Khomp hardware endpoint support for FreeSWITCH open source telephony platform.
-
 %package endpoint-rtmp
 Summary:        RTPM Endpoint support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1300,7 +1292,7 @@ ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323 endpoints/mod_khomp 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323
  
 ######################################################################################################################
 #
@@ -2008,9 +2000,6 @@ fi
 
 #%files endpoint-h323
 #%{MODINSTDIR}/mod_h323.so*
-
-#%files endpoint-khomp
-#%{MODINSTDIR}/mod_khomp.so*
 
 %files endpoint-rtmp
 %{MODINSTDIR}/mod_rtmp.so*

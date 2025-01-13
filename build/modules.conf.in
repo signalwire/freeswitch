@@ -71,7 +71,6 @@ dialplans/mod_dialplan_xml
 #directories/mod_ldap
 #endpoints/mod_alsa
 #endpoints/mod_h323
-#endpoints/mod_khomp
 endpoints/mod_loopback
 #endpoints/mod_opal
 endpoints/mod_rtc

@@ -365,10 +365,6 @@ Description: mod_h323
  Adds mod_h323.
 Build-Depends: libopenh323-dev | libh323plus-dev, libpt-dev
 
-Module: endpoints/mod_khomp
-Description: mod_khomp
- Adds mod_khomp.
-
 Module: endpoints/mod_loopback
 Description: mod_loopback
  Adds mod_loopback.

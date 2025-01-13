@@ -43,7 +43,6 @@ avoid_mods=(
   codecs/mod_siren
   codecs/mod_skel_codec
   endpoints/mod_h323
-  endpoints/mod_khomp
   endpoints/mod_opal
   endpoints/mod_reference
   event_handlers/mod_smpp
