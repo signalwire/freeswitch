@@ -2232,7 +2232,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/xml_int/mod_xml_cdr/Makefile
 		src/mod/xml_int/mod_xml_curl/Makefile
 		src/mod/xml_int/mod_xml_ldap/Makefile
-		src/mod/xml_int/mod_xml_radius/Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
 		src/mod/xml_int/mod_xml_scgi/Makefile
 		src/mod/applications/mod_av/Makefile

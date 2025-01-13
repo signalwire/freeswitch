@@ -52,7 +52,6 @@ avoid_mods=(
   formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap
-  xml_int/mod_xml_radius
 )
 avoid_mods_armhf=(
   languages/mod_v8
