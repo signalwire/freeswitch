@@ -164,10 +164,6 @@ Description: Longest prefix match search
  This module provides a data store with fast lookups by the longest
  prefix match (LPM) rule.
 
-Module: applications/mod_rad_auth
-Description: RADIUS AA
- This module implements RADIUS Authentication and Authorization.
-
 Module: applications/mod_random
 Description: Entropy extraction
  This module extracts entropy from FreeSWITCH and feeds it into
