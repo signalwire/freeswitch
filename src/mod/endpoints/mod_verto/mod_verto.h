@@ -141,8 +141,8 @@ struct jsock_s {
 	char remote_host[256];
 	int remote_port;
 	int family;
-	time_t exptime;
-	time_t logintime;
+	switch_time_t exptime;
+	switch_time_t logintime;
 	struct verto_profile_s *profile;
 	switch_thread_rwlock_t *rwlock;
 
@@ -191,7 +191,7 @@ typedef struct verto_pvt_s {
 	switch_media_handle_t *smh;
 	switch_core_media_params_t *mparams;
 	switch_call_cause_t remote_hangup_cause;
-	time_t detach_time;
+	switch_time_t detach_time;
 	struct verto_pvt_s *next;
 	switch_byte_t text_read_frame_data[SWITCH_RTP_MAX_BUF_LEN];
 	switch_frame_t text_read_frame;
