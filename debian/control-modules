@@ -440,10 +440,6 @@ Module: event_handlers/mod_event_test
 Description: mod_event_test
  Adds mod_event_test.
 
-Module: event_handlers/mod_event_zmq
-Description: mod_event_zmq
- Adds mod_event_zmq.
-
 Module: event_handlers/mod_format_cdr
 Description: mod_format_cdr
  Adds mod_format_cdr.
