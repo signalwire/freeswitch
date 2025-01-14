@@ -767,6 +767,10 @@ process_common_toolchain() {
 
     # detect tgt_os
     case "$gcctarget" in
+      arm64-apple-darwin*)
+        tgt_isa=arm64
+        tgt_os=darwin
+        ;;
       *darwin*)
         tgt_isa=x86_64
         tgt_os=darwin
@@ -845,7 +849,7 @@ process_common_toolchain() {
   # Handle darwin variants. Newer SDKs allow targeting older
   # platforms, so use the newest one available.
   case ${toolchain} in
-    arm*-darwin*)
+    DISABLE-arm*-darwin*)
       add_cflags "-miphoneos-version-min=${IOS_VERSION_MIN}"
       iphoneos_sdk_dir="$(show_darwin_sdk_path iphoneos)"
       if [ -d "${iphoneos_sdk_dir}" ]; then
@@ -1046,7 +1050,7 @@ EOF
           soft_enable unit_tests
           ;;
 
-        darwin*)
+        DISABLE-darwin*)
           XCRUN_FIND="xcrun --sdk iphoneos --find"
           CXX="$(${XCRUN_FIND} clang++)"
           CC="$(${XCRUN_FIND} clang)"
