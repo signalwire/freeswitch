@@ -577,6 +577,7 @@ switch_status_t pgsql_handle_exec_detailed(const char *file, const char *func, i
 
 error:
 	pgsql_handle_set_error_if_not_set(handle, err);
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -662,6 +663,7 @@ error:
 
 	pgsql_free_result(&result);
 	pgsql_handle_set_error_if_not_set(handle, err);
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -1074,6 +1076,7 @@ switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char
 error:
 
 	pgsql_handle_set_error_if_not_set(handle, err);
+
 	return SWITCH_STATUS_FALSE;
 }
 
