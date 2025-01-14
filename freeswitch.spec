@@ -622,14 +622,6 @@ Conflicts:	codec-com-g729
 %description codec-passthru-g729
 Pass-through g729 Codec support for FreeSWITCH open source telephony platform
 
-%package codec-h26x
-Summary:        H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-h26x
-H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
-
 %package codec-ilbc
 Summary:        iLCB Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -737,14 +729,6 @@ PostgreSQL native support for FreeSWITCH.
 #
 #%description endpoint-h323
 #H.323 endpoint support for FreeSWITCH open source telephony platform
-
-#%package endpoint-khomp
-#Summary:        khomp endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-khomp
-#Khomp hardware endpoint support for FreeSWITCH open source telephony platform.
 
 %package endpoint-rtmp
 Summary:        RTPM Endpoint support for FreeSWITCH open source telephony platform
@@ -1168,7 +1152,6 @@ Requires:	freeswitch-codec-passthru-amr
 Requires:	freeswitch-codec-bv
 Requires:	freeswitch-codec-passthru-g723_1
 Requires:	freeswitch-codec-passthru-g729
-Requires:	freeswitch-codec-h26x
 Requires:	freeswitch-codec-ilbc
 Requires:	freeswitch-codec-siren
 Requires:	freeswitch-database-pgsql
@@ -1257,7 +1240,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
-		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
+		codecs/mod_g729 codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
 		codecs/mod_siren codecs/mod_theora"
 #
 
@@ -1291,7 +1274,7 @@ ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323 endpoints/mod_khomp 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323
  
 ######################################################################################################################
 #
@@ -1948,9 +1931,6 @@ fi
 %files codec-passthru-g729
 %{MODINSTDIR}/mod_g729.so*
 
-%files codec-h26x
-%{MODINSTDIR}/mod_h26x.so*
-
 %files codec-ilbc
 %{MODINSTDIR}/mod_ilbc.so*
 
@@ -1996,9 +1976,6 @@ fi
 
 #%files endpoint-h323
 #%{MODINSTDIR}/mod_h323.so*
-
-#%files endpoint-khomp
-#%{MODINSTDIR}/mod_khomp.so*
 
 %files endpoint-rtmp
 %{MODINSTDIR}/mod_rtmp.so*

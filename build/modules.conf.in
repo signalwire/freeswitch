@@ -56,7 +56,6 @@ codecs/mod_b64
 #codecs/mod_com_g729
 codecs/mod_g723_1
 codecs/mod_g729
-codecs/mod_h26x
 #codecs/mod_ilbc
 codecs/mod_opus
 #codecs/mod_silk
@@ -70,7 +69,6 @@ dialplans/mod_dialplan_xml
 #directories/mod_ldap
 #endpoints/mod_alsa
 #endpoints/mod_h323
-#endpoints/mod_khomp
 endpoints/mod_loopback
 #endpoints/mod_opal
 endpoints/mod_rtc

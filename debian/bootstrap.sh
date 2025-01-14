@@ -43,7 +43,6 @@ avoid_mods=(
   codecs/mod_siren
   codecs/mod_skel_codec
   endpoints/mod_h323
-  endpoints/mod_khomp
   endpoints/mod_opal
   endpoints/mod_reference
   event_handlers/mod_smpp
@@ -479,7 +478,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-amr (= \${binary:Version}),
- freeswitch-mod-h26x (= \${binary:Version}),
  freeswitch-mod-sndfile (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
  freeswitch-mod-local-stream (= \${binary:Version}),
@@ -688,7 +686,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-codec2 (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
- freeswitch-mod-h26x (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
@@ -712,7 +709,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-codec2-dbg (= \${binary:Version}),
  freeswitch-mod-g723-1-dbg (= \${binary:Version}),
  freeswitch-mod-g729-dbg (= \${binary:Version}),
- freeswitch-mod-h26x-dbg (= \${binary:Version}),
  freeswitch-mod-opus-dbg (= \${binary:Version}),
  freeswitch-mod-silk-dbg (= \${binary:Version}),
  freeswitch-mod-spandsp-dbg (= \${binary:Version}),

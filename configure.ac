@@ -740,6 +740,8 @@ case "$host" in
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
         APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
+        APR_ADDTO(CPPFLAGS, -I/opt/homebrew/include)
+        APR_ADDTO(LDFLAGS, -L/opt/homebrew/lib)
         if test "x$enable_core_odbc_support" != "xno"; then
 	   APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
@@ -838,6 +840,8 @@ AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
+
+AC_CHECK_HEADERS([jpeglib.h])
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
 
 AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
@@ -1079,7 +1083,7 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_opal mod_h323 mod_khomp 
+# Untested modules : mod_osp mod_opal mod_h323
 #                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
@@ -1262,6 +1266,8 @@ case $host in
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ffmpeg/lib/pkgconfig/
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/lib/pkgconfig/
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/sqlite/lib/pkgconfig/
        ;;
 esac
 
@@ -2143,7 +2149,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
-		src/mod/codecs/mod_h26x/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
@@ -2159,7 +2164,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
 		src/mod/endpoints/mod_h323/Makefile
-		src/mod/endpoints/mod_khomp/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
 		src/mod/endpoints/mod_reference/Makefile
