@@ -1164,10 +1164,10 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_generate_version(switch_uuid_t *uuid
 {
 	switch(version) {
 		case 4:
-			switch_uuid_generate_v4(uuid);
+			return switch_uuid_generate_v4(uuid);
 			break;
 		case 7:
-			switch_uuid_generate_v7(uuid);
+			return switch_uuid_generate_v7(uuid);
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Unsupported UUID version %d\n", version);
