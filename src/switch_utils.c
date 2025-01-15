@@ -4873,13 +4873,8 @@ SWITCH_DECLARE(int) switch_rand(void)
 }
 
 
-SWITCH_DECLARE(int) switch_getentropy(void *buffer, switch_size_t length)
+static SWITCH_DECLARE(int) _switch_getentropy(void *buffer, switch_size_t length)
 {
-	if (!buffer || length > 256) { // Enforce same limit as `getentropy`
-		errno = EIO; // Input/Output error
-		return -1;
-	}
-
 #ifdef WIN32
 	BCRYPT_ALG_HANDLE hAlgorithm = NULL;
 	NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
@@ -4940,16 +4935,26 @@ SWITCH_DECLARE(int) switch_getentropy(void *buffer, switch_size_t length)
 }
 
 
+SWITCH_DECLARE(int) switch_getentropy(void *buffer, switch_size_t length)
+{
+	if (!buffer || length > 256) { // Enforce same limit as `getentropy`
+		errno = EIO; // Input/Output error
+		return -1;
+	}
+	return _switch_getentropy(buffer, length);
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v7(switch_uuid_t *uuid) {
 	/* random bytes */
 	unsigned char *value = uuid->data;
 
+	/* current timestamp in ms */
+	switch_time_t timestamp = switch_time_now() / 1000;
+
 	if (switch_getentropy(value, 16) != 0) {
 		return -1;
 	}
-
-	/* current timestamp in ms */
-	switch_time_t timestamp = switch_time_now() / 1000;
 
 	// timestamp
 	value[0] = (timestamp >> 40) & 0xFF;
