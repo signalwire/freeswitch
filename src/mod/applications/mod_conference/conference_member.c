@@ -714,7 +714,14 @@ switch_status_t conference_member_del_relationship(conference_member_t *member, 
 	return status;
 }
 
-
+switch_status_t conference_member_play_alone_sound(conference_member_t *member)
+{
+	char *sound = member->conference->alone_sound ? member->conference->alone_sound : "say:You are currently the only person in this conference.";
+	if (!strcasecmp(sound, "none")) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	return conference_member_play_file(member, sound, 0, SWITCH_TRUE);
+}
 
 /* Gain exclusive access and add the member to the list */
 switch_status_t conference_member_add(conference_obj_t *conference, conference_member_t *member)
@@ -940,15 +947,8 @@ switch_status_t conference_member_add(conference_obj_t *conference, conference_m
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
 				} else if (conference->count == 1 && !conference->perpetual_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
 					/* as long as its not a bridge_to conference, announce if person is alone */
-					if (!conference_utils_test_flag(conference, CFLAG_BRIDGE_TO)) {
-						if (conference->alone_sound  && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
-							conference_file_stop(conference, FILE_STOP_ASYNC);
-							conference_file_play(conference, conference->alone_sound, CONF_DEFAULT_LEADIN,
-												 switch_core_session_get_channel(member->session), 0);
-						} else {
-							switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
-							conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
-						}
+					if (!conference_utils_test_flag(conference, CFLAG_BRIDGE_TO) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
+						conference_member_play_alone_sound(member);
 					}
 				}
 			}
@@ -1346,8 +1346,13 @@ switch_status_t conference_member_del(conference_obj_t *conference, conference_m
 				conference_file_play(conference, conference->exit_sound, 0, channel, 0);
 			}
 			if (conference->count == 1 && conference->alone_sound && !conference_utils_test_flag(conference, CFLAG_WAIT_MOD) && !conference_utils_member_test_flag(member, MFLAG_GHOST)) {
-				conference_file_stop(conference, FILE_STOP_ASYNC);
-				conference_file_play(conference, conference->alone_sound, 0, channel, 0);
+				/* play file to single member that was left in the conference */
+				for (imember = conference->members; imember; imember = imember->next) {
+					if (!conference_utils_member_test_flag(imember, MFLAG_GHOST)) {
+						conference_member_play_alone_sound(imember);
+						break;
+					}
+				}
 			}
 		}
 
