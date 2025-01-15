@@ -1158,6 +1158,8 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v4(switch_uuid_t *uuid)
 	UuidCreate((UUID *) uuid);
 #endif
 	switch_mutex_unlock(runtime.uuid_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_uuid_generate_version(switch_uuid_t *uuid, int version)
