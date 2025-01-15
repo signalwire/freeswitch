@@ -9726,25 +9726,26 @@ static int _wrap_Dbh_query_rows(lua_State* L) {
   lua_State *arg2 = (lua_State *) 0 ;
   char *arg3 = (char *) 0 ;
   DbhQueryRowsReturn result;
-
+  
   arg2 = L;
   SWIG_check_num_args("LUA::Dbh::query_rows",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("LUA::Dbh::query_rows",1,"LUA::Dbh *");
   if(!SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("LUA::Dbh::query_rows",2,"char *");
-
+  
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Dbh,0))){
     SWIG_fail_ptr("Dbh_query_rows",1,SWIGTYPE_p_LUA__Dbh);
   }
-
+  
   arg3 = (char *)lua_tostring(L, 2);
+  switch_assert(arg1);
   result = (arg1)->query_rows(arg2,arg3);
   {
     SWIG_arg += result;
   }
   return SWIG_arg;
-
+  
   if(0) SWIG_fail;
-
+  
 fail:
   lua_error(L);
   return SWIG_arg;
