@@ -683,14 +683,6 @@ see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_
 and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html 
 At the time of this packaging, Polycom does not charge for licensing.
 
-%package codec-theora
-Summary:        Theora Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-theora
-Theora Video Codec support for FreeSWITCH open source telephony platform.
-
 ######################################################################################################################
 #				FreeSWITCH Database Modules
 ######################################################################################################################
@@ -1242,7 +1234,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
 		codecs/mod_g729 codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_theora"
+		codecs/mod_siren"
 #
 
 ######################################################################################################################
@@ -1946,9 +1938,6 @@ fi
 
 %files codec-siren
 %{MODINSTDIR}/mod_siren.so*
-
-%files codec-theora
-%{MODINSTDIR}/mod_theora.so*
 
 ######################################################################################################################
 #

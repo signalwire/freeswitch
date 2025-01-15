@@ -688,7 +688,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
- freeswitch-mod-theora (= \${binary:Version}),
 Suggests:
  freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-siren (= \${binary:Version})
@@ -711,7 +710,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-opus-dbg (= \${binary:Version}),
  freeswitch-mod-silk-dbg (= \${binary:Version}),
  freeswitch-mod-spandsp-dbg (= \${binary:Version}),
- freeswitch-mod-theora-dbg (= \${binary:Version}),
 Suggests:
  freeswitch-mod-ilbc-dbg (= \${binary:Version}),
  freeswitch-mod-siren-dbg (= \${binary:Version})
