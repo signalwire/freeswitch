@@ -4116,8 +4116,9 @@ SWITCH_DECLARE(char *) switch_uuid_str_version(char *buf, switch_size_t len, int
 
 	if (len < (SWITCH_UUID_FORMATTED_LENGTH + 1)) {
 		switch_snprintf(buf, len, "INVALID");
+	} else if (switch_uuid_generate_version(&uuid, version) != SWITCH_STATUS_SUCCESS) {
+		switch_snprintf(buf, len, "INVALID");
 	} else {
-		switch_uuid_generate_version(&uuid, version);
 		switch_uuid_format(buf, &uuid);
 	}
 
