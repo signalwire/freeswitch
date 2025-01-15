@@ -4873,7 +4873,7 @@ SWITCH_DECLARE(int) switch_rand(void)
 }
 
 
-static SWITCH_DECLARE(int) _switch_getentropy(void *buffer, switch_size_t length)
+static int _switch_getentropy(void *buffer, switch_size_t length)
 {
 #ifdef WIN32
 	BCRYPT_ALG_HANDLE hAlgorithm = NULL;
