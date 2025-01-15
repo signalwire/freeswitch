@@ -560,7 +560,12 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
  * Generate and return a (new) UUID
  * @param uuid The resulting UUID
  */
-SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid);
+#ifndef DEFAULT_UUID_VERSION
+#define DEFAULT_UUID_VERSION 4
+#endif
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v4(switch_uuid_t *uuid);
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_version(switch_uuid_t *uuid, int version);
+#define switch_uuid_get(uuid) switch_uuid_generate_version(uuid, DEFAULT_UUID_VERSION);
 
 /**
  * Parse a standard-format string into a UUID
