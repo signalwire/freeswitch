@@ -90,7 +90,6 @@ event_handlers/mod_event_socket
 #event_handlers/mod_odbc_cdr
 #event_handlers/mod_smpp
 #event_handlers/mod_snmp
-#event_handlers/mod_event_zmq
 #formats/mod_imagick
 formats/mod_local_stream
 formats/mod_native_file

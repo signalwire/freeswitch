@@ -821,14 +821,6 @@ Requires:	%{name} = %{version}-%{release}
 %description event-multicast
 Multicast Event System for FreeSWITCH.
 
-#%package event-zmq
-#Summary:	ZeroMQ Event System for the FreeSWITCH open source telephony platform
-#Group:		System/Libraries
-#Requires:	 %{name} = %{version}-%{release}
-#
-#%description event-zmq
-#ZeroMQ Event System for FreeSWITCH.
-
 %package event-json-cdr
 Summary:	JSON CDR Logger for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1286,7 +1278,6 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
 
-#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
@@ -2013,9 +2004,6 @@ fi
 
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
-
-#%files event-zmq
-#%{MODINSTDIR}/mod_xmq.so*
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
