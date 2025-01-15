@@ -1149,7 +1149,7 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 #endif
 }
 
-SWITCH_DECLARE(void) switch_uuid_generate_v4(switch_uuid_t *uuid)
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v4(switch_uuid_t *uuid)
 {
 	switch_mutex_lock(runtime.uuid_mutex);
 #ifndef WIN32
