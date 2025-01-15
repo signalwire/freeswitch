@@ -235,7 +235,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_timerfd_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "epoll_wait interrupted by SIGINT, continue...\n");
 				continue;
 			}
-			
+
 			break;
 		}
 
