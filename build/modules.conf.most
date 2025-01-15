@@ -103,7 +103,6 @@ languages/mod_managed
 languages/mod_perl
 languages/mod_python3
 #languages/mod_v8
-languages/mod_yaml
 loggers/mod_console
 loggers/mod_graylog2
 loggers/mod_logfile
