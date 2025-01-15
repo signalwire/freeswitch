@@ -668,9 +668,6 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-iksemel-dep:
-	make -C src/mod/formats/mod_ssml deps
-
 core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
@@ -743,13 +740,6 @@ srtp-reconf:
 	cd libs/srtp && $(MAKE) clean
 	cd libs/srtp && sh ./config.status --recheck
 	cd libs/srtp && sh ./config.status
-
-
-iks-reconf:
-	cd libs/iksemel && $(MAKE) clean
-	cd libs/iksemel && autoreconf -fi
-	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	$(MAKE) mod_ssml-clean
 
 cluecon:
 	@clear

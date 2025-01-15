@@ -255,6 +255,10 @@ SWITCH_BEGIN_EXTERN_C
 
 typedef uint8_t switch_byte_t;
 
+typedef struct {
+	unsigned int value : 31;
+} switch_uint31_t;
+
 typedef enum {
 	SWITCH_PVT_PRIMARY = 0,
 	SWITCH_PVT_SECONDARY
@@ -594,6 +598,13 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_MAX_MANAGEMENT_BUFFER_LEN 1024 * 8
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
+
+/* Check if RAND_MAX is a power of 2 minus 1 or in other words all bits set */
+#if ((RAND_MAX) & ((RAND_MAX) + 1)) == 0 && (RAND_MAX) != 0
+#define SWITCH_RAND_MAX RAND_MAX
+#else
+#define SWITCH_RAND_MAX 0x7fff
+#endif
 
 typedef enum {
 	SWITCH_RW_READ,
@@ -1784,7 +1795,8 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
 	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
 	SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
-	SWITCH_SPEECH_FLAG_DONE = (1 << 6)
+	SWITCH_SPEECH_FLAG_DONE = (1 << 6),
+	SWITCH_SPEECH_FLAG_MULTI = (1 << 7)
 } switch_speech_flag_enum_t;
 typedef uint32_t switch_speech_flag_t;
 
@@ -2249,7 +2261,8 @@ typedef enum {
 	SWITCH_CAUSE_BAD_IDENTITY_INFO = 821,
 	SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 822,
 	SWITCH_CAUSE_INVALID_IDENTITY = 823,
-	SWITCH_CAUSE_STALE_DATE = 824
+	SWITCH_CAUSE_STALE_DATE = 824,
+	SWITCH_CAUSE_REJECT_ALL = 825
 } switch_call_cause_t;
 
 typedef enum {
@@ -2424,6 +2437,7 @@ typedef enum {
 	SCC_VIDEO_RESET,
 	SCC_AUDIO_PACKET_LOSS,
 	SCC_AUDIO_ADJUST_BITRATE,
+	SCC_AUDIO_VAD,
 	SCC_DEBUG,
 	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
@@ -2654,10 +2668,12 @@ struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;
 
 typedef enum {
-	SDP_TYPE_REQUEST,
-	SDP_TYPE_RESPONSE
+	SDP_OFFER,
+	SDP_ANSWER
 } switch_sdp_type_t;
 
+#define SDP_TYPE_REQUEST SDP_OFFER
+#define SDP_TYPE_RESPONSE SDP_ANSWER
 
 typedef enum {
 	AEAD_AES_256_GCM_8,

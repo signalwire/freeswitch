@@ -1419,7 +1419,7 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int get_style_method = 0;
 	char *method = NULL;
-	struct curl_httppost *formpost=NULL;
+	switch_curl_mime *formpost = NULL;
 	switch_event_t *save_params = NULL;
 	const char *put_file;
 	FILE *fd = NULL;
@@ -1476,7 +1476,7 @@ static switch_status_t httapi_sync(client_t *client)
 	}
 
 	if (!put_file) {
-		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);
+		switch_curl_process_mime(client->params, curl_handle, &formpost);
 	}
 
 	if (formpost) {
@@ -1588,7 +1588,7 @@ static switch_status_t httapi_sync(client_t *client)
 		curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, put_file_read);
 
 	} else if (formpost) {
-		curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, formpost);
+		switch_curl_easy_setopt_mime(curl_handle, formpost);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_POST, !get_style_method);
 	}
@@ -1670,9 +1670,7 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_curl_easy_cleanup(curl_handle);
 	switch_curl_slist_free_all(headers);
 
-	if (formpost) {
-		curl_formfree(formpost);
-	}
+	switch_curl_mime_free(&formpost);
 
 	if (client->err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error encountered! [%s]\ndata: [%s]\n", client->profile->url, data);
