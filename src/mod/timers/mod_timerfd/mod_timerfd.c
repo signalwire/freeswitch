@@ -30,8 +30,8 @@
  *
  */
 
-#include <errno.h>
 #include <switch.h>
+#include <errno.h>
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
