@@ -747,7 +747,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 
 
-	if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+	if (!(gateway = sofia_reg_find_profile_gateway(profile, sofia_private->gateway_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
 		goto error;
 	}
@@ -1491,7 +1491,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		if (!zstr(sofia_private->gateway_name)) {
-			if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+			if (!(gateway = sofia_reg_find_profile_gateway(profile,sofia_private->gateway_name))) {
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
@@ -1520,7 +1520,7 @@ static void our_sofia_event_callback(nua_event_t event,
 				}
 
 				if (tech_pvt->gateway_name) {
-					gateway = sofia_reg_find_gateway(tech_pvt->gateway_name);
+					gateway = sofia_reg_find_profile_gateway(profile,tech_pvt->gateway_name);
 				}
 
 				if (channel && switch_channel_down(channel)) {
@@ -2099,7 +2099,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			if (sofia_private && !zstr(sofia_private->gateway_name)) {
 				sofia_gateway_t *gateway = NULL;
 
-				if ((gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+				if ((gateway = sofia_reg_find_profile_gateway(profile,sofia_private->gateway_name))) {
 					gateway->state = REG_STATE_FAILED;
 					gateway->failure_status = status;
 					sofia_reg_release_gateway(gateway);
@@ -3790,8 +3790,12 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 		}
 
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
-		if (switch_core_hash_find(mod_sofia_globals.gateway_hash, name) && (gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) && !gp->deleted) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", name);
+		if ((gp = switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey)) && !gp->deleted) {
+			if (sofia_reg_add_gateway(profile, name, gp) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Added gateway to hash '%s'\n", name);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", name);
+			}
 			switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 			free(pkey);
 			goto skip;
@@ -4219,7 +4223,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 				parse_gateway_subscriptions(profile, gateway, gw_subs_tag);
 			}
 
-			sofia_reg_add_gateway(profile, gateway->name, gateway);
+			if (sofia_reg_add_gateway(profile, gateway->name, gateway) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Skipped gateway '%s' on profile '%s'\n", gateway->name, profile->name);
+			}
 
 		}
 
@@ -6446,7 +6452,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 	switch_bool_t do_fire_gateway_state_event = SWITCH_FALSE;
 
 	if (sofia_private && !zstr(sofia_private->gateway_name)) {
-		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
+		gateway = sofia_reg_find_profile_gateway(profile,sofia_private->gateway_name);
 		sofia_private->destroy_me = 1;
 	}
 
@@ -11309,13 +11315,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		sofia_gateway_t *gateway = NULL;
 		char *extension = NULL;
 
-		if (gw_name && ((gateway = sofia_reg_find_gateway(gw_name)))) {
+		if (gw_name && ((gateway = sofia_reg_find_profile_gateway(profile, gw_name)))) {
 			gw_param_name = NULL;
 			extension = gateway->extension;
 		}
 
 		if (!gateway && gw_param_name) {
-			if ((gateway = sofia_reg_find_gateway(gw_param_name))) {
+			if ((gateway = sofia_reg_find_profile_gateway(profile, gw_param_name))) {
 				extension = gateway->real_extension;
 			}
 		}
