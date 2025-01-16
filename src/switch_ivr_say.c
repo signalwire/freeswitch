@@ -68,6 +68,7 @@ static char *SAY_GENDER_NAMES[] = {
 	"MASCULINE",
 	"FEMININE",
 	"NEUTER",
+	"UTRUM",
 	NULL
 };
 
