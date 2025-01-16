@@ -1521,7 +1521,6 @@ SWITCH_DECLARE(const char *) switch_memory_usage_stream(switch_stream_handle_t *
 SWITCH_DECLARE(int) switch_rand(void);
 SWITCH_DECLARE(int) switch_getentropy(void *buffer, switch_size_t length);
 SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v7(switch_uuid_t *uuid);
-SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v7(switch_uuid_t *uuid);
 
 SWITCH_END_EXTERN_C
 #endif
