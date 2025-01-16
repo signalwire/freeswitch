@@ -145,13 +145,11 @@ Release/
 /src/mod/applications/mod_nibblebill/Makefile
 /src/mod/applications/mod_osp/Makefile
 /src/mod/applications/mod_osp/Makefile.in
-/src/mod/applications/mod_rss/Makefile
 /src/mod/applications/mod_snipe_hunt/Makefile
 /src/mod/applications/mod_test/test/Makefile
 /src/mod/applications/mod_test/test/Makefile.in
 /src/mod/codecs/mod_com_g729/Makefile
 /src/mod/codecs/mod_com_g729/Makefile.in
-/src/mod/codecs/mod_dahdi_codec/Makefile
 /src/mod/dialplans/mod_dialplan_directory/Makefile
 /src/mod/formats/mod_shell_stream/Makefile
 /src/mod/languages/mod_lua/mod_lua_wrap.cpp.orig
@@ -175,7 +173,6 @@ BuildLog.htm
 
 !/libs/win32/
 !/libs/speex/win32/
-!/src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/win32/
 *.suo
 *.sdf
 x64/
@@ -255,9 +252,6 @@ libs/sofia-sip*
 
 src/mod/applications/mod_test/test/test_asr
 src/mod/applications/mod_test/test/test_tts
-src/mod/event_handlers/mod_rayo/test/test_iks
-src/mod/event_handlers/mod_rayo/test/test_nlsml
-src/mod/event_handlers/mod_rayo/test/test_srgs
 src/mod/applications/mod_http_cache/test/Makefile
 src/mod/applications/mod_http_cache/test/Makefile.in
 src/mod/applications/mod_http_cache/test/test-suite.log
@@ -266,7 +260,6 @@ src/mod/applications/mod_http_cache/test/test_aws.log
 src/mod/applications/mod_http_cache/test/test_aws.trs
 src/mod/formats/mod_sndfile/test/test_sndfile
 src/mod/formats/mod_sndfile/test/test_sndfile_conf
-src/mod/formats/mod_ssml/test/test_tts_format
 src/mod/*/*/test/*.log
 src/mod/*/*/test/*.trs
 src/mod/*/*/test/[0-9]*/*

@@ -126,11 +126,6 @@ set_fs_ver () {
   sed -e "s|\(%define nonparsedversion \).*|\1$rpm_version|"  \
        freeswitch.spec > freeswitch.spec.$$
   mv freeswitch.spec.$$ freeswitch.spec
-
-  sed -e "s|\(%define nonparsedversion \).*|\1$rpm_version|"  \
-       freeswitch-config-rayo.spec > freeswitch-config-rayo.spec.$$
-  mv freeswitch-config-rayo.spec.$$ freeswitch-config-rayo.spec
-
 #%define version 1.5.16
 
 }
@@ -141,10 +136,6 @@ set_fs_release () {
     sed -e "s|\(%define release \).*|\1$release|"  \
          freeswitch.spec > freeswitch.spec.$$
     mv freeswitch.spec.$$ freeswitch.spec
-
-    sed -e "s|\(%define release \).*|\1$release|"  \
-         freeswitch-config-rayo.spec > freeswitch-config-rayo.spec.$$
-    mv freeswitch-config-rayo.spec.$$ freeswitch-config-rayo.spec
   fi
 }
 

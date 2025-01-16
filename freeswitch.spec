@@ -29,19 +29,11 @@
 #
 ######################################################################################################################
 # Module build settings
-%define build_sng_isdn 0
-%define build_sng_ss7 0
-%define build_sng_tc 0
 %define build_py26_esl 0
 %define build_timerfd 0
 %define build_mod_esl 0
-%define build_mod_rayo 1
-%define build_mod_ssml 1
 %define build_mod_v8 0
 
-%{?with_sang_tc:%define build_sng_tc 1 }
-%{?with_sang_isdn:%define build_sng_isdn 1 }
-%{?with_sang_ss7:%define build_sng_ss7 1 }
 %{?with_py26_esl:%define build_py26_esl 1 }
 %{?with_timerfd:%define build_timerfd 1 }
 %{?with_mod_esl:%define build_mod_esl 1 }
@@ -118,10 +110,9 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
-Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -235,14 +226,6 @@ FreeSWITCH development files
 ######################################################################################################################
 #				FreeSWITCH Application Modules
 ######################################################################################################################
-%package application-abstraction
-Summary:	FreeSWITCH mod_abstraction
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-abstraction
-Provide an abstraction to FreeSWITCH API calls
-
 %package application-avmd
 Summary:	FreeSWITCH voicemail detector
 Group:          System/Libraries
@@ -467,14 +450,6 @@ Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for
 FreeSWITCH to allow real-time debiting of credit or cash from a database 
 while calls are in progress.
 
-%package application-rad_auth
-Summary:	FreeSWITCH mod_rad_auth
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-rad_auth
-Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
-
 %package application-redis
 Summary:	FreeSWITCH mod_redis
 Group:          System/Libraries
@@ -483,15 +458,6 @@ Requires:       %{name} = %{version}-%{release}
 %description application-redis
 Provides FreeSWITCH mod_redis, access to the redis key value pair db system from
 FreeSWITCH
-
-%package application-rss
-Summary:	FreeSWITCH mod_rss
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-rss
-Provides FreeSWITCH mod_rss, edisrse and read an XML based RSS feed, then read
-the entries aloud via a TTS engine
 
 %package application-signalwire
 Summary:	FreeSWITCH mod_signalwire
@@ -521,27 +487,6 @@ Requires:       %{name} = %{version}-%{release}
 Provides FreeSWITCH mod_snapshot, allows recording a sliding window of audio 
 and taking snapshots to disk. 
 
-%package application-snom
-Summary:	FreeSWITCH mod_snom
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-snom
-Provides FreeSWITCH mod_snom, an application for controlling the functionality 
-and appearance of the programmable softkeys on Snom phones
-
-%package application-soundtouch
-Summary:	FreeSWITCH mod_soundtouch
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-BuildRequires:  soundtouch-devel >= 1.7.1
-
-%description application-soundtouch
-Provides FreeSWITCH mod_soundtouch, uses the soundtouch library, which can do
-pitch shifting and other audio effects, so you can pipe the audio of a call
-(or any other channel audio) through this module and achieve those effects. You
-can specifically adjust pitch, rate, and tempo.
-
 %package application-spy
 Summary:	FreeSWITCH mod_spy
 Group:          System/Libraries
@@ -550,15 +495,6 @@ Requires:       %{name} = %{version}-%{release}
 %description application-spy
 Provides FreeSWITCH mod_spy, implements userspy application which provides 
 persistent eavesdrop on all channels bridged to a certain user
-
-%package application-stress
-Summary:	FreeSWITCH mod_stress
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-stress
-Provides FreeSWITCH mod_stress. mod_stress attempts to detect stress in a 
-person's voice and generates FreeSWITCH events based on that data. 
 
 %package application-translate
 Summary:	FreeSWITCH mod_translate
@@ -695,14 +631,6 @@ Conflicts:	codec-com-g729
 %description codec-passthru-g729
 Pass-through g729 Codec support for FreeSWITCH open source telephony platform
 
-%package codec-h26x
-Summary:        H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-h26x
-H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
-
 %package codec-ilbc
 Summary:        iLCB Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -714,29 +642,13 @@ BuildRequires:  ilbc2-devel
 %description codec-ilbc
 iLBC Codec support for FreeSWITCH open source telephony platform
 
-%package codec-isac
-Summary:        iSAC Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-isac
-iSAC Codec support for FreeSWITCH open source telephony platform
-
 %package codec-vpx
 Summary:        vp8 Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 %description codec-vpx
-iSAC Codec support for FreeSWITCH open source telephony platform
-
-%package codec-mp4v
-Summary:        MP4V Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-mp4v
-MP4V Video Codec support for FreeSWITCH open source telephony platform
+VP8 Codec support for FreeSWITCH open source telephony platform
 
 %package codec-opus
 Summary:        Opus Codec support for FreeSWITCH open source telephony platform
@@ -747,19 +659,6 @@ BuildRequires:  opus-devel >= 1.1
 
 %description codec-opus
 OPUS Codec support for FreeSWITCH open source telephony platform
-
-%if %{build_sng_tc}
-%package sangoma-codec
-Summary:	Sangoma D100 and D500 Codec Card Support
-Group:		System/Libraries
-Requires:        %{name} = %{version}-%{release}
-Requires: sng-tc-linux
-BuildRequires: sng-tc-linux
-
-%description sangoma-codec
-Sangoma D100 and D500 Codec Card Support
-
-%endif
 
 %package codec-silk
 Summary:        Silk Codec support for FreeSWITCH open source telephony platform
@@ -783,14 +682,6 @@ directly from Polycom(R) for your company.
 see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_g7221.html 
 and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html 
 At the time of this packaging, Polycom does not charge for licensing.
-
-%package codec-theora
-Summary:        Theora Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-theora
-Theora Video Codec support for FreeSWITCH open source telephony platform.
 
 ######################################################################################################################
 #				FreeSWITCH Database Modules
@@ -832,16 +723,6 @@ PostgreSQL native support for FreeSWITCH.
 #				FreeSWITCH Endpoint Modules
 ######################################################################################################################
 
-#%package endpoint-gsmopen
-#Summary:        Generic GSM endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-gsmopen
-#GSMopen is an endpoint (channel driver) that allows an SMS to be sent or 
-#received from FreeSWITCH as well as incoming and outgoing GSM voice calls.
-#SMS is handled via the standard CHAT API in FreeSWITCH.
-
 #%package endpoint-h323
 #Summary:        H.323 endpoint support for FreeSWITCH open source telephony platform
 #Group:          System/Libraries
@@ -849,25 +730,6 @@ PostgreSQL native support for FreeSWITCH.
 #
 #%description endpoint-h323
 #H.323 endpoint support for FreeSWITCH open source telephony platform
-
-#%package endpoint-khomp
-#Summary:        khomp endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-khomp
-#Khomp hardware endpoint support for FreeSWITCH open source telephony platform.
-
-%package endpoint-portaudio
-Summary:        PortAudio endpoint support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:	alsa-lib
-BuildRequires:	alsa-lib-devel
-BuildRequires:	portaudio-devel
-
-%description endpoint-portaudio
-PortAudio endpoint support for FreeSWITCH open source telephony platform.
 
 %package endpoint-rtmp
 Summary:        RTPM Endpoint support for FreeSWITCH open source telephony platform
@@ -960,14 +822,6 @@ Requires:	%{name} = %{version}-%{release}
 %description event-multicast
 Multicast Event System for FreeSWITCH.
 
-#%package event-zmq
-#Summary:	ZeroMQ Event System for the FreeSWITCH open source telephony platform
-#Group:		System/Libraries
-#Requires:	 %{name} = %{version}-%{release}
-#
-#%description event-zmq
-#ZeroMQ Event System for FreeSWITCH.
-
 %package event-json-cdr
 Summary:	JSON CDR Logger for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -975,25 +829,6 @@ Requires:	%{name} = %{version}-%{release}
 
 %description event-json-cdr
 JSON CDR Logger for FreeSWITCH.
-
-%package event-radius-cdr
-Summary:        RADIUS Logger for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
-
-%description event-radius-cdr
-RADIUS Logger for the FreeSWITCH open source telephony platform
-
-%if %{build_mod_rayo}
-%package event-rayo
-Summary:        Rayo (XMPP 3PCC) server for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:	%{name} = %{version}-%{release}
-
-%description event-rayo
-Rayo 3PCC for FreeSWITCH.  http://rayo.org   http://xmpp.org/extensions/xep-0327.html
-Rayo is an XMPP protocol extension for third-party control of telephone calls.
-%endif
 
 %package event-snmp
 Summary:	SNMP stats reporter for the FreeSWITCH open source telephony platform
@@ -1043,15 +878,6 @@ transcoding is necessary. The default FreeSWITCH sound files are in wav format.
 Generally, these require transcoding when being played to callers. However, if
 a native format sound file is available then FreeSWITCH can use it. 
 
-%package format-portaudio-stream
-Summary:	PortAudio Media Steam support for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:	%{name} = %{version}-%{release}
-BuildRequires:	portaudio-devel
-
-%description format-portaudio-stream
-Portaudio Streaming interface Audio for FreeSWITCH
-
 %package format-shell-stream
 Summary:	Implements Media Steaming from arbitrary shell commands for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1086,16 +912,6 @@ BuildRequires:	opusfile-devel >= 0.5
 
 %description format-opusfile
 Mod Opusfile is a FreeSWITCH module to allow you to play Opus encoded files
-
-%if %{build_mod_ssml}
-%package format-ssml
-Summary:        Adds Speech Synthesis Markup Language (SSML) parser format for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description format-ssml
-mod_ssml is a FreeSWITCH module that renders SSML into audio.  This module requires a text-to-speech module for speech synthesis.
-%endif
 
 %package format-tone-stream
 Summary:	Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
@@ -1293,7 +1109,6 @@ The Python ESL module allows for native interaction with FreeSWITCH over the eve
 Summary:        Basic vanilla config set for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	freeswitch-application-abstraction
 Requires:	freeswitch-application-avmd
 Requires:	freeswitch-application-blacklist
 Requires:	freeswitch-application-callcenter
@@ -1318,14 +1133,10 @@ Requires:	freeswitch-application-limit
 Requires:	freeswitch-application-memcache
 Requires:	freeswitch-application-nibblebill
 Requires:	freeswitch-application-redis
-Requires:	freeswitch-application-rss
 Requires:	freeswitch-application-signalwire
 Requires:	freeswitch-application-sms
 Requires:	freeswitch-application-snapshot
-Requires:	freeswitch-application-snom
-Requires:	freeswitch-application-soundtouch
 Requires:	freeswitch-application-spy
-Requires:	freeswitch-application-stress
 Requires:	freeswitch-application-valet_parking
 Requires:	freeswitch-application-video_filter
 Requires:	freeswitch-application-voicemail
@@ -1334,13 +1145,11 @@ Requires:	freeswitch-codec-passthru-amr
 Requires:	freeswitch-codec-bv
 Requires:	freeswitch-codec-passthru-g723_1
 Requires:	freeswitch-codec-passthru-g729
-Requires:	freeswitch-codec-h26x
 Requires:	freeswitch-codec-ilbc
 Requires:	freeswitch-codec-siren
 Requires:	freeswitch-database-pgsql
 Requires:	freeswitch-format-local-stream
 Requires:	freeswitch-format-native-file
-Requires:	freeswitch-format-portaudio-stream
 Requires:	freeswitch-format-tone-stream
 Requires:	freeswitch-lang-en
 
@@ -1388,7 +1197,7 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 #						Application Modules
 #
 ######################################################################################################################
-APPLICATION_MODULES_AC="applications/mod_abstraction applications/mod_avmd applications/mod_blacklist \
+APPLICATION_MODULES_AC="applications/mod_avmd applications/mod_blacklist \
 			applications/mod_callcenter  applications/mod_cidlookup \
 			applications/mod_commands applications/mod_conference applications/mod_curl"
 APPLICATION_MODULES_DE="applications/mod_db applications/mod_directory applications/mod_distributor \
@@ -1401,11 +1210,11 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
-			applications/mod_redis applications/mod_rss "
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill \
+			applications/mod_redis "
 
-APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
-			applications/mod_spandsp applications/mod_spy applications/mod_stress \
+APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
+			applications/mod_spandsp applications/mod_spy \
 			applications/mod_valet_parking applications/mod_translate applications/mod_voicemail \
 			applications/mod_voicemail_ivr applications/mod_video_filter"
 
@@ -1424,12 +1233,9 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
-		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_theora"
+		codecs/mod_g729 codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
+		codecs/mod_siren"
 #
-%if %{build_sng_tc}
-CODECS_MODULES+="codecs/mod_sangoma_codec"
-%endif
 
 ######################################################################################################################
 #
@@ -1458,10 +1264,10 @@ DIRECTORIES_MODULES=""
 #
 ######################################################################################################################
 ENDPOINTS_MODULES=" \
-			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
+			endpoints/mod_loopback endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323
  
 ######################################################################################################################
 #
@@ -1470,23 +1276,16 @@ ENDPOINTS_MODULES=" \
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
 			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
-			event_handlers/mod_event_socket event_handlers/mod_json_cdr event_handlers/mod_radius_cdr \
+			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
-%if %{build_mod_rayo}
-EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
-%endif
 
-#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
 #
 ######################################################################################################################
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile formats/mod_portaudio_stream \
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_opusfile \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
-%if %{build_mod_ssml}
-FORMATS_MODULES+=" formats/mod_ssml"
-%endif
 
 ######################################################################################################################
 #
@@ -1687,17 +1486,6 @@ cd ../..
 #
 ######################################################################################################################
 
-%if %{build_sng_ss7}
-#do not delete a thing
-%else
-%{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_ss7*
-%endif
-%if %{build_sng_isdn}
-#do not delete a thing
-%else
-%{__rm} -f %{buildroot}/%{MODINSTDIR}/ftmod_sangoma_isdn*
-%endif
-
 %{__rm} -f %{buildroot}/%{LIBDIR}/*.la
 %{__rm} -f %{buildroot}/%{MODINSTDIR}/*.la
 
@@ -1867,7 +1655,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/extensions.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/mime.types
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/abstraction.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/amrwb.conf.xml
@@ -1881,7 +1668,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_mongodb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_sqlite.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cepstral.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cidlookup.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/conference_layouts.conf.xml
@@ -1915,22 +1701,17 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/msrp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/nibblebill.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opal.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/oreka.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/osp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pocketsphinx.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/portaudio.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/post_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pre_load_modules.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/presence_map.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/redis.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rss.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/rtmp.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sangoma_codec.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/shout.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/signalwire.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/skinny.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/smpp.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sms_flowroute.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sndfile.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/sofia.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/spandsp.conf.xml
@@ -1939,7 +1720,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/timezones.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/translate.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
@@ -1998,9 +1778,6 @@ fi
 #						Application Packages
 #
 ######################################################################################################################
-%files application-abstraction
-%{MODINSTDIR}/mod_abstraction.so*
-
 %files application-avmd
 %{MODINSTDIR}/mod_avmd.so*
 
@@ -2079,14 +1856,8 @@ fi
 %files application-nibblebill
 %{MODINSTDIR}/mod_nibblebill.so*
 
-%files application-rad_auth
-%{MODINSTDIR}/mod_rad_auth.so*
-
 %files application-redis
 %{MODINSTDIR}/mod_redis.so*
-
-%files application-rss
-%{MODINSTDIR}/mod_rss.so*
 
 %files application-signalwire
 %{MODINSTDIR}/mod_signalwire.so*
@@ -2097,17 +1868,8 @@ fi
 %files application-snapshot
 %{MODINSTDIR}/mod_snapshot.so*
 
-%files application-snom
-%{MODINSTDIR}/mod_snom.so*
-
-%files application-soundtouch
-%{MODINSTDIR}/mod_soundtouch.so*
-
 %files application-spy
 %{MODINSTDIR}/mod_spy.so*
-
-%files application-stress
-%{MODINSTDIR}/mod_stress.so*
 
 %files application-translate
 %{MODINSTDIR}/mod_translate.so*
@@ -2163,35 +1925,18 @@ fi
 %files codec-passthru-g729
 %{MODINSTDIR}/mod_g729.so*
 
-%files codec-h26x
-%{MODINSTDIR}/mod_h26x.so*
-
 %files codec-ilbc
 %{MODINSTDIR}/mod_ilbc.so*
-
-%files codec-isac
-%{MODINSTDIR}/mod_isac.so*
-
-%files codec-mp4v
-%{MODINSTDIR}/mod_mp4v.so*
 
 %files codec-opus
 %{MODINSTDIR}/mod_opus.so*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opus.conf.xml
-
-%if %{build_sng_tc}
-%files sangoma-codec
-%{MODINSTDIR}/mod_sangoma_codec.so*
-%endif
 
 %files codec-silk
 %{MODINSTDIR}/mod_silk.so*
 
 %files codec-siren
 %{MODINSTDIR}/mod_siren.so*
-
-%files codec-theora
-%{MODINSTDIR}/mod_theora.so*
 
 ######################################################################################################################
 #
@@ -2220,17 +1965,8 @@ fi
 #
 ######################################################################################################################
 
-#%files endpoint-gsmopen
-#%{MODINSTDIR}/mod_gsmopen.so*
-
 #%files endpoint-h323
 #%{MODINSTDIR}/mod_h323.so*
-
-#%files endpoint-khomp
-#%{MODINSTDIR}/mod_khomp.so*
-
-%files endpoint-portaudio
-%{MODINSTDIR}/mod_portaudio.so*
 
 %files endpoint-rtmp
 %{MODINSTDIR}/mod_rtmp.so*
@@ -2269,19 +2005,8 @@ fi
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
 
-#%files event-zmq
-#%{MODINSTDIR}/mod_xmq.so*
-
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
-
-%files event-radius-cdr
-%{MODINSTDIR}/mod_radius_cdr.so*
-
-%if %{build_mod_rayo}
-%files event-rayo 
-%{MODINSTDIR}/mod_rayo.so*
-%endif
 
 %files event-snmp
 %{MODINSTDIR}/mod_snmp.so*
@@ -2301,19 +2026,11 @@ fi
 %files format-opusfile
 %{MODINSTDIR}/mod_opusfile.so*
 
-%files format-portaudio-stream
-%{MODINSTDIR}/mod_portaudio_stream.so*
-
 %files format-shell-stream
 %{MODINSTDIR}/mod_shell_stream.so*
 
 %files format-mod-shout
 %{MODINSTDIR}/mod_shout.so*
-
-%if %{build_mod_ssml}
-%files format-ssml
-%{MODINSTDIR}/mod_ssml.so*
-%endif
 
 %files format-tone-stream
 %{MODINSTDIR}/mod_tone_stream.so*

@@ -6,8 +6,6 @@
     <load module="mod_logfile"/>
     <!-- <load module="mod_syslog"/> -->
 
-    <!--<load module="mod_yaml"/>-->
-
     <!-- Multi-Faceted -->
     <!-- mod_enum is a dialplan interface, an application interface and an api command interface -->
     <load module="mod_enum"/>
@@ -29,7 +27,6 @@
     <!-- Endpoints -->
     <!-- <load module="mod_dingaling"/> -->
     <!-- <load module="mod_iax"/> -->
-    <!-- <load module="mod_portaudio"/> -->
     <!-- <load module="mod_alsa"/> -->
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
@@ -49,9 +46,6 @@
     <load module="mod_fsv"/>
     <!--<load module="mod_translate"/>-->
 
-    <!-- SNOM Module -->
-    <!--<load module="mod_snom"/>-->
-
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
     <load module="mod_dialplan_xml"/>
@@ -63,7 +57,6 @@
     <load module="mod_g729"/>
     <load module="mod_amr"/>
     <!--<load module="mod_ilbc"/>-->
-    <load module="mod_h26x"/>
     <!--<load module="mod_siren"/>-->
 
     <!-- File Format Interfaces -->
@@ -88,9 +81,7 @@
     <!-- ASR /TTS -->
     <!-- <load module="mod_flite"/> -->
     <!-- <load module="mod_pocketsphinx"/> -->
-    <!-- <load module="mod_cepstral"/> -->
     <!-- <load module="mod_openmrcp"/> -->
-    <!-- <load module="mod_rss"/> -->
     
     <!-- Say -->
     <load module="mod_say_en"/>
