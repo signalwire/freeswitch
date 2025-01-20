@@ -89,6 +89,7 @@
 #ifndef WIN32
 #include <uuid/uuid.h>
 #endif
+#include <switch_uuidv7.h>
 
 /* apr stubs */
 
@@ -1153,7 +1154,11 @@ SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
 	switch_mutex_lock(runtime.uuid_mutex);
 #ifndef WIN32
-	uuid_generate(uuid->data);
+	if (runtime.uuid_version == 7) {
+		uuidv7_new(uuid->data);
+	} else {
+		uuid_generate(uuid->data);
+	}
 #else
 	UuidCreate((UUID *) uuid);
 #endif

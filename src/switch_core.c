@@ -1904,6 +1904,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	load_mime_types();
 	runtime.flags |= flags;
 	runtime.sps_total = 30;
+	runtime.uuid_version = 4;
 
 	*err = NULL;
 
@@ -2212,6 +2213,8 @@ static void switch_load_core_config(const char *file)
 					switch_time_set_use_system_time(switch_true(val));
 				} else if (!strcasecmp(var, "enable-monotonic-timing")) {
 					switch_time_set_monotonic(switch_true(val));
+				} else if (!strcasecmp(var, "uuid-version") && !zstr(val)) {
+					runtime.uuid_version = atoi(val);
 				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
 					int ival = 0;
 					if (val) {
@@ -2963,7 +2966,12 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		newintval = runtime.sps_total;
 		switch_mutex_unlock(runtime.throttle_mutex);
 		break;
-
+	case SCSC_UUID_VERSION:
+		if(oldintval > 0){
+			runtime.uuid_version = oldintval;
+		}
+		newintval = runtime.uuid_version;
+		break;
 	case SCSC_RECLAIM:
 		switch_core_memory_reclaim_all();
 		newintval = 0;
