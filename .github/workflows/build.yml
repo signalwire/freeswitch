@@ -136,9 +136,9 @@ jobs:
           - name: amd64
             runner: ubuntu-latest
           - name: arm32v7
-            runner: linux-arm64-4-core-public
+            runner: ubuntu-24.04-arm
           - name: arm64v8
-            runner: linux-arm64-4-core-public
+            runner: ubuntu-24.04-arm
         release:
           - ${{ needs.preconfig.outputs.release }}
         exclude: ${{ fromJson(needs.preconfig.outputs.deb) }}
