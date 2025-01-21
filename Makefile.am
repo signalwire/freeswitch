@@ -300,6 +300,7 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
+	src/include/switch_uuidv7.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
 	src/include/switch_hashtable.h \
@@ -394,7 +395,8 @@ libfreeswitch_la_SOURCES = \
 	libs/miniupnpc/minissdpc.c \
 	libs/miniupnpc/upnperrors.c \
 	libs/libnatpmp/natpmp.c \
-	libs/libnatpmp/getgateway.c
+	libs/libnatpmp/getgateway.c \
+	src/switch_uuidv7.c
 
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
@@ -814,4 +816,3 @@ support:
 	@cp support-d/.screenrc ~
 	@cp support-d/.bashrc ~
 	@test -f ~/.cc-mode-installed || sh support-d/install-cc-mode.sh && touch ~/.cc-mode-installed
-
