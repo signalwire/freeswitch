@@ -898,7 +898,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (argc == 0) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
-		} else if (argc >= MOD_CURL_MAX_ARGS) {
+		} else if (argc > MOD_CURL_MAX_ARGS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max args exceeded: %d\n", MOD_CURL_MAX_ARGS);
 			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
@@ -1021,7 +1021,7 @@ SWITCH_STANDARD_API(curl_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (argc < 1) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
-		} else if (argc >= MOD_CURL_MAX_ARGS) {
+		} else if (argc > MOD_CURL_MAX_ARGS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max args exceeded: %d\n", MOD_CURL_MAX_ARGS);
 			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}

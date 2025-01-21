@@ -29,7 +29,6 @@ applications/mod_lcr
 applications/mod_memcache
 applications/mod_mongo
 applications/mod_nibblebill
-applications/mod_oreka
 #applications/mod_osp
 applications/mod_prefix
 applications/mod_signalwire
@@ -59,7 +58,6 @@ codecs/mod_ilbc
 codecs/mod_opus
 codecs/mod_silk
 codecs/mod_siren
-codecs/mod_theora
 #databases/mod_mariadb
 databases/mod_pgsql
 dialplans/mod_dialplan_asterisk
@@ -103,7 +101,6 @@ languages/mod_managed
 languages/mod_perl
 languages/mod_python3
 #languages/mod_v8
-languages/mod_yaml
 loggers/mod_console
 loggers/mod_graylog2
 loggers/mod_logfile
