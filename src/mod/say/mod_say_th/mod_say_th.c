@@ -308,7 +308,7 @@ static switch_status_t th_say_time(switch_core_session_t *session, char *tosay, 
 			if (seconds == 2) {
 				say_file("time/2s.wav");
 			} else {
-				say_num(hours, SSM_PRONOUNCED);
+				say_num(seconds, SSM_PRONOUNCED);
 			}
 			say_file("time/seconds.wav");
 		} else {
