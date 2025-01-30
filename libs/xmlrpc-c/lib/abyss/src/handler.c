@@ -305,7 +305,7 @@ sendDirectoryDocument(TList *      const listP,
         if (k > 24) {
             snprintf(z1, sizeof(z1), "%.10s...%s", z, z + k - 11);
             k = 24;
-            p = z1 + 24;
+            p = z1 + k;
         } else {
             snprintf(z1, sizeof(z1), "%s", z);
             
