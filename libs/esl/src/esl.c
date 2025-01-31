@@ -284,9 +284,12 @@ ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...)
 
 static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-	if (file && func && line && level && fmt) {
-		return;
-	}
+	(void)file;
+	(void)func;
+	(void)line;
+	(void)level;
+	(void)fmt;
+
 	return;
 }
 
