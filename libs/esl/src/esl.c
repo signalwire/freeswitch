@@ -1299,14 +1299,12 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 						*e++ = '\0';
 						while(*e == '\n' || *e == '\r') e++;
 						
-						if (hval) {
-							esl_url_decode(hval);
-							esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
-							if (!strncmp(hval, "ARRAY::", 7)) {
-								esl_event_add_array(revent, hname, hval);
-							} else {
-								esl_event_add_header_string(revent, ESL_STACK_BOTTOM, hname, hval);
-							}
+						esl_url_decode(hval);
+						esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
+						if (!strncmp(hval, "ARRAY::", 7)) {
+							esl_event_add_array(revent, hname, hval);
+						} else {
+							esl_event_add_header_string(revent, ESL_STACK_BOTTOM, hname, hval);
 						}
 						
 						p = e;
