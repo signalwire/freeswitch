@@ -1167,19 +1167,19 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	esl_event_safe_destroy(&handle->last_ievent);
 	esl_event_safe_destroy(&handle->info_event);
 
-	if (mutex) {
-		esl_mutex_unlock(mutex);
-		esl_mutex_lock(mutex);
-		esl_mutex_unlock(mutex);
-		esl_mutex_destroy(&mutex);
-	}
-	
 	if (handle->packet_buf) {
 		esl_buffer_destroy(&handle->packet_buf);
 	}
 
 	memset(handle, 0, sizeof(*handle));
 	handle->destroyed = 1;
+
+	if (mutex) {
+		esl_mutex_unlock(mutex);
+		esl_mutex_lock(mutex);
+		esl_mutex_unlock(mutex);
+		esl_mutex_destroy(&mutex);
+	}
 
 	return status;
 }
