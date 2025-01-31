@@ -1066,7 +1066,10 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 			}
 		}
 #else
-		fcntl(handle->sock, F_SETFL, fd_flags);
+		if (fcntl(handle->sock, F_SETFL, fd_flags)) {
+			snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
+			goto fail;
+		}
 #endif	
 		rval = 0;
 	}
