@@ -1217,7 +1217,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 		status = ESL_BREAK;
 	}
 
-	if (handle->mutex) esl_mutex_unlock(handle->mutex);
+	esl_mutex_unlock(handle->mutex);
 
 	return status;
 
