@@ -696,7 +696,10 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 	}
 	
 
-	esl_socket_reuseaddr(server_sock);
+	if (esl_socket_reuseaddr(server_sock) != 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
 		   
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -751,7 +754,10 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 		return ESL_FAIL;
 	}
 
-	esl_socket_reuseaddr(server_sock);
+	if (esl_socket_reuseaddr(server_sock) != 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
 		   
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
