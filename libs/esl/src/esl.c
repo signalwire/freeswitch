@@ -1531,11 +1531,15 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 	const char *hval;
 	esl_status_t status;
 	
-    if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
-        return ESL_FAIL;
-    }
+	if (!handle) {
+		return ESL_FAIL;
+	}
 
 	esl_mutex_lock(handle->mutex);
+	if (!handle->connected || handle->sock == ESL_SOCK_INVALID) {
+		esl_mutex_unlock(handle->mutex);
+		return ESL_FAIL;
+	}	
 
 	esl_event_safe_destroy(&handle->last_sr_event);
 
