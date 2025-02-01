@@ -990,6 +990,8 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	}
 
 	memcpy(&handle->sockaddr, result->ai_addr, result->ai_addrlen);	
+	freeaddrinfo(result);
+
 	switch(handle->sockaddr.ss_family) {
 		case AF_INET:
 			sockaddr_in = (struct sockaddr_in*)&(handle->sockaddr);
@@ -1005,7 +1007,6 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 			strncpy(handle->err, "Host resolves to unsupported address family", sizeof(handle->err));
 			goto fail;
 	}
-	freeaddrinfo(result);
 	
 	handle->sock = socket(handle->sockaddr.ss_family, SOCK_STREAM, IPPROTO_TCP);
 	
