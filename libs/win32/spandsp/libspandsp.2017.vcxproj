@@ -480,6 +480,9 @@
       <Project>{329a6fa0-0fcc-4435-a950-e670aefa9838}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="make_modem_godard_descriptor.2017.vcxproj">
+      <Project>{c8ea4ad3-3edd-4dd1-9d63-4be22585aa14}</Project>
+    </ProjectReference>
     <ProjectReference Include="make_t43_gray_code_tables.2017.vcxproj">
       <Project>{eddb8ab9-c53e-44c0-a620-0e86c2cbd5d5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

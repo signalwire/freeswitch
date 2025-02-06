@@ -65,6 +65,11 @@
     <ClCompile Include="..\..\spandsp\src\g711.c" />
     <ClCompile Include="..\..\spandsp\src\alloc.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libtiff\libtiff.2017.vcxproj">
+      <Project>{401a40cd-5db4-4e34-ac68-fa99e9fac014}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
