@@ -19,7 +19,6 @@
              <Task>  
                 <Reference Include="Microsoft.Build" />
                 <Reference Include="Microsoft.Build.Framework" />
-                <Reference Include="Microsoft.Build.Utilities.Core" />
                 <Code Type="Class" Language="cs">
 <![CDATA[  
 using System;

@@ -89,14 +89,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_abstraction\mod_abstraction.2017.vcxproj">
-      <Name>mod_abstraction</Name>
-      <Project>{60c542ee-6882-4ea2-8c21-5ab6db1ba73f}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_avmd\mod_avmd.2017.vcxproj">
       <Name>mod_avmd</Name>
       <Project>{990baa76-89d3-4e38-8479-c7b28784efc8}</Project>
@@ -297,14 +289,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_rss\mod_rss.2017.vcxproj">
-      <Name>mod_rss</Name>
-      <Project>{b69247fa-ecd6-40ed-8e44-5ca6c3baf9a4}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_signalwire\mod_signalwire.2017.vcxproj">
       <Name>mod_signalwire</Name>
       <Project>{b19ae6fc-bfff-428d-b483-3bbeaeccc618}</Project>
@@ -316,14 +300,6 @@
     <ProjectReference Include="..\..\src\mod\applications\mod_sms\mod_sms.2017.vcxproj">
       <Name>mod_sms</Name>
       <Project>{2469b306-b027-4ff2-8815-c9c1ea2cae79}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_snom\mod_snom.2017.vcxproj">
-      <Name>mod_snom</Name>
-      <Project>{2a3d00c6-588d-4e86-81ac-9ef5ede86e03}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -425,25 +401,9 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\codecs\mod_h26x\mod_h26x.2017.vcxproj">
-      <Name>mod_h26x</Name>
-      <Project>{2c3c2423-234b-4772-8899-d3b137e5ca35}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_ilbc\mod_ilbc.2017.vcxproj">
       <Name>mod_ilbc</Name>
       <Project>{d3ec0aff-76fc-4210-a825-9a17410660a3}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\codecs\mod_isac\mod_iSAC.2017.vcxproj">
-      <Name>mod_iSAC</Name>
-      <Project>{7f1610f1-dd5a-4cf7-8610-30ab12c60add}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -521,25 +481,9 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_gsmopen\mod_gsmopen.2017.vcxproj">
-      <Name>mod_gsmopen</Name>
-      <Project>{74b120ff-6935-4dfe-a142-cdb6bea99c90}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\endpoints\mod_loopback\mod_loopback.2017.vcxproj">
       <Name>mod_loopback</Name>
       <Project>{b3f424ec-3d8f-417c-b244-3919d5e1a577}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_portaudio\mod_PortAudio.2017.vcxproj">
-      <Name>mod_PortAudio</Name>
-      <Project>{5fd31a25-5d83-4794-8bee-904dad84ce71}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
