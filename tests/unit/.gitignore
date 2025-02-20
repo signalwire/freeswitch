@@ -43,6 +43,10 @@ switch_xml
 switch_estimators
 switch_jitter_buffer
 test_sofia
+switch_core_asr
+switch_core_media
+switch_sip
+switch_rtp_pcap
 .deps/
 Makefile
 conf/*/
