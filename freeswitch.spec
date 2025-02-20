@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python3 freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru
 #		      and others
 #
@@ -943,14 +943,14 @@ BuildRequires:	perl-ExtUtils-Embed
 
 %description	perl
 
-%package        python
+%package        python3
 Summary:        Python support for the FreeSWITCH open source telephony platform
 Group:          System/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:       python
-BuildRequires:  python-devel
+Requires:       python3.12
+BuildRequires:  python3.12-devel, python3.12-setuptools
 
-%description    python
+%description    python3
 
 %if %{build_mod_v8}
 %package v8
@@ -1092,13 +1092,13 @@ Group:		System Environment/Libraries
 %description	-n perl-ESL
 The Perl ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 
-%package	-n python-ESL
+%package	-n python3-ESL
 Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 Group:		System Environment/Libraries
-Requires:	python
-BuildRequires:	python-devel
+Requires:	python3.12
+BuildRequires:	python3.12-devel, python3.12-setuptools
 
-%description	-n python-ESL
+%description	-n python3-ESL
 The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 
 ######################################################################################################################
@@ -1292,7 +1292,7 @@ FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_op
 #						Embedded Languages
 #
 ######################################################################################################################
-LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python "
+LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python3 "
 %if %{build_mod_v8}
 LANGUAGES_MODULES+="languages/mod_v8"
 %endif
@@ -1405,13 +1405,14 @@ autoreconf --force --install
 --with-odbc \
 --with-erlang \
 --with-openssl \
+--with-python3=/usr/bin/python3.12 \
 %{?configure_options}
 
 unset MODULES
 %{__make}
 
 cd libs/esl
-%{__make} pymod
+%{__make} py3mod
 %{__make} perlmod
 
 
@@ -1441,7 +1442,7 @@ cd libs/esl
 
 #install the esl stuff
 cd libs/esl
-%{__make} DESTDIR=%{buildroot} pymod-install
+%{__make} DESTDIR=%{buildroot} py3mod-install
 %{__make} DESTDIR=%{buildroot} perlmod-install
 
 %if %{build_py26_esl}
@@ -2049,7 +2050,7 @@ fi
 %{prefix}/perl/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/perl.conf.xml
 
-%files python
+%files python3
 %{MODINSTDIR}/mod_python*.so*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
@@ -2199,7 +2200,7 @@ fi
 %{perl_archlib}/ESL/Dispatch.pm
 %{perl_archlib}/ESL/IVR.pm
 
-%files	-n python-ESL
+%files	-n python3-ESL
 %attr(0644, root, bin) /usr/lib*/python*/site-packages/freeswitch.py*
 %attr(0755, root, bin) /usr/lib*/python*/site-packages/_ESL.so*
 %attr(0755, root, bin) /usr/lib*/python*/site-packages/ESL.py*
