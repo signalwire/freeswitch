@@ -181,9 +181,10 @@ releaseDecompArray(struct arrayDecomp const arrayDecomp,
 
 
 static void
-releaseDecompStruct(struct structDecomp const structDecomp,
+releaseDecompStruct(struct structDecomp const *_structDecomp,
                     bool                const oldstyleMemMgmt) {
 
+    struct structDecomp const structDecomp = *_structDecomp;
     unsigned int i;
     for (i = 0; i < structDecomp.mbrCnt; ++i) {
         releaseDecomposition(structDecomp.mbrArray[i].decompTreeP,
@@ -239,7 +240,7 @@ releaseDecomposition(const struct decompTreeNode * const decompRootP,
         releaseDecompArray(decompRootP->store.Tarray, oldstyleMemMgmt);
         break;
     case '{':
-        releaseDecompStruct(decompRootP->store.Tstruct, oldstyleMemMgmt);
+        releaseDecompStruct(&decompRootP->store.Tstruct, oldstyleMemMgmt);
         break;
     }
 }
@@ -259,8 +260,9 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
 static void
 validateArraySize(xmlrpc_env *         const envP,
                   const xmlrpc_value * const arrayP,
-                  struct arrayDecomp   const arrayDecomp) {
+                  struct arrayDecomp   const *_arrayDecomp) {
     
+    struct arrayDecomp   const arrayDecomp = *_arrayDecomp;
     unsigned int size;
               
     size = xmlrpc_array_size(envP, arrayP);
@@ -284,10 +286,12 @@ validateArraySize(xmlrpc_env *         const envP,
 static void 
 parsearray(xmlrpc_env *         const envP,
            const xmlrpc_value * const arrayP,
-           struct arrayDecomp   const arrayDecomp,
+           struct arrayDecomp   const *_arrayDecomp,
            bool                 const oldstyleMemMgmt) {
 
-    validateArraySize(envP, arrayP, arrayDecomp);
+    struct arrayDecomp   const arrayDecomp = *_arrayDecomp;
+
+    validateArraySize(envP, arrayP, &arrayDecomp);
 
     if (!envP->fault_occurred) {
         unsigned int doneCnt;
@@ -324,9 +328,10 @@ parsearray(xmlrpc_env *         const envP,
 static void 
 parsestruct(xmlrpc_env *        const envP,
             xmlrpc_value *      const structP,
-            struct structDecomp const structDecomp,
+            struct structDecomp const *_structDecomp,
             bool                const oldstyleMemMgmt) {
 
+	struct structDecomp const structDecomp = *_structDecomp;
     unsigned int doneCount;
     
     doneCount = 0;  /* No members done yet */
@@ -569,7 +574,7 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
                 "%s, but the '(...)' specifier requires type ARRAY",
                 xmlrpc_type_name(xmlrpc_value_type(valueP)));
         else
-            parsearray(envP, valueP, decompRootP->store.Tarray,
+            parsearray(envP, valueP, &decompRootP->store.Tarray,
                        oldstyleMemMgmt);
         break;
 
@@ -580,7 +585,7 @@ decomposeValueWithTree(xmlrpc_env *                  const envP,
                 "%s, but the '{...}' specifier requires type STRUCT",
                 xmlrpc_type_name(xmlrpc_value_type(valueP)));
         else
-            parsestruct(envP, valueP, decompRootP->store.Tstruct,
+            parsestruct(envP, valueP, &decompRootP->store.Tstruct,
                         oldstyleMemMgmt);
         break;
 
