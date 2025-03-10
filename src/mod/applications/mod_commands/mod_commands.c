@@ -2417,7 +2417,7 @@ SWITCH_STANDARD_API(uptime_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[api_expansion [on|off]|recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
+#define CTL_SYNTAX "[api_expansion [on|off]|recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|uuid_version [4|7]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -2661,6 +2661,14 @@ SWITCH_STANDARD_API(ctl_function)
 			}
 			switch_core_session_ctl(SCSC_SPS, &arg);
 			stream->write_function(stream, "+OK sessions per second: %d\n", arg);
+		} else if (!strcasecmp(argv[0], "uuid_version")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			} else {
+				arg = 0;
+			}
+			switch_core_session_ctl(SCSC_UUID_VERSION, &arg);
+			stream->write_function(stream, "+OK set uuid version: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "sync_clock")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SYNC_CLOCK, &arg);
@@ -7808,6 +7816,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl send_sighup");
 	switch_console_set_complete("add fsctl mdns_resolve disable");
 	switch_console_set_complete("add fsctl mdns_resolve enable");
+	switch_console_set_complete("add fsctl uuid_version");
+	switch_console_set_complete("add fsctl uuid_version 4");
+	switch_console_set_complete("add fsctl uuid_version 7");
 	switch_console_set_complete("add interface_ip auto ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv4 ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv6 ::console::list_interfaces");
