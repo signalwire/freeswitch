@@ -27,6 +27,10 @@ Replace `<PAT or API token>` with your `SignalWire Personal Access Token (PAT)`
 curl -sSL https://freeswitch.org/fsget | bash -s <PAT or API token>
 ```
 
+## (Optional) Compile build dependencies manually
+There is an optional possibility of manually compiling Debian packages directly from the source code by following this [guide](dependencies/README.md). This replaces the need to set up the FreeSWITCH Debian repo.
+Be advised the recommended way is to use the FreeSWITCH Debian repo.
+
 ## Building packages with `FSDEB`
 ```bash
 curl -sSL https://freeswitch.org/fsdeb | bash -s -- -b 999 -o /usr/src/fsdebs/ -w /usr/src/freeswitch
