@@ -11,7 +11,7 @@ This guide explains how to build the `signalwire-c` Debian package.
 
 ### Clone the repository:
 ```bash
-git clone --branch master --single-branch git@github.com:signalwire/signalwire-c.git
+git clone git@github.com:signalwire/signalwire-c.git
 ```
 
 ### (Optionally) Use Docker to build packages for Debian `Bookworm`:

@@ -10,7 +10,7 @@ This guide explains how to build the `libbroadvoice` Debian package.
 
 ### Clone the repository:
 ```bash
-git clone --depth 1 --branch master git@github.com:freeswitch/libbroadvoice.git
+git clone git@github.com:freeswitch/libbroadvoice.git
 ```
 
 ### (Optionally) Use Docker to build packages for Debian `Bookworm`:

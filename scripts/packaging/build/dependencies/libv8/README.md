@@ -11,7 +11,7 @@ This guide explains how to build the `libv8` Debian package.
 
 ### Clone the repository:
 ```bash
-git clone --depth 1 --branch master git@github.com:freeswitch/libv8-packaging.git
+git clone git@github.com:freeswitch/libv8-packaging.git
 ```
 
 ### (Optionally) Use Docker to build packages for Debian `Bookworm`:
@@ -94,7 +94,7 @@ export BUILD_DIR=$(realpath $(pwd))/BUILD
 
 ### Clone, build and configure `pyenv`:
 ```bash
-git clone --depth 1 --branch $PYENV_VERSION_TAG https://github.com/pyenv/pyenv.git $PYENV_ROOT \
+git clone --branch $PYENV_VERSION_TAG https://github.com/pyenv/pyenv.git $PYENV_ROOT \
     && sed -i 's|PATH="/|PATH="$PYENV_ROOT/bin/:/|g' /etc/profile \
     && $PYENV_ROOT/bin/pyenv init - | tee -a /etc/profile \
     && echo "export PATH=\"$BUILD_DIR/depot_tools:${PATH}\"" | tee -a /etc/profile

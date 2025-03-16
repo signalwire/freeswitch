@@ -10,7 +10,7 @@ This guide explains how to build the `spandsp` Debian package.
 
 ### Clone the repository:
 ```bash
-git clone --depth 1 --branch packages git@github.com:freeswitch/spandsp.git
+git clone --branch packages git@github.com:freeswitch/spandsp.git
 ```
 
 ### (Optionally) Use Docker to build packages for Debian `Bookworm`:

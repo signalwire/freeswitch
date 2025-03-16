@@ -10,7 +10,7 @@ This guide explains how to build the `sofia-sip` Debian package.
 
 ### Clone the repository:
 ```bash
-git clone --depth 1 --branch master git@github.com:freeswitch/sofia-sip.git
+git clone git@github.com:freeswitch/sofia-sip.git
 ```
 
 ### (Optionally) Use Docker to build packages for Debian `Bookworm`:

@@ -10,7 +10,7 @@ This guide explains how to build the `libks` Debian package.
 
 ### Clone the repository:
 ```bash
-git clone --branch master --single-branch git@github.com:signalwire/libks.git
+git clone git@github.com:signalwire/libks.git
 ```
 
 ### (Optionally) Use Docker to build packages for Debian `Bookworm`:
