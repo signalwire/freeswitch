@@ -1062,7 +1062,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		} else {
 			switch_xml_t x_param, x_params;
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
-			time_t now = switch_epoch_time_now(NULL);
+			switch_time_t now = switch_epoch_time_now(NULL);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
 			
@@ -1117,11 +1117,11 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_clear_flag(jsock, JPFLAG_AUTH_EXPIRED);
 					
 					if (!strcmp(var, "login-expires")) {
-						uint32_t tmp = atol(val);
+						switch_time_t tmp = atol(val);
 
 						if (tmp > now) {
 							jsock->exptime = tmp;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %ld seconds [%ld] [%ld]\n", jsock->uid, tmp - now, jsock->exptime, now);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %" SWITCH_TIME_T_FMT " seconds [%" SWITCH_TIME_T_FMT "] [%" SWITCH_TIME_T_FMT "]\n", jsock->uid, tmp - now, jsock->exptime, now);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid expire time for %s. Defaulting to 300 sec\n", jsock->uid);
 							jsock->exptime = now + 300;
@@ -1994,7 +1994,7 @@ static void client_run(jsock_t *jsock)
 
 	while(jsock->profile->running) {
 		int pflags, poll_time = 50;
-		time_t now;
+		switch_time_t now;
 
 		if (!jsock->ws) { die("%s Setup Error\n", jsock->name); }
 		
@@ -2005,9 +2005,8 @@ static void client_run(jsock_t *jsock)
 
 			if (now >= jsock->exptime) {
 				switch_set_flag(jsock, JPFLAG_AUTH_EXPIRED);
-				die("%s Authentication Expired [%ld] >= [%ld]\n", jsock->uid, now, jsock->exptime);
+				die("%s Authentication Expired [%" SWITCH_TIME_T_FMT "] >= [%" SWITCH_TIME_T_FMT "]\n", jsock->uid, now, jsock->exptime);
 			}
-
 		}
 
 		if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
