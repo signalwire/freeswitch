@@ -3078,15 +3078,19 @@ static switch_bool_t verto__bye_func(const char *method, cJSON *params, jsock_t 
 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
-		if (tech_pvt) {
+		if (!tech_pvt) {
+			cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Invalid channel"));
+			err = 1;
+		}
+		else {
 			tech_pvt->remote_hangup_cause = cause;
 			switch_channel_set_variable(tech_pvt->channel, "verto_hangup_disposition", "recv_bye");
 			switch_channel_hangup(tech_pvt->channel, cause);
-		}
 
-		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL ENDED"));
-		cJSON_AddItemToObject(obj, "causeCode", cJSON_CreateNumber(cause));
-		cJSON_AddItemToObject(obj, "cause", cJSON_CreateString(switch_channel_cause2str(cause)));
+			cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL ENDED"));
+			cJSON_AddItemToObject(obj, "causeCode", cJSON_CreateNumber(cause));
+			cJSON_AddItemToObject(obj, "cause", cJSON_CreateString(switch_channel_cause2str(cause)));
+		}
 		switch_core_session_rwunlock(session);
 	} else {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CALL DOES NOT EXIST"));
@@ -3416,6 +3420,10 @@ static switch_bool_t verto__modify_func(const char *method, cJSON *params, jsock
 
 	if ((session = switch_core_session_locate(call_id))) {
 		tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+		if (!tech_pvt) {
+			cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Invalid channel"));
+			err = 1; goto rwunlock;
+		}
 
 		if (!strcasecmp(action, "videoRefresh")) {
 			switch_core_media_gen_key_frame(tech_pvt->session);
@@ -3588,6 +3596,11 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	}
 
 	tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+	if (!tech_pvt) {
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Invalid channel"));
+		err = 1; goto cleanup;
+	}
+	
 	tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
 
 
