@@ -3,11 +3,6 @@
 
 ## mod/applications
 
-Module: applications/mod_abstraction
-Description: Abstraction layer for APIs
- This module provides a way to create new API functions via regex
- rewriting.
-
 Module: applications/mod_av
 Description: mod_av
  Adds mod_av.
@@ -130,12 +125,6 @@ Description: HTTP GET with caching
  This module provides an API for making HTTP GET requests where the
  result is cached.
 
-Module: applications/mod_ladspa
-Description: LADSPA
- This module provides an API for accessing LADSPA plugins.
-Build-Depends: ladspa-sdk
-Suggests: tap-plugins, swh-plugins, autotalent
-
 Module: applications/mod_lcr
 Description: LCR
  This module adds a facility for least-cost routing.
@@ -155,25 +144,10 @@ Description: MongoDB
  This module provides an interface to MongoDB.
 Build-Depends: libmongoc-dev
 
-Module: applications/mod_mp4
-Section: contrib/comm
-Description: MP4 video support
- This module adds support for MP4 video playback.
-Build-Depends: libmp4v2-dev
-
-Module: applications/mod_mp4v2
-Description: Adds mod_mp4v2
- Adds mod_mp4v2.
-
 Module: applications/mod_nibblebill
 Description: Nibblebill
  This module allows for real-time accounting of a cash balance and
  using that information for call routing.
-
-Module: applications/mod_oreka
-Description: Media recording with Oreka
- This module provides media recording with the Oreka cross-platfor
- audio stream recording and retrieval system.
 
 Module: applications/mod_osp
 Description: Open Settlement Protocol
@@ -185,10 +159,6 @@ Description: Longest prefix match search
  This module provides a data store with fast lookups by the longest
  prefix match (LPM) rule.
 
-Module: applications/mod_rad_auth
-Description: RADIUS AA
- This module implements RADIUS Authentication and Authorization.
-
 Module: applications/mod_random
 Description: Entropy extraction
  This module extracts entropy from FreeSWITCH and feeds it into
@@ -198,10 +168,6 @@ Module: applications/mod_redis
 Description: Redis limit backend
  This module provides a mechanism to use Redis as a backend data
  store.
-
-Module: applications/mod_rss
-Description: RSS browser
- This module provides an RSS browser.
 
 Module: applications/mod_skel
 Description: Adds mod_skel
@@ -222,20 +188,6 @@ Description: Snapshot
  This module can record a sliding window of audio and take snapshots
  to disk.
 
-Module: applications/mod_snom
-Description: SNOM specific features
- This module implements features specific to SNOM phones.
-
-Module: applications/mod_sonar
-Description: Sonar ping timer
- This module measures the latency on an audio link by sending audible
- audio sonar pings.
-
-Module: applications/mod_soundtouch
-Description: Soundtouch
- This module implements example media bugs.
-Build-Depends: libsoundtouch-dev
-
 Module: applications/mod_spandsp
 Description: SpanDSP
  This module implements spandsp fax, dsp, and codec functionality.
@@ -243,10 +195,6 @@ Description: SpanDSP
 Module: applications/mod_spy
 Description: UserSpy
  This module adds the ability to monitor the audio of a channel.
-
-Module: applications/mod_stress
-Description: Voice stress detection
- This module attempts to detect voice stress on an audio channel.
 
 Module: applications/mod_translate
 Description: Number translation
@@ -274,10 +222,6 @@ Description: Voicemail IVR
  This module provides an extensible voicemail IVR system.
 
 ## mod/asr_tts
-
-Module: asr_tts/mod_cepstral
-Description: mod_cepstral
- Adds mod_cepstral.
 
 Module: asr_tts/mod_flite
 Description: mod_flite
@@ -321,10 +265,6 @@ Module: codecs/mod_com_g729
 Description: mod_com_g729
  Adds mod_com_g729.
 
-Module: codecs/mod_dahdi_codec
-Description: mod_dahdi_codec
- Adds mod_dahdi_codec.
-
 Module: codecs/mod_g723_1
 Description: mod_g723_1
  Adds mod_g723_1.
@@ -333,23 +273,11 @@ Module: codecs/mod_g729
 Description: mod_g729
  Adds mod_g729.
 
-Module: codecs/mod_h26x
-Description: mod_h26x
- Adds mod_h26x.
-
 Module: codecs/mod_ilbc
 Section: non-free/comm
 Description: mod_ilbc
  Adds mod_ilbc.
 Build-Depends: libilbc-dev
-
-Module: codecs/mod_isac
-Description: mod_isac
- Adds mod_isac.
-
-Module: codecs/mod_mp4v
-Description: mod_mp4v
- Adds mod_mp4v.
 
 Module: codecs/mod_openh264
 Description: Adds mod_openh264
@@ -359,11 +287,6 @@ Module: codecs/mod_opus
 Description: mod_opus
  Adds mod_opus.
 Build-Depends: libopus-dev
-
-Module: codecs/mod_sangoma_codec
-Description: mod_sangoma_codec
- Adds mod_sangoma_codec.
-Build-Depends: libsngtc-dev
 
 Module: codecs/mod_silk
 Description: mod_silk
@@ -379,10 +302,6 @@ Build-Depends: libg7221-dev
 Module: codecs/mod_skel_codec
 Description: Adds mod_skel_codec
  Adds mod_skel_codec.
-
-Module: codecs/mod_theora
-Description: mod_theora
- Adds mod_theora.
 
 Module: codecs/mod_yuv
 Description: Adds mod_yuv
@@ -428,19 +347,10 @@ Description: mod_alsa
  Adds mod_alsa.
 Build-Depends: libasound2-dev
 
-Module: endpoints/mod_gsmopen
-Description: mod_gsmopen
- Adds mod_gsmopen.
-Build-Depends: libx11-dev
-
 Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
 Build-Depends: libopenh323-dev | libh323plus-dev, libpt-dev
-
-Module: endpoints/mod_khomp
-Description: mod_khomp
- Adds mod_khomp.
 
 Module: endpoints/mod_loopback
 Description: mod_loopback
@@ -450,11 +360,6 @@ Module: endpoints/mod_opal
 Description: mod_opal
  Adds mod_opal.
 Build-Depends: libopal-dev
-
-Module: endpoints/mod_portaudio
-Description: mod_portaudio
- Adds mod_portaudio.
-Build-Depends: portaudio19-dev
 
 Module: endpoints/mod_reference
 Description: mod_reference
@@ -475,10 +380,6 @@ Description: mod_skinny
 Module: endpoints/mod_sofia
 Description: mod_sofia
  Adds mod_sofia.
-
-Module: endpoints/mod_unicall
-Description: mod_unicall
- Adds mod_unicall.
 
 Module: endpoints/mod_verto
 Description: Adds mod_verto.
@@ -530,10 +431,6 @@ Module: event_handlers/mod_event_test
 Description: mod_event_test
  Adds mod_event_test.
 
-Module: event_handlers/mod_event_zmq
-Description: mod_event_zmq
- Adds mod_event_zmq.
-
 Module: event_handlers/mod_format_cdr
 Description: mod_format_cdr
  Adds mod_format_cdr.
@@ -545,15 +442,6 @@ Description: mod_json_cdr
 Module: event_handlers/mod_odbc_cdr
 Description: mod_odbc_cdr
  Adds mod_odbc_cdr.
-
-Module: event_handlers/mod_radius_cdr
-Description: mod_radius_cdr
- Adds mod_radius_cdr.
-
-Module: event_handlers/mod_rayo
-Description: mod_rayo
- Adds mod_rayo.
-Depends: freeswitch-mod-ssml (= ${binary:Version})
 
 Module: event_handlers/mod_smpp
 Description: mod_snmp
@@ -583,11 +471,6 @@ Module: formats/mod_png
 Description: Adds mod_png
  Adds mod_png.
 
-Module: formats/mod_portaudio_stream
-Description: mod_portaudio_stream
- Adds mod_portaudio_stream.
-Build-Depends: portaudio19-dev
-
 Module: formats/mod_shell_stream
 Description: mod_shell_stream
  Adds mod_shell_stream.
@@ -603,10 +486,6 @@ Description: mod_sndfile
  Adds mod_sndfile.
 Build-Depends: libsndfile1-dev, libflac-dev, libogg-dev,
  libvorbis-dev
-
-Module: formats/mod_ssml
-Description: mod_ssml
- Adds mod_ssml.
 
 Module: formats/mod_tone_stream
 Description: mod_tone_stream
@@ -673,11 +552,6 @@ Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
 Build-Depends: git, libv8-6.1-dev
-
-Module: languages/mod_yaml
-Description: mod_yaml
- Adds mod_yaml.
-Build-Depends: libyaml-dev, libglib2.0-dev
 
 ## mod/loggers
 
@@ -801,10 +675,6 @@ Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libldap2-dev, libsasl2-dev
-
-Module: xml_int/mod_xml_radius
-Description: mod_xml_radius
- Adds mod_xml_radius
 
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc

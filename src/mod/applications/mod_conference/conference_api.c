@@ -2133,7 +2133,7 @@ switch_status_t conference_api_sub_list(conference_obj_t *conference, switch_str
 			d = argv[2 + argofs];
 
 			if (*d == '"') {
-				if (++d) {
+				if (*(++d)) {
 					char *p;
 					if ((p = strchr(d, '"'))) {
 						*p = '\0';

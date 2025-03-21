@@ -2676,7 +2676,13 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 		if (err_msg) {
 			*err_msg = "response code != 200";
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "caching: url:%s to %s failed with HTTP response code %d\n", url, save_path, (int)code);
+		
+		if (save_path) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "caching: url:%s to %s failed with HTTP response code %d\n", url, save_path, (int)code);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "head: url:%s failed with HTTP response code %d\n", url, (int)code);
+		}
+
 		status = SWITCH_STATUS_FALSE;
 		break;
 	}

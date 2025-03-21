@@ -740,6 +740,8 @@ case "$host" in
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
         APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
+        APR_ADDTO(CPPFLAGS, -I/opt/homebrew/include)
+        APR_ADDTO(LDFLAGS, -L/opt/homebrew/lib)
         if test "x$enable_core_odbc_support" != "xno"; then
 	   APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
@@ -838,6 +840,8 @@ AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
+
+AC_CHECK_HEADERS([jpeglib.h])
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
 
 AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
@@ -1079,8 +1083,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_opal mod_h323 mod_khomp 
-#                    mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+# Untested modules : mod_osp mod_opal mod_h323
+#                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1261,8 +1265,9 @@ case $host in
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
-        path_push_unique PKG_CONFIG_PATH /usr/local/opt/portaudio/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ffmpeg/lib/pkgconfig/
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/lib/pkgconfig/
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/sqlite/lib/pkgconfig/
        ;;
 esac
 
@@ -1325,12 +1330,6 @@ PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
-PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
-  AM_CONDITIONAL([HAVE_YAML],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
-PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
-  AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
@@ -1472,10 +1471,6 @@ AM_CONDITIONAL([HAVE_CODEC2],[$codec2])
 PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
-
-PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
-  AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
 
 flite="true"
 PKG_CHECK_MODULES([FLITE], [flite >= 2],[],[
@@ -2092,7 +2087,6 @@ AC_CONFIG_FILES([Makefile
 		tests/unit/Makefile
 		src/Makefile
 		src/mod/Makefile
-		src/mod/applications/mod_abstraction/Makefile
 		src/mod/applications/mod_avmd/Makefile
 		src/mod/applications/mod_bert/Makefile
 		src/mod/applications/mod_blacklist/Makefile
@@ -2119,39 +2113,27 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
-		src/mod/applications/mod_ladspa/Makefile
 		src/mod/applications/mod_lcr/Makefile
 		src/mod/applications/mod_limit/Makefile
 		src/mod/applications/mod_memcache/Makefile
 		src/mod/applications/mod_mongo/Makefile
-		src/mod/applications/mod_mp4/Makefile
-		src/mod/applications/mod_mp4v2/Makefile
 		src/mod/applications/mod_nibblebill/Makefile
-		src/mod/applications/mod_oreka/Makefile
 		src/mod/applications/mod_osp/Makefile
 		src/mod/applications/mod_prefix/Makefile
-		src/mod/applications/mod_rad_auth/Makefile
 		src/mod/applications/mod_random/Makefile
 		src/mod/applications/mod_redis/Makefile
-		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
-		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_snom/Makefile
-		src/mod/applications/mod_sonar/Makefile
-		src/mod/applications/mod_soundtouch/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
-		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile
 		src/mod/applications/mod_vmd/Makefile
 		src/mod/applications/mod_voicemail/Makefile
 		src/mod/applications/mod_voicemail_ivr/Makefile
-		src/mod/asr_tts/mod_cepstral/Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
@@ -2159,23 +2141,16 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
-		src/mod/codecs/mod_clearmode/Makefile
 		src/mod/codecs/mod_codec2/Makefile
 		src/mod/codecs/mod_com_g729/Makefile
-		src/mod/codecs/mod_dahdi_codec/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
-		src/mod/codecs/mod_h26x/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
-		src/mod/codecs/mod_isac/Makefile
-		src/mod/codecs/mod_mp4v/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
-		src/mod/codecs/mod_sangoma_codec/Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
-		src/mod/codecs/mod_theora/Makefile
 		src/mod/databases/mod_mariadb/Makefile
 		src/mod/databases/mod_pgsql/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
@@ -2183,17 +2158,13 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
-		src/mod/endpoints/mod_khomp/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
-		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_reference/Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_sofia/Makefile
-		src/mod/endpoints/mod_unicall/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_amqp/Makefile
@@ -2208,12 +2179,9 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_fail2ban/Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
-		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
-		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
-		src/mod/event_handlers/mod_event_zmq/Makefile
 		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
@@ -2222,10 +2190,8 @@ AC_CONFIG_FILES([Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
-		src/mod/formats/mod_ssml/Makefile
 		src/mod/formats/mod_tone_stream/Makefile
 		src/mod/formats/mod_vlc/Makefile
-		src/mod/formats/mod_portaudio_stream/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
 		src/mod/languages/mod_managed/Makefile
@@ -2233,13 +2199,11 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_python3/Makefile
 		src/mod/languages/mod_v8/Makefile
-		src/mod/languages/mod_yaml/Makefile
 		src/mod/languages/mod_basic/Makefile
 		src/mod/loggers/mod_console/Makefile
 		src/mod/loggers/mod_graylog2/Makefile
 		src/mod/loggers/mod_logfile/Makefile
 		src/mod/loggers/mod_syslog/Makefile
-		src/mod/loggers/mod_raven/Makefile
 		src/mod/say/mod_say_de/Makefile
 		src/mod/say/mod_say_en/Makefile
 		src/mod/say/mod_say_es/Makefile
@@ -2263,7 +2227,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/xml_int/mod_xml_cdr/Makefile
 		src/mod/xml_int/mod_xml_curl/Makefile
 		src/mod/xml_int/mod_xml_ldap/Makefile
-		src/mod/xml_int/mod_xml_radius/Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
 		src/mod/xml_int/mod_xml_scgi/Makefile
 		src/mod/applications/mod_av/Makefile
@@ -2339,7 +2302,6 @@ AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi
-AC_CONFIG_SUBDIRS([libs/iksemel])
 
 case $host in
    *-openbsd*|*-netbsd*)
