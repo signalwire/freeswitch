@@ -103,7 +103,6 @@ formats/mod_tone_stream
 languages/mod_lua
 #languages/mod_managed
 #languages/mod_perl
-#languages/mod_python
 #languages/mod_python3
 #languages/mod_v8
 loggers/mod_console
