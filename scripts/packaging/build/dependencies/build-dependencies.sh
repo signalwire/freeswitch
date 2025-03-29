@@ -416,7 +416,7 @@ function build_all_libraries()
 		esac
 	done
 
-	if [ "$SETUP_LOCAL_REPO" == "true" ] && [ "$NEEDS_LOCAL_REPO" == "false" ]; then
+	if [ "$SETUP_LOCAL_REPO" == "true" ] || [ "$NEEDS_LOCAL_REPO" == "false" ]; then
 		setup_local_repository
 		echo "Local Debian repository has been set up at $OUTPUT_DIR."
 	fi
