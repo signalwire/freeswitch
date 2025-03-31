@@ -706,7 +706,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean python-reconf python3-reconf
+update-clean: clean python3-reconf
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
@@ -718,10 +718,6 @@ sndfile-reconf:
 	cd libs/libsndfile && autoreconf
 	cd libs/libsndfile && ./config.status --recheck
 	cd libs/libsndfile && ./config.status
-
-python-reconf:
-	rm -f src/mod/languages/mod_python/Makefile
-	./config.status
 
 python3-reconf:
 	rm -f src/mod/languages/mod_python3/Makefile

@@ -3,7 +3,7 @@ touch noreg
 ./bootstrap.sh -j
 ./configure -C --enable-portable-binary \
             --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
-            --with-gnu-ld --with-python --with-erlang --with-openssl \
+            --with-gnu-ld --with-python3 --with-erlang --with-openssl \
             --enable-core-odbc-support \
             --enable-core-pgsql-support \
             --enable-static-v8 
