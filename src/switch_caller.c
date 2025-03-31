@@ -162,6 +162,10 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 		for (pn = tocopy->soft; pn; pn = pn->next) {
 			profile_node_t *pp, *n = switch_core_alloc(profile->pool, sizeof(*n));
 
+			if (pn->var && !strncasecmp(pn->var, "local:", 6)) {
+				continue;
+			}
+
 			n->var = switch_core_strdup(profile->pool, pn->var);
 			n->val = switch_core_strdup(profile->pool, pn->val);
 
