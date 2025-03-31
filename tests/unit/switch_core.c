@@ -32,6 +32,11 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+#include <string.h>
+// #include <time.h>
+#include <uuid/uuid.h>
+#include <switch_uuidv7.h>
+
 #if defined(HAVE_OPENSSL)
 #include <openssl/ssl.h>
 #endif
@@ -568,6 +573,52 @@ FST_CORE_BEGIN("./conf")
 			fst_check(switch_channel_get_variable_buf(channel, "test_var_does_not_exist", buf, sizeof(buf)) == SWITCH_STATUS_FALSE);
 		}
 		FST_SESSION_END()
+
+		FST_TEST_BEGIN(test_create_uuid)
+		{
+			switch_uuid_t uuid;
+			switch_uuid_t uuid2;
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid:\n");
+			uuidv7_new(uuid.data);
+			switch_uuid_format(uuid_str, &uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv7: %s\n", uuid_str);
+			uuidv7_new(uuid.data);
+			switch_uuid_format(uuid_str, &uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv7: %s\n", uuid_str);
+			fst_check(0 != memcmp(uuid.data, uuid2.data, sizeof(uuid.data)));
+			uuid_generate(uuid.data);
+			switch_uuid_format(uuid_str, &uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv4: %s\n", uuid_str);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_create_uuid_speed)
+		{
+			int n;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid_speed:\n");
+			for (n = 1; n < 4; n++) {
+				clock_t start = 0, end = 0;
+				switch_uuid_t uuid;
+				double cpu_time_used = 0;
+				start = clock();
+				for (int i = 0; i < 1000 * pow(10, n); i++) {
+					uuidv7_new(uuid.data);
+				}
+				end = clock();
+				cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d uuidv7_new running time: %f seconds\n", 1000 * (int)pow(10, n), cpu_time_used);
+
+				start = clock();
+				for (long long int i = 0; i < 1000 * pow(10, n); i++) {
+					uuid_generate(uuid.data);
+				}
+				end = clock();
+				cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d uuid_generate running time: %f seconds\n", 1000 * (int)pow(10, n), cpu_time_used);
+			}
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
