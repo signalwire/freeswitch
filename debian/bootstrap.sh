@@ -63,7 +63,6 @@ avoid_mods_jessie=(
   directories/mod_ldap
 )
 avoid_mods_bookworm=(
-  languages/mod_python
 )
 avoid_mods_wheezy=(
   event_handlers/mod_amqp
@@ -314,7 +313,7 @@ Build-Depends:
 # configure options
  libssl1.0-dev | libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-turbo-dev | libjpeg-turbo8-dev | libjpeg62-dev | libjpeg8-dev,
- python-dev | python-dev-is-python2 | python-dev-is-python3, python3-dev, python-all-dev | python3-all-dev, python-support (>= 0.90) | dh-python, erlang-dev, libtpl-dev (>= 1.5),
+ python-dev-is-python3, python3-dev, python3-all-dev, dh-python, erlang-dev, libtpl-dev (>= 1.5),
 # documentation
  doxygen,
 # for APR (not essential for build)

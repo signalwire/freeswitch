@@ -537,11 +537,6 @@ Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
 Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
 Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
 
-Module: languages/mod_python
-Description: mod_python
- Adds mod_python.
-Build-Depends: python-dev | python-dev-is-python2
-
 Module: languages/mod_python3
 Description: mod_python3
  Adds mod_python3.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# lint: shfmt -w -s -bn -ci -sr -fn scripts/packaging/build/build-debs-native.sh
+# lint: shfmt -w -s -bn -ci -sr -fn scripts/packaging/build/fsdeb.sh
 
 set -e          # Exit immediately if a command exits with a non-zero status
 set -u          # Treat unset variables as an error
@@ -12,7 +12,9 @@ print_usage()
 	exit 1
 }
 
-WORKING_DIR=$(git rev-parse --show-toplevel 2> /dev/null || pwd -P)
+BUILD_NUMBER=""
+OUTPUT_DIR=""
+WORKING_DIR=""
 
 while getopts ":b:o:w:" opt; do
 	case ${opt} in
@@ -27,11 +29,13 @@ if [ -z "${BUILD_NUMBER:-}" ] || [ -z "${OUTPUT_DIR:-}" ]; then
 	print_usage
 fi
 
+if [ -z "${WORKING_DIR}" ]; then
+	WORKING_DIR=$(git rev-parse --show-toplevel 2> /dev/null || pwd -P)
+fi
+
 if [ "$(id -u)" != "0" ]; then
 	echo "Non-root user detected. Execution may fail."
 fi
-
-cd "${WORKING_DIR}" || exit 1
 
 install_deps()
 {
@@ -64,13 +68,13 @@ export_vars()
 
 setup_git_local()
 {
+	git config --global --add safe.directory "${WORKING_DIR}"
 	if [ -z "$(git config user.email)" ]; then
 		git config user.email "$(id -un)@localhost"
 	fi
 	if [ -z "$(git config user.name)" ]; then
 		git config user.name "$(id -un)"
 	fi
-	git config --add safe.directory '*'
 }
 
 bootstrap_freeswitch()
@@ -83,7 +87,7 @@ install_freeswitch_deps()
 {
 	apt-get update || echo "WARNING: apt-get update failed"
 	mk-build-deps --install --remove debian/control \
-		--tool "apt-get --yes --no-install-recommends" || echo "WARNING: mk-build-deps failed"
+		--tool "apt-get -o Debug::pkgProblemResolver=yes --yes --no-install-recommends" || echo "WARNING: mk-build-deps failed"
 	apt-get --yes --fix-broken install || echo "WARNING: apt-get fix-broken failed"
 }
 
@@ -105,9 +109,11 @@ build_and_move()
 
 main()
 {
+	cd "${WORKING_DIR}" || exit 1
+
 	install_deps
-	export_vars
 	setup_git_local
+	export_vars
 	bootstrap_freeswitch
 	install_freeswitch_deps
 	build_source_package
