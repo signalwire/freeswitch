@@ -92,14 +92,14 @@ char* skinny_codec2string(skinny_codecs skinnycodec);
 /*****************************************************************************/
 
 #define skinny_create_message(message,msgtype,field) \
-    message = calloc(1, 12 + sizeof(message->data.field)); \
+    message = calloc(1, sizeof(skinny_message_t)); \
     message->type = msgtype; \
     message->length = 4 + sizeof(message->data.field)
 
 #define skinny_create_empty_message(message,msgtype) \
-    message = calloc(1, 12); \
-    message->type = msgtype; \
-    message->length = 4
+    message = calloc(1, sizeof(skinny_empty_message_t)); \
+    ((skinny_empty_message_t *)message)->type = msgtype; \
+    ((skinny_empty_message_t *)message)->length = 4
 
 
 /* KeepAliveMessage */
@@ -937,6 +937,12 @@ union skinny_data {
 #pragma pack(push, r1, 1)
 #endif
 
+struct PACKED skinny_empty_message {
+	uint32_t length;
+	uint32_t version;
+	uint32_t type;
+};
+
 /*
  * header is length+version
  * body is type+data
@@ -954,6 +960,7 @@ struct PACKED skinny_message {
 #endif
 
 typedef struct skinny_message skinny_message_t;
+typedef struct skinny_empty_message skinny_empty_message_t;
 
 
 

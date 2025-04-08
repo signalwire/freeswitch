@@ -550,15 +550,22 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 	switch_xml_root_t root = (switch_xml_root_t) xml;
 	int i = 0;
 
-	if (!root)
+	if (!root) {
 		return (const char **) SWITCH_XML_NIL;
-	while (root->xml.parent)
+	}
+
+	while (root && root->xml.parent) {
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
+	}
+
 	if (!root || !root->pi) {
 		return (const char **) SWITCH_XML_NIL;
 	}
-	while (root->pi[i] && strcmp(target, root->pi[i][0]))
+
+	while (root->pi[i] && strcmp(target, root->pi[i][0])) {
 		i++;					/* find target */
+	}
+
 	return (const char **) ((root->pi[i]) ? root->pi[i] + 1 : SWITCH_XML_NIL);
 }
 
@@ -1146,7 +1153,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 				return switch_xml_err(root, d, "unclosed <!--");
 		} else if (!strncmp(s, "![CDATA[", 8)) {	/* cdata */
 			if ((s = strstr(s, "]]>"))) {
-				if (root && root->cur) {
+				if (root->cur) {
 					root->cur->flags |= SWITCH_XML_CDATA;
 				}
 				switch_xml_char_content(root, d + 8, (s += 2) - d - 10, 'c');
@@ -1213,10 +1220,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 		}
 	} while (s && l == SWITCH_XML_BUFSIZE);
 
-	if (!s)
+	if (!s) {
 		return NULL;
-	root = (switch_xml_root_t) switch_xml_parse_str(s, len);
+	}
+
+	if (!(root = (switch_xml_root_t) switch_xml_parse_str(s, len))) {
+		free(s);
+
+		return NULL;
+	}
+
 	root->dynamic = 1;			/* so we know to free s in switch_xml_free() */
+
 	return &root->xml;
 }
 
@@ -1232,9 +1247,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 
 	if (fd < 0)
 		return NULL;
-	fstat(fd, &st);
 
-	if (!st.st_size) {
+	if (fstat(fd, &st) == -1 || !st.st_size) {
 		return NULL;
 	}
 
@@ -1243,8 +1257,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	if (!(0<(l = read(fd, m, st.st_size)))
 		|| !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
 		free(m);
+
 		return NULL;
 	}
+
 	root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
 
 	return &root->xml;
@@ -1637,14 +1653,28 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 	switch_xml_root_t root;
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
-		fstat(fd, &st);
-		if (!st.st_size) goto error;
+		if (fstat(fd, &st) == -1 || !st.st_size) {
+			close(fd);
+			goto error;
+		}
+
 		m = switch_must_malloc(st.st_size);
 
-		if (!(0<(l = read(fd, m, st.st_size)))) goto error;
-		if (!(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) goto error;
+		if (!(0 < (l = read(fd, m, st.st_size)))) {
+			free(m);
+			close(fd);
+			goto error;
+		}
+
+		if (!(root = (switch_xml_root_t)switch_xml_parse_str((char*)m, l))) {
+			free(m);
+			close(fd);
+			goto error;
+		}
+
 		root->dynamic = 1;
 		close(fd);
+
 		return &root->xml;
 	}
 
@@ -1696,6 +1726,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		if ( rename(new_file_tmp,new_file) ) {
 			goto done;
 		}
+
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
 			if ((xml = switch_xml_parse_fd(fd))) {
 				if (strcmp(abs, SWITCH_GLOBAL_filenames.conf_name)) {
@@ -1703,8 +1734,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 					new_file = NULL;
 				}
 			}
+
 			close(fd);
-			fd = -1;
 		}
 	}
 
@@ -1715,10 +1746,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	if (write_fd) {
 		fclose(write_fd);
 		write_fd = NULL;
-	}
-
-	if (fd > -1) {
-		close(fd);
 	}
 
 	switch_safe_free(new_file_tmp);
@@ -2242,7 +2269,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 		switch_event_destroy(&my_params);
 	}
 
-	if (status != SWITCH_STATUS_SUCCESS && root && *root) {
+	if (status != SWITCH_STATUS_SUCCESS && *root) {
 		switch_xml_free(*root);
 		*root = NULL;
 		*domain = NULL;

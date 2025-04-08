@@ -191,6 +191,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	if (codec->fmtp_in) {
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 #else
 	struct amrwb_context *context = NULL;
@@ -198,11 +199,13 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
+	char *fmtp_dup = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct amrwb_context))))) {
+
 		return SWITCH_STATUS_FALSE;
 	} else {
 
@@ -222,13 +225,19 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		}
 
 		if (codec->fmtp_in) {
-			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			fmtp_dup = strdup(codec->fmtp_in);
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
 			for (x = 0; x < argc; x++) {
 				char *data = argv[x];
 				char *arg;
+
 				while (*data && *data == ' ') {
 					data++;
 				}
+
 				if ((arg = strchr(data, '='))) {
 					*arg++ = '\0';
 					if (!strcasecmp(data, "octet-align")) {
@@ -264,7 +273,9 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					} else if (!strcasecmp(data, "mode-set")) {
 						int y, m_argc;
 						char *m_argv[SWITCH_AMRWB_MODES-1]; /* AMRWB has 9 modes */
+
 						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+
 						for (y = 0; y < m_argc; y++) {
 							context->enc_modes |= (1 << atoi(m_argv[y]));
 							context->enc_mode = atoi(m_argv[y]);
@@ -272,6 +283,8 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					}
 				}
 			}
+
+			free(fmtp_dup);
 		}
 
 		if (context->enc_modes && !globals.mode_set_overwrite) {
@@ -285,6 +298,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 
 			/* re-create mode-set */
 			fmtptmp_pos = switch_snprintf(fmtptmp, sizeof(fmtptmp), "mode-set=");
+
 			for (i = 0; SWITCH_AMRWB_MODES-1 > i; ++i) {
 				if (context->enc_modes & (1 << i)) {
 					fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, fmtptmp_pos > strlen("mode-set=") ? ",%d" : "%d", i);
@@ -301,12 +315,13 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 		}
 
 		if (!globals.volte) {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d",
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		} else {
-			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
+			switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, ";octet-align=%d;max-red=0;mode-change-capability=2",
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
+
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->encoder_state = NULL;
@@ -401,12 +416,14 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 #else
 	struct amrwb_context *context = codec->private_info;
-	unsigned char *buf = encoded_data;
+	unsigned char buf[SWITCH_AMRWB_OUT_MAX_SIZE];
 	uint8_t tmp[SWITCH_AMRWB_OUT_MAX_SIZE];
 
-	if (!context) {
+	if (!context || encoded_data_len > SWITCH_AMRWB_OUT_MAX_SIZE) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	memcpy(buf, encoded_data, encoded_data_len);
 
 	if (globals.debug) {
 		switch_amrwb_info(codec, buf, encoded_data_len, switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0, "AMRWB decoder");

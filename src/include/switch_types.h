@@ -189,7 +189,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME "__cache_speech_handles_obj__"
 #define SWITCH_BYPASS_MEDIA_VARIABLE "bypass_media"
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
-#define SWITCH_ZRTP_PASSTHRU_VARIABLE "zrtp_passthru"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
@@ -255,6 +254,10 @@ SWITCH_BEGIN_EXTERN_C
 #define LOST_BURST_CAPTURE 1024
 
 typedef uint8_t switch_byte_t;
+
+typedef struct {
+	unsigned int value : 31;
+} switch_uint31_t;
 
 typedef enum {
 	SWITCH_PVT_PRIMARY = 0,
@@ -596,6 +599,13 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
+/* Check if RAND_MAX is a power of 2 minus 1 or in other words all bits set */
+#if ((RAND_MAX) & ((RAND_MAX) + 1)) == 0 && (RAND_MAX) != 0
+#define SWITCH_RAND_MAX RAND_MAX
+#else
+#define SWITCH_RAND_MAX 0x7fff
+#endif
+
 typedef enum {
 	SWITCH_RW_READ,
 	SWITCH_RW_WRITE
@@ -817,10 +827,6 @@ typedef enum {
 	SWITCH_RTP_FLAG_FLUSH,
 	SWITCH_RTP_FLAG_AUTOFLUSH,
 	SWITCH_RTP_FLAG_STICKY_FLUSH,
-	SWITCH_ZRTP_FLAG_SECURE_SEND,
-	SWITCH_ZRTP_FLAG_SECURE_RECV,
-	SWITCH_ZRTP_FLAG_SECURE_MITM_SEND,
-	SWITCH_ZRTP_FLAG_SECURE_MITM_RECV,
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ,
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE,
 	SWITCH_RTP_FLAG_ESTIMATORS,
@@ -1208,9 +1214,8 @@ SWITCH_STACK_TOP	- Stack on the top
 typedef enum {
 	SWITCH_STACK_BOTTOM = (1 << 0),
 	SWITCH_STACK_TOP = (1 << 1),
-	SWITCH_STACK_NODUP = (1 << 2),
-	SWITCH_STACK_UNSHIFT = (1 << 3),
-	SWITCH_STACK_PUSH = (1 << 4),
+	SWITCH_STACK_UNSHIFT = (1 << 2),
+	SWITCH_STACK_PUSH = (1 << 3)
 } switch_stack_t;
 
 /*!
@@ -1542,9 +1547,6 @@ typedef enum {
 	CF_MANUAL_MEDIA_PARAMS,
 	CF_SERVICE_AUDIO,
 	CF_SERVICE_VIDEO,
-	CF_ZRTP_PASSTHRU_REQ,
-	CF_ZRTP_PASSTHRU,
-	CF_ZRTP_HASH,
 	CF_CHANNEL_SWAP,
 	CF_DEVICE_LEG,
 	CF_FINAL_DEVICE_LEG,
@@ -1693,20 +1695,19 @@ typedef enum {
 	SFF_RFC2833 = (1 << 4),
 	SFF_PROXY_PACKET = (1 << 5),
 	SFF_DYNAMIC = (1 << 6),
-	SFF_ZRTP = (1 << 7),
-	SFF_UDPTL_PACKET = (1 << 8),
-	SFF_NOT_AUDIO = (1 << 9),
-	SFF_RTCP = (1 << 10),
-	SFF_MARKER = (1 << 11),
-	SFF_WAIT_KEY_FRAME = (1 << 12),
-	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
-	SFF_PICTURE_RESET = (1 << 14),
-	SFF_SAME_IMAGE = (1 << 15),
-	SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
-	SFF_ENCODED = (1 << 17),
-	SFF_TEXT_LINE_BREAK = (1 << 18),
-	SFF_IS_KEYFRAME = (1 << 19),
-	SFF_EXTERNAL = (1 << 20)
+	SFF_UDPTL_PACKET = (1 << 7),
+	SFF_NOT_AUDIO = (1 << 8),
+	SFF_RTCP = (1 << 9),
+	SFF_MARKER = (1 << 10),
+	SFF_WAIT_KEY_FRAME = (1 << 11),
+	SFF_RAW_RTP_PARSE_FRAME = (1 << 12),
+	SFF_PICTURE_RESET = (1 << 13),
+	SFF_SAME_IMAGE = (1 << 14),
+	SFF_USE_VIDEO_TIMESTAMP = (1 << 15),
+	SFF_ENCODED = (1 << 16),
+	SFF_TEXT_LINE_BREAK = (1 << 17),
+	SFF_IS_KEYFRAME = (1 << 18),
+	SFF_EXTERNAL = (1 << 19)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -1794,7 +1795,8 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
 	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
 	SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
-	SWITCH_SPEECH_FLAG_DONE = (1 << 6)
+	SWITCH_SPEECH_FLAG_DONE = (1 << 6),
+	SWITCH_SPEECH_FLAG_MULTI = (1 << 7)
 } switch_speech_flag_enum_t;
 typedef uint32_t switch_speech_flag_t;
 
@@ -2259,7 +2261,8 @@ typedef enum {
 	SWITCH_CAUSE_BAD_IDENTITY_INFO = 821,
 	SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 822,
 	SWITCH_CAUSE_INVALID_IDENTITY = 823,
-	SWITCH_CAUSE_STALE_DATE = 824
+	SWITCH_CAUSE_STALE_DATE = 824,
+	SWITCH_CAUSE_REJECT_ALL = 825
 } switch_call_cause_t;
 
 typedef enum {
@@ -2434,6 +2437,7 @@ typedef enum {
 	SCC_VIDEO_RESET,
 	SCC_AUDIO_PACKET_LOSS,
 	SCC_AUDIO_ADJUST_BITRATE,
+	SCC_AUDIO_VAD,
 	SCC_DEBUG,
 	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
@@ -2664,10 +2668,12 @@ struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;
 
 typedef enum {
-	SDP_TYPE_REQUEST,
-	SDP_TYPE_RESPONSE
+	SDP_OFFER,
+	SDP_ANSWER
 } switch_sdp_type_t;
 
+#define SDP_TYPE_REQUEST SDP_OFFER
+#define SDP_TYPE_RESPONSE SDP_ANSWER
 
 typedef enum {
 	AEAD_AES_256_GCM_8,

@@ -1173,9 +1173,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				if (tfd > -1 && globals.RUNNING == 1) {
 					uint64_t exp;
-					int r;
-					r = read(tfd, &exp, sizeof(exp));
-					r++;
+					read(tfd, &exp, sizeof(exp));
+					(void)exp;
 				} else {
 					switch_time_t timediff = runtime.reference - ts;
 
@@ -1243,15 +1242,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			if (runtime.sps <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
+
+			/* These two mutexes must be held in exact order: session_hash_mutex and then throttle_mutex. See switch_core_session_request_uuid() */
+			switch_mutex_lock(runtime.session_hash_mutex);
 			switch_mutex_lock(runtime.throttle_mutex);
 			runtime.sps_last = runtime.sps_total - runtime.sps;
 
 			if (sps_interval_ticks >= 300) {
 				runtime.sps_peak_fivemin = 0;
 				sps_interval_ticks = 0;
-				switch_mutex_lock(runtime.session_hash_mutex);
+				/* This line is protected by runtime.session_hash_mutex */
 				runtime.sessions_peak_fivemin = session_manager.session_count;
-				switch_mutex_unlock(runtime.session_hash_mutex);
 			}
 
 			sps_interval_ticks++;
@@ -1265,6 +1266,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			runtime.sps = runtime.sps_total;
 			switch_mutex_unlock(runtime.throttle_mutex);
+			switch_mutex_unlock(runtime.session_hash_mutex);
 			tick = 0;
 		}
 #ifndef DISABLE_1MS_COND
@@ -1382,9 +1384,12 @@ SWITCH_DECLARE(const char *) switch_lookup_timezone(const char *tz_name)
 		return NULL;
 	}
 
+	switch_mutex_lock(globals.mutex);
 	if ((value = switch_core_hash_find(TIMEZONES_LIST.hash, tz_name)) == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timezone '%s' not found!\n", tz_name);
 	}
+
+	switch_mutex_unlock(globals.mutex);
 
 	return value;
 }
@@ -1520,7 +1525,7 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 #endif
 
 	memset(&globals, 0, sizeof(globals));
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 
 	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -1597,16 +1602,19 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 	DeleteCriticalSection(&timer_section);
 #endif
 
+	if (NODE) {
+		switch_event_unbind(&NODE);
+	}
+
+	switch_mutex_lock(globals.mutex);
 	if (TIMEZONES_LIST.hash) {
 		switch_core_hash_destroy(&TIMEZONES_LIST.hash);
 	}
 
+	switch_mutex_unlock(globals.mutex);
+
 	if (TIMEZONES_LIST.pool) {
 		switch_core_destroy_memory_pool(&TIMEZONES_LIST.pool);
-	}
-
-	if (NODE) {
-		switch_event_unbind(&NODE);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

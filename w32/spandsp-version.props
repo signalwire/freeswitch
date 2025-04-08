@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <SpandspVersion>master</SpandspVersion>
+    <SpandspVersion>0d2e6ac65e0e8f53d652665a743015a88bf048d4</SpandspVersion>
   </PropertyGroup>
   <PropertyGroup>
     <SpandspVersionImported>true</SpandspVersionImported>

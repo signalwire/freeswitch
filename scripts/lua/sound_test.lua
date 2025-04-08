@@ -42,7 +42,6 @@ tbl_types = {
 	    ['phonetic-ascii'] = 1,
 	    ['time'] = 1,
 	    ['voicemail'] = 1,
-	    ['zrtp'] = 1
 };
 
 tbl_rates = {['8000'] = 1 ,['16000'] = 1, ['32000'] = 1, ['48000'] = 1};

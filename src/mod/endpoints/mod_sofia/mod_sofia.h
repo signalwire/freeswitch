@@ -350,7 +350,6 @@ typedef enum {
 	TFLAG_TPORT_LOG,
 	TFLAG_SENT_UPDATE,
 	TFLAG_PROXY_MEDIA,
-	TFLAG_ZRTP_PASSTHRU,
 	TFLAG_HOLD_LOCK,
 	TFLAG_3PCC_HAS_ACK,
 	TFLAG_UPDATING_DISPLAY,
@@ -727,6 +726,7 @@ struct sofia_profile {
 	uint32_t max_recv_requests_per_second;
 	uint32_t rtp_timeout_sec;
 	uint32_t rtp_hold_timeout_sec;
+	uint32_t db_spin_up_wait_ms;
 	char *odbc_dsn;
 	char *pre_trans_execute;
 	char *post_trans_execute;
@@ -776,7 +776,7 @@ struct sofia_profile {
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
 	uint32_t queued_events;
-	uint32_t last_cseq;
+	switch_uint31_t last_cseq;
 	int tls_only;
 	int tls_verify_date;
 	enum tport_tls_verify_policy tls_verify_policy;

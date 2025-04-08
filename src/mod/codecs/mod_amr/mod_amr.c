@@ -250,6 +250,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 	int x, i, argc, fmtptmp_pos;
 	char *argv[10];
 	char fmtptmp[128];
+	char *fmtp_dup = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -283,13 +284,19 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
 		}
 		if (codec->fmtp_in) {
-			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			fmtp_dup = strdup(codec->fmtp_in);
+			switch_assert(fmtp_dup);
+
+			argc = switch_separate_string(fmtp_dup, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
 			for (x = 0; x < argc; x++) {
 				char *data = argv[x];
 				char *arg;
+
 				while (*data && *data == ' ') {
 					data++;
 				}
+
 				if ((arg = strchr(data, '='))) {
 					*arg++ = '\0';
 					if (!strcasecmp(data, "octet-align")) {
@@ -325,13 +332,17 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 					} else if (!strcasecmp(data, "mode-set")) {
 						int y, m_argc;
 						char *m_argv[SWITCH_AMR_MODES-1];
+
 						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+
 						for (y = 0; y < m_argc; y++) {
 							context->enc_modes |= (1 << atoi(m_argv[y]));
 						}
 					}
 				}
 			}
+
+			free(fmtp_dup);
 		}
 
 		if (context->enc_modes) {
@@ -475,12 +486,14 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_FALSE;
 #else
 	struct amr_context *context = codec->private_info;
-	unsigned char *buf = encoded_data;
+	unsigned char buf[SWITCH_AMR_OUT_MAX_SIZE];
 	uint8_t tmp[SWITCH_AMR_OUT_MAX_SIZE];
 
-	if (!context) {
+	if (!context || encoded_data_len > SWITCH_AMR_OUT_MAX_SIZE) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	memcpy(buf, encoded_data, encoded_data_len);
 
 	if (globals.debug) {
 		switch_amr_info(codec, buf, encoded_data_len, switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, "AMR decoder");
