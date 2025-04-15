@@ -2959,6 +2959,11 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 
 	if ((session = switch_core_session_locate(call_id))) {
 		verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
+		if (!tech_pvt) {
+			cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Invalid channel"));
+			err = 1; goto rwunlock;
+        }
+
 		switch_core_session_t *other_session = NULL;
 
 		tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
@@ -3002,7 +3007,7 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 			}
 			switch_channel_mark_answered(tech_pvt->channel);
 		}
-
+	rwunlock:
 		switch_core_session_rwunlock(session);
 	} else {
 		err = 1;
