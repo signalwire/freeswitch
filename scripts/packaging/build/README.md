@@ -21,6 +21,8 @@ Configuring the repo is enough. Dependencies will be installed during the FreeSW
 Just follow this [Dependency Building Guide](dependencies/README.md) without the need to set up the FreeSWITCH Debian repo.</br>
 Although we recommend using the FreeSWITCH Debian repo as all the dependencies are already prebuilt for you.
 
+> Note: There is a possibility to use pre-created [Dockerfile(s)](/docker/build) for building images, see comments inside each Dockerfile.
+
 ---
 ## Prerequisites
 FreeSWITCH packages can be built when FreeSWITCH is cloned using `git` only.

@@ -1733,127 +1733,6 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
 fi
 
 #
-# Python checks for mod_python (scroll down to see python3 checks for mod_python3)
-#
-AC_ARG_WITH(
-	[python],
-	[AS_HELP_STRING([--with-python], [Use system provided version of python (default: try)])],
-	[with_python="$withval"],
-	[with_python="try"]
-)
-
-if test "$with_python" != "no"
-then
-	save_CFLAGS="$CFLAGS"
-	save_LIBS="$LIBS"
-
-	if test "$with_python" != "yes" -a "$with_python" != "try" ; then
-		AC_MSG_CHECKING([for python])
-		if test ! -x "$with_python" ; then
-			AC_MSG_ERROR([Specified python does not exist or is not executable: $with_python])
-		fi
-		AC_MSG_RESULT([$with_python])
-		AC_SUBST([PYTHON], ["$with_python"])
-	else
-		AC_PATH_PROG([PYTHON], ["python"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
-	fi
-
-	if test "$PYTHON" != "no" ; then
-		AC_MSG_CHECKING([python version])
-		PYTHON_VER="`$PYTHON -V 2>&1 | cut -d' ' -f2`"
-
-		if test -z "$PYTHON_VER" ; then
-			AC_MSG_ERROR([Unable to detect python version])
-		fi
-		AC_MSG_RESULT([$PYTHON_VER])
-
-		AC_MSG_CHECKING([for python distutils])
-		python_result="`$PYTHON -c 'import distutils;' 2>&1`"
-		if test -z "$python_result" ; then
-			python_has_distutils="yes"
-		else
-			python_has_distutils="no"
-		fi
-		AC_MSG_RESULT([$python_has_distutils])
-
-		if test "$python_has_distutils" != "no" ; then
-			AC_MSG_CHECKING([location of site-packages])
-
-			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
-
-			if test -z "$PYTHON_SITE_DIR" ; then
-				AC_MSG_ERROR([Unable to detect python site-packages path])
-			elif test ! -d "$PYTHON_SITE_DIR" ; then
-				AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
-			fi
-			AC_MSG_RESULT([$PYTHON_SITE_DIR])
-			AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
-
-			#
-			# python distutils found, get settings from python directly
-			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
-			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print(\" \".join(libs));'`"
-			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print(\"python\" + sysconfig.get_config_var(\"VERSION\"));'`"
-			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
-
-			# handle python being installed into /usr/local
-			AC_MSG_CHECKING([python libdir])
-			if test -z "`echo $PYTHON_LIBDIR | grep "/usr/lib"`" ; then
-				PYTHON_LDFLAGS="-L$PYTHON_LIBDIR $PYTHON_LDFLAGS"
-				LIBS="-L$PYTHON_LIBDIR $LIBS"
-			fi
-			AC_MSG_RESULT([$PYTHON_LIBDIR])
-
-			# check libpython
-			AC_CHECK_LIB([$PYTHON_LIB], [main], [has_libpython="yes"], [has_libpython="no"])
-
-			if test "$has_libpython" = "no" ; then
-				AS_IF([test "$with_python" = "try"],
-				 	[AC_MSG_WARN([$PYTHON_LIB is unusable])],
-					[AC_MSG_ERROR([$PYTHON_LIB is unusable])]
-				)
-			fi
-
-			# check whether system libpython is usable and has threads support
-			CFLAGS="$PYTHON_CFLAGS"
-			LIBS="$PYTHON_LDFLAGS"
-			AC_CHECK_FUNC([PyThread_init_thread], [python_has_threads="yes"], [python_has_threads="no"])
-
-			if test "$python_has_threads" = "no"; then
-				AS_IF([test "$with_python" = "try"],
-					[AC_MSG_WARN([Your python lacks threads support, can not build mod_python])],
-					[AC_MSG_ERROR([Your python lacks threads support, can not build mod_python])]
-				)
-			else
-				AC_MSG_NOTICE([Your python seems OK, do not forget to enable mod_python in modules.conf])
-				AC_SUBST([PYTHON_CFLAGS],  [$PYTHON_CFLAGS])
-				AC_SUBST([PYTHON_LDFLAGS], [$PYTHON_LDFLAGS])
-			fi
-		else
-			AS_IF([test "$with_python" = "try"],
-				[AC_MSG_WARN([Could not find or use python distutils module: $python_result])],
-				[AC_MSG_ERROR([Could not find or use python distutils module: $python_result])]
-			)
-		fi
-
-		LIBS="$save_LIBS"
-		CFLAGS="$save_CFLAGS"
-
-		unset python_has_threads
-		unset python_has_distutils
-		unset python_result
-	else
-		AS_IF([test "$with_python" = "try"],
-			[AC_MSG_WARN([Could not find python, mod_python will not build, use --with-python to specify the location])],
-			[AC_MSG_ERROR([Could not find python, use --with-python to specify the location])]
-		)
-	fi
-else
-	AC_MSG_WARN([python support disabled, building mod_python will fail!])
-fi
-
-#
 # Python3 checks for mod_python3
 #
 AC_ARG_WITH(
@@ -2196,7 +2075,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_lua/Makefile
 		src/mod/languages/mod_managed/Makefile
 		src/mod/languages/mod_perl/Makefile
-		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_python3/Makefile
 		src/mod/languages/mod_v8/Makefile
 		src/mod/languages/mod_basic/Makefile

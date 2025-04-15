@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru
 #		      and others
 #
@@ -943,15 +943,6 @@ BuildRequires:	perl-ExtUtils-Embed
 
 %description	perl
 
-%package        python
-Summary:        Python support for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:       python
-BuildRequires:  python-devel
-
-%description    python
-
 %if %{build_mod_v8}
 %package v8
 Summary:	JavaScript support for the FreeSWITCH open source telephony platform, using Google V8 JavaScript engine
@@ -1091,15 +1082,6 @@ Group:		System Environment/Libraries
 
 %description	-n perl-ESL
 The Perl ESL module allows for native interaction with FreeSWITCH over the event socket interface.
-
-%package	-n python-ESL
-Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
-Group:		System Environment/Libraries
-Requires:	python
-BuildRequires:	python-devel
-
-%description	-n python-ESL
-The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 
 ######################################################################################################################
 #				FreeSWITCH basic config module
@@ -1292,7 +1274,7 @@ FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_op
 #						Embedded Languages
 #
 ######################################################################################################################
-LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python "
+LANGUAGES_MODULES="languages/mod_lua languages/mod_perl "
 %if %{build_mod_v8}
 LANGUAGES_MODULES+="languages/mod_v8"
 %endif
@@ -1411,7 +1393,6 @@ unset MODULES
 %{__make}
 
 cd libs/esl
-%{__make} pymod
 %{__make} perlmod
 
 
@@ -1441,17 +1422,7 @@ cd libs/esl
 
 #install the esl stuff
 cd libs/esl
-%{__make} DESTDIR=%{buildroot} pymod-install
 %{__make} DESTDIR=%{buildroot} perlmod-install
-
-%if %{build_py26_esl}
-#install esl for python 26
-%{__make} clean
-sed -i s/python\ /python26\ /g python/Makefile
-%{__make} pymod
-%{__mkdir} -p %{buildroot}/usr/lib/python2.6/site-packages
-%{__make} DESTDIR=%{buildroot} pymod-install
-%endif
 
 cd ../..
 
@@ -2049,10 +2020,6 @@ fi
 %{prefix}/perl/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/perl.conf.xml
 
-%files python
-%{MODINSTDIR}/mod_python*.so*
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
-
 %if %{build_mod_v8}
 %files v8
 %{MODINSTDIR}/mod_v8*.so*
@@ -2198,11 +2165,6 @@ fi
 %dir %{perl_archlib}/ESL
 %{perl_archlib}/ESL/Dispatch.pm
 %{perl_archlib}/ESL/IVR.pm
-
-%files	-n python-ESL
-%attr(0644, root, bin) /usr/lib*/python*/site-packages/freeswitch.py*
-%attr(0755, root, bin) /usr/lib*/python*/site-packages/_ESL.so*
-%attr(0755, root, bin) /usr/lib*/python*/site-packages/ESL.py*
 
 ######################################################################################################################
 #
