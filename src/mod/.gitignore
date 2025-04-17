@@ -47,7 +47,6 @@
 /languages/mod_lua/Makefile.in
 /languages/mod_lua/mod_lua.log
 /languages/mod_managed/freeswitch_wrap.cpp
-/languages/mod_python/Makefile
 /loggers/mod_console/Makefile
 /loggers/mod_logfile/Makefile
 /loggers/mod_syslog/Makefile
