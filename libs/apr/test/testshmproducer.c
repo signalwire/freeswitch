@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_shm.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_time.h"
+#include "fspr_shm.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_time.h"
 #include "testshm.h"
-#include "apr.h"
+#include "fspr.h"
 
 #if APR_HAVE_STDLIB_H
 #include <stdlib.h>
@@ -31,30 +31,30 @@
 #if APR_HAS_SHARED_MEMORY
 static void msgput(int boxnum, char *msg)
 {
-    apr_cpystrn(boxes[boxnum].msg, msg, strlen(msg) + 1);
+    fspr_cpystrn(boxes[boxnum].msg, msg, strlen(msg) + 1);
     boxes[boxnum].msgavail = 1;
 }
 
 int main(void)
 {
-    apr_status_t rv;
-    apr_pool_t *pool;
-    apr_shm_t *shm;
+    fspr_status_t rv;
+    fspr_pool_t *pool;
+    fspr_shm_t *shm;
     int i;
     int sent = 0;
 
-    apr_initialize();
+    fspr_initialize();
     
-    if (apr_pool_create(&pool, NULL) != APR_SUCCESS) {
+    if (fspr_pool_create(&pool, NULL) != APR_SUCCESS) {
         exit(-1);
     }
 
-    rv = apr_shm_attach(&shm, SHARED_FILENAME, pool);
+    rv = fspr_shm_attach(&shm, SHARED_FILENAME, pool);
     if (rv != APR_SUCCESS) {
         exit(-2);
     }
 
-    boxes = apr_shm_baseaddr_get(shm);
+    boxes = fspr_shm_baseaddr_get(shm);
 
     /* produce messages on all of the boxes, in descending order,
      * Yes, we could just return N_BOXES, but I want to have a double-check
@@ -64,10 +64,10 @@ int main(void)
      */
     for (i = N_BOXES - 1, sent = 0; i >= 0; i--, sent++) {
         msgput(i, MSG);
-        apr_sleep(apr_time_from_sec(1));
+        fspr_sleep(fspr_time_from_sec(1));
     }
 
-    rv = apr_shm_detach(shm);
+    rv = fspr_shm_detach(shm);
     if (rv != APR_SUCCESS) {
         exit(-3);
     }

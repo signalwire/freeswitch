@@ -15,16 +15,6 @@ AM_LIBAPR_CPPFLAGS := $(shell ./libs/apr/apr-1-config --cppflags --includes)
 AM_LIBAPR_LDFLAGS := $(shell ./libs/apr/apr-1-config --ldflags)
 AM_LIBAPR_LIBS := $(subst $(switch_builddir)/,,$(shell ./libs/apr/apr-1-config \--libs))
 endif
-if SYSTEM_APRUTIL
-AM_LIBAPU_CPPFLAGS := $(shell apu-1-config --includes)
-AM_LIBAPU_LDFLAGS := $(shell apu-1-config --ldflags)
-AM_LIBAPU_LIBS := $(shell apu-1-config \--libs)
-AM_LIBAPU_LINKLIBTOOL := $(shell apu-1-config \--link-libtool)
-else
-AM_LIBAPU_CPPFLAGS := $(shell ./libs/apr-util/apu-1-config --includes)
-AM_LIBAPU_LDFLAGS := $(shell ./libs/apr-util/apu-1-config --ldflags)
-AM_LIBAPU_LIBS := $(subst $(switch_builddir)/,,$(shell ./libs/apr-util/apu-1-config \--libs))
-endif
 
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
@@ -141,11 +131,6 @@ CORE_LIBS=
 if ENABLE_LIBVPX
 CORE_LIBS += libs/libvpx/libvpx.a
 endif
-if SYSTEM_APRUTIL
-CORE_LIBS += $(AM_LIBAPU_LINKLIBTOOL)
-else
-CORE_LIBS +=  libs/apr-util/libaprutil-1.la
-endif
 if SYSTEM_APR
 CORE_LIBS += $(AM_LIBAPR_LINKLIBTOOL)
 else
@@ -259,19 +244,6 @@ if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
 endif
 
-if ENABLE_ZRTP
-CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bgaes
-CORE_CFLAGS += -I$(switch_srcdir)/libs/libzrtp/third_party/bnlib
-CORE_CFLAGS += -isystem $(switch_srcdir)/libs/libzrtp/include
-ZRTP_LDFLAGS = -L$(switch_srcdir)/libs/libzrtp/third_party/bnlib
-ZRTP_LDFLAGS += -L$(switch_srcdir)/libs/libzrtp
-ZRTP_LIBS = -lbn -lzrtp
-libfreeswitch_la_LDFLAGS += $(ZRTP_LDFLAGS)
-libfreeswitch_la_LIBADD += $(ZRTP_LIBS)
-CORE_LIBS += libs/libzrtp/libzrtp.a
-LIBS += libs/libzrtp/third_party/bnlib/libbn.a
-endif
-
 library_includetestdir = $(includedir)/test
 library_includetest_HEADERS = \
 	src/include/test/switch_fct.h \
@@ -340,6 +312,7 @@ nodist_libfreeswitch_la_SOURCES = \
 
 libfreeswitch_la_SOURCES = \
 	src/switch_apr.c \
+	src/switch_apr_queue.c \
 	src/switch_buffer.c \
 	src/switch_caller.c \
 	src/switch_channel.c \
@@ -584,9 +557,6 @@ src/include/switch_version.h: src/include/switch_version.h.in Makefile $(switch_
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-libs/libzrtp/libzrtp.a:
-	cd libs/libzrtp && $(MAKE)
-
 libs/libvpx/Makefile: libs/libvpx/.update
 	cd libs/libvpx && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(VISIBILITY_FLAG)" CXXFLAGS="$(CXXFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure --enable-pic --disable-docs --disable-examples --disable-install-bins --disable-install-srcs --disable-unit-tests --size-limit=16384x16384
 
@@ -599,9 +569,6 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
-
-libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
-	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
 
 SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
 		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
@@ -621,10 +588,6 @@ libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
 ##
 ## helper targets
 ##
-yaml-files:
-	@echo `mkdir $(DESTDIR)$(confdir)/yaml 2>/dev/null`
-	$(INSTALL) -m 644 $(switch_srcdir)/conf/default/yaml/*.yaml $(DESTDIR)$(confdir)/yaml
-
 vm-sync:
 	test -d $(DESTDIR)$(confdir) || $(mkinstalldirs) $(DESTDIR)$(confdir)
 	test -d $(DESTDIR)$(confdir)/lang || $(mkinstalldirs) $(DESTDIR)$(confdir)/lang
@@ -701,9 +664,6 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-iksemel-dep:
-	make -C src/mod/endpoints/mod_dingaling deps
-
 core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
@@ -746,7 +706,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean python-reconf python3-reconf
+update-clean: clean python3-reconf
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
@@ -758,10 +718,6 @@ sndfile-reconf:
 	cd libs/libsndfile && autoreconf
 	cd libs/libsndfile && ./config.status --recheck
 	cd libs/libsndfile && ./config.status
-
-python-reconf:
-	rm -f src/mod/languages/mod_python/Makefile
-	./config.status
 
 python3-reconf:
 	rm -f src/mod/languages/mod_python3/Makefile
@@ -776,13 +732,6 @@ srtp-reconf:
 	cd libs/srtp && $(MAKE) clean
 	cd libs/srtp && sh ./config.status --recheck
 	cd libs/srtp && sh ./config.status
-
-
-iks-reconf:
-	cd libs/iksemel && $(MAKE) clean
-	cd libs/iksemel && autoreconf -fi
-	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
-	$(MAKE) mod_dingaling-clean
 
 cluecon:
 	@clear

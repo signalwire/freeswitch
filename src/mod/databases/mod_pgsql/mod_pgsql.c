@@ -36,6 +36,7 @@
 #include <switch.h>
 
 #include <libpq-fe.h>
+#include <pg_config.h>
 
 #ifndef _WIN32
 #include <poll.h>
@@ -105,6 +106,22 @@ char * pgsql_handle_get_error(switch_pgsql_handle_t *handle)
 	return err_str;
 }
 
+void pgsql_handle_set_error_if_not_set(switch_pgsql_handle_t *handle, char **err)
+{
+	char *err_str;
+
+	if (err && !(*err)) {
+		err_str = pgsql_handle_get_error(handle);
+
+		if (zstr(err_str)) {
+			switch_safe_free(err_str);
+			err_str = strdup((char *)"SQL ERROR!");
+		}
+
+		*err = err_str;
+	}
+}
+
 static int db_is_up(switch_pgsql_handle_t *handle)
 {
 	int ret = 0;
@@ -112,7 +129,7 @@ static int db_is_up(switch_pgsql_handle_t *handle)
 	char *err_str = NULL;
 	int max_tries = DEFAULT_PGSQL_RETRIES;
 	int code = 0;
-	int recon = 0;
+	switch_status_t recon = SWITCH_STATUS_FALSE;
 	switch_byte_t sanity = 255;
 
 	if (handle) {
@@ -127,6 +144,7 @@ top:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
 		goto done;
 	}
+
 	if (!handle->con) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Connection\n");
 		goto done;
@@ -140,6 +158,7 @@ top:
 			switch_yield(1);
 			continue;
 		}
+
 		break;
 	}
 
@@ -157,6 +176,7 @@ reset:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "PQstatus returned bad connection -- reconnection failed!\n");
 			goto error;
 		}
+
 		handle->state = SWITCH_PGSQL_STATE_CONNECTED;
 		handle->sock = PQsocket(handle->con);
 	}
@@ -192,6 +212,7 @@ error:
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection could not be re-established");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The connection could not be re-established\n");
 		}
+
 		if (!max_tries) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "Giving up!");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up!\n");
@@ -548,8 +569,15 @@ switch_status_t pgsql_handle_exec_detailed(const char *file, const char *func, i
 		goto error;
 	}
 
-	return pgsql_finish_results(handle);
+	if (pgsql_finish_results(handle) != SWITCH_STATUS_SUCCESS) {
+		goto error;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
 error:
+	pgsql_handle_set_error_if_not_set(handle, err);
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -597,9 +625,13 @@ switch_status_t database_handle_exec_string(switch_database_interface_handle_t *
 		goto done;
 	} else {
 		switch (result->status) {
-#if POSTGRESQL_MAJOR_VERSION >= 9 && POSTGRESQL_MINOR_VERSION >= 2
+#if PG_VERSION_NUM >= 90002
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
+#endif
+#if PG_VERSION_NUM >= 170000
+		case PGRES_TUPLES_CHUNK:
+			/* Added in PostgreSQL 17 */
 #endif
 		case PGRES_COMMAND_OK:
 		case PGRES_TUPLES_OK:
@@ -621,12 +653,16 @@ done:
 
 	pgsql_free_result(&result);
 	if (pgsql_finish_results(handle) != SWITCH_STATUS_SUCCESS) {
+		pgsql_handle_set_error_if_not_set(handle, err);
 		sstatus = SWITCH_STATUS_FALSE;
 	}
 
 	return sstatus;
 
 error:
+
+	pgsql_free_result(&result);
+	pgsql_handle_set_error_if_not_set(handle, err);
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -756,25 +792,29 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 		*result_out = res;
 		res->status = PQresultStatus(res->result);
 		switch (res->status) {
-//#if (POSTGRESQL_MAJOR_VERSION == 9 && POSTGRESQL_MINOR_VERSION >= 2) || POSTGRESQL_MAJOR_VERSION > 9
+#if PG_VERSION_NUM >= 90002
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
-//#endif
+#endif
+#if PG_VERSION_NUM >= 170000
+		case PGRES_TUPLES_CHUNK:
+			/* Added in PostgreSQL 17 */
+#endif
 		case PGRES_TUPLES_OK:
 		{
 			res->rows = PQntuples(res->result);
 			res->cols = PQnfields(res->result);
 		}
 		break;
-//#if (POSTGRESQL_MAJOR_VERSION == 9 && POSTGRESQL_MINOR_VERSION >= 1) || POSTGRESQL_MAJOR_VERSION > 9
+#if PG_VERSION_NUM >= 90001
 		case PGRES_COPY_BOTH:
 			/* Added in PostgreSQL 9.1 */
-//#endif
+#endif
 		case PGRES_COPY_OUT:
 		case PGRES_COPY_IN:
 		case PGRES_COMMAND_OK:
 			break;
-#if POSTGRESQL_MAJOR_VERSION >= 14
+#if PG_VERSION_NUM >= 140001
 		case PGRES_PIPELINE_ABORTED:
 		case PGRES_PIPELINE_SYNC:
 			break;
@@ -1034,6 +1074,8 @@ switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char
 
 	return SWITCH_STATUS_SUCCESS;
 error:
+
+	pgsql_handle_set_error_if_not_set(handle, err);
 
 	return SWITCH_STATUS_FALSE;
 }

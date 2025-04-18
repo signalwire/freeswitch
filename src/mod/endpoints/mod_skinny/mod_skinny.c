@@ -2056,7 +2056,7 @@ sock_fail:
 
 		assert(profile->sock);
 
-		if ((rv = switch_socket_accept(&inbound_socket, profile->sock, listener_pool))) {
+		if (switch_socket_accept(&inbound_socket, profile->sock, listener_pool)) {
 			if (!skinny_globals.running) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
 				goto end;
@@ -2136,7 +2136,7 @@ void launch_skinny_profile_thread(skinny_profile_t *profile) {
 /*****************************************************************************/
 /* MODULE FUNCTIONS */
 /*****************************************************************************/
-switch_endpoint_interface_t *skinny_get_endpoint_interface()
+switch_endpoint_interface_t *skinny_get_endpoint_interface(void)
 {
 	return skinny_endpoint_interface;
 }

@@ -814,24 +814,6 @@
       <prompt phrase="Das ist eine ungültige Durchwahl." filename="invalid_extension.wav"/>
       <prompt phrase="Englisch." filename="en.wav"/>
     </misc>
-    <zrtp>
-      <!-- Event prompts -->
-      <prompt phrase="Willkommen bei der Anmeldung zum Z R T P Sicherheits-System." filename="zrtp-enroll_welcome.wav"/>
-      <prompt phrase="Sie müssen den Authentisierungs-String mit Ihrem Gesprächspartner vergleichen. Wenn er nicht übereinstimmt, ist dies ein Hinweis darauf, dass das Gespräch abgehört wird." filename="zrtp-check_sas.wav"/>
-      <prompt phrase="Nur authentisierte Telefone können so konfiguriert werden, dass sie diesem System vertrauen bezüglich der Vermittlung von Verbindungen die mit Z R T P gesichert sind.  Ihr Telefon ist nicht authentisiert, daher wird dieser Anruf nicht vermittelt." filename="zrtp-enroll_not_sip_registered.wav"/>
-      <prompt phrase="Ihr Telefon signalisiert, dass es diesem System bereits vertraut bezüglich der Vermittlung von Verbindungen die mit Z R T P gesichert sind.  Sie müssen deshalb nichts weiter tun." filename="zrtp-enroll_already_enrolled.wav"/>
-      <prompt phrase="Nur Telefone, die das Z R T P Protokoll unterstützen, können diese Nebenstelle Nutzen. Ihr Telefon unterstützt Z R T P nicht, daher wird dieser Anruf nicht vermittelt." filename="zrtp-enroll_notzrtp.wav"/>
-      <prompt phrase="Dieses System ist für die Verarbeitung von mit Z R T P verschlüsselten Telefonanrufen ausgestattet. Sie müssen entscheiden, ob Sie zulassen möchten, dass dieses System Ihre sicheren Telefonanrufe abfangen und möglicherweise überwachen kann. Sie können auflegen, nachdem Sie dies getan haben." filename="zrtp-enroll_confirmed.wav"/>
-      <prompt phrase="Vergleichen Sie diesen Authentifizierungscode mit Ihrem Gesprächspartner, indem Sie sich diesen Code vorlesen." filename="zrtp-is_secure.wav"/>
-      <prompt phrase="Der Authentifizierungscode ist derzeit nicht überprüft." filename="zrtp-is_unverified.wav"/>
-      <prompt phrase="Der Authentifizierungscode ist jetzt überprüft." filename="zrtp-is_verified.wav"/>
-      <prompt phrase="Vielen Dank für Ihren Anruf. Auf Wiedersehen." filename="zrtp-thankyou_goodbye.wav"/>
-      <prompt phrase="Etwas stimmt nicht." filename="zrtp-somethings_wrong.wav"/>
-      <prompt phrase="Fehler." filename="zrtp-status_error.wav"/>
-      <prompt phrase="Verbindung ist nicht sicher." filename="zrtp-status_notsecure.wav"/>
-      <prompt phrase="Verbindung ist sicher." filename="zrtp-status_secure.wav"/>
-      <prompt phrase="Sichere die Verbindung." filename="zrtp-status_securing.wav"/>
-    </zrtp>
   </de>
 </language>
 <!--

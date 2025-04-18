@@ -31,9 +31,11 @@
 
 #include <switch.h>
 #include <test/switch_test.h>
-#include "../mod_sofia.c"
+
+int protect_dest_uri(switch_caller_profile_t *cp);
 
 static int timeout_sec = 10;
+static switch_interval_time_t delay_start_ms = 5000;
 
 FST_CORE_EX_BEGIN("./conf", SCF_VG | SCF_USE_SQL)
 
@@ -41,6 +43,11 @@ FST_MODULE_BEGIN(mod_sofia, sofia)
 
 FST_SETUP_BEGIN()
 {
+	/* Give mod_sofia time to spinup profile threads */
+	if (delay_start_ms) {
+		switch_sleep(delay_start_ms * 1000);
+		delay_start_ms = 0;
+	}
 }
 FST_SETUP_END()
 
@@ -108,7 +115,6 @@ FST_TEST_BEGIN(originate_test)
 	fst_check(status == SWITCH_STATUS_SUCCESS);
 	if (session) {
 		channel = switch_core_session_get_channel(session);
-		fst_requires(channel);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		switch_core_session_rwunlock(session);
 		switch_sleep(1 * 1000 * 1000);

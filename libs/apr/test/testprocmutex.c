@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "apr_shm.h"
-#include "apr_thread_proc.h"
-#include "apr_file_io.h"
-#include "apr_proc_mutex.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_getopt.h"
+#include "fspr_shm.h"
+#include "fspr_thread_proc.h"
+#include "fspr_file_io.h"
+#include "fspr_proc_mutex.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_getopt.h"
 #include "errno.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,47 +32,47 @@
 #define CHILDREN 6
 #define MAX_COUNTER (MAX_ITER * CHILDREN)
 
-static apr_proc_mutex_t *proc_lock;
+static fspr_proc_mutex_t *proc_lock;
 static volatile int *x;
 
 /* a slower more racy way to implement (*x)++ */
 static int increment(int n)
 {
-    apr_sleep(1);
+    fspr_sleep(1);
     return n+1;
 }
 
-static void make_child(abts_case *tc, apr_proc_t **proc, apr_pool_t *p)
+static void make_child(abts_case *tc, fspr_proc_t **proc, fspr_pool_t *p)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    *proc = apr_pcalloc(p, sizeof(**proc));
+    *proc = fspr_pcalloc(p, sizeof(**proc));
 
     /* slight delay to allow things to settle */
-    apr_sleep (1);
+    fspr_sleep (1);
 
-    rv = apr_proc_fork(*proc, p);
+    rv = fspr_proc_fork(*proc, p);
     if (rv == APR_INCHILD) {
         int i = 0;
-        /* The parent process has setup all processes to call apr_terminate
+        /* The parent process has setup all processes to call fspr_terminate
          * at exit.  But, that means that all processes must also call
-         * apr_initialize at startup.  You cannot have an unequal number
-         * of apr_terminate and apr_initialize calls.  If you do, bad things
+         * fspr_initialize at startup.  You cannot have an unequal number
+         * of fspr_terminate and fspr_initialize calls.  If you do, bad things
          * will happen.  In this case, the bad thing is that if the mutex
          * is a semaphore, it will be destroyed before all of the processes
          * die.  That means that the test will most likely fail.
          */
-        apr_initialize();
+        fspr_initialize();
 
-        if (apr_proc_mutex_child_init(&proc_lock, NULL, p))
+        if (fspr_proc_mutex_child_init(&proc_lock, NULL, p))
             exit(1);
 
         do {
-            if (apr_proc_mutex_lock(proc_lock))
+            if (fspr_proc_mutex_lock(proc_lock))
                 exit(1);
             i++;
             *x = increment(*x);
-            if (apr_proc_mutex_unlock(proc_lock))
+            if (fspr_proc_mutex_unlock(proc_lock))
                 exit(1);
         } while (i < MAX_ITER);
         exit(0);
@@ -82,25 +82,25 @@ static void make_child(abts_case *tc, apr_proc_t **proc, apr_pool_t *p)
 }
 
 /* Wait for a child process and check it terminated with success. */
-static void await_child(abts_case *tc, apr_proc_t *proc)
+static void await_child(abts_case *tc, fspr_proc_t *proc)
 {
     int code;
-    apr_exit_why_e why;
-    apr_status_t rv;
+    fspr_exit_why_e why;
+    fspr_status_t rv;
 
-    rv = apr_proc_wait(proc, &code, &why, APR_WAIT);
+    rv = fspr_proc_wait(proc, &code, &why, APR_WAIT);
     ABTS_ASSERT(tc, "child did not terminate with success",
              rv == APR_CHILD_DONE && why == APR_PROC_EXIT && code == 0);
 }
 
 static void test_exclusive(abts_case *tc, const char *lockname, 
-                           apr_lockmech_e mech)
+                           fspr_lockmech_e mech)
 {
-    apr_proc_t *child[CHILDREN];
-    apr_status_t rv;
+    fspr_proc_t *child[CHILDREN];
+    fspr_status_t rv;
     int n;
  
-    rv = apr_proc_mutex_create(&proc_lock, lockname, mech, p);
+    rv = fspr_proc_mutex_create(&proc_lock, lockname, mech, p);
     APR_ASSERT_SUCCESS(tc, "create the mutex", rv);
     if (rv != APR_SUCCESS)
         return;
@@ -118,25 +118,25 @@ static void test_exclusive(abts_case *tc, const char *lockname,
 static void proc_mutex(abts_case *tc, void *data)
 {
 #if APR_HAS_FORK
-    apr_status_t rv;
+    fspr_status_t rv;
     const char *shmname = "tpm.shm";
-    apr_shm_t *shm;
-    apr_lockmech_e *mech = data;
+    fspr_shm_t *shm;
+    fspr_lockmech_e *mech = data;
 
     /* Use anonymous shm if available. */
-    rv = apr_shm_create(&shm, sizeof(int), NULL, p);
+    rv = fspr_shm_create(&shm, sizeof(int), NULL, p);
     if (rv == APR_ENOTIMPL) {
-        apr_file_remove(shmname, p);
-        rv = apr_shm_create(&shm, sizeof(int), shmname, p);
+        fspr_file_remove(shmname, p);
+        rv = fspr_shm_create(&shm, sizeof(int), shmname, p);
     }
 
     APR_ASSERT_SUCCESS(tc, "create shm segment", rv);
     if (rv != APR_SUCCESS)
         return;
 
-    x = apr_shm_baseaddr_get(shm);
+    x = fspr_shm_baseaddr_get(shm);
     test_exclusive(tc, NULL, *mech);
-    rv = apr_shm_destroy(shm);
+    rv = fspr_shm_destroy(shm);
     APR_ASSERT_SUCCESS(tc, "Error destroying shared memory block", rv);
 #else
     ABTS_NOT_IMPL(tc, "APR lacks fork() support");
@@ -146,7 +146,7 @@ static void proc_mutex(abts_case *tc, void *data)
 
 abts_suite *testprocmutex(abts_suite *suite)
 {
-    apr_lockmech_e mech = APR_LOCK_DEFAULT;
+    fspr_lockmech_e mech = APR_LOCK_DEFAULT;
 
     suite = ADD_SUITE(suite)
     abts_run_test(suite, proc_mutex, &mech);

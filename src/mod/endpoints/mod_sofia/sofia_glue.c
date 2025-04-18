@@ -446,14 +446,16 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 
 	a_id = switch_strip_whitespace(duped);
 
-	if (zstr(a_id)) return;
+	if (zstr(a_id)) {
+		goto end;
+	}
 
 	p = strchr(a_id, ';');
 	if (p) *p = '\0';
 
 	if (!sofia_glue_is_valid_session_uuid(a_id)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: Ignoring \"%s\" parsed as \"%s\"\n", header, a_id);
-		return;
+		goto end;
 	}
 
 	/* RFC7329 compatibility */
@@ -483,7 +485,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 	if (!p) {
 		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
 		switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
-		return;
+		goto end;
 	}
 	p++;
 	remote_param = strstr(p, "remote=");
@@ -491,7 +493,7 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 		switch_channel_set_flag(channel, CF_RFC7329_COMPAT);
 		switch_channel_set_flag_partner(channel, CF_RFC7329_COMPAT);
 		sofia_glue_check_filter_generic_params(session, profile, p);
-		return;
+		goto end;
 	} 
 	b_id = remote_param + 7;
 	if (!zstr(b_id) && strlen(b_id) == RFC7989_SESSION_UUID_LEN /*32*/) {
@@ -503,6 +505,9 @@ void sofia_glue_store_session_id(switch_core_session_t *session, sofia_profile_t
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Session-ID: invalid uuid, ignored.\n");
 	}
+
+end:
+	switch_safe_free(a_id);
 }
 
 /* add "Session-ID:" header */
@@ -908,7 +913,6 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	const char *exclude_regex = NULL;
 	switch_regex_t *re = NULL;
 	int ovector[30] = {0};
-	int proceed;
 
 	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
 	SWITCH_STANDARD_STREAM(stream);
@@ -922,12 +926,12 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				if ( !exclude_regex || !(proceed = switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ( !exclude_regex || !(/*proceed*/ switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 					const char *hname = name + strlen(prefix);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
-					switch_regex_safe_free(re);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
+					switch_regex_safe_free(re);
 				}
 			}
 		}
@@ -1154,7 +1158,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	if (!switch_channel_get_private(tech_pvt->channel, "t38_options") || zstr(tech_pvt->mparams.local_sdp_str)) {
-		switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
+		switch_core_media_gen_local_sdp(session, SDP_OFFER, NULL, 0, NULL, 0);
 	}
 
 	sofia_set_flag_locked(tech_pvt, TFLAG_READY);
@@ -2278,8 +2282,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	private_object_t *tech_pvt = NULL;
 	sofia_profile_t *profile = NULL;
-	const char *tmp;
-	const char *rr;
+	const char *tmp, *rr, *use_uuid;
 	int r = 0;
 	const char *profile_name = switch_channel_get_variable_dup(channel, "recovery_profile_name", SWITCH_FALSE, -1);
 	int swap = switch_channel_var_true(channel, "dlg_req_swap_direction");
@@ -2370,17 +2373,13 @@ int sofia_recover_callback(switch_core_session_t *session)
 										   );
 	}
 
-	if (session) {
-		const char *use_uuid;
-
-		if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
-			if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(channel),
-								  use_uuid);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
-								  switch_channel_get_name(channel), use_uuid);
-			}
+	if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
+		if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(channel),
+							  use_uuid);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n",
+							  switch_channel_get_name(channel), use_uuid);
 		}
 	}
 

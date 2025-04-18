@@ -384,10 +384,11 @@ static switch_status_t read_page(pdf_file_context_t *context)
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
 			free(storage);
+
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_img_from_raw(context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
+		switch_img_from_raw(&context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
 		free(storage);
 	} else {
 		switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, image->columns, image->rows, 0);
@@ -397,6 +398,8 @@ static switch_status_t read_page(pdf_file_context_t *context)
 
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
+			switch_img_free(&img);
+
 			return SWITCH_STATUS_FALSE;
 		}
 

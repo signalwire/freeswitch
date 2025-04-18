@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr_version.h"
-#include "apr_general.h" /* for APR_STRINGIFY */
+#include "fspr_version.h"
+#include "fspr_general.h" /* for APR_STRINGIFY */
 
-APR_DECLARE(void) apr_version(apr_version_t *pvsn)
+APR_DECLARE(void) fspr_version(fspr_version_t *pvsn)
 {
     pvsn->major = APR_MAJOR_VERSION;
     pvsn->minor = APR_MINOR_VERSION;
@@ -29,7 +29,7 @@ APR_DECLARE(void) apr_version(apr_version_t *pvsn)
 #endif
 }
 
-APR_DECLARE(const char *) apr_version_string(void)
+APR_DECLARE(const char *) fspr_version_string(void)
 {
     return APR_VERSION_STRING;
 }

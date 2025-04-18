@@ -19,7 +19,6 @@
              <Task>  
                 <Reference Include="Microsoft.Build" />
                 <Reference Include="Microsoft.Build.Framework" />
-                <Reference Include="Microsoft.Build.Utilities.Core" />
                 <Code Type="Class" Language="cs">
 <![CDATA[  
 using System;
@@ -100,7 +99,14 @@ using System.Diagnostics;
                     Uri uri = new Uri(package);
                     string urifilename = Path.GetFileName(uri.LocalPath);
                     string output = Path.Combine(outputfolder ?? librarypath, (outputfilename ?? urifilename));
+                    string cachedir = Environment.GetEnvironmentVariable("FreeSWITCHBuildCachePath") ?? "";
+                    string cached_file = cachedir != "" ? Path.Combine(cachedir, (outputfilename ?? urifilename)) : "";
 
+                    if (cached_file != "" && File.Exists(cached_file)) {
+                        Log.LogMessage(MessageImportance.High,
+                                            "Found package in cache \"" + cached_file + "\".");
+                        File.Copy(cached_file, output); 
+                    } else
                     //if (!File.Exists(output)) // Uncomment to skip download if exists
                     {
                         var syncObject = new State

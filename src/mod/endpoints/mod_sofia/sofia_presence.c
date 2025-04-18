@@ -399,6 +399,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
+	switch_safe_free(extra_headers);
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
@@ -482,7 +483,7 @@ struct mwi_helper {
 
 static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 {
-	char *account, *dup_account, *yn, *host = NULL, *user;
+	char *account, *dup_account, *host = NULL, *user;
 	char *sql;
 	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -500,7 +501,7 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		return;
 	}
 
-	if (!(yn = switch_event_get_header(event, "mwi-messages-waiting"))) {
+	if (!switch_event_get_header(event, "mwi-messages-waiting")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
 		return;
 	}
@@ -1620,7 +1621,6 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Event Thread Started\n");
 
 	while (mod_sofia_globals.running == 1) {
-		int count = 0;
 
 		if (switch_queue_pop(mod_sofia_globals.presence_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event = (switch_event_t *) pop;
@@ -1655,7 +1655,6 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 			}
 
 			switch_event_destroy(&event);
-			count++;
 		}
 	}
 
@@ -2113,12 +2112,12 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 
 #define SOFIA_PRESENCE_COLLISION_DELTA 50
 #define SOFIA_PRESENCE_ROLLOVER_YEAR (86400 * 365 * SOFIA_PRESENCE_COLLISION_DELTA)
-static uint32_t check_presence_epoch(void)
+static switch_uint31_t check_presence_epoch(void)
 {
 	time_t now = switch_epoch_time_now(NULL);
-	uint32_t callsequence = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
+	switch_uint31_t callsequence = { .value = (uint32_t)((now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA) };
 
-	if (!mod_sofia_globals.presence_year || callsequence >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
+	if (!mod_sofia_globals.presence_year || callsequence.value >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
 		struct tm tm;
 		switch_mutex_lock(mod_sofia_globals.mutex);
 		tm = *(localtime(&now));
@@ -2126,7 +2125,7 @@ static uint32_t check_presence_epoch(void)
 		if (tm.tm_year != mod_sofia_globals.presence_year) {
 			mod_sofia_globals.presence_epoch = (uint32_t)now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
 			mod_sofia_globals.presence_year = tm.tm_year;
-			callsequence = (uint32_t)(((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
+			callsequence.value = (uint32_t)(((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA);
 		}
 
 		switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -2137,17 +2136,17 @@ static uint32_t check_presence_epoch(void)
 
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 {
-	uint32_t callsequence;
+	switch_uint31_t callsequence;
 	int diff = 0;
 
 	switch_mutex_lock(profile->ireg_mutex);
 
 	callsequence = check_presence_epoch();
 
-	if (profile->last_cseq) {
-		diff = callsequence - profile->last_cseq;
+	if (profile->last_cseq.value) {
+		diff = (int)callsequence.value - (int)profile->last_cseq.value;
 		if (diff <= 0 && diff > -100000) {
-			callsequence = ++profile->last_cseq;
+			callsequence.value = ++profile->last_cseq.value;
 		}
 	}
 
@@ -2155,8 +2154,7 @@ uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 
 	switch_mutex_unlock(profile->ireg_mutex);
 
-	return callsequence;
-
+	return (uint32_t)callsequence.value;
 }
 
 
@@ -2503,7 +2501,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 {
 	char *ret = NULL;
 
-	if (switch_stristr("polycom", user_agent)) {
+	if (switch_stristr("poly", user_agent)) {
 		*ct = "application/xpidf+xml";
 
 		/* If unknown/none prpid is provided, just show the user as online. */
@@ -3755,7 +3753,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	if ((sub_max_deviation_var = profile->sip_subscription_max_deviation)) {
 		int sub_deviation;
-		srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
 		/* random negative number between 0 and negative sub_max_deviation_var: */
 		sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
 		if ( (exp_delta + sub_deviation) > 45 ) {
@@ -4325,7 +4322,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_event_fire(&event);
 	}
 
- end:
 
 	if (strcasecmp(event, "call-info") && strcasecmp(event, "line-seize")) {
 
@@ -4406,6 +4402,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		}
 	}
+
+ end:
 
 	if (event) {
 		su_free(nua_handle_get_home(nh), event);
