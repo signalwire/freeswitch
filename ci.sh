@@ -67,7 +67,6 @@ configure_freeswitch()
 			echo 'codecs/mod_openh264' >> modules.conf
 			sed -i \
 				-e '/applications\/mod_http_cache/s/^#//g' \
-				-e '/event_handlers\/mod_rayo/s/^#//g' \
 				-e '/formats\/mod_opusfile/s/^#//g' \
 				-e '/languages\/mod_lua/s/^#//g' \
 				modules.conf
@@ -93,11 +92,8 @@ configure_freeswitch()
 			# "Disable"/"Comment out" mods
 			sed -i \
 				-e '/mod_ilbc/s/^/#/g' \
-				-e '/mod_isac/s/^/#/g' \
-				-e '/mod_mp4/s/^/#/g' \
 				-e '/mod_mongo/s/^/#/g' \
 				-e '/mod_pocketsphinx/s/^/#/g' \
-				-e '/mod_sangoma_codec/s/^/#/g' \
 				-e '/mod_siren/s/^/#/g' \
 				-e '/mod_avmd/s/^/#/g' \
 				-e '/mod_basic/s/^/#/g' \

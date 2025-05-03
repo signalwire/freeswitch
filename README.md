@@ -48,6 +48,10 @@ Step by step tutorials to build FreeSWITCH with provided dependency packages:
   * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
   * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
 
+### How to build Debian packages
+
+  * [Using FSDEB](/scripts/packaging/build)
+
 ## Downloads
 
   * [Tarballs](https://files.freeswitch.org/releases/freeswitch/)

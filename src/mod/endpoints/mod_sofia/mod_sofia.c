@@ -254,7 +254,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	callee_number = switch_sanitize_number(switch_core_session_strdup(session, callee_number));
 	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
-	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
+	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("poly", ua))) {
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, host);
 	}
 
@@ -2075,13 +2075,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
 						} else if (update_allowed && ua && (switch_channel_var_true(tech_pvt->channel, "update_ignore_ua") ||
-									  switch_stristr("polycom", ua) ||
+									  switch_stristr("poly", ua) ||
 									  (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
 									  (switch_stristr("cisco/spa50", ua) ||
 									  switch_stristr("cisco/spa525", ua)) ||
 									  switch_stristr("cisco/spa30", ua) ||
 									  switch_stristr("Fanvil", ua) ||
 									  switch_stristr("Grandstream", ua) ||
+									  switch_stristr("Ringotel", ua) ||
+									  switch_stristr("Groundwire", ua) ||									  
 									  switch_stristr("Yealink", ua) ||
 									  switch_stristr("Mitel", ua) ||
 									  switch_stristr("Panasonic", ua))) {
@@ -2152,7 +2154,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								 SIPTAG_PAYLOAD_STR(message),
 								 TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								 TAG_END());
-					} else if (ua && switch_stristr("polycom", ua)) {
+					} else if (ua && switch_stristr("poly", ua)) {
 						snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
 						nua_update(tech_pvt->nh,
 								   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
