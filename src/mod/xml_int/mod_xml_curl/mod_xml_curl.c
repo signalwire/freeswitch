@@ -55,6 +55,7 @@ struct xml_binding {
 	char *ssl_cacert_file;
 	uint32_t enable_ssl_verifyhost;
 	char *cookie_file;
+	char *auth_token;
 	switch_hash_t *vars_map;
 	int use_dynamic_url;
 	long auth_scheme;
@@ -152,7 +153,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	xml_binding_t *binding = (xml_binding_t *) user_data;
 	char *file_url;
-	switch_curl_slist_t *slist = NULL;
 	long httpRes = 0;
 	switch_curl_slist_t *headers = NULL;
 	char hostname[256] = "";
@@ -220,6 +220,18 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_handle = switch_curl_easy_init();
 		headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 
+		if (binding->auth_token) {
+			char *auth_key = "Authorization: ";
+			int auth_header_len = strlen(auth_key) + strlen(binding->auth_token)+2;
+			char *auth_header = (char *)malloc(auth_header_len);
+			switch_assert(auth_header);
+
+			switch_snprintf(auth_header, auth_header_len, "%s%s", auth_key, binding->auth_token);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sending auth header [%s]\n", auth_header);
+			headers = switch_curl_slist_append(headers, auth_header);
+			switch_safe_free(auth_header);
+		}
+
 		if (!strncasecmp(binding->url, "https", 5)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
@@ -248,8 +260,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 
 		if (binding->disable100continue) {
-			slist = switch_curl_slist_append(slist, "Expect:");
-			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist);
+			headers = switch_curl_slist_append(headers, "Expect:");
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		}
 
 		if (binding->enable_cacert_check) {
@@ -301,7 +313,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		switch_curl_easy_cleanup(curl_handle);
 		switch_curl_slist_free_all(headers);
-		switch_curl_slist_free_all(slist);
 		close(config_data.fd);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
@@ -382,6 +393,7 @@ static switch_status_t do_config(void)
 		char *ssl_cacert_file = NULL;
 		uint32_t enable_ssl_verifyhost = 0;
 		char *cookie_file = NULL;
+		char *auth_token = NULL;
 		hash_node_t *hash_node;
 		long auth_scheme = CURLAUTH_BASIC;
 		need_vars_map = 0;
@@ -443,6 +455,8 @@ static switch_status_t do_config(void)
 				enable_ssl_verifyhost = 1;
 			} else if (!strcasecmp(var, "cookie-file")) {
 				cookie_file = val;
+			} else if (!strcasecmp(var, "auth-token")) {
+				auth_token = val;
 			} else if (!strcasecmp(var, "use-dynamic-url") && switch_true(val)) {
 				use_dynamic_url = 1;
 			} else if (!strcasecmp(var, "enable-post-var")) {
@@ -536,6 +550,10 @@ static switch_status_t do_config(void)
 
 		if (cookie_file) {
 			binding->cookie_file = switch_core_strdup(globals.pool, cookie_file);
+		}
+
+		if (auth_token) {
+			binding->auth_token = auth_token;
 		}
 
 		binding->vars_map = vars_map;
