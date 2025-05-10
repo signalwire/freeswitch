@@ -227,7 +227,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			switch_assert(auth_header);
 
 			switch_snprintf(auth_header, auth_header_len, "%s%s", auth_key, binding->auth_token);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sending auth header [%s]\n", auth_header);
 			headers = switch_curl_slist_append(headers, auth_header);
 			switch_safe_free(auth_header);
 		}
