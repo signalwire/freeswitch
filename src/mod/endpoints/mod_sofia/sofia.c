@@ -2461,14 +2461,14 @@ void sofia_event_callback(nua_event_t event,
 
 		if (!sofia_private) {
 			if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
-				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
+				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR(profile->unavailable_retry_after_timeout), NUTAG_WITH_THIS(nua), TAG_END());
 				nua_handle_destroy(nh);
 				goto end;
 			}
 
 
 			if (switch_queue_size(mod_sofia_globals.msg_queue) > (unsigned int)critical) {
-				nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
+				nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR(profile->unavailable_retry_after_timeout), NUTAG_WITH_THIS(nua), TAG_END());
 				nua_handle_destroy(nh);
 				goto end;
 			}
@@ -2587,7 +2587,7 @@ void sofia_event_callback(nua_event_t event,
 
 			set_call_id(tech_pvt, sip);
 		} else {
-			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+			nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR(profile->unavailable_retry_after_timeout), TAG_END());
 			nua_destroy_event(de->event);
 			su_free(nua_handle_get_home(nh), de);
 
@@ -2609,7 +2609,7 @@ void sofia_event_callback(nua_event_t event,
 				nua_handle_bind(nh, NULL);
 				sofia_private_free(sofia_private);
 				switch_core_session_destroy(&session);
-				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR(profile->unavailable_retry_after_timeout), TAG_END());
 			}
 			switch_mutex_lock(profile->flag_mutex);
 			if ((uuid = switch_core_hash_find(profile->chat_hash, tech_pvt->call_id))) {
@@ -4657,6 +4657,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_3;
 					profile->tls_timeout = 300;
 					profile->db_spin_up_wait_ms = 1000;
+					profile->unavailable_retry_after_timeout = "300";
 					profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 					profile->server_rport_level = 1;
 					profile->client_rport_level = 1;
@@ -5291,6 +5292,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->bind_params = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-domain")) {
 						profile->sipdomain = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "unavailable-retry-after-timeout")) {
+						profile->unavailable_retry_after_timeout = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtp-timer-name")) {
 						profile->timer_name = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "hold-music")) {
@@ -10431,7 +10434,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	if (!session || (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING))) {
-		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"),
+		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR(profile->unavailable_retry_after_timeout),
 					TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), TAG_END());
 		goto fail;
 	}
@@ -11878,7 +11881,8 @@ void sofia_handle_sip_i_options(int status,
 
 	if (sofia_test_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY) &&
 			(sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound())) {
-		nua_respond(nh, 503, "Maximum Calls In Progress", NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+		nua_respond(nh, 503, "Maximum Calls In Progress", NUTAG_WITH_THIS_MSG(de->data->e_msg),
+					SIPTAG_RETRY_AFTER_STR(profile->unavailable_retry_after_timeout), TAG_END());
 	} else {
 		switch_assert(sip);
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg),
