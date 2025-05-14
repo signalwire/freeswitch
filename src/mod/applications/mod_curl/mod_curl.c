@@ -378,9 +378,14 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 				char *argv[3] = { 0 };
 				int argc;
 				if ((argc = switch_separate_string(header->data, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-					if (argc > 2) {
-						cJSON_AddItemToObject(top, "version", cJSON_CreateString(argv[0]));
-						cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(argv[2]));
+					if (argc >= 2) {
+  						cJSON_AddItemToObject(top, "version", cJSON_CreateString(argv[0]));
+  						if (argc > 2) {
+    							cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(argv[2]));
+  						} else {
+    							/* HTTP/2 responses may not include a phrase */
+    							cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(""));
+  						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: argc: %d\n", argc);
 					}
