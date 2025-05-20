@@ -386,7 +386,7 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 						cJSON_AddItemToObject(top, "version", cJSON_CreateString(argv[0]));
 						cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(""));
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: argc: %d\n", argc);	
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: argc: %d\n", argc);
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Starts with HTTP but not parsable: %s\n", header->data);
