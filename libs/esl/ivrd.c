@@ -41,8 +41,12 @@
 static void handle_SIGCHLD(int sig)
 {
 	int status = 0;
+	int pid = 0;
 
-	wait(&status);
+	do {
+		pid = waitpid(-1, &status, WNOHANG);
+	} while (pid > 0);
+
 	return;
 }
 
