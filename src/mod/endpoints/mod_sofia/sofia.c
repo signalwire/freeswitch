@@ -8503,7 +8503,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
 			uint8_t match = 0;
 
-			sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
+
 			switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 
@@ -8531,6 +8531,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			}
 		}
+		sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
 
 		if (r_sdp && sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
 			sofia_clear_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
