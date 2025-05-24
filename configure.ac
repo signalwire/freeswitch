@@ -2000,7 +2000,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_osp/Makefile
 		src/mod/applications/mod_prefix/Makefile
 		src/mod/applications/mod_random/Makefile
-		src/mod/applications/mod_redis/Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
