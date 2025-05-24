@@ -65,8 +65,8 @@
     <!-- Shouldn't set these on IPv6 -->
     <!--<param name="ext-rtp-ip" value="auto-nat"/>-->
     <!--<param name="ext-sip-ip" value="auto-nat"/>-->
-    <param name="rtp-timeout-sec" value="300"/>
-    <param name="rtp-hold-timeout-sec" value="1800"/>
+    <param name="media_timeout" value="300"/>
+    <param name="media_hold_timeout" value="1800"/>
     <!--<param name="enable-3pcc" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
