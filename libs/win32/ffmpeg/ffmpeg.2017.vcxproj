@@ -77,7 +77,7 @@
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WC_ERR_INVALID_CHARS=0x00000080;BUILDING_avdevice;BUILDING_avfilter;BUILDING_avformat;BUILDING_avcodec;BUILDING_swresample;BUILDING_swscale;BUILDING_avutil;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UCRT_NOISY_NAN;WC_ERR_INVALID_CHARS=0x00000080;BUILDING_avdevice;BUILDING_avfilter;BUILDING_avformat;BUILDING_avcodec;BUILDING_swresample;BUILDING_swscale;BUILDING_avutil;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|x64'">
