@@ -14641,7 +14641,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				}
 			}
 #endif 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Bridge\n", switch_channel_get_name(session->channel));
 
 			if (switch_rtp_ready(a_engine->rtp_session)) {
 				const char *val;
@@ -14703,7 +14702,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s Unbridge\n", switch_channel_get_name(session->channel));
 
 #if 0
 		if (switch_rtp_ready(v_engine->rtp_session)) {

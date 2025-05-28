@@ -772,11 +772,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 #if DEBUG_RTP
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Audio bridge thread: #18 %p -> %p\n", (void*)session_a, (void*)session_b);
 #endif
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Parsing next event...\n");
-			switch_channel_set_variable(chan_a, "log_next_event", "true");
 			switch_ivr_parse_next_event(session_a);
-			switch_channel_set_variable(chan_a, "log_next_event", NULL);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_NOTICE, "Done parsing next event.\n");
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			switch_core_session_receive_message(session_a, &msg);
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);
