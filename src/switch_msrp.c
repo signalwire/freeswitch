@@ -99,7 +99,7 @@ static switch_bool_t msrp_check_success_report(switch_msrp_msg_t *msrp_msg)
 	return (msrp_h_success_report && !strcmp(msrp_h_success_report, "yes"));
 }
 
-static void msrp_deinit_ssl()
+static void msrp_deinit_ssl(void)
 {
 	globals.ssl_ready = 0;
 	if (globals.ssl_ctx) {
@@ -112,7 +112,7 @@ static void msrp_deinit_ssl()
 	}
 }
 
-static void msrp_init_ssl()
+static void msrp_init_ssl(void)
 {
 	const char *err = "";
 
@@ -187,7 +187,7 @@ static void msrp_init_ssl()
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip);
 
-static switch_status_t load_config()
+static switch_status_t load_config(void)
 {
 	char *cf = "msrp.conf";
 	switch_xml_t cfg, xml = NULL, settings, param;
@@ -286,12 +286,12 @@ sock_fail:
 	return rv;
 }
 
-SWITCH_DECLARE(const char *) switch_msrp_listen_ip()
+SWITCH_DECLARE(const char *) switch_msrp_listen_ip(void)
 {
 	return globals.ip;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_msrp_init()
+SWITCH_DECLARE(switch_status_t) switch_msrp_init(void)
 {
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
@@ -346,7 +346,7 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_msrp_destroy()
+SWITCH_DECLARE(switch_status_t) switch_msrp_destroy(void)
 {
 	switch_status_t st = SWITCH_STATUS_SUCCESS;
 	switch_socket_t *sock;
@@ -1622,7 +1622,7 @@ SWITCH_DECLARE (switch_status_t) switch_msrp_perform_send(switch_msrp_session_t 
 	return status;
 }
 
-SWITCH_DECLARE(switch_msrp_msg_t *) switch_msrp_msg_create()
+SWITCH_DECLARE(switch_msrp_msg_t *) switch_msrp_msg_create(void)
 {
 	switch_msrp_msg_t *msg = malloc(sizeof(switch_msrp_msg_t));
 	switch_assert(msg);

@@ -679,7 +679,6 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 	char * descXML;
 	int descXMLsize = 0;
 	struct UPNPDev * dev;
-	int ndev = 0;
 	int state; /* state 1 : IGD connected. State 2 : IGD. State 3 : anything */
 	if(!devlist)
 	{
@@ -698,7 +697,6 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 			   	                        lanaddr, lanaddrlen);
 			if(descXML)
 			{
-				ndev++;
 				memset(data, 0, sizeof(struct IGDdatas));
 				memset(urls, 0, sizeof(struct UPNPUrls));
 				parserootdesc(descXML, descXMLsize, data);
