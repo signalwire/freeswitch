@@ -7,12 +7,27 @@ on:
     branches: [master, release]
 jobs:
   x64:
-    runs-on: windows-2019
+    runs-on: windows-2022
 
     steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
+    - name: Download yasm.exe
+      run: |
+        curl -o libs\win32\ffmpeg\yasm.exe https://files.freeswitch.org/downloads/win64/yasm-1.3.0.87.g121a.exe
+        copy libs\win32\ffmpeg\yasm.exe libs\win32\libvpx\yasm.exe
+
+    - name: Verify and Run yasm.exe
+      run: |
+        if exist libs\win32\ffmpeg\yasm.exe (
+          libs\win32\ffmpeg\yasm.exe --version
+        ) else (
+          echo ERROR: yasm.exe not found!
+          exit 1
+        )
+      shell: cmd
 
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
