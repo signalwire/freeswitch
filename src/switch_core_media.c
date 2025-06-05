@@ -2657,7 +2657,7 @@ static void merge_codec_string(switch_core_session_t *session, const char *prefe
 					}
 				}
 			} else {
-				if (closest_rate_index < 0 || (abs(current_rate - priority_rate) < abs(closest_rate - priority_rate))) {
+				if (closest_rate_index < 0 || (abs((int32_t)(current_rate - priority_rate)) < abs((int32_t)(closest_rate - priority_rate)))) {
 					closest_rate_index = i;
 				}
 			}
