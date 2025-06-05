@@ -3178,6 +3178,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 		flags |= SMBF_STEREO_NO_DOWN_MIX;
 	}
 
+	if (recording_var_true(channel, vars, "RECORD_CONTINUE_ON_HOLD")) {
+		flags |= SMBF_CONTINUE_ON_HOLD;
+	}
+
 	if (recording_var_true(channel, vars, "RECORD_APPEND")) {
 		file_flags |= SWITCH_FILE_WRITE_APPEND;
 	}

@@ -69,7 +69,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0, tap_only = 0;
+	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0, tap_only = 0, is_inuse = 0;
 	switch_codec_implementation_t codec_impl;
 	switch_frame_t *fork_frame = NULL;
 	unsigned int flag = 0;
@@ -194,9 +194,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 
 		if (status == SWITCH_STATUS_INUSE) {
+			switch_bool_t has_bug_with_continue_on_hold = SWITCH_FALSE;
 			*frame = &runtime.dummy_cng_frame;
 			if (switch_test_flag(*frame, SFF_FORK_RTP)) {
 				switch_core_session_set_fork_read_frame(session, *frame);
+			}
+
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
+			for (switch_media_bug_t *bp = session->bugs; bp; bp = bp->next) {
+				if (switch_core_media_bug_test_flag(bp, SMBF_CONTINUE_ON_HOLD)) {
+					has_bug_with_continue_on_hold = SWITCH_TRUE;
+					break;
+				}
+			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+			if (has_bug_with_continue_on_hold) {
+				switch_mutex_lock(session->codec_read_mutex);
+				if (!switch_core_codec_ready(session->read_codec)) {
+					switch_mutex_unlock(session->codec_read_mutex);
+					switch_yield(20000);
+					return SWITCH_STATUS_SUCCESS;
+				}
+				(*frame)->codec = session->read_codec;
+				switch_mutex_unlock(session->codec_read_mutex);
+				status = SWITCH_STATUS_SUCCESS;
+				is_inuse = 1;
+				goto cnt_with_cng;
 			}
 			switch_yield(20000);
 			return SWITCH_STATUS_SUCCESS;
@@ -239,6 +262,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
+cnt_with_cng:
 	if (switch_test_flag(*frame, SFF_FORK_RTP)) {
 		flag |= SFF_FORK_RTP;
 		fork_frame = *frame;
@@ -273,6 +297,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		for (bp = session->bugs; bp; bp = bp->next) {
 			ok = SWITCH_TRUE;
 
+			if (is_inuse && !switch_core_media_bug_test_flag(bp, SMBF_CONTINUE_ON_HOLD)) {
+				continue;
+			}
 			if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 				continue;
 			}
@@ -333,6 +360,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
+
+				if (is_inuse && !switch_core_media_bug_test_flag(bp, SMBF_CONTINUE_ON_HOLD)) {
+					continue;
+				}
 
 				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
@@ -683,6 +714,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
 
+				if (is_inuse && !switch_core_media_bug_test_flag(bp, SMBF_CONTINUE_ON_HOLD)) {
+					continue;
+				}
+
 				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
 				}
@@ -733,6 +768,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
+
+				if (is_inuse && !switch_core_media_bug_test_flag(bp, SMBF_CONTINUE_ON_HOLD)) {
+					continue;
+				}
 
 				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
@@ -943,6 +982,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
+
+				if (is_inuse && !switch_core_media_bug_test_flag(bp, SMBF_CONTINUE_ON_HOLD)) {
+					continue;
+				}
 
 				if (switch_core_media_bug_test_flag(bp, SMBF_PAUSE) || (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE))) {
 					continue;
