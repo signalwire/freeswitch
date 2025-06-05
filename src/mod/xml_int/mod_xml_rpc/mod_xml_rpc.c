@@ -1252,6 +1252,53 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	return val;
 }
 
+static xmlrpc_value *freeswitch_batch(xmlrpc_env * const envP, xmlrpc_value * const paramArrayP, void * const userData, void * const callInfo)
+{
+	xmlrpc_value *commandResults = NULL;
+	xmlrpc_value *commands = NULL;
+	unsigned int i = 0,commandSize = 0;
+
+	/* Parse our argument array. */
+	xmlrpc_decompose_value(envP, paramArrayP, "(A)", &commands);
+	if (envP->fault_occurred) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Request!\n");
+		return NULL;
+	}
+
+	commandResults = xmlrpc_array_new(envP);
+	if (envP->fault_occurred) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory allocation failed!\n");
+		xmlrpc_DECREF(commands);
+		return NULL;
+	}
+
+	commandSize = xmlrpc_array_size(envP, commands);
+	for (i = 0; i < commandSize; i++) {
+		xmlrpc_value *command = NULL;
+		xmlrpc_value *value = NULL;
+		
+		xmlrpc_array_read_item(envP, commands, i, &command);
+		if (envP->fault_occurred) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read command item from array!\n");
+			break;
+		}
+
+		value = freeswitch_api(envP, command, userData, callInfo);
+		if (envP->fault_occurred) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FS API failed!\n");
+			xmlrpc_DECREF(command);
+			break;
+		}
+
+		xmlrpc_array_append_item(envP, commandResults, value);
+		xmlrpc_DECREF(command);
+		xmlrpc_DECREF(value);
+	}
+
+	xmlrpc_DECREF(commands);
+	return commandResults;
+}
+
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 {
 	xmlrpc_env env;
@@ -1280,6 +1327,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
     xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch_api", &freeswitch_api, NULL, NULL, NULL);
     xmlrpc_registry_add_method(&env, globals.registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
     xmlrpc_registry_add_method(&env, globals.registryP, NULL, "freeswitch_management", &freeswitch_man, NULL);
+    xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch.batch", &freeswitch_batch, NULL, NULL, NULL);
+    xmlrpc_registry_add_method2(&env, globals.registryP, "freeswitch_batch", &freeswitch_batch, NULL, NULL, NULL);
 
 	MIMETypeInit();
 
