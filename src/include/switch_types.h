@@ -1985,7 +1985,7 @@ typedef enum {
 	SMBF_PAUSE = (1 << 28),
 	SMBF_STEREO_NO_DOWN_MIX = (1 << 29),
 	SMBF_REAL_STEREO = (1 << 30),
-	SMBF_CONTINUE_ON_HOLD = (1 << 31)
+	SMBF_CONTINUE_ON_HOLD = (int)(1u << 31)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
