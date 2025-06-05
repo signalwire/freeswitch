@@ -5907,7 +5907,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	int got_audio_rtcp = 0, got_video_rtcp = 0;
 	switch_port_t audio_port = 0, video_port = 0;
 	int amrwb_offerings_n = 0, amr_offerings_n = 0;
-	int amrwb_offerings_rejected_n = 0, amr_offerings_rejected_n = 0;
+	//int amrwb_offerings_rejected_n = 0,
+	int amr_offerings_rejected_n = 0;
 
 	switch_assert(session);
 
@@ -6725,12 +6726,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					 * If this is last codec, accept it (in case of multiple, they could have been rejected but last should get matched
 					 * to any AMR-WB/AMR implementation loaded).
 					 */
-					if (!strcasecmp(map->rm_encoding, "AMR-WB")) {
-						if (amrwb_offerings_n > 1) {
-							if (amrwb_offerings_rejected_n + 1 < amrwb_offerings_n) {
-								if (SWITCH_STATUS_IGNORE == switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) {
-									match = 0;
-								}
+					if (!strcasecmp(map->rm_encoding, "AMR-WB") && !strcasecmp(imp->iananame, "AMR-WB")) {
+						codec_fmtp.private_info = imp->fmtp;
+						if (imp->matches_fmtp) {
+							if (SWITCH_STATUS_SUCCESS != imp->matches_fmtp(map->rm_fmtp, imp->fmtp)) {
+								match = 0;
 							}
 						}
 					} else if (!strcasecmp(map->rm_encoding, "AMR")) {
@@ -6817,7 +6817,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				// Count rejected AMR-WB offerings
 				if (!amrwb_matched && !strcasecmp(map->rm_encoding, "AMR-WB")) {
-					++amrwb_offerings_rejected_n;
+//					++amrwb_offerings_rejected_n;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AMR-WB codec [%s:%d:%u:%d] rejected\n",
 							rm_encoding, map->rm_pt, (int) remote_codec_rate, codec_ms);
 				}
@@ -15183,7 +15183,7 @@ SWITCH_DECLARE(void) switch_core_media_merge_sdp_codec_string(switch_core_sessio
 }
 
 
-static void add_audio_codec(sdp_rtpmap_t *map, const switch_codec_implementation_t *imp, int ptime, char *buf, switch_size_t buflen)
+static void add_audio_codec(sdp_rtpmap_t *map, const switch_codec_implementation_t *imp, int ptime, char *fmtp, char *buf, switch_size_t buflen)
 {
 	int codec_ms = ptime;
 	uint32_t map_bit_rate = 0, map_channels = 1;
@@ -15238,8 +15238,11 @@ static void add_audio_codec(sdp_rtpmap_t *map, const switch_codec_implementation
 		switch_snprintf(bitstr, sizeof(bitstr), "@%dc", map_channels);
 	}
 
-	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s.%s%s%s%s", imp->modname, map->rm_encoding, ratestr, ptstr, bitstr);
-
+	if (!zstr(fmtp)) {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s.%s~%s%s%s%s", imp->modname, map->rm_encoding, fmtp, ratestr, ptstr, bitstr);
+	} else {
+		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s.%s%s%s%s", imp->modname, map->rm_encoding, ratestr, ptstr, bitstr);
+	}
 }
 
 
@@ -15396,7 +15399,18 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						}
 
 						if (match) {
-							add_audio_codec(map, imp, ptime, buf, sizeof(buf));
+							if (imp->matches_fmtp && map->rm_fmtp) {
+								switch_status_t match_result = imp->matches_fmtp(imp->fmtp, map->rm_fmtp);
+								if (match_result == SWITCH_STATUS_SUCCESS) {
+									add_audio_codec(map, imp, ptime, imp->fmtp, buf, sizeof(buf));
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "Codec %s.%s does not match fmtp: %s\n",
+													  imp->modname, imp->iananame, map->rm_fmtp);
+									match = 0;
+								}
+							} else {
+								add_audio_codec(map, imp, ptime, imp->fmtp, buf, sizeof(buf));
+							}
 						}
 					}
 				}
@@ -15427,7 +15441,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						}
 
 						if (match) {
-							add_audio_codec(map, imp, ptime, buf, sizeof(buf));
+							add_audio_codec(map, imp, ptime, imp->fmtp, buf, sizeof(buf));
 						}
 					}
 				}

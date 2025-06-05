@@ -765,6 +765,8 @@ struct switch_codec_implementation {
 	switch_core_codec_control_func_t codec_control;
 	/*! deinitalize a codec handle using this implementation */
 	switch_core_codec_destroy_func_t destroy;
+	/*! does this codec matches the fmtp line */
+	switch_core_codec_matches_fmtp_func_t matches_fmtp;
 	uint32_t codec_id;
 	uint32_t impl_id;
 	char *modname;

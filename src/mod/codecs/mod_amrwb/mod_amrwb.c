@@ -135,7 +135,7 @@ static struct {
 
 const int switch_amrwb_frame_sizes[] = {17, 23, 32, 36, 40, 46, 50, 58, 60, 5, 0, 0, 0, 0, 1, 1};
 
-#define SWITCH_AMRWB_OUT_MAX_SIZE 61
+#define SWITCH_AMRWB_OUT_MAX_SIZE 62
 #define SWITCH_AMRWB_MODES 10 /* Silence Indicator (SID) included */
 
 #define invalid_frame_type (index > SWITCH_AMRWB_MODES && index != 0xe && index != 0xf) /* include SPEECH_LOST and NO_DATA*/
@@ -228,7 +228,7 @@ static switch_bool_t switch_amrwb_info(switch_codec_t *codec, unsigned char *enc
 static switch_status_t amrwb_parse_fmtp_cb(const char *fmtp, switch_codec_fmtp_t *codec_fmtp)
 {
 	/* Must return IGNORE for FS to skip this codec */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Considering fmtp\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Considering fmtp %s\n", fmtp);
 
 	if (!zstr(fmtp)) {
 		int x, argc;
@@ -286,6 +286,7 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 	char *argv[10];
 	char fmtptmp[128];
 	char *fmtp_dup = NULL;
+	switch_core_session_t *session = codec->session;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -431,6 +432,23 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 					switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN) ? 1 : 0);
 		}
 
+		if (!zstr(globals.fmtp_extra)) {
+			fmtptmp_pos += switch_snprintf(fmtptmp + fmtptmp_pos, sizeof(fmtptmp) - fmtptmp_pos, "; %s", globals.fmtp_extra);
+		}
+
+		if (globals.silence_supp_off) {
+			switch_channel_t *channel = NULL;
+			if (session) {
+				channel = switch_core_session_get_channel(session);
+				if (channel) {
+					switch_channel_set_variable(channel, "suppress_cng", "true");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Turning CNG off (silence suppression off, suppress_cng=true) due to silence-supp-off=true\n");
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot turn silence suppression off - session missing\n");
+			}
+		}
+
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->encoder_state = NULL;
@@ -531,6 +549,7 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	uint8_t tmp[SWITCH_AMRWB_OUT_MAX_SIZE];
 
 	if (!context || encoded_data_len > SWITCH_AMRWB_OUT_MAX_SIZE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder: Invalid context or encoded data length %d\n", encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -545,6 +564,7 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	if (switch_test_flag(context, AMRWB_OPT_OCTET_ALIGN)) {
 		/* Octed Aligned */
 		if (!switch_amrwb_unpack_oa(buf, tmp, encoded_data_len)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid frame size: %d\n", encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
@@ -629,6 +649,49 @@ static switch_status_t switch_amrwb_control(switch_codec_t *codec,
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
+#ifndef AMRWB_PASSTHROUGH
+static int extract_octet_align(const char *fmtp)
+{
+	int oa = 0;
+	int argc;
+	char *argv[10];
+	char *fmtp_dup;
+
+	if (zstr(fmtp)) return oa;
+
+	fmtp_dup = strdup(fmtp);
+	if (!fmtp_dup) return oa;
+
+	argc = switch_separate_string(fmtp_dup, ';', argv, (int)(sizeof(argv) / sizeof(argv[0])));
+	for (int i = 0; i < argc; ++i) {
+		char *data = argv[i];
+		char *arg;
+		while (*data == ' ') data++;
+		arg = strchr(data, '=');
+		if (arg) {
+			*arg++ = '\0';
+			if (!strcasecmp(data, "octet-align")) {
+				oa = switch_true(arg);
+				break;
+			}
+		}
+	}
+
+	free(fmtp_dup);
+	return oa;
+}
+
+static switch_status_t matches_fmtp(const char *fmtp, const char *codec_fmtp)
+{
+	int oa1 = extract_octet_align(fmtp);
+	int oa2 = extract_octet_align(codec_fmtp);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AMRWB fmtp: %s, codec_fmtp: %s\n", fmtp, codec_fmtp);
+
+	return (oa1 == oa2) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 #endif
 
@@ -854,9 +917,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 										 switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;
+	codec_interface->implementations->matches_fmtp = matches_fmtp;
 #endif
 
-	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Bandwidth Efficient");
+//	SWITCH_ADD_CODEC(codec_interface, "AMR-WB / Bandwidth Efficient");
 	codec_interface->parse_fmtp = amrwb_parse_fmtp_cb;
 
 	default_fmtp_be = generate_fmtp(pool, 0);
@@ -867,6 +931,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amrwb_load)
 										 switch_amrwb_init, switch_amrwb_encode, switch_amrwb_decode, switch_amrwb_destroy);
 #ifndef AMRWB_PASSTHROUGH
 	codec_interface->implementations->codec_control = switch_amrwb_control;
+	codec_interface->implementations->matches_fmtp = matches_fmtp;
 #endif
 
 	switch_mutex_init(&global_lock, SWITCH_MUTEX_NESTED, pool);

@@ -2854,6 +2854,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 					uint32_t crate = !strcasecmp(imp->iananame, "g722") ? imp->samples_per_second : imp->actual_samples_per_second;
+					if (imp->matches_fmtp) {
+						/* Add all codecs that implement the fmtp matching */
+						array[i++] = imp;
+						continue;
+					}
 
 					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != default_ptime) ||
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
@@ -2901,6 +2906,9 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (channels && imp->number_of_channels != channels) {
 						continue;
 					}
+				}
+				if (imp->matches_fmtp) {
+					continue;
 				}
 
 				array[i++] = imp;

@@ -2536,6 +2536,7 @@ typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *cod
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);
 typedef switch_status_t (*switch_core_codec_destroy_func_t) (switch_codec_t *);
+typedef switch_status_t (*switch_core_codec_matches_fmtp_func_t) (const char *fmtp, const char *codec_fmtp);
 
 
 typedef switch_status_t (*switch_chat_application_function_t) (switch_event_t *, const char *);
