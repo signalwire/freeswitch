@@ -1038,6 +1038,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 			last_bp = bp;
 		}
+	} else {
+		for(bp = session->bugs; bp; bp = bp->next) {
+			if (bp->ready && !switch_test_flag(bp, SMBF_TAP_NATIVE_READ) && !switch_test_flag(bp, SMBF_TAP_NATIVE_WRITE)) {
+				tap_only = 0;
+				break;
+			}
+		}
 	}
 
 	switch_thread_rwlock_unlock(session->bug_rwlock);
