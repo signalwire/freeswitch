@@ -2816,6 +2816,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				}
 				switch_buffer_unlock(ep->buffer);
 			}
+
+			switch_ivr_parse_all_events(session);
+
 		}
 
 	  end_loop:
