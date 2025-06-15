@@ -58,13 +58,13 @@ AS_CASE([$host], [sparc-*-solaris2*], [AC_CHECK_LIB(mtmalloc, malloc)])
 AC_ARG_ENABLE([fhs],[AS_HELP_STRING([--disable-fhs],
 	[Do Not follow the FHS when placing files and directories (default only when not specifying prefix])],[enable_fhs="$enableval"],[enable_fhs="yes"])
 
-AC_PREFIX_DEFAULT(/usr/local/freeswitch)
-# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
-
+# Set default prefix based on OS preferred target location
 if test "x$prefix" = "xNONE" ; then
     enable_fhs=no
-    prefix='/usr/local/freeswitch'
+    AS_CASE([$host], [aarch64-apple-darwin*], prefix='/opt/freeswitch', prefix='/usr/local/freeswitch')
 fi
+# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
+AC_PREFIX_DEFAULT($prefix)
 
 if test "x${exec_prefix}" = "xNONE" ; then
     exec_prefix="$prefix"
@@ -323,10 +323,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
     esac
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     case "$host" in
-# older Xcode test for darwin, Xcode 4/5 use clang above
-        *darwin*)
-            SOLINK="-dynamic -bundle -force-flat-namespace"
-        ;;
         *-solaris2*)
             SOLINK="-shared -Xlinker"
         ;;
@@ -428,15 +424,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
-             *darwin*)
-                osxvrm=`sw_vers -productVersion`          # Get version.release.modlevel
-	        osxrel=`echo $osxvrm | cut -d. -f2`       # Get release only
-                if test "$osxrel" -ge 4; then             # 10.4 and up are x64
-		   APR_ADDTO(CFLAGS, -arch x86_64)
-		   APR_ADDTO(LDFLAGS, -arch x86_64)
-		   APR_ADDTO(CXXFLAGS, -arch x86_64)
-                fi
-		;;
              *-solaris2*)
 		APR_ADDTO(CFLAGS, -m64)
 		APR_ADDTO(LDFLAGS, -m64)
@@ -653,8 +640,10 @@ path_push_unique () {
 AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
 AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 
+# These 2 x86 libraries are not required on macOS 15 Sequoia on x86 as of June 2025. Not needed on aarch64 systems.
+# They are left here since they are likely required on older macOS systems.
 case $host in
-     *-darwin*)
+     x86_64-apple-darwin*)
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/libpq/lib/pkgconfig
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/openssl/lib/pkgconfig
      ;;
@@ -735,35 +724,35 @@ PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
     *darwin*)
-        # Common Apple Darwin settings
+        case "$host" in
+          aarch64-apple-darwin*)
+          # Homebrew package required libraries on Apple Silicon
+            APR_ADDTO(CPPFLAGS, -I/opt/homebrew/include)
+            APR_ADDTO(LDFLAGS, -L/opt/homebrew/lib)
+          ;;
+          *)
+          # Default package libraries on Apple x86_64
+          # The following 4 x86_64 libraries are not required on macOS 15 Sequoia as of June 2025.
+          # They are left here since they are likely required on older macOS systems.
+            APR_ADDTO(CPPFLAGS, -I/usr/local/include)  # Xcode 6 drops std lib search, add it to clang
+            APR_ADDTO(LDFLAGS,  -L/usr/local/lib)      # Xcode 6 drops std lib search, add it to clang
+            APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
+            APR_ADDTO(LDFLAGS,  -L/usr/local/opt/openssl/lib)
+          ;;
+        esac
+       # Common Apple Clang flags
+        APR_ADDTO(CFLAGS, -pipe)
+        APR_ADDTO(LDFLAGS, -pipe)
+        APR_ADDTO(CXXFLAGS, -pipe)
+       # Common Apple Darwin settings
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
-        APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
-        APR_ADDTO(CPPFLAGS, -I/opt/homebrew/include)
-        APR_ADDTO(LDFLAGS, -L/opt/homebrew/lib)
         if test "x$enable_core_odbc_support" != "xno"; then
 	   APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    # Get OSX and clang version
-        osxvrm=`sw_vers -productVersion`          # Get version.release.modlevel
-	osxrel=`echo $osxvrm | cut -d. -f2`       # Get release only
-        clangvers="`clang -v 2>&1  >/dev/null | grep version | sed -e 's/.*version \([[0-9]]*\).*$/\1/'`"
-        if test "$clangvers" -ge 6; then          # Xcode 6 drops std lib search, add it to clang
-           APR_ADDTO(LDFLAGS, -L/usr/local/lib)
-           APR_ADDTO(CPPFLAGS, -I/usr/local/include)
-        fi
-        if test "$clangvers" -ge 4; then          # Xcode 4 / 10.7 and up
-           APR_ADDTO(CFLAGS, -Wno-deprecated-declarations)
-        fi
-        if test "$osxrel" -ge 6; then             # 10.6 and up
-           APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
-           APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
-           APR_ADDTO(CXXFLAGS, -pipe)
-        fi
     ;;
-    *-solaris2*)
+   *-solaris2*)
 	if test "${enable_64}" = "yes"; then
            APR_ADDTO(CPPFLAGS, [-I/opt/64/include])
            APR_ADDTO(LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
@@ -1261,13 +1250,15 @@ GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
 case $host in
+   aarch64-apple-darwin*)
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/pkgconf/
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/sqlite/lib/pkgconfig/
+       ;;
    *-darwin*)
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ffmpeg/lib/pkgconfig/
-        path_push_unique PKG_CONFIG_PATH /opt/homebrew/lib/pkgconfig/
-        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/sqlite/lib/pkgconfig/
        ;;
 esac
 
