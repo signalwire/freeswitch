@@ -752,7 +752,7 @@ case "$host" in
 	fi
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
-   *-solaris2*)
+    *-solaris2*)
 	if test "${enable_64}" = "yes"; then
            APR_ADDTO(CPPFLAGS, [-I/opt/64/include])
            APR_ADDTO(LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
