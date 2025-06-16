@@ -2265,9 +2265,16 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 
 		for (gp = profile->gateways; gp; gp = gp->next) {
 			char *pkey = switch_mprintf("%s::%s", profile->name, gp->name);
+			// Only delete from hash if this gateway matches ours.
+			if (switch_core_hash_find(mod_sofia_globals.gateway_hash, gp->name) == gp) {
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway on profile %s from hash %s.\n", profile->name, gp->name);
+			}
+			if (switch_core_hash_find(mod_sofia_globals.gateway_hash, pkey) == gp) {
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing gateway on profile %s from hash %s.\n", profile->name, pkey);
+			}
 
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
-			switch_core_hash_delete(mod_sofia_globals.gateway_hash, pkey);
 			switch_safe_free(pkey);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "deleted gateway %s from profile %s\n", gp->name, profile->name);
 		}
