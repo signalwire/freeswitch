@@ -4448,15 +4448,14 @@ SWITCH_STANDARD_API(sofia_function)
 	int lead = 1;
 	static const char usage_string[] = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
-		"sofia global siptrace <on|off>\n"
-		"sofia        capture  <on|off>\n"
-		"             watchdog <on|off>\n\n"
+		"sofia global <capture|siptrace|standby|watchdog> <on|off>\n"
+		"             debug [sla|presence|none]\n\n"
 		"sofia profile <name> [start | stop | restart | rescan] [wait]\n"
 		"                     flush_inbound_reg [<call_id> | <[user]@domain>] [reboot]\n"
 		"                     check_sync [<call_id> | <[user]@domain>]\n"
-		"                     [register | unregister] [<gateway name> | all]\n"
-		"                     killgw <gateway name>\n"
-		"                     [stun-auto-disable | stun-enabled] [true | false]]\n"
+		"                     [register | startgw | unregister] [<gateway name> | all]\n"
+		"                     killgw < <gateway name> | _all_ >"
+		"                     gwlist [<gateway name> | all | down | off | on | up]\n"
 		"                     siptrace <on|off>\n"
 		"                     capture  <on|off>\n"
 		"                     watchdog <on|off>\n\n"
@@ -4590,7 +4589,7 @@ SWITCH_STANDARD_API(sofia_function)
 			sofia_glue_global_standby(stbyon);
 			stream->write_function(stream, "+OK Global standby %s", stbyon ? "on" : "off");
 		} else {
-			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|capture <on|off>|watchdog <on|off>|debug <sla|presence|none");
+			stream->write_function(stream, "-ERR Usage: siptrace <on|off>|capture <on|off>|watchdog <on|off>|debug [sla|presence|none]|standby <on|off>");
 		}
 
 		goto done;
