@@ -12378,8 +12378,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		if (!audio_mid) {
 			switch_channel_set_variable(session->channel, "rtp_audio_mid", "audio");
 		}
-		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=mid:%s\r\n", audio_mid ? audio_mid : "audio");
 
+		if (switch_channel_var_true(session->channel, "rtp_no_audio_mid") || switch_channel_var_true(session->channel, "rtp_no_attr_mid")) {
+			switch_channel_set_variable(session->channel, "rtp_audio_mid", NULL);
+		} else {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=mid:%s\r\n", audio_mid ? audio_mid : "audio");
+		}
 
 		if (!zstr(a_engine->local_dtls_fingerprint.type)) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\r\na=setup:%s\r\n",
@@ -12850,7 +12854,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				if (!video_mid) {
 					switch_channel_set_variable(session->channel, "rtp_video_mid", "video");
 				}
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=mid:%s\r\n", video_mid ? video_mid : "video");
+
+				if (switch_channel_var_true(session->channel, "rtp_no_video_mid") || switch_channel_var_true(session->channel, "rtp_no_attr_mid")) {
+					switch_channel_set_variable(session->channel, "rtp_video_mid", NULL);
+				} else {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=mid:%s\r\n", video_mid ? video_mid : "video");
+				}
 				
 				if (v_engine->smode == SWITCH_MEDIA_FLOW_SENDRECV) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s", "a=sendrecv\r\n");
