@@ -58,13 +58,13 @@ AS_CASE([$host], [sparc-*-solaris2*], [AC_CHECK_LIB(mtmalloc, malloc)])
 AC_ARG_ENABLE([fhs],[AS_HELP_STRING([--disable-fhs],
 	[Do Not follow the FHS when placing files and directories (default only when not specifying prefix])],[enable_fhs="$enableval"],[enable_fhs="yes"])
 
-# Set default prefix based on OS preferred target location
+AC_PREFIX_DEFAULT(/usr/local/freeswitch)
+# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
+
 if test "x$prefix" = "xNONE" ; then
     enable_fhs=no
-    AS_CASE([$host], [aarch64-apple-darwin*], prefix='/opt/freeswitch', prefix='/usr/local/freeswitch')
+    prefix='/usr/local/freeswitch'
 fi
-# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script
-AC_PREFIX_DEFAULT($prefix)
 
 if test "x${exec_prefix}" = "xNONE" ; then
     exec_prefix="$prefix"
