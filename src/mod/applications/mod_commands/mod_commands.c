@@ -6267,7 +6267,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define EAVESDROP_COMMAND_SYNTAX "<uuid> threeway|speak [caller|callee]"
+#define EAVESDROP_COMMAND_SYNTAX "<uuid> threeway|speak [caller|callee]|mute"
 SWITCH_STANDARD_API(uuid_eavesdrop_command_function)
 {
 	switch_core_session_t *tsession = NULL;
@@ -6292,6 +6292,8 @@ SWITCH_STANDARD_API(uuid_eavesdrop_command_function)
 						eavesdrop_command = "1";
 					}
 				}
+			} else if (!strcasecmp(command, "mute")) {
+				eavesdrop_command = "0";
 			}
 		}
 	}
