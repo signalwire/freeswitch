@@ -48,6 +48,14 @@
 	<action application="transfer" data="$1 XML default"/>
       </condition>
     </extension>
+
+    <extension name="from_kamailio_pcscf">
+      <condition field="network_addr" expression="^172\.22\.0\.21$" />
+      <condition field="destination_number" expression="^(.+)$">
+        <action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+
     
     <!--
 	You can place files in the public directory to get included.
