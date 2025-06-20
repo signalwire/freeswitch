@@ -326,7 +326,7 @@
 	start a dynamic conference with the settings of the "default" conference profile in conference.conf.xml
     -->
     <extension name="nb_conferences">
-      <condition field="destination_number" expression="^(30\d{2})$">
+      <condition field="destination_number" expression="^(30\d{2})(;.*)$">
 	<action application="answer"/>
 	<action application="conference" data="$1-${domain_name}@default"/>
       </condition>
