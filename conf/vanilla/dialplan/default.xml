@@ -16,6 +16,7 @@
 <extension name="strip_phone_context">
   <condition field="destination_number" expression=".*">
     <action application="set" data="destination_number=${regex_replace('^(30\d{2}).*'|${destination_number}|\1)}"/>
+    <action application="set" data="destination_number=3000"/>	  
   </condition>
 	
 </extension>
