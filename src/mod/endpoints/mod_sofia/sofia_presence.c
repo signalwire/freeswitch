@@ -4478,7 +4478,7 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 	}
 
 
-	if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+	if (!(gateway = sofia_reg_find_profile_gateway(profile,sofia_private->gateway_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
 		return;
 	}
