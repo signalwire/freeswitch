@@ -246,9 +246,13 @@
        127 - BV32
 
   -->
+  <!--
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
-
+  -->
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=AMR,H264,VP8"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=AMR,H264,VP8"/>
+  
   <!--
       xmpp_client_profile and xmpp_server_profile
       xmpp_client_profile can be any string.
