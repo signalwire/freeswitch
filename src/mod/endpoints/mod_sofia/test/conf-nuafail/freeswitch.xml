@@ -69,8 +69,8 @@
         <param name="sip-ip" value="170.0.0.1"/>
         <param name="ext-rtp-ip" value="170.0.0.1"/>
         <param name="ext-sip-ip" value="170.0.0.1"/>
-        <param name="rtp-timeout-sec" value="300"/>
-        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="media_timeout" value="300"/>
+        <param name="media_hold_timeout" value="1800"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
         <param name="tls" value="false"/>
@@ -94,7 +94,7 @@
 				<action application="set" data="absolute_codec_string=PCMU@20i"/>
 				<action application="info"/>
 				<action application="answer"/>
-				<action application="park""/>
+				<action application="park"/>
 			</condition>
 		</extension>
     </context>
