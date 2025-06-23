@@ -17,9 +17,9 @@
   <condition field="destination_number" expression=".*">
     <action application="set" data="destination_number=${regex_replace('^(30\d{2}).*'|${destination_number}|\1)}"/>
     <action application="set" data="destination_number=3000"/>	  
-  </condition>
--->	
+  </condition>	
 </extension>
+-->
     <extension name="unloop">
       <condition field="${unroll_loops}" expression="^true$"/>
       <condition field="${sip_looped_call}" expression="^true$">
