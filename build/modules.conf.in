@@ -48,7 +48,7 @@ applications/mod_voicemail
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_tts_commandline
 codecs/mod_amr
-#codecs/mod_amrwb
+codecs/mod_amrwb
 codecs/mod_b64
 #codecs/mod_bv
 #codecs/mod_codec2
