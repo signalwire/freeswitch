@@ -62,7 +62,7 @@
   <X-PRE-PROCESS cmd="set" data="auto-nat=10.2.110.199"/>
   -->
    
-  <X-PRE-PROCESS cmd="set" data="domain=ims.mnc020.mcc404.3gppnetwork.org"/>
+  <X-PRE-PROCESS cmd="set" data="domain=ims.mnc001.mcc001.3gppnetwork.org"/>
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
