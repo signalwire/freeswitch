@@ -293,8 +293,8 @@
          auto                  - Use guessed ip.
          auto-nat              - Use ip learned from NAT-PMP or UPNP
     -->
-    <param name="ext-rtp-ip" value="auto-nat"/>
-    <param name="ext-sip-ip" value="auto-nat"/>
+    <param name="ext-rtp-ip" value="$${docker_host_ip}"/>
+    <param name="ext-sip-ip" value="$${docker_host_ip}"/>
 
     <!-- rtp inactivity timeout -->
     <param name="rtp-timeout-sec" value="300"/>
