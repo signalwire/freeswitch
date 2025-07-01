@@ -385,7 +385,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 
 static void switch_core_session_hupall_handler(switch_core_session_t* session, void* user_data)
 {
-	switch_channel_hangup(session->channel, (switch_call_cause_t)user_data);
+	switch_channel_hangup(session->channel, (switch_call_cause_t)(uintptr_t)user_data);
 }
 
 SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)

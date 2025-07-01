@@ -2843,7 +2843,7 @@ SWITCH_DECLARE(uint16_t) switch_rtp_set_end_sequence(uint16_t sequence)
 	return END_SEQUENCE;
 }
 
-SWITCH_DECLARE(uint16_t) switch_rtp_request_sequence()
+SWITCH_DECLARE(uint16_t) switch_rtp_request_sequence(void)
 {
 	return (((uint16_t)rand()) % (END_SEQUENCE - START_SEQUENCE + 1) + START_SEQUENCE);
 }

@@ -130,38 +130,38 @@ void prometheus_init(switch_loadable_module_interface_t **module_interface, swit
 	instance = new prometheus_metrics(module_interface, pool);
 }
 
-void prometheus_destroy()
+void prometheus_destroy(void)
 {
 	delete instance;
 	instance = 0;
 }
 
-void prometheus_increment_tx_fax_success()
+void prometheus_increment_tx_fax_success(void)
 {
 	instance->increment_tx_fax_success();
 }
 
-void prometheus_increment_tx_fax_failure()
+void prometheus_increment_tx_fax_failure(void)
 {
 	instance->increment_tx_fax_failure();
 }
 
-void prometheus_increment_rx_fax_success()
+void prometheus_increment_rx_fax_success(void)
 {
 	instance->increment_rx_fax_success();
 }
 
-void prometheus_increment_rx_fax_failure()
+void prometheus_increment_rx_fax_failure(void)
 {
 	instance->increment_rx_fax_failure();
 }
 
-void prometheus_increment_gateway_fax_failure()
+void prometheus_increment_gateway_fax_failure(void)
 {
 	instance->increment_gateway_fax_failure();
 }
 
-void prometheus_increment_gateway_fax_success()
+void prometheus_increment_gateway_fax_success(void)
 {
 	instance->increment_gateway_fax_success();
 }

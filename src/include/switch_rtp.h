@@ -349,7 +349,7 @@ SWITCH_DECLARE(uint16_t) switch_rtp_set_end_sequence(uint16_t sequence);
   \brief Request a new start sequence to be used for RTP packet
   \return the new random sequence
 */
-SWITCH_DECLARE(uint16_t) switch_rtp_request_sequence();
+SWITCH_DECLARE(uint16_t) switch_rtp_request_sequence(void);
 
 /*!
   \brief Set/Get RTP packet penalty for packet loss

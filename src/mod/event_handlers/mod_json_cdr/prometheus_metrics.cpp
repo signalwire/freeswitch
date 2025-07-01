@@ -147,43 +147,43 @@ void prometheus_init(switch_loadable_module_interface_t **module_interface, swit
 	instance = new prometheus_metrics(module_interface, pool);
 }
 
-void prometheus_destroy()
+void prometheus_destroy(void)
 {
 	delete instance;
 	instance = 0;
 }
 
-void prometheus_increment_cdr_counter()
+void prometheus_increment_cdr_counter(void)
 {
 	instance->increment_cdr_counter();
 }
 
-void prometheus_increment_cdr_success()
+void prometheus_increment_cdr_success(void)
 {
 	instance->increment_cdr_success();
 }
 
-void prometheus_increment_cdr_error()
+void prometheus_increment_cdr_error(void)
 {
 	instance->increment_cdr_error();
 }
 
-void prometheus_increment_tmpcdr_move_success()
+void prometheus_increment_tmpcdr_move_success(void)
 {
 	instance->increment_tmpcdr_move_success();
 }
 
-void prometheus_increment_tmpcdr_move_error()
+void prometheus_increment_tmpcdr_move_error(void)
 {
 	instance->increment_tmpcdr_move_error();
 }
 
-void prometheus_increment_backup_cdr_success()
+void prometheus_increment_backup_cdr_success(void)
 {
 	instance->increment_backup_cdr_success();
 }
 
-void prometheus_increment_backup_cdr_error()
+void prometheus_increment_backup_cdr_error(void)
 {
 	instance->increment_backup_cdr_error();
 }

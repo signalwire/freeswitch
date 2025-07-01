@@ -213,7 +213,7 @@ static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t *th
 	return NULL;
 }
 
-SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task()
+SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task(void)
 {
 	uint32_t total;
 	switch_mutex_lock(globals.task_mutex);
@@ -222,7 +222,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_get_total_task()
 	return total;
 }
 
-SWITCH_DECLARE(uint32_t) switch_scheduler_get_active_task()
+SWITCH_DECLARE(uint32_t) switch_scheduler_get_active_task(void)
 {
 	uint32_t active;
 	switch_mutex_lock(globals.task_mutex);

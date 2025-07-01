@@ -173,7 +173,7 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void crtp_config()
+static void crtp_config(void)
 {
 	switch_xml_t xml = NULL, cfg, param, settings;
 

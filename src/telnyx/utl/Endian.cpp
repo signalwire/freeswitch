@@ -34,12 +34,12 @@ Telnyx::UInt32 endian_flip_bytes(Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_flip_bytes(Telnyx::Int64 value)
 {
-  return ByteOrder::flipBytes(value);
+  return ByteOrder::flipBytes((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_flip_bytes(Telnyx::UInt64 value)
 {
-  return ByteOrder::flipBytes(value);
+  return ByteOrder::flipBytes((Poco::UInt64)value);
 }
 
 #endif
@@ -67,12 +67,12 @@ Telnyx::UInt32 endian_to_big_endian (Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_to_big_endian(Telnyx::Int64 value)
 {
-  return ByteOrder::toBigEndian(value);
+  return ByteOrder::toBigEndian((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_to_big_endian (Telnyx::UInt64 value)
 {
-  return ByteOrder::toBigEndian(value);
+  return ByteOrder::toBigEndian((Poco::UInt64)value);
 }
 
 #endif
@@ -100,12 +100,12 @@ Telnyx::UInt32 endian_from_big_endian (Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_from_big_endian(Telnyx::Int64 value)
 {
-  return ByteOrder::fromBigEndian(value);
+  return ByteOrder::fromBigEndian((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_from_big_endian (Telnyx::UInt64 value)
 {
-  return ByteOrder::fromBigEndian(value);
+  return ByteOrder::fromBigEndian((Poco::UInt64)value);
 }
 #endif
 
@@ -132,12 +132,12 @@ Telnyx::UInt32 endian_to_little_endian (Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_to_little_endian(Telnyx::Int64 value)
 {
-  return ByteOrder::toLittleEndian(value);
+  return ByteOrder::toLittleEndian((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_to_little_endian (Telnyx::UInt64 value)
 {
-  return ByteOrder::toLittleEndian(value);
+  return ByteOrder::toLittleEndian((Poco::UInt64)value);
 }
 #endif
 
@@ -164,12 +164,12 @@ Telnyx::UInt32 endian_from_little_endian (Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_from_little_endian(Telnyx::Int64 value)
 {
-  return ByteOrder::fromLittleEndian(value);
+  return ByteOrder::fromLittleEndian((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_from_little_endian (Telnyx::UInt64 value)
 {
-  return ByteOrder::fromLittleEndian(value);
+  return ByteOrder::fromLittleEndian((Poco::UInt64)value);
 }
 #endif
 
@@ -196,12 +196,12 @@ Telnyx::UInt32 endian_to_network_order (Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_to_network_order(Telnyx::Int64 value)
 {
-  return ByteOrder::toNetwork(value);
+  return ByteOrder::toNetwork((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_to_network_order (Telnyx::UInt64 value)
 {
-  return ByteOrder::toNetwork(value);
+  return ByteOrder::toNetwork((Poco::UInt64)value);
 }
 #endif
 
@@ -228,12 +228,12 @@ Telnyx::UInt32 endian_from_network_order (Telnyx::UInt32 value)
 #if defined(TELNYX_HAVE_INT64)
 Telnyx::Int64 endian_from_network_order(Telnyx::Int64 value)
 {
-  return ByteOrder::fromNetwork(value);
+  return ByteOrder::fromNetwork((Poco::Int64)value);
 }
 
 Telnyx::UInt64 endian_from_network_order (Telnyx::UInt64 value)
 {
-  return ByteOrder::fromNetwork(value);
+  return ByteOrder::fromNetwork((Poco::UInt64)value);
 }
 #endif
 

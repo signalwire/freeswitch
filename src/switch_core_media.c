@@ -10256,7 +10256,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	if (((val = switch_channel_get_variable(session->channel, "srtp_hangup_on_error")))) {
-		flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] = switch_true(val);
+		flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] = switch_true(val) ? 1 : 0;
 	} else if (switch_media_handle_test_media_flag(smh, SCMF_SRTP_HANGUP_ON_ERROR)) {
 		flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR]++;
 	}

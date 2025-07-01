@@ -204,13 +204,13 @@ void prometheus_init(switch_loadable_module_interface_t **module_interface, swit
 	instance = new prometheus_metrics(module_interface, pool);
 }
 
-void prometheus_destroy()
+void prometheus_destroy(void)
 {
 	delete instance;
 	instance = 0;
 }
 
-void prometheus_increment_call_counter()
+void prometheus_increment_call_counter(void)
 {
 	instance->increment_call_counter();
 }
@@ -230,17 +230,17 @@ void prometheus_increment_request_method(const char* method)
 	instance->increment_request_method(method);
 }
 
-void prometheus_increment_outgoing_invite()
+void prometheus_increment_outgoing_invite(void)
 {
 	instance->increment_outgoing_invite();
 }
 
-void prometheus_increment_incoming_new_invite()
+void prometheus_increment_incoming_new_invite(void)
 {
 	instance->increment_incoming_new_invite();
 }
 
-void prometheus_increment_invite_retransmission()
+void prometheus_increment_invite_retransmission(void)
 {
 	instance->increment_invite_retransmission();
 }
