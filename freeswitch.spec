@@ -450,15 +450,6 @@ Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for
 FreeSWITCH to allow real-time debiting of credit or cash from a database 
 while calls are in progress.
 
-%package application-redis
-Summary:	FreeSWITCH mod_redis
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-redis
-Provides FreeSWITCH mod_redis, access to the redis key value pair db system from
-FreeSWITCH
-
 %package application-signalwire
 Summary:	FreeSWITCH mod_signalwire
 Group:          System/Libraries
@@ -1192,8 +1183,8 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill \
-			applications/mod_redis "
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill"
+
 
 APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
 			applications/mod_spandsp applications/mod_spy \
@@ -1826,9 +1817,6 @@ fi
 
 %files application-nibblebill
 %{MODINSTDIR}/mod_nibblebill.so*
-
-%files application-redis
-%{MODINSTDIR}/mod_redis.so*
 
 %files application-signalwire
 %{MODINSTDIR}/mod_signalwire.so*
