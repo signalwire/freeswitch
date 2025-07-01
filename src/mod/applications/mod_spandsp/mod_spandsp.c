@@ -518,6 +518,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 	spandsp_globals.verbose_log_level = SWITCH_LOG_DEBUG;
 	spandsp_globals.use_ecm = 1;
 	spandsp_globals.disable_v17 = 0;
+	spandsp_globals.enable_jbig = 1;
 	spandsp_globals.prepend_string = switch_core_strdup(spandsp_globals.config_pool, "fax");
 	spandsp_globals.spool = switch_core_strdup(spandsp_globals.config_pool, "/tmp");
 	spandsp_globals.ident = "SpanDSP Fax Ident";
@@ -601,6 +602,11 @@ switch_status_t load_configuration(switch_bool_t reload)
 						spandsp_globals.disable_v17 = 1;
 					else
 						spandsp_globals.disable_v17 = 0;
+				} else if (!strcmp(name, "enable-jbig")) {
+					if (switch_true(value))
+						spandsp_globals.enable_jbig = 1;
+					else
+						spandsp_globals.enable_jbig = 0;
 				} else if (!strcmp(name, "enable-colour")) {
 					if (switch_true(value))
 						spandsp_globals.enable_colour_fax = 1;
