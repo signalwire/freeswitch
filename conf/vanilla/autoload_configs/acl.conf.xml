@@ -23,7 +23,7 @@
     <list name="domains" default="deny">
       <!-- domain= is special it scans the domain from the directory to build the ACL -->
       <node type="allow" domain="$${domain}"/>
-      <node type="allow" cidr="172.22.0.21/32"/>
+      <node type="allow" cidr="172.22.0.20/32"/>
       <!-- use cidr= if you wish to allow ip ranges to this domains acl. -->
       <!-- <node type="allow" cidr="192.168.0.0/24"/> -->
     </list>
