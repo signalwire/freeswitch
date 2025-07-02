@@ -82,8 +82,8 @@
         <param name="sip-ip" value="$${local_ip_v4}"/>
         <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
         <param name="ext-sip-ip" value="$${local_ip_v4}"/>
-        <param name="media_timeout" value="300"/>
-        <param name="media_hold_timeout" value="1800"/>
+        <param name="media_timeout" value="300000"/>
+        <param name="media_hold_timeout" value="1800000"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
         <param name="tls" value="false"/>
@@ -123,8 +123,8 @@
         <param name="sip-ip" value="$${local_ip_v4}"/>
         <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
         <param name="ext-sip-ip" value="$${local_ip_v4}"/>
-        <param name="media_timeout" value="300"/>
-        <param name="media_hold_timeout" value="1800"/>
+        <param name="media_timeout" value="300000"/>
+        <param name="media_hold_timeout" value="1800000"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
         <param name="tls" value="false"/>

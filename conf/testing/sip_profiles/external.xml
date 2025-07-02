@@ -64,8 +64,8 @@
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="ext-rtp-ip" value="auto-nat"/>
     <param name="ext-sip-ip" value="auto-nat"/>
-    <param name="media_timeout" value="300"/>
-    <param name="media_hold_timeout" value="1800"/>
+    <param name="media_timeout" value="300000"/>
+    <param name="media_hold_timeout" value="1800000"/>
     <!--<param name="enable-3pcc" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
