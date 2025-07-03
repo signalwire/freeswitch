@@ -1487,7 +1487,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 
 	/* 16 khz */
-	samples = 160;
+	samples = 480;
 	bytes = 320;
 	mss = 10000;
 	rate = 16000;
@@ -1584,7 +1584,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	}
 
 	/* 8 khz */
-	samples = 80;
+	samples = 480;
 	bytes = 160;
 	mss = 10000;
 	rate = 8000;
