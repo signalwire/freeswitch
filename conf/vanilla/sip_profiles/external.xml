@@ -62,8 +62,12 @@
     -->
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
+    <!--
     <param name="ext-rtp-ip" value="$${docker_host_ip}"/>
     <param name="ext-sip-ip" value="$${docker_host_ip}"/>
+    -->
+    <param name="ext-rtp-ip" value="172.22.0.16"/>
+    <param name="ext-sip-ip" value="172.22.0.21"/>
     <param name="rtp-timeout-sec" value="300"/>
     <param name="rtp-hold-timeout-sec" value="1800"/>
     <!--<param name="enable-3pcc" value="true"/>-->
