@@ -297,8 +297,8 @@
     <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
     <param name="ext-sip-ip" value="$${local_ip_v4}"/>
     -->
-    <param name="ext-rtp-ip" value="172.22.0.16"/>
-    <param name="ext-sip-ip" value="172.22.0.21"/>
+    <param name="ext-rtp-ip" value="$${ext_rtp_ip}"/>
+    <param name="ext-sip-ip" value="$${ext_sip_ip}"/>
     
     <!-- rtp inactivity timeout -->
     <param name="rtp-timeout-sec" value="300"/>
