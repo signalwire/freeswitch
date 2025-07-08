@@ -911,8 +911,6 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hi = NULL;
 	const char *exclude_regex = NULL;
-	switch_regex_t *re = NULL;
-	int ovector[30] = {0};
 
 	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
 	SWITCH_STANDARD_STREAM(stream);
@@ -926,12 +924,11 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				if ( !exclude_regex || !(/*proceed*/ switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ( !exclude_regex || !(/*proceed*/ switch_regex(name, exclude_regex))) {
 					const char *hname = name + strlen(prefix);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
-					switch_regex_safe_free(re);
 				}
 			}
 		}

@@ -40,6 +40,7 @@ static const char js_class_name[] = "PCRE";
 FSPCRE::~FSPCRE(void)
 {
 	if (!_freed && _re) {
+		switch_regex_match_safe_free(_match_data);
 		switch_regex_safe_free(_re);
 		switch_safe_free(_str);
 	}
@@ -53,9 +54,9 @@ string FSPCRE::GetJSClassName()
 void FSPCRE::Init()
 {
 	_re = NULL;
+	_match_data = NULL;
 	_str = NULL;
 	_proceed = 0;
-	memset(&_ovector, 0, sizeof(_ovector));
 	_freed = 0;
 }
 
@@ -74,11 +75,11 @@ JS_PCRE_FUNCTION_IMPL(Compile)
 		String::Utf8Value str2(info[1]);
 		string = js_safe_str(*str1);
 		regex_string = js_safe_str(*str2);
+		switch_regex_match_safe_free(this->_match_data);
 		switch_regex_safe_free(this->_re);
 		switch_safe_free(this->_str);
 		js_strdup(this->_str, string);
-		this->_proceed = switch_regex_perform(this->_str, regex_string, &this->_re, this->_ovector,
-												 sizeof(this->_ovector) / sizeof(this->_ovector[0]));
+		this->_proceed = switch_regex_perform(this->_str, regex_string, &this->_re, &this->_match_data);
 		info.GetReturnValue().Set(this->_proceed ? true : false);
 	} else {
 		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid args"));
@@ -103,7 +104,7 @@ JS_PCRE_FUNCTION_IMPL(Substitute)
 		len = (uint32_t) (strlen(this->_str) + strlen(subst_string) + 10) * this->_proceed;
 		substituted = (char *)malloc(len);
 		switch_assert(substituted != NULL);
-		switch_perform_substitution(this->_re, this->_proceed, subst_string, this->_str, substituted, len, this->_ovector);
+		switch_perform_substitution(this->_match_data, subst_string, substituted, len);
 		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), substituted));
 		free(substituted);
 	} else {
