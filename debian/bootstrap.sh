@@ -302,7 +302,7 @@ Build-Depends:
 # core build
  dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
- libpcre3-dev,
+ libpcre2-dev,
  libedit-dev (>= 2.11),
  libsqlite3-dev,
  libtiff5-dev,
