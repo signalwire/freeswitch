@@ -25,7 +25,7 @@ swigclean: clean
 	rm -f mod_lua_wrap.*
 
 mod_lua_wrap.cpp: mod_lua_extra.c
-	swig3.0 -lua -c++ -I../../../../src/include -oh mod_lua_wrap.h -o mod_lua_wrap.cpp freeswitch.i
+	swig -lua -c++ -I../../../../src/include -oh mod_lua_wrap.h -o mod_lua_wrap.cpp freeswitch.i
 	echo "#include \"mod_lua_extra.c\"" >> mod_lua_wrap.cpp
 	patch -s -p0 -i hack.diff
 
