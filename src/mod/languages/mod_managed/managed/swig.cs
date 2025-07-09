@@ -38923,7 +38923,7 @@ public class switch_event : global::System.IDisposable {
     Dispose(false);
   }
 
-  public void Dispose() {
+  public virtual void Dispose() {
     Dispose(true);
     global::System.GC.SuppressFinalize(this);
   }
