@@ -53,6 +53,17 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_fctstr_safe_cpy)
+		{
+			char *dst;
+			const char *src = "1234567890";
+
+			dst = fctstr_clone(src);
+			fst_check_string_equals(dst, src);
+			free(dst);
+		}
+		FST_TEST_END()
+
 		FST_TEST_BEGIN(test_switch_rand)
 		{
 			int i, c = 0;
