@@ -623,11 +623,11 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
 
 		if (codec_id == AV_CODEC_ID_H264) {
-#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+#if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
 GCC_DIAG_OFF(deprecated-declarations)
 #endif
 			c->ticks_per_frame = 2;
-#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+#if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
 GCC_DIAG_ON(deprecated-declarations)
 #endif
 
@@ -1417,7 +1417,11 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
 
+#if (LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
+	handle->seekable = !(context->fc->iformat->flags & AVFMT_NOTIMESTAMPS);
+#else
 	handle->seekable = context->fc->iformat->read_seek2 ? 1 : (context->fc->iformat->read_seek ? 1 : 0);
+#endif
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "file %s is %sseekable\n", filename, handle->seekable ? "" : "not ");
 
 	/** Get information on the input file (number of streams etc.). */
@@ -1509,7 +1513,12 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open input audio codec channel 2 (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
 		if ((cc = av_get_codec_context(&context->audio_st[0]))) {
+#if (LIBAVCODEC_VERSION_MAJOR < LIBAVCODEC_7_V)
 			avcodec_close(cc);
+#else
+			/* avcodec_close() will be called in avcodec_free_context() */
+			avcodec_free_context(&cc);
+#endif
 		}
 
 		context->has_audio = 0;
@@ -3217,7 +3226,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 	if ((c = av_get_codec_context(mst)) && c->time_base.num) {
 		cp = av_stream_get_parser(st);
-#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+#if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
 GCC_DIAG_OFF(deprecated-declarations)
 #endif
 		ticks = cp ? cp->repeat_pict + 1 : c->ticks_per_frame;
@@ -3229,7 +3238,7 @@ GCC_DIAG_OFF(deprecated-declarations)
 			context->video_start_time, ticks, c ? c->ticks_per_frame : -1, st->time_base.num, st->time_base.den, c ? c->time_base.num : -1, c ? c->time_base.den : -1,
 			st->start_time, st->duration == AV_NOPTS_VALUE ? context->fc->duration / AV_TIME_BASE * 1000 : st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
-#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V)
+#if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
 GCC_DIAG_ON(deprecated-declarations)
 #endif
 
