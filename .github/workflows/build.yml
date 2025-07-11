@@ -48,15 +48,15 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             JSON=$(jq -n '[
               {
-                "version": "bookworm",
+                "version": "trixie",
                 "platform": {
-                  "name": "arm64v8"
+                  "name": "amd64"
                 }
               },
               {
-                "version": "bullseye",
+                "version": "bookworm",
                 "platform": {
-                  "name": "amd64"
+                  "name": "arm64v8"
                 }
               },
               {
@@ -130,6 +130,7 @@ jobs:
         os:
           - debian
         version:
+          - trixie
           - bookworm
           - bullseye
         platform:
