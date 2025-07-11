@@ -184,6 +184,16 @@ struct av_file_context {
 
 typedef struct av_file_context av_file_context_t;
 
+#if (LIBAVFORMAT_VERSION_MAJOR >= 60)
+typedef struct FFOutputFormat {
+	int priv_data_size;
+} FFOutputFormat;
+
+static inline int priv_data_size(const AVOutputFormat *fmt)
+{
+    return ((const struct FFOutputFormat*)fmt)->priv_data_size;
+}
+#endif
 
 /**
  * Fill the provided buffer with a string containing a timestamp
@@ -455,8 +465,13 @@ static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, const cha
 	}
 
 	s->oformat = oformat;
+#if (LIBAVFORMAT_VERSION_MAJOR < 60)
 	if (s->oformat->priv_data_size > 0) {
 		s->priv_data = av_mallocz(s->oformat->priv_data_size);
+#else
+	if (priv_data_size(s->oformat) > 0) {
+		s->priv_data = av_mallocz(priv_data_size(s->oformat));
+#endif
 		if (!s->priv_data) {
 			goto nomem;
 		}
@@ -621,7 +636,9 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
 
 		if (codec_id == AV_CODEC_ID_H264) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60,31,102))
 			c->ticks_per_frame = 2;
+#endif
 
 
 			c->flags|=AV_CODEC_FLAG_LOOP_FILTER;   // flags=+loop
@@ -1410,8 +1427,10 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
 
+#if (LIBAVFORMAT_VERSION_MAJOR < 61)
 	handle->seekable = context->fc->iformat->read_seek2 ? 1 : (context->fc->iformat->read_seek ? 1 : 0);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "file %s is %sseekable\n", filename, handle->seekable ? "" : "not ");
+#endif
 
 	/** Get information on the input file (number of streams etc.). */
 	if ((error = avformat_find_stream_info(context->fc, opts ? &opts : NULL)) < 0) {
@@ -1502,7 +1521,11 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open input audio codec channel 2 (error '%s')\n", get_error_text(error, ebuf, sizeof(ebuf)));
 		if ((cc = av_get_codec_context(&context->audio_st[0]))) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,48,101))
 			avcodec_close(cc);
+#else
+			avcodec_free_context(&cc);
+#endif
 		}
 
 		context->has_audio = 0;
@@ -3084,14 +3107,11 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	void *pop;
 	MediaStream *mst = &context->video_st;
 	AVStream *st = mst->st;
-	int ticks = 0;
 	int64_t max_delta = 1 * AV_TIME_BASE; // 1 second
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	double fl_to = 0.02;
 	int do_fl = 0;
 	int smaller_ts = context->read_fps;
-	AVCodecContext *c = NULL;
-	AVCodecParserContext *cp = NULL;
 
 	if (!context->has_video) return SWITCH_STATUS_FALSE;
 
@@ -3199,6 +3219,10 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 	}
 #endif
 
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60,31,102))
+	int ticks = 0;
+	AVCodecContext *c = NULL;
+	AVCodecParserContext *cp = NULL;
 	if ((c = av_get_codec_context(mst)) && c->time_base.num) {
 		cp = av_stream_get_parser(st);
 		ticks = cp ? cp->repeat_pict + 1 : c->ticks_per_frame;
@@ -3210,6 +3234,7 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 			context->video_start_time, ticks, c ? c->ticks_per_frame : -1, st->time_base.num, st->time_base.den, c ? c->time_base.num : -1, c ? c->time_base.den : -1,
 			st->start_time, st->duration == AV_NOPTS_VALUE ? context->fc->duration / AV_TIME_BASE * 1000 : st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
+#endif
 
  again:
 

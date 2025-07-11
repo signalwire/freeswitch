@@ -1226,9 +1226,13 @@ static switch_status_t open_encoder(h264_codec_context_t *context, uint32_t widt
 	}
 
 	if (context->encoder_ctx) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,48,101))
 		if (avcodec_is_open(context->encoder_ctx)) {
 			avcodec_close(context->encoder_ctx);
 		}
+#else
+		avcodec_free_context(&(context->encoder_ctx));
+#endif
 		av_free(context->encoder_ctx);
 		context->encoder_ctx = NULL;
 	}
@@ -1319,9 +1323,13 @@ FF_ENABLE_DEPRECATION_WARNINGS
 		}
 
 		if (context->encoder_ctx) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,48,101))
 			if (avcodec_is_open(context->encoder_ctx)) {
 				avcodec_close(context->encoder_ctx);
 			}
+#else
+			avcodec_free_context(&(context->encoder_ctx));
+#endif
 			av_free(context->encoder_ctx);
 			context->encoder_ctx = NULL;
 		}
@@ -1557,7 +1565,11 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		 avframe->pict_type = AV_PICTURE_TYPE_I;
+#if (LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58,29,100))
 		 avframe->key_frame = 1;
+#else
+		 avframe->flags |= AV_FRAME_FLAG_KEY;
+#endif
 		 context->last_keyframe_request = switch_time_now();
 	}
 
@@ -1600,9 +1612,14 @@ GCC_DIAG_ON(deprecated-declarations)
 		}
 #endif
 
+#if (LIBAVUTIL_VERSION_INT < AV_VERSION_INT(58,29,100))
 	if (context->need_key_frame && avframe->key_frame == 1) {
-		avframe->pict_type = 0;
 		avframe->key_frame = 0;
+#else
+	if (context->need_key_frame && avframe->flags & AV_FRAME_FLAG_KEY) {
+		avframe->flags ^= AV_FRAME_FLAG_KEY;
+#endif
+		avframe->pict_type = 0;
 		context->need_key_frame = 0;
 	}
 
@@ -1862,14 +1879,22 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 
 	switch_buffer_destroy(&context->nalu_buffer);
 	if (context->decoder_ctx) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,48,101))
 		if (avcodec_is_open(context->decoder_ctx)) avcodec_close(context->decoder_ctx);
+#else
+		avcodec_free_context(&(context->decoder_ctx));
+#endif
 		av_free(context->decoder_ctx);
 	}
 
 	switch_img_free(&context->img);
 
 	if (context->encoder_ctx) {
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,48,101))
 		if (avcodec_is_open(context->encoder_ctx)) avcodec_close(context->encoder_ctx);
+#else
+		avcodec_free_context(&(context->encoder_ctx));
+#endif
 		av_free(context->encoder_ctx);
 	}
 
