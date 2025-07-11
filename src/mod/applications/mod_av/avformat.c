@@ -557,7 +557,21 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 
 	switch ((*codec)->type) {
 	case AVMEDIA_TYPE_AUDIO:
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 100)
+		/*
+		   Changelog says 61.12.100 but commit changes version actually to 61.13.100
+		   https://github.com/FFmpeg/FFmpeg/commit/3305767560a6303f474fffa3afb10c500059b455
+		 */
+		{
+			const enum AVSampleFormat *sample_fmts = NULL;
+			int fmts_count = 0;
+			int ret = avcodec_get_supported_config(c, *codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, (const void**)&sample_fmts, &fmts_count);
+
+			c->sample_fmt = (ret >= 0 && fmts_count && sample_fmts) ? sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+		}
+#else
 		c->sample_fmt  = (*codec)->sample_fmts ? (*codec)->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+#endif
 		c->bit_rate    = 128000;
 		c->sample_rate = mst->sample_rate = context->handle->samplerate;
 #if (LIBAVCODEC_VERSION_MAJOR < LIBAVCODEC_V)
