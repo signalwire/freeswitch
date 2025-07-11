@@ -78,7 +78,7 @@ RUN --mount=type=secret,id=REPO_PASSWORD,required=true \
     mk-build-deps \
         --install \
         --remove debian/control \
-        --tool "apt-get --yes --no-install-recommends" && \
+        --tool "apt-get -o Debug::pkgProblemResolver=yes --yes --no-install-recommends" && \
     apt-get --yes --fix-broken install && \
     rm -f /etc/apt/auth.conf
 
