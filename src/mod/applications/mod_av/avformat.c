@@ -416,6 +416,7 @@ static int interrupt_cb(void *cp)
 }
  
 
+#if (LIBAVFORMAT_VERSION_MAJOR < LIBAVFORMAT_6_V)
 static int mod_avformat_alloc_output_context2(AVFormatContext **avctx, const char *format, const char *filename, av_file_context_t *context)
 {
 	AVFormatContext *s = avformat_alloc_context();
@@ -489,6 +490,7 @@ error:
 
 	return ret;
 }
+#endif
 
 static int write_frame(AVFormatContext *fmt_ctx, const AVRational *time_base, AVStream *st, AVPacket *pkt)
 {
@@ -2235,7 +2237,16 @@ static switch_status_t av_file_open(switch_file_handle_t *handle, const char *pa
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+#if (LIBAVFORMAT_VERSION_MAJOR < LIBAVFORMAT_6_V)
 	mod_avformat_alloc_output_context2(&context->fc, format, (char *)file, context);
+#else
+	avformat_alloc_output_context2(&context->fc, NULL, format, (char *)file);
+
+	if (context->fc) {
+		context->fc->interrupt_callback.callback = interrupt_cb;
+		context->fc->interrupt_callback.opaque = context;
+	}
+#endif
 
 	if (!context->fc) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not deduce output format from file extension\n");
