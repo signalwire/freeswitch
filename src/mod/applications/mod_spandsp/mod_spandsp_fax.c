@@ -101,6 +101,7 @@ struct pvt_s {
 	int use_ecm;
 	int disable_v17;
 	int enable_tep;
+	int enable_jbig;
 	int enable_colour_fax;
 	int enable_image_resizing;
 	int enable_colour_to_bilevel;
@@ -983,9 +984,11 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
                                         | T4_RESOLUTION_400_400);
 	compressions = T4_COMPRESSION_T4_1D
 				 | T4_COMPRESSION_T4_2D
-				 | T4_COMPRESSION_T6
-				 | T4_COMPRESSION_T85
+				 | T4_COMPRESSION_T6;
+	if (pvt->enable_jbig) {
+		compressions |=    T4_COMPRESSION_T85
 				 | T4_COMPRESSION_T85_L0;
+	}
 	if (pvt->enable_colour_fax) {
 		t30_set_supported_colour_resolutions(t30, T4_RESOLUTION_100_100
 												| T4_RESOLUTION_200_200
@@ -1361,6 +1364,12 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		pvt->disable_v17 = switch_true(tmp);
 	} else {
 		pvt->disable_v17 = spandsp_globals.disable_v17;
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_enable_jbig"))) {
+		pvt->enable_jbig = switch_true(tmp);
+	} else {
+		pvt->enable_jbig = spandsp_globals.enable_jbig;
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_enable_colour"))) {
