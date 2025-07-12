@@ -1563,6 +1563,14 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2], [
        AM_CONDITIONAL([HAVE_AMQP], [false])
    ])
 
+PKG_CHECK_MODULES([SPHINXBASE], [sphinxbase >= 5],[
+  AM_CONDITIONAL([HAVE_SPHINXBASE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SPHINXBASE],[false])])
+
+PKG_CHECK_MODULES([POCKETSPHINX], [pocketsphinx >= 5],[
+  AM_CONDITIONAL([HAVE_POCKETSPHINX],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_POCKETSPHINX],[false])])
+
 PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
   AM_CONDITIONAL([HAVE_H2O],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_H2O],[false])])
