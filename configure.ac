@@ -1563,6 +1563,26 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2], [
        AM_CONDITIONAL([HAVE_AMQP], [false])
    ])
 
+PKG_CHECK_MODULES([SPHINXBASE], [sphinxbase >= 5],[
+  AM_CONDITIONAL([HAVE_SPHINXBASE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SPHINXBASE],[false])])
+
+PKG_CHECK_MODULES([POCKETSPHINX], [pocketsphinx >= 5],[
+       AM_CONDITIONAL([HAVE_POCKETSPHINX],[true])
+       # Extract the version of pocketsphinx
+       POCKETSPHINX_VERSION=`$PKG_CONFIG --modversion pocketsphinx`
+       AC_DEFINE_UNQUOTED([POCKETSPHINX_VERSION], ["$POCKETSPHINX_VERSION"], [Version of pocketsphinx])
+       AC_MSG_NOTICE([POCKETSPHINX_VERSION is $POCKETSPHINX_VERSION])
+       # Parse major version but take only first digit for now
+       POCKETSPHINX_MAJOR_VERSION=`echo $POCKETSPHINX_VERSION | cut -c1`
+       AC_MSG_NOTICE([POCKETSPHINX_MAJOR_VERSION is $POCKETSPHINX_MAJOR_VERSION])
+       AC_DEFINE_UNQUOTED([POCKETSPHINX_MAJOR_VERSION], [$POCKETSPHINX_MAJOR_VERSION], [Major version of pocketsphinx])
+       AC_SUBST(POCKETSPHINX_MAJOR_VERSION)
+   ], [
+      AC_MSG_RESULT([no])
+      AM_CONDITIONAL([HAVE_POCKETSPHINX],[false])
+   ])
+
 PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
   AM_CONDITIONAL([HAVE_H2O],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_H2O],[false])])

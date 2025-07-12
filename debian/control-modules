@@ -231,6 +231,7 @@ Build-Depends: libflite-dev | flite1-dev
 Module: asr_tts/mod_pocketsphinx
 Description: mod_pocketsphinx
  Adds mod_pocketsphinx.
+Build-Depends: libsphinxbase-dev, libpocketsphinx-dev
 
 Module: asr_tts/mod_tts_commandline
 Description: mod_tts_commandline
