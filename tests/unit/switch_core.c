@@ -53,6 +53,22 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_switch_regex)
+		{
+			switch_regex_match_t *match_data = NULL;
+			switch_regex_t *re = NULL;
+			char buf[100] = { 0 };
+			size_t size = sizeof(buf);
+
+			switch_regex_perform("1234", "^[0-9]+$", &re, &match_data);
+			switch_regex_copy_substring(match_data, 0, buf, &size);
+			switch_regex_match_free(match_data);
+			switch_regex_free(re);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\n%s\n", buf);
+			fst_check_string_equals(buf, "1234");
+		}
+		FST_TEST_END()
 		FST_TEST_BEGIN(test_fctstr_safe_cpy)
 		{
 			char *dst;

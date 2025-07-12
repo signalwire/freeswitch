@@ -40,7 +40,7 @@ jobs:
             lua \
             opus \
             ossp-uuid \
-            pcre \
+            pcre2 \
             pkgconf \
             sofia-sip \
             speex \
