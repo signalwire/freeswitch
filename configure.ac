@@ -1546,9 +1546,22 @@ PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client2 >= 2.0.0],[
   ])
 ])
 
-PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
-  AM_CONDITIONAL([HAVE_AMQP],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
+PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2], [
+       AM_CONDITIONAL([HAVE_AMQP], [true])
+       # Extract the version of librabbitmq
+       AMQP_VERSION=`$PKG_CONFIG --modversion librabbitmq`
+       AC_DEFINE_UNQUOTED([AMQP_VERSION], ["$AMQP_VERSION"], [Version of librabbitmq])
+       # Parse major and minor version numbers
+       AMQP_MAJOR_VERSION=`echo $AMQP_VERSION | cut -d. -f1`
+       AMQP_MINOR_VERSION=`echo $AMQP_VERSION | cut -d. -f2`
+       AC_DEFINE_UNQUOTED([AMQP_MAJOR_VERSION], [$AMQP_MAJOR_VERSION], [Major version of librabbitmq])
+       AC_DEFINE_UNQUOTED([AMQP_MINOR_VERSION], [$AMQP_MINOR_VERSION], [Minor version of librabbitmq])
+       AC_SUBST(AMQP_MAJOR_VERSION)
+       AC_SUBST(AMQP_MINOR_VERSION)
+   ], [
+       AC_MSG_RESULT([no])
+       AM_CONDITIONAL([HAVE_AMQP], [false])
+   ])
 
 PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
   AM_CONDITIONAL([HAVE_H2O],[true])],[
