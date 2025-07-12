@@ -45,7 +45,7 @@ SWITCH_DECLARE(void) switch_curl_slist_free_all(switch_curl_slist_t * list)
 
 SWITCH_DECLARE(const char *) switch_curl_easy_strerror(switch_CURLcode errornum )
 {
-	return curl_easy_strerror(errornum);
+	return curl_easy_strerror((CURLcode)errornum);
 }
 
 SWITCH_DECLARE(void) switch_curl_init(void)
