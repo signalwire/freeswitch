@@ -3133,7 +3133,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						engine->last_codec_ms = codec_ms;
 
 						if (engine->mismatch_count > MAX_MISMATCH_FRAMES) {
-
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_WARNING, "[VBR]: The number of mismatch is %d\n",(int)engine->mismatch_count);
 							if (codec_ms > 120) {
 								/*will show too many times with packet loss*/
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG3,
