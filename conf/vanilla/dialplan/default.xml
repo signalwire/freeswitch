@@ -335,6 +335,7 @@
     <extension name="nb_conferences">
       <condition field="destination_number" expression="^(30\d{2})$">
 	<action application="answer"/>
+	<action application="set" data="absolute_codec_string=AMR-WB@20k"/>
 	<action application="conference" data="$1-${domain_name}@default"/>
       </condition>
     </extension>
