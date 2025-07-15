@@ -3211,15 +3211,17 @@ SWITCH_STANDARD_APP(capture_function)
 {
 	char *argv[3] = { 0 };
 	switch_regex_t *re = NULL;
-	int ovector[30] = {0};
+	switch_regex_match_t *match_data = NULL;
 	char *lbuf;
 	int proceed;
 
 	if (!zstr(data) && (lbuf = switch_core_session_strdup(session, data))
 		&& switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0]))) == 3) {
-		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-			switch_capture_regex(re, proceed, argv[1], ovector, argv[0], switch_regex_set_var_callback, session);
+		if ((proceed = switch_regex_perform(argv[1], argv[2], &re, &match_data))) {
+			switch_capture_regex(match_data, proceed, argv[0], switch_regex_set_var_callback, session);
 		}
+
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No data specified.\n");

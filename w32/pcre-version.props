@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <pcreVersion>8.34</pcreVersion>
+    <pcreVersion>10.45</pcreVersion>
   </PropertyGroup>
   <PropertyGroup>
     <pcreVersionImported>true</pcreVersionImported>

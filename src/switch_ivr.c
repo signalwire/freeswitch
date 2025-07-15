@@ -4343,8 +4343,6 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 	switch_xml_t cfg, xml, x_domains, x_domain, x_exten;
 	char *r = NULL;
 	switch_event_t *params = NULL;
-	switch_regex_t *re = NULL;
-	int proceed = 0, ovector[100];
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
@@ -4375,17 +4373,11 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 			const char *regex = switch_xml_attr(x_exten, "regex");
 			const char *proto = switch_xml_attr(x_exten, "proto");
 
-			if (!zstr(regex) && !zstr(proto)) {
-				proceed = switch_regex_perform(exten_name, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-				switch_regex_safe_free(re);
-
-				if (proceed) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n",
-									  exten_name, domain_name, proto, regex);
-					r = strdup(proto);
-					goto end;
-				}
-
+			if (!zstr(regex) && !zstr(proto) && switch_regex(exten_name, regex)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n",
+								  exten_name, domain_name, proto, regex);
+				r = strdup(proto);
+				goto end;
 			}
 		}
 	}

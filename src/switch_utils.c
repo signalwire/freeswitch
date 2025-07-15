@@ -2081,8 +2081,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(char *buf, int len, int
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {
 	switch_time_exp_t tm = { 0 }, local_tm = { 0 };
-	int proceed = 0, ovector[30], time_only = 0;
+	int proceed = 0, time_only = 0;
 	switch_regex_t *re = NULL;
+	switch_regex_match_t *match_data = NULL;
 	char replace[1024] = "";
 	switch_time_t ret = 0, local_time = 0;
 	char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
@@ -2092,66 +2093,78 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 	switch_time_exp_lt(&tm, switch_micro_time_now());
 
 
-	if ((time_only = switch_regex_perform(in, pattern3, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+	if ((time_only = switch_regex_perform(in, pattern3, &re, &match_data))) {
 		tm.tm_hour = 0;
 		tm.tm_min = 0;
 		tm.tm_sec = 0;
 	} else {
 		tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = tm.tm_usec = 0;
 
-		if (!(proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if (!(proceed = switch_regex_perform(in, pattern, &re, &match_data))) {
+			switch_regex_match_safe_free(match_data);
 			switch_regex_safe_free(re);
-			proceed = switch_regex_perform(in, pattern2, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+			proceed = switch_regex_perform(in, pattern2, &re, &match_data);
 		}
 	}
 
 	if (proceed || time_only) {
+		size_t replace_size;
 
 		if (time_only > 1) {
-			switch_regex_copy_substring(in, ovector, time_only, 1, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 1, replace, &replace_size);
 			tm.tm_hour = atoi(replace);
 		}
 
 		if (time_only > 2) {
-			switch_regex_copy_substring(in, ovector, time_only, 2, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 2, replace, &replace_size);
 			tm.tm_min = atoi(replace);
 		}
 
 		if (time_only > 3) {
-			switch_regex_copy_substring(in, ovector, time_only, 3, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 3, replace, &replace_size);
 			tm.tm_sec = atoi(replace);
 		}
 
 		if (proceed > 1) {
-			switch_regex_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 1, replace, &replace_size);
 			tm.tm_year = atoi(replace) - 1900;
 		}
 
 		if (proceed > 2) {
-			switch_regex_copy_substring(in, ovector, proceed, 2, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 2, replace, &replace_size);
 			tm.tm_mon = atoi(replace) - 1;
 		}
 
 		if (proceed > 3) {
-			switch_regex_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 3, replace, &replace_size);
 			tm.tm_mday = atoi(replace);
 		}
 
 		if (proceed > 4) {
-			switch_regex_copy_substring(in, ovector, proceed, 4, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 4, replace, &replace_size);
 			tm.tm_hour = atoi(replace);
 		}
 
 		if (proceed > 5) {
-			switch_regex_copy_substring(in, ovector, proceed, 5, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 5, replace, &replace_size);
 			tm.tm_min = atoi(replace);
 		}
 
 		if (proceed > 6) {
-			switch_regex_copy_substring(in, ovector, proceed, 6, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 6, replace, &replace_size);
 			tm.tm_sec = atoi(replace);
 		}
 		
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 
 		switch_time_exp_get(&local_time, &tm);
@@ -2160,9 +2173,11 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 		tm.tm_gmtoff = local_tm.tm_gmtoff;
 
 		switch_time_exp_gmt_get(&ret, &tm);
+
 		return ret;
 	}
 
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 
 	return ret;

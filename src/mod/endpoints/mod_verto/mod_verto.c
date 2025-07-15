@@ -1882,23 +1882,19 @@ authed:
 
 	if (vhost->rewrites) {
 		switch_event_header_t *rule = vhost->rewrites->headers;
-		switch_regex_t *re = NULL;
-		int ovector[30];
 		int proceed;
 
 		while(rule) {
 			char *expression = rule->name;
 
-			if ((proceed = switch_regex_perform(request->uri, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if ((proceed = switch_regex(request->uri, expression))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "%d request [%s] matched expr [%s]\n", proceed, request->uri, expression);
 				request->uri = rule->value;
-				switch_regex_safe_free(re);
 				break;
 			}
 
 			rule = rule->next;
-			switch_regex_safe_free(re);
 		}
 	}
 
