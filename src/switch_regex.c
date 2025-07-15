@@ -49,7 +49,7 @@ SWITCH_DECLARE(int) switch_regex_copy_substring(switch_regex_match_t *match_data
 
 SWITCH_DECLARE(void) switch_regex_match_free(void *data)
 {
-	pcre2_match_context_free(data);
+	pcre2_match_data_free(data);
 
 }
 
@@ -138,8 +138,13 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 		switch_regex_safe_free(re);
 	}
 
-	*new_re = (switch_regex_t *)re;
-	*new_match_data = (switch_regex_match_t *)match_data;
+	if (new_re) {
+		*new_re = (switch_regex_t *)re;
+	}
+
+	if (new_match_data) {
+		*new_match_data = (switch_regex_match_t *)match_data;
+	}
 
   end:
 	switch_safe_free(tmp);
