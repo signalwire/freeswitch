@@ -103,6 +103,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	int proceed = 0, save_proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL, *save_re = NULL;
+	switch_regex_match_t *match_data = NULL, *save_match_data = NULL;
 	int offset = 0;
 	const char *tmp, *tzoff = NULL, *tzname_ = NULL, *req_nesta = NULL;
 	char nbuf[128] = "";
@@ -170,7 +171,6 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		char *expression = NULL, *save_expression = NULL, *save_field_data = NULL;
 		char *regex_rule = NULL;
 		const char *field_data = NULL;
-		int ovector[30];
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
 		int time_match;
@@ -292,7 +292,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 						field_data = "";
 					}
 
-					if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					if ((proceed = switch_regex_perform(field_data, expression, &re, &match_data))) {
 						if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 										  "%sDialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ match=%s\n", space,
@@ -344,20 +344,23 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					switch_snprintf(var, sizeof(var), "DP_REGEX_MATCH_%d", total);
 
 					switch_channel_set_variable(channel, var, NULL);
-					switch_capture_regex(re, proceed, field_data, ovector, var, switch_regex_set_var_callback, session);
+					switch_capture_regex(match_data, proceed, var, switch_regex_set_var_callback, session);
 
 					switch_safe_free(save_expression);
 					switch_safe_free(save_field_data);
+					switch_regex_match_safe_free(match_data);
 					switch_regex_safe_free(save_re);
 
 					save_expression = strdup(expression);
 					save_field_data = strdup(field_data);
 					save_re = re;
+					save_match_data = match_data;
 					save_proceed = proceed;
 
 					re = NULL;
 				}
 
+				switch_regex_match_safe_free(match_data);
 				switch_regex_safe_free(re);
 
 				switch_safe_free(field_expanded);
@@ -406,7 +409,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					field_data = "";
 				}
 
-				if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ((proceed = switch_regex_perform(field_data, expression, &re, &match_data))) {
 					if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 									  "%sDialplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n", space,
@@ -446,7 +449,9 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 		if (save_re) {
 			re = save_re;
+			match_data = save_match_data;
 			save_re = NULL;
+			save_match_data = NULL;
 
 			expression = expression_expanded = save_expression;
 			save_expression = NULL;
@@ -506,7 +511,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		} else {
 			if (field && expression && strchr(expression, '(')) {
 				switch_channel_set_variable(channel, "DP_MATCH", NULL);
-				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", switch_regex_set_var_callback, session);
+				switch_capture_regex(match_data, proceed, "DP_MATCH", switch_regex_set_var_callback, session);
 			}
 
 			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
@@ -534,7 +539,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 						goto done;
 					}
 					memset(substituted, 0, len);
-					switch_perform_substitution(re, proceed, data, field_data, substituted, len, ovector);
+					switch_perform_substitution(match_data, data, substituted, len);
 					app_data = substituted;
 				} else {
 					app_data = data;
@@ -571,6 +576,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				switch_safe_free(substituted);
 			}
 		}
+
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 
 		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
@@ -591,6 +598,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	}
 
   done:
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 	switch_safe_free(field_expanded);
 	switch_safe_free(expression_expanded);
