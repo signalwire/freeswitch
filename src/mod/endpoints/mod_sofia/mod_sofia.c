@@ -2818,7 +2818,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "User:       \t%s@%s\n"
 							   "Contact:    \t%s\n"
 							   "Agent:      \t%s\n"
-							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d)\n"
+							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d) EXPUNIX(%s)\n"
 							   "Ping-Status:\t%s\n"
 							   "Ping-Time:\t%0.2f\n"
 							   "Host:       \t%s\n"
@@ -2828,7 +2828,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Auth-Realm: \t%s\n"
 							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[18]),
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[6]), switch_str_nil(argv[18]),
 							   (float)atoll(switch_str_nil(argv[19]))/1000, switch_str_nil(argv[11]), switch_str_nil(argv[12]),
 							   switch_str_nil(argv[13]), switch_str_nil(argv[14]),
 							   switch_str_nil(argv[15]), switch_str_nil(argv[16]), switch_str_nil(argv[17]));
