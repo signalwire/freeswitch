@@ -387,22 +387,10 @@ cd /tmp/buildd/*/debian/..
 EOF
 }
 
-get_sources () {
-  local tgt_distro="$1"
-  while read type args path distro components; do
-    test "$type" = deb || continue
-    if echo "$args" | grep -qv "\[" ; then components=$distro;distro=$path;path=$args;args=""; fi
-    prefix=`echo $distro | awk -F/ '{print $1}'`
-    suffix="`echo $distro | awk -F/ '{print $2}'`"
-    if test -n "$suffix" ; then full="$tgt_distro/$suffix" ; else full="$tgt_distro" ; fi
-    printf "$type $args $path $full $components\n"
-  done < "$2"
-}
-
 get_mirrors () {
-  file=${2-/etc/apt/sources.list}
+  file=${1-/etc/apt/sources.list}
   announce "Using apt sources file: $file"
-  get_sources "$1" "$file" | tr '\n' '|' | head -c-1; echo
+  echo "$(<$file)" | sed '/^$/d' | tr '\n' '|' | head -c-1; echo
 }
 
 build_debs () {
@@ -534,7 +522,7 @@ EOF
           --architecture $arch \
           --basepath $cow_img \
           --keyring "$keyring" \
-          --othermirror "$(get_mirrors $distro $custom_sources_file)"
+          --othermirror "$(get_mirrors $custom_sources_file)"
       fi
     }
     if ! [ -d $cow_img ]; then
