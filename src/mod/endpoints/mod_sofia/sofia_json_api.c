@@ -45,7 +45,7 @@ typedef switch_status_t (*sofia_command_t) (char **argv, int argc, switch_stream
 
 extern const char *sofia_state_names[];
 
-switch_status_t build_sofia_status_json(cJSON * container)
+switch_status_t build_sofia_status_json(cJSON * container, const char *profile_type)
 {
 	sofia_profile_t *profile = NULL;
 	sofia_gateway_t *gp;
@@ -57,6 +57,11 @@ switch_status_t build_sofia_status_json(cJSON * container)
 		cJSON * jprofile = cJSON_CreateObject();
 		cJSON * jstatus = cJSON_CreateObject();
 		switch_core_hash_this(hi, &vvar, NULL, &val);
+
+		if (!zstr(profile_type) && strcasecmp(profile_type, (const char *)vvar)) {
+			continue;
+		}
+
 		cJSON_AddItemToObject(container, (const char *)vvar, jprofile);
 		cJSON_AddItemToObject(jprofile, "status", jstatus);
 		profile = (sofia_profile_t *) val;
@@ -168,8 +173,10 @@ SWITCH_STANDARD_JSON_API(sofia_status_json_function)
 {
 	cJSON *ret = cJSON_CreateObject();
 	cJSON *profiles = cJSON_CreateObject();
+	cJSON *data = cJSON_GetObjectItem(json, "data");
+	const char *profile = cJSON_GetObjectCstr(data, "profile");
 	cJSON_AddItemToObject(ret, "profiles", profiles);
-	build_sofia_status_json(profiles);
+	build_sofia_status_json(profiles, profile);
 
 	*json_reply = ret;
 
@@ -180,8 +187,10 @@ SWITCH_STANDARD_JSON_API(sofia_status_info_json_function)
 {
 	cJSON *ret = cJSON_CreateObject();
 	cJSON *profiles = cJSON_CreateObject();
+	cJSON *data = cJSON_GetObjectItem(json, "data");
+	const char *profile = cJSON_GetObjectCstr(data, "profile");
 	cJSON_AddItemToObject(ret, "profiles", profiles);
-	build_sofia_status_json(profiles);
+	build_sofia_status_json(profiles, profile);
 	build_sofia_profile_info_json(profiles);
 
 	*json_reply = ret;
@@ -195,7 +204,7 @@ switch_status_t cmd_json_status(char **argv, int argc, switch_stream_handle_t *s
 	cJSON *ret = cJSON_CreateObject();
 	cJSON *profiles = cJSON_CreateObject();
 	cJSON_AddItemToObject(ret, "profiles", profiles);
-	build_sofia_status_json(profiles);
+	build_sofia_status_json(profiles, NULL);
 	build_sofia_profile_info_json(profiles);
 
 	json = cJSON_Print(ret);
