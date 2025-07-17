@@ -925,7 +925,6 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 				stream.write_function(&stream, "Geolocation: %s\r\n", value);
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "STEVEN LOG!!!!!!!!!");
 			if (strstr(name, "sip_h_Identities")) {
 				stream.write_function(&stream, "Identity: %s\r\n", value);
 				continue;
