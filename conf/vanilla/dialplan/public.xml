@@ -50,7 +50,7 @@
     </extension>
 
     <extension name="from_kamailio_pcscf">
-      <condition field="network_addr" expression="^172\.22\.0\.21$" />
+      <condition field="network_addr" expression="^172\.22\.1\.21$" />
       <condition field="destination_number" expression="^(.+)$">
         <action application="transfer" data="$1 XML default"/>
       </condition>
