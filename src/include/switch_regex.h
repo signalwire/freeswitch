@@ -40,6 +40,9 @@ SWITCH_BEGIN_EXTERN_C
  * @ingroup FREESWITCH
  * @{
  */
+
+#define SWITCH_PCRE2 1
+
 typedef struct pcre2_real_code switch_regex_t;
 typedef struct pcre2_real_match_data_8 switch_regex_match_t;
 typedef struct pcre2_real_compile_context_8 switch_regex_compile_context_t;
