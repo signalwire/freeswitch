@@ -1945,6 +1945,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_core_session_t *rsession;
 				if ((rsession = switch_core_session_locate(uuid))) {
 					switch_channel_t *rchannel = switch_core_session_get_channel(rsession);
+					private_object_t *rtech_pvt = switch_core_session_get_private(rsession);
+					
 					call_id = switch_channel_get_variable(rchannel, "sip_call_id");
 
 					to_user = switch_channel_get_variable(rchannel, "sip_to_user");
@@ -1953,16 +1955,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						to_host = switch_channel_get_variable(rchannel, "sip_to_host");
 						from_user = switch_channel_get_variable(channel, "sip_from_user");
 						from_host = switch_channel_get_variable(channel, "sip_from_host");
-						to_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
-						from_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					} else {
 						to_host = switch_channel_get_variable(channel, "sip_to_host");
 						from_user = switch_channel_get_variable(rchannel, "sip_from_user");
 						from_host = switch_channel_get_variable(rchannel, "sip_from_host");
-						from_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
-						to_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					}
 
+					to_tag = nta_leg_get_rtag(nua_get_dialog_state_leg(rtech_pvt->nh));
+					from_tag = nta_leg_get_tag(nua_get_dialog_state_leg(rtech_pvt->nh));
+					
 					switch_core_session_rwunlock(rsession);
 				}
 			}
