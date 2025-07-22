@@ -192,14 +192,9 @@ jobs:
     name: "Publish build data to meta-repo"
     if: >-
       ${{
-        (github.event.pull_request.head.repo.full_name == github.repository) &&
-        (
-          (
-            github.event_name != 'pull_request' &&
-            github.event_name != 'workflow_dispatch'
-          ) ||
-          (github.event_name == 'workflow_dispatch' && inputs.publish)
-        )
+        github.event_name == 'push' &&
+        github.repository == 'signalwire/freeswitch' &&
+        contains(fromJSON('["master", "v1.10"]'), github.ref_name)
       }}
     needs:
       - deb-public
