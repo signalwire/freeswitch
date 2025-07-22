@@ -87,6 +87,7 @@ jobs:
         shell: bash
         working-directory: freeswitch
         run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y libpcre2-dev libsphinxbase-dev libpocketsphinx-dev
           ./ci.sh -t unit-test -a configure -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
           ./ci.sh -t unit-test -a build -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
           ./ci.sh -t unit-test -a install -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"

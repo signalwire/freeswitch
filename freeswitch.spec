@@ -133,7 +133,7 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: sofia-sip-devel >= 1.13.17
 BuildRequires: spandsp3-devel >= 3.0
-BuildRequires: pcre-devel 
+BuildRequires: pcre2-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
@@ -147,7 +147,7 @@ BuildRequires: zlib-devel
 BuildRequires: libxml2-devel
 BuildRequires: libsndfile-devel
 Requires: curl >= 7.19
-Requires: pcre
+Requires: pcre2
 Requires: speex
 Requires: sqlite >= 3.6.20
 Requires: libtiff

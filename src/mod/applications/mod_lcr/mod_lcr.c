@@ -166,7 +166,8 @@ static void lcr_destroy(lcr_route route)
 static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const char *number, switch_core_session_t *session)
 {
 	switch_regex_t *re = NULL;
-	int proceed = 0, ovector[30];
+	switch_regex_match_t *match_data = NULL;
+	int proceed = 0;
 	char *substituted = NULL;
 	uint32_t len = 0;
 	char *src = NULL;
@@ -230,23 +231,25 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "expanded src: %s, dst: %s\n", src, dst);
 	}
 
-	if ((proceed = switch_regex_perform(number, src, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+	if ((proceed = switch_regex_perform(number, src, &re, &match_data))) {
 		len = (uint32_t) (strlen(src) + strlen(dst) + 10) * proceed; /* guestimate size */
 		if (!(substituted = switch_core_alloc(pool, len))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 			goto done;
 		}
 		memset(substituted, 0, len);
-		switch_perform_substitution(re, proceed, dst, number, substituted, len, ovector);
+		switch_perform_substitution(match_data, dst, substituted, len);
 	} else {
 		goto done;
 	}
 
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 
 	return substituted;
 
 done:
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 	switch_safe_free(tmp_regex);
 	return number;
