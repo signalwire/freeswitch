@@ -154,14 +154,12 @@ jobs:
       TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-${{ matrix.release }}-artifact
       UPLOAD_BUILD_ARTIFACTS: >-
         ${{
-          (github.event.pull_request.head.repo.full_name == github.repository) &&
           (
-            (
-              github.event_name != 'pull_request' &&
-              github.event_name != 'workflow_dispatch'
-            ) ||
-            (github.event_name == 'workflow_dispatch' && inputs.publish)
-          )
+            github.event_name == 'push' &&
+            github.repository == 'signalwire/freeswitch' &&
+            contains(fromJSON('["master", "v1.10"]'), github.ref_name)
+          ) ||
+          (github.event_name == 'workflow_dispatch' && inputs.publish)
         }}
     secrets:
       GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
