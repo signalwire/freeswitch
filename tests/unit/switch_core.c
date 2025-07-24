@@ -33,7 +33,7 @@
 #include <test/switch_test.h>
 
 #include <string.h>
-#include <private/switch_uuidv7_pvt.h>
+#include <../../src/switch_uuidv7.c>
 
 #if defined(HAVE_OPENSSL)
 #include <openssl/ssl.h>

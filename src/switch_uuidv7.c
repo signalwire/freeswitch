@@ -77,7 +77,7 @@ static void switch_getentropy(unsigned char *rand_bytes, size_t n_rand_consumed)
 #endif
 }
 
-SWITCH_DECLARE(int) uuidv7_new(uint8_t *uuid_out)
+int uuidv7_new(uint8_t *uuid_out)
 {
 	int8_t status;
 	uint64_t unix_ts_ms = switch_time_now() / 1000;

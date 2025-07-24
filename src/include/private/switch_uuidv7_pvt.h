@@ -283,7 +283,7 @@ static inline int uuidv7_from_string(const char *string, uint8_t *uuid_out) {
  *                  process. The implementation-dependent code must be out of
  *                  the range of `int8_t` and negative if it reports an error.
  */
-SWITCH_DECLARE(int) uuidv7_new(uint8_t *uuid_out);
+int uuidv7_new(uint8_t *uuid_out);
 
 /**
  * Generates an 8-4-4-4-12 hexadecimal string representation of new UUIDv7.
