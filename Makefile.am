@@ -300,7 +300,6 @@ library_include_HEADERS = \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
-	src/include/switch_uuidv7.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
 	src/include/switch_hashtable.h \
@@ -812,3 +811,4 @@ support:
 	@cp support-d/.screenrc ~
 	@cp support-d/.bashrc ~
 	@test -f ~/.cc-mode-installed || sh support-d/install-cc-mode.sh && touch ~/.cc-mode-installed
+

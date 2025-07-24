@@ -2963,6 +2963,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		if (oldintval > 0) {
 			runtime.sps_total = oldintval;
 		}
+
 		newintval = runtime.sps_total;
 		switch_mutex_unlock(runtime.throttle_mutex);
 		break;
@@ -2970,6 +2971,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		if(oldintval > 0){
 			runtime.uuid_version = oldintval;
 		}
+
 		newintval = runtime.uuid_version;
 		break;
 	case SCSC_RECLAIM:

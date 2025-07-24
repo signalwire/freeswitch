@@ -30,15 +30,18 @@
  */
 
 #include <switch.h>
-#include "switch_uuidv7.h"
+#include "private/switch_uuidv7_pvt.h"
 #ifdef __APPLE__
-#include <sys/random.h> // for macOS getentropy()
+#include <sys/random.h> /* for macOS getentropy() */
+#endif
+#ifdef _MSC_VER
+#include <bcrypt.h> /* for BCryptGenRandom */
 #endif
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 	#define SWITCH_THREAD_LOCAL static _Thread_local
 #else
-	// Fallback to compiler-specific or other methods
+	/* Fallback to compiler-specific or other methods */
 	#ifdef _MSC_VER
 		#define SWITCH_THREAD_LOCAL __declspec(thread)
 	#elif defined(__GNUC__)
@@ -56,6 +59,24 @@ SWITCH_THREAD_LOCAL uint8_t rand_bytes[10] = {0};
 SWITCH_THREAD_LOCAL size_t n_rand_consumed = 10;
 #endif
 
+static void switch_getentropy(unsigned char *rand_bytes, size_t n_rand_consumed) {
+#ifdef _MSC_VER
+	NTSTATUS status = BCryptGenRandom(
+		NULL,                          /* Algorithm handle (NULL for system-preferred RNG) */
+		rand_bytes,                    /* Buffer to receive random bytes */
+		(ULONG)n_rand_consumed,        /* Size of buffer in bytes */
+		BCRYPT_USE_SYSTEM_PREFERRED_RNG  /* Flag for system RNG */
+	);
+	if (status != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error generating random bytes: 0x%lx\n", status);
+	}
+#else
+	if (getentropy(rand_bytes, n_rand_consumed) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "getentropy failed");
+	}
+#endif
+}
+
 SWITCH_DECLARE(int) uuidv7_new(uint8_t *uuid_out)
 {
 	int8_t status;
@@ -66,7 +87,7 @@ SWITCH_DECLARE(int) uuidv7_new(uint8_t *uuid_out)
 	uint8_t rand_bytes[10] = {0};
 #endif
 
-	getentropy(rand_bytes, n_rand_consumed);
+	switch_getentropy(rand_bytes, n_rand_consumed);
 #ifdef SWITCH_THREAD_LOCAL_NOT_SUPPORTED
 	status = uuidv7_generate(uuid_out, unix_ts_ms, rand_bytes, NULL);
 #else
@@ -77,6 +98,7 @@ SWITCH_DECLARE(int) uuidv7_new(uint8_t *uuid_out)
 	} else if (status == UUIDV7_STATUS_CLOCK_ROLLBACK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "uuidv7_generate: clock rollback detected\n");
 	}
+
 #ifdef SWITCH_THREAD_LOCAL_NOT_SUPPORTED
 	return status;
 #else

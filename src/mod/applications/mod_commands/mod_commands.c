@@ -2660,6 +2660,7 @@ SWITCH_STANDARD_API(ctl_function)
 			} else {
 				arg = 0;
 			}
+
 			switch_core_session_ctl(SCSC_SPS, &arg);
 			stream->write_function(stream, "+OK sessions per second: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "uuid_version")) {
@@ -2668,6 +2669,7 @@ SWITCH_STANDARD_API(ctl_function)
 			} else {
 				arg = 0;
 			}
+
 			switch_core_session_ctl(SCSC_UUID_VERSION, &arg);
 			stream->write_function(stream, "+OK set uuid version: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "sync_clock")) {
