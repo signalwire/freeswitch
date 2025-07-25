@@ -3150,9 +3150,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 												  (int) engine->cur_payload_map->codec_ms,
 												  (int) codec_ms
 												  );
+								if (codec_ms>20)
+								{
+								  codec_ms = 20;
+								}
 			 					engine->cur_payload_map->codec_ms = codec_ms;
 								engine->reset_codec = 2;
-
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),SWITCH_LOG_WARNING,
+										 "[VBR]: Packet ptime changed . Remote PTIME changed from [%d]",
+										  (int) engine->cur_payload_map->codec_ms);
 								if (switch_channel_test_flag(session->channel, CF_CONFERENCE)) {
 									switch_channel_set_flag(session->channel, CF_CONFERENCE_RESET_MEDIA);
 								}
