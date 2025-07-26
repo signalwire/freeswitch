@@ -175,7 +175,7 @@
     <!--max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
     <!--<param name="max-recv-requests-per-second" value="0"/> -->
     <!--session timers for all call to expire after the specified seconds -->
-    <param name="session-timeout" value="7200"/>
+    <!--<param name="session-timeout" value="7200"/> -->
     <!-- Can be 'true' or 'contact' -->
     <!--<param name="multiple-registrations" value="contact"/>-->
     <!--set to 'greedy' if you want your codec list to take precedence -->
@@ -301,7 +301,7 @@
     <param name="ext-sip-ip" value="$${ext_sip_ip}"/>
     
     <!-- rtp inactivity timeout -->
-    <param name="rtp-timeout-sec" value="300"/>
+    <param name="rtp-timeout-sec" value="10"/>
     <param name="rtp-hold-timeout-sec" value="1800"/>
     <!-- VAD choose one (out is a good choice); -->
     <!-- <param name="vad" value="in"/> -->
