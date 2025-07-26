@@ -39,7 +39,7 @@
     <!--max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
     <!--<param name="max-recv-requests-per-second" value="0"/>-->
     <!--session timers for all call to expire after the specified seconds -->
-    <!--<param name="session-timeout" value="1800"/>-->
+    <param name="session-timeout" value="1800"/>
     <!--<param name="multiple-registrations" value="true"/>-->
     <!--set to 'greedy' if you want your codec list to take precedence -->
     <param name="inbound-codec-negotiation" value="generous"/>
