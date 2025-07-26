@@ -253,7 +253,7 @@
       <param name="conference-flags" value="livearray-json-status|json-events|video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding|manage-inbound-video-bitrate|video-required-for-canvas|video-mute-exit-canvas|mute-detect"/>
       <param name="video-auto-floor-msec" value="1000"/>
       <param name="video-mode" value="mux"/>
-      <param name="video-layout-name" value="2x2"/>
+      <param name="video-layout-name" value="2x1-zoom"/>
     <!--  <param name="video-layout-name" value="group:grid"/> -->
       <param name="video-canvas-size" value="1920x1080"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
@@ -289,7 +289,7 @@
       <param name="conference-flags" value="livearray-json-status|json-events|video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding|manage-inbound-video-bitrate|video-required-for-canvas|video-mute-exit-canvas|mute-detect"/>
       <param name="video-auto-floor-msec" value="1000"/>
       <param name="video-mode" value="mux"/>
-      <param name="video-layout-name" value="2x2"/>
+      <param name="video-layout-name" value="2x1-zoom"/>
    <!--   <param name="video-layout-name" value="group:grid"/> -->
       <param name="video-canvas-size" value="1280x720"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
@@ -324,7 +324,7 @@
       <param name="conference-flags" value="livearray-json-status|json-events|video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding|manage-inbound-video-bitrate|video-required-for-canvas|video-mute-exit-canvas|mute-detect"/>
       <param name="video-auto-floor-msec" value="1000"/>
       <param name="video-mode" value="mux"/>
-      <param name="video-layout-name" value="2x2"/>
+      <param name="video-layout-name" value="2x1-zoom"/>
     <!--  <param name="video-layout-name" value="group:grid"/> -->
       <param name="video-canvas-size" value="640x480"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
@@ -359,7 +359,7 @@
       <param name="conference-flags" value="livearray-json-status|json-events|video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding|manage-inbound-video-bitrate|video-required-for-canvas|video-mute-exit-canvas|mute-detect"/>
       <param name="video-auto-floor-msec" value="1000"/>
       <param name="video-mode" value="mux"/>
-      <param name="video-layout-name" value="2x2"/>
+      <param name="video-layout-name" value="2x1-zoom"/>
    <!--   <param name="video-layout-name" value="group:grid"/> -->
       <param name="video-canvas-size" value="480x320"/> 
       <param name="video-canvas-bgcolor" value="#333333"/>
