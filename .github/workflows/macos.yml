@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          # brew install libtiff openssl@3 pkg-config
+          # brew install libtiff openssl@3
           brew install \
             autoconf \
             automake \
@@ -40,7 +40,8 @@ jobs:
             lua \
             opus \
             ossp-uuid \
-            pcre \
+            pcre2 \
+            pkgconf \
             sofia-sip \
             speex \
             speexdsp \

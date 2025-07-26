@@ -11,12 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       freeswitch_ref:
-        description: 'FreeSWITCH repository ref'
+        description: "FreeSWITCH repository ref"
         required: true
         default: master
         type: string
       release:
-        description: 'FreeSWITCH release type'
+        description: "FreeSWITCH release type"
         type: choice
         required: true
         default: unstable
@@ -24,7 +24,7 @@ on:
           - release
           - unstable
       publish:
-        description: 'Publish build data'
+        description: "Publish build data"
         required: true
         default: false
         type: boolean
@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   preconfig:
-    name: 'Preconfig'
+    name: "Preconfig"
     runs-on: ubuntu-latest
     outputs:
       deb: ${{ steps.deb.outputs.excludes }}
@@ -51,12 +51,6 @@ jobs:
                 "version": "bookworm",
                 "platform": {
                   "name": "arm64v8"
-                }
-              },
-              {
-                "version": "bullseye",
-                "platform": {
-                  "name": "amd64"
                 }
               },
               {
@@ -88,7 +82,7 @@ jobs:
           fi
 
   get-nonce:
-    name: 'Get Nonce for token'
+    name: "Get Nonce for token"
     runs-on: freeswitch-repo-auth-client
     outputs:
       nonce: ${{ steps.get-nonce.outputs.nonce }}
@@ -100,12 +94,17 @@ jobs:
           mode: nonce
 
   issue-token:
-    name: 'Issue temporary token'
+    name: "Issue temporary token"
     runs-on: ubuntu-latest
     needs: get-nonce
+    env:
+      NONCE: ${{ needs.get-nonce.outputs.nonce }}
     outputs:
       token: ${{ steps.issue-token.outputs.token }}
     steps:
+      - name: Mask Token
+        run: echo "::add-mask::$NONCE"
+
       - name: Issue Token
         id: issue-token
         uses: signalwire/actions-template/.github/actions/repo-auth-client@main
@@ -115,7 +114,7 @@ jobs:
           mode: issue
 
   deb-public:
-    name: 'DEB-PUBLIC'
+    name: "DEB-PUBLIC"
     permissions:
       id-token: write
       contents: read
@@ -130,6 +129,7 @@ jobs:
         os:
           - debian
         version:
+          - trixie
           - bookworm
           - bullseye
         platform:
@@ -147,21 +147,19 @@ jobs:
       REF: ${{ inputs.freeswitch_ref }}
       ARTIFACTS_PATTERN: '.*\.(deb|dsc|changes|tar.bz2|tar.gz|tar.lzma|tar.xz)$'
       DOCKERFILE: .github/docker/${{ matrix.os }}/${{ matrix.version }}/${{ matrix.platform.name }}/public.${{ matrix.release }}.Dockerfile
-      MAINTAINER: 'Andrey Volk <andrey@signalwire.com>'
+      MAINTAINER: "Andrey Volk <andrey@signalwire.com>"
       META_FILE_PATH_PREFIX: /var/www/freeswitch/public/${{ matrix.release }}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
       PLATFORM: ${{ matrix.platform.name }}
-      REPO_DOMAIN: 'freeswitch.signalwire.com'
+      REPO_DOMAIN: "freeswitch.signalwire.com"
       TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-${{ matrix.release }}-artifact
       UPLOAD_BUILD_ARTIFACTS: >-
         ${{
-          (github.event.pull_request.head.repo.full_name == github.repository) &&
           (
-            (
-              github.event_name != 'pull_request' &&
-              github.event_name != 'workflow_dispatch'
-            ) ||
-            (github.event_name == 'workflow_dispatch' && inputs.publish)
-          )
+            github.event_name == 'push' &&
+            github.repository == 'signalwire/freeswitch' &&
+            contains(fromJSON('["master", "v1.10"]'), github.ref_name)
+          ) ||
+          (github.event_name == 'workflow_dispatch' && inputs.publish)
         }}
     secrets:
       GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
@@ -169,11 +167,11 @@ jobs:
       PROXY_URL: ${{ secrets.PROXY_URL }}
       USERNAME: ${{ secrets.USERNAME }}
       TELEPORT_TOKEN: ${{ secrets.TELEPORT_TOKEN }}
-      REPO_USERNAME: 'SWUSERNAME'
+      REPO_USERNAME: "SWUSERNAME"
       REPO_PASSWORD: ${{ needs.issue-token.outputs.token }}
 
   revoke-token:
-    name: 'Revoke temporary token'
+    name: "Revoke temporary token"
     runs-on: ubuntu-latest
     # if: always()
     needs:
@@ -189,17 +187,12 @@ jobs:
           mode: revoke
 
   meta:
-    name: 'Publish build data to meta-repo'
+    name: "Publish build data to meta-repo"
     if: >-
       ${{
-        (github.event.pull_request.head.repo.full_name == github.repository) &&
-        (
-          (
-            github.event_name != 'pull_request' &&
-            github.event_name != 'workflow_dispatch'
-          ) ||
-          (github.event_name == 'workflow_dispatch' && inputs.publish)
-        )
+        github.event_name == 'push' &&
+        github.repository == 'signalwire/freeswitch' &&
+        contains(fromJSON('["master", "v1.10"]'), github.ref_name)
       }}
     needs:
       - deb-public
@@ -208,7 +201,7 @@ jobs:
       contents: read
     uses: signalwire/actions-template/.github/workflows/meta-repo-content.yml@main
     with:
-      META_CONTENT: '/var/www/freeswitch/public/{release,unstable}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}'
+      META_CONTENT: "/var/www/freeswitch/public/{release,unstable}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}"
       META_REPO: signalwire/bamboo_gha_trigger
       META_REPO_BRANCH: trigger/freeswitch/${{ github.ref_name }}
     secrets:

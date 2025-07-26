@@ -1121,7 +1121,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 						if (tmp > now) {
 							jsock->exptime = tmp;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %ld seconds [%ld] [%ld]\n", jsock->uid, tmp - now, jsock->exptime, now);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Login expire time for %s set to %"TIME_T_FMT" seconds [%"TIME_T_FMT"] [%"TIME_T_FMT"]\n", jsock->uid, (time_t)tmp - now, jsock->exptime, now);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid expire time for %s. Defaulting to 300 sec\n", jsock->uid);
 							jsock->exptime = now + 300;
@@ -1882,23 +1882,19 @@ authed:
 
 	if (vhost->rewrites) {
 		switch_event_header_t *rule = vhost->rewrites->headers;
-		switch_regex_t *re = NULL;
-		int ovector[30];
 		int proceed;
 
 		while(rule) {
 			char *expression = rule->name;
 
-			if ((proceed = switch_regex_perform(request->uri, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if ((proceed = switch_regex(request->uri, expression))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "%d request [%s] matched expr [%s]\n", proceed, request->uri, expression);
 				request->uri = rule->value;
-				switch_regex_safe_free(re);
 				break;
 			}
 
 			rule = rule->next;
-			switch_regex_safe_free(re);
 		}
 	}
 
@@ -2005,7 +2001,7 @@ static void client_run(jsock_t *jsock)
 
 			if (now >= jsock->exptime) {
 				switch_set_flag(jsock, JPFLAG_AUTH_EXPIRED);
-				die("%s Authentication Expired [%ld] >= [%ld]\n", jsock->uid, now, jsock->exptime);
+				die("%s Authentication Expired [%"TIME_T_FMT"] >= [%"TIME_T_FMT"]\n", jsock->uid, now, jsock->exptime);
 			}
 
 		}

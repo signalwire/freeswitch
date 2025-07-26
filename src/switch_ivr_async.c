@@ -370,12 +370,11 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
 			if (bp->repl) {
-				int ovector[30] = { 0 };
 				int proceed = 0;
 				switch_regex_t *re = NULL;
-
+				switch_regex_match_t *match_data = NULL;
 				
-				proceed = switch_regex_perform(dmachine->digits, bp->digits, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+				proceed = switch_regex_perform(dmachine->digits, bp->digits, &re, &match_data);
 				
 				if (proceed) {
 					char *substituted = NULL;
@@ -385,12 +384,14 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 					substituted = malloc(len);
 					switch_assert(substituted);
 					memset(substituted, 0, len);
-					switch_perform_substitution(re, proceed, bp->repl, dmachine->digits, substituted, len, ovector);
+					switch_perform_substitution(match_data, bp->repl, substituted, len);
 
 					if (!bp->substituted || strcmp(substituted, bp->substituted)) {
 						bp->substituted = switch_core_strdup(dmachine->pool, substituted);
 					}
+
 					free(substituted);
+					switch_regex_match_safe_free(match_data);
 					switch_regex_safe_free(re);
 					bp->rmatch = 1;
 				} else {

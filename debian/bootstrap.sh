@@ -29,7 +29,7 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_debian_distros="wheezy jessie stretch buster bullseye bookworm sid"
+supported_debian_distros="buster bullseye bookworm trixie sid"
 supported_ubuntu_distros="trusty utopic xenial"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
@@ -302,7 +302,7 @@ Build-Depends:
 # core build
  dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
- libpcre3-dev,
+ libpcre2-dev,
  libedit-dev (>= 2.11),
  libsqlite3-dev,
  libtiff5-dev,

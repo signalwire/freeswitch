@@ -23,12 +23,12 @@ source_os_release()
 setup_common()
 {
 	rm -f /etc/apt/sources.list.d/freeswitch.list
+	rm -f /etc/apt/sources.list.d/freeswitch.sources
 	apt-get update && apt-get install -y \
 		apt-transport-https \
 		curl \
 		gnupg2 \
-		grep \
-		software-properties-common
+		grep
 }
 
 configure_auth()
@@ -81,7 +81,7 @@ source_os_release
 if [ "${ID,,}" = "debian" ]; then
 	ARCH=$(dpkg --print-architecture)
 
-	if [[ ${TOKEN} == pat_* ]]; then
+	if [[ ${TOKEN} == pat_* || ${TOKEN} == ghapat_* ]]; then
 		DOMAIN="freeswitch.signalwire.com"
 		GPG_KEY="/usr/share/keyrings/signalwire-freeswitch-repo.gpg"
 		RPI=""
@@ -107,12 +107,16 @@ if [ "${ID,,}" = "debian" ]; then
 			--output ${GPG_KEY} \
 			https://${DOMAIN}/repo/deb/${RPI}debian-release/signalwire-freeswitch-repo.gpg
 
-		echo "deb [signed-by=${GPG_KEY}] https://${DOMAIN}/repo/deb/${RPI}debian-${RELEASE}/ ${VERSION_CODENAME} main" > /etc/apt/sources.list.d/freeswitch.list
-		echo "deb-src [signed-by=${GPG_KEY}] https://${DOMAIN}/repo/deb/${RPI}debian-${RELEASE}/ ${VERSION_CODENAME} main" >> /etc/apt/sources.list.d/freeswitch.list
+		echo "Types: deb deb-src" > /etc/apt/sources.list.d/freeswitch.sources
+		echo "URIs: https://${DOMAIN}/repo/deb/${RPI}debian-${RELEASE}/" >> /etc/apt/sources.list.d/freeswitch.sources
+		echo "Suites: ${VERSION_CODENAME}" >> /etc/apt/sources.list.d/freeswitch.sources
+		echo "Components: main" >> /etc/apt/sources.list.d/freeswitch.sources
+		echo "Signed-By: ${GPG_KEY}" >> /etc/apt/sources.list.d/freeswitch.sources
 
 		install_freeswitch "Community" "${ACTION}"
 	elif [[ ${TOKEN} == PT* ]]; then
 		DOMAIN="fsa.freeswitch.com"
+		GPG_KEY="/usr/share/keyrings/signalwire-freeswitch-advantage-repo.gpg"
 		RPI=""
 
 		if [ "${RELEASE,,}" = "prerelease" ]; then
@@ -133,10 +137,14 @@ if [ "${ID,,}" = "debian" ]; then
 		curl \
 			--fail \
 			--netrc-file /etc/apt/auth.conf \
-			https://${DOMAIN}/repo/deb/fsa${RPI}/pubkey.gpg | tee /etc/apt/trusted.gpg.d/freeswitch-enterprise.asc
+			--output ${GPG_KEY} \
+			https://${DOMAIN}/repo/deb/fsa${RPI}/keyring.gpg
 
-		echo "deb https://${DOMAIN}/repo/deb/fsa${RPI}/ ${VERSION_CODENAME} ${RELEASE}" > /etc/apt/sources.list.d/freeswitch.list
-		echo "deb-src https://${DOMAIN}/repo/deb/fsa${RPI}/ ${VERSION_CODENAME} ${RELEASE}" >> /etc/apt/sources.list.d/freeswitch.list
+		echo "Types: deb deb-src" > /etc/apt/sources.list.d/freeswitch.sources
+		echo "URIs: https://${DOMAIN}/repo/deb/fsa${RPI}/" >> /etc/apt/sources.list.d/freeswitch.sources
+		echo "Suites: ${VERSION_CODENAME}" >> /etc/apt/sources.list.d/freeswitch.sources
+		echo "Components: ${RELEASE}" >> /etc/apt/sources.list.d/freeswitch.sources
+		echo "Signed-By: ${GPG_KEY}" >> /etc/apt/sources.list.d/freeswitch.sources
 
 		install_freeswitch "Enterprise" "${ACTION}"
 	else
