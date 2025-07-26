@@ -62,10 +62,10 @@
 	<image x="180" y="180" scale="180"/>
       </layout>
       <layout name="2x2" auto-3d-position="true">
-	<image x="0" y="0" scale="180"/>
-	<image x="180" y="0" scale="180"/>
-	<image x="0" y="180" scale="180"/>
-	<image x="180" y="180" scale="180"/>
+	<image x="0" y="0" scale="240"/>
+	<image x="180" y="0" scale="240"/>
+	<image x="0" y="180" scale="240"/>
+	<image x="180" y="180" scale="240"/>
       </layout>
       <layout name="3x3" auto-3d-position="true">
 	<image x="0" y="0" scale="120"/>
