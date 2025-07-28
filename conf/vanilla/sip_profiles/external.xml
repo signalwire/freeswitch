@@ -69,7 +69,7 @@
     <param name="ext-rtp-ip" value="$${ext_rtp_ip}"/>
     <param name="ext-sip-ip" value="$${ext_sip_ip}"/>
     
-    <param name="rtp-timeout-sec" value="1"/>
+    <param name="rtp-timeout-sec" value="5"/>
     <param name="rtp-hold-timeout-sec" value="1800"/>
     <!--<param name="enable-3pcc" value="true"/>-->
 
