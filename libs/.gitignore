@@ -525,7 +525,6 @@ opal
 /win32/celt/*/*/libcelt.log
 /win32/libg722_1/*/*/libg722_1.log
 /win32/libshout/*/*/libshout.log
-/win32/pcre/pcre_chartables.c
 /win32/tmp*.bat
 !/xmlrpc-c/include/xmlrpc-c/config.h.in
 /xmlrpc-c/stamp-h2
@@ -580,7 +579,6 @@ opal
 broadvoice/config/compile
 ilbc/config/compile
 libg722_1/config/compile
-pcre/compile
 srtp/build/compile
 /pcre-*/
 /speex-*/
