@@ -55,7 +55,7 @@ RUN . ~/.env && ./debian/util.sh prep-create-dsc ${CODENAME}
 RUN --mount=type=secret,id=REPO_PASSWORD,required=true \
     sha512sum /run/secrets/REPO_PASSWORD && \
     curl -sSL https://freeswitch.org/fsget | \
-        bash -s $(cat /run/secrets/REPO_PASSWORD) prerelease && \
+        bash -s $(cat /run/secrets/REPO_PASSWORD) release && \
     apt-get --quiet update && \
     mk-build-deps \
         --install \

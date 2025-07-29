@@ -40,4 +40,4 @@ jobs:
       with:
         name: MSI Package
         path: D:\a\freeswitch\freeswitch\x64\*.msi
-      if: contains(github.event.pull_request.title, ':upload-artifacts') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10'
+      if: contains(github.event.pull_request.title, ':upload-artifacts') || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10' || github.ref == 'refs/heads/v1.11'
