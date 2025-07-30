@@ -6104,11 +6104,16 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					if (stat) {
 						//++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp]++;
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "RTCP UNPROTECT ERR\n");
+						sbytes = 0;
 					} else {
 						//rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
 					}
 
-					*bytes = sbytes;
+					if (sbytes > 0) {
+						*bytes = sbytes;
+					} else {
+						invalidate_received_packet(rtp_session, bytes);
+					}
 				}
 #endif
 				switch_mutex_unlock(rtp_session->ice_mutex);
