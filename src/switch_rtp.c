@@ -5841,6 +5841,12 @@ static int get_recv_payload(switch_rtp_t *rtp_session)
 	return r;
 }
 
+static inline void invalidate_received_packet(switch_rtp_t *rtp_session, switch_size_t *bytes)
+{
+	*bytes = 0;
+	rtp_session->skip_timer = 1;
+}
+
 #define return_cng_frame() do_cng = 1; goto timer_check
 
 static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags,
@@ -6006,7 +6012,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1,
 									  "Invalid Packet SEQ: %d TS: %d PT:%d ignored\n",
 									  ntohs(rtp_session->recv_msg.header.seq), ntohl(rtp_session->last_rtp_hdr.ts), rtp_session->last_rtp_hdr.pt);
-					*bytes = 0;
+					invalidate_received_packet(rtp_session, bytes);
 				}
 			}
 
@@ -6227,7 +6233,8 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		*bytes && rtp_session->last_rtp_hdr.pt != rtp_session->recv_te &&
 		ts && !rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session) && ts == rtp_session->last_cng_ts) {
 		/* we already sent this frame..... */
-		*bytes = 0;
+		invalidate_received_packet(rtp_session, bytes);
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -6308,7 +6315,11 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
 				}
 
-				*bytes = sbytes;
+				if (sbytes > 0) {
+					*bytes = sbytes;
+				} else {
+					invalidate_received_packet(rtp_session, bytes);
+				}
 			}
 			switch_mutex_unlock(rtp_session->ice_mutex);
 #endif
@@ -6333,7 +6344,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					if (*bytes > (length * 4 + 4)) {
 						*bytes -= (length * 4 + 4);
 					} else {
-						*bytes = 0;
+						invalidate_received_packet(rtp_session, bytes);
 					}
 				}
 			}
