@@ -64,6 +64,9 @@
     <!-- Default Global Log Level - value is one of debug,info,notice,warning,err,crit,alert -->
     <param name="loglevel" value="debug"/>
 
+    <!-- UUID version to use, 4 or 7 -->
+    <!-- <param name="uuid-version" value="7"/> -->
+
     <!-- Set the core DEBUG level (0-10) -->
     <!-- <param name="debug-level" value="10"/> -->
 
@@ -206,4 +209,3 @@
   </settings>
 
 </configuration>
-
