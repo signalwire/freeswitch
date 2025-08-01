@@ -259,7 +259,7 @@
        <param name="video-canvas-size" value="1080x1920"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
-      <param name="video-codec-bandwidth" value="3mb"/>
+      <param name="video-codec-bandwidth" value="384kb"/>
       <param name="video-fps" value="30"/>
       <!-- <param name="video-codec-config-profile-name" value="conference"/> -->
     </profile>
@@ -292,7 +292,8 @@
       <param name="video-mode" value="mux"/>
       <param name="video-layout-name" value="2x2"/>
    <!--   <param name="video-layout-name" value="group:grid"/> -->
-      <param name="video-canvas-size" value="1280x720"/>
+      <!--<param name="video-canvas-size" value="1280x720"/> -->
+       <param name="video-canvas-size" value="720x1280"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
       <param name="video-codec-bandwidth" value="384kb"/>
@@ -327,7 +328,8 @@
       <param name="video-mode" value="mux"/>
       <param name="video-layout-name" value="2x2"/>
     <!--  <param name="video-layout-name" value="group:grid"/> -->
-      <param name="video-canvas-size" value="640x480"/>
+    <!--   <param name="video-canvas-size" value="640x480"/>-->
+      <param name="video-canvas-size" value="480x640"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
       <param name="video-codec-bandwidth" value="384kb"/>
@@ -362,7 +364,8 @@
       <param name="video-mode" value="mux"/>
       <param name="video-layout-name" value="2x2"/>
    <!--   <param name="video-layout-name" value="group:grid"/> -->
-      <param name="video-canvas-size" value="480x320"/> 
+    <!--  <param name="video-canvas-size" value="480x320"/> -->
+      <param name="video-canvas-size" value="320x480"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
       <param name="video-codec-bandwidth" value="384kb"/>
