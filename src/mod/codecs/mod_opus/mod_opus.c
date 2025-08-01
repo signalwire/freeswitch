@@ -144,6 +144,7 @@ struct opus_context {
 	enc_stats_t encoder_stats;
 	codec_control_state_t control_state;
 	switch_bool_t recreate_decoder;
+	uint32_t encoder_samplerate;
 };
 
 struct {
@@ -175,6 +176,11 @@ static switch_bool_t switch_opus_acceptable_rate(int rate)
 		return SWITCH_FALSE;
 	}
 	return SWITCH_TRUE;
+}
+
+static inline uint32_t opus_ts_step(uint32_t ptime_ms, uint32_t enc_rate)
+{
+	return (ptime_ms * 48); /* 48 kHz RTP clock rate */
 }
 
 static uint32_t switch_opus_encoder_set_audio_bandwidth(OpusEncoder *encoder_object,int enc_samplerate)
@@ -618,6 +624,9 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 			return SWITCH_STATUS_GENERR;
 		}
 
+		/* Store encoder sample rate for RTP timestamp scaling */
+		context->encoder_samplerate = enc_samplerate;
+
 		/* https://tools.ietf.org/html/rfc7587  */
 		if (opus_codec_settings.maxaveragebitrate) {
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(opus_codec_settings.maxaveragebitrate));
@@ -680,6 +689,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 		if (opus_prefs.adjust_bitrate) {
 			switch_set_flag(codec, SWITCH_CODEC_FLAG_HAS_ADJ_BITRATE);
 		}
+
 	}
 
 	if (decoding) {
@@ -716,6 +726,19 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 			return SWITCH_STATUS_GENERR;
 		}
+	}
+
+	/* Set RTP interval for RFC 7587 compliance */
+	if (codec->session) {
+		switch_rtp_t *rtp = switch_core_media_get_rtp_session(codec->session, SWITCH_MEDIA_TYPE_AUDIO);
+		if (rtp) {
+			uint32_t ptime_ms = codec->implementation->microseconds_per_packet / 1000;
+			uint32_t step = opus_ts_step(ptime_ms, codec->implementation->actual_samples_per_second);
+			switch_rtp_set_interval(rtp, ptime_ms, step);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						 "Opus codec initialized without session - RTP interval not configured\n");
 	}
 
 	context->codec_settings = opus_codec_settings;
