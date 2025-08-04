@@ -297,7 +297,7 @@
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
       <param name="video-codec-bandwidth" value="400kb"/>
-      <param name="video-fps" value="15"/>
+      <param name="video-fps" value="24"/>
     </profile>
 
     <profile name="video-mcu-stereo-480">
