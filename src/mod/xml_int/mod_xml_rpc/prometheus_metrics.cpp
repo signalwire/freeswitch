@@ -34,10 +34,15 @@ public:
 		switch_mutex_destroy(_mutex);
 	}
 	
-	void increment_api_counter(const char* command)
+	void increment_current_api_call()
 	{
 		auto_lock lock(_mutex);
 		++_api_calls;
+	}
+
+	void increment_api_counter(const char* command)
+	{
+		auto_lock lock(_mutex);
 		api_counter::iterator found = _api_counter.find(command);
 		if (found != _api_counter.end()) {
 			++found->second;
@@ -99,7 +104,7 @@ void prometheus_init(switch_loadable_module_interface_t **module_interface, swit
 	instance = new prometheus_metrics(module_interface, pool);
 }
 
-void prometheus_destroy()
+void prometheus_destroy(void)
 {
 	delete instance;
 	instance = 0;
@@ -110,7 +115,12 @@ void prometheus_increment_api_counter(const char* command)
 	instance->increment_api_counter(command);
 }
 
-void prometheus_decrement_current_api_call()
+void prometheus_increment_current_api_call(void)
+{
+	instance->increment_current_api_call();
+}
+
+void prometheus_decrement_current_api_call(void)
 {
 	instance->decrement_current_api_call();
 }
