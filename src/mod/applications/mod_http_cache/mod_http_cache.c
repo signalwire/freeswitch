@@ -740,6 +740,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 	char *filename = NULL;
 	cached_url_t *u = NULL;
 	if (zstr(url)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Empty or NULL URL provided\n");
 		return NULL;
 	}
 
@@ -800,7 +801,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			/* Did not get the file, flag for replacement */
 			url_cache_lock(cache, session);
 			url_cache_remove_soft(cache, session, u);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Failed to download URL %s\n", url);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to download URL %s\n", url);
 			cache->errors++;
 		}
 	} else if (!u || (u->status == CACHED_URL_RX_IN_PROGRESS && download != DOWNLOAD)) {
@@ -828,7 +829,7 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 		} else {
 			cache->misses++;
 			cache->errors++;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s: Cache MISS: size = %zu (%zu MB), hit ratio = %d/%d, error count = %d\n", url, cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses, cache->errors);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s: Cache MISS after download wait failed - status=%d: size = %zu (%zu MB), hit ratio = %d/%d, error count = %d\n", url, u ? u->status : -1, cache->queue.size, cache->size / 1000000, cache->hits, cache->hits + cache->misses, cache->errors);
 		}
 	}
 	url_cache_unlock(cache, session);
@@ -1457,9 +1458,11 @@ SWITCH_STANDARD_API(http_cache_get)
 					, file_status
 					, strerror(atoi(file_status)));
 			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed with unknown error for URL: %s\n", url);
 				stream->write_function(stream, "-ERR UNKNOWN\n");
 			}
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed with unknown error for URL: %s (failed to create events!)\n", url);
 			stream->write_function(stream, "-ERR UNKNOWN\n");
 		}
 		status = SWITCH_STATUS_SUCCESS;
