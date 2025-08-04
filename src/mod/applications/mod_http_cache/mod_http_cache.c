@@ -197,6 +197,8 @@ struct url_cache {
 	size_t max_size;
 	/** The default time to allow a cached URL to live, if none is specified */
 	switch_time_t default_max_age;
+	/** The minimum time to allow a cached URL to live, in seconds, enforced even if cache-control max-age is lower */
+	int min_max_age;
 	/** The current size of this cache, in bytes */
 	size_t size;
 	/** The location of the cache in the filesystem */
@@ -593,6 +595,12 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 		return;
 	}
 
+	/* Enforce minimum max-age if configured */
+	if (gcache.min_max_age > 0 && max_age < gcache.min_max_age) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "cache-control max-age %u seconds is below minimum %d seconds\n", (int)max_age, gcache.min_max_age);
+		max_age = gcache.min_max_age;
+	}
+	
 	url->max_age = max_age * 1000 * 1000;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting max age to %u seconds from now\n", (int)max_age);
 }
@@ -1786,6 +1794,7 @@ static switch_status_t do_config(url_cache_t *cache)
 	cache->download_timeout = 300;
 	cache->max_retry = 1;
 	cache->retry_delay_ms = 100;
+	cache->min_max_age = 0;
 
 	/* get params */
 	settings = switch_xml_child(cfg, "settings");
@@ -1810,6 +1819,12 @@ static switch_status_t do_config(url_cache_t *cache)
 			} else if (!strcasecmp(var, "default-max-age")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting default-max-age to %s\n", val);
 				default_max_age_sec = atoi(val);
+			} else if (!strcasecmp(var, "min-max-age")) {
+				int int_val = atoi(val);
+				if (int_val >= 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting min-max-age to %s\n", val);
+					cache->min_max_age = int_val;
+				}
 			} else if (!strcasecmp(var, "prefetch-queue-size")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting prefetch-queue-size to %s\n", val);
 				cache->prefetch_queue_size = atoi(val);
