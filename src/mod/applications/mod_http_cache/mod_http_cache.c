@@ -1701,8 +1701,8 @@ static void *SWITCH_THREAD_FUNC prefetch_thread(switch_thread_t *thread, void *o
 	// process prefetch requests
 	while (!gcache.shutdown) {
 		if (switch_queue_pop(gcache.prefetch_queue, &url) == SWITCH_STATUS_SUCCESS) {
-			prometheus_set_prefetch_queue_size(switch_queue_size(gcache.prefetch_queue));
 			switch_stream_handle_t stream = { 0 };
+			prometheus_set_prefetch_queue_size(switch_queue_size(gcache.prefetch_queue));
 			SWITCH_STANDARD_STREAM(stream);
 			switch_api_execute("http_get", url, NULL, &stream);
 			switch_safe_free(stream.data);
