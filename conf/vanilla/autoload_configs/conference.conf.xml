@@ -266,7 +266,7 @@
 
     <profile name="video-mcu-stereo-720">
       <param name="domain" value="$${domain}"/>
-      <param name="rate" value="48000"/>
+      <param name="rate" value="16000"/>
       <param name="channels" value="2"/>
       <param name="interval" value="20"/>
       <param name="energy-level" value="200"/>
@@ -296,8 +296,8 @@
        <param name="video-canvas-size" value="720x1280"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
-      <param name="video-codec-bandwidth" value="3mb"/>
-      <param name="video-fps" value="24"/>
+      <param name="video-codec-bandwidth" value="400kb"/>
+      <param name="video-fps" value="15"/>
     </profile>
 
     <profile name="video-mcu-stereo-480">
