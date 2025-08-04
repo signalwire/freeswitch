@@ -10,6 +10,7 @@ void prometheus_destroy();
 
 void prometheus_increment_download_duration(unsigned int duration);
 void prometheus_increment_download_fail_count();
+void prometheus_set_prefetch_queue_size(unsigned int size);
 
 SWITCH_END_EXTERN_C
 #endif /* PROMETHEUS_METRICS_H */

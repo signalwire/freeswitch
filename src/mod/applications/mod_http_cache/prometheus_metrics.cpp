@@ -33,7 +33,8 @@ public:
 			{0,   0,   0,   0,    0,    0,    0,    0}
 		},
 		_download_bucket_sum(0),
-		_download_bucket_count(0)
+		_download_bucket_count(0),
+		_prefetch_queue_size(0)
 	{
 		switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
 	}
@@ -62,6 +63,12 @@ public:
 		auto_lock lock(_mutex);
 		_download_fail_count++;
 	}
+
+	void set_prefetch_queue_size(unsigned int size)
+	{
+		auto_lock lock(_mutex);
+		_prefetch_queue_size = size;
+	}
 		
 	void generate_metrics(switch_stream_handle_t *stream)
 	{
@@ -79,6 +86,10 @@ public:
 		stream->write_function(stream, "mod_http_cache_download_duration_bucket{le=\"+Inf\"} %u\n", _download_buckets[BUCKET_COUNT][MAX_BUCKET_LEN - 1]);
 		stream->write_function(stream, "mod_http_cache_download_duration_sum %llu\n", _download_bucket_sum);
 		stream->write_function(stream, "mod_http_cache_download_duration_count %lu\n", _download_bucket_count);
+
+		stream->write_function(stream, "# HELP mod_http_cache_prefetch_queue_size Current number of items in the prefetch queue\n");
+		stream->write_function(stream, "# TYPE mod_http_cache_prefetch_queue_size gauge\n");
+		stream->write_function(stream, "mod_http_cache_prefetch_queue_size %u\n", _prefetch_queue_size);
 	}
 	
 
@@ -91,6 +102,7 @@ private:
 	unsigned int _download_buckets[2][MAX_BUCKET_LEN];
 	unsigned long long int _download_bucket_sum;
 	unsigned long int _download_bucket_count;
+	unsigned int _prefetch_queue_size;
 };
 
 static prometheus_metrics* instance = 0;
@@ -126,6 +138,11 @@ void prometheus_increment_download_duration(unsigned int duration)
 void prometheus_increment_download_fail_count()
 {
 	instance->increment_download_fail_count();
+}
+
+void prometheus_set_prefetch_queue_size(unsigned int size)
+{
+	instance->set_prefetch_queue_size(size);
 }
 
 SWITCH_END_EXTERN_C
