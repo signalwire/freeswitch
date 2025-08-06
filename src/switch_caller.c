@@ -306,6 +306,15 @@ SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profi
 	if (!strcasecmp(name, "transferred_time")) {
 		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
 	}
+	if (!strcasecmp(name, "bridged_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->bridged);
+	}
+	if (!strcasecmp(name, "last_hold_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->last_hold);
+	}
+	if (!strcasecmp(name, "hold_accum_time")) {
+		return switch_core_sprintf(caller_profile->pool, "%" SWITCH_TIME_T_FMT, caller_profile->times->hold_accum);
+	}
 
 	if (caller_profile->soft && switch_test_flag(caller_profile, SWITCH_CPF_SOFT_LOOKUP)) {
 		profile_node_t *pn;
