@@ -10,36 +10,17 @@
     <!-- mod_enum is a dialplan interface, an application interface and an api command interface -->
     <load module="mod_enum"/>
 
-    <!-- XML Interfaces -->
-    <!-- <load module="mod_xml_rpc"/> -->
-    <!-- <load module="mod_xml_curl"/> -->
-    <!-- <load module="mod_xml_cdr"/> -->
-    <!-- <load module="mod_xml_scgi"/> -->
-
     <!-- Event Handlers -->
     <!-- <load module="mod_amqp"/> -->
     <load module="mod_cdr_csv"/>
-    <!-- <load module="mod_cdr_sqlite"/> -->
-    <!-- <load module="mod_event_multicast"/> -->
-    <load module="mod_event_socket"/>
-    <!-- <load module="mod_zeroconf"/> -->
-    <!-- <load module="mod_erlang_event"/> -->
-    <!-- <load module="mod_smpp"/> -->
-    <!-- <load module="mod_snmp"/> -->
 
-    <!-- Directory Interfaces -->
-    <!-- <load module="mod_ldap"/> -->
+    <load module="mod_event_socket"/>
 
     <!-- Endpoints -->
-    <!-- <load module="mod_dingaling"/> -->
-    <!-- <load module="mod_alsa"/> -->
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
-    <!-- <load module="mod_woomera"/> -->
-    <!-- <load module="mod_freetdm"/> -->
-    <!-- <load module="mod_skinny"/> -->
+
     <load module="mod_rtc"/>
-    <!-- <load module="mod_rtmp"/>   -->
     <load module="mod_verto"/>
 
     <!-- Applications -->
@@ -54,19 +35,10 @@
     <load module="mod_hash"/>
     <!--<load module="mod_mongo"/> -->
     <load module="mod_voicemail"/>
-    <!--<load module="mod_directory"/>-->
-    <!--<load module="mod_distributor"/>-->
-    <!--<load module="mod_lcr"/>-->
-    <!--<load module="mod_easyroute"/>-->
+
     <load module="mod_esf"/>
     <load module="mod_fsv"/>
-    <!--<load module="mod_cluechoo"/>-->
-    <load module="mod_valet_parking"/>
-    <!--<load module="mod_fsk"/>-->
-    <!--<load module="mod_spy"/>-->
-    <!--<load module="mod_sms"/>-->
-    <!--<load module="mod_smpp"/>-->
-    <!--<load module="mod_random"/>-->
+
     <load module="mod_httapi"/>
     <!--<load module="mod_translate"/>-->
 
@@ -90,40 +62,18 @@
     <load module="mod_av"/>
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
-    <!--<load module="mod_opusfile"/>-->
+ 
     <load module="mod_png"/>
-    <!-- <load module="mod_shell_stream"/> -->
-    <!--For icecast/mp3 streams/files-->
-    <!--<load module="mod_shout"/>-->
+
     <!--For local streams (play all the files in a directory)-->
     <load module="mod_local_stream"/>
     <load module="mod_tone_stream"/>
 
-    <!-- Timers -->
-    <!-- <load module="mod_timerfd"/> -->
-    <!-- <load module="mod_posix_timer"/> -->
 
     <!-- Languages -->
-    <!-- <load module="mod_v8"/> -->
-    <!-- <load module="mod_perl"/> -->
-    <!-- <load module="mod_python3"/> -->
-    <!-- <load module="mod_java"/> -->
     <load module="mod_lua"/>
-
-    <!-- ASR /TTS -->
-    <!-- <load module="mod_flite"/> -->
-    <!-- <load module="mod_pocketsphinx"/> -->
-    <!-- <load module="mod_tts_commandline"/> -->
-
-    <!-- Say -->
     <load module="mod_say_en"/>
-    <!-- <load module="mod_say_ru"/> -->
-    <!-- <load module="mod_say_zh"/> -->
-    <!-- <load module="mod_say_sv"/> -->
 
-    <!-- Third party modules -->
-    <!--<load module="mod_nibblebill"/>-->
-    <!--<load module="mod_callcenter"/>-->
 
   </modules>
 </configuration>
