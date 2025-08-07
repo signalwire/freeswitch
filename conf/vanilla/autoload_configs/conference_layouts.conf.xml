@@ -362,11 +362,11 @@
 	<layout>2x1</layout>
 	<layout>1x1+2x1</layout>
 	<layout>2x2</layout>
-	<!--<layout>3x3</layout>
+	<layout>3x3</layout>
 	<layout>4x4</layout>
 	<layout>5x5</layout>
 	<layout>6x6</layout>
-	<layout>8x8</layout>-->
+	<layout>8x8</layout>
       </group>
       <group name="grid-zoom">
 	<layout>1x1</layout>
