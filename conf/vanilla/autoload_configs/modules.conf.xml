@@ -14,7 +14,7 @@
     <!-- Endpoints -->
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
-
+    <load module="mod_verto"/>
     <!-- Applications -->
     <!--load module="mod_signalwire"/-->
     <load module="mod_commands"/>
@@ -31,7 +31,7 @@
     <!-- Codec Interfaces -->
     <load module="mod_amr"/>
     <load module="mod_amrwb"/>
-	  <load module="mod_opus"/>
+	 <load module="mod_opus"/>
 	
     <!-- File Format Interfaces -->
 	<load module="mod_av"/>
