@@ -290,7 +290,7 @@
       <param name="conference-flags" value="livearray-json-status|json-events|video-floor-only|rfc-4579|livearray-sync|minimize-video-encoding|manage-inbound-video-bitrate|video-required-for-canvas|video-mute-exit-canvas|mute-detect"/>
       <param name="video-auto-floor-msec" value="1000"/>
       <param name="video-mode" value="mux"/>
-      <param name="video-layout-name" value="8x8"/>
+      <param name="video-layout-name" value="3x3"/>
      <!--<param name="video-layout-name" value="group:grid"/>-->
      <!--<param name="video-canvas-size" value="1280x720"/>-->
        <param name="video-canvas-size" value="720x1280"/>
