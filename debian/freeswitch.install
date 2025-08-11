@@ -1,4 +1,0 @@
-/usr/bin
-fonts/FreeMono.ttf /usr/share/freeswitch/fonts/
-fonts/FreeSans.ttf /usr/share/freeswitch/fonts/
-images/*.png /var/lib/freeswitch/images/
