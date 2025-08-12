@@ -1,0 +1,8 @@
+FreeSWITCH unit tests should be kept as shallow unit tests and micro
+benchmarks testing functionality exposed through libfreeswitch.
+
+Requirements for a new unit tests: 
+
+1. Tests must use switch_test.h framework
+
+
