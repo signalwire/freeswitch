@@ -134,6 +134,11 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	int mstatus = 0, sanity = 0;
 	const char *blocking;
 	int is_blocking = 0;
+	switch_core_session_t *session = NULL;
+	switch_core_session_t *other_session = NULL;
+	const char *session_uuid;
+	const char *to_tag = NULL;
+	const char *from_tag = NULL;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from_proto = switch_event_get_header(message_event, "from_proto");
@@ -148,6 +153,10 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 	network_ip = switch_event_get_header(message_event, "to_sip_ip");
 	network_port = switch_event_get_header(message_event, "to_sip_port");
+
+	from_tag = switch_event_get_header(message_event, "to_tag");
+	to_tag = switch_event_get_header(message_event, "from_tag");
+	session_uuid = switch_event_get_header(message_event, "Unique-ID");
 
 	extra_headers = sofia_glue_get_extra_headers_from_event(message_event, SOFIA_SIP_HEADER_PREFIX);
 
@@ -201,6 +210,27 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		"Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", proto, from, to,
 						  body ? body : "[no body]", prof ? prof : "NULL");
 		goto end;
+	}
+
+	if(to_tag && from_tag && (session = switch_core_session_locate(session_uuid))) {
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_compare(session, other_session)) {
+				const char *session_id_header = sofia_glue_session_id_header(session, profile);
+				private_object_t *other_session_tech_pvt = (private_object_t *) switch_core_session_get_private(other_session);
+
+				nua_message(other_session_tech_pvt->nh,
+					SIPTAG_CONTENT_TYPE_STR(ct),
+					TAG_IF(!zstr(other_session_tech_pvt->user_via), SIPTAG_VIA_STR(other_session_tech_pvt->user_via)),
+					SIPTAG_PAYLOAD_STR(body),
+					TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+					TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+					TAG_END());
+
+				status = SWITCH_STATUS_SUCCESS;
+
+				goto end;
+			}
+		}
 	}
 
 	if (zstr(host)) {
@@ -403,6 +433,14 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
+	}
+
+	if (session) {
+		switch_core_session_rwunlock(session);
+	}
+
+	if (other_session) {
+		switch_core_session_rwunlock(other_session);
 	}
 
 	return status;
@@ -4902,6 +4940,14 @@ void sofia_presence_handle_sip_i_message(int status,
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", to_addr);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "context", profile->context);
+
+				if (sip->sip_to) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_tag", sip->sip_to->a_tag);
+				}
+
+				if (sip->sip_from) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_tag", sip->sip_from->a_tag);
+				}
 
 				if (sip->sip_content_type && sip->sip_content_type->c_subtype) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", sip->sip_content_type->c_type);
