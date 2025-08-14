@@ -1990,153 +1990,47 @@ AC_CONFIG_FILES([Makefile
 		tests/unit/Makefile
 		src/Makefile
 		src/mod/Makefile
-		src/mod/applications/mod_avmd/Makefile
-		src/mod/applications/mod_bert/Makefile
-		src/mod/applications/mod_blacklist/Makefile
-		src/mod/applications/mod_callcenter/Makefile
-		src/mod/applications/mod_cidlookup/Makefile
-		src/mod/applications/mod_cluechoo/Makefile
 		src/mod/applications/mod_commands/Makefile
 		src/mod/applications/mod_conference/Makefile
-		src/mod/applications/mod_curl/Makefile
-		src/mod/applications/mod_cv/Makefile
 		src/mod/applications/mod_db/Makefile
-		src/mod/applications/mod_directory/Makefile
-		src/mod/applications/mod_distributor/Makefile
 		src/mod/applications/mod_dptools/Makefile
-		src/mod/applications/mod_easyroute/Makefile
-		src/mod/applications/mod_enum/Makefile
 		src/mod/applications/mod_esf/Makefile
-		src/mod/applications/mod_esl/Makefile
 		src/mod/applications/mod_expr/Makefile
-		src/mod/applications/mod_fifo/Makefile
-		src/mod/applications/mod_fsk/Makefile
-		src/mod/applications/mod_fsv/Makefile
 		src/mod/applications/mod_hash/Makefile
-		src/mod/applications/mod_hiredis/Makefile
-		src/mod/applications/mod_httapi/Makefile
-		src/mod/applications/mod_http_cache/Makefile
-		src/mod/applications/mod_lcr/Makefile
-		src/mod/applications/mod_limit/Makefile
-		src/mod/applications/mod_memcache/Makefile
-		src/mod/applications/mod_mongo/Makefile
-		src/mod/applications/mod_nibblebill/Makefile
-		src/mod/applications/mod_osp/Makefile
-		src/mod/applications/mod_prefix/Makefile
-		src/mod/applications/mod_random/Makefile
-		src/mod/applications/mod_redis/Makefile
-		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_signalwire/Makefile
-		src/mod/applications/mod_sms/Makefile
-		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_spandsp/Makefile
-		src/mod/applications/mod_spy/Makefile
-		src/mod/applications/mod_test/Makefile
-		src/mod/applications/mod_translate/Makefile
-		src/mod/applications/mod_valet_parking/Makefile
-		src/mod/applications/mod_vmd/Makefile
-		src/mod/applications/mod_voicemail/Makefile
-		src/mod/applications/mod_voicemail_ivr/Makefile
-		src/mod/asr_tts/mod_flite/Makefile
-		src/mod/asr_tts/mod_pocketsphinx/Makefile
-		src/mod/asr_tts/mod_tts_commandline/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
-		src/mod/codecs/mod_b64/Makefile
-		src/mod/codecs/mod_bv/Makefile
-		src/mod/codecs/mod_codec2/Makefile
-		src/mod/codecs/mod_com_g729/Makefile
-		src/mod/codecs/mod_g723_1/Makefile
-		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
-		src/mod/codecs/mod_silk/Makefile
-		src/mod/codecs/mod_siren/Makefile
-		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/databases/mod_mariadb/Makefile
 		src/mod/databases/mod_pgsql/Makefile
-		src/mod/dialplans/mod_dialplan_asterisk/Makefile
-		src/mod/dialplans/mod_dialplan_directory/Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
-		src/mod/directories/mod_ldap/Makefile
-		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_h323/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
-		src/mod/endpoints/mod_opal/Makefile
-		src/mod/endpoints/mod_reference/Makefile
-		src/mod/endpoints/mod_rtmp/Makefile
-		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_sofia/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
-		src/mod/event_handlers/mod_amqp/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
-		src/mod/event_handlers/mod_cdr_mongodb/Makefile
-		src/mod/event_handlers/mod_cdr_pg_csv/Makefile
-		src/mod/event_handlers/mod_cdr_sqlite/Makefile
-		src/mod/event_handlers/mod_erlang_event/Makefile
-		src/mod/event_handlers/mod_event_multicast/Makefile
 		src/mod/event_handlers/mod_event_socket/Makefile
-		src/mod/event_handlers/mod_event_test/Makefile
-		src/mod/event_handlers/mod_fail2ban/Makefile
-		src/mod/event_handlers/mod_format_cdr/Makefile
-		src/mod/event_handlers/mod_json_cdr/Makefile
-		src/mod/event_handlers/mod_odbc_cdr/Makefile
-		src/mod/event_handlers/mod_smpp/Makefile
-		src/mod/event_handlers/mod_snmp/Makefile
-		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
-		src/mod/formats/mod_opusfile/Makefile
 		src/mod/formats/mod_png/Makefile
-		src/mod/formats/mod_shell_stream/Makefile
-		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
 		src/mod/formats/mod_tone_stream/Makefile
-		src/mod/formats/mod_vlc/Makefile
-		src/mod/languages/mod_java/Makefile
-		src/mod/languages/mod_lua/Makefile
-		src/mod/languages/mod_managed/Makefile
-		src/mod/languages/mod_perl/Makefile
-		src/mod/languages/mod_python3/Makefile
-		src/mod/languages/mod_v8/Makefile
-		src/mod/languages/mod_basic/Makefile
 		src/mod/loggers/mod_console/Makefile
-		src/mod/loggers/mod_graylog2/Makefile
 		src/mod/loggers/mod_logfile/Makefile
 		src/mod/loggers/mod_syslog/Makefile
 		src/mod/say/mod_say_de/Makefile
 		src/mod/say/mod_say_en/Makefile
-		src/mod/say/mod_say_es/Makefile
-		src/mod/say/mod_say_es_ar/Makefile
-		src/mod/say/mod_say_fa/Makefile
-		src/mod/say/mod_say_fr/Makefile
-		src/mod/say/mod_say_he/Makefile
-		src/mod/say/mod_say_hr/Makefile
-		src/mod/say/mod_say_hu/Makefile
-		src/mod/say/mod_say_it/Makefile
-		src/mod/say/mod_say_ja/Makefile
-		src/mod/say/mod_say_nl/Makefile
-		src/mod/say/mod_say_pl/Makefile
-		src/mod/say/mod_say_pt/Makefile
-		src/mod/say/mod_say_ru/Makefile
-		src/mod/say/mod_say_sv/Makefile
-		src/mod/say/mod_say_th/Makefile
 		src/mod/say/mod_say_zh/Makefile
 		src/mod/timers/mod_posix_timer/Makefile
 		src/mod/timers/mod_timerfd/Makefile
-		src/mod/xml_int/mod_xml_cdr/Makefile
-		src/mod/xml_int/mod_xml_curl/Makefile
-		src/mod/xml_int/mod_xml_ldap/Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
-		src/mod/xml_int/mod_xml_scgi/Makefile
 		src/mod/applications/mod_av/Makefile
 		src/mod/applications/mod_video_filter/Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
 		build/getlib.sh
-		build/getg729.sh
 		build/freeswitch.pc
 		build/standalone_module/freeswitch.pc
 		build/modmake.rules
