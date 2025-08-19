@@ -296,8 +296,8 @@
        <param name="video-canvas-size" value="720x1280"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
-      <param name="video-codec-bandwidth" value="2mb"/>
-      <param name="video-fps" value="30"/>
+      <param name="video-codec-bandwidth" value="1mb"/>
+      <param name="video-fps" value="24"/>
     </profile>
 
     <profile name="video-mcu-stereo-480">
@@ -333,8 +333,8 @@
       <param name="video-canvas-size" value="720x1280"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
-      <param name="video-codec-bandwidth" value="3mb"/>
-      <param name="video-fps" value="30"/>
+      <param name="video-codec-bandwidth" value="1mb"/>
+      <param name="video-fps" value="20"/>
     </profile>
 
     <profile name="video-mcu-stereo-320">
@@ -370,8 +370,8 @@
       <param name="video-canvas-size" value="720x1280"/>
       <param name="video-canvas-bgcolor" value="#333333"/>
       <param name="video-layout-bgcolor" value="#000000"/>
-      <param name="video-codec-bandwidth" value="500kb"/>
-      <param name="video-fps" value="30"/>
+      <param name="video-codec-bandwidth" value="1mb"/>
+      <param name="video-fps" value="15"/>
     </profile>
 
   <!--<profile name="sla">
