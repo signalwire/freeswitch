@@ -932,6 +932,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		const char *bridge_bleg = switch_channel_get_variable(channel, "eavesdrop_bridge_bleg");
 		const char *whisper_aleg = switch_channel_get_variable(channel, "eavesdrop_whisper_aleg");
 		const char *whisper_bleg = switch_channel_get_variable(channel, "eavesdrop_whisper_bleg");
+		const char *whisper_demux = switch_channel_get_variable(channel, "eavesdrop_whisper_demux");
 		const char *bug_top = switch_channel_get_variable(channel, "eavesdrop_bug_top");
 		const char *bug_bottom = switch_channel_get_variable(channel, "eavesdrop_bug_bottom");
 
@@ -944,6 +945,9 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		}
 		if (switch_true(whisper_bleg)) {
 			flags |= ED_MUX_WRITE;
+		}
+		if (switch_true(whisper_demux)) {
+			flags |= ED_DEMUX_READ;
 		}
 
 		/* Defaults to both, if neither is set */

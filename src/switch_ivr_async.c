@@ -2177,14 +2177,19 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 					rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) ep->data, bytes / 2, channels) * 2 * channels;
 					rframe->samples = rframe->datalen / 2;
 
-					ep->demux_frame.data = ep->data;
-					ep->demux_frame.datalen = bytes;
-					ep->demux_frame.samples = bytes / 2;
-					ep->demux_frame.channels = rframe->channels;
+					if (switch_test_flag(ep, ED_DEMUX_READ)) {
+						ep->demux_frame.data = ep->data;
+						ep->demux_frame.datalen = bytes;
+						ep->demux_frame.samples = bytes / 2;
+						ep->demux_frame.channels = rframe->channels;
+					}
 
 					switch_buffer_unlock(ep->r_buffer);
 					switch_core_media_bug_set_read_replace_frame(bug, rframe);
-					switch_core_media_bug_set_read_demux_frame(bug, &ep->demux_frame);
+
+					if (switch_test_flag(ep, ED_DEMUX_READ)) {
+						switch_core_media_bug_set_read_demux_frame(bug, &ep->demux_frame);
+					}
 				}
 			}
 
@@ -2746,6 +2751,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 						break;
 					case '6':
 						switch_media_bug_set_spy_fmt(bug, switch_media_bug_parse_spy_fmt("lower-right-large"));
+						break;
+					case '7':
+						switch_set_flag(ep, ED_DEMUX_READ);
+						break;
+					case '8':
+						switch_clear_flag(ep, ED_DEMUX_READ);
 						break;
 					case '0':
 						switch_clear_flag(ep, ED_MUX_READ);
