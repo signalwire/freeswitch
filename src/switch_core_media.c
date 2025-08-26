@@ -3522,6 +3522,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			int rtp_hold_timeout_sec = 0;
 
 			engine->reset_codec = 0;
+			if (type == SWITCH_MEDIA_TYPE_AUDIO && switch_core_codec_ready(&engine->read_codec)) {
+				switch_clear_flag(&engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+			}
 
 			if (switch_rtp_ready(engine->rtp_session)) {
 
@@ -3760,6 +3763,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 										/* mark to re-set codec */
 										engine->reset_codec = 2;
+										if (switch_core_codec_ready(&engine->read_codec)) {
+											switch_set_flag(&engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+										}
 									}
 								}
 							}
@@ -3812,6 +3818,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 												  );
 			 					engine->cur_payload_map->codec_ms = codec_ms;
 								engine->reset_codec = 2;
+								if (switch_core_codec_ready(&engine->read_codec)) {
+									switch_set_flag(&engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+								}
 
 								if (switch_channel_test_flag(session->channel, CF_CONFERENCE)) {
 									switch_channel_set_flag(session->channel, CF_CONFERENCE_RESET_MEDIA);
@@ -3861,6 +3870,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 							/* mark to re-set codec */
 							engine->reset_codec = 1;
+							if (switch_core_codec_ready(&engine->read_codec)) {
+								switch_set_flag(&engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+							}
 							break;
 						}
 					}
@@ -7024,10 +7036,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (a_engine->read_impl.iananame) {
 					int z = 0;
 					a_engine->reset_codec = 1;
+					if (switch_core_codec_ready(&a_engine->read_codec)) {
+						switch_set_flag(&a_engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+					}
 					if (changed_pt) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Force reset codec for %s\n", a_engine->read_impl.iananame);
 						if (switch_core_media_set_codec(session, 2, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
 							match = 0;
+						} else {
+							a_engine->reset_codec = 0;
+							if (switch_core_codec_ready(&a_engine->read_codec)) {
+								switch_clear_flag(&a_engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+							}
 						}
 					} else {
 						for(z = 0; z < m_idx && smh->num_negotiated_codecs < SWITCH_MAX_CODECS; z++) { 
@@ -7037,6 +7057,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								matches[z].imp->samples_per_second != a_engine->read_impl.samples_per_second
 								)))) {
 								a_engine->reset_codec = 0;
+								if (switch_core_codec_ready(&a_engine->read_codec)) {
+									switch_clear_flag(&a_engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+								}
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Not resetting codec. We stick to %s\n", a_engine->read_impl.iananame);
 								break;
 							} 
@@ -7044,6 +7067,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				} else if (switch_core_media_set_codec(session, 0, smh->mparams->codec_flags) != SWITCH_STATUS_SUCCESS) {
 					match = 0;
+				} else {
+					a_engine->reset_codec = 0;
+					if (switch_core_codec_ready(&a_engine->read_codec)) {
+						switch_clear_flag(&a_engine->read_codec, SWITCH_CODEC_FLAG_RESET_PENDING);
+					}
 				}
 
 				if (match) {

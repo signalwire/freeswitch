@@ -550,7 +550,7 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 
 	if (!context || encoded_data_len > SWITCH_AMRWB_OUT_MAX_SIZE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder: Invalid context or encoded data length %d\n", encoded_data_len);
-		return SWITCH_STATUS_FALSE;
+		goto decode_error;
 	}
 
 	memcpy(buf, encoded_data, encoded_data_len);
@@ -565,12 +565,12 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 		/* Octed Aligned */
 		if (!switch_amrwb_unpack_oa(buf, tmp, encoded_data_len)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AMRWB decoder (OA): Invalid frame size: %d\n", encoded_data_len);
-			return SWITCH_STATUS_FALSE;
+			goto decode_error;
 		}
 	} else {
 		/* Bandwidth Efficient */
 		if (!switch_amrwb_unpack_be(buf, tmp, encoded_data_len)) {
-			return SWITCH_STATUS_FALSE;
+			goto decode_error;
 		}
 	}
 
@@ -579,6 +579,13 @@ static switch_status_t switch_amrwb_decode(switch_codec_t *codec,
 	*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 
 	return SWITCH_STATUS_SUCCESS;
+
+decode_error:
+	/* Check if codec reset is in progress to prevent call termination */
+	if (switch_test_flag(codec, SWITCH_CODEC_FLAG_RESET_PENDING)) {
+		return SWITCH_STATUS_NOOP;
+	}
+	return SWITCH_STATUS_FALSE;
 #endif
 }
 
