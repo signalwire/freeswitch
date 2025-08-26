@@ -3574,7 +3574,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_APPL_METHOD("BYE"),
 #endif
 				   NUTAG_APPL_METHOD("MESSAGE"),
-				   TAG_IF(sofia_test_pflag(profile, PFLAG_HANDLE_UPDATE), NUTAG_APPL_METHOD("UPDATE")),
 
 				   TAG_IF(profile->session_timeout && profile->minimum_session_expires, NUTAG_MIN_SE(profile->minimum_session_expires)),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
@@ -7015,6 +7014,18 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		int has_t38 = 0;
 		const char *drrrf_chanvar_str = switch_channel_get_variable(channel, "disable_recovery_record_route_fixup"); // disable_recovery_record_route_fixup as a chanvar
 		switch_bool_t drrrf_chanvar_zstr = zstr(drrrf_chanvar_str), drrrf_chanvar = switch_true(drrrf_chanvar_str);
+		const char *handle_update = switch_channel_get_variable(channel, "handle_update");
+		switch_bool_t to_handle_update = SWITCH_FALSE;
+
+		if (!zstr(handle_update)) {
+			to_handle_update = switch_true(handle_update);
+		} else {
+			to_handle_update = sofia_test_pflag(profile, PFLAG_HANDLE_UPDATE);
+		}
+
+		if (status > 180 && to_handle_update) {
+			nua_set_params(nua, NUTAG_APPL_METHOD("UPDATE"), TAG_END());
+		}
 
 		if (status == 100 && !sofia_test_flag(tech_pvt, TFLAG_100_UEPOCH_SET)) {
 			sofia_set_flag(tech_pvt, TFLAG_100_UEPOCH_SET);
@@ -11188,6 +11199,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	char *req_user = NULL;
 	switch_time_t sip_invite_time;
 	const char *session_id_header;
+	const char *handle_update;
+	switch_bool_t to_handle_update = SWITCH_FALSE;
 
 	profile->nua_handle_count = nua_handle_count_handles(nh);
 
@@ -11527,6 +11540,16 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 	channel = tech_pvt->channel = switch_core_session_get_channel(session);
+	handle_update = switch_channel_get_variable(channel, "handle_update");
+
+	if (!zstr(handle_update)) {
+		to_handle_update = switch_true(handle_update);
+	} else {
+		to_handle_update = sofia_test_pflag(profile, PFLAG_HANDLE_UPDATE);
+	}
+	if (to_handle_update) {
+		nua_set_params(nua, NUTAG_APPL_METHOD("UPDATE"), TAG_END());
+	}
 
 	switch_channel_set_variable_printf(channel, "sip_local_network_addr", "%s", profile->extsipip ? profile->extsipip : profile->sipip);
 	switch_channel_set_variable_printf(channel, "sip_network_ip", "%s", network_ip);
