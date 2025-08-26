@@ -3664,13 +3664,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									}
 								}
 							} else {
-								if (write_frame.codec && switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
+								if (write_frame.codec && write_frame.codec->implementation && switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
 									write_frame.datalen = (uint32_t)switch_buffer_read(early_state.buffer, write_frame.data,
 																			 write_frame.codec->implementation->decoded_bytes_per_packet);
 								}
 							}
 							switch_mutex_unlock(early_state.mutex);
-						} else if (ringback.fh) {
+						} else if (ringback.fh && write_frame.codec && write_frame.codec->implementation) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
 
