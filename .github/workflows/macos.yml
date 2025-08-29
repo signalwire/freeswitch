@@ -26,6 +26,8 @@ jobs:
         run: |
           brew update
           brew upgrade
+          # Remove pinned cmake version (https://github.com/actions/runner-images/blob/macos-15-arm64/20250825.2246/images/macos/scripts/build/install-common-utils.sh#L19)
+          brew uninstall --ignore-dependencies cmake || true
           # brew install libtiff openssl@3
           brew install \
             autoconf \
