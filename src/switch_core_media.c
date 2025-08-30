@@ -3234,7 +3234,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 
 	if (type == SWITCH_MEDIA_TYPE_TEXT && !switch_test_flag((&engine->read_frame), SFF_CNG)) {
-		if (engine->red_pt) {
+		if (engine->red_pt == engine->read_frame.payload) {
 			unsigned char *p = engine->read_frame.data;
 
 			*(p + engine->read_frame.datalen) = '\0';
@@ -5891,6 +5891,25 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			switch_channel_set_flag(session->channel, CF_TEXT_POSSIBLE);
 
 			got_text++;
+
+			switch_core_media_set_rmode(smh->session, SWITCH_MEDIA_TYPE_TEXT, sdp_media_flow(m->m_mode), sdp_type);
+
+			if (sdp_type == SDP_TYPE_REQUEST) {
+				switch(t_engine->rmode) {
+				case SWITCH_MEDIA_FLOW_RECVONLY:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_SENDONLY, sdp_type);
+					break;
+				case SWITCH_MEDIA_FLOW_SENDONLY:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_RECVONLY, sdp_type);
+					break;
+				case SWITCH_MEDIA_FLOW_INACTIVE:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_INACTIVE, sdp_type);
+					break;
+				default:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_SENDRECV, sdp_type);
+					break;
+				}
+			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				payload_map_t *pmap;
