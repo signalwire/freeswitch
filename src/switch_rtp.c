@@ -37,6 +37,8 @@
 #endif
 #include <switch_stun.h>
 #include <fspr_network_io.h>
+#include <switch_simd.h>
+
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
@@ -8327,6 +8329,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VAD] &&
 		rtp_session->last_rtp_hdr.pt == rtp_session->vad_data.read_codec->implementation->ianacode) {
 
+		// Candidate for SWITCH_ALIGN if we add SIMD to the energy computation
 		int16_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE / sizeof(int16_t)] = { 0 };
 		uint32_t rate = 0;
 		uint32_t codec_flags = 0;
