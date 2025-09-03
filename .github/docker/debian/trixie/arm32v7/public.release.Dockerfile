@@ -1,4 +1,4 @@
-ARG BUILDER_IMAGE=arm32v7/debian:trixie-20250520
+ARG BUILDER_IMAGE=arm32v7/debian:trixie-20250811
 
 FROM --platform=linux/arm/v7 ${BUILDER_IMAGE} AS builder
 

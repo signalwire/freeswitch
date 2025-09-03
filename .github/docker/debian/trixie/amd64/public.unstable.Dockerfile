@@ -1,4 +1,4 @@
-ARG BUILDER_IMAGE=debian:trixie-20250520
+ARG BUILDER_IMAGE=debian:trixie-20250811
 
 FROM ${BUILDER_IMAGE} AS builder
 
