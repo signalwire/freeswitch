@@ -2342,6 +2342,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_xml(switch_e
 
 	flags[CF_RECOVERING] = 0;
 	flags[CF_RECOVERING_BRIDGE] = 0;
+	flags[CF_REMOTE_RECOVERED] = 0;
 	flags[CF_TRACKED] = 0;
 	flags[CF_TRANSFER] = 0;
 	flags[CF_ACCEPT_CNG] = 0;

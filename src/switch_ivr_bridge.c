@@ -1777,7 +1777,9 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		const char *sbv = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
 		const char *var;
 
-		if (!zstr(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
+		if (switch_channel_test_flag(channel, CF_REMOTE_RECOVERED)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Call recovered remotely: Prevent terminating partner channel:%s.\n", uuid);
+		} else if (!zstr(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
 			int hup = 1;
 
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
