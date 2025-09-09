@@ -135,7 +135,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 	max = (int) strlen(set);
 
 	for (x = 0; x < len; x++) {
-		int j = (int) (max * 1.0 * rand() / (RAND_MAX + 1.0));
+		int j = (int) (max * 1.0 * switch_rand() / (SWITCH_RAND_MAX + 1.0));
 		buf[x] = set[j];
 	}
 }
@@ -401,13 +401,17 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_s
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(switch_stun_packet_attribute_t *attribute, switch_stun_packet_header_t *header, char *ipstr, switch_size_t iplen, uint16_t *port)
 {
 	switch_stun_ip_t *ip;
+	switch_stun_ipv6_t *ipv6;
 	uint8_t x, *i;
 	char *p = ipstr;
 
 	ip = (switch_stun_ip_t *) attribute->value;
 
 	if (ip->family == 2) {
-		uint8_t *v6addr = (uint8_t *) &ip->address;
+		uint8_t *v6addr;
+
+		ipv6 = (switch_stun_ipv6_t *)attribute->value;
+		v6addr = (uint8_t *) &ipv6->address;
 		v6_xor(v6addr, (uint8_t *)header->id);
 		inet_ntop(AF_INET6, v6addr, ipstr, iplen);
 	} else {

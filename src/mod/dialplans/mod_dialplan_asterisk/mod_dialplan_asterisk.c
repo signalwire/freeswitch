@@ -170,9 +170,8 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				char *expression = NULL, expression_buf[1024] = { 0 };
 				char substituted[2048] = "";
 				const char *field_data = caller_profile->destination_number;
-				int proceed = 0;
 				switch_regex_t *re = NULL;
-				int ovector[30] = { 0 };
+				switch_regex_match_t *match_data = NULL;
 				char *cid = NULL;
 
 				expression = expression_buf;
@@ -221,7 +220,8 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						field_data = "";
 					}
 
-					if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					if (!(switch_regex_perform(field_data, expression, &re, &match_data))) {
+						switch_regex_match_safe_free(match_data);
 						switch_regex_safe_free(re);
 						switch_safe_free(field_expanded);
 						continue;
@@ -267,10 +267,11 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				}
 
 				if (strchr(expression, '(')) {
-					switch_perform_substitution(re, proceed, argument, field_data, substituted, sizeof(substituted), ovector);
+					switch_perform_substitution(match_data, argument, substituted, sizeof(substituted));
 					argument = substituted;
 				}
 
+				switch_regex_match_safe_free(match_data);
 				switch_regex_safe_free(re);
 
 				if (!extension) {

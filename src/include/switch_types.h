@@ -599,6 +599,13 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
+/* Check if RAND_MAX is a power of 2 minus 1 or in other words all bits set */
+#if ((RAND_MAX) & ((RAND_MAX) + 1)) == 0 && (RAND_MAX) != 0
+#define SWITCH_RAND_MAX RAND_MAX
+#else
+#define SWITCH_RAND_MAX 0x7fff
+#endif
+
 typedef enum {
 	SWITCH_RW_READ,
 	SWITCH_RW_WRITE
@@ -1788,7 +1795,8 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
 	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
 	SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
-	SWITCH_SPEECH_FLAG_DONE = (1 << 6)
+	SWITCH_SPEECH_FLAG_DONE = (1 << 6),
+	SWITCH_SPEECH_FLAG_MULTI = (1 << 7)
 } switch_speech_flag_enum_t;
 typedef uint32_t switch_speech_flag_t;
 
@@ -2302,7 +2310,8 @@ typedef enum {
 	SCSC_SESSIONS_PEAK,
 	SCSC_SESSIONS_PEAK_FIVEMIN,
 	SCSC_MDNS_RESOLVE,
-	SCSC_SHUTDOWN_CAUSE
+	SCSC_SHUTDOWN_CAUSE,
+	SCSC_UUID_VERSION
 } switch_session_ctl_t;
 
 typedef enum {

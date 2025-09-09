@@ -46,10 +46,10 @@ find_distro () {
   case "$1" in
     experimental) echo "sid";;
     unstable) echo "sid";;
-    experimental) echo "bookworm";;
-    testing) echo "bullseye";;
-    stable) echo "buster";;
-    oldstable) echo "stretch";;
+    testing) echo "trixie";;
+    stable) echo "bookworm";;
+    oldstable) echo "bullseye";;
+    oldoldstable) echo "buster";;
     *) echo "$1";;
   esac
 }
@@ -57,10 +57,10 @@ find_distro () {
 find_suite () {
   case "$1" in
     sid) echo "unstable";;
-    bookworm) echo "experimental";;
-    bullseye) echo "testing";;
-    buster) echo "stable";;
-    stretch) echo "oldstable";;
+    trixie) echo "testing";;
+    bookworm) echo "stable";;
+    bullseye) echo "oldstable";;
+    buster) echo "oldoldstable";;
     *) echo "$1";;
   esac
 }
@@ -105,7 +105,6 @@ getlibs () {
   getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
   #getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
   #  || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
   #getlib http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 }
 
@@ -203,11 +202,16 @@ create_orig () {
     done
     shift $(($OPTIND-1))
 
-    local orig
+    local commit_epoch=$(git log -1 --format=%ct)
+    local source_date=$(date -u -d @$commit_epoch +'%Y-%m-%d %H:%M:%S')
+
+    local orig git_archive_prefix
     if $auto_orig; then
       orig="../freeswitch_$(debian/version-omit_revision.pl).orig.tar.xz"
+      git_archive_prefix="freeswitch/"
     else
       orig="../freeswitch_$(mk_dver "$uver")~$(lsb_release -sc).orig.tar.xz"
+      git_archive_prefix="freeswitch-$uver/"
     fi
 
     mv .gitattributes .gitattributes.orig
@@ -226,12 +230,32 @@ create_orig () {
     git add -f configure.ac .version
     git commit --allow-empty -m "nightly v$uver"
 
+    local tmpsrcdir="$(mktemp -d)"
     git archive -v \
       --worktree-attributes \
       --format=tar \
-      --prefix=freeswitch-$uver/ \
-      HEAD \
-      | xz -c -${zl}v > $orig
+      --prefix=$git_archive_prefix \
+      HEAD | tar --extract --directory="$tmpsrcdir"
+
+    # https://www.gnu.org/software/tar/manual/html_section/Reproducibility.html
+    tar \
+      --sort=name \
+      --format=posix \
+      --pax-option='exthdr.name=%d/PaxHeaders/%f' \
+      --pax-option='delete=atime,delete=ctime' \
+      --clamp-mtime \
+      --mtime="$source_date" \
+      --numeric-owner \
+      --owner=0 \
+      --group=0 \
+      --mode='go+u,go-w' \
+      --create \
+      --directory="$tmpsrcdir" \
+      . | xz -v -c -${zl} > "$orig" && \
+    rm -rf "$tmpsrcdir"
+
+    echo "Source archive checksum:"
+    sha256sum $orig
 
     mv .gitattributes.orig .gitattributes
 

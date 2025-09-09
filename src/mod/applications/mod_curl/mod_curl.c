@@ -57,6 +57,10 @@ static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-t
 #define HTTP_MAX_APPEND_HEADERS 10
 #define HTTP_DEFAULT_MAX_BYTES 64000
 
+#ifndef MOD_CURL_MAX_ARGS
+#define MOD_CURL_MAX_ARGS 30
+#endif
+
 static struct {
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
@@ -377,6 +381,10 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 					if (argc > 2) {
 						cJSON_AddItemToObject(top, "version", cJSON_CreateString(argv[0]));
 						cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(argv[2]));
+					} else if (argc == 2 && strcmp(argv[0], "HTTP/2") == 0) {
+						/* HTTP/2 responses may not include a phrase */
+						cJSON_AddItemToObject(top, "version", cJSON_CreateString(argv[0]));
+						cJSON_AddItemToObject(top, "phrase", cJSON_CreateString(""));
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unparsable header: argc: %d\n", argc);
 					}
@@ -866,7 +874,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	char *argv[10] = { 0 };
+	char *argv[MOD_CURL_MAX_ARGS + 1] = { 0 };
 	int argc;
 	char *mydata = NULL;
 
@@ -894,6 +902,9 @@ SWITCH_STANDARD_APP(curl_app_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (argc == 0) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
+		} else if (argc > MOD_CURL_MAX_ARGS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max args exceeded: %d\n", MOD_CURL_MAX_ARGS);
+			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 
 		url = switch_core_strdup(pool, argv[0]);
@@ -982,7 +993,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 SWITCH_STANDARD_API(curl_function)
 {
 	switch_status_t status;
-	char *argv[10] = { 0 };
+	char *argv[MOD_CURL_MAX_ARGS + 1] = { 0 };
 	int argc;
 	char *mydata = NULL;
 	char *url = NULL;
@@ -1014,6 +1025,9 @@ SWITCH_STANDARD_API(curl_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (argc < 1) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
+		} else if (argc > MOD_CURL_MAX_ARGS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Max args exceeded: %d\n", MOD_CURL_MAX_ARGS);
+			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 
 		url = switch_core_strdup(pool, argv[0]);

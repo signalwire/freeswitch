@@ -141,6 +141,13 @@ typedef struct {
 	uint32_t address;
 } switch_stun_ip_t;
 
+typedef struct {
+	uint8_t wasted;
+	uint8_t family;
+	uint16_t port;
+	uint8_t address[16];
+} switch_stun_ipv6_t;
+
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
 
 typedef struct {
