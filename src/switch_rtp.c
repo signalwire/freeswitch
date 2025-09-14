@@ -4670,6 +4670,9 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 		goto end;
 	}
 
+	/* once we have the remote_addr set, change from_addr to it, since this is the one we should expect incoming packets from later on */
+	switch_cp_addr(rtp_session->from_addr, rtp_session->remote_addr);
+
  end:
 
 	if (rtp_session) {
