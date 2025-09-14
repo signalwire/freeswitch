@@ -1206,7 +1206,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 								break;
 							}
 
-							old = rtp_session->remote_port;
+							old = rtp_session->eff_remote_port;
 
 							//tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
 							old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
@@ -7649,7 +7649,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
 				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
 					const char *err;
-					uint32_t old = rtp_session->remote_port;
+					uint32_t old = rtp_session->eff_remote_port;
 					const char *tx_host;
 					const char *old_host;
 					char bufa[50], bufb[50];
