@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2025, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -5904,10 +5904,15 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	rtp_session->has_rtp = 0;
 	rtp_session->has_ice = 0;
 	rtp_session->has_rtcp = 0;
+
+	switch_mutex_lock(rtp_session->ice_mutex);
 	if (rtp_session->dtls) {
 		rtp_session->dtls->bytes = 0;
 		rtp_session->dtls->data = NULL;
 	}
+
+	switch_mutex_unlock(rtp_session->ice_mutex);
+
 	memset(&rtp_session->last_rtp_hdr, 0, sizeof(rtp_session->last_rtp_hdr));
 
 	if (poll_status == SWITCH_STATUS_SUCCESS) {
@@ -5927,10 +5932,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		if ((*b >= 20) && (*b <= 64)) {
+			switch_mutex_lock(rtp_session->ice_mutex);
 			if (rtp_session->dtls) {
 				rtp_session->dtls->bytes = *bytes;
 				rtp_session->dtls->data = (void *) &rtp_session->recv_msg;
 			}
+
+			switch_mutex_unlock(rtp_session->ice_mutex);
+
 			rtp_session->has_ice = 0;
 			rtp_session->has_rtp = 0;
 			rtp_session->has_rtcp = 0;
