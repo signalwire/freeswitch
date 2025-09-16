@@ -1344,14 +1344,23 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	(*event)->bind_user_data = todup->bind_user_data;
 	(*event)->flags = todup->flags;
 	for (hp = todup->headers; hp; hp = hp->next) {
-		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
+		if (todup->subclass_name && hp->name && strcmp(hp->name, "Event-Subclass") == 0) {
 			continue;
 		}
 
-		if (hp->idx) {
-			int i;
-			for (i = 0; i < hp->idx; i++) {
-				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+		if (!hp->name || !*hp->name) {
+			continue;
+		}
+
+		if (!hp->array && !hp->value) {
+			continue;
+		}
+
+		if (hp->idx > 0 && hp->array) {
+			for (int i = 0; i < hp->idx; i++) {
+				if (hp->array[i]) {
+					switch_event_add_header_string(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+				}
 			}
 		} else {
 			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
