@@ -1333,47 +1333,44 @@ SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *t
 
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
-	switch_event_header_t *hp;
+    switch_event_header_t *hp;
 
-	if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
-	}
+    if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
+        return SWITCH_STATUS_GENERR;
+    }
 
-	(*event)->event_id = todup->event_id;
-	(*event)->event_user_data = todup->event_user_data;
-	(*event)->bind_user_data = todup->bind_user_data;
-	(*event)->flags = todup->flags;
-	for (hp = todup->headers; hp; hp = hp->next) {
-		if (todup->subclass_name && hp->name && strcmp(hp->name, "Event-Subclass") == 0) {
-			continue;
-		}
+    (*event)->event_id = todup->event_id;
+    (*event)->event_user_data = todup->event_user_data;
+    (*event)->bind_user_data = todup->bind_user_data;
+    (*event)->flags = todup->flags;
 
-		if (!hp->name || !*hp->name) {
-			continue;
-		}
+    for (hp = todup->headers; hp; hp = hp->next) {
+        if (zstr(hp->name)) {
+            continue;
+        }
 
-		if (!hp->array && !hp->value) {
-			continue;
-		}
+        if (todup->subclass_name && !strcasecmp(hp->name, "Event-Subclass")) {
+            continue;
+        }
 
-		if (hp->idx > 0 && hp->array) {
-			for (int i = 0; i < hp->idx; i++) {
-				if (hp->array[i]) {
-					switch_event_add_header_string(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
-				}
-			}
-		} else {
-			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
-		}
-	}
+        if (hp->idx > 0 && hp->array) {
+            for (int i = 0; i < hp->idx; i++) {
+                if (!zstr(hp->array[i])) {
+                    switch_event_add_header_string(*event, SWITCH_STACK_PUSH, hp->name, hp->array[i]);
+                }
+            }
+        } else if (!zstr(hp->value)) {
+            switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
+        }
+    }
 
-	if (todup->body) {
-		(*event)->body = DUP(todup->body);
-	}
+    if (!zstr(todup->body)) {
+        (*event)->body = DUP(todup->body);
+    }
 
-	(*event)->key = todup->key;
+    (*event)->key = todup->key;
 
-	return SWITCH_STATUS_SUCCESS;
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
