@@ -1376,59 +1376,72 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 
 SWITCH_DECLARE(switch_status_t) switch_event_dup_reply(switch_event_t **event, switch_event_t *todup)
 {
-	switch_event_header_t *hp;
-	char hname[1024] = "";
-	char *p;
+    switch_event_header_t *hp;
+    char hname[1024] = "";
+    char *p;
 
-	if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
-	}
+    if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
+        return SWITCH_STATUS_GENERR;
+    }
 
-	(*event)->event_id = todup->event_id;
-	(*event)->event_user_data = todup->event_user_data;
-	(*event)->bind_user_data = todup->bind_user_data;
-	(*event)->flags = todup->flags;
+    (*event)->event_id = todup->event_id;
+    (*event)->event_user_data = todup->event_user_data;
+    (*event)->bind_user_data = todup->bind_user_data;
+    (*event)->flags = todup->flags;
 
-	for (hp = todup->headers; hp; hp = hp->next) {
-		char *name = hp->name, *value = hp->value;
+    for (hp = todup->headers; hp; hp = hp->next) {
+        char *name;
+        char *value;
 
-		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
-			continue;
-		}
+        if (zstr(hp->name)) {
+            continue;
+        }
 
-		if (!strncasecmp(hp->name, "from_", 5)) {
-			p = hp->name + 5;
-			switch_snprintf(hname, sizeof(hname), "to_%s", p);
-			name = hname;
-		} else if (!strncasecmp(hp->name, "to_", 3)) {
-			p = hp->name + 3;
-			switch_snprintf(hname, sizeof(hname), "from_%s", p);
-			name = hname;
-		} else if (!strcasecmp(name, "to")) {
-			name = "from";
-		} else if (!strcasecmp(name, "from")) {
-			name = "to";
-		}
+        if (todup->subclass_name && !strcasecmp(hp->name, "Event-Subclass")) {
+            continue;
+        }
 
-		if (hp->idx) {
-			int i;
-			for (i = 0; i < hp->idx; i++) {
-				switch_event_add_header_string(*event, SWITCH_STACK_PUSH, name, hp->array[i]);
-			}
-		} else {
-			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, value);
-		}
-	}
+        name = hp->name;
+        value = hp->value;
 
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "replying", "true");
+        if (zstr(value) && hp->idx == 0) {
+            continue;
+        }
 
-	if (todup->body) {
-		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "orig_body", todup->body);
-	}
+        if (!strncasecmp(name, "from_", 5)) {
+            p = name + 5;
+            switch_snprintf(hname, sizeof(hname), "to_%s", p);
+            name = hname;
+        } else if (!strncasecmp(name, "to_", 3)) {
+            p = name + 3;
+            switch_snprintf(hname, sizeof(hname), "from_%s", p);
+            name = hname;
+        } else if (!strcasecmp(name, "to")) {
+            name = "from";
+        } else if (!strcasecmp(name, "from")) {
+            name = "to";
+        }
 
-	(*event)->key = todup->key;
+        if (hp->idx > 0 && hp->array) {
+            for (int i = 0; i < hp->idx; i++) {
+                if (!zstr(hp->array[i])) {
+                    switch_event_add_header_string(*event, SWITCH_STACK_PUSH, name, hp->array[i]);
+                }
+            }
+        } else if (!zstr(value)) {
+            switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, name, value);
+        }
+    }
 
-	return SWITCH_STATUS_SUCCESS;
+    switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "replying", "true");
+
+    if (!zstr(todup->body)) {
+        switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "orig_body", todup->body);
+    }
+
+    (*event)->key = todup->key;
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 #define SWITCH_SERIALIZED_EVENT_MAP "S(iiisss)A(S(ss))"
