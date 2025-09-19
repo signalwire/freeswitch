@@ -3194,7 +3194,6 @@ SWITCH_STANDARD_APP(endless_playback_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *error = NULL;
 	const char *file = data;
 
 	while (switch_channel_ready(channel)) {
@@ -3214,8 +3213,8 @@ SWITCH_STANDARD_APP(endless_playback_function)
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not play the media correctly. status: %d, error: %s\n", status, error);
-		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not play the media correctly. status: %d\n", status);
+		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d", status);
 		break;
 	}
 
@@ -3225,7 +3224,6 @@ SWITCH_STANDARD_APP(loop_playback_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *error = NULL;
 	const char *file = data;
 	int loop = 1;
 
@@ -3265,8 +3263,8 @@ SWITCH_STANDARD_APP(loop_playback_function)
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not play the media correctly. status: %d, error: %s\n", status, error);
-		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d:%s", status, error);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Could not play the media correctly. status: %d\n", status);
+		switch_channel_set_variable_printf(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR: %d", status);
 		break;
 	}
 
