@@ -149,6 +149,7 @@
 #include "switch_vad.h"
 #include <libteletone.h>
 #include "switch_telnyx.h"
+#include "switch_telnyx_kv.h"
 
 
 /** \mainpage FreeSWITCH
