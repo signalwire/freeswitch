@@ -1,0 +1,139 @@
+# LLM Repository Instructions for FreeSWITCH
+
+## Overview
+This is a FreeSWITCH codebase - a Software Defined Telecom Stack for VoIP/telecommunications applications. This fork is maintained by Telnyx with bugfixes and stability enhancements. FreeSWITCH is primarily written in C with some C++ components.
+
+## Code Style and Conventions
+
+### General C/C++ Style
+- Follow existing indentation and formatting patterns (tabs appear to be used)
+- Use consistent variable naming conventions (snake_case for variables, UPPER_CASE for constants/macros)
+- Maintain existing function signature patterns and return value conventions
+- Preserve existing comment style and documentation format
+- Use FreeSWITCH-specific prefixes (SWITCH_*, switch_*) for APIs and types
+
+### FreeSWITCH-Specific Conventions
+- All FreeSWITCH APIs use the `switch_` prefix (e.g., `switch_log_printf`, `switch_channel_*`)
+- Module functions follow `mod_<modulename>_<function>` naming pattern
+- Use FreeSWITCH macros like `SWITCH_MODULE_DEFINITION`, `SWITCH_MODULE_LOAD_FUNCTION`
+- Follow the modular architecture - modules are in `src/mod/` subdirectories
+- Configuration uses FreeSWITCH XML config patterns
+
+### Memory Management
+- Always check for NULL pointers before dereferencing
+- Use FreeSWITCH memory pool system (`switch_core_alloc`, `switch_core_session_alloc`)
+- Avoid direct malloc/free - use FreeSWITCH memory management APIs
+- Use `const` qualifiers appropriately for read-only data
+- Be especially careful with session and channel memory management
+
+### Error Handling
+- Use FreeSWITCH status codes (`switch_status_t`, `SWITCH_STATUS_SUCCESS`, etc.)
+- Check return values of all function calls that can fail
+- Use consistent error code conventions throughout the codebase
+- Provide meaningful error messages using `switch_log_printf`
+- Handle edge cases and boundary conditions properly
+
+## Build System
+
+### Primary Build System
+- This project uses autotools (configure.ac, Makefile.am files)
+- Run `./configure` followed by `make` to build
+- Module-specific Makefiles are in each mod directory
+- Respect existing compiler flags and optimization settings
+- The build supports cross-compilation scenarios
+
+### Module System
+- Modules are dynamically loadable (.so/.dll files)
+- Each module has its own Makefile.am in its subdirectory
+- Modules must be enabled in `modules.conf` to be built
+- Follow existing module template patterns (see mod_skel)
+
+### Dependencies
+- Core dependencies include: APR, Sofia-SIP, SpanDSP, various codec libraries
+- Check configure.ac for required vs optional dependencies
+- Telnyx-specific additions include Boost, Poco, ZMQ, Berkeley DB
+
+## Telecommunications/Audio Specific
+
+### Real-Time Processing
+- Be mindful of sample rate dependencies and buffer sizes
+- Maintain precision in audio/signal processing calculations
+- Consider numerical stability in codec and DSP algorithms
+- Avoid blocking operations in media processing threads
+- Preserve existing bit-exactness where required for codec compliance
+
+### Session Management
+- Understand FreeSWITCH session lifecycle and state management
+- Use proper channel variables and APIs
+- Handle call setup, media handling, and teardown correctly
+- Be aware of SIP protocol requirements and FreeSWITCH abstractions
+
+### Threading and Concurrency
+- FreeSWITCH is heavily multi-threaded
+- Use FreeSWITCH thread primitives and synchronization
+- Be aware of session locks and avoid deadlocks
+- Understand the core thread architecture
+
+## Performance Considerations
+- Avoid unnecessary memory allocations in real-time media paths
+- Consider cache-friendly memory access patterns
+- Maintain existing optimization strategies
+- Profile critical paths when making changes
+- Be mindful of CPU usage in high-call-volume scenarios
+
+## Testing and Validation
+
+### Module Testing
+- Test modules with various call scenarios
+- Validate codec encode/decode paths
+- Check for memory leaks using FreeSWITCH's built-in tools
+- Test with different SIP scenarios and edge cases
+- Ensure compliance with relevant telecommunications standards
+
+### Integration Testing
+- Test with real SIP phones and soft clients  
+- Validate interoperability with different SIP stacks
+- Test under load conditions
+- Verify configuration file parsing and validation
+
+## Security Considerations
+- Follow secure coding practices for network-facing code
+- Validate all external inputs (SIP messages, RTP packets, etc.)
+- Be aware of buffer overflow and injection vulnerabilities
+- Use FreeSWITCH's built-in security features appropriately
+- Never log sensitive information like credentials
+
+## Before Making Changes
+- Understand the FreeSWITCH architecture and call flow
+- Check for similar patterns elsewhere in the codebase  
+- Consider impact on both call setup and media processing
+- Verify changes don't break existing module compatibility
+- Test with multiple codecs and transport protocols
+- Ensure changes work with FreeSWITCH's event system
+
+## Configuration and XML
+- FreeSWITCH uses XML for configuration
+- Follow existing XML schema patterns
+- Use FreeSWITCH's configuration API for runtime config changes
+- Validate configuration parameters appropriately
+- Provide meaningful error messages for configuration issues
+
+## Logging and Debugging
+- Use FreeSWITCH's logging system (`switch_log_printf`)
+- Follow existing log level conventions (DEBUG, INFO, WARNING, ERROR)
+- Include channel UUID in session-related logs
+- Avoid excessive logging in high-frequency code paths
+- Use appropriate log channels for different subsystems
+
+## Codec and Media Handling
+- Understand FreeSWITCH's codec negotiation system
+- Handle media frame timing correctly
+- Support various audio/video formats as appropriate
+- Follow existing patterns for codec implementation
+- Handle format changes and re-INVITE scenarios properly
+
+## Documentation
+- Document public APIs using existing comment patterns
+- Update relevant configuration examples
+- Maintain inline documentation for complex algorithms
+- Follow FreeSWITCH documentation conventions

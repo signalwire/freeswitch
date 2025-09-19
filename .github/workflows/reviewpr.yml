@@ -1,0 +1,24 @@
+name: PR Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: write
+  actions: write
+
+jobs:
+  review:
+    runs-on: ["self-hosted", "telnyx-2xsmall"]
+
+    steps:
+      - name: PR Review
+        uses: team-telnyx/reviewpr-internal@main
+        with:
+          telnyx_api_key: ${{ secrets.TELNYXAI_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          preferred_model: ${{ vars.PREFERRED_MODEL }}
