@@ -2067,7 +2067,10 @@ struct eavesdrop_pvt {
 	int errs;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t tread_impl;
+	switch_audio_resampler_t *resampler;
+	switch_mutex_t *resample_mutex;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t resample_data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 };
 
 
@@ -2152,8 +2155,34 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	case SWITCH_ABC_TYPE_READ_PING:
 		if (ep->buffer) {
 			if (switch_core_media_bug_read(bug, &frame, SWITCH_FALSE) != SWITCH_STATUS_FALSE) {
+				void *data_to_write = frame.data;
+				uint32_t datalen_to_write = frame.datalen;
+
+				/* Apply resampling if needed */
+				if (ep->resampler && frame.datalen > 0) {
+					int16_t *original_data = (int16_t *)frame.data;
+					int original_samples = frame.datalen / 2 / ep->tread_impl.number_of_channels;
+
+					switch_mutex_lock(ep->resample_mutex);
+					switch_resample_process(ep->resampler, original_data, original_samples);
+
+					/* Copy resampled data to resample buffer */
+					memcpy(ep->resample_data, ep->resampler->to, ep->resampler->to_len * 2 * ep->tread_impl.number_of_channels);
+					data_to_write = ep->resample_data;
+					datalen_to_write = ep->resampler->to_len * 2 * ep->tread_impl.number_of_channels;
+
+					switch_mutex_unlock(ep->resample_mutex);
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
+									  "Eavesdrop callback: Resampled %d->%d samples (%u->%u bytes), %dHz->%dHz\n",
+									  original_samples, (int)ep->resampler->to_len,
+									  frame.datalen, datalen_to_write,
+									  ep->tread_impl.actual_samples_per_second,
+									  ep->read_impl.actual_samples_per_second);
+				}
+
 				switch_buffer_lock(ep->buffer);
-				switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
+				switch_buffer_zwrite(ep->buffer, data_to_write, datalen_to_write);
 				switch_buffer_unlock(ep->buffer);
 			}
 		}
@@ -2451,7 +2480,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		switch_core_session_get_read_impl(tsession, &tread_impl);
 		switch_core_session_get_read_impl(session, &read_impl);
-		
+
 		if ((id_name = switch_channel_get_variable(tchannel, "eavesdrop_announce_id"))) {
 			const char *tmp = switch_channel_get_variable(tchannel, "eavesdrop_announce_macro");
 			if (tmp) {
@@ -2529,6 +2558,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		ep->read_impl = read_impl;
 		ep->tread_impl = tread_impl;
+
+		/* Initialize resampler if sample rates differ */
+		if (tread_impl.actual_samples_per_second != read_impl.actual_samples_per_second) {
+			switch_mutex_init(&ep->resample_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+							  "Eavesdrop: Creating resampler %dHz->%dHz for sample rate conversion\n",
+							  tread_impl.actual_samples_per_second, read_impl.actual_samples_per_second);
+
+			if (switch_resample_create(&ep->resampler,
+									   tread_impl.actual_samples_per_second,
+									   read_impl.actual_samples_per_second,
+									   tread_impl.decoded_bytes_per_packet,
+									   SWITCH_RESAMPLE_QUALITY,
+									   tread_impl.number_of_channels) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+								  "Eavesdrop: Unable to create resampler\n");
+				goto end;
+			}
+		}
 
 		codec_initialized = 1;
 
@@ -2968,6 +3017,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 			if (ep->w_buffer) {
 				switch_buffer_destroy(&ep->w_buffer);
+			}
+
+			if (ep->resampler) {
+				switch_resample_destroy(&ep->resampler);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Eavesdrop: Destroyed resampler\n");
 			}
 		}
 
