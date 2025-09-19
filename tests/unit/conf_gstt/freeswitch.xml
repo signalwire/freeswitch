@@ -180,8 +180,9 @@
     <context name="default">
                 <extension name="two">
                         <condition field="destination_number" expression="^\+15553332901$">
-                                <action application="log" data="${sip_h_identity}"/>
-                                <action application="hash" data="insert/realm/identity_check/${sip_h_identity}"/>
+                                <!-- On ENGDESK-38038 we have disable sip_h_identity and use sip_identity instead -->
+                                <action application="log" data="${sip_identity[0]}"/>
+                                <action application="hash" data="insert/realm/identity_check/${sip_identity[0]}"/>
                                 <action application="answer"/>
                                 <action application="park"/>
                         </condition>

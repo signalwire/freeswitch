@@ -128,7 +128,7 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
-		FST_TEST_BEGIN(test_mod_opus_switch_status_false)
+		FST_TEST_BEGIN(test_mod_opus_switch_status_noop)
 		{
 			signed char outbuf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 			uint32_t decoded_len = 0;
@@ -148,7 +148,8 @@ FST_CORE_BEGIN("./conf")
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 
 			status = switch_core_codec_decode(&orig_codec, NULL, "test", 5, 48000, outbuf, &decoded_len, &decoded_rate, &flags);
-			fst_check_int_equals(status, SWITCH_STATUS_FALSE);
+			// On ENGDESK-42254 we have change SWITCH_STATUS_FALSE to SWITCH_STATUS_NOOP to fix customer issue, so this test should check SWITCH_STATUS_NOOP
+			fst_check_int_equals(status, SWITCH_STATUS_NOOP);
 			switch_core_codec_destroy(&orig_codec);
 		}
 		FST_TEST_END()

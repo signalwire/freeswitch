@@ -5189,7 +5189,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	memset(&rtp_session->fork, 0, sizeof(rtp_session->fork));
 
 	{
-		const char *v = switch_channel_get_variable(channel, "debug_rtp");
+		const char *v = NULL;
+		if (channel) {
+			v = switch_channel_get_variable(channel, "debug_rtp");
+		}
 		if (!zstr(v) && switch_true(v)) {
 			rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
 			rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]++;
@@ -5199,7 +5202,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->poll_timeout_s = poll_timeout_s;
 
 	{
-		const char *v = switch_channel_get_variable(channel, "telnyx_rtp_poll_timeout_s");
+		const char *v = NULL;
+		if (channel) {
+			v = switch_channel_get_variable(channel, "telnyx_rtp_poll_timeout_s");
+		}
 		if (!zstr(v)) {
 			if (!switch_is_number(v)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RTP blocking mode poll timeout variable set but is not a number - ignoring\n");
@@ -5215,7 +5221,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->publish_stats_interval_ms = RTP_PUBLISH_STATS_INTERVAL_MS;
 	
 	{
-		const char *v = switch_channel_get_variable(channel, "telnyx_rtp_publish_stats_interval_ms");
+		const char *v = NULL;
+		if (channel) {
+			v = switch_channel_get_variable(channel, "telnyx_rtp_publish_stats_interval_ms");
+		}
 		if (!zstr(v)) {
 			if (!switch_is_number(v)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "RTP publish stats interval variable is set but is not a number - ignoring\n");
