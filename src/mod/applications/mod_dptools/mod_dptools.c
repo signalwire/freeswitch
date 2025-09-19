@@ -937,7 +937,11 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		const char *bug_bottom = switch_channel_get_variable(channel, "eavesdrop_bug_bottom");
 
 		if (enable_dtmf) {
-			flags = switch_true(enable_dtmf) ? ED_DTMF : ED_NONE;
+			if (!strcasecmp(enable_dtmf, "events")) {
+				flags = ED_DTMF_EVENTS_ONLY;
+			} else {
+				flags = switch_true(enable_dtmf) ? ED_DTMF : ED_NONE;
+			}
 		}
 
 		if (switch_true(whisper_aleg)) {

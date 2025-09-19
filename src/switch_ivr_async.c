@@ -2638,6 +2638,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		if ((flags & ED_TAP_READ) || (flags & ED_TAP_WRITE)) {
 			flags &= ~ED_DTMF;
+			flags &= ~ED_DTMF_EVENTS_ONLY;
 			flags &= ~ED_BRIDGE_READ;
 			flags &= ~ED_BRIDGE_WRITE;
 		}
@@ -2693,11 +2694,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				switch_event_destroy(&event);
 			}
 
-			if ((flags & ED_DTMF) && switch_channel_has_dtmf(channel)) {
+			if (((flags & ED_DTMF) || (flags & ED_DTMF_EVENTS_ONLY)) && switch_channel_has_dtmf(channel)) {
 				switch_dtmf_t dtmf = { 0 };
 				switch_channel_dequeue_dtmf(channel, &dtmf);
 				db[0] = dtmf.digit;
-				fcommand = db;
+				if (flags & ED_DTMF) {
+					fcommand = db;
+				}
 			}
 
 			if (switch_core_media_bug_test_flag(bug, SMBF_READ_VIDEO_STREAM) ||

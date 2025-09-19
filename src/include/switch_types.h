@@ -370,7 +370,8 @@ typedef enum {
 	ED_STEREO = (1 << 8),
 	ED_BUG_TOP = (1 << 9),
 	ED_BUG_BOTTOM = (1 << 10),
-	ED_DEMUX_READ = (1 << 11)
+	ED_DEMUX_READ = (1 << 11),
+	ED_DTMF_EVENTS_ONLY = (1 << 12)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
