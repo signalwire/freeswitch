@@ -5486,21 +5486,22 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (copy_multipart && (!(vval = switch_channel_get_variable(o_channel, "sip_forward_isup")) || switch_true(vval)))  {
 			switch_channel_t *chana = switch_core_session_get_channel(session);
 			switch_channel_t *chanb = switch_core_session_get_channel(nsession);
-			char * isup = switch_channel_get_private(chana, "_isup_payload");
+			char *isup = switch_channel_get_private(chana, "_isup_payload");
 			if (isup) {
 				/*
 				 * Transfer ownership of the isup payload to b-leg
 				 */
-				void* len = switch_channel_get_private(chana, "_isup_payload_size");
-				switch_channel_set_private(chanb, "_isup_payload", isup);
+				void *len = switch_channel_get_private(chana, "_isup_payload_size");
+				char *isup2 = switch_core_session_alloc(nsession, (switch_size_t)len);
+				memcpy(isup2, isup, (switch_size_t)len);
+				switch_channel_set_private(chanb, "_isup_payload", isup2);
 				switch_channel_set_private(chanb, "_isup_payload_size", (void*)len);
 				switch_channel_set_private(chana, "_isup_payload", 0);
 			}
 		} else {
 			switch_channel_t *chana = switch_core_session_get_channel(session);
-			char * isup = switch_channel_get_private(chana, "_isup_payload");
+			char *isup = switch_channel_get_private(chana, "_isup_payload");
 			if (isup) {
-				free(isup);
 				switch_channel_set_private(chana, "_isup_payload", 0);
 			}
 		}

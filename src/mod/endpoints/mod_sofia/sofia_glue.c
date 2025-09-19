@@ -1717,13 +1717,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		
 		isup = switch_channel_get_private(channel, "_isup_payload");
 		if (isup) {
-			/*
-			 * We no longer need the isup.  Free it up or it would leak!
-			 */
-			free(isup);
 			switch_channel_set_private(channel, "_isup_payload", 0);
 		}
-		
 	}
 
 	if ((tech_pvt->session_timeout = session_timeout)) {

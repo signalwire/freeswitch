@@ -12009,12 +12009,9 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if (mp->mp_payload && mp->mp_payload->pl_data && mp->mp_content_type && mp->mp_content_type->c_type) {
 				if (mp->mp_content_type->c_subtype && strcasecmp(mp->mp_content_type->c_subtype, "isup") == 0) {
 					intptr_t len = mp->mp_payload->pl_len;
-					char * isup = malloc(mp->mp_payload->pl_len);
+					char *isup = switch_core_session_alloc(session, mp->mp_payload->pl_len);
 					char *val = switch_core_session_sprintf(session, "%s:{ELIDED_BINARY_DATA}", mp->mp_content_type->c_type);
 					switch_channel_add_variable_var_check(channel, "sip_multipart", val, SWITCH_FALSE, SWITCH_STACK_PUSH);
-					/*
-					 * Take note that isup is allocated.  it must deleted afterwards
-					 */
 					memcpy(isup, mp->mp_payload->pl_data, mp->mp_payload->pl_len);
 					switch_channel_set_private(channel, "_isup_payload", isup);
 					switch_channel_set_private(channel, "_isup_payload_size", (void*)len);

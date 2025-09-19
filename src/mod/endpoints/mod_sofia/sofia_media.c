@@ -101,15 +101,17 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_string_stream_write(switch_stream_
 {
 	va_list ap;
 	char *data = NULL;
+	switch_status_t status;
 	va_start(ap, fmt);
 	//ret = switch_vasprintf(&data, fmt, ap);
 	if (!(data = switch_vmprintf(fmt, ap))) {
 		return SWITCH_STATUS_FALSE;
 	}
 	va_end(ap);
-	return handle->raw_write_function(handle, (unsigned char*)data, strlen(data));
+	status = handle->raw_write_function(handle, (unsigned char*)data, strlen(data));
+	free(data);
+	return status;
 }
-
 
 static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str, const char *isup, intptr_t isup_len, switch_bool_t drop_sdp) {
 	char *dname = switch_core_session_strdup(session, str);
@@ -146,7 +148,7 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 	switch_bool_t allow_custom_sdp = switch_true(switch_channel_get_variable(channel, "allow_custom_sdp"));
 	switch_bool_t drop_sdp = !!sdp && !allow_custom_sdp;
 
-	char * isup = (char*)switch_channel_get_private(channel, "_isup_payload");
+	char *isup = (char*)switch_channel_get_private(channel, "_isup_payload");
 	intptr_t isup_len = (intptr_t)switch_channel_get_private(channel, "_isup_payload_size");
 
 
