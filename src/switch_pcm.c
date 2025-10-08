@@ -268,6 +268,93 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 }
 
 
+static switch_status_t switch_l24_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+{
+	int encoding, decoding;
+
+	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
+	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
+
+	if (!(encoding || decoding)) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		return SWITCH_STATUS_SUCCESS;
+	}
+}
+
+static switch_status_t switch_l24_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
+										 void *decoded_data,
+										 uint32_t decoded_data_len,
+										 uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										 unsigned int *flag)
+{
+	int16_t *src = (int16_t *)decoded_data;
+	uint8_t *dst = (uint8_t *)encoded_data;
+	uint32_t num_samples = decoded_data_len / 2;  /* 2 bytes per 16-bit sample */
+	uint32_t i;
+	int32_t sample32;
+
+	/* Convert 16-bit samples to 24-bit samples (big-endian, network byte order) */
+	for (i = 0; i < num_samples; i++) {
+		/* Extend 16-bit sample to 24-bit by left-shifting 8 bits */
+		sample32 = ((int32_t)src[i]) << 8;
+
+		/* Write 24-bit sample in big-endian format */
+		dst[i * 3 + 0] = (sample32 >> 16) & 0xff;  /* MSB */
+		dst[i * 3 + 1] = (sample32 >> 8) & 0xff;   /* middle byte */
+		dst[i * 3 + 2] = sample32 & 0xff;          /* LSB */
+	}
+
+	*encoded_data_len = num_samples * 3;  /* 3 bytes per 24-bit sample */
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_l24_decode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
+										 void *encoded_data,
+										 uint32_t encoded_data_len,
+										 uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										 unsigned int *flag)
+{
+	uint8_t *src = (uint8_t *)encoded_data;
+	int16_t *dst = (int16_t *)decoded_data;
+	uint32_t num_samples = encoded_data_len / 3;  /* 3 bytes per 24-bit sample */
+	uint32_t i;
+	int32_t sample32;
+
+	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
+		memset(dst, 0, codec->implementation->decoded_bytes_per_packet);
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
+	} else {
+		/* Convert 24-bit samples (big-endian) to 16-bit samples */
+		for (i = 0; i < num_samples; i++) {
+			/* Read 24-bit sample in big-endian format */
+			sample32 = ((int32_t)src[i * 3 + 0] << 16) |  /* MSB */
+					   ((int32_t)src[i * 3 + 1] << 8) |   /* middle byte */
+					   ((int32_t)src[i * 3 + 2]);         /* LSB */
+
+			/* Sign-extend from 24-bit to 32-bit */
+			if (sample32 & 0x00800000) {
+				sample32 |= 0xff000000;
+			}
+
+			/* Convert 24-bit to 16-bit by right-shifting 8 bits */
+			dst[i] = (int16_t)(sample32 >> 8);
+		}
+
+		*decoded_data_len = num_samples * 2;  /* 2 bytes per 16-bit sample */
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_l24_destroy(switch_codec_t *codec)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static void mod_g711_load(switch_loadable_module_interface_t ** module_interface, switch_memory_pool_t *pool)
 {
 	switch_codec_interface_t *codec_interface;
@@ -936,6 +1023,78 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 			switch_raw_encode, /* function to encode raw data into encoded data */
 			switch_raw_decode, /* function to decode encoded data into raw data */
 			switch_raw_destroy); /* deinitalize a codec handle using this implementation */
+
+	/* L24 - 24-bit Linear PCM */
+	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (24 bit)");
+
+	/* 8000 Hz L24 */
+	rate = 8000;
+	spf = 80;
+	bpf = 160;  /* 80 samples * 2 bytes per sample (internal 16-bit format) */
+	ebpf = 240; /* 80 samples * 3 bytes per sample (wire 24-bit format) */
+	mpf = 10000;
+	for (countb = 12; countb > 0; countb--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24,
+											 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24 * 2,
+											 mpf * countb, spf * countb, bpf * countb * 2, ebpf * countb * 2, 2, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+	}
+
+	/* 16000 Hz L24 */
+	rate = 16000;
+	spf = 160;
+	bpf = 320;  /* 160 samples * 2 bytes per sample (internal 16-bit format) */
+	ebpf = 480; /* 160 samples * 3 bytes per sample (wire 24-bit format) */
+	for (countb = 12; countb > 0; countb--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24,
+											 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24 * 2,
+											 mpf * countb, spf * countb, bpf * countb * 2, ebpf * countb * 2, 2, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+	}
+
+	/* 32000 Hz L24 */
+	rate = 32000;
+	spf = 320;
+	bpf = 640;  /* 320 samples * 2 bytes per sample (internal 16-bit format) */
+	ebpf = 960; /* 320 samples * 3 bytes per sample (wire 24-bit format) */
+	for (countb = 6; countb > 0; countb--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24,
+											 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24 * 2,
+											 mpf * countb, spf * countb, bpf * countb * 2, ebpf * countb * 2, 2, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+	}
+
+	/* 48000 Hz L24 */
+	rate = 48000;
+	spf = 480;
+	bpf = 960;  /* 480 samples * 2 bytes per sample (internal 16-bit format) */
+	ebpf = 1440; /* 480 samples * 3 bytes per sample (wire 24-bit format) */
+	for (countb = 6; countb > 0; countb--) {
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24,
+											 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+
+		switch_core_codec_add_implementation(pool, codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO, 96, "L24", NULL, rate, rate, rate * 24 * 2,
+											 mpf * countb, spf * countb, bpf * countb * 2, ebpf * countb * 2, 2, spf * countb,
+											 switch_l24_init, switch_l24_encode, switch_l24_decode, switch_l24_destroy);
+	}
 
 	/* indicate that the module should continue to be loaded */
 
