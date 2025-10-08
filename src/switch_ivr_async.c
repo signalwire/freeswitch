@@ -1182,6 +1182,7 @@ struct record_helper {
 	switch_event_t *variables;
 	switch_mutex_t *cond_mutex;
 	switch_thread_cond_t *cond;
+	char *record_label;
 };
 
 static switch_status_t record_helper_destroy(struct record_helper **rh, switch_core_session_t *session);
@@ -1269,7 +1270,7 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 			switch_size_t updated_record_ms = current_record_ms;
 			const char *prev_record_sec_str = switch_channel_get_variable(channel, "record_seconds");
 			const char *prev_record_ms_str = switch_channel_get_variable(channel, "record_ms");
-			char buffer_name[32];
+			char buffer_name[128];
 
 			snprintf(buffer_name, sizeof(buffer_name), "record_samples_%d", record_index);
 			switch_channel_set_variable_printf(channel, buffer_name, "%d", current_samples_out);
@@ -1280,14 +1281,73 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 			snprintf(buffer_name, sizeof(buffer_name), "record_url_%d", record_index);
 			switch_channel_set_variable_printf(channel, buffer_name, "%s", !zstr(rh->file) ? rh->file : "");
 
-			if ((!zstr(prev_record_sec_str) && switch_is_number(prev_record_sec_str))
-				&& !zstr(prev_record_ms_str) && switch_is_number(prev_record_ms_str)) {
-				updated_record_seconds += atoi(prev_record_sec_str);
-				updated_record_ms += atoi(prev_record_ms_str);
-			}
+			/* Handle labeled CDR variables if record_label is set */
+			if (!zstr(rh->record_label)) {
+				/* For labeled recordings, accumulate in label-specific variables */
+				switch_size_t labeled_record_seconds = current_record_seconds;
+				switch_size_t labeled_record_ms = current_record_ms;
+				const char *prev_labeled_sec_str;
+				const char *prev_labeled_ms_str;
+				
+				/* Get previous labeled seconds and ms if they exist */
+				snprintf(buffer_name, sizeof(buffer_name), "record_%s_seconds", rh->record_label);
+				prev_labeled_sec_str = switch_channel_get_variable(channel, buffer_name);
+				
+				snprintf(buffer_name, sizeof(buffer_name), "record_%s_ms", rh->record_label);
+				prev_labeled_ms_str = switch_channel_get_variable(channel, buffer_name);
+				
+				/* Add to previous values if both exist (like original code) */
+				if ((!zstr(prev_labeled_sec_str) && switch_is_number(prev_labeled_sec_str))
+					&& (!zstr(prev_labeled_ms_str) && switch_is_number(prev_labeled_ms_str))) {
+					int prev_sec = switch_safe_atoi(prev_labeled_sec_str, 0);
+					int prev_ms = switch_safe_atoi(prev_labeled_ms_str, 0);
+					if (prev_sec >= 0 && prev_ms >= 0) {
+						labeled_record_seconds += (switch_size_t)prev_sec;
+						labeled_record_ms += (switch_size_t)prev_ms;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							"Skipping negative recording values for label '%s': seconds=%d, ms=%d\n",
+							rh->record_label, prev_sec, prev_ms);
+					}
+				}
+				
+				/* Set the labeled CDR variables */
+				snprintf(buffer_name, sizeof(buffer_name), "record_%s_seconds", rh->record_label);
+				switch_channel_set_variable_printf(channel, buffer_name, "%d", labeled_record_seconds);
+				
+				snprintf(buffer_name, sizeof(buffer_name), "record_%s_ms", rh->record_label);
+				switch_channel_set_variable_printf(channel, buffer_name, "%d", labeled_record_ms);
+				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+					"Recording stopped with label '%s': current=%ds/%dms, total=%ds/%dms\n",
+					rh->record_label, 
+					(int)current_record_seconds, (int)current_record_ms,
+					(int)labeled_record_seconds, (int)labeled_record_ms);
+			} else {
+				/* For non-labeled recordings, accumulate in record_seconds and record_ms */
+				/* Use same logic as original code - both variables must exist */
+				if ((!zstr(prev_record_sec_str) && switch_is_number(prev_record_sec_str))
+					&& (!zstr(prev_record_ms_str) && switch_is_number(prev_record_ms_str))) {
+					int prev_sec = switch_safe_atoi(prev_record_sec_str, 0);
+					int prev_ms = switch_safe_atoi(prev_record_ms_str, 0);
+					if (prev_sec >= 0 && prev_ms >= 0) {
+						updated_record_seconds += (switch_size_t)prev_sec;
+						updated_record_ms += (switch_size_t)prev_ms;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							"Skipping negative recording values: seconds=%d, ms=%d\n",
+							prev_sec, prev_ms);
+					}
+				}
 
-			switch_channel_set_variable_printf(channel, "record_seconds", "%d", updated_record_seconds);
-			switch_channel_set_variable_printf(channel, "record_ms", "%d", updated_record_ms);
+				switch_channel_set_variable_printf(channel, "record_seconds", "%d", updated_record_seconds);
+				switch_channel_set_variable_printf(channel, "record_ms", "%d", updated_record_ms);
+				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+					"Recording stopped without label: current=%ds/%dms, total=%ds/%dms\n",
+					(int)current_record_seconds, (int)current_record_ms,
+					(int)updated_record_seconds, (int)updated_record_ms);
+			}
 		}
 	}
 
@@ -3520,6 +3580,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session_event(switch_core_sess
 
 	if (vars) {
 		switch_event_dup(&rh->variables, vars);
+	}
+
+	/* Get record_label from fh->params if present (parsed by switch_core_file_open) */
+	rh->record_label = NULL;
+	
+	if (fh && fh->params) {
+		const char *label = switch_event_get_header(fh->params, "record_label");
+		if (!zstr(label)) {
+			rh->record_label = switch_core_strdup(rh->helper_pool, label);
+		}
 	}
 
 	rh->hangup_on_error = hangup_on_error;
