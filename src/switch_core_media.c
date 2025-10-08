@@ -339,6 +339,8 @@ static const char* CRYPTO_KEY_PARAM_METHOD[CRYPTO_KEY_PARAM_METHOD_INVALID] = {
 	[CRYPTO_KEY_PARAM_METHOD_INLINE] = "inline",
 };
 
+#define CRYPTO_KEY_PARAM_METHOD_INLINE_LEN 7  /* strlen("inline:") */
+
 static inline switch_media_flow_t sdp_media_flow(unsigned in)
 {
 	switch(in) {
@@ -1643,6 +1645,83 @@ SWITCH_DECLARE(switch_rtp_t *) switch_core_media_get_rtp_session(switch_core_ses
 	return session->media_handle->engines[type].rtp_session;
 }
 
+static const char *extract_crypto_key_material(const char *crypto_key, char *buf, size_t buf_size)
+{
+	const char *inline_ptr = NULL;
+	const char *key_start = NULL;
+	const char *key_end = NULL;
+	int key_len = 0;
+
+	if (!crypto_key || !buf || buf_size == 0) {
+		return NULL;
+	}
+
+	inline_ptr = switch_stristr("inline:", crypto_key);
+	if (inline_ptr) {
+		key_start = inline_ptr + CRYPTO_KEY_PARAM_METHOD_INLINE_LEN;
+		key_end = key_start;
+		/* Find the end of the base64 key material (stops at '|', space, or end of string) */
+		while (*key_end && *key_end != '|' && *key_end != ' ' && *key_end != '\r' && *key_end != '\n') {
+			key_end++;
+		}
+		key_len = key_end - key_start;
+		if (key_len > 0 && key_len < buf_size) {
+			memcpy(buf, key_start, key_len);
+			buf[key_len] = '\0';
+			return buf;
+		} else {
+			return key_start;
+		}
+	}
+
+	return crypto_key;
+}
+
+// Validate crypto key size and regenerate if needed. 
+// Returns SWITCH_TRUE if key is regenerated, SWITCH_FALSE if key is valid 
+static switch_bool_t patch_recovered_crypto_key(switch_core_session_t *session, const char *key_material,
+												 switch_rtp_crypto_key_type_t crypto_type, const char *crypto_type_str,
+												 switch_media_type_t media_type, switch_rtp_engine_t *engine)
+{
+	int expected_b64_len = 0;
+	int actual_key_len = 0;
+	switch_bool_t regenerate_key = SWITCH_TRUE;
+
+	if (!key_material) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"CRYPTO: Recovery - no saved key material found for %s, generating new key\n", crypto_type_str);
+		goto regenerate;
+	}
+
+	expected_b64_len = ((SUITES[crypto_type].keysalt_len * 4) + 2) / 3;
+	actual_key_len = strlen(key_material);
+
+	if (actual_key_len < (expected_b64_len - 5)) {
+		// Saved key is too short
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"CRYPTO: Recovery - saved key length %d too short for %s (expected ~%d), generating new key\n",
+			actual_key_len, crypto_type_str, expected_b64_len);
+		goto regenerate;
+	} else if (actual_key_len > (expected_b64_len + 5)) {
+		// Saved key is too long, might be corrupted?
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+			"CRYPTO: Recovery - saved key length %d too long for %s (expected ~%d), generating new key\n",
+			actual_key_len, crypto_type_str, expected_b64_len);
+		goto regenerate;
+	}
+
+	// Key size is valid, don't regenerate
+	regenerate_key = SWITCH_FALSE;
+
+regenerate:
+	if (regenerate_key) {
+		switch_core_media_build_crypto(session->media_handle, media_type, engine->ssec[crypto_type].crypto_tag,
+			crypto_type, SWITCH_RTP_CRYPTO_SEND, 1, 0);
+	}
+
+	return regenerate_key;
+}
+
 static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *session, switch_media_type_t type)
 {
 	const char *tmp;
@@ -1652,8 +1731,6 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 
 	if (!session->media_handle) return;
 	engine = &session->media_handle->engines[type];
-
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Restoring recovery crypto (type=%s)\n", type2str(type));
 
 	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
 		keyvar = "srtp_remote_audio_crypto_key";
@@ -1674,6 +1751,7 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 
 	if ((remote_crypto_key = switch_channel_get_variable(session->channel, keyvar))) {
 		const char *ct;
+
 		if ((ct = switch_channel_get_variable(session->channel, ctypevar))) {
 			engine->crypto_type = switch_core_media_crypto_str2type(ct);
 		}
@@ -1688,32 +1766,44 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 		// Recreate local and remote crypto key
 		if (ct) {
 			const char *local_crypto_key = NULL;
+			const char *negotiated_keyvar = NULL;
+			char local_key_buf[256] = "";
+			const char *inline_ptr = NULL;
 
-			// Recreate the remote crypto key format: <tag> <algorithm> inline:<key>
-			engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_sprintf(session, 
-				"%d %s inline:%s", engine->ssec[engine->crypto_type].crypto_tag, ct, remote_crypto_key);
-
-			// Recreate the local crypto key format:<tag> <algorithm> inline:<key>
-			local_crypto_key = switch_channel_get_variable(session->channel, lastkeyvar);
-			if (local_crypto_key) {
-				engine->ssec[engine->crypto_type].local_crypto_key = switch_core_session_strdup(session, local_crypto_key);
+			inline_ptr = switch_stristr("inline:", remote_crypto_key);
+			if (inline_ptr) {
+				engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_sprintf(session,
+					"%d %s %s", engine->ssec[engine->crypto_type].crypto_tag, ct, inline_ptr);
 			} else {
-				// If its missing, attempt to recreate it using remote key.
-				engine->ssec[engine->crypto_type].local_crypto_key = switch_core_session_sprintf(session,
+				engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_sprintf(session,
 					"%d %s inline:%s", engine->ssec[engine->crypto_type].crypto_tag, ct, remote_crypto_key);
+			}
+
+			negotiated_keyvar = (type == SWITCH_MEDIA_TYPE_AUDIO) ? "srtp_local_audio_crypto_key_negotiated" :
+								(type == SWITCH_MEDIA_TYPE_VIDEO) ? "srtp_local_video_crypto_key_negotiated" :
+								"srtp_local_text_crypto_key_negotiated";
+
+			local_crypto_key = switch_channel_get_variable(session->channel, negotiated_keyvar);
+			if (!local_crypto_key) {
+				local_crypto_key = switch_channel_get_variable(session->channel, lastkeyvar);
+			}
+
+			if (local_crypto_key) {
+				local_crypto_key = extract_crypto_key_material(local_crypto_key, local_key_buf, sizeof(local_key_buf));
+
+				if (!patch_recovered_crypto_key(session, local_crypto_key, engine->crypto_type, ct, type, engine)) {
+					engine->ssec[engine->crypto_type].local_crypto_key = switch_core_session_sprintf(session,
+						"%d %s inline:%s", engine->ssec[engine->crypto_type].crypto_tag, ct, local_crypto_key);
+				}
+			} else {
+				switch_core_media_build_crypto(session->media_handle, type, engine->ssec[engine->crypto_type].crypto_tag,
+					engine->crypto_type, SWITCH_RTP_CRYPTO_SEND, 1, 0);
 			}
 		}
 
 		if (engine->ssec[engine->crypto_type].local_crypto_key && engine->ssec[engine->crypto_type].remote_crypto_key) {
 			switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_SEND);
 			switch_core_media_add_crypto(session, &engine->ssec[engine->crypto_type], SWITCH_RTP_CRYPTO_RECV);
-
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Restored recovery crypto (type=%s, tag=%d, localkey='%s', remotekey='%s')\n",
-				type2str(type), engine->ssec[engine->crypto_type].crypto_tag,
-				engine->ssec[engine->crypto_type].local_crypto_key,
-				engine->ssec[engine->crypto_type].remote_crypto_key);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "CRYPTO: Skipping raw key extraction - keys not ready for recovery!\n");
 		}
 
 		switch_channel_set_flag(session->channel, CF_SECURE);
@@ -2026,6 +2116,16 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		/* Compare all the key. The tag may remain the same even if key changed */
 		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: Existing key is still valid. (sdp type %s)\n", sdp_type == SDP_TYPE_RESPONSE ? "SDP_TYPE_RESPONSE" : "SDP_TYPE_REQUEST");
+
+			// Save the negotiated local crypto key for recovery
+			if (engine->ssec[engine->crypto_type].local_crypto_key) {
+				if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+					switch_channel_set_variable(session->channel, "srtp_local_audio_crypto_key_negotiated", engine->ssec[engine->crypto_type].local_crypto_key);
+				} else if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
+					switch_channel_set_variable(session->channel, "srtp_local_video_crypto_key_negotiated", engine->ssec[engine->crypto_type].local_crypto_key);
+				}
+			}
+
 			got_crypto = 1;
 		} else {
 			const char *a = switch_stristr("AE", engine->ssec[engine->crypto_type].remote_crypto_key);
@@ -2103,11 +2203,11 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 			switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
 		} else if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
 			switch_channel_set_variable(session->channel, "srtp_remote_video_crypto_key", crypto);
-			switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_tag", "%d", crypto_tag);
+			switch_channel_set_variable_printf(session->channel, "srtp_remote_video_crypto_tag", "%d", crypto_tag);
 			switch_channel_set_variable_printf(session->channel, "srtp_remote_video_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
 		} else if (engine->type == SWITCH_MEDIA_TYPE_TEXT) {
 			switch_channel_set_variable(session->channel, "srtp_remote_text_crypto_key", crypto);
-			switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_tag", "%d", crypto_tag);
+			switch_channel_set_variable_printf(session->channel, "srtp_remote_text_crypto_tag", "%d", crypto_tag);
 			switch_channel_set_variable_printf(session->channel, "srtp_remote_text_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
 		}
 
@@ -2118,14 +2218,23 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: build crypto for tag %d\n", crypto_tag);
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
 		}
 	}
 
  end:
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: switch_core_session_check_incoming_crypto ret=%d\n", got_crypto);
+	// Save the negotiated local crypto key for recovery if negotiation succeeded
+	// except during recovery itself
+	if (got_crypto && engine->ssec[engine->crypto_type].local_crypto_key &&
+	    !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+		if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+			switch_channel_set_variable(session->channel, "srtp_local_audio_crypto_key_negotiated", engine->ssec[engine->crypto_type].local_crypto_key);
+		} else if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
+			switch_channel_set_variable(session->channel, "srtp_local_video_crypto_key_negotiated", engine->ssec[engine->crypto_type].local_crypto_key);
+		}
+	}
+
 	return got_crypto;
 }
 
@@ -12026,7 +12135,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (switch_channel_test_flag(session->channel, CF_PROXY_OFF) && (tmp = switch_channel_get_variable(smh->session->channel, "uuid_media_secure_media"))) {
 		switch_channel_set_variable(smh->session->channel, "rtp_secure_media", tmp);
 		switch_core_session_parse_crypto_prefs(session);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: CHECK OUTGOING\n");
 		switch_core_session_check_outgoing_crypto(session, sdp_type);
 	}
 
@@ -12054,8 +12162,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 		}
 		switch_core_session_parse_crypto_prefs(session);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "CRYPTO: CHECK OUTGOING\n");
-		switch_core_session_check_outgoing_crypto(session, sdp_type);
+
+		// Skip generating new crypto keys if this is a recovering call - keys were already restored
+		if (!switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+			switch_core_session_check_outgoing_crypto(session, sdp_type);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Skipping outgoing crypto generation for recovering call - using restored keys\n");
+		}
 	}
 
 	fmtp_out = a_engine->cur_payload_map->fmtp_out;
@@ -12287,6 +12400,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	}
 
 	smh->session_id++;
+
+	switch_channel_set_variable_printf(session->channel, "rtp_sdp_owner_id", "%u", smh->owner_id);
+	switch_channel_set_variable_printf(session->channel, "rtp_sdp_session_id", "%u", smh->session_id);
 
 	if ((smh->mparams->ndlb & SM_NDLB_SENDRECV_IN_SESSION) ||
 		((var_val = switch_channel_get_variable(session->channel, "ndlb_sendrecv_in_session")) && switch_true(var_val))) {
@@ -15857,6 +15973,13 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_sdp_owner_id"))) {
+		smh->owner_id = (uint32_t)atol(tmp);
+	}
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_sdp_session_id"))) {
+		smh->session_id = (uint32_t)atol(tmp);
+	}
 
 	a_engine->cur_payload_map->iananame = a_engine->cur_payload_map->rm_encoding = (char *) switch_channel_get_variable(session->channel, "rtp_use_codec_name");
 	a_engine->cur_payload_map->rm_fmtp = (char *) switch_channel_get_variable(session->channel, "rtp_use_codec_fmtp");
