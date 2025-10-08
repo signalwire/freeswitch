@@ -1355,7 +1355,11 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 					}
 					
 				} else {
-					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					if (!switch_channel_test_flag(channel, CF_REMOTE_RECOVERED)) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Call recovered remotely: Prevent terminating via bridge:%s.\n", switch_core_session_get_uuid(session));
+					}
 				}
 			}
 		}
@@ -1777,9 +1781,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		const char *sbv = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
 		const char *var;
 
-		if (switch_channel_test_flag(channel, CF_REMOTE_RECOVERED)) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Call recovered remotely: Prevent terminating partner channel:%s.\n", uuid);
-		} else if (!zstr(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
+		if (!zstr(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
 			int hup = 1;
 
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
@@ -1787,7 +1789,10 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
 
 			if (switch_channel_up_nosig(other_channel)) {
-				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+				if (switch_channel_test_flag(other_channel, CF_REMOTE_RECOVERED)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Call recovered remotely: Prevent terminating via bridge:%s.\n", uuid);
+					hup = 0;
+				} else if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 					switch_ivr_park_session(other_session);
 					hup = 0;
 				} else if ((var = switch_channel_get_variable(other_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
