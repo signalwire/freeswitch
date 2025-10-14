@@ -73,10 +73,10 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	}
 
 	*new_resampler = resampler;
-	resampler->from_rate = from_rate;
-	resampler->to_rate = to_rate;
 	lto_rate = (double) resampler->to_rate;
 	lfrom_rate = (double) resampler->from_rate;
+	resampler->from_rate = from_rate;
+	resampler->to_rate = to_rate;
 	resampler->factor = (lto_rate / lfrom_rate);
 	resampler->rfactor = (lfrom_rate / lto_rate);
 	resampler->channels = channels;
