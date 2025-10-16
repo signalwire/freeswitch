@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <OpenSSLVersion>3.4.0</OpenSSLVersion>
+    <OpenSSLVersion>3.4.3</OpenSSLVersion>
     <OpenSSLLibDir>$(BaseDir)libs\openssl-$(OpenSSLVersion)</OpenSSLLibDir>
   </PropertyGroup>
   <PropertyGroup>
