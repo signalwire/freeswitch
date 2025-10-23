@@ -4,7 +4,7 @@ noinst_PROGRAMS = switch_event switch_hash switch_ivr_originate switch_utils swi
 			   switch_ivr_play_say switch_core_codec switch_rtp switch_xml
 noinst_PROGRAMS += switch_core_video switch_core_db switch_vad switch_packetizer switch_core_session test_sofia switch_ivr_async switch_core_asr switch_log
 
-noinst_PROGRAMS += switch_hold switch_sip switch_mod_telnyx switch_mod_gstt
+noinst_PROGRAMS += switch_hold switch_sip switch_mod_telnyx switch_mod_gstt switch_3pcc
 
 if HAVE_PCAP
 noinst_PROGRAMS += switch_rtp_pcap
