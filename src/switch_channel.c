@@ -3603,6 +3603,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 			switch_channel_set_variable_partner(channel, "last_bridge_" SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, var);
 		}
 
+		switch_channel_set_variable_printf(channel, "last_hangup_source", "%s:%d (%s)", file, line, func);
+
 		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 			switch_channel_set_variable(channel, "last_bridge_role", "originator");
 		} else if (switch_channel_test_flag(channel, CF_BRIDGED)) {
