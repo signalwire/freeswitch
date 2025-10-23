@@ -16139,6 +16139,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	// Restore crypto keys before SDP generation so they are included in the SDP
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO);
+	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_TEXT);
 
 	switch_core_media_gen_local_sdp(session, SDP_OFFER, NULL, 0, NULL, 1);
 	switch_core_media_set_video_codec(session, 1);
