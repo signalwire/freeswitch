@@ -12389,6 +12389,43 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 	}
 
+	/* Update partner leg's media mode when generating SDP answer for reINVITE */
+	if (sdp_type == SDP_ANSWER && switch_channel_test_flag(session->channel, CF_REINVITE)) {
+		switch_core_session_t *other_session = NULL;
+		switch_media_flow_t new_smode = SWITCH_MEDIA_FLOW_SENDRECV;
+		switch_media_flow_t opp_smode = SWITCH_MEDIA_FLOW_SENDRECV;
+		switch_media_handle_t *other_smh = NULL;
+		switch_rtp_engine_t *other_engine = NULL;
+		const char *dummy_str = NULL;
+
+		if (!strcasecmp(sr, "sendonly")) {
+			new_smode = SWITCH_MEDIA_FLOW_SENDONLY;
+		} else if (!strcasecmp(sr, "recvonly")) {
+			new_smode = SWITCH_MEDIA_FLOW_RECVONLY;
+		} else if (!strcasecmp(sr, "inactive")) {
+			new_smode = SWITCH_MEDIA_FLOW_INACTIVE;
+		}
+
+		media_flow_get_mode(new_smode, &dummy_str, &opp_smode);
+
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			other_smh = other_session->media_handle;
+			if (other_smh) {
+				other_engine = &other_smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+				/* Only update partner's smode if partner's endpoint is not on hold
+				 * When we transition to sendrecv/recvonly (can receive), only update if partner can send */
+				if (new_smode == SWITCH_MEDIA_FLOW_SENDRECV || new_smode == SWITCH_MEDIA_FLOW_RECVONLY) {
+					if (other_engine->rmode != SWITCH_MEDIA_FLOW_INACTIVE) {
+						other_engine->smode = opp_smode;
+					}
+				} else {
+					other_engine->smode = opp_smode;
+				}
+			}
+			switch_core_session_rwunlock(other_session);
+		}
+	}
+
 	if (!smh->owner_id) {
 		smh->owner_id = (uint32_t)(switch_time_t)switch_epoch_time_now(NULL) - port;
 	}
