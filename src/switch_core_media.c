@@ -12416,9 +12416,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				 * When we transition to sendrecv/recvonly (can receive), only update if partner can send */
 				if (new_smode == SWITCH_MEDIA_FLOW_SENDRECV || new_smode == SWITCH_MEDIA_FLOW_RECVONLY) {
 					if (other_engine->rmode != SWITCH_MEDIA_FLOW_INACTIVE) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
+						"Updating partner media mode to %d\n", opp_smode);
 						other_engine->smode = opp_smode;
 					}
 				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
+						"Updating partner media mode to %d\n", opp_smode);
 					other_engine->smode = opp_smode;
 				}
 			}
