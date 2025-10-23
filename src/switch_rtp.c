@@ -10504,7 +10504,7 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_start_event(switch_rtp_t *rtp_session)
 		cJSON_AddItemToObject(f, "tx", tx);
 	}
 
-	fork->start_time = switch_micro_time_now() / 1000;
+	fork->start_time = switch_time_now() / 1000;
 
 	if (f) {
 		s = cJSON_Print(f);
@@ -10532,9 +10532,9 @@ SWITCH_DECLARE(void) switch_rtp_fork_fire_stop_event(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	fork->stop_time = switch_micro_time_now() / 1000;
+	fork->stop_time = switch_time_now() / 1000;
 	last_duration = fork->duration;
-	current_duration = (fork->stop_time - fork->start_time);
+	current_duration = (fork->start_time && fork->stop_time >= fork->start_time) ? (fork->stop_time - fork->start_time) : 0;
 	fork->duration = current_duration + last_duration;
 
 	switch_core_media_fork_do_fire_stop_event(rtp_session->session, fork, last_duration);

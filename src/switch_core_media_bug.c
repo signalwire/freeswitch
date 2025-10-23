@@ -334,11 +334,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	}
 
 	if (do_read && do_read > SWITCH_RECOMMENDED_BUFFER_SIZE) {
-		do_read = 1280;
+		do_read = 1920;
 	}
 
 	if (do_write && do_write > SWITCH_RECOMMENDED_BUFFER_SIZE) {
-		do_write = 1280;
+		do_write = 1920;
 	}
 
 	if (do_read) {

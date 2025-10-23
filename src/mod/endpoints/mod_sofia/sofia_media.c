@@ -109,7 +109,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_string_stream_write(switch_stream_
 	}
 	va_end(ap);
 	status = handle->raw_write_function(handle, (unsigned char*)data, strlen(data));
-	free(data);
+	switch_safe_free(data);
 	return status;
 }
 

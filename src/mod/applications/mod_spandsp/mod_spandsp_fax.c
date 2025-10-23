@@ -2313,7 +2313,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid value for delay_hangup_failure_during_reinvite (%s), defaulting to %d\n", val, delay);
 			}
 		}
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Delaying hangup for %d seconds because of fax failure.\n", delay);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Delaying hangup for %d seconds because of fax failure during reINVITE.\n", delay);
 		switch_ivr_schedule_hangup(switch_epoch_time_now(NULL) + delay, switch_core_session_get_uuid(session), SWITCH_CAUSE_NETWORK_OUT_OF_ORDER, SWITCH_FALSE);
 	}
 	else {

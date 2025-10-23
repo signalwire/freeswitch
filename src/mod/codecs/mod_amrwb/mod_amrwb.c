@@ -440,10 +440,8 @@ static switch_status_t switch_amrwb_init(switch_codec_t *codec, switch_codec_fla
 			switch_channel_t *channel = NULL;
 			if (session) {
 				channel = switch_core_session_get_channel(session);
-				if (channel) {
-					switch_channel_set_variable(channel, "suppress_cng", "true");
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Turning CNG off (silence suppression off, suppress_cng=true) due to silence-supp-off=true\n");
-				}
+				switch_channel_set_variable(channel, "suppress_cng", "true");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Turning CNG off (silence suppression off, suppress_cng=true) due to silence-supp-off=true\n");
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot turn silence suppression off - session missing\n");
 			}
@@ -680,6 +678,7 @@ static int extract_octet_align(const char *fmtp)
 		arg = strchr(data, '=');
 		if (arg) {
 			*arg++ = '\0';
+			while (*arg == ' ') arg++;
 			if (!strcasecmp(data, "octet-align")) {
 				oa = switch_true(arg);
 				break;
@@ -687,7 +686,7 @@ static int extract_octet_align(const char *fmtp)
 		}
 	}
 
-	free(fmtp_dup);
+	switch_safe_free(fmtp_dup);
 	return oa;
 }
 
@@ -696,7 +695,7 @@ static switch_status_t matches_fmtp(const char *fmtp, const char *codec_fmtp)
 	int oa1 = extract_octet_align(fmtp);
 	int oa2 = extract_octet_align(codec_fmtp);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AMRWB fmtp: %s, codec_fmtp: %s\n", fmtp, codec_fmtp);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AMRWB fmtp: %s, codec_fmtp: %s\n", switch_str_nil(fmtp), switch_str_nil(codec_fmtp));
 
 	return (oa1 == oa2) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }

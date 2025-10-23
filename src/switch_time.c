@@ -321,7 +321,7 @@ SWITCH_DECLARE(switch_time_t) switch_mono_micro_time_now(void)
 
 SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 {
-	time_t now = switch_micro_time_now() / APR_USEC_PER_SEC;
+	time_t now = switch_time_now() / APR_USEC_PER_SEC;
 	if (t) {
 		*t = now;
 	}
