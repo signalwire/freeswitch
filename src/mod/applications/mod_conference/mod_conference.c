@@ -3925,6 +3925,9 @@ conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_co
 		switch_channel_event_set_data(channel, event);
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "conference-create");
+	if (channel && switch_channel_test_flag(channel, CF_RECOVERED)) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Recovered", "true");
+	}
 	switch_event_fire(&event);
 
  end:
