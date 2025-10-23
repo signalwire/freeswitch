@@ -3309,7 +3309,7 @@ SWITCH_DECLARE(void) switch_ivr_set_json_call_stats(cJSON *json, switch_core_ses
 	add_jstat(j_in, stats->inbound.cumulative_mos, "cumulative_mos");
 
 
-	if (stats->inbound.error_log) {
+	if (stats->inbound.error_log && switch_channel_var_true(switch_core_session_get_channel(session), "include_error_log")) {
 		cJSON *j_err_log, *j_err;
 		switch_error_period_t *ep;
 
