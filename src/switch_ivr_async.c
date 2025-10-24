@@ -5405,7 +5405,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	sth->session = session;
 	sth->ah = ah;
 
-	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
+	if (((p = switch_core_get_variable_dup("fire_asr_events")) && switch_true(p)) ||
+		((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p))) {
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
@@ -5490,8 +5491,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		switch_ivr_resume_detect_speech(session);
 	}
 
-	if ((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p)) {
-		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
+	if (((p = switch_core_get_variable_dup("fire_asr_events")) && switch_true(p)) ||
+		((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p))) {
+		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
