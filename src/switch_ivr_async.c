@@ -5511,7 +5511,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	}
 
 	if (check_fire_asr_events(channel)) {
-		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
+		switch_set_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
