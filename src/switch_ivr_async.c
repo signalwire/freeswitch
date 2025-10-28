@@ -5368,6 +5368,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_disable_all_grammars(sw
 	return SWITCH_STATUS_FALSE;
 }
 
+static switch_bool_t check_fire_asr_events(switch_channel_t *channel)
+{
+    char *core_val = NULL;
+    const char *chan_val = NULL;
+    switch_bool_t result = SWITCH_FALSE;
+
+	chan_val = switch_channel_get_variable(channel, "fire_asr_events");
+	if (chan_val && switch_true(chan_val)) {
+		return SWITCH_TRUE;
+	}
+
+	core_val = switch_core_get_variable_dup("fire_asr_events");
+    if (core_val) {
+        if (switch_true(core_val)) {
+            result = SWITCH_TRUE;
+        }
+        free(core_val);
+    }
+
+    return result;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_session_t *session, const char *mod_name,
 															  const char *dest, switch_asr_handle_t *ah)
 {
@@ -5376,7 +5398,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
 	switch_codec_implementation_t read_impl = { 0 };
-	const char *p;
 	char key[512] = "";
 
 	if (sth) {
@@ -5405,8 +5426,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_sessio
 	sth->session = session;
 	sth->ah = ah;
 
-	if (((p = switch_core_get_variable_dup("fire_asr_events")) && switch_true(p)) ||
-		((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p))) {
+	if (check_fire_asr_events(channel)) {
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
@@ -5461,7 +5481,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct speech_thread_handle *sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY);
-	const char *p;
 	int resume = 0;
 
 
@@ -5491,8 +5510,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 		switch_ivr_resume_detect_speech(session);
 	}
 
-	if (((p = switch_core_get_variable_dup("fire_asr_events")) && switch_true(p)) ||
-		((p = switch_channel_get_variable(channel, "fire_asr_events")) && switch_true(p))) {
+	if (check_fire_asr_events(channel)) {
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
 	}
 
