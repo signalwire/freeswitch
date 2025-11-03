@@ -49,16 +49,10 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             JSON=$(jq -n '[
               {
-                "version": "bookworm",
-                "platform": {
-                  "name": "arm64v8"
-                }
+                "version": "bookworm"
               },
               {
-                "version": "bullseye",
-                "platform": {
-                  "name": "arm32v7"
-                }
+                "version": "bullseye"
               }
             ]')
           fi
@@ -131,8 +125,8 @@ jobs:
           - debian
         version:
           - trixie
-          - bookworm
-          - bullseye
+          # - bookworm
+          # - bullseye
         platform:
           - name: amd64
             runner: ubuntu-latest
