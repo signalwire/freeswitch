@@ -262,8 +262,14 @@ static inline switch_jb_node_t *new_node(switch_jb_t *jb)
 		if (jb->allocated_nodes > jb->max_frame_len * mult) {
 			jb_debug(jb, 2, "ALLOCATED FRAMES TOO HIGH! %d\n", jb->allocated_nodes);
 			jb->jitter.stats.reset_too_big++;
-			switch_jb_reset(jb);
 			switch_mutex_unlock(jb->list_mutex);
+			/* Unlock jb->mutex before calling switch_jb_reset to avoid deadlock.
+			 * switch_jb_reset() needs to acquire the channel mutex (via switch_channel_set_variable_printf)
+			 * and then locks jb->mutex internally. If we hold jb->mutex here, we could deadlock with
+			 * another thread that holds the channel mutex and is waiting for jb->mutex. */
+			switch_mutex_unlock(jb->mutex);
+			switch_jb_reset(jb);
+			switch_mutex_lock(jb->mutex);
 			return NULL;
 		}
 		
@@ -717,7 +723,13 @@ static inline void add_node(switch_jb_t *jb, switch_rtp_packet_t *packet, switch
 		if (((seq_diff >= 100) || (ts_diff > (900000 * 5)))) {
 			jb_debug(jb, 2, "CHANGE DETECTED, PUNT %u\n", abs(((int)ntohs(packet->header.seq) - ntohs(jb->highest_wrote_seq))));
 			jb->jitter.stats.reset_ts_jump++;
+			/* Unlock jb->mutex before calling switch_jb_reset to avoid deadlock.
+			 * switch_jb_reset() needs to acquire the channel mutex (via switch_channel_set_variable_printf)
+			 * and then locks jb->mutex internally. If we hold jb->mutex here, we could deadlock with
+			 * another thread that holds the channel mutex and is waiting for jb->mutex. */
+			switch_mutex_unlock(jb->mutex);
 			switch_jb_reset(jb);
+			switch_mutex_lock(jb->mutex);
 		}
 	}
 
