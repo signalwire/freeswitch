@@ -51,6 +51,7 @@
 #include <switch.h>
 #define SOFIA_NAT_SESSION_TIMEOUT 90
 #define SOFIA_MAX_ACL 100
+#define SOFIA_MAX_REDIRECT_NO_LOOKUP_DOMAINS 64
 #ifdef _MSC_VER
 #define HAVE_FUNCTION 1
 #else
@@ -854,6 +855,9 @@ struct sofia_profile {
 	sofia_auth_algs_t auth_algs[SOFIA_MAX_REG_ALGS];
 	uint8_t disable_recovery_record_route_fixup;
 	switch_call_cause_t telnyx_sip_proxy_timeout_hangup_cause;
+	char *redirect_no_lookup_domains;
+	char **redirect_no_lookup_domains_list;
+	int redirect_no_lookup_domains_count;
 };
 
 

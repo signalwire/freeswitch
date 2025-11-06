@@ -6468,6 +6468,43 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_DISABLE_AUTH_CHALLENGE_RESPONSE);
 						}
+					} else if (!strcasecmp(var, "redirect-no-lookup-domains")) {
+						profile->redirect_no_lookup_domains = switch_core_strdup(profile->pool, val);
+						
+						/* Pre-parse domains at config time for better runtime performance */
+						if (!zstr(val)) {
+							char *domains = switch_core_strdup(profile->pool, val);
+							char *list[SOFIA_MAX_REDIRECT_NO_LOOKUP_DOMAINS];
+							char *valid_domains[SOFIA_MAX_REDIRECT_NO_LOOKUP_DOMAINS];
+							int i, n, valid_count = 0;
+							
+							n = switch_separate_string(domains, ',', list, SOFIA_MAX_REDIRECT_NO_LOOKUP_DOMAINS);
+							
+							/* First pass: count valid domains after trimming */
+							for (i = 0; i < n; ++i) {
+								list[i] = switch_strip_spaces(list[i], SWITCH_FALSE);
+								if (!zstr(list[i])) {
+									valid_domains[valid_count++] = list[i];
+								}
+							}
+							
+							/* Allocate exact size needed */
+							if (valid_count > 0) {
+								profile->redirect_no_lookup_domains_list = 
+									switch_core_alloc(profile->pool, sizeof(char*) * valid_count);
+								profile->redirect_no_lookup_domains_count = valid_count;
+								
+								/* Store the valid domains */
+								for (i = 0; i < valid_count; ++i) {
+									profile->redirect_no_lookup_domains_list[i] = 
+										switch_core_strdup(profile->pool, valid_domains[i]);
+								}
+								
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+									"Parsed %d domains for redirect-no-lookup-domains\n", 
+									profile->redirect_no_lookup_domains_count);
+							}
+						}
 					} else if (!strcasecmp(var, "telnyx-sip-proxy-timeout-hangup-cause") && !zstr(val)) {
 						switch_call_cause_t timeout_cause;
 						timeout_cause = switch_channel_str2cause(val);
@@ -6996,6 +7033,30 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 	}
 }
 
+/* Check if we should skip directory lookup for 3xx redirects */
+static switch_bool_t sofia_should_skip_directory_lookup(sofia_profile_t *profile, int status, const char *host)
+{
+	int i;
+	
+	/* Safety checks and validate redirect status codes: 300, 301, 302, 305 */
+	if (!profile
+		|| (status != 300 && status != 301 && status != 302 && status != 305) 
+		|| !profile->redirect_no_lookup_domains_list 
+		|| profile->redirect_no_lookup_domains_count == 0
+		|| zstr(host))
+		return SWITCH_FALSE;
+	
+	/* Simply loop through pre-parsed domains - no copying or tokenizing needed */
+	for (i = 0; i < profile->redirect_no_lookup_domains_count; ++i) {
+		if (!strcasecmp(host, profile->redirect_no_lookup_domains_list[i])) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+				"Skipping directory lookup for %d redirect to %s\n", status, host);
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
 static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status,
 									  char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -7434,7 +7495,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					} else if ((!strcmp(profile->sipip, p_contact->m_url->url_host))
 							   || (profile->extsipip && !strcmp(profile->extsipip, p_contact->m_url->url_host))
-							   || (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS)) {
+							   || (!sofia_should_skip_directory_lookup(profile, status, p_contact->m_url->url_host)
+								   && (switch_xml_locate_domain(p_contact->m_url->url_host, NULL, &root, &domain) == SWITCH_STATUS_SUCCESS))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Redirect: Transfering to %s\n",
 										  p_contact->m_url->url_user);
 
