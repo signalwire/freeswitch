@@ -6238,8 +6238,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
 
+				/* Don't hold bleg if the application doesn't require media. */
 				if ((flags & SMF_HOLD_BLEG)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+					if (!(app_flags & SAF_SUPPORT_NOMEDIA)) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+							SWITCH_LOG_DEBUG, "Ignore hold-bleg for app broadcast that doesn't require media: %s\n", app);
+					}
 				}
 
 				switch_core_session_queue_private_event(other_session, &event, (flags & SMF_PRIORITY));
@@ -6258,6 +6264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		if ((flags & SMF_EXEC_INLINE)) {
 			switch_core_session_execute_application(session, app, path);
 		} else {
+			switch_core_session_get_app_flags(app, &app_flags);
 			if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
@@ -6268,8 +6275,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
+
+				/* Don't hold bleg if the application doesn't require media. */
 				if ((flags & SMF_HOLD_BLEG)) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+					if (!(app_flags & SAF_SUPPORT_NOMEDIA)) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hold-bleg", "true");
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
+							SWITCH_LOG_DEBUG, "Ignore hold-bleg for app broadcast that doesn't require media: %s\n", app);
+					}
 				}
 
 				switch_core_session_queue_private_event(session, &event, (flags & SMF_PRIORITY));
