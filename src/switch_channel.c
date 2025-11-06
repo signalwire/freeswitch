@@ -4143,6 +4143,24 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_channel_presence(channel, "unknown", "answered", NULL);
 
 	//switch_channel_audio_sync(channel);
+
+	var = switch_channel_get_variable(channel, "trackable");
+	if (!zstr(var)) {
+		if (switch_true(var)) {
+			switch_channel_set_flag(channel, CF_TRACKABLE);
+		} else if (switch_false(var)) {
+			switch_channel_clear_flag(channel, CF_TRACKABLE);
+		}
+	}
+
+	var = switch_channel_get_variable(channel, "track_call");
+	if (!zstr(var)) {
+		if (switch_true(var)) {
+			switch_channel_set_flag(channel, CF_TRACKABLE);
+		} else if (switch_false(var)) {
+			switch_channel_clear_flag(channel, CF_TRACKABLE);
+		}
+	}
 			
 	if (!switch_channel_test_flag(channel, CF_NO_RECOVER)) { 
 		switch_core_recovery_track(channel->session);

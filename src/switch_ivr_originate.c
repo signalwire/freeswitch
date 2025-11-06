@@ -2459,6 +2459,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "language")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "track_call")) {
+					ok = 1;
 				}
 
 				if (ok && !switch_event_get_header(var_event, hi->name)) {
@@ -3229,6 +3231,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if (switch_true(switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "leg_required"))) {
 						oglobals.originate_status[i].tagged = 1;
+					}
+
+					if ((vvar = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "trackable"))) {
+						if (switch_true(vvar)) {
+							switch_channel_set_flag(oglobals.originate_status[i].peer_channel, CF_TRACKABLE);
+						} else if (switch_false(vvar)) {
+							switch_channel_clear_flag(oglobals.originate_status[i].peer_channel, CF_TRACKABLE);
+						}
+					}
+
+					if ((vvar = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "track_call"))) {
+						if (switch_true(vvar)) {
+							switch_channel_set_flag(oglobals.originate_status[i].peer_channel, CF_TRACKABLE);
+							/* No need to call recovery track here. If the originate is successful,
+							 * the session should execute recovery track. */
+							if (caller_channel) {
+								switch_channel_set_flag(caller_channel, CF_TRACKABLE);
+							}
+						} else if (switch_false(vvar)) {
+							switch_channel_clear_flag(oglobals.originate_status[i].peer_channel, CF_TRACKABLE);
+
+							/* Need to untrack the call as the caller may already been tracked prior to originate.*/
+							if (oglobals.session && caller_channel) {
+								switch_core_recovery_untrack(oglobals.session, SWITCH_FALSE);
+								switch_channel_clear_flag(caller_channel, CF_TRACKABLE);	
+							}
+						}
 					}
 
 					if ((vvar = switch_channel_get_variable(oglobals.originate_status[i].peer_channel, "origination_channel_name"))) {
