@@ -2177,6 +2177,33 @@ SWITCH_DECLARE(void) switch_ivr_check_hold(switch_core_session_t *session)
 	}
 }
 
+static void switch_ivr_fire_transfer_event(switch_core_session_t *session, const char *event_name, const char *extension, 
+                                           const char *dialplan, const char *context, const char *error_msg)
+{
+	switch_event_t *event;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, event_name) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		
+		if (!zstr(extension)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Extension", extension);
+		}
+		if (!zstr(dialplan)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Dialplan", dialplan);
+		}
+		if (!zstr(context)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Context", context);
+		}
+		if (!zstr(error_msg)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Error-Message", error_msg);
+		}
+		
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Transfer-Source", "uuid_transfer");
+		switch_event_fire(&event);
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan,
 															const char *context)
 {
@@ -2192,6 +2219,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	int forwardval = 70;
 	const char *use_dialplan = dialplan, *use_context = context;
 	
+	/* Fire transfer start event */
+	switch_ivr_fire_transfer_event(session, "transfer::start", extension, dialplan, context, NULL);
+	
 	if (zstr(forwardvar)) {
 		forwardvar_name = SWITCH_MAX_FORWARDS_VARIABLE; /* fall back to max_forwards variable for setting maximum */
 		forwardvar = switch_channel_get_variable(channel, forwardvar_name);
@@ -2200,6 +2230,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		forwardval = atoi(forwardvar) - 1;
 	}
 	if (forwardval <= 0) {
+		switch_ivr_fire_transfer_event(session, "transfer::failed", extension, dialplan, context, "Maximum forwards exceeded");
 		switch_channel_hangup(channel, SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2326,9 +2357,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 														   extension, use_context, use_dialplan);
 		switch_channel_add_variable_var_check(channel, SWITCH_TRANSFER_HISTORY_VARIABLE, new_profile->transfer_source, SWITCH_FALSE, SWITCH_STACK_PUSH);
 		switch_channel_set_variable_var_check(channel, SWITCH_TRANSFER_SOURCE_VARIABLE, new_profile->transfer_source, SWITCH_FALSE);
+		
+		/* Set flag to indicate transfer is in progress and store transfer details */
+		switch_channel_set_variable(channel, "transfer_in_progress", "true");
+		switch_channel_set_variable(channel, "transfer_extension", extension);
+		switch_channel_set_variable(channel, "transfer_dialplan", use_dialplan);
+		switch_channel_set_variable(channel, "transfer_context", use_context);
+		
+		/* Also set global variables that will be inherited by originated channels */
+		switch_core_set_variable("transfer_originating_uuid", switch_core_session_get_uuid(session));
+		switch_core_set_variable("transfer_originating_extension", extension);
+		switch_core_set_variable("transfer_originating_dialplan", use_dialplan);
+		switch_core_set_variable("transfer_originating_context", use_context);
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	/* Fire transfer failed event */
+	switch_ivr_fire_transfer_event(session, "transfer::failed", extension, dialplan, context, "Transfer operation failed");
+	
 	return SWITCH_STATUS_FALSE;
 }
 

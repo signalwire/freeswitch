@@ -2044,6 +2044,56 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_event_add_presence_data_cols(peer_channel, event, "Bridge-B-PD-");
 			switch_event_fire(&event);
 			br = 1;
+			
+			/* Check if this bridge is the result of a successful transfer */
+			if (switch_channel_get_variable(caller_channel, "transfer_in_progress") ||
+			    switch_channel_get_variable(peer_channel, "transfer_in_progress")) {
+				switch_event_t *transfer_event;
+				switch_core_session_t *transfer_session = NULL;
+				switch_channel_t *transfer_channel = NULL;
+				
+				/* Determine which channel was transferred */
+				if (switch_channel_get_variable(caller_channel, "transfer_in_progress")) {
+					transfer_session = session;
+					transfer_channel = caller_channel;
+				} else if (switch_channel_get_variable(peer_channel, "transfer_in_progress")) {
+					transfer_session = peer_session;
+					transfer_channel = peer_channel;
+				}
+				
+				if (transfer_session && transfer_channel) {
+					/* Fire transfer complete event */
+					if (switch_event_create_subclass(&transfer_event, SWITCH_EVENT_CUSTOM, "transfer::complete") == SWITCH_STATUS_SUCCESS) {
+						const char *transfer_extension = switch_channel_get_variable(transfer_channel, "transfer_extension");
+						const char *transfer_dialplan = switch_channel_get_variable(transfer_channel, "transfer_dialplan");
+						const char *transfer_context = switch_channel_get_variable(transfer_channel, "transfer_context");
+						
+						switch_channel_event_set_data(transfer_channel, transfer_event);
+						if (transfer_extension) {
+							switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Extension", transfer_extension);
+						}
+						if (transfer_dialplan) {
+							switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Dialplan", transfer_dialplan);
+						}
+						if (transfer_context) {
+							switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Context", transfer_context);
+						}
+						switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Source", "uuid_transfer");
+						switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Bridge-Peer-UUID", 
+							transfer_channel == caller_channel ? switch_core_session_get_uuid(peer_session) : switch_core_session_get_uuid(session));
+						switch_event_fire(&transfer_event);
+					}
+					
+					/* Clear the transfer in progress flag */
+					switch_channel_set_variable(transfer_channel, "transfer_in_progress", NULL);
+					
+					/* Clear global transfer variables */
+					switch_core_set_variable("transfer_originating_uuid", NULL);
+					switch_core_set_variable("transfer_originating_extension", NULL);
+					switch_core_set_variable("transfer_originating_dialplan", NULL);
+					switch_core_set_variable("transfer_originating_context", NULL);
+				}
+			}
 		}
 
 		if (switch_core_session_read_lock(peer_session) == SWITCH_STATUS_SUCCESS) {

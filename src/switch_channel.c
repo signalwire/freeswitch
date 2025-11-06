@@ -3620,6 +3620,65 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
+		
+		/* Check if this hangup is during a failed transfer */
+		if (switch_channel_get_variable(channel, "transfer_in_progress") ||
+		    switch_core_get_variable("transfer_originating_uuid")) {
+			switch_event_t *transfer_event;
+			switch_call_cause_t cause = switch_channel_get_cause(channel);
+			const char *originating_uuid = switch_core_get_variable("transfer_originating_uuid");
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Transfer hangup detected for channel %s, cause: %s (%d)\n", 
+							  switch_channel_get_name(channel), switch_channel_cause2str(cause), cause);
+			
+			/* Fire transfer failed event for most hangup causes during transfer */
+			if (cause != SWITCH_CAUSE_NORMAL_CLEARING &&
+			    cause != SWITCH_CAUSE_MANAGER_REQUEST &&
+			    cause != SWITCH_CAUSE_ORIGINATOR_CANCEL &&
+			    cause != SWITCH_CAUSE_LOSE_RACE) {
+				
+				if (switch_event_create_subclass(&transfer_event, SWITCH_EVENT_CUSTOM, "transfer::failed") == SWITCH_STATUS_SUCCESS) {
+					const char *transfer_extension = switch_channel_get_variable(channel, "transfer_extension");
+					const char *transfer_dialplan = switch_channel_get_variable(channel, "transfer_dialplan");
+					const char *transfer_context = switch_channel_get_variable(channel, "transfer_context");
+					
+					/* Use global variables if channel variables are not available */
+					if (!transfer_extension && originating_uuid) {
+						transfer_extension = switch_core_get_variable("transfer_originating_extension");
+						transfer_dialplan = switch_core_get_variable("transfer_originating_dialplan");
+						transfer_context = switch_core_get_variable("transfer_originating_context");
+					}
+					
+					switch_channel_event_set_data(channel, transfer_event);
+					if (transfer_extension) {
+						switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Extension", transfer_extension);
+					}
+					if (transfer_dialplan) {
+						switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Dialplan", transfer_dialplan);
+					}
+					if (transfer_context) {
+						switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Context", transfer_context);
+					}
+					switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Source", "uuid_transfer");
+					switch_event_add_header_string(transfer_event, SWITCH_STACK_BOTTOM, "Transfer-Error-Message", switch_channel_cause2str(cause));
+					switch_event_fire(&transfer_event);
+				}
+				
+				/* Clear the transfer in progress flag */
+				switch_channel_set_variable(channel, "transfer_in_progress", NULL);
+				switch_channel_set_variable(channel, "transfer_extension", NULL);
+				switch_channel_set_variable(channel, "transfer_dialplan", NULL);
+				switch_channel_set_variable(channel, "transfer_context", NULL);
+				
+				/* Clear global transfer variables */
+				if (originating_uuid) {
+					switch_core_set_variable("transfer_originating_uuid", NULL);
+					switch_core_set_variable("transfer_originating_extension", NULL);
+					switch_core_set_variable("transfer_originating_dialplan", NULL);
+					switch_core_set_variable("transfer_originating_context", NULL);
+				}
+			}
+		}
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
