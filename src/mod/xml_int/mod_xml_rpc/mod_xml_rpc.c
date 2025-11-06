@@ -860,6 +860,8 @@ abyss_bool handler_hook(TSession * r)
 		return FALSE;
 	}
 
+	switch_mutex_unlock(globals.mutex);
+
 	/* Default to 500 status to avoid assert. It should be
 	   overridden later if we actually handle it or if the
 	   default handler in abyss handles it. */
@@ -882,7 +884,6 @@ abyss_bool handler_hook(TSession * r)
 		command += 8;
 		xml++;
 	} else {
-		switch_mutex_unlock(globals.mutex);
 		return FALSE; /* 404 */
 	}
 
@@ -1045,7 +1046,6 @@ abyss_bool handler_hook(TSession * r)
 
 	/* We made it this far, always OK */
 	if (!HTTPWrite(r, "HTTP/1.1 200 OK\r\n", (uint32_t) strlen("HTTP/1.1 200 OK\r\n"))) {
-		switch_mutex_unlock(globals.mutex);
 		return TRUE;
 	}
 
@@ -1083,7 +1083,6 @@ abyss_bool handler_hook(TSession * r)
 		char *header = switch_mprintf("%s: %s\r\n", ti->name, ti->value);
 		if (!ConnWrite(r->connP, header, (uint32_t) strlen(header))) {
 			switch_safe_free(header);
-			switch_mutex_unlock(globals.mutex);
 			return TRUE;
 		}
 		switch_safe_free(header);
@@ -1092,7 +1091,6 @@ abyss_bool handler_hook(TSession * r)
 	/* send end http header */
 	if (html||text||xml) {
 		if (!ConnWrite(r->connP, CRLF, 2)) {
-			switch_mutex_unlock(globals.mutex);
 			return TRUE;
 		}
 	}
@@ -1137,7 +1135,6 @@ abyss_bool handler_hook(TSession * r)
 	r->requestInfo.keepalive = 0;
 
   end:
-	switch_mutex_unlock(globals.mutex);
 	return ret;
 }
 
