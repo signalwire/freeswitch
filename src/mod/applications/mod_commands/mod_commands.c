@@ -5892,6 +5892,7 @@ SWITCH_STANDARD_API(show_function)
 			}
 		} else if (!strcasecmp(command, "old_calls")) {
 			int age = 14400; // default 4 hours
+			time_t now = time(NULL);
 			int format_arg_index = 1;
 
 			if (argv[1] && isdigit(*argv[1])) {
@@ -5899,12 +5900,16 @@ SWITCH_STANDARD_API(show_function)
 				format_arg_index = 2;
 			}
 
-			switch_snprintfv(sql, sizeof(sql), "SELECT * FROM calls where hostname='%q' and (strftime('%%s','now') - call_created_epoch) > %d order by call_created_epoch",
-				switch_core_get_switchname(), age);
+			time_t threshold_epoch = now - age;
+
+			switch_snprintfv(sql, sizeof(sql),
+				"SELECT * FROM calls WHERE hostname='%q' AND call_created_epoch < %ld ORDER BY call_created_epoch",
+				switch_core_get_switchname(), threshold_epoch);
 
 			if (argv[format_arg_index] && argv[format_arg_index+1] && !strcasecmp(argv[format_arg_index], "as")) {
 				as = argv[format_arg_index + 1];
 			}
+
 		} else {
 
 			stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
