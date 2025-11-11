@@ -5892,20 +5892,17 @@ SWITCH_STANDARD_API(show_function)
 			}
 		} else if (!strcasecmp(command, "old_calls")) {
 			int age = 14400; // default 4 hours
+			int format_arg_index = 1;
 
-			int format_arg_index = -1;
-
-			if (argc > 1 && isdigit(*argv[1])) {
+			if (argv[1] && isdigit(*argv[1])) {
 				age = atoi(argv[1]);
 				format_arg_index = 2;
-			} else {
-				format_arg_index = 1;
 			}
 
 			switch_snprintfv(sql, sizeof(sql), "SELECT * FROM calls where hostname='%q' and (strftime('%%s','now') - call_created_epoch) > %d order by call_created_epoch",
 				switch_core_get_switchname(), age);
 
-			if (argc > format_arg_index + 1 && argv[format_arg_index+1] && !strcasecmp(argv[format_arg_index], "as")) {
+			if (argv[format_arg_index] && argv[format_arg_index+1] && !strcasecmp(argv[format_arg_index], "as")) {
 				as = argv[format_arg_index + 1];
 			}
 		} else {
