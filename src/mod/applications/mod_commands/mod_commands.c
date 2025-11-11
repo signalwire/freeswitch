@@ -5893,6 +5893,7 @@ SWITCH_STANDARD_API(show_function)
 		} else if (!strcasecmp(command, "old_calls")) {
 			int age = 14400; // default 4 hours
 			time_t now = time(NULL);
+			time_t threshold_epoch;
 			int format_arg_index = 1;
 
 			if (argv[1] && isdigit(*argv[1])) {
@@ -5900,7 +5901,7 @@ SWITCH_STANDARD_API(show_function)
 				format_arg_index = 2;
 			}
 
-			time_t threshold_epoch = now - age;
+			threshold_epoch = now - age;
 
 			switch_snprintfv(sql, sizeof(sql),
 				"SELECT * FROM calls WHERE hostname='%q' AND call_created_epoch < %ld ORDER BY call_created_epoch",
