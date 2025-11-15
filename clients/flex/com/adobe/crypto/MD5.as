@@ -184,7 +184,7 @@ package com.adobe.crypto {
 			digest.writeInt(c);
 			digest.writeInt(d);
 			digest.position = 0;
-			// Finish up by concatening the buffers with their hex output
+			// Finish up by concatenating the buffers with their hex output
 			return IntUtil.toHex( a ) + IntUtil.toHex( b ) + IntUtil.toHex( c ) + IntUtil.toHex( d );
 		}
 		
