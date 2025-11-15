@@ -677,6 +677,7 @@ struct sofia_profile {
 	char *challenge_realm;
 	char *pnp_prov_url;
 	char *pnp_notify_profile;
+	char *unavailable_retry_after_timeout;
 	int sip_user_ping_max;
 	int sip_user_ping_min;
 	sofia_cid_type_t cid_type;
