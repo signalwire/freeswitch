@@ -1391,7 +1391,7 @@ package com.adobe.net
 		 * did not have any escaping, the first unescape will do nothing
 		 * and then the re-escape will properly escape everything.  If
 		 * the URI was already escaped, the unescape and re-escape will
-		 * essentally be a no-op.  This provides a safe way to make sure
+		 * essentially be a no-op.  This provides a safe way to make sure
 		 * a URI is in the proper escaped form.</p>
 		 */
 		public function forceEscape() : void
@@ -1794,7 +1794,7 @@ package com.adobe.net
 			else
 			{
 				// Both URI's have the same number of path components, but
-				// it failed the equivelence check above.  This means that
+				// it failed the equivalence check above.  This means that
 				// the two URI's are not related.
 				return URI.NOT_RELATED;
 			}
