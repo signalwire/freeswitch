@@ -6400,7 +6400,7 @@ const char *sofia_gateway_status_name(sofia_gateway_status_t status)
 
 const char *sofia_sip_user_status_name(sofia_sip_user_status_t status)
 {
-	static const char *status_names[] = { "UNREACHABLE", "REACHABLE", NULL };
+	static const char *status_names[] = { "REACHABLE", "UNREACHABLE", NULL };
 
 	if (status < SOFIA_REG_INVALID) {
 		return status_names[status];
@@ -6525,10 +6525,16 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		sip_user_status.status_len = sizeof(ping_status);
 		sip_user_status.contact = sip_contact;
 		sip_user_status.contact_len = sizeof(sip_contact);
+		sip_user_status.count = -1;
 		sql = switch_mprintf("select ping_status, ping_count, contact from sip_registrations where sip_user='%q' and sip_host='%q' and call_id='%q'",
 				     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
 		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_sip_user_status_callback, &sip_user_status);
 		switch_safe_free(sql);
+
+		if (sip_user_status.count < 0) {
+				switch_safe_free(sip_user);
+				return;
+		}
 
 		if (status != 200 && status != 486) {
 			sip_user_status.count--;
@@ -6549,7 +6555,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 					switch_safe_free(sql);
 					sofia_reg_fire_custom_sip_user_state_event(profile, sip_user, sip_user_status.contact, sip->sip_to->a_url->url_user,
-															   sip->sip_to->a_url->url_host, call_id, SOFIA_REG_REACHABLE, status, phrase);
+															   sip->sip_to->a_url->url_host, call_id, SOFIA_REG_UNREACHABLE, status, phrase);
 
 					if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL)) {
 						time_t now = switch_epoch_time_now(NULL);
@@ -6582,7 +6588,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 					switch_safe_free(sql);
 					sofia_reg_fire_custom_sip_user_state_event(profile, sip_user, sip_user_status.contact, sip->sip_to->a_url->url_user,
-															   sip->sip_to->a_url->url_host, call_id, SOFIA_REG_UNREACHABLE, status, phrase);
+															   sip->sip_to->a_url->url_host, call_id, SOFIA_REG_REACHABLE, status, phrase);
 				}
 			}
 		}
