@@ -2,23 +2,6 @@
 
 
 
-
-locks/unix/proc_mutex.c: In function 'proc_mutex_proc_pthread_create':
-locks/unix/proc_mutex.c:329:5: warning: 'pthread_mutexattr_setrobust_np' is deprecated: pthread_mutexattr_setrobust_np is deprecated, use pthread_mutexattr_setrobust [-Wdeprecated-declarations]
-  329 |     if ((rv = pthread_mutexattr_setrobust_np(&mattr,
-      |     ^~
-In file included from /usr/include/features.h:489,
-                 from /usr/include/x86_64-linux-gnu/sys/types.h:25,
-                 from ./include/fspr.h:113,
-                 from locks/unix/proc_mutex.c:17:
-/usr/include/pthread.h:951:12: note: declared here
-  951 | extern int __REDIRECT_NTH (pthread_mutexattr_setrobust_np,
-      |            ^~~~~~~~~~~~~~
-
-
-
-
-
 crypto/hash/hmac_ossl.c: In function 'srtp_hmac_alloc':
 crypto/hash/hmac_ossl.c:106:5: warning: 'HMAC_CTX_new' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
   106 |     (*a)->state = HMAC_CTX_new();
@@ -73,50 +56,7 @@ crypto/hash/hmac_ossl.c:208:5: warning: 'HMAC_Final' is deprecated: Since OpenSS
 
 
 
-*** Warning: Linking the shared library libfreeswitch.la against the
-*** static library libs/libvpx/libvpx.a is not portable!
-Making all in .
-make[2]: Entering directory '/usr/src/freeswitch'
-  CC       src/freeswitch-switch.o
-(CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/bash '/usr/src/freeswitch/build/config/missing' autoheader)
-rm -f src/include/stamp-h1
-touch src/include/switch_private.h.in
-cd . && /bin/bash ./config.status src/include/switch_private.h
-config.status: creating src/include/switch_private.h
-config.status: src/include/switch_private.h is unchanged
-  CC       src/libfreeswitch_la-switch_version.lo
-  CXXLD    libfreeswitch.la
 
-*** Warning: Linking the shared library libfreeswitch.la against the
-*** static library libs/libvpx/libvpx.a is not portable!
-  CCLD     freeswitch
-  CC       libs/esl/src/fs_cli-esl.o
-  CC       libs/esl/src/fs_cli-esl_config.o
-  CC       libs/esl/src/fs_cli-esl_event.o
-  CC       libs/esl/src/fs_cli-esl_threadmutex.o
-  CC       libs/esl/fs_cli-fs_cli.o
-  CC       libs/esl/src/fs_cli-esl_json.o
-  CC       libs/esl/src/fs_cli-esl_buffer.o
-  CC       libs/esl/src/fs_cli-cJSON.o
-  CC       libs/esl/src/fs_cli-cJSON_Utils.o
-  CCLD     fs_cli
-  CC       libs/esl/src/fs_ivrd-esl.o
-  CC       libs/esl/src/fs_ivrd-esl_config.o
-  CC       libs/esl/src/fs_ivrd-esl_event.o
-  CC       libs/esl/src/fs_ivrd-esl_threadmutex.o
-  CC       libs/esl/fs_ivrd-ivrd.o
-  CC       libs/esl/src/fs_ivrd-esl_json.o
-  CC       libs/esl/src/fs_ivrd-esl_buffer.o
-  CC       libs/esl/src/fs_ivrd-cJSON.o
-  CC       libs/esl/src/fs_ivrd-cJSON_Utils.o
-  CCLD     fs_ivrd
-  CC       src/tone2wav-tone2wav.o
-  CCLD     tone2wav
-  CC       src/fs_encode-fs_encode.o
-  CCLD     fs_encode
-  CC       src/fs_tts-fs_tts.o
-  CCLD     fs_tts
-creating fsxs
 
 
 
