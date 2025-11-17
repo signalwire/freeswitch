@@ -69,7 +69,7 @@ static void hadamard_highbd_col8_first_pass(const int16_t *src_diff,
 // src_diff: 16 bit, dynamic range [-32760, 32760]
 // coeff: 19 bit
 static void hadamard_highbd_col8_second_pass(const int16_t *src_diff,
-                                             ptrdiff_t src_stride,
+                                            ptrdiff_t src_stride,
                                              int32_t *coeff) {
   int32_t b0 = src_diff[0 * src_stride] + src_diff[1 * src_stride];
   int32_t b1 = src_diff[0 * src_stride] - src_diff[1 * src_stride];
@@ -340,8 +340,8 @@ int vpx_satd_c(const tran_low_t *coeff, int length) {
 
 // Integer projection onto row vectors.
 // height: value range {16, 32, 64}.
-void vpx_int_pro_row_c(int16_t hbuf[16], const uint8_t *ref,
-                       const int ref_stride, const int height) {
+void vpx_int_pro_row_c(int16_t *hbuf, const uint8_t *ref,
+                      const int ref_stride, const int height) {
   int idx;
   const int norm_factor = height >> 1;
   if (height == 1) return;

@@ -1,0 +1,374 @@
+# build Issue, in offical repo 
+
+vp8/vp8_dx_iface.c: In function ‘vp8_decode’:
+vp8/vp8_dx_iface.c:284:16: warning: variable ‘w’ might be clobbered by ‘longjmp’ or ‘vfork’ [-Wclobbered]
+  284 |   unsigned int w, h;
+      |                ^
+vp8/vp8_dx_iface.c:284:19: warning: variable ‘h’ might be clobbered by ‘longjmp’ or ‘vfork’ [-Wclobbered]
+  284 |   unsigned int w, h;
+      |                   ^
+
+
+
+vp9/encoder/vp9_bitstream.c: In function ‘encode_tile_worker’:
+vp9/encoder/vp9_bitstream.c:948:3: warning: ‘write_modes’ accessing 64 bytes in a region of size 16 [-Wstringop-overflow=]
+  948 |   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  949 |               &data->bit_writer, tile_row, data->tile_idx,
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  950 |               &data->max_mv_magnitude, data->interp_filter_selected);
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_bitstream.c:948:3: note: referencing argument 8 of type ‘int[4][4]’
+vp9/encoder/vp9_bitstream.c:488:13: note: in a call to function ‘write_modes’
+  488 | static void write_modes(
+      |             ^~~~~~~~~~~
+vp9/encoder/vp9_bitstream.c:948:3: warning: ‘write_modes’ accessing 64 bytes in a region of size 16 [-Wstringop-overflow=]
+  948 |   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  949 |               &data->bit_writer, tile_row, data->tile_idx,
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  950 |               &data->max_mv_magnitude, data->interp_filter_selected);
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_bitstream.c:948:3: note: referencing argument 8 of type ‘int[4][4]’
+vp9/encoder/vp9_bitstream.c:488:13: note: in a call to function ‘write_modes’
+  488 | static void write_modes(
+      |             ^~~~~~~~~~~
+vp9/encoder/vp9_bitstream.c:948:3: warning: ‘write_modes’ accessing 64 bytes in a region of size 16 [-Wstringop-overflow=]
+  948 |   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  949 |               &data->bit_writer, tile_row, data->tile_idx,
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  950 |               &data->max_mv_magnitude, data->interp_filter_selected);
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_bitstream.c:948:3: note: referencing argument 8 of type ‘int[4][4]’
+vp9/encoder/vp9_bitstream.c:488:13: note: in a call to function ‘write_modes’
+  488 | static void write_modes(
+      |             ^~~~~~~~~~~
+    
+
+
+
+vp9/encoder/vp9_rd.c: In function ‘vp9_get_entropy_contexts’:
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [64, 254] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [68, 196] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [72, 200] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [76, 204] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [80, 208] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [84, 212] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [88, 216] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [92, 220] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [96, 224] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [100, 228] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [104, 232] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [108, 236] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [112, 240] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [116, 244] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:554:20: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  554 |         t_above[i] = !!*(const uint32_t *)&above[i];
+      |         ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:532:47: note: at offset [120, 248] into destination object ‘t_above’ of size [0, 16]
+  532 |                               ENTROPY_CONTEXT t_above[16],
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [64, 254] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [68, 196] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [72, 200] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [76, 204] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [80, 208] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [84, 212] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [88, 216] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [92, 220] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [96, 224] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [100, 228] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [104, 232] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [108, 236] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [112, 240] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [116, 244] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+vp9/encoder/vp9_rd.c:556:19: warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+  556 |         t_left[i] = !!*(const uint32_t *)&left[i];
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/vp9_rd.c:533:47: note: at offset [120, 248] into destination object ‘t_left’ of size [0, 16]
+  533 |                               ENTROPY_CONTEXT t_left[16]) {
+      |                               ~~~~~~~~~~~~~~~~^~~~~~~~~~
+    [CC] vp9/encoder/vp9_rdopt.c.o
+   
+
+
+vp9/encoder/x86/vp9_diamond_search_sad_avx.c: In function ‘vp9_diamond_search_sad_avx’:
+vp9/encoder/x86/vp9_diamond_search_sad_avx.c:285:19: warning: ‘v_these_mv_w’ may be used uninitialized [-Wmaybe-uninitialized]
+  285 |           new_bmv = ((const int_mv *)&v_these_mv_w)[local_best_idx];
+      |           ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+vp9/encoder/x86/vp9_diamond_search_sad_avx.c:149:21: note: ‘v_these_mv_w’ declared here
+  149 |       const __m128i v_these_mv_w = _mm_add_epi16(v_bmv_w, v_ss_mv_w);
+      |                     ^~~~~~~~~~~~
+
+
+file_io/unix/dir.c: In function 'fspr_dir_read':
+file_io/unix/dir.c:144:5: warning: 'readdir_r' is deprecated [-Wdeprecated-declarations]
+  144 |     ret = readdir_r(thedir->dirstruct, thedir->entry, &retent);
+      |     ^~~
+In file included from /usr/src/freeswitch/libs/apr/include/arch/unix/fspr_arch_file_io.h:50,
+                 from file_io/unix/dir.c:17:
+/usr/include/dirent.h:185:12: note: declared here
+  185 | extern int readdir_r (DIR *__restrict __dirp,
+      |            ^~~~~~~~~
+
+
+
+locks/unix/proc_mutex.c: In function 'proc_mutex_proc_pthread_create':
+locks/unix/proc_mutex.c:329:5: warning: 'pthread_mutexattr_setrobust_np' is deprecated: pthread_mutexattr_setrobust_np is deprecated, use pthread_mutexattr_setrobust [-Wdeprecated-declarations]
+  329 |     if ((rv = pthread_mutexattr_setrobust_np(&mattr,
+      |     ^~
+In file included from /usr/include/features.h:489,
+                 from /usr/include/x86_64-linux-gnu/sys/types.h:25,
+                 from ./include/fspr.h:113,
+                 from locks/unix/proc_mutex.c:17:
+/usr/include/pthread.h:951:12: note: declared here
+  951 | extern int __REDIRECT_NTH (pthread_mutexattr_setrobust_np,
+      |            ^~~~~~~~~~~~~~
+
+
+
+
+
+crypto/hash/hmac_ossl.c: In function 'srtp_hmac_alloc':
+crypto/hash/hmac_ossl.c:106:5: warning: 'HMAC_CTX_new' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  106 |     (*a)->state = HMAC_CTX_new();
+      |     ^
+In file included from crypto/hash/hmac_ossl.c:54:
+/usr/include/openssl/hmac.h:33:33: note: declared here
+   33 | OSSL_DEPRECATEDIN_3_0 HMAC_CTX *HMAC_CTX_new(void);
+      |                                 ^~~~~~~~~~~~
+crypto/hash/hmac_ossl.c: In function 'srtp_hmac_dealloc':
+crypto/hash/hmac_ossl.c:136:5: warning: 'HMAC_CTX_free' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  136 |     HMAC_CTX_free(hmac_ctx);
+      |     ^~~~~~~~~~~~~
+/usr/include/openssl/hmac.h:35:28: note: declared here
+   35 | OSSL_DEPRECATEDIN_3_0 void HMAC_CTX_free(HMAC_CTX *ctx);
+      |                            ^~~~~~~~~~~~~
+crypto/hash/hmac_ossl.c: In function 'srtp_hmac_start':
+crypto/hash/hmac_ossl.c:152:5: warning: 'HMAC_Init_ex' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  152 |     if (HMAC_Init_ex(state, NULL, 0, NULL, NULL) == 0)
+      |     ^~
+/usr/include/openssl/hmac.h:43:27: note: declared here
+   43 | OSSL_DEPRECATEDIN_3_0 int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
+      |                           ^~~~~~~~~~~~
+crypto/hash/hmac_ossl.c: In function 'srtp_hmac_init':
+crypto/hash/hmac_ossl.c:164:5: warning: 'HMAC_Init_ex' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  164 |     if (HMAC_Init_ex(state, key, key_len, EVP_sha1(), NULL) == 0)
+      |     ^~
+/usr/include/openssl/hmac.h:43:27: note: declared here
+   43 | OSSL_DEPRECATEDIN_3_0 int HMAC_Init_ex(HMAC_CTX *ctx, const void *key, int len,
+      |                           ^~~~~~~~~~~~
+crypto/hash/hmac_ossl.c: In function 'srtp_hmac_update':
+crypto/hash/hmac_ossl.c:179:5: warning: 'HMAC_Update' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  179 |     if (HMAC_Update(state, message, msg_octets) == 0)
+      |     ^~
+/usr/include/openssl/hmac.h:45:27: note: declared here
+   45 | OSSL_DEPRECATEDIN_3_0 int HMAC_Update(HMAC_CTX *ctx, const unsigned char *data,
+      |                           ^~~~~~~~~~~
+crypto/hash/hmac_ossl.c: In function 'srtp_hmac_compute':
+crypto/hash/hmac_ossl.c:205:5: warning: 'HMAC_Update' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  205 |     if (HMAC_Update(state, message, msg_octets) == 0)
+      |     ^~
+/usr/include/openssl/hmac.h:45:27: note: declared here
+   45 | OSSL_DEPRECATEDIN_3_0 int HMAC_Update(HMAC_CTX *ctx, const unsigned char *data,
+      |                           ^~~~~~~~~~~
+crypto/hash/hmac_ossl.c:208:5: warning: 'HMAC_Final' is deprecated: Since OpenSSL 3.0 [-Wdeprecated-declarations]
+  208 |     if (HMAC_Final(state, hash_value, &len) == 0)
+      |     ^~
+/usr/include/openssl/hmac.h:47:27: note: declared here
+   47 | OSSL_DEPRECATEDIN_3_0 int HMAC_Final(HMAC_CTX *ctx, unsigned char *md,
+      |                           ^~~~~~~~~~
+
+
+
+
+
+*** Warning: Linking the shared library libfreeswitch.la against the
+*** static library libs/libvpx/libvpx.a is not portable!
+Making all in .
+make[2]: Entering directory '/usr/src/freeswitch'
+  CC       src/freeswitch-switch.o
+(CDPATH="${ZSH_VERSION+.}:" && cd . && /bin/bash '/usr/src/freeswitch/build/config/missing' autoheader)
+rm -f src/include/stamp-h1
+touch src/include/switch_private.h.in
+cd . && /bin/bash ./config.status src/include/switch_private.h
+config.status: creating src/include/switch_private.h
+config.status: src/include/switch_private.h is unchanged
+  CC       src/libfreeswitch_la-switch_version.lo
+  CXXLD    libfreeswitch.la
+
+*** Warning: Linking the shared library libfreeswitch.la against the
+*** static library libs/libvpx/libvpx.a is not portable!
+  CCLD     freeswitch
+  CC       libs/esl/src/fs_cli-esl.o
+  CC       libs/esl/src/fs_cli-esl_config.o
+  CC       libs/esl/src/fs_cli-esl_event.o
+  CC       libs/esl/src/fs_cli-esl_threadmutex.o
+  CC       libs/esl/fs_cli-fs_cli.o
+  CC       libs/esl/src/fs_cli-esl_json.o
+  CC       libs/esl/src/fs_cli-esl_buffer.o
+  CC       libs/esl/src/fs_cli-cJSON.o
+  CC       libs/esl/src/fs_cli-cJSON_Utils.o
+  CCLD     fs_cli
+  CC       libs/esl/src/fs_ivrd-esl.o
+  CC       libs/esl/src/fs_ivrd-esl_config.o
+  CC       libs/esl/src/fs_ivrd-esl_event.o
+  CC       libs/esl/src/fs_ivrd-esl_threadmutex.o
+  CC       libs/esl/fs_ivrd-ivrd.o
+  CC       libs/esl/src/fs_ivrd-esl_json.o
+  CC       libs/esl/src/fs_ivrd-esl_buffer.o
+  CC       libs/esl/src/fs_ivrd-cJSON.o
+  CC       libs/esl/src/fs_ivrd-cJSON_Utils.o
+  CCLD     fs_ivrd
+  CC       src/tone2wav-tone2wav.o
+  CCLD     tone2wav
+  CC       src/fs_encode-fs_encode.o
+  CCLD     fs_encode
+  CC       src/fs_tts-fs_tts.o
+  CCLD     fs_tts
+creating fsxs
+
+
+
+
