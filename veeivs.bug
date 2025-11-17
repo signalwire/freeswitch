@@ -2,23 +2,6 @@
 
 
 
-
-
-
-
-    [CC] vp9/encoder/vp9_rdopt.c.o
-   
-
-
-vp9/encoder/x86/vp9_diamond_search_sad_avx.c: In function ‘vp9_diamond_search_sad_avx’:
-vp9/encoder/x86/vp9_diamond_search_sad_avx.c:285:19: warning: ‘v_these_mv_w’ may be used uninitialized [-Wmaybe-uninitialized]
-  285 |           new_bmv = ((const int_mv *)&v_these_mv_w)[local_best_idx];
-      |           ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-vp9/encoder/x86/vp9_diamond_search_sad_avx.c:149:21: note: ‘v_these_mv_w’ declared here
-  149 |       const __m128i v_these_mv_w = _mm_add_epi16(v_bmv_w, v_ss_mv_w);
-      |                     ^~~~~~~~~~~~
-
-
 file_io/unix/dir.c: In function 'fspr_dir_read':
 file_io/unix/dir.c:144:5: warning: 'readdir_r' is deprecated [-Wdeprecated-declarations]
   144 |     ret = readdir_r(thedir->dirstruct, thedir->entry, &retent);
