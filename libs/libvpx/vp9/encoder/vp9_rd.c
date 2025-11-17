@@ -133,7 +133,7 @@ static void fill_mode_costs(VP9_COMP *cpi) {
 }
 
 static void fill_token_costs(vp9_coeff_cost *c,
-                             vp9_coeff_probs_model (*p)[PLANE_TYPES]) {
+                            vp9_coeff_probs_model (*p)[PLANE_TYPES]) {
   int i, j, k, l;
   TX_SIZE t;
   for (t = TX_4X4; t <= TX_32X32; ++t)
@@ -145,9 +145,9 @@ static void fill_token_costs(vp9_coeff_cost *c,
             vp9_model_to_full_probs(p[t][i][j][k][l], probs);
             vp9_cost_tokens((int *)c[t][i][j][k][0][l], probs, vp9_coef_tree);
             vp9_cost_tokens_skip((int *)c[t][i][j][k][1][l], probs,
-                                 vp9_coef_tree);
+                                vp9_coef_tree);
             assert(c[t][i][j][k][0][l][EOB_TOKEN] ==
-                   c[t][i][j][k][1][l][EOB_TOKEN]);
+                  c[t][i][j][k][1][l][EOB_TOKEN]);
           }
 }
 
@@ -187,7 +187,7 @@ void vp9_init_me_luts(void) {
 }
 
 static const int rd_boost_factor[16] = { 64, 32, 32, 32, 24, 16, 12, 12,
-                                         8,  8,  4,  4,  2,  2,  1,  0 };
+                                        8,  8,  4,  4,  2,  2,  1,  0 };
 
 // Note that the element below for frame type "USE_BUF_FRAME", which indicates
 // that the show frame flag is set, should not be used as no real frame
@@ -321,7 +321,7 @@ static void set_block_thresholds(const VP9_COMMON *cm, RD_OPT *rd) {
         for (i = 0; i < MAX_MODES; ++i)
           rd->threshes[segment_id][bsize][i] = rd->thresh_mult[i] < thresh_max
                                                    ? rd->thresh_mult[i] * t / 4
-                                                   : INT_MAX;
+                                                  : INT_MAX;
       } else {
         for (i = 0; i < MAX_REFS; ++i)
           rd->threshes[segment_id][bsize][i] =
@@ -357,7 +357,7 @@ void vp9_initialize_rd_consts(VP9_COMP *cpi) {
   set_error_per_bit(x, rd->RDMULT);
 
   x->select_tx_size = (cpi->sf.tx_size_search_method == USE_LARGESTALL &&
-                       cm->frame_type != KEY_FRAME)
+                      cm->frame_type != KEY_FRAME)
                           ? 0
                           : 1;
 
@@ -550,23 +550,23 @@ void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
         t_left[i] = !!*(const uint16_t *)&left[i];
       break;
     case TX_16X16:
-      for (i = 0; i < num_4x4_w; i += 4)
+      for (i = 0; i < num_4x4_w && i < 16; i += 4)
         t_above[i] = !!*(const uint32_t *)&above[i];
-      for (i = 0; i < num_4x4_h; i += 4)
+      for (i = 0; i < num_4x4_h && i < 16; i += 4)
         t_left[i] = !!*(const uint32_t *)&left[i];
       break;
     default:
       assert(tx_size == TX_32X32);
-      for (i = 0; i < num_4x4_w; i += 8)
+      for (i = 0; i < num_4x4_w && i < 16; i += 8)
         t_above[i] = !!*(const uint64_t *)&above[i];
-      for (i = 0; i < num_4x4_h; i += 8)
+      for (i = 0; i < num_4x4_h && i < 16; i += 8)
         t_left[i] = !!*(const uint64_t *)&left[i];
       break;
   }
 }
 
 void vp9_mv_pred(VP9_COMP *cpi, MACROBLOCK *x, uint8_t *ref_y_buffer,
-                 int ref_y_stride, int ref_frame, BLOCK_SIZE block_size) {
+                int ref_y_stride, int ref_frame, BLOCK_SIZE block_size) {
   int i;
   int zero_seen = 0;
   int best_index = 0;
@@ -604,7 +604,7 @@ void vp9_mv_pred(VP9_COMP *cpi, MACROBLOCK *x, uint8_t *ref_y_buffer,
     ref_y_ptr = &ref_y_buffer[ref_y_stride * fp_row + fp_col];
     // Find sad for current vector.
     this_sad = cpi->fn_ptr[block_size].sdf(src_y_ptr, x->plane[0].src.stride,
-                                           ref_y_ptr, ref_y_stride);
+                                          ref_y_ptr, ref_y_stride);
     // Note if it is the best so far.
     if (this_sad < best_sad) {
       best_sad = this_sad;
@@ -633,8 +633,8 @@ void vp9_setup_pred_block(const MACROBLOCKD *xd,
 
   for (i = 0; i < MAX_MB_PLANE; ++i) {
     setup_pred_plane(dst + i, dst[i].buf, dst[i].stride, mi_row, mi_col,
-                     i ? scale_uv : scale, xd->plane[i].subsampling_x,
-                     xd->plane[i].subsampling_y);
+                    i ? scale_uv : scale, xd->plane[i].subsampling_x,
+                    xd->plane[i].subsampling_y);
   }
 }
 
@@ -653,21 +653,21 @@ int16_t *vp9_raster_block_offset_int16(BLOCK_SIZE plane_bsize, int raster_block,
 }
 
 YV12_BUFFER_CONFIG *vp9_get_scaled_ref_frame(const VP9_COMP *cpi,
-                                             int ref_frame) {
+                                            int ref_frame) {
   const VP9_COMMON *const cm = &cpi->common;
   const int scaled_idx = cpi->scaled_ref_idx[ref_frame - 1];
   const int ref_idx = get_ref_frame_buf_idx(cpi, ref_frame);
   assert(ref_frame >= LAST_FRAME && ref_frame <= ALTREF_FRAME);
   return (scaled_idx != ref_idx && scaled_idx != INVALID_IDX)
-             ? &cm->buffer_pool->frame_bufs[scaled_idx].buf
-             : NULL;
+            ? &cm->buffer_pool->frame_bufs[scaled_idx].buf
+            : NULL;
 }
 
 int vp9_get_switchable_rate(const VP9_COMP *cpi, const MACROBLOCKD *const xd) {
   const MODE_INFO *const mi = xd->mi[0];
   const int ctx = get_pred_context_switchable_interp(xd);
   return SWITCHABLE_INTERP_RATE_FACTOR *
-         cpi->switchable_interp_costs[ctx][mi->interp_filter];
+        cpi->switchable_interp_costs[ctx][mi->interp_filter];
 }
 
 void vp9_set_rd_speed_thresholds(VP9_COMP *cpi) {
@@ -735,7 +735,7 @@ void vp9_set_rd_speed_thresholds_sub8x8(VP9_COMP *cpi) {
 }
 
 void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
-                               int bsize, int best_mode_index) {
+                              int bsize, int best_mode_index) {
   if (rd_thresh > 0) {
     const int top_mode = bsize < BLOCK_8X8 ? MAX_REFS : MAX_MODES;
     int mode;
@@ -756,7 +756,7 @@ void vp9_update_rd_thresh_fact(int (*factor_buf)[MAX_MODES], int rd_thresh,
 }
 
 int vp9_get_intra_cost_penalty(const VP9_COMP *const cpi, BLOCK_SIZE bsize,
-                               int qindex, int qdelta) {
+                              int qindex, int qdelta) {
   // Reduce the intra cost penalty for small blocks (<=16x16).
   int reduction_fac =
       (bsize <= BLOCK_16X16) ? ((bsize <= BLOCK_8X8) ? 4 : 2) : 0;
