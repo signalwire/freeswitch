@@ -2,17 +2,6 @@
 
 
 
-file_io/unix/dir.c: In function 'fspr_dir_read':
-file_io/unix/dir.c:144:5: warning: 'readdir_r' is deprecated [-Wdeprecated-declarations]
-  144 |     ret = readdir_r(thedir->dirstruct, thedir->entry, &retent);
-      |     ^~~
-In file included from /usr/src/freeswitch/libs/apr/include/arch/unix/fspr_arch_file_io.h:50,
-                 from file_io/unix/dir.c:17:
-/usr/include/dirent.h:185:12: note: declared here
-  185 | extern int readdir_r (DIR *__restrict __dirp,
-      |            ^~~~~~~~~
-
-
 
 locks/unix/proc_mutex.c: In function 'proc_mutex_proc_pthread_create':
 locks/unix/proc_mutex.c:329:5: warning: 'pthread_mutexattr_setrobust_np' is deprecated: pthread_mutexattr_setrobust_np is deprecated, use pthread_mutexattr_setrobust [-Wdeprecated-declarations]
