@@ -1,12 +1,5 @@
 # build Issue, in offical repo 
 
-vp8/vp8_dx_iface.c: In function ‘vp8_decode’:
-vp8/vp8_dx_iface.c:284:16: warning: variable ‘w’ might be clobbered by ‘longjmp’ or ‘vfork’ [-Wclobbered]
-  284 |   unsigned int w, h;
-      |                ^
-vp8/vp8_dx_iface.c:284:19: warning: variable ‘h’ might be clobbered by ‘longjmp’ or ‘vfork’ [-Wclobbered]
-  284 |   unsigned int w, h;
-      |                   ^
 
 
 
