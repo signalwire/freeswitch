@@ -3,41 +3,6 @@
 
 
 
-vp9/encoder/vp9_bitstream.c: In function ‘encode_tile_worker’:
-vp9/encoder/vp9_bitstream.c:948:3: warning: ‘write_modes’ accessing 64 bytes in a region of size 16 [-Wstringop-overflow=]
-  948 |   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
-      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  949 |               &data->bit_writer, tile_row, data->tile_idx,
-      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  950 |               &data->max_mv_magnitude, data->interp_filter_selected);
-      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-vp9/encoder/vp9_bitstream.c:948:3: note: referencing argument 8 of type ‘int[4][4]’
-vp9/encoder/vp9_bitstream.c:488:13: note: in a call to function ‘write_modes’
-  488 | static void write_modes(
-      |             ^~~~~~~~~~~
-vp9/encoder/vp9_bitstream.c:948:3: warning: ‘write_modes’ accessing 64 bytes in a region of size 16 [-Wstringop-overflow=]
-  948 |   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
-      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  949 |               &data->bit_writer, tile_row, data->tile_idx,
-      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  950 |               &data->max_mv_magnitude, data->interp_filter_selected);
-      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-vp9/encoder/vp9_bitstream.c:948:3: note: referencing argument 8 of type ‘int[4][4]’
-vp9/encoder/vp9_bitstream.c:488:13: note: in a call to function ‘write_modes’
-  488 | static void write_modes(
-      |             ^~~~~~~~~~~
-vp9/encoder/vp9_bitstream.c:948:3: warning: ‘write_modes’ accessing 64 bytes in a region of size 16 [-Wstringop-overflow=]
-  948 |   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
-      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  949 |               &data->bit_writer, tile_row, data->tile_idx,
-      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  950 |               &data->max_mv_magnitude, data->interp_filter_selected);
-      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-vp9/encoder/vp9_bitstream.c:948:3: note: referencing argument 8 of type ‘int[4][4]’
-vp9/encoder/vp9_bitstream.c:488:13: note: in a call to function ‘write_modes’
-  488 | static void write_modes(
-      |             ^~~~~~~~~~~
-    
 
 
 
