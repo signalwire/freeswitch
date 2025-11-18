@@ -265,7 +265,7 @@ applications/mod_esf
 applications/mod_fsv
 applications/mod_httapi
 applications/mod_enum
-applications/mod_spandsp
+# applications/mod_spandsp  # Disabled: SpanDSP 3.0 API incompatibility with FreeSWITCH
 applications/mod_valet_parking
 # applications/mod_signalwire  # Disabled: requires signalwire-client-c (optional for AI orchestrator)
 
