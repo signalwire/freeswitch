@@ -267,7 +267,7 @@ applications/mod_httapi
 applications/mod_enum
 applications/mod_spandsp
 applications/mod_valet_parking
-applications/mod_signalwire
+# applications/mod_signalwire  # Disabled: requires signalwire-client-c (optional for AI orchestrator)
 
 # Video support
 applications/mod_av
