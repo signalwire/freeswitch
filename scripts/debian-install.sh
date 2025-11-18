@@ -116,6 +116,10 @@ apt-get install -y \
     libopencore-amrnb-dev \
     libopus-dev
 
+# ENUM support (mod_enum)
+log_info "Installing LDNS for ENUM support..."
+apt-get install -y libldns-dev
+
 # WebSocket & Event Socket dependencies
 log_info "Installing WebSocket and networking libraries..."
 apt-get install -y \
