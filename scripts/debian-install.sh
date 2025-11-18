@@ -80,9 +80,27 @@ apt-get install -y \
     libdb-dev \
     zlib1g-dev
 
-# SIP Stack (Sofia-SIP)
-log_info "Installing Sofia-SIP for SIP support..."
-apt-get install -y libsofia-sip-ua-dev libsofia-sip-ua0
+# SIP Stack (Sofia-SIP 1.13.17+)
+log_info "Installing Sofia-SIP 1.13.17+ for SIP support..."
+# Note: Debian 13 has sofia-sip 1.12.11, but FreeSWITCH needs 1.13.17+
+# Remove old Debian package if exists
+apt-get remove -y libsofia-sip-ua-dev libsofia-sip-ua0t64 2>/dev/null || true
+
+if ! pkg-config --exists sofia-sip-ua || [ "$(pkg-config --modversion sofia-sip-ua)" != "1.13.17" ]; then
+    log_info "Sofia-SIP 1.13.17 not found, building from source..."
+    cd /tmp
+    git clone --depth 1 https://github.com/freeswitch/sofia-sip.git
+    cd sofia-sip
+    ./bootstrap.sh
+    ./configure --prefix=/usr
+    make -j$(nproc)
+    make install
+    ldconfig
+    log_info "Sofia-SIP installed: $(pkg-config --modversion sofia-sip-ua)"
+    cd "$BUILD_DIR"
+else
+    log_info "Sofia-SIP 1.13.17 already installed"
+fi
 
 # Audio processing
 log_info "Installing audio processing libraries..."
