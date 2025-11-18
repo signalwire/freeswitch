@@ -70,7 +70,7 @@ apt-get install -y \
     libspeexdsp-dev \
     libssl-dev \
     libpq-dev \
-    libncurses5-dev \
+    libncurses-dev \
     libjpeg-dev \
     python3-dev \
     uuid-dev \
@@ -86,7 +86,7 @@ apt-get install -y libsofia-sip-ua-dev libsofia-sip-ua0
 # Audio processing
 log_info "Installing audio processing libraries..."
 apt-get install -y \
-    libspandsp3-dev \
+    libspandsp-dev \
     libsndfile1-dev \
     libflac-dev \
     libvorbis-dev
