@@ -81,7 +81,7 @@ source_os_release
 if [ "${ID,,}" = "debian" ]; then
 	ARCH=$(dpkg --print-architecture)
 
-	if [[ ${TOKEN} == pat_* || ${TOKEN} == ghapat_* ]]; then
+	if [[ ${TOKEN} == pat_* || ${TOKEN} == ghapat_* || ${TOKEN} == not_a_real_token_but_a_dummy_token_* ]]; then
 		DOMAIN="freeswitch.signalwire.com"
 		GPG_KEY="/usr/share/keyrings/signalwire-freeswitch-repo.gpg"
 		RPI=""
