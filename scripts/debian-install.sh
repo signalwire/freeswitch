@@ -119,6 +119,25 @@ apt-get install -y \
 log_info "Installing database libraries..."
 apt-get install -y libpq-dev
 
+# SpanDSP 3.0 (required for mod_spandsp - fax support)
+log_info "Installing SpanDSP 3.0 from source..."
+if ! pkg-config --exists spandsp || [ "$(pkg-config --modversion spandsp)" != "3.0.0" ]; then
+    log_info "SpanDSP 3.0 not found, building from source..."
+    cd /tmp
+    wget -q https://github.com/freeswitch/spandsp/archive/refs/heads/master.zip -O spandsp.zip
+    unzip -q spandsp.zip
+    cd spandsp-master
+    ./bootstrap.sh
+    ./configure --prefix=/usr
+    make -j$(nproc)
+    make install
+    ldconfig
+    log_info "SpanDSP 3.0 installed: $(pkg-config --modversion spandsp)"
+    cd "$BUILD_DIR"
+else
+    log_info "SpanDSP 3.0 already installed: $(pkg-config --modversion spandsp)"
+fi
+
 ################################################################################
 # PHASE 2: FreeSWITCH Build & Install
 ################################################################################
@@ -202,7 +221,7 @@ applications/mod_esf
 applications/mod_fsv
 applications/mod_httapi
 applications/mod_enum
-# applications/mod_spandsp  # Disabled: requires spandsp3 (not available in Debian 13)
+applications/mod_spandsp
 applications/mod_valet_parking
 applications/mod_signalwire
 
