@@ -287,14 +287,15 @@ cat modules.conf
 
 # Configure with optimizations
 log_info "Running configure..."
+# Note: Disable -Werror for GCC 13 compatibility (stringop-overflow warnings)
 ./configure \
     --prefix=/usr/local/freeswitch \
     --enable-core-pgsql-support \
     --enable-static-v8 \
     --disable-debug \
     --with-openssl \
-    CFLAGS="-O3 -march=native" \
-    CXXFLAGS="-O3 -march=native"
+    CFLAGS="-O2 -g -Wno-error" \
+    CXXFLAGS="-O2 -g -Wno-error"
 
 # Build (using all CPU cores)
 log_info "Building FreeSWITCH (this may take 15-30 minutes)..."
