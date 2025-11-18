@@ -161,6 +161,26 @@ else
     log_info "SpanDSP 3.0 already installed: $(pkg-config --modversion spandsp)"
 fi
 
+# libks2 (required for mod_verto and mod_signalwire)
+log_info "Installing libks2 from source..."
+if ! pkg-config --exists libks2; then
+    log_info "libks2 not found, building from source..."
+    cd /tmp
+    rm -rf libks
+    git clone --depth 1 --branch v2.0.7 https://github.com/signalwire/libks.git
+    cd libks
+    # Patch CMakeLists.txt to fix changelog generation error
+    sed -i '316s/.*/\t\tstring(REPLACE "\\"" "" CHANGELOG "\${CHANGELOG}")/' CMakeLists.txt
+    cmake . -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+    make -j$(nproc)
+    make install
+    ldconfig
+    log_info "libks2 installed: $(pkg-config --modversion libks2)"
+    cd "$BUILD_DIR"
+else
+    log_info "libks2 already installed: $(pkg-config --modversion libks2)"
+fi
+
 ################################################################################
 # PHASE 2: FreeSWITCH Build & Install
 ################################################################################
