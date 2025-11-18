@@ -55,7 +55,8 @@ apt-get install -y \
     pkg-config \
     git \
     wget \
-    curl
+    curl \
+    unzip
 
 # FreeSWITCH core dependencies
 log_info "Installing FreeSWITCH core dependencies..."
