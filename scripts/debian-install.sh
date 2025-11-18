@@ -86,10 +86,10 @@ apt-get install -y libsofia-sip-ua-dev libsofia-sip-ua0
 # Audio processing
 log_info "Installing audio processing libraries..."
 apt-get install -y \
-    libspandsp-dev \
     libsndfile1-dev \
     libflac-dev \
     libvorbis-dev
+# Note: libspandsp-dev skipped (v0.0.6 available, but FreeSWITCH needs v3.0+)
 
 # Codec dependencies
 log_info "Installing codec libraries..."
@@ -202,7 +202,7 @@ applications/mod_esf
 applications/mod_fsv
 applications/mod_httapi
 applications/mod_enum
-applications/mod_spandsp
+# applications/mod_spandsp  # Disabled: requires spandsp3 (not available in Debian 13)
 applications/mod_valet_parking
 applications/mod_signalwire
 
