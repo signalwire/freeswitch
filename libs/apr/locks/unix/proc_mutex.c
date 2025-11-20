@@ -66,7 +66,7 @@ static fspr_status_t proc_mutex_posix_create(fspr_proc_mutex_t *new_mutex,
     unsigned long usec;
     
     new_mutex->interproc = fspr_palloc(new_mutex->pool,
-                                      sizeof(*new_mutex->interproc));
+                                    sizeof(*new_mutex->interproc));
     /*
      * This bogusness is to follow what appears to be the
      * lowest common denominator in Posix semaphore naming:
@@ -111,8 +111,8 @@ static fspr_status_t proc_mutex_posix_create(fspr_proc_mutex_t *new_mutex,
     new_mutex->psem_interproc = psem;
     new_mutex->fname = fspr_pstrdup(new_mutex->pool, semname);
     fspr_pool_cleanup_register(new_mutex->pool, (void *)new_mutex,
-                              fspr_proc_mutex_cleanup, 
-                              fspr_pool_cleanup_null);
+                            fspr_proc_mutex_cleanup, 
+                            fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
@@ -204,7 +204,7 @@ static fspr_status_t proc_mutex_sysv_create(fspr_proc_mutex_t *new_mutex,
     new_mutex->curr_locked = 0;
     fspr_pool_cleanup_register(new_mutex->pool,
                               (void *)new_mutex, fspr_proc_mutex_cleanup, 
-                              fspr_pool_cleanup_null);
+                            fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
@@ -297,10 +297,10 @@ static fspr_status_t proc_mutex_proc_pthread_create(fspr_proc_mutex_t *new_mutex
     }
 
     new_mutex->pthread_interproc = (pthread_mutex_t *)mmap(
-                                       (caddr_t) 0, 
-                                       sizeof(pthread_mutex_t), 
-                                       PROT_READ | PROT_WRITE, MAP_SHARED,
-                                       fd, 0); 
+                                    (caddr_t) 0, 
+                                    sizeof(pthread_mutex_t), 
+                                    PROT_READ | PROT_WRITE, MAP_SHARED,
+                                    fd, 0); 
     if (new_mutex->pthread_interproc == (pthread_mutex_t *) (caddr_t) -1) {
         close(fd);
         return errno;
@@ -326,8 +326,8 @@ static fspr_status_t proc_mutex_proc_pthread_create(fspr_proc_mutex_t *new_mutex
     }
 
 #ifdef HAVE_PTHREAD_MUTEX_ROBUST
-    if ((rv = pthread_mutexattr_setrobust_np(&mattr, 
-                                               PTHREAD_MUTEX_ROBUST_NP))) {
+    if ((rv = pthread_mutexattr_setrobust(&mattr, 
+                                            PTHREAD_MUTEX_ROBUST))) {
 #ifdef PTHREAD_SETS_ERRNO
         rv = errno;
 #endif
@@ -365,9 +365,9 @@ static fspr_status_t proc_mutex_proc_pthread_create(fspr_proc_mutex_t *new_mutex
     }
 
     fspr_pool_cleanup_register(new_mutex->pool,
-                              (void *)new_mutex,
-                              fspr_proc_mutex_cleanup, 
-                              fspr_pool_cleanup_null);
+                                (void *)new_mutex,
+                                fspr_proc_mutex_cleanup, 
+                                fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
@@ -379,10 +379,10 @@ static fspr_status_t proc_mutex_proc_pthread_acquire(fspr_proc_mutex_t *mutex)
 #ifdef PTHREAD_SETS_ERRNO
         rv = errno;
 #endif
-#ifdef HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP
+#ifdef HAVE_PTHREAD_MUTEX_ROBUST
         /* Okay, our owner died.  Let's try to make it consistent again. */
         if (rv == EOWNERDEAD) {
-            pthread_mutex_consistent_np(mutex->pthread_interproc);
+            pthread_mutex_consistent(mutex->pthread_interproc);
         }
         else
             return rv;
@@ -463,21 +463,21 @@ static fspr_status_t proc_mutex_fcntl_create(fspr_proc_mutex_t *new_mutex,
                                             const char *fname)
 {
     int rv;
- 
+
     if (fname) {
         new_mutex->fname = fspr_pstrdup(new_mutex->pool, fname);
         rv = fspr_file_open(&new_mutex->interproc, new_mutex->fname,
-                           APR_CREATE | APR_WRITE | APR_EXCL, 
-                           APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD,
-                           new_mutex->pool);
+                            APR_CREATE | APR_WRITE | APR_EXCL, 
+                            APR_UREAD | APR_UWRITE | APR_GREAD | APR_WREAD,
+                            new_mutex->pool);
     }
     else {
         new_mutex->fname = fspr_pstrdup(new_mutex->pool, "/tmp/aprXXXXXX");
         rv = fspr_file_mktemp(&new_mutex->interproc, new_mutex->fname,
-                             APR_CREATE | APR_WRITE | APR_EXCL,
-                             new_mutex->pool);
+                            APR_CREATE | APR_WRITE | APR_EXCL,
+                            new_mutex->pool);
     }
- 
+
     if (rv != APR_SUCCESS) {
         return rv;
     }
@@ -485,9 +485,9 @@ static fspr_status_t proc_mutex_fcntl_create(fspr_proc_mutex_t *new_mutex,
     new_mutex->curr_locked = 0;
     unlink(new_mutex->fname);
     fspr_pool_cleanup_register(new_mutex->pool,
-                              (void*)new_mutex,
-                              fspr_proc_mutex_cleanup, 
-                              fspr_pool_cleanup_null);
+                            (void*)new_mutex,
+                            fspr_proc_mutex_cleanup, 
+                            fspr_pool_cleanup_null);
     return APR_SUCCESS; 
 }
 
@@ -562,29 +562,29 @@ static fspr_status_t proc_mutex_flock_create(fspr_proc_mutex_t *new_mutex,
                                             const char *fname)
 {
     int rv;
- 
+
     if (fname) {
         new_mutex->fname = fspr_pstrdup(new_mutex->pool, fname);
         rv = fspr_file_open(&new_mutex->interproc, new_mutex->fname,
-                           APR_CREATE | APR_WRITE | APR_EXCL, 
-                           APR_UREAD | APR_UWRITE,
-                           new_mutex->pool);
+                            APR_CREATE | APR_WRITE | APR_EXCL, 
+                            APR_UREAD | APR_UWRITE,
+                            new_mutex->pool);
     }
     else {
         new_mutex->fname = fspr_pstrdup(new_mutex->pool, "/tmp/aprXXXXXX");
         rv = fspr_file_mktemp(&new_mutex->interproc, new_mutex->fname,
-                             APR_CREATE | APR_WRITE | APR_EXCL,
-                             new_mutex->pool);
+                                APR_CREATE | APR_WRITE | APR_EXCL,
+                                new_mutex->pool);
     }
- 
+
     if (rv != APR_SUCCESS) {
         proc_mutex_flock_cleanup(new_mutex);
         return errno;
     }
     new_mutex->curr_locked = 0;
     fspr_pool_cleanup_register(new_mutex->pool, (void *)new_mutex,
-                              fspr_proc_mutex_cleanup,
-                              fspr_pool_cleanup_null);
+                                fspr_proc_mutex_cleanup,
+                                fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
@@ -632,7 +632,7 @@ static fspr_status_t proc_mutex_flock_child_init(fspr_proc_mutex_t **mutex,
     }
     new_mutex->fname = fspr_pstrdup(pool, fname);
     rv = fspr_file_open(&new_mutex->interproc, new_mutex->fname,
-                       APR_WRITE, 0, new_mutex->pool);
+                        APR_WRITE, 0, new_mutex->pool);
     if (rv != APR_SUCCESS) {
         return rv;
     }
@@ -739,7 +739,7 @@ APR_DECLARE(const char *) fspr_proc_mutex_defname(void)
 
     return fspr_proc_mutex_name(&mutex);
 }
-   
+
 static fspr_status_t proc_mutex_create(fspr_proc_mutex_t *new_mutex, fspr_lockmech_e mech, const char *fname)
 {
     fspr_status_t rv;

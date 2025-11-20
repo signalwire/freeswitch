@@ -20,7 +20,7 @@
 extern const int16_t vpx_rv[];
 
 void vpx_mbpost_proc_down_sse2(unsigned char *dst, int pitch, int rows,
-                               int cols, int flimit) {
+                              int cols, int flimit) {
   int col;
   const __m128i zero = _mm_setzero_si128();
   const __m128i f = _mm_set1_epi32(flimit);
@@ -36,7 +36,7 @@ void vpx_mbpost_proc_down_sse2(unsigned char *dst, int pitch, int rows,
     __m128i s = _mm_loadl_epi64((__m128i *)dst);
     __m128i sum, sumsq_0, sumsq_1;
     __m128i tmp_0, tmp_1;
-    __m128i below_context;
+    __m128i below_context = zero;
 
     s = _mm_unpacklo_epi8(s, zero);
 
@@ -131,7 +131,7 @@ void vpx_mbpost_proc_down_sse2(unsigned char *dst, int pitch, int rows,
       out = _mm_or_si128(mask_1, mask_0);
 
       _mm_storel_epi64((__m128i *)(dst + row * pitch),
-                       _mm_packus_epi16(out, zero));
+                      _mm_packus_epi16(out, zero));
 
       _mm_store_si128((__m128i *)above_context + ((row + 8) & 7), this_row);
     }

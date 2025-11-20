@@ -20,13 +20,13 @@
 // filters for 16_h8
 DECLARE_ALIGNED(32, static const uint8_t,
                 filt1_global_avx2[32]) = { 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5,
-                                           6, 6, 7, 7, 8, 0, 1, 1, 2, 2, 3,
-                                           3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
+                                          6, 6, 7, 7, 8, 0, 1, 1, 2, 2, 3,
+                                          3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
 
 DECLARE_ALIGNED(32, static const uint8_t,
                 filt2_global_avx2[32]) = { 2, 3, 3, 4, 4,  5, 5, 6, 6, 7, 7,
-                                           8, 8, 9, 9, 10, 2, 3, 3, 4, 4, 5,
-                                           5, 6, 6, 7, 7,  8, 8, 9, 9, 10 };
+                                          8, 8, 9, 9, 10, 2, 3, 3, 4, 4, 5,
+                                          5, 6, 6, 7, 7,  8, 8, 9, 9, 10 };
 
 DECLARE_ALIGNED(32, static const uint8_t, filt3_global_avx2[32]) = {
   4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
@@ -167,14 +167,14 @@ static void vpx_filter_block1d16_h8_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_stride, uint8_t *output_ptr,
     ptrdiff_t dst_stride, uint32_t output_height, const int16_t *filter) {
   vpx_filter_block1d16_h8_x_avx2(src_ptr, src_stride, output_ptr, dst_stride,
-                                 output_height, filter, 0);
+                                output_height, filter, 0);
 }
 
 static void vpx_filter_block1d16_h8_avg_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_stride, uint8_t *output_ptr,
     ptrdiff_t dst_stride, uint32_t output_height, const int16_t *filter) {
   vpx_filter_block1d16_h8_x_avx2(src_ptr, src_stride, output_ptr, dst_stride,
-                                 output_height, filter, 1);
+                                output_height, filter, 1);
 }
 
 static INLINE void vpx_filter_block1d16_v8_x_avx2(
@@ -185,7 +185,7 @@ static INLINE void vpx_filter_block1d16_v8_x_avx2(
   __m256i srcRegHead1;
   unsigned int i;
   ptrdiff_t src_stride, dst_stride;
-  __m256i f[4], s1[4], s2[4];
+  __m256i f[4], s1[4] = {0}, s2[4] = {0};
 
   shuffle_filter_avx2(filter, f);
 
@@ -315,22 +315,22 @@ static INLINE void vpx_filter_block1d16_v8_x_avx2(
 
 static void vpx_filter_block1d16_v8_avx2(const uint8_t *src_ptr,
                                          ptrdiff_t src_stride, uint8_t *dst_ptr,
-                                         ptrdiff_t dst_stride, uint32_t height,
+                                        ptrdiff_t dst_stride, uint32_t height,
                                          const int16_t *filter) {
   vpx_filter_block1d16_v8_x_avx2(src_ptr, src_stride, dst_ptr, dst_stride,
-                                 height, filter, 0);
+                                height, filter, 0);
 }
 
 static void vpx_filter_block1d16_v8_avg_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_stride, uint8_t *dst_ptr,
     ptrdiff_t dst_stride, uint32_t height, const int16_t *filter) {
   vpx_filter_block1d16_v8_x_avx2(src_ptr, src_stride, dst_ptr, dst_stride,
-                                 height, filter, 1);
+                                height, filter, 1);
 }
 
 static void vpx_filter_block1d16_h4_avx2(const uint8_t *src_ptr,
                                          ptrdiff_t src_stride, uint8_t *dst_ptr,
-                                         ptrdiff_t dst_stride, uint32_t height,
+                                        ptrdiff_t dst_stride, uint32_t height,
                                          const int16_t *kernel) {
   // We will cast the kernel from 16-bit words to 8-bit words, and then extract
   // the middle four elements of the kernel into two registers in the form
@@ -358,10 +358,10 @@ static void vpx_filter_block1d16_h4_avx2(const uint8_t *src_ptr,
   __m256i tmp_0, tmp_1;
   __m256i idx_shift_0 =
       _mm256_setr_epi8(0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 0, 1, 1,
-                       2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8);
+                      2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8);
   __m256i idx_shift_2 =
       _mm256_setr_epi8(2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 2, 3, 3,
-                       4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10);
+                      4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10);
 
   // Start one pixel before as we need tap/2 - 1 = 1 sample from the past
   src_ptr -= 1;
@@ -405,7 +405,7 @@ static void vpx_filter_block1d16_h4_avx2(const uint8_t *src_ptr,
     // Finally combine to get the final dst
     dst_first = _mm256_packus_epi16(dst_first, dst_second);
     mm256_store2_si128((__m128i *)dst_ptr, (__m128i *)(dst_ptr + dst_stride),
-                       &dst_first);
+                      &dst_first);
 
     src_ptr += unrolled_src_stride;
     dst_ptr += unrolled_dst_stride;
@@ -435,7 +435,7 @@ static void vpx_filter_block1d16_h4_avx2(const uint8_t *src_ptr,
 
 static void vpx_filter_block1d16_v4_avx2(const uint8_t *src_ptr,
                                          ptrdiff_t src_stride, uint8_t *dst_ptr,
-                                         ptrdiff_t dst_stride, uint32_t height,
+                                        ptrdiff_t dst_stride, uint32_t height,
                                          const int16_t *kernel) {
   // We will load two rows of pixels as 8-bit words, rearrange them into the
   // form
@@ -492,13 +492,13 @@ static void vpx_filter_block1d16_v4_avx2(const uint8_t *src_ptr,
         _mm_loadu_si128((const __m128i *)(src_ptr + src_stride * 3)));
 
     src_reg_12 = _mm256_inserti128_si256(src_reg_1,
-                                         _mm256_castsi256_si128(src_reg_2), 1);
+                                        _mm256_castsi256_si128(src_reg_2), 1);
 
     src_reg_3 = _mm256_castsi128_si256(
         _mm_loadu_si128((const __m128i *)(src_ptr + src_stride * 4)));
 
     src_reg_23 = _mm256_inserti128_si256(src_reg_2,
-                                         _mm256_castsi256_si128(src_reg_3), 1);
+                                        _mm256_castsi256_si128(src_reg_3), 1);
 
     // Last three rows
     src_reg_1223_lo = _mm256_unpacklo_epi8(src_reg_12, src_reg_23);
@@ -523,7 +523,7 @@ static void vpx_filter_block1d16_v4_avx2(const uint8_t *src_ptr,
 
     // Save the result
     mm256_store2_si128((__m128i *)dst_ptr, (__m128i *)(dst_ptr + dst_stride),
-                       &res_reg);
+                      &res_reg);
 
     // Update the source by two rows
     src_ptr += src_stride_unrolled;
@@ -565,10 +565,10 @@ static void vpx_filter_block1d8_h4_avx2(const uint8_t *src_ptr,
   __m256i tmp_0, tmp_1;
   __m256i idx_shift_0 =
       _mm256_setr_epi8(0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 0, 1, 1,
-                       2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8);
+                      2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8);
   __m256i idx_shift_2 =
       _mm256_setr_epi8(2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 2, 3, 3,
-                       4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10);
+                      4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10);
 
   // Start one pixel before as we need tap/2 - 1 = 1 sample from the past
   src_ptr -= 1;
@@ -686,13 +686,13 @@ static void vpx_filter_block1d8_v4_avx2(const uint8_t *src_ptr,
         _mm_loadl_epi64((const __m128i *)(src_ptr + src_stride * 3)));
 
     src_reg_12 = _mm256_inserti128_si256(src_reg_1,
-                                         _mm256_castsi256_si128(src_reg_2), 1);
+                                        _mm256_castsi256_si128(src_reg_2), 1);
 
     src_reg_3 = _mm256_castsi128_si256(
         _mm_loadl_epi64((const __m128i *)(src_ptr + src_stride * 4)));
 
     src_reg_23 = _mm256_inserti128_si256(src_reg_2,
-                                         _mm256_castsi256_si128(src_reg_3), 1);
+                                        _mm256_castsi256_si128(src_reg_3), 1);
 
     // Last three rows
     src_reg_1223 = _mm256_unpacklo_epi8(src_reg_12, src_reg_23);
@@ -745,7 +745,7 @@ static void vpx_filter_block1d4_h4_avx2(const uint8_t *src_ptr,
   __m256i dst;
   __m256i shuf_idx =
       _mm256_setr_epi8(0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 1, 2,
-                       3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6);
+                      3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6);
 
   // Start one pixel before as we need tap/2 - 1 = 1 sample from the past
   src_ptr -= 1;
@@ -855,13 +855,13 @@ static void vpx_filter_block1d4_v4_avx2(const uint8_t *src_ptr,
         _mm_loadl_epi64((const __m128i *)(src_ptr + src_stride * 3)));
 
     src_reg_12 = _mm256_inserti128_si256(src_reg_1,
-                                         _mm256_castsi256_si128(src_reg_2), 1);
+                                        _mm256_castsi256_si128(src_reg_2), 1);
 
     src_reg_3 = _mm256_castsi128_si256(
         _mm_loadl_epi64((const __m128i *)(src_ptr + src_stride * 4)));
 
     src_reg_23 = _mm256_inserti128_si256(src_reg_2,
-                                         _mm256_castsi256_si128(src_reg_3), 1);
+                                        _mm256_castsi256_si128(src_reg_3), 1);
 
     // Last three rows
     src_reg_1223 = _mm256_unpacklo_epi8(src_reg_12, src_reg_23);

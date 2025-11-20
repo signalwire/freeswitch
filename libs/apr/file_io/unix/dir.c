@@ -78,7 +78,7 @@ fspr_status_t fspr_dir_open(fspr_dir_t **new, const char *dirname,
      */
     fspr_size_t dirent_size = 
         (sizeof((*new)->entry->d_name) > 1 ? 
-         sizeof(struct dirent) : sizeof (struct dirent) + 255);
+        sizeof(struct dirent) : sizeof (struct dirent) + 255);
     DIR *dir = opendir(dirname);
 
     if (!dir) {
@@ -93,7 +93,7 @@ fspr_status_t fspr_dir_open(fspr_dir_t **new, const char *dirname,
     (*new)->entry = fspr_pcalloc(pool, dirent_size);
 
     fspr_pool_cleanup_register((*new)->pool, *new, dir_cleanup,
-                              fspr_pool_cleanup_null);
+                            fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
@@ -140,29 +140,31 @@ fspr_status_t fspr_dir_read(fspr_finfo_t *finfo, fspr_int32_t wanted,
 #if APR_HAS_THREADS && defined(_POSIX_THREAD_SAFE_FUNCTIONS) \
                     && !defined(READDIR_IS_THREAD_SAFE)
     struct dirent *retent;
+    fspr_size_t dirent_size;
 
-    ret = readdir_r(thedir->dirstruct, thedir->entry, &retent);
-
-    /* Avoid the Linux problem where at end-of-directory thedir->entry
-     * is set to NULL, but ret = APR_SUCCESS.
-     */
-    if(!ret && thedir->entry != retent)
-        ret = APR_ENOENT;
-
-    /* Solaris is a bit strange, if there are no more entries in the
-     * directory, it returns EINVAL.  Since this is against POSIX, we
-     * hack around the problem here.  EINVAL is possible from other
-     * readdir implementations, but only if the result buffer is too small.
-     * since we control the size of that buffer, we should never have
-     * that problem.
-     */
-    if (ret == EINVAL) {
-        ret = ENOENT;
+    /* We're about to call readdir() that may set `errno', and the logic
+     * below actually cares about errno after the call.  Therefore we need
+     * to clear errno first. */
+    errno = 0;
+    retent = readdir(thedir->dirstruct);
+    
+    if (retent == NULL) {
+        /* If NULL was returned, this can NEVER be a success. Can it?! */
+        if (errno == APR_SUCCESS) {
+            ret = APR_ENOENT;
+        }
+        else
+            ret = errno;
+    } else {
+        /* Copy the dirent data to our buffer */
+        dirent_size = (sizeof(thedir->entry->d_name) > 1 ? 
+                    sizeof(struct dirent) : sizeof(struct dirent) + 255);
+        memcpy(thedir->entry, retent, dirent_size);
     }
 #else
     /* We're about to call a non-thread-safe readdir() that may
-       possibly set `errno', and the logic below actually cares about
-       errno after the call.  Therefore we need to clear errno first. */
+    possibly set `errno', and the logic below actually cares about
+    errno after the call.  Therefore we need to clear errno first. */
     errno = 0;
     thedir->entry = readdir(thedir->dirstruct);
     if (thedir->entry == NULL) {
@@ -320,4 +322,3 @@ fspr_status_t fspr_os_dir_put(fspr_dir_t **dir, fspr_os_dir_t *thedir,
     return APR_SUCCESS;
 }
 
-  

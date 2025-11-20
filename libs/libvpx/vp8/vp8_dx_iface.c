@@ -281,7 +281,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
                                   void *user_priv, long deadline) {
   volatile vpx_codec_err_t res = VPX_CODEC_INVALID_PARAM;
   volatile unsigned int resolution_change = 0;
-  unsigned int w, h;
+  volatile unsigned int w, h;
 
   if (!ctx->fragments.enabled && (data == NULL && data_sz == 0)) {
     return 0;
@@ -299,7 +299,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
 
   if (ctx->fragments.ptrs[0]) {
       res = vp8_peek_si_internal(ctx->fragments.ptrs[0], ctx->fragments.sizes[0],
-                             &ctx->si, ctx->decrypt_cb, ctx->decrypt_state);
+                            &ctx->si, ctx->decrypt_cb, ctx->decrypt_state);
   }
 
   if ((res == VPX_CODEC_UNSUP_BITSTREAM) && !ctx->si.is_kf) {
@@ -397,18 +397,18 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
         if (pc->Width <= 0) {
           pc->Width = w;
           vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                             "Invalid frame width");
+                            "Invalid frame width");
         }
 
         if (pc->Height <= 0) {
           pc->Height = h;
           vpx_internal_error(&pc->error, VPX_CODEC_CORRUPT_FRAME,
-                             "Invalid frame height");
+                            "Invalid frame height");
         }
 
         if (vp8_alloc_frame_buffers(pc, pc->Width, pc->Height)) {
           vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
-                             "Failed to allocate frame buffers");
+                            "Failed to allocate frame buffers");
         }
 
         xd->pre = pc->yv12_fb[pc->lst_fb_idx];
@@ -434,16 +434,16 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
           if (!pc->prev_mip) {
             vp8_de_alloc_frame_buffers(pc);
             vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
-                               "Failed to allocate"
-                               "last frame MODE_INFO array");
+                              "Failed to allocate"
+                              "last frame MODE_INFO array");
           }
 
           pc->prev_mi = pc->prev_mip + pc->mode_info_stride + 1;
 
           if (vp8_alloc_overlap_lists(pbi))
             vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
-                               "Failed to allocate overlap lists "
-                               "for error concealment");
+                              "Failed to allocate overlap lists "
+                              "for error concealment");
         }
 
 #endif
@@ -524,7 +524,7 @@ static vpx_image_t *vp8_get_frame(vpx_codec_alg_priv_t *ctx,
     }
 
     if (0 == vp8dx_get_raw_frame(ctx->yv12_frame_buffers.pbi[0], &sd,
-                                 &time_stamp, &time_end_stamp, &flags)) {
+                                &time_stamp, &time_end_stamp, &flags)) {
       yuvconfig2image(&ctx->img, &sd, ctx->user_priv);
 
       img = &ctx->img;
@@ -563,7 +563,7 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
 }
 
 static vpx_codec_err_t vp8_set_reference(vpx_codec_alg_priv_t *ctx,
-                                         va_list args) {
+                                        va_list args) {
   vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
   if (data) {
@@ -573,14 +573,14 @@ static vpx_codec_err_t vp8_set_reference(vpx_codec_alg_priv_t *ctx,
     image2yuvconfig(&frame->img, &sd);
 
     return vp8dx_set_reference(ctx->yv12_frame_buffers.pbi[0],
-                               frame->frame_type, &sd);
+                              frame->frame_type, &sd);
   } else {
     return VPX_CODEC_INVALID_PARAM;
   }
 }
 
 static vpx_codec_err_t vp8_get_reference(vpx_codec_alg_priv_t *ctx,
-                                         va_list args) {
+                                        va_list args) {
   vpx_ref_frame_t *data = va_arg(args, vpx_ref_frame_t *);
 
   if (data) {
@@ -590,14 +590,14 @@ static vpx_codec_err_t vp8_get_reference(vpx_codec_alg_priv_t *ctx,
     image2yuvconfig(&frame->img, &sd);
 
     return vp8dx_get_reference(ctx->yv12_frame_buffers.pbi[0],
-                               frame->frame_type, &sd);
+                              frame->frame_type, &sd);
   } else {
     return VPX_CODEC_INVALID_PARAM;
   }
 }
 
 static vpx_codec_err_t vp8_get_quantizer(vpx_codec_alg_priv_t *ctx,
-                                         va_list args) {
+                                        va_list args) {
   int *const arg = va_arg(args, int *);
   if (arg == NULL) return VPX_CODEC_INVALID_PARAM;
   *arg = vp8dx_get_quantizer(ctx->yv12_frame_buffers.pbi[0]);
@@ -660,7 +660,7 @@ static vpx_codec_err_t vp8_get_last_ref_frame(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t vp8_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
-                                               va_list args) {
+                                              va_list args) {
   int *corrupted = va_arg(args, int *);
   VP8D_COMP *pbi = (VP8D_COMP *)ctx->yv12_frame_buffers.pbi[0];
 
@@ -675,7 +675,7 @@ static vpx_codec_err_t vp8_get_frame_corrupted(vpx_codec_alg_priv_t *ctx,
 }
 
 static vpx_codec_err_t vp8_set_decryptor(vpx_codec_alg_priv_t *ctx,
-                                         va_list args) {
+                                        va_list args) {
   vpx_decrypt_init *init = va_arg(args, vpx_decrypt_init *);
 
   if (init) {
