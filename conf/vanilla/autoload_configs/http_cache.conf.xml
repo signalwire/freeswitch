@@ -17,5 +17,78 @@
     <!--param name="connect-timeout" value="300"/-->
     <!-- default is 300 seconds, override here -->
     <!--param name="download-timeout" value="300"/-->
+    <!-- global bind IP (optional) - can be overridden per profile -->
+    <!--param name="bind-ip" value="192.168.1.100"/-->
   </settings>
+
+  <profiles>
+    <!-- Example AWS S3 profile with bind-ip -->
+    <!--
+    <profile name="aws-s3-profile">
+      <aws-s3>
+        <access-key-id>AKIAIOSFODNN7EXAMPLE</access-key-id>
+        <secret-access-key>wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY</secret-access-key>
+        <region>us-east-1</region>
+        <base-domain>s3.amazonaws.com</base-domain>
+        <bind-ip>192.168.1.100</bind-ip>
+      </aws-s3>
+      <domains>
+        <domain name="s3.amazonaws.com"/>
+        <domain name="s3.us-east-1.amazonaws.com"/>
+      </domains>
+    </profile>
+    -->
+
+    <!-- Example Azure Blob profile with bind-ip -->
+    <!--
+    <profile name="azure-profile">
+      <azure-blob>
+        <secret-access-key>YOUR_BASE64_ENCODED_KEY</secret-access-key>
+        <base-domain>blob.core.windows.net</base-domain>
+        <bind-ip>192.168.1.101</bind-ip>
+      </azure-blob>
+      <domains>
+        <domain name="myaccount.blob.core.windows.net"/>
+      </domains>
+    </profile>
+    -->
+
+    <!-- Example default profile with bind-ip and custom headers -->
+    <!--
+    <profile name="custom-http">
+      <default>
+        <param name="bind-ip" value="192.168.1.102"/>
+        <header name="X-Custom-Header">CustomValue</header>
+      </default>
+      <domains>
+        <domain name="example.com"/>
+      </domains>
+    </profile>
+    -->
+
+    <!-- Example profile with CIDR/subnet matching for ephemeral IPs -->
+    <!--
+    <profile name="private-network">
+      <default>
+        <param name="bind-ip" value="10.0.0.1"/>
+      </default>
+      <domains>
+        <!-- Exact domain or IP matching -->
+        <domain name="internal.example.com"/>
+        <domain name="storage.local"/>
+        <domain name="192.168.50.10"/>
+
+        <!-- CIDR/Subnet matching for IP ranges -->
+        <cidr name="192.168.1.0/24"/>
+        <cidr name="10.0.0.0/8"/>
+        <cidr name="172.16.0.0/12"/>
+        <cidr name="172.16.50.100/32"/>
+
+        <!-- IPv6 CIDR support -->
+        <cidr name="2001:db8::/32"/>
+        <cidr name="fe80::/10"/>
+      </domains>
+    </profile>
+    -->
+  </profiles>
 </configuration>

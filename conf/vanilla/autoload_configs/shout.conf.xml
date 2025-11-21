@@ -1,8 +1,47 @@
 <configuration name="shout.conf" description="mod shout config">
   <settings>
+    <!-- Global settings (backward compatibility) -->
     <!-- Don't change these unless you are insane -->
     <!--<param name="decoder" value="i586"/>-->
     <!--<param name="volume" value=".1"/>-->
     <!--<param name="outscale" value="8192"/>-->
+    <!--<param name="bind-ip" value="192.168.1.100"/>-->
+    <!--<param name="encode-brate" value="64"/>-->
+    <!--<param name="encode-resample" value="22050"/>-->
+    <!--<param name="encode-quality" value="5"/>-->
   </settings>
+
+  <profiles>
+    <!-- Default profile (used when no profile specified) -->
+    <profile name="default">
+      <!--<param name="decoder" value="auto"/>-->
+      <!--<param name="volume" value="1.0"/>-->
+      <!--<param name="outscale" value="8192"/>-->
+      <!--<param name="bind-ip" value="0.0.0.0"/>-->
+      <!--<param name="encode-brate" value="64"/>-->
+      <!--<param name="encode-resample" value="22050"/>-->
+      <!--<param name="encode-quality" value="5"/>-->
+    </profile>
+
+    <!-- High quality profile for good bandwidth connections -->
+    <profile name="high-quality">
+      <param name="encode-brate" value="128"/>
+      <param name="encode-resample" value="44100"/>
+      <param name="encode-quality" value="2"/>
+    </profile>
+
+    <!-- Low bandwidth profile for limited connections -->
+    <profile name="low-bandwidth">
+      <param name="encode-brate" value="32"/>
+      <param name="encode-resample" value="16000"/>
+      <param name="encode-quality" value="7"/>
+    </profile>
+
+    <!-- Medium quality profile -->
+    <profile name="medium">
+      <param name="encode-brate" value="64"/>
+      <param name="encode-resample" value="22050"/>
+      <param name="encode-quality" value="5"/>
+    </profile>
+  </profiles>
 </configuration>

@@ -48,6 +48,8 @@ struct http_profile {
 	int header_count;
 	char** header_names;
 	char** header_values;
+	char *bind_ip;           // bind IP address for this profile
+	switch_network_list_t *ip_acl;  // network ACL for IP/CIDR matching
 	// function to be called to add the profile specific headers to the GET/PUT requests
 	switch_curl_slist_t *(*append_headers_ptr)(struct http_profile *profile, switch_curl_slist_t *headers,
 		const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string);

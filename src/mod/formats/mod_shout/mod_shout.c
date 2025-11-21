@@ -58,6 +58,17 @@ SWITCH_MODULE_DEFINITION(mod_shout, mod_shout_load, mod_shout_shutdown, NULL);
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
+typedef struct shout_profile {
+	char name[256];
+	char decoder[256];
+	char* bind_ip;
+	float vol;
+	uint32_t outscale;
+	uint32_t brate;
+	uint32_t resample;
+	uint32_t quality;
+} shout_profile_t;
+
 static struct {
 	char decoder[256];
 	char* bind_ip;
@@ -67,18 +78,34 @@ static struct {
 	uint32_t resample;
 	uint32_t quality;
 	switch_memory_pool_t *pool;
+	switch_hash_t *profiles;
+	shout_profile_t *default_profile;
 } globals;
 
-mpg123_handle *our_mpg123_new(const char *decoder, int *error)
+mpg123_handle *our_mpg123_new(const char *decoder, int *error, shout_profile_t *profile)
 {
 	const char *arch = "auto";
 	const char *err = NULL;
 	mpg123_handle *mh;
 	int x64 = 0;
 	int rc = 0;
+	const char *use_decoder = NULL;
+	uint32_t use_outscale = 0;
+	float use_vol = 0.0;
 
-	if (*globals.decoder) {
-		arch = globals.decoder;
+	/* Use profile settings if available, otherwise fall back to globals */
+	if (profile) {
+		use_decoder = profile->decoder;
+		use_outscale = profile->outscale;
+		use_vol = profile->vol;
+	} else {
+		use_decoder = globals.decoder;
+		use_outscale = globals.outscale;
+		use_vol = globals.vol;
+	}
+
+	if (use_decoder && *use_decoder) {
+		arch = use_decoder;
 	}
 #ifndef WIN32
 	else if (sizeof(void *) == 4) {
@@ -96,13 +123,13 @@ mpg123_handle *our_mpg123_new(const char *decoder, int *error)
 		return NULL;
 	}
 
-	/* NOTE: keeping the globals.decoder check here for behaviour backwards compat - stkn */
-	if (*globals.decoder || globals.outscale || globals.vol) {
-		if (globals.outscale) {
-			mpg123_param(mh, MPG123_OUTSCALE, globals.outscale, 0);
+	/* NOTE: keeping the decoder check here for behaviour backwards compat - stkn */
+	if ((use_decoder && *use_decoder) || use_outscale || use_vol) {
+		if (use_outscale) {
+			mpg123_param(mh, MPG123_OUTSCALE, use_outscale, 0);
 		}
-		if (globals.vol) {
-			mpg123_volume(mh, globals.vol);
+		if (use_vol) {
+			mpg123_volume(mh, use_vol);
 		}
 	} else if (x64) {
 		mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
@@ -141,6 +168,7 @@ struct shout_context {
 	switch_thread_t *read_stream_thread;
 	switch_thread_t *write_stream_thread;
 	curl_socket_t curlfd;
+	shout_profile_t *profile;
 };
 
 typedef struct shout_context shout_context_t;
@@ -530,7 +558,9 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100);	/* handle trickle connections */
 	switch_curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
-	if (!zstr(globals.bind_ip)) {
+	if (context->profile && !zstr(context->profile->bind_ip)) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, context->profile->bind_ip);
+	} else if (!zstr(globals.bind_ip)) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, globals.bind_ip);
 	}
 	curl_easy_setopt(curl_handle, CURLOPT_SOCKOPTFUNCTION, sockopt_callback);
@@ -685,6 +715,8 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	int channels = 0;
 	int encoding = 0;
 	const char *var = NULL;
+	const char *profile_name = NULL;
+	shout_profile_t *profile = NULL;
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
@@ -694,10 +726,24 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		handle->samplerate = 8000;
 	}
 
+	if (handle->params && (var = switch_event_get_header(handle->params, "profile"))) {
+		profile_name = var;
+		if ((profile = switch_core_hash_find(globals.profiles, profile_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using mod_shout profile: %s\n", profile_name);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"Profile '%s' not found, using default profile\n", profile_name);
+			profile = globals.default_profile;
+		}
+	} else {
+		profile = globals.default_profile;
+	}
+
 	context->memory_pool = handle->memory_pool;
 	context->samplerate = handle->samplerate;
 	context->handle = handle;
 	context->buffer_seconds = 1;
+	context->profile = profile;
 
 	switch_thread_rwlock_create(&(context->rwlock), context->memory_pool);
 
@@ -722,7 +768,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			goto error;
 		}
 
-		context->mh = our_mpg123_new(NULL, NULL);
+		context->mh = our_mpg123_new(NULL, NULL, profile);
 		if (mpg123_format_all(context->mh) != MPG123_OK) {
 			MPGERROR();
 		}
@@ -797,7 +843,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 		context->channels = handle->channels;
 
-		if (globals.brate) {
+		if (profile && profile->brate) {
+			lame_set_brate(context->gfp, profile->brate);
+		} else if (globals.brate) {
 			lame_set_brate(context->gfp, globals.brate);
 		} else {
 			lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
@@ -806,7 +854,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
 
-		if (globals.resample) {
+		if (profile && profile->resample) {
+			lame_set_out_samplerate(context->gfp, profile->resample);
+		} else if (globals.resample) {
 			lame_set_out_samplerate(context->gfp, globals.resample);
 		} else {
 			lame_set_out_samplerate(context->gfp, handle->samplerate);
@@ -818,7 +868,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			lame_set_mode(context->gfp, MONO);
 		}
 
-		if (globals.quality) {
+		if (profile && profile->quality) {
+			lame_set_quality(context->gfp, profile->quality);
+		} else if (globals.quality) {
 			lame_set_quality(context->gfp, globals.quality);
 		} else {
 			lame_set_quality(context->gfp, 2);      /* 2=high  5 = medium  7=low */
@@ -1605,10 +1657,48 @@ SWITCH_STANDARD_API(telecast_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void load_profile_params(shout_profile_t *profile, switch_xml_t params_xml)
+{
+	switch_xml_t param;
+
+	for (param = switch_xml_child(params_xml, "param"); param; param = param->next) {
+		char *var = (char *) switch_xml_attr_soft(param, "name");
+		char *val = (char *) switch_xml_attr_soft(param, "value");
+
+		if (!strcmp(var, "decoder")) {
+			switch_set_string(profile->decoder, val);
+		} else if (!strcmp(var, "bind-ip")) {
+			profile->bind_ip = switch_core_strdup(globals.pool, val);
+		} else if (!strcmp(var, "volume")) {
+			profile->vol = (float) atof(val);
+		} else if (!strcmp(var, "outscale")) {
+			int tmp = atoi(val);
+			if (tmp > 0) {
+				profile->outscale = tmp;
+			}
+		} else if (!strcmp(var, "encode-brate")) {
+			int tmp = atoi(val);
+			if (tmp > 0) {
+				profile->brate = tmp;
+			}
+		} else if (!strcmp(var, "encode-resample")) {
+			int tmp = atoi(val);
+			if (tmp > 0) {
+				profile->resample = tmp;
+			}
+		} else if (!strcmp(var, "encode-quality")) {
+			int tmp = atoi(val);
+			if (tmp > 0) {
+				profile->quality = tmp;
+			}
+		}
+	}
+}
+
 static switch_status_t load_config(switch_memory_pool_t* pool)
 {
 	char *cf = "shout.conf";
-	switch_xml_t cfg, xml, settings, param;
+	switch_xml_t cfg, xml, settings, profiles_xml, profile_xml, param;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
@@ -1618,6 +1708,10 @@ static switch_status_t load_config(switch_memory_pool_t* pool)
 		return SWITCH_STATUS_TERM;
 	}
 
+	/* Create hash table for profiles */
+	switch_core_hash_init(&globals.profiles);
+
+	/* Load global settings (backward compatibility) */
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1653,6 +1747,59 @@ static switch_status_t load_config(switch_memory_pool_t* pool)
 		}
 	}
 
+	/* Create default profile from global settings */
+	globals.default_profile = switch_core_alloc(globals.pool, sizeof(shout_profile_t));
+	switch_set_string(globals.default_profile->name, "default");
+	switch_set_string(globals.default_profile->decoder, globals.decoder);
+	globals.default_profile->bind_ip = globals.bind_ip;
+	globals.default_profile->vol = globals.vol;
+	globals.default_profile->outscale = globals.outscale;
+	globals.default_profile->brate = globals.brate;
+	globals.default_profile->resample = globals.resample;
+	globals.default_profile->quality = globals.quality;
+
+	switch_core_hash_insert(globals.profiles, "default", globals.default_profile);
+
+	/* Load profiles */
+	if ((profiles_xml = switch_xml_child(cfg, "profiles"))) {
+		for (profile_xml = switch_xml_child(profiles_xml, "profile"); profile_xml; profile_xml = profile_xml->next) {
+			char *profile_name = (char *) switch_xml_attr_soft(profile_xml, "name");
+			shout_profile_t *profile;
+
+			if (zstr(profile_name)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile missing name attribute\n");
+				continue;
+			}
+
+			profile = switch_core_alloc(globals.pool, sizeof(shout_profile_t));
+			switch_set_string(profile->name, profile_name);
+
+			/* Copy default values from global settings */
+			switch_set_string(profile->decoder, globals.decoder);
+			profile->bind_ip = globals.bind_ip;
+			profile->vol = globals.vol;
+			profile->outscale = globals.outscale;
+			profile->brate = globals.brate;
+			profile->resample = globals.resample;
+			profile->quality = globals.quality;
+
+			/* Load profile-specific settings */
+			load_profile_params(profile, profile_xml);
+
+			/* Add to hash table */
+			switch_core_hash_insert(globals.profiles, profile_name, profile);
+
+			/* Override default profile if this is named "default" */
+			if (!strcmp(profile_name, "default")) {
+				globals.default_profile = profile;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+				"Loaded mod_shout profile '%s' (brate=%d, resample=%d, quality=%d, decoder=%s, vol=%.2f, outscale=%d)\n",
+				profile_name, profile->brate, profile->resample, profile->quality,
+				profile->decoder, profile->vol, profile->outscale);
+		}
+	}
 
 	switch_xml_free(xml);
 
@@ -1868,6 +2015,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
+	if (globals.profiles) {
+		switch_core_hash_destroy(&globals.profiles);
+	}
 	mpg123_exit();
 	return SWITCH_STATUS_SUCCESS;
 }

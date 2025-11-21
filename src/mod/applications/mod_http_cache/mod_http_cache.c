@@ -418,6 +418,11 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
+		if (profile && !zstr(profile->bind_ip)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, profile->bind_ip);
+		} else if (!zstr(cache->bind_ip)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, cache->bind_ip);
+		}
 		if (cache->connect_timeout > 0) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, cache->connect_timeout);
 		}
@@ -956,15 +961,108 @@ static http_profile_t *url_cache_http_profile_find(url_cache_t *cache, const cha
 }
 
 /**
- * Find a profile by domain name
+ * Find a profile by domain name or IP/CIDR
  */
 static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, const char *url)
 {
+	http_profile_t *profile = NULL;
+
 	if (cache && !zstr(url)) {
 		char fqdn[DOMAIN_BUF_SIZE];
+		char host[DOMAIN_BUF_SIZE];
+		char *port;
+		uint32_t ip = 0;
+		ip_t ip6;
+		switch_bool_t is_ipv4 = SWITCH_FALSE, is_ipv6 = SWITCH_FALSE;
+
 		parse_domain(url, fqdn, DOMAIN_BUF_SIZE);
-		if (!zstr_buf(fqdn)) {
-			return (http_profile_t *)switch_core_hash_find(cache->fqdn_profiles, fqdn);
+		if (zstr_buf(fqdn)) {
+			return NULL;
+		}
+
+		/* First try exact domain name match (includes port) */
+		profile = (http_profile_t *)switch_core_hash_find(cache->fqdn_profiles, fqdn);
+		if (profile) {
+			return profile;
+		}
+
+		switch_copy_string(host, fqdn, DOMAIN_BUF_SIZE);
+
+		/* Handle IPv6 addresses with brackets */
+		if (host[0] == '[') {
+			char *bracket_close = strchr(host, ']');
+			if (!bracket_close) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+					"Malformed IPv6 address in URL '%s': opening bracket '[' without closing bracket ']'\n", fqdn);
+				return NULL;
+			}
+
+			if (bracket_close[1] == ':') {
+				memmove(host, host + 1, bracket_close - host - 1);
+				host[bracket_close - host - 1] = '\0';
+			} else if (bracket_close[1] == '\0') {
+				memmove(host, host + 1, bracket_close - host - 1);
+				host[bracket_close - host - 1] = '\0';
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+					"Malformed IPv6 address in URL '%s': invalid character '%c' after closing bracket ']'\n",
+					fqdn, bracket_close[1]);
+				return NULL;
+			}
+		} else {
+			/* IPv4 with port, or IPv6 without brackets */
+			char *bracket_close = strchr(host, ']');
+			if (bracket_close) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+					"Malformed IPv6 address in URL '%s': closing bracket ']' without opening bracket '['\n", fqdn);
+				return NULL;
+			}
+
+			port = strchr(host, ':');
+			if (port) {
+				int colon_count = 0;
+				char *p;
+				for (p = host; *p; p++) {
+					if (*p == ':') ++colon_count;
+				}
+				if (colon_count == 1) {
+					*port = '\0';
+				}
+			}
+		}
+
+		if (switch_inet_pton(AF_INET, host, &ip) == 1) {
+			is_ipv4 = SWITCH_TRUE;
+			ip = ntohl(ip);
+		} else if (switch_inet_pton(AF_INET6, host, &ip6) == 1) {
+			is_ipv6 = SWITCH_TRUE;
+		}
+
+		if (is_ipv4 || is_ipv6) {
+			switch_hash_index_t *hi;
+			for (hi = switch_core_hash_first(cache->profiles); hi; hi = switch_core_hash_next(&hi)) {
+				void *val;
+				http_profile_t *check_profile;
+
+				switch_core_hash_this(hi, NULL, NULL, &val);
+				check_profile = (http_profile_t *)val;
+
+				if (check_profile && check_profile->ip_acl) {
+					switch_bool_t match = SWITCH_FALSE;
+
+					if (is_ipv4) {
+						match = switch_network_list_validate_ip(check_profile->ip_acl, ip);
+					} else if (is_ipv6) {
+						match = switch_network_list_validate_ip6_token(check_profile->ip_acl, ip6, NULL);
+					}
+
+					if (match) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+							"URL host '%s' matched profile '%s' via IP ACL\n", fqdn, check_profile->name);
+						return check_profile;
+					}
+				}
+			}
 		}
 	}
 	return NULL;
@@ -1226,7 +1324,10 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-http-cache/1.0");
 		switch_curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, errbuf);
-		if (!zstr(cache->bind_ip)) {
+		/* use profile bind_ip if available, otherwise use global cache bind_ip */
+		if (profile && !zstr(profile->bind_ip)) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, profile->bind_ip);
+		} else if (!zstr(cache->bind_ip)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, cache->bind_ip);
 		}
 		if (cache->connect_timeout > 0) {
@@ -1742,9 +1843,21 @@ static switch_curl_slist_t *default_append_headers(http_profile_t *profile, swit
 static switch_status_t default_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool)
 {
 	int i, header_count = 0;
-	switch_xml_t header;
+	switch_xml_t header, param;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Configuring default profile\n");
+
+	for (param = switch_xml_child(xml, "param"); param; param = param->next) {
+		char *var = (char *) switch_xml_attr_soft(param, "name");
+		char *val = (char *) switch_xml_attr_soft(param, "value");
+
+		if (!strcasecmp(var, "bind-ip")) {
+			profile->bind_ip = switch_core_strdup(pool, val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Profile bind-ip set to %s\n", val);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
+		}
+	}
 
 	for (header = switch_xml_child(xml, "header"); header; header = header->next) {
 		header_count++;
@@ -1896,6 +2009,8 @@ static switch_status_t do_config(url_cache_t *cache)
 				profile_obj->header_count = 0;
 				profile_obj->header_names = NULL;
 				profile_obj->header_values = NULL;
+				profile_obj->bind_ip = NULL;
+				profile_obj->ip_acl = NULL;
 				profile_obj->append_headers_ptr = NULL;
 				profile_obj->finalise_put_ptr = NULL;
 
@@ -1925,14 +2040,46 @@ static switch_status_t do_config(url_cache_t *cache)
 
 				domains = switch_xml_child(profile, "domains");
 				if (domains) {
-					switch_xml_t domain;
+					switch_xml_t domain, cidr;
+					switch_bool_t has_cidr = SWITCH_FALSE;
+
+					if (switch_xml_child(domains, "cidr")) {
+						has_cidr = SWITCH_TRUE;
+					}
+
+					if (has_cidr) {
+						char acl_name[256];
+						snprintf(acl_name, sizeof(acl_name), "http_cache_profile_%s", name);
+						if (switch_network_list_create(&profile_obj->ip_acl, acl_name, SWITCH_FALSE, cache->pool) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created IP ACL for profile \"%s\"\n", name);
+						}
+					}
+
 					for (domain = switch_xml_child(domains, "domain"); domain; domain = domain->next) {
 						const char *fqdn = switch_xml_attr_soft(domain, "name");
 						if (!zstr(fqdn)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding profile \"%s\" domain \"%s\" to cache\n", name, fqdn);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+								"Adding profile \"%s\" domain \"%s\" for exact matching\n", name, fqdn);
 							switch_core_hash_insert(cache->fqdn_profiles, fqdn, profile_obj);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "HTTP profile domain missing name!\n");
+						}
+					}
+
+					for (cidr = switch_xml_child(domains, "cidr"); cidr; cidr = cidr->next) {
+						const char *cidr_str = switch_xml_attr_soft(cidr, "name");
+						if (!zstr(cidr_str)) {
+							if (profile_obj->ip_acl) {
+								if (switch_network_list_add_cidr(profile_obj->ip_acl, cidr_str, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+										"Added CIDR \"%s\" to profile \"%s\" ACL\n", cidr_str, name);
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										"Failed to add CIDR \"%s\" to profile \"%s\" ACL\n", cidr_str, name);
+								}
+							}
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "HTTP profile CIDR missing name!\n");
 						}
 					}
 				}

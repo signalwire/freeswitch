@@ -390,9 +390,20 @@ switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *prof
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *key = NULL;
 	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
+	switch_xml_t bind_ip_xml = switch_xml_child(xml, "bind-ip");
 
 	profile->append_headers_ptr = azure_blob_append_headers;
 	profile->finalise_put_ptr = azure_blob_finalise_put;
+
+	if (bind_ip_xml) {
+		profile->bind_ip = switch_strip_whitespace(switch_xml_txt(bind_ip_xml));
+		if (!zstr(profile->bind_ip)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Profile \"%s\" bind-ip set to %s\n", profile->name, profile->bind_ip);
+		} else {
+			switch_safe_free(profile->bind_ip);
+			profile->bind_ip = NULL;
+		}
+	}
 
 	/* check if environment variables set the keys */
 	key = getenv("AZURE_STORAGE_ACCESS_KEY");
