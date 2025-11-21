@@ -7113,15 +7113,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 					pmap->codec_ms = mimp->microseconds_per_packet / 1000;
 					pmap->bitrate = mimp->bits_per_second;
-					pmap->channels = mmap->rm_params ? atoi(mmap->rm_params) : 1;
+					pmap->channels = mimp->number_of_channels;
 
 					if (!strcasecmp((char *) mmap->rm_encoding, "opus")) {
-						if (pmap->channels == 1) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid SDP for opus.  Don't ask.. but it needs a /2\n");
-							pmap->adv_channels = 1;
-						} else {
-							pmap->adv_channels = 2; /* IKR ???*/
-						}
+						// Set adv_channels to what remote advertised, not based on our internal channels
+						pmap->adv_channels = mmap->rm_params ? atoi(mmap->rm_params) : 2;
 						if (!zstr((char *) mmap->rm_fmtp) && switch_stristr("stereo=1", (char *) mmap->rm_fmtp)) {
 							uint32_t allow_channels = switch_core_max_audio_channels(0);
 							if (!allow_channels || allow_channels >= 2) { /*default*/
@@ -18195,7 +18191,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->enc_write_frame.codec = session->write_codec;
 				session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
 				session->enc_write_frame.channels = session->write_impl.number_of_channels;
-				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet) {
+				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet ||
+					frame->codec->implementation->samples_per_second != session->write_impl.samples_per_second) {
 					session->enc_write_frame.timestamp = 0;
 				} else {
 					session->enc_write_frame.timestamp = frame->timestamp;
