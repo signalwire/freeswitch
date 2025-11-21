@@ -1975,6 +1975,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(state->oglobals->session), SWITCH_LOG_DEBUG,
 												"Changing sampling rate from %uHz to %uHz\n", write_impl.actual_samples_per_second, peer_read_impl.actual_samples_per_second);
 							
+							switch_mutex_lock(state->mutex);
 							if (switch_core_codec_ready(state->write_codec)) {
 								switch_core_codec_destroy(state->write_codec);
 							}
@@ -1997,6 +1998,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 								memset(state->write_frame->data, 255, state->write_frame->datalen);
 								switch_core_session_set_read_codec(state->oglobals->session, state->write_codec);
 							}
+							switch_mutex_unlock(state->mutex);
 						}
 					}
 
@@ -3693,9 +3695,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									}
 								}
 							} else {
-								if (write_frame.codec && write_frame.codec->implementation && switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
+								if (early_state.write_codec && early_state.write_codec->implementation && switch_buffer_inuse(early_state.buffer) >= early_state.write_codec->implementation->decoded_bytes_per_packet) {
 									write_frame.datalen = (uint32_t)switch_buffer_read(early_state.buffer, write_frame.data,
-																			 write_frame.codec->implementation->decoded_bytes_per_packet);
+																			 early_state.write_codec->implementation->decoded_bytes_per_packet);
 								}
 							}
 							switch_mutex_unlock(early_state.mutex);
