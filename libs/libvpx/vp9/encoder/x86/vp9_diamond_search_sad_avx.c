@@ -146,7 +146,8 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
 
       // Compute the candidate motion vectors
       const __m128i v_ss_mv_w = _mm_loadu_si128((const __m128i *)&ss_mv[i]);
-      __m128i v_these_mv_w = _mm_add_epi16(v_bmv_w, v_ss_mv_w);
+      __m128i v_these_mv_w;
+      v_these_mv_w = _mm_add_epi16(v_bmv_w, v_ss_mv_w);
       // Clamp them to the search bounds
       v_these_mv_w = _mm_min_epi16(v_these_mv_w, v_max_mv_w);
       v_these_mv_w = _mm_max_epi16(v_these_mv_w, v_min_mv_w);
@@ -281,6 +282,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
 
         // Update the global minimum if the local minimum is smaller
         if (LIKELY(local_best_sad < best_sad)) {
+          // v_these_mv_w is guaranteed to be initialized here since we didn't continue above
           new_bmv = ((const int_mv *)&v_these_mv_w)[local_best_idx];
           new_best_address = ((const uint8_t **)v_blocka)[local_best_idx];
 
