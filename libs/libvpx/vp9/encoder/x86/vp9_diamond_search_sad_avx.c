@@ -43,7 +43,7 @@ static INLINE MV_JOINT_TYPE get_mv_joint(const int_mv mv) {
 static INLINE int mv_cost(const int_mv mv, const int *joint_cost,
                           int *const comp_cost[2]) {
   return joint_cost[get_mv_joint(mv)] + comp_cost[0][mv.as_mv.row] +
-         comp_cost[1][mv.as_mv.col];
+        comp_cost[1][mv.as_mv.col];
 }
 
 static int mvsad_err_cost(const MACROBLOCK *x, const int_mv mv, const MV *ref,
@@ -146,13 +146,13 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
 
       // Compute the candidate motion vectors
       const __m128i v_ss_mv_w = _mm_loadu_si128((const __m128i *)&ss_mv[i]);
-      const __m128i v_these_mv_w = _mm_add_epi16(v_bmv_w, v_ss_mv_w);
+      __m128i v_these_mv_w;
+      v_these_mv_w = _mm_add_epi16(v_bmv_w, v_ss_mv_w);
       // Clamp them to the search bounds
-      __m128i v_these_mv_clamp_w = v_these_mv_w;
-      v_these_mv_clamp_w = _mm_min_epi16(v_these_mv_clamp_w, v_max_mv_w);
-      v_these_mv_clamp_w = _mm_max_epi16(v_these_mv_clamp_w, v_min_mv_w);
+      v_these_mv_w = _mm_min_epi16(v_these_mv_w, v_max_mv_w);
+      v_these_mv_w = _mm_max_epi16(v_these_mv_w, v_min_mv_w);
       // The ones that did not change are inside the search area
-      v_inside_d = _mm_cmpeq_epi32(v_these_mv_clamp_w, v_these_mv_w);
+      v_inside_d = _mm_cmpeq_epi32(v_these_mv_w, v_ss_mv_w);
 
       // If none of them are inside, then move on
       if (LIKELY(_mm_test_all_zeros(v_inside_d, v_inside_d))) {
@@ -166,7 +166,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
       v_outside_d = _mm_srli_epi32(v_outside_d, 1);
 
       // Compute the difference MV
-      v_diff_mv_w = _mm_sub_epi16(v_these_mv_clamp_w, vfcmv);
+      v_diff_mv_w = _mm_sub_epi16(v_these_mv_w, vfcmv);
       // We utilise the fact that the cost function is even, and use the
       // absolute difference. This allows us to use unsigned indexes later
       // and reduces cache pressure somewhat as only a half of the table
@@ -234,7 +234,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
       v_cost_d = _mm_mullo_epi32(v_cost_d, v_spb_d);
       // ROUND_POWER_OF_TWO(v_cost_d, VP9_PROB_COST_SHIFT)
       v_cost_d = _mm_add_epi32(v_cost_d,
-                               _mm_set1_epi32(1 << (VP9_PROB_COST_SHIFT - 1)));
+                              _mm_set1_epi32(1 << (VP9_PROB_COST_SHIFT - 1)));
       v_cost_d = _mm_srai_epi32(v_cost_d, VP9_PROB_COST_SHIFT);
       // Add the cost to the sad
       v_sad_d = _mm_add_epi32(v_sad_d, v_cost_d);
@@ -282,6 +282,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
 
         // Update the global minimum if the local minimum is smaller
         if (LIKELY(local_best_sad < best_sad)) {
+          // v_these_mv_w is guaranteed to be initialized here since we didn't continue above
           new_bmv = ((const int_mv *)&v_these_mv_w)[local_best_idx];
           new_best_address = ((const uint8_t **)v_blocka)[local_best_idx];
 
