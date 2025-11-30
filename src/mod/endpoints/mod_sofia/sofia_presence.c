@@ -2137,18 +2137,22 @@ static switch_uint31_t check_presence_epoch(void)
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 {
 	switch_uint31_t callsequence;
-	int diff = 0;
 
 	switch_mutex_lock(profile->ireg_mutex);
 
 	callsequence = check_presence_epoch();
 
-	if (profile->last_cseq.value) {
-		diff = (int)callsequence.value - (int)profile->last_cseq.value;
-		if (diff <= 0 && diff > -100000) {
-			callsequence.value = ++profile->last_cseq.value;
-		}
-	}
+    /* Enforce strictly monotonic CSeq for NOTIFY to avoid New Year rollbacks
+       that some phones (e.g., Polycom) reject with 500. */
+    if (profile->last_cseq.value && callsequence.value <= profile->last_cseq.value) {
+        callsequence.value = profile->last_cseq.value + 1;
+    }
+
+   /* Keep within 31 bits and non-zero, matching switch_uint31_t semantics. */
+    callsequence.value &= 0x7fffffff;
+    if (callsequence.value == 0) {
+        callsequence.value = 1;
+    }
 
 	profile->last_cseq = callsequence;
 
