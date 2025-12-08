@@ -2730,7 +2730,8 @@ GCC_DIAG_ON(deprecated-declarations)
 					if ((context->errs % 10) == 0) {
 						char ebuf[255] = "";
 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame: %d %s\n", ret, get_error_text(ret, ebuf, sizeof(ebuf)));
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s] Error while writing audio frame: %d %s\n", 
+							handle->file_path ? handle->file_path : "unknown", ret, get_error_text(ret, ebuf, sizeof(ebuf)));
 						if ((ret == -5 || ret == -104) && handle->stream_name) {
 							context->errs = 1001;
 						}
@@ -2775,7 +2776,8 @@ GCC_DIAG_ON(deprecated-declarations)
 					context->errs++;
 					if ((context->errs % 10) == 0) {
 						char ebuf[255] = "";
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame: %s\n", get_error_text(ret, ebuf, sizeof(ebuf)));
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[%s] Error while writing audio frame: %s\n", 
+							handle->file_path ? handle->file_path : "unknown", get_error_text(ret, ebuf, sizeof(ebuf)));
 					}
 					
 					if(ret == -(ETIMEDOUT)) {
