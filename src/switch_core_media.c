@@ -5807,7 +5807,8 @@ SWITCH_DECLARE(int16_t) switch_core_media_validate_common_audio_sdp(switch_core_
 							!switch_true(switch_channel_get_variable(session->channel, "rtp_allow_crypto_in_avp"))) {
 						if (m->m_proto != sdp_proto_srtp && !got_webrtc) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "a=crypto in RTP/AVP, refer to rfc3711\n");
-							return 0;
+							match = 0;
+							goto done;
 						}
 					}
 
@@ -5817,7 +5818,8 @@ SWITCH_DECLARE(int16_t) switch_core_media_validate_common_audio_sdp(switch_core_
 
 			if (got_crypto == -1 && got_savp && !got_avp && !got_webrtc) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Declining invite with only SAVP because secure media is administratively disabled\n");
-				return 0;
+				match = 0;
+				goto done;
 			}
 
 			connection = sdp->sdp_connection;
@@ -5827,7 +5829,8 @@ SWITCH_DECLARE(int16_t) switch_core_media_validate_common_audio_sdp(switch_core_
 
 			if (!connection) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
-				return 0;
+				match = 0;
+				goto done;
 			}
 
 			if (connection->c_addrtype == sdp_addr_ip6) {
@@ -5835,7 +5838,8 @@ SWITCH_DECLARE(int16_t) switch_core_media_validate_common_audio_sdp(switch_core_
 					|| ((val = switch_channel_get_variable(session->channel, "sdp_reject_ipv6")) && switch_true(val))) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reject IPv6 media address: %s!\n"
 						, connection->c_address ? connection->c_address : "<MISSING>");
-					return 0;
+					match = 0;
+					goto done;
 				}
 			}
 
@@ -6013,14 +6017,20 @@ SWITCH_DECLARE(int16_t) switch_core_media_validate_common_audio_sdp(switch_core_
 			}
 
 			if (match) {
-				return match;
+				goto done;
 			}
 		}
 	}
 
 	if (no_audio) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No Audio found! Skip audio validation.\n");
-		return -1;
+		match = -1;
+	}
+
+done:
+
+	if (parser) {
+		sdp_parser_free(parser);
 	}
 
 	return match;
