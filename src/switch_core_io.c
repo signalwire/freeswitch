@@ -804,6 +804,7 @@ cnt_with_cng:
 													 bp->read_demux_frame->channels) * 2 * bp->read_demux_frame->channels;
 
 						switch_buffer_write(bp->raw_read_buffer, data, datalen);
+						bp->read_demux_frame = NULL;
 					} else {
 						switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					}

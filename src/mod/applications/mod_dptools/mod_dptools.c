@@ -924,7 +924,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", eavesdrop_SYNTAX);
 	} else {
-		switch_eavesdrop_flag_t flags = ED_DTMF;
+		switch_eavesdrop_flag_t flags = ED_DTMF | ED_DEMUX_READ;
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *require_group = switch_channel_get_variable(channel, "eavesdrop_require_group");
 		const char *enable_dtmf = switch_channel_get_variable(channel, "eavesdrop_enable_dtmf");
@@ -936,6 +936,11 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		const char *bug_top = switch_channel_get_variable(channel, "eavesdrop_bug_top");
 		const char *bug_bottom = switch_channel_get_variable(channel, "eavesdrop_bug_bottom");
 
+		const char *whisper_target = switch_channel_get_variable(channel, "eavesdrop_whisper_target");
+		const char *whisper_partner = switch_channel_get_variable(channel, "eavesdrop_whisper_partner");
+		const char *bridge_target = switch_channel_get_variable(channel, "eavesdrop_bridge_target");
+		const char *bridge_partner = switch_channel_get_variable(channel, "eavesdrop_bridge_partner");
+
 		if (enable_dtmf) {
 			if (!strcasecmp(enable_dtmf, "events")) {
 				flags = ED_DTMF_EVENTS_ONLY;
@@ -944,21 +949,21 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			}
 		}
 
-		if (switch_true(whisper_aleg)) {
+		if (switch_true(whisper_aleg) || switch_true(whisper_partner)) {
 			flags |= ED_MUX_READ;
 		}
-		if (switch_true(whisper_bleg)) {
+		if (switch_true(whisper_bleg) || switch_true(whisper_target)) {
 			flags |= ED_MUX_WRITE;
 		}
-		if (switch_true(whisper_demux)) {
-			flags |= ED_DEMUX_READ;
+		if (switch_false(whisper_demux)) {
+			flags &= ~ED_DEMUX_READ;
 		}
 
 		/* Defaults to both, if neither is set */
-		if (switch_true(bridge_aleg)) {
+		if (switch_true(bridge_aleg) || switch_true(bridge_target)) {
 			flags |= ED_BRIDGE_READ;
 		}
-		if (switch_true(bridge_bleg)) {
+		if (switch_true(bridge_bleg) || switch_true(bridge_partner)) {
 			flags |= ED_BRIDGE_WRITE;
 		}
 		if (switch_true(bug_top)) {
@@ -1055,7 +1060,7 @@ SWITCH_STANDARD_APP(three_way_function)
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *bug_top = switch_channel_get_variable(channel, "eavesdrop_bug_top");
 		const char *bug_bottom = switch_channel_get_variable(channel, "eavesdrop_bug_bottom");
-		switch_eavesdrop_flag_t flags = ED_MUX_READ | ED_MUX_WRITE;
+		switch_eavesdrop_flag_t flags = ED_MUX_READ | ED_MUX_WRITE | ED_DEMUX_READ;
 
 		if (switch_true(bug_top)) {
 			flags &= ~ED_BUG_BOTTOM;
