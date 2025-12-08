@@ -1950,8 +1950,19 @@ static void our_sofia_event_callback(nua_event_t event,
 		break;
 	case nua_i_update:
 		if (session) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			const char *handle_update = switch_channel_get_variable(channel, "handle_update");
+			switch_bool_t should_handle_update = SWITCH_FALSE;
+
 			sofia_update_callee_id(session, profile, sip, SWITCH_TRUE);
-			if (sofia_test_pflag(profile, PFLAG_HANDLE_UPDATE)) {
+
+			if (!zstr(handle_update)) {
+				should_handle_update = switch_true(handle_update);
+			} else {
+				should_handle_update = sofia_test_pflag(profile, PFLAG_HANDLE_UPDATE);
+			}
+
+			if (should_handle_update) {
 				sofia_handle_sip_i_update(nua, profile, nh, session, sip, de, tags);
 			}
 		}
@@ -9741,7 +9752,7 @@ void sofia_handle_sip_i_update(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 					tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, r_sdp);
 					switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Local SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
 				} else {
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)), NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 					return;
