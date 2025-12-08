@@ -252,6 +252,8 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 SWITCH_DECLARE(int) switch_core_session_validate_incoming_crypto(switch_core_session_t *session,
 															  switch_media_type_t type, const char *crypto, switch_sdp_type_t sdp_type);
 
+SWITCH_DECLARE(int) switch_core_media_pre_validate_offer(switch_core_session_t *session, const char *r_sdp, switch_event_t *params);
+
 
 SWITCH_DECLARE(uint32_t) switch_core_media_get_video_fps(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_set_rtp_session(switch_core_session_t *session, switch_media_type_t type, switch_rtp_t *rtp_session);

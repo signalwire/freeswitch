@@ -146,6 +146,110 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	return status;
 }
 
+/* Extract media security preference from caller extension applications before processing by dialplan*/
+static void sofia_pre_extract_media_security_preference(switch_core_session_t *session, switch_event_t **params)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *caller_profile = NULL;
+	switch_caller_extension_t *caller_extension = NULL;
+	switch_caller_application_t *app = NULL;
+	const char *last_secure_media = NULL;
+
+	if (!params) {
+		return;
+	}
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+	if (!caller_profile || !caller_profile->caller_extension) {
+		return;
+	}
+
+	caller_extension = caller_profile->caller_extension;
+
+	for (app = caller_extension->applications; app; app = app->next) {
+		const char *data = NULL;
+		if (!app->application_name || !app->application_data) {
+			continue;
+		}
+
+		if (strcasecmp(app->application_name, "set") && strcasecmp(app->application_name, "export")) {
+			continue;
+		}
+
+		data = app->application_data;
+
+		if (!strncasecmp(data, "rtp_secure_media_inbound=", 25)) {
+			char *dup = switch_core_session_strdup(session, data);
+			char *p = strchr(dup, '=');
+			if (p) {
+				last_secure_media = p + 1;
+			}
+		} else if (!strncasecmp(data, "rtp_secure_media=", 17)) {
+			char *dup = switch_core_session_strdup(session, data);
+			char *p = strchr(dup, '=');
+			if (p) {
+				last_secure_media = p + 1;
+			}
+		}
+	}
+
+	if (zstr(last_secure_media)) {
+		return;
+	}
+
+	if (!*params) {
+		switch_event_t *new_params = NULL;
+		if (switch_event_create(&new_params, SWITCH_EVENT_CLONE) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+				"Failed to create event for SDP validation\n");
+			return;
+		}	
+		*params = new_params;
+	}
+
+	switch_event_add_header_string(*params, SWITCH_STACK_BOTTOM, "rtp_secure_media", last_secure_media);
+}
+
+/* Perform pre validation of inbound remote SDP before processing dialplan commands*/
+static switch_status_t sofia_pre_validate_remote_sdp(switch_core_session_t *session,
+															sofia_profile_t *profile,
+															switch_event_t *params)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *r_sdp = NULL;
+	int result = 0;
+
+	if (switch_channel_direction(channel) != SWITCH_CALL_DIRECTION_INBOUND) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+	if (!r_sdp) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!params) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	result = switch_core_media_pre_validate_offer(session, r_sdp, params);
+	if (result < 0) {
+		private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+		const char *rtp_secure_media = switch_event_get_header(params, "rtp_secure_media");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+			"SDP offer pre-validation failed with secure_media=%s\n",
+			rtp_secure_media ? rtp_secure_media : "none");
+		if (tech_pvt) {
+			tech_pvt->respond_code = 488;
+			tech_pvt->respond_phrase = switch_core_session_strdup(tech_pvt->session, "Media Encryption Required B3");
+		}
+		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t sofia_on_routing(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
@@ -213,6 +317,8 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_t *params = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_assert(tech_pvt != NULL);
 
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
@@ -220,10 +326,15 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 	}
 
+	sofia_pre_extract_media_security_preference(session, &params);
+	if (sofia_pre_validate_remote_sdp(session, tech_pvt->profile, params) != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA EXECUTE\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 char *generate_pai_str(private_object_t *tech_pvt)
