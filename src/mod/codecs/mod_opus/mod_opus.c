@@ -383,6 +383,100 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 
 }
 
+static switch_status_t switch_opus_matches_fmtp(const char *fmtp, const char *codec_fmtp)
+{
+	switch_codec_fmtp_t remote_fmtp = { 0 };
+	switch_codec_fmtp_t local_fmtp = { 0 };
+	opus_codec_settings_t remote_settings = { 0 };
+	opus_codec_settings_t local_settings = { 0 };
+	
+	if (!fmtp || !codec_fmtp) {
+		/* If either fmtp is missing, consider it a match (fallback behavior) */
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	/* Parse remote fmtp */
+	remote_fmtp.private_info = &remote_settings;
+	if (switch_opus_fmtp_parse(fmtp, &remote_fmtp) != SWITCH_STATUS_SUCCESS) {
+		/* If we can't parse remote fmtp, consider it a match (fallback behavior) */
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	/* Parse local codec fmtp */
+	local_fmtp.private_info = &local_settings;
+	if (switch_opus_fmtp_parse(codec_fmtp, &local_fmtp) != SWITCH_STATUS_SUCCESS) {
+		/* If we can't parse local fmtp, consider it a match (fallback behavior) */
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Check bitrate compatibility (bits_per_second from fmtp) */
+	if (remote_fmtp.bits_per_second && local_fmtp.bits_per_second) {
+		/* If both specify bitrates, they should be compatible */
+		/* Allow some flexibility - remote can request lower than local */
+		if (remote_fmtp.bits_per_second > local_fmtp.bits_per_second) {
+			/* Remote wants higher bitrate than we support */
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	/* Check stereo compatibility */
+	if (remote_fmtp.stereo && !local_fmtp.stereo) {
+		/* Remote wants stereo but we only support mono */
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	/* Check sprop-stereo compatibility */
+	if (remote_fmtp.sprop_stereo && !local_fmtp.sprop_stereo && !local_fmtp.stereo) {
+		/* Remote advertises stereo capability but we don't support it */
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	/* Check sample rate compatibility via sprop-maxcapturerate */
+	if (remote_fmtp.actual_samples_per_second && local_fmtp.actual_samples_per_second) {
+		/* Both specify actual sample rates - they should match or be compatible */
+		if (remote_fmtp.actual_samples_per_second != local_fmtp.actual_samples_per_second) {
+			/* Check if they're compatible (e.g., 16000 vs 48000 might be OK) */
+			/* For now, require exact match or allow remote to be lower */
+			if (remote_fmtp.actual_samples_per_second > local_fmtp.actual_samples_per_second) {
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+	}
+	
+	/* Check maxplaybackrate compatibility if specified */
+	if (remote_settings.maxplaybackrate && local_settings.maxplaybackrate) {
+		if (opus_prefs.asymmetric_samplerates) {
+			if (remote_settings.maxplaybackrate > local_settings.maxplaybackrate) {
+				/* Remote wants higher playback rate than we support */
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			if (remote_settings.maxplaybackrate != local_settings.maxplaybackrate) {
+				/* Remote wants different playback rate than we support */
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+	}
+
+	/* Check sprop-maxcapturerate compatibility if specified */
+	if (remote_settings.sprop_maxcapturerate && local_settings.sprop_maxcapturerate) {
+		if (opus_prefs.asymmetric_samplerates) {
+			if (remote_settings.sprop_maxcapturerate > local_settings.sprop_maxcapturerate) {
+				/* Remote wants higher capture rate than we support */
+				return SWITCH_STATUS_FALSE;
+			}
+		} else {
+			if (remote_settings.sprop_maxcapturerate != local_settings.sprop_maxcapturerate) {
+				/* Remote wants different capture rate than we support */
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+	}
+	
+	/* If we get here, the fmtp parameters are compatible */
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_length_bytes)
 {
 	/* nb_silk_frames: number of silk-frames (10 or 20 ms) in an opus frame:  0, 1, 2 or 3 */
@@ -1459,6 +1553,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
 
 		codec_interface->implementations->codec_control = switch_opus_control;
+		codec_interface->implementations->matches_fmtp = switch_opus_matches_fmtp;
 
 		settings.stereo = 1;
 

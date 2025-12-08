@@ -7150,6 +7150,22 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						}
 					}
 
+					/*
+					 * Check codec fmtp compatibility.
+					 */
+					if (!match && imp->matches_fmtp) {
+						if (SWITCH_STATUS_SUCCESS != imp->matches_fmtp(map->rm_fmtp, imp->fmtp)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								"Codec Match FAILED: fmtp mismatch [%s:%d] remote_fmtp=[%s] local_fmtp=[%s]\n",
+								rm_encoding, map->rm_pt, map->rm_fmtp ? map->rm_fmtp : "(none)", imp->fmtp ? imp->fmtp : "(none)");
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+								"Codec Match: fmtp match successful [%s:%d] remote_fmtp=[%s] local_fmtp=[%s]\n",
+								rm_encoding, map->rm_pt, map->rm_fmtp ? map->rm_fmtp : "(none)", imp->fmtp ? imp->fmtp : "(none)");
+							match = 1;
+						}
+					}
+
 					if (match && remote_codec_rate && codec_rate && remote_codec_rate != codec_rate && (!strcasecmp(map->rm_encoding, "pcma") ||
 																							  !strcasecmp(map->rm_encoding, "pcmu"))) {
 						/* if the sampling rate is specified and doesn't match, this is not a codec match for G.711 */
