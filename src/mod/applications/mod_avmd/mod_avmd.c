@@ -1619,7 +1619,7 @@ SWITCH_STANDARD_APP(avmd_stop_app) {
 
     bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_avmd_");
     if (bug == NULL) {
-        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Stop failed - no avmd session running on this channel [%s]!\n", switch_channel_get_name(channel));
+        switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Stop failed - no avmd session running on this channel [%s]!\n", switch_channel_get_name(channel));
         return;
     }
 
