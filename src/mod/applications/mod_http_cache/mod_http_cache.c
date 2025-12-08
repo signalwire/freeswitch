@@ -1392,7 +1392,7 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 		}
 	} else {
 		url->size = 0; // nothing downloaded or download interrupted
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING
 			, "Received curl error %d HTTP error code %ld trying to fetch %s (local:%s:%ld remote:%s:%ld)\n"
 			, curl_status, httpRes, url->url
 			, !zstr(local_ip) ? local_ip : "N/A", local_port
