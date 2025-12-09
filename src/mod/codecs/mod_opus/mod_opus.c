@@ -389,6 +389,8 @@ static switch_status_t switch_opus_matches_fmtp(const char *fmtp, const char *co
 	switch_codec_fmtp_t local_fmtp = { 0 };
 	opus_codec_settings_t remote_settings = { 0 };
 	opus_codec_settings_t local_settings = { 0 };
+	int remote_ptime = 0;
+	int local_ptime = 0;
 	
 	if (!fmtp || !codec_fmtp) {
 		/* If either fmtp is missing, consider it a match (fallback behavior) */
@@ -407,6 +409,29 @@ static switch_status_t switch_opus_matches_fmtp(const char *fmtp, const char *co
 	if (switch_opus_fmtp_parse(codec_fmtp, &local_fmtp) != SWITCH_STATUS_SUCCESS) {
 		/* If we can't parse local fmtp, consider it a match (fallback behavior) */
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* Check ptime compatibility */
+	if (remote_fmtp.microseconds_per_packet) {
+		remote_ptime = remote_fmtp.microseconds_per_packet / 1000;
+	} else if (remote_fmtp.min_ptime) {
+		remote_ptime = remote_fmtp.min_ptime;
+	} else {
+		remote_ptime = remote_fmtp.max_ptime;
+	}
+
+	if (local_fmtp.microseconds_per_packet) {
+		local_ptime = local_fmtp.microseconds_per_packet / 1000;
+	} else if (local_fmtp.min_ptime) {
+		local_ptime = local_fmtp.min_ptime;
+	} else {
+		local_ptime = local_fmtp.max_ptime;
+	}
+
+	if (remote_ptime && local_ptime) {
+		if (remote_ptime != local_ptime) {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	/* Check bitrate compatibility (bits_per_second from fmtp) */
