@@ -7153,7 +7153,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					/*
 					 * Check codec fmtp compatibility.
 					 */
-					if (!match && imp->matches_fmtp) {
+					if (!match && imp->matches_fmtp && !strcasecmp(map->rm_encoding, imp->iananame)) {
 						if (SWITCH_STATUS_SUCCESS != imp->matches_fmtp(map->rm_fmtp, imp->fmtp)) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								"Codec Match FAILED: fmtp mismatch [%s:%d] remote_fmtp=[%s] local_fmtp=[%s]\n",
@@ -15891,7 +15891,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						}
 
 						if (match) {
-							if (imp->matches_fmtp && map->rm_fmtp) {
+							if (imp->matches_fmtp  && map->rm_fmtp && !strcasecmp(map->rm_encoding, imp->iananame)) {
 								switch_status_t match_result = imp->matches_fmtp(imp->fmtp, map->rm_fmtp);
 								if (match_result == SWITCH_STATUS_SUCCESS) {
 									add_audio_codec(map, imp, ptime, imp->fmtp, buf, sizeof(buf));
