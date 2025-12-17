@@ -275,3 +275,4 @@ src/mod/codecs/mod_amrwb/test/test_amrwb
 src/mod/endpoints/mod_sofia/test/sipp-based-tests
 
 .DS_Store
+.idea/
