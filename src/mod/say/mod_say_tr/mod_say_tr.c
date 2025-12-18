@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Anthony Minessale II
+ * Copyright (c) 2007-2014, Anthony Minessale II
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,13 +44,14 @@
  *
  */
 
-#include <ctype.h>
 #include <switch.h>
+#include <ctype.h>
+#include <string.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_tr_load);
 SWITCH_MODULE_DEFINITION(mod_say_tr, mod_say_tr_load, NULL, NULL);
 
-#define say_num(num, meth)                                                                                             \
+#define say_num(_sh, num, meth)                                                                                             \
 	{                                                                                                                  \
 		char tmp[80];                                                                                                  \
 		switch_status_t tstatus;                                                                                       \
@@ -59,121 +60,63 @@ SWITCH_MODULE_DEFINITION(mod_say_tr, mod_say_tr_load, NULL, NULL);
 		say_args->type = SST_ITEMS;                                                                                    \
 		say_args->method = meth;                                                                                       \
 		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);                                                        \
-		if ((tstatus = tr_say_general_count(session, tmp, say_args, args)) != SWITCH_STATUS_SUCCESS) {                 \
+		if ((tstatus = tr_say_general_count(_sh, tmp, say_args)) != SWITCH_STATUS_SUCCESS) {                           \
 			return tstatus;                                                                                            \
 		}                                                                                                              \
 		say_args->method = smeth;                                                                                      \
 		say_args->type = stype;                                                                                        \
 	}
 
-#define say_file(...)                                                                                                  \
-	{                                                                                                                  \
-		char tmp[80];                                                                                                  \
-		switch_status_t tstatus;                                                                                       \
-		switch_snprintf(tmp, sizeof(tmp), __VA_ARGS__);                                                                \
-		if ((tstatus = switch_ivr_play_file(session, NULL, tmp, args)) != SWITCH_STATUS_SUCCESS) { return tstatus; }   \
-		if (!switch_channel_ready(switch_core_session_get_channel(session))) { return SWITCH_STATUS_FALSE; }           \
+	#define say_num_goto_status(_sh, num, meth, tag) {				    \
+		char tmp[80];													\
+		switch_status_t tstatus;										\
+		switch_say_args_t tsay_args = *say_args;						\
+		tsay_args.type = SST_ITEMS;										\
+		tsay_args.method = meth;										\
+		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
+		if ((tstatus = tr_say_general_count(_sh, tmp, &tsay_args)) !=	\
+			SWITCH_STATUS_SUCCESS) {									\
+			switch_goto_status(tstatus, tag);							\
+		}																\
 	}
 
-static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what,
-								  switch_core_session_t *session, switch_input_args_t *args)
+static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
 {
 	if (a) {
-		/**
-		 * 100 = Yüz
-		 * 200 = İkiyüz
-		 * 300 = Üçyüz
-		 * 400 = Dörtyüz
-		 * 500 = Beşyüz
-		 * 600 = Altıyüz
-		 * 700 = Yediyüz
-		 * 800 = Sekizyüz
-		 * 900 = Dokuzyüz
-		 */
-		if (a > 1) { say_file("digits/%d", a); }
-
+		if (a > 1) { switch_say_file(sh, "digits/%d", a); }
 		if (method == SSM_COUNTED && !b && !c) {
-			/**
-			 * In Turkish for 100th, "yüzüncü" suffix is used.
-			 */
-			say_file("digits/yuzuncu", a);
+			switch_say_file(sh, "digits/yuzuncu", a);
 		} else {
-			say_file("digits/yuz", a);
+			switch_say_file(sh, "digits/yuz", a);
 		}
 	}
 
 	if (b) {
 		if (method == SSM_COUNTED && !c) {
-			/**
-			 * 10. Onuncu
-			 * 20. Yirmiinci
-			 * 30. Otuzuncu
-			 * 40. Kırkıncı
-			 * 50. Ellinci
-			 * 60. Altmışıncı
-			 * 70. Yetmişinci
-			 * 80. Sekizinci
-			 * 90. Dokuzuncu
-			 */
-			say_file("digits/%d0-nth", b);
+			switch_say_file(sh, "digits/%d0-nth", b);
 		} else {
-			/**
-			 * 10 = On
-			 * 20 = Yirmi
-			 * 30 = Otuz
-			 * 40 = Kırk
-			 * 50 = Elli
-			 * 60 = Altmış
-			 * 70 = Yetmiş
-			 * 80 = Seksen
-			 * 90 = Doksan
-			 */
-			say_file("digits/%d0", b);
+			switch_say_file(sh, "digits/%d0", b);
 		}
 	}
 
 	if (c) {
-		/* In Turkish, "One Thousand" is just "Bin", not "Bir Bin" */
 		if (what && !strncmp(what, "digits/bin", 10) && !a && !b && c == 1) {
-			/* Skip saying "Bir" for Bin and Bininci */
+			/* Skip saying "Bir" for Bin */
 		} else {
 			if (method == SSM_COUNTED) {
-				/**
-				 * 1. Birinci
-				 * 2. İkinci
-				 * 3. Üçüncü
-				 * 4. Dördüncü
-				 * 5. Beşinci
-				 * 6. Altıncı
-				 * 7. Yedinci
-				 * 8. Sekizinci
-				 * 9. Dokuzuncu
-				 */
-				say_file("digits/%d-nth", c);
+				switch_say_file(sh, "digits/%d-nth", c);
 			} else {
-				/**
-				 * 1 = Bir
-				 * 2 = İki
-				 * 3 = Üç
-				 * 4 = Dört
-				 * 5 = Beş
-				 * 6 = Altı
-				 * 7 = Yedi
-				 * 8 = Sekiz
-				 * 9 = Dokuz
-				 */
-				say_file("digits/%d", c);
+				switch_say_file(sh, "digits/%d", c);
 			}
 		}
 	}
 
-	if (what && (a || b || c)) { say_file(what); }
+	if (what && (a || b || c)) { switch_say_file(sh, what); }
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tr_say_general_count(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-											switch_input_args_t *args)
+static switch_status_t tr_say_general_count(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	int64_t in;
 	char sbuf[128] = "";
@@ -184,7 +127,7 @@ static switch_status_t tr_say_general_count(switch_core_session_t *session, char
 	if (say_args->method == SSM_ITERATED) {
 		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf) - 1))) {
 			char *p;
-			for (p = tosay; p && *p; p++) { say_file("digits/%c", *p); }
+			for (p = tosay; p && *p; p++) { switch_say_file(sh, "digits/%c", *p); }
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 			return SWITCH_STATUS_GENERR;
@@ -198,25 +141,17 @@ static switch_status_t tr_say_general_count(switch_core_session_t *session, char
 	}
 
 	in = atoll(tosay);
+
 	if (in != 0) {
 		int places[15] = {0};
 		int64_t temp_in = in;
 
-		// Populate places manually to avoid pow precision/cast issues
-		// 10^14
 		for (i = 0; i < 15; i++) {
 			places[i] = temp_in % 10;
 			temp_in /= 10;
 		}
-		// Note: places[0] is units, places[1] is tens.
-		// play_group expects: (hundreds, tens, units).
-		// My places array is reversed compared to mod_say_en's logic which used pow(10, x) from top down.
-		// mod_say_en: places[8] = 100M, places[0] = units.
-		// My loop above: places[0] = units.
-		// So indices match!
-		// places[14] is 100T. places[12] is T units.
 
-		snprintf(digits, sizeof(digits), "%lld", in);
+		snprintf(digits, sizeof(digits), "%" SWITCH_INT64_T_FMT, in);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Say: %s \n", digits);
 
 		switch (say_args->method) {
@@ -228,8 +163,6 @@ static switch_status_t tr_say_general_count(switch_core_session_t *session, char
 			char *bin_file = "digits/bin";
 
 			if (say_args->method == SSM_COUNTED) {
-				// Check if lower magnitudes are empty to apply ordinal suffix to the lowest non-empty magnitude
-
 				int has_trilyon = places[14] || places[13] || places[12];
 				int has_milyar = places[11] || places[10] || places[9];
 				int has_milyon = places[8] || places[7] || places[6];
@@ -244,28 +177,22 @@ static switch_status_t tr_say_general_count(switch_core_session_t *session, char
 				if (!has_units && has_bin) { bin_file = "digits/bin-nth"; }
 			}
 
-			// 1.000.000.000.000 = Bir Trilyon
-			if ((status = play_group(SSM_PRONOUNCED, places[14], places[13], places[12], trilyon_file, session,
-									 args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, places[14], places[13], places[12], trilyon_file, sh)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			// 1.000.000.000 = Bir Milyar
-			if ((status = play_group(SSM_PRONOUNCED, places[11], places[10], places[9], milyar_file, session, args)) !=
+			if ((status = play_group(SSM_PRONOUNCED, places[11], places[10], places[9], milyar_file, sh)) !=
 				SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			// 1.000.000 = Bir Milyon
-			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], milyon_file, session, args)) !=
+			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], milyon_file, sh)) !=
 				SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			// 1.000 = Bin
-			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], bin_file, session, args)) !=
+			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], bin_file, sh)) !=
 				SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			// 1 = Bir
-			if ((status = play_group(say_args->method, places[2], places[1], places[0], NULL, session, args)) !=
+			if ((status = play_group(say_args->method, places[2], places[1], places[0], NULL, sh)) !=
 				SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
@@ -275,13 +202,61 @@ static switch_status_t tr_say_general_count(switch_core_session_t *session, char
 			break;
 		}
 	} else {
-		say_file("digits/0");
+		switch_say_file(sh, "digits/0");
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-								   switch_input_args_t *args)
+static switch_status_t tr_say_play_locative(switch_say_file_handle_t *sh, int number)
+{
+	char *suffix = "time/de";
+	int last_digit = number % 10;
+
+	if (number == 10 || number == 30 || number == 9 || number == 6 || number == 0) {
+		suffix = "time/da";
+	} else if (number == 40) {
+		suffix = "time/ta";
+	} else if (number == 3 || number == 4 || number == 5) {
+		suffix = "time/te";
+	} else if (last_digit == 0) {
+		suffix = "time/de";
+	} else {
+		switch (last_digit) {
+		case 1:
+			suffix = "time/de";
+			break;
+		case 2:
+			suffix = "time/de";
+			break;
+		case 3:
+			suffix = "time/te";
+			break;
+		case 4:
+			suffix = "time/te";
+			break;
+		case 5:
+			suffix = "time/te";
+			break;
+		case 6:
+			suffix = "time/da";
+			break;
+		case 7:
+			suffix = "time/de";
+			break;
+		case 8:
+			suffix = "time/de";
+			break;
+		case 9:
+			suffix = "time/da";
+			break;
+		}
+	}
+	switch_say_file(sh, "%s", suffix);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t tr_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	int64_t t = 0;
 	switch_time_t target = 0, target_now = 0;
@@ -289,15 +264,11 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0,
 			say_today = 0;
 	const char *tz = NULL;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	tz = switch_channel_get_variable(channel, "timezone");
+	tz = switch_say_file_handle_get_variable(sh, "timezone");
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
-		int64_t hours = 0;
-		int64_t minutes = 0;
-		int64_t seconds = 0;
-		int64_t r = 0;
+		int64_t hours = 0, minutes = 0, seconds = 0, r = 0;
 
 		if (strchr(tosay, ':')) {
 			char *tme = strdup(tosay);
@@ -316,14 +287,14 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 			}
 			free(tme);
 		} else {
-			if ((seconds = atol(tosay)) <= 0) { seconds = (int64_t)switch_epoch_time_now(NULL); }
-
+			if ((seconds = atol(tosay)) <= 0) { 
+				seconds = (int64_t)switch_epoch_time_now(NULL); 
+			}
 			if (seconds >= 60) {
 				minutes = seconds / 60;
 				r = seconds % 60;
 				seconds = r;
 			}
-
 			if (minutes >= 60) {
 				hours = minutes / 60;
 				r = minutes % 60;
@@ -332,36 +303,26 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		if (hours) {
-			say_num(hours, SSM_PRONOUNCED);
+			say_num(sh, hours, SSM_PRONOUNCED);
 			if (minutes || seconds) {
-				say_file("time/saat+");
+				switch_say_file(sh, "time/saat+");
 			} else {
-				say_file("time/saat");
+				switch_say_file(sh, "time/saat");
 			}
 		}
 		if (minutes) {
-			say_num(minutes, SSM_PRONOUNCED);
+			say_num(sh, minutes, SSM_PRONOUNCED);
 			if (seconds) {
-				say_file("time/dakika+");
+				switch_say_file(sh, "time/dakika+");
 			} else {
-				say_file("time/dakika");
+				switch_say_file(sh, "time/dakika");
 			}
 		}
-
 		if (seconds) {
-			say_num(seconds, SSM_PRONOUNCED);
-			say_file("time/saniye");
+			say_num(sh, seconds, SSM_PRONOUNCED);
+			switch_say_file(sh, "time/saniye");
 		}
-
 		return SWITCH_STATUS_SUCCESS;
-	}
-
-	if (strchr(tosay, ':')) {
-		switch_time_t tme = switch_str_time(tosay);
-		t = (int64_t)((tme) / (int64_t)(1000000));
-
-		target = switch_time_make(t, 0);
-		target_now = switch_micro_time_now();
 	}
 
 	if (!t) {
@@ -376,7 +337,6 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 
 	if (tz) {
 		int check = atoi(tz);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
 		if (check) {
 			switch_time_exp_tz(&tm, target, check);
 			switch_time_exp_tz(&tm_now, target_now, check);
@@ -401,13 +361,11 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 		break;
 	case SST_SHORT_DATE_TIME:
 		say_time = 1;
-		// Time is in the future
 		if ((tm.tm_year > tm_now.tm_year) || (tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) ||
 			(tm.tm_year == tm_now.tm_year && tm.tm_mon == tm_now.tm_mon && tm.tm_mday > tm_now.tm_mday)) {
 			say_date = 1;
 			break;
 		}
-		// Time is today or earlier
 		if (tm.tm_year != tm_now.tm_year) {
 			say_date = 1;
 			break;
@@ -424,9 +382,7 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 			say_dow = 1;
 			break;
 		}
-
 		say_month = say_day = say_dow = 1;
-
 		break;
 	default:
 		break;
@@ -437,46 +393,30 @@ static switch_status_t tr_say_time(switch_core_session_t *session, char *tosay, 
 		say_today = say_yesterday = 0;
 	}
 
-	if (say_today) { say_file("time/bugun"); }
-	if (say_yesterday) { say_file("time/dun"); }
-	if (say_dow) { say_file("time/day-%d", tm.tm_wday); }
-	if (say_day) {
-		say_num(tm.tm_mday, SSM_PRONOUNCED); // 1. 2. 3. (Birinci, Ikinci...) for day of month?
-		// In Turkish, dates are usually cardinal numbers (1 Ekim, 25 Kasim), not ordinal (Birinci Ekim is rare/wrong).
-		// It should be SSM_PRONOUNCED.
-		// Wait, earlier I saw SSM_COUNTED for ordinals (Birinci).
-		// Standard Turkish date reading: "25 October" -> "Yirmi Beş Ekim".
-		// So SSM_PRONOUNCED is correct.
-		// Modifying to SSM_PRONOUNCED.
-	}
-	if (say_month) { say_file("time/mon-%d", tm.tm_mon); }
-	if (say_year) { say_num(tm.tm_year + 1900, SSM_PRONOUNCED); }
+	if (say_today) switch_say_file(sh, "time/bugun");
+	if (say_yesterday) switch_say_file(sh, "time/dun");
+	if (say_day) say_num(sh, tm.tm_mday, SSM_PRONOUNCED);
+	if (say_month) switch_say_file(sh, "time/mon-%d", tm.tm_mon);
+	if (say_year) say_num(sh, tm.tm_year + 1900, SSM_PRONOUNCED);
+	if (say_dow) switch_say_file(sh, "time/day-%d", tm.tm_wday);
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour;
+		switch_say_file(sh, "time/saat");
+		say_num(sh, tm.tm_hour, SSM_PRONOUNCED);
+		if (tm.tm_min) say_num(sh, tm.tm_min, SSM_PRONOUNCED);
 
 		if (say_date || say_today || say_yesterday || say_dow) {
-			say_file("time/at"); // "saat" or "de/da"
+			int last_num = tm.tm_min ? tm.tm_min : tm.tm_hour;
+			tr_say_play_locative(sh, last_num);
 		}
-		// In Turkish, "at 5" is "saat 5'te".
-		// "time/at" might be "saat" word.
-		// I will use "time/saat" if not already spoken.
-		// But "time/saat" is used inside the block below.
-
-		say_file("time/saat");
-		say_num(hour, SSM_PRONOUNCED);
-		if (tm.tm_min) { say_num(tm.tm_min, SSM_PRONOUNCED); }
-		// No default "hundred" or "oclock" needed for Turkish usually if minute is 0.
-		// "Saat On" is fine.
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tr_say_money(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-									switch_input_args_t *args)
+static switch_status_t tr_say_money(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
-	char sbuf[16] = ""; /* enough for 999,999,999,999.99 (w/o the commas or leading $) */
+	char sbuf[16] = "";
 	char *dollars = NULL;
 	char *cents = NULL;
 
@@ -486,27 +426,25 @@ static switch_status_t tr_say_money(switch_core_session_t *session, char *tosay,
 	}
 
 	dollars = sbuf;
-
 	if ((cents = strchr(sbuf, '.'))) {
 		*cents++ = '\0';
-		if (strlen(cents) > 2) { cents[2] = '\0'; }
+		if (strlen(cents) > 2) cents[2] = '\0';
 	}
 
 	say_args->type = SST_ITEMS;
 	say_args->method = SSM_PRONOUNCED;
-	tr_say_general_count(session, dollars, say_args, args);
-	say_file("money/lira");
+	tr_say_general_count(sh, dollars, say_args);
+	switch_say_file(sh, "money/lira");
 
 	if (cents) {
-		tr_say_general_count(session, cents, say_args, args);
-		say_file("money/kurus");
+		tr_say_general_count(sh, cents, say_args);
+		switch_say_file(sh, "money/kurus");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tr_say_telephone_number(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-											   switch_input_args_t *args)
+static switch_status_t tr_say_telephone_number(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	int silence = 0;
 	char *p;
@@ -514,7 +452,7 @@ static switch_status_t tr_say_telephone_number(switch_core_session_t *session, c
 	for (p = tosay; !zstr(p); p++) {
 		int a = tolower((int)*p);
 		if (a >= '0' && a <= '9') {
-			say_file("digits/%c", a);
+			switch_say_file(sh, "digits/%c", a);
 			silence = 0;
 		} else if (a == '+' || (a >= 'a' && a <= 'z')) {
 			switch_say_file(sh, "ascii/%d", a);
@@ -524,68 +462,71 @@ static switch_status_t tr_say_telephone_number(switch_core_session_t *session, c
 			silence = 1;
 		}
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tr_say_spell(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-									switch_input_args_t *args)
+static switch_status_t tr_say_spell(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	char *p;
 
 	for (p = tosay; p && *p; p++) {
 		int a = tolower((int)*p);
 		if (a >= '0' && a <= '9') {
-			say_file("digits/%c", a);
+			switch_say_file(sh, "digits/%c", a);
 		} else {
 			if (say_args->type == SST_NAME_SPELLED) {
-				say_file("ascii/%d", a);
+				switch_say_file(sh, "ascii/%d", a);
 			} else if (say_args->type == SST_NAME_PHONETIC) {
-				say_file("phonetic-ascii/%d", a);
+				switch_say_file(sh, "phonetic-ascii/%d", a);
 			}
 		}
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t tr_say_ip(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-								 switch_input_args_t *args)
+static switch_status_t tr_say_ip(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (!(a = strdup(tosay))) { abort(); }
+	if (!(a = strdup(tosay))) {
+		abort();
+	}
 
-	if (!(b = strchr(a, '.'))) { goto end; }
+	if (!(b = strchr(a, '.'))) {
+		goto end;
+	}
 
 	*b++ = '\0';
 
-	if (!(c = strchr(b, '.'))) { goto end; }
+	if (!(c = strchr(b, '.'))) {
+		goto end;
+	}
 
 	*c++ = '\0';
 
-	if (!(d = strchr(c, '.'))) { goto end; }
+	if (!(d = strchr(c, '.'))) {
+		goto end;
+	}
 
 	*d++ = '\0';
 
-	say_num_goto_status(atoi(a), say_args->method, end);
-	say_file("digits/nokta");
-	say_num_goto_status(atoi(b), say_args->method, end);
-	say_file("digits/nokta");
-	say_num_goto_status(atoi(c), say_args->method, end);
-	say_file("digits/nokta");
-	say_num_goto_status(atoi(d), say_args->method, end);
+	say_num_goto_status(sh, atoi(a), say_args->method, end);
+	switch_say_file(sh, "digits/nokta");
+	say_num_goto_status(sh, atoi(b), say_args->method, end);
+	switch_say_file(sh, "digits/nokta");
+	say_num_goto_status(sh, atoi(c), say_args->method, end);
+	switch_say_file(sh, "digits/nokta");
+	say_num_goto_status(sh, atoi(d), say_args->method, end);
 
 end:
 
 	free(a);
-
+	
 	return status;
 }
 
-static switch_status_t tr_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-							  switch_input_args_t *args)
+static switch_new_say_callback_t choose_callback(switch_say_args_t *say_args)
 {
 	switch_new_say_callback_t say_cb = NULL;
 
@@ -607,6 +548,7 @@ static switch_status_t tr_say(switch_core_session_t *session, char *tosay, switc
 		say_cb = tr_say_ip;
 		break;
 	case SST_TELEPHONE_NUMBER:
+	case SST_TELEPHONE_EXTENSION:
 		say_cb = tr_say_telephone_number;
 		break;
 	case SST_NAME_SPELLED:
@@ -621,34 +563,72 @@ static switch_status_t tr_say(switch_core_session_t *session, char *tosay, switc
 		break;
 	}
 
-	if (say_cb) { return say_cb(session, tosay, say_args, args); }
-
-	return SWITCH_STATUS_FALSE;
+	return say_cb;
 }
 
-static switch_status_t tr_say_string(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
-									 char **rstr)
+static switch_status_t run_callback(switch_new_say_callback_t say_cb, char *tosay, switch_say_args_t *say_args, switch_core_session_t *session, char **rstr)
 {
-	switch_new_say_callback_t say_cb = NULL;
+	switch_say_file_handle_t *sh;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *string = NULL;
+	switch_event_t *var_event = NULL;
 
-	switch (say_args->type) {
-	case SST_NUMBER:
-	case SST_ITEMS:
-	case SST_PERSONS:
-	case SST_MESSAGES:
-		say_cb = tr_say_general_count;
-		break;
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_get_variables(channel, &var_event);
 	}
 
+	switch_say_file_handle_create(&sh, say_args->ext, &var_event);
+
+	status = say_cb(sh, tosay, say_args);
+
+	if ((*rstr = switch_say_file_handle_detach_path(sh))) {
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_say_file_handle_destroy(&sh);
+
+	return status;
+}
+
+static switch_status_t tr_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args,
+							  switch_input_args_t *args)
+{
+	switch_new_say_callback_t say_cb = NULL;
+	char *string = NULL;
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	say_cb = choose_callback(say_args);
+
 	if (say_cb) {
-		status = say_cb(session, tosay, say_args, &string);
+		status = run_callback(say_cb, tosay, say_args, session, &string);
+		if (session && string) {
+			status = switch_ivr_play_file(session, NULL, string, args);
+		}
+
+		switch_safe_free(string);
+	}
+
+	return status;
+}
+
+static switch_status_t tr_say_string(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, char **rstr)
+{
+	switch_new_say_callback_t say_cb = NULL;
+	char *string = NULL;
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	say_cb = choose_callback(say_args);
+
+	if (say_cb) {
+		status = run_callback(say_cb, tosay, say_args, session, &string);
 		if (string) {
 			status = SWITCH_STATUS_SUCCESS;
 			*rstr = string;
 		}
 	}
+
 	return status;
 }
 
@@ -660,7 +640,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_say_tr_load)
 	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
 	say_interface->interface_name = "tr";
 	say_interface->say_function = tr_say;
+	say_interface->say_string_function = tr_say_string;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

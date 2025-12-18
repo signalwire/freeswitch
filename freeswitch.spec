@@ -1291,7 +1291,7 @@ LOGGERS_MODULES="loggers/mod_console loggers/mod_graylog2 loggers/mod_logfile lo
 #						Phrase engine language modules
 #
 ######################################################################################################################
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_es say/mod_say_pt say/mod_say_fr say/mod_say_he say/mod_say_ru say/mod_say_sv"
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_es say/mod_say_pt say/mod_say_fr say/mod_say_he say/mod_say_ru say/mod_say_sv say/mod_say_tr"
 
 ######################################################################################################################
 #
