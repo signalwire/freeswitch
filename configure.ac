@@ -2123,6 +2123,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/say/mod_say_ru/Makefile
 		src/mod/say/mod_say_sv/Makefile
 		src/mod/say/mod_say_th/Makefile
+    src/mod/say/mod_say_tr/Makefile
 		src/mod/say/mod_say_zh/Makefile
 		src/mod/timers/mod_posix_timer/Makefile
 		src/mod/timers/mod_timerfd/Makefile

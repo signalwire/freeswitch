@@ -68,5 +68,6 @@
     <X-PRE-PROCESS cmd="include" data="lang/pt/pt_BR.xml"/>
     <X-NO-PRE-PROCESS cmd="include" data="lang/pt/pt_PT.xml"/>
     <X-NO-PRE-PROCESS cmd="include" data="lang/sv/*.xml"/>
+    <X-NO-PRE-PROCESS cmd="include" data="lang/tr/*.xml"/>
   </section>
 </document>
