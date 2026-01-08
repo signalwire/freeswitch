@@ -3822,7 +3822,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	switch_dtls_t *dtls;
 	const char *var;
 	int ret;
-	const char *kind = "";
+	const char *kind;
 	unsigned long ssl_method_error = 0;
 	unsigned long ssl_ctx_error = 0;
 	const SSL_METHOD *ssl_method;

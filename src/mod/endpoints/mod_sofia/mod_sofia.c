@@ -4091,7 +4091,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
 	const char *match_user_agent = NULL;
-	char *reply = "error/facility_not_subscribed";
+	char *reply;
 	switch_stream_handle_t mystream = { 0 };
 
 	if (!cmd) {

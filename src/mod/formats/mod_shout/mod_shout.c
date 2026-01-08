@@ -1289,7 +1289,7 @@ void do_telecast(switch_stream_handle_t *stream)
 	char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
 	char *uuid = strdup(path_info + 4);
 	switch_core_session_t *tsession;
-	char *fname = "stream.mp3";
+	char *fname;
 
 	switch_assert(uuid);
 	if ((fname = strchr(uuid, '/'))) {

@@ -174,7 +174,7 @@ void verto_broadcast(const char *event_channel, cJSON *json, const char *key, sw
 
 static int verto_init_ssl(verto_profile_t *profile)
 {
-	const char *err = "";
+	const char *err;
 	int i = 0;
 
 	profile->ssl_method = SSLv23_server_method();   /* create server instance */
