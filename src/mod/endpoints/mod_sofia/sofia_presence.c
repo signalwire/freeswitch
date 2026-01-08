@@ -2136,31 +2136,101 @@ static switch_uint31_t check_presence_epoch(void)
 
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 {
-	switch_uint31_t callsequence;
+    switch_uint31_t callsequence;
+    char *sql;
+    char val[80] = "";
+    char file_path[256];
+    FILE *fp;
 
-	switch_mutex_lock(profile->ireg_mutex);
+    /* Construct path: storage_dir/presence_seq_internal.txt */
+    switch_snprintf(file_path, sizeof(file_path), "%s%spresence_seq_%s.txt",
+                    SWITCH_GLOBAL_dirs.storage_dir, SWITCH_PATH_SEPARATOR, profile->name);
 
-	callsequence = check_presence_epoch();
+    switch_mutex_lock(profile->ireg_mutex);
 
-    /* Enforce strictly monotonic CSeq for NOTIFY to avoid New Year rollbacks
-       that some phones (e.g., Polycom) reject with 500. */
+    /* --- STEP 1: INITIALIZATION & RECOVERY --- */
+    if (profile->last_cseq.value == 0) {
+
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+                          "Pres_Seq: Initializing '%s'. Checking DB and Disk...\n", profile->name);
+
+        /* A. Try DB First */
+        sql = switch_mprintf("SELECT cseq FROM sip_presence_seq WHERE profile_name='%q' AND hostname='%q'",
+                             profile->name, mod_sofia_globals.hostname);
+
+        if (sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, val, sizeof(val))) {
+            uint32_t stored_seq = (uint32_t)atoi(val);
+            if (stored_seq > 0) {
+                profile->last_cseq.value = stored_seq + 200;
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+                                  "Pres_Seq: Restored '%s' to %u (from DB)\n",
+                                  profile->name, profile->last_cseq.value);
+            }
+        }
+        switch_safe_free(sql);
+
+        /* B. If DB Failed/Empty, Try Flat File */
+        if (profile->last_cseq.value == 0) {
+            fp = fopen(file_path, "r");
+            if (fp) {
+                if (fgets(val, sizeof(val), fp)) {
+                    uint32_t file_seq = (uint32_t)atoi(val);
+                    if (file_seq > 0) {
+                        profile->last_cseq.value = file_seq + 200;
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+                                          "Pres_Seq: DB was empty! Restored '%s' to %u (from Disk File)\n",
+                                          profile->name, profile->last_cseq.value);
+                    }
+                }
+                fclose(fp);
+            }
+        }
+
+        /* C. If both failed, ensure DB table exists for future use */
+        if (profile->last_cseq.value == 0) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+                              "Pres_Seq: No history found on DB or Disk. Starting fresh.\n");
+
+            sql = switch_mprintf("CREATE TABLE IF NOT EXISTS sip_presence_seq (profile_name VARCHAR(255), hostname VARCHAR(255), cseq INTEGER)");
+            sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+        }
+    }
+
+    /* --- STEP 2: CALCULATE --- */
+    callsequence = check_presence_epoch();
+
+    /* --- STEP 3: ROLLOVER PROTECTION --- */
     if (profile->last_cseq.value && callsequence.value <= profile->last_cseq.value) {
         callsequence.value = profile->last_cseq.value + 1;
     }
 
-   /* Keep within 31 bits and non-zero, matching switch_uint31_t semantics. */
     callsequence.value &= 0x7fffffff;
-    if (callsequence.value == 0) {
-        callsequence.value = 1;
+    if (callsequence.value == 0) callsequence.value = 1;
+
+/* --- STEP 4: PERSISTENCE (DB + Disk) --- */
+    /* Optimize: Only write every 10 packets to save I/O */
+    if (callsequence.value % 10 == 0) {
+        /* 1. Save to DB (Async) */
+        sql = switch_mprintf("DELETE FROM sip_presence_seq WHERE profile_name='%q' AND hostname='%q'; "
+                             "INSERT INTO sip_presence_seq (profile_name, hostname, cseq) VALUES ('%q', '%q', %u)",
+                             profile->name, mod_sofia_globals.hostname,
+                             profile->name, mod_sofia_globals.hostname, callsequence.value);
+        sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
+        /* 2. Disk Write (Sync) - Safe fallback for RAM disk wipes */
+        fp = fopen(file_path, "w");
+        if (fp) {
+            fprintf(fp, "%u", callsequence.value);
+            fclose(fp);
+        }
     }
 
-	profile->last_cseq = callsequence;
+    profile->last_cseq = callsequence;
 
-	switch_mutex_unlock(profile->ireg_mutex);
+    switch_mutex_unlock(profile->ireg_mutex);
 
-	return (uint32_t)callsequence.value;
+    return (uint32_t)callsequence.value;
 }
-
 
 #define send_presence_notify(_a,_b,_c,_d,_e,_f,_g,_h,_i,_j,_k,_l) \
 _send_presence_notify(_a,_b,_c,_d,_e,_f,_g,_h,_i,_j,_k,_l,__FILE__, __SWITCH_FUNC__, __LINE__)
