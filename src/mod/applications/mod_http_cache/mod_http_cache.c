@@ -242,7 +242,7 @@ struct url_cache {
 };
 static url_cache_t gcache;
 
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool);
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool, switch_time_t max_age);
 static switch_status_t url_cache_add(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
 static void url_cache_remove_soft(url_cache_t *cache, switch_core_session_t *session, cached_url_t *url);
@@ -583,10 +583,16 @@ static void process_cache_control_header(cached_url_t *url, char *data)
 
 	if (max_age < 0) {
 		return;
+	} else {
+		max_age = max_age * 1000 * 1000;
 	}
 
-	url->max_age = max_age * 1000 * 1000;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting max age to %u seconds from now\n", (int)max_age);
+	if (url->max_age > max_age) {
+		url->max_age = max_age;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting max age from control-cache to %ld seconds from now\n", max_age/1000000);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Discarding max age of %ld from control-cache, keeping max-age of %ld seconds from now\n", max_age/1000000, url->max_age/1000000);
+	}
 }
 
 /**
@@ -715,7 +721,7 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session)
  * @param pool The pool to use for allocating the filename
  * @return The filename or NULL if there is an error
  */
-static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool)
+static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_core_session_t *session, const char *url, int download, int refresh, switch_memory_pool_t *pool, switch_time_t max_age)
 {
 	switch_time_t download_timeout_ns = cache->download_timeout * 1000 * 1000;
 	char *filename = NULL;
@@ -758,6 +764,15 @@ static char *url_cache_get(url_cache_t *cache, http_profile_t *profile, switch_c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Failed to add URL to cache!\n");
 			cached_url_destroy(u, cache->pool);
 			return NULL;
+		}
+
+		if (max_age) {
+			if (u->max_age > (max_age * 1000 * 1000)) {
+				u->max_age = (max_age * 1000 * 1000);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Overriding max-age to value of %ld seconds!\n", max_age);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "User defined max-age cannot be greather then configured max-age! Keeping max-age %ld seconds.\n", u->max_age/1000000);
+			}
 		}
 
 		/* download the file */
@@ -1272,6 +1287,7 @@ SWITCH_STANDARD_API(http_cache_get)
 	char *url;
 	int refresh = SWITCH_FALSE;
 	int download = DOWNLOAD;
+	switch_time_t max_age = 0;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", HTTP_GET_SYNTAX);
@@ -1295,10 +1311,13 @@ SWITCH_STANDARD_API(http_cache_get)
 		if (switch_true(switch_event_get_header(params, "prefetch"))) {
 			download = PREFETCH;
 		}
+		if (switch_event_get_header(params, "max-age")) {
+			max_age = atoi(params->headers->value);
+		}
 		refresh = switch_true(switch_event_get_header(params, "refresh"));
 	}
 
-	filename = url_cache_get(&gcache, profile, session, url, download, refresh, pool);
+	filename = url_cache_get(&gcache, profile, session, url, download, refresh, pool, max_age);
 	if (filename) {
 		stream->write_function(stream, "%s", filename);
 
@@ -1349,7 +1368,7 @@ SWITCH_STANDARD_API(http_cache_tryget)
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
 
-	filename = url_cache_get(&gcache, NULL, session, url, 0, params ? switch_true(switch_event_get_header(params, "refresh")) : SWITCH_FALSE, pool);
+	filename = url_cache_get(&gcache, NULL, session, url, 0, params ? switch_true(switch_event_get_header(params, "refresh")) : SWITCH_FALSE, pool, 0);
 	if (filename) {
 		if (!strcmp(DOWNLOAD_NEEDED, filename)) {
 			stream->write_function(stream, "-ERR %s\n", DOWNLOAD_NEEDED);
@@ -1484,7 +1503,7 @@ SWITCH_STANDARD_API(http_cache_remove)
 		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
 	}
 
-	url_cache_get(&gcache, NULL, session, url, 0, 1, pool);
+	url_cache_get(&gcache, NULL, session, url, 0, 1, pool, 0);
 	stream->write_function(stream, "+OK\n");
 
 	if (lpool) {
@@ -1785,21 +1804,48 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	struct http_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	int file_flags = SWITCH_FILE_DATA_SHORT | (switch_test_flag(handle, SWITCH_FILE_FLAG_VIDEO) ? SWITCH_FILE_FLAG_VIDEO : 0);
+	char *url = NULL;
+	switch_event_t *params = NULL;
+	switch_time_t max_age = 0;
+	int refresh = SWITCH_FALSE;
 
 	if (handle->params) {
 		context->profile = url_cache_http_profile_find(&gcache, switch_event_get_header(handle->params, "profile"));
+
+		if (switch_event_get_header(handle->params, "max-age")) {
+				max_age = atoi(handle->params->headers->value);
+		}
+
+		refresh = switch_true(switch_event_get_header(handle->params, "refresh"));
 	}
+
+	url = strdup(path);
+
+	if (*url == '{') {
+		switch_event_create_brackets(url, '{', '}', ',', &params, &url, SWITCH_FALSE);
+
+		if (params) {
+			context->profile = url_cache_http_profile_find(&gcache, switch_event_get_header(params, "profile"));
+
+			if (switch_event_get_header(params, "max-age")) {
+				max_age = atoi(params->headers->value);
+			}
+			
+			refresh = switch_true(switch_event_get_header(params, "refresh"));
+		}
+	}
+
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		/* WRITE = HTTP PUT */
 		file_flags |= SWITCH_FILE_FLAG_WRITE;
-		context->write_url = switch_core_strdup(handle->memory_pool, path);
+		context->write_url = switch_core_strdup(handle->memory_pool, url);
 		/* allocate local file in cache */
 		context->local_path = cached_url_filename_create(&gcache, context->write_url, NULL);
 	} else {
 		/* READ = HTTP GET */
 		file_flags |= SWITCH_FILE_FLAG_READ;
-		context->local_path = url_cache_get(&gcache, context->profile, NULL, path, 1, handle->params ? switch_true(switch_event_get_header(handle->params, "refresh")) : 0, handle->memory_pool);
+		context->local_path = url_cache_get(&gcache, context->profile, NULL, url, 1, refresh, handle->memory_pool, max_age);
 		if (!context->local_path) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1811,7 +1857,7 @@ static switch_status_t http_cache_file_open(switch_file_handle_t *handle, const 
 			handle->channels,
 			handle->samplerate,
 			file_flags, NULL)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", context->local_path, path);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open HTTP cache file: %s, %s\n", context->local_path, url);
 			if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 				switch_safe_free(context->local_path);
 			}
