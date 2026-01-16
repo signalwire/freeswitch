@@ -3090,25 +3090,25 @@ end:
 
 SWITCH_DECLARE(switch_status_t) switch_img_patch_png(switch_image_t *img, int x, int y, const char *file_name)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "This function is not available, libpng not installed\n");
 	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char* file_name, switch_img_fmt_t img_fmt)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "This function is not available, libpng not installed\n");
 	return NULL;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char* file_name)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "This function is not available, libpng not installed\n");
 	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, char **urlP)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function is not available, libpng not installed\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "This function is not available, libpng not installed\n");
 	return SWITCH_STATUS_FALSE;
 }
 
