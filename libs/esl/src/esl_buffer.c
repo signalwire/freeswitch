@@ -260,7 +260,7 @@ ESL_DECLARE(esl_size_t) esl_buffer_read_packet(esl_buffer_t *buffer, void *data,
 
 ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data, esl_size_t datalen)
 {
-	esl_size_t freespace, actual_freespace;
+	esl_size_t freespace;
 
 	esl_assert(buffer != NULL);
 	esl_assert(data != NULL);
@@ -270,14 +270,18 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 		return buffer->used;
 	}
 
-	actual_freespace = buffer->datalen - buffer->actually_used;
-	if (actual_freespace < datalen && (!buffer->max_len || (buffer->used + datalen <= buffer->max_len))) {
+	/* Enforce max_len limit before any write */
+	if (buffer->max_len && (buffer->used + datalen > buffer->max_len)) {
+		return 0;
+	}
+
+	freespace = buffer->datalen - buffer->actually_used;
+	if (freespace < datalen) {
 		memmove(buffer->data, buffer->head, buffer->used);
 		buffer->head = buffer->data;
 		buffer->actually_used = buffer->used;
+		freespace = buffer->datalen - buffer->actually_used;
 	}
-
-	freespace = buffer->datalen - buffer->used;
 
 	/*
 	  if (buffer->data != buffer->head) {
@@ -289,25 +293,26 @@ ESL_DECLARE(esl_size_t) esl_buffer_write(esl_buffer_t *buffer, const void *data,
 	if (freespace < datalen) {
 		esl_size_t new_size, new_block_size;
 		void *data1;
-		
+
 		new_size = buffer->datalen + datalen;
 		new_block_size = buffer->datalen + buffer->blocksize;
 
 		if (new_block_size > new_size) {
 			new_size = new_block_size;
 		}
-		buffer->head = buffer->data;
+
 		data1 = realloc(buffer->data, new_size);
 		if (!data1) {
 			return 0;
 		}
+
 		buffer->data = data1;
 		buffer->head = buffer->data;
 		buffer->datalen = new_size;
 	}
 	
 
-	freespace = buffer->datalen - buffer->used;
+	freespace = buffer->datalen - buffer->actually_used;
 
 	if (freespace < datalen) {
 		return 0;
