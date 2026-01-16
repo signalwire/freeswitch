@@ -1,0 +1,9 @@
+
+<extension name="piper-tts">
+    <condition field="destination_number" expression="^(3123)$">
+	<action application="answer"/>
+	<action application="speak" data="piper|en|Hello world!"/>
+	<action application="hangup"/>
+    </condition>
+</extension>
+
