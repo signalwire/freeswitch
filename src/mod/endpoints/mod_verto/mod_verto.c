@@ -1764,41 +1764,54 @@ new_req:
 		goto done;
 	}
 
-	if (!strncmp(request->method, "POST", 4) && request->content_length && request->content_type &&
-		!strncmp(request->content_type, "application/x-www-form-urlencoded", 33)) {
+	if (!strncmp(request->method, "POST", 4) && request->content_length && request->content_type) {
+		switch_bool_t content_type_urlencoded = SWITCH_FALSE;
+		switch_bool_t content_type_json = SWITCH_FALSE;
 
-		char *buffer = NULL;
-		switch_ssize_t len = 0, bytes = 0;
+		content_type_urlencoded = !strncmp(request->content_type, "application/x-www-form-urlencoded", 33);
+		content_type_json = !strncmp(request->content_type, "application/json", 16);
 
-		if (request->content_length && request->content_length > 10 * 1024 * 1024 - 1) {
-			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
-				"Content-Length: 0\r\n\r\n";
-			kws_raw_write(jsock->ws, data, strlen(data));
-			request->keepalive = 0;
-			goto done;
-		}
+		if (content_type_urlencoded || content_type_json) {
+			char *buffer = NULL;
+			switch_ssize_t len = 0, bytes = 0;
 
-		if (!(buffer = malloc(2 * 1024 * 1024))) {
-			goto request_err;
-		}
+			if (request->content_length > 10 * 1024 * 1024 - 1) {
+				char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
+					"Content-Length: 0\r\n\r\n";
 
-		while(bytes < (switch_ssize_t)request->content_length) {
-			len = request->content_length - bytes;
-
-#define WS_BLOCK 1
-
-			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
+				kws_raw_write(jsock->ws, data, strlen(data));
+				request->keepalive = 0;
 				goto done;
 			}
 
-			bytes += len;
+			if (!(buffer = malloc(10 * 1024 * 1024))) {
+				goto request_err;
+			}
+
+			while (bytes < (switch_ssize_t)request->content_length) {
+				len = request->content_length - bytes;
+
+#define WS_BLOCK 1
+
+				if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
+					free(buffer);
+					goto done;
+				}
+
+				bytes += len;
+			}
+
+			*(buffer + bytes) = '\0';
+
+			if (content_type_urlencoded) {
+				kws_parse_qs(request, buffer);
+			} else if (content_type_json) {
+				switch_event_set_body(stream.param_event, buffer);
+			}
+
+			free(buffer);
 		}
-
-		*(buffer + bytes) = '\0';
-
-		kws_parse_qs(request, buffer);
-		free(buffer);
 	}
 
 	// kws_request_dump(request);
