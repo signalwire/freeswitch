@@ -1152,6 +1152,7 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 switch_status_t conference_file_local_play(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin, void *buf,
 										   uint32_t buflen);
 switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin, switch_bool_t mux);
+switch_status_t conference_member_play_alone_sound(conference_member_t *member);
 switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
 conference_obj_t *conference_new(char *name, conference_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool);
