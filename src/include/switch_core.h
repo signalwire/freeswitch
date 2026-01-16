@@ -90,6 +90,30 @@ typedef struct device_uuid_node_s {
 	struct device_uuid_node_s *next;
 } switch_device_node_t;
 
+typedef struct packet_stats_io_info {
+	const char* in_callid;
+	char* in_codec;
+	uint32_t in_ssrc;
+	switch_sockaddr_t *in_remote_addr;
+	switch_sockaddr_t *in_local_addr;
+	const char* out_callid;
+	char* out_codec;
+	uint32_t out_ssrc;
+	switch_sockaddr_t *out_remote_addr;
+	switch_sockaddr_t *out_local_addr;
+	uint32_t count; // count of packets going out
+} packet_stats_io_info_t;
+
+typedef struct packet_stats {
+	int max;
+	float average;
+	uint32_t in_count;
+	uint32_t in_plc;
+	uint32_t count;
+	packet_stats_io_info_t io_info;
+	switch_bool_t reported;
+} packet_stats_t;
+
 typedef struct switch_device_stats_s {
 	uint32_t total;
 	uint32_t total_in;
@@ -255,6 +279,10 @@ static inline void *switch_must_realloc(void *_b, size_t _z)
 ///\{
 
 
+SWITCH_DECLARE(void) switch_core_session_increment_read(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_increment_plc(switch_core_session_t *session);
+SWITCH_DECLARE(void) packet_stats_print(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_set_io_stats(switch_core_session_t *session, packet_stats_io_info_t *packet_stats_io_info);
 SWITCH_DECLARE(void) switch_core_screen_size(int *x, int *y);
 SWITCH_DECLARE(void) switch_core_session_sched_heartbeat(switch_core_session_t *session, uint32_t seconds);
 SWITCH_DECLARE(void) switch_core_session_unsched_heartbeat(switch_core_session_t *session);
