@@ -354,6 +354,8 @@ struct switch_rtp {
 	uint32_t rtcp_autoadj_threshold;
 	uint32_t rtcp_autoadj_tally;
 
+	uint32_t udptl_autoadj_threshold;
+
 	srtp_ctx_t *send_ctx[2];
 	srtp_ctx_t *recv_ctx[2];
 
@@ -3107,6 +3109,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 		}
 	}
 
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL_INIT);
+	}
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL);
 	switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
 	switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
@@ -5391,6 +5396,7 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 		rtp_session->autoadj_window = 20;
 		rtp_session->autoadj_threshold = 10;
 		rtp_session->autoadj_tally = 0;
+		rtp_session->udptl_autoadj_threshold = 1;
 
 		switch_mutex_lock(rtp_session->flag_mutex);
 		rtp_session->flags[SWITCH_RTP_FLAG_RTCP_AUTOADJ] = 1;
@@ -7654,9 +7660,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
+		/* ignore RTP packets when looking for UDPTL media */
+		if (rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && rtp_session->flags[SWITCH_RTP_FLAG_UDPTL_INIT]) {
+			if (bytes && rtp_session->last_seq > 100) {
+				goto recvfrom;
+			}
+		}
+
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
 			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
-				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
+				if (++rtp_session->autoadj_tally >= (rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] ? rtp_session->udptl_autoadj_threshold : rtp_session->autoadj_threshold)) {
 					const char *err;
 					uint32_t old = rtp_session->eff_remote_port;
 					const char *tx_host;
@@ -7717,6 +7730,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes && !(rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST) && rtp_session->autoadj_window) {
 			if (--rtp_session->autoadj_window == 0) {
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_UDPTL_INIT);
 			}
 		}
 
