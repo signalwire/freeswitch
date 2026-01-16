@@ -6,10 +6,12 @@ on:
     branches:
       - master
       - v1.10
+      - v1.11
   pull_request:
     branches:
       - master
       - v1.10
+      - v1.11
 
 jobs:
   build:
