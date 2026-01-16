@@ -77,7 +77,7 @@
   <!-- Test with SIP hardware phone: must use WWW-Authenticate instead of Proxy-Authenticate.
        You could also try with SIP/2.0 401 Unauthorized. -->
 
-  <send>
+  <send retrans="500">
     <![CDATA[
 
       SIP/2.0 407 Proxy Authentication Required
