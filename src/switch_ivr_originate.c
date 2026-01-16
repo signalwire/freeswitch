@@ -26,12 +26,15 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  * Travis Cross <tc@traviscross.com>
+ * Stephane Alnet <stephane@shimaore.net>
  *
  * switch_ivr_originate.c -- IVR Library (originate)
  *
  */
 
 #include <switch.h>
+#include <switch_simd.h>
+
 #define QUOTED_ESC_COMMA 1
 #define UNQUOTED_ESC_COMMA 2
 
@@ -1899,7 +1902,7 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	early_state_t *state = (early_state_t *) obj;
 	originate_status_t originate_status[MAX_PEERS] = { {0} };
 	uint8_t array_pos = 0;
-	int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+	SWITCH_ALIGN int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 	int32_t sample;
 	switch_codec_t read_codecs[MAX_PEERS] = { {0} };
 	int i, x, ready = 0, answered = 0, ring_ready = 0;
@@ -1980,11 +1983,15 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 						if (datalen < read_frame->datalen) {
 							datalen = read_frame->datalen;
 						}
+#ifdef SIMD
+						SIMD_mux_sln(mux_data, data, (int) read_frame->datalen / 2);
+#else
 						for (x = 0; x < (int) read_frame->datalen / 2; x++) {
 							sample = data[x] + mux_data[x];
 							switch_normalize_to_16bit(sample);
 							mux_data[x] = (int16_t) sample;
 						}
+#endif
 					}
 				} else {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
