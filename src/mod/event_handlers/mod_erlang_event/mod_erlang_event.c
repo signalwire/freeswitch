@@ -970,7 +970,7 @@ static void listener_main_loop(listener_t *listener)
 	int status = 1;
 	int msgs_sent = 0; /* how many messages we sent in a loop */
 
-	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN) && !prefs.done) {
+	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN || erl_errno == 0) && !prefs.done) {
 		erlang_msg msg;
 		ei_x_buff buf;
 		ei_x_buff rbuf;
@@ -1933,6 +1933,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+
+#if (ERLANG_MAJOR == 10 && ERLANG_MINOR >= 3) || ERLANG_MAJOR >= 11
+	ei_init();
+#endif
 
 	module_pool = pool;
 
