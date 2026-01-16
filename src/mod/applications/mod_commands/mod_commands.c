@@ -5019,18 +5019,12 @@ SWITCH_STANDARD_API(break_function)
 
 
 
-	if (switch_channel_test_flag(channel, CF_BROADCAST)) {
-		switch_channel_stop_broadcast(channel);
-	} else {
-		switch_channel_set_flag_value(channel, CF_BREAK, all ? 2 : 1);
-	}
+	switch_channel_stop_broadcast(channel);
+	switch_channel_set_flag_value(channel, CF_BREAK, all ? 2 : 1);
 
 	if (qchannel) {
-		if (switch_channel_test_flag(qchannel, CF_BROADCAST)) {
-			switch_channel_stop_broadcast(qchannel);
-		} else {
-			switch_channel_set_flag_value(qchannel, CF_BREAK, all ? 2 : 1);
-		}
+		switch_channel_stop_broadcast(qchannel);
+		switch_channel_set_flag_value(qchannel, CF_BREAK, all ? 2 : 1);
 	}
 
 	stream->write_function(stream, "+OK\n");
