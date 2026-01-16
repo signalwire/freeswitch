@@ -61,6 +61,7 @@ static struct {
 	char *ssl_key_password;
 	char *ssl_version;
 	char *ssl_cacert_file;
+	char *unix_socket_path;
 	uint32_t enable_ssl_verifyhost;
 	int encode;
 	int log_http_and_disk;
@@ -364,6 +365,10 @@ static void process_cdr(cdr_data_t *data)
 
 		// tcp timeout
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.timeout);
+
+		if (!zstr(globals.unix_socket_path)) {
+            switch_curl_easy_setopt(curl_handle, CURLOPT_UNIX_SOCKET_PATH, globals.unix_socket_path);
+        }
 
 		/* these were used for testing, optionally they may be enabled if someone desires
 		   switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
@@ -674,6 +679,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 				globals.ssl_version = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "ssl-cacert-file")) {
 				globals.ssl_cacert_file = switch_core_strdup(globals.pool, val);
+			} else if (!strcasecmp(var, "unix-socket-path")) {
+                globals.unix_socket_path = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "enable-ssl-verifyhost") && switch_true(val)) {
 				globals.enable_ssl_verifyhost = 1;
 			} else if (!strcasecmp(var, "auth-scheme")) {
