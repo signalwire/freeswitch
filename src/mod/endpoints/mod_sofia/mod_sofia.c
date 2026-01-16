@@ -510,6 +510,16 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					reason = switch_core_session_sprintf(session, "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				}
 			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "reason .[%s].\n", reason);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "reason lg (%zu). cause %d \n", strlen(reason), cause);
+
+			if(strlen(reason) > 126 && strstr(reason, "text=\"") != NULL && reason[126] != '"') {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "avant reason .[%s].\n", reason);
+				reason[126] = '"';
+				reason[127] = 0;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "apres reason .[%s].\n", reason);
+			}
 		}
 
 		if (switch_channel_test_flag(channel, CF_INTERCEPT) || cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
