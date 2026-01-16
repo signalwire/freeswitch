@@ -3387,6 +3387,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT) && !strcmp(via->v_protocol, "SIP/2.0/TLS")) {
 				profile->tls_sip_port = (switch_port_t)atoi(via->v_port);
+				if (!profile->ext_tls_sip_port) profile->ext_tls_sip_port = profile->tls_sip_port;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s (TLS)\n", profile->tls_sip_port, profile->name);
 			}
 
@@ -4180,14 +4181,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->extsipport, params, str_rfc_5626);
+							profile->ext_tls_sip_port : profile->extsipport, params, str_rfc_5626);
 
 				} else {
 					format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->extsipport, params);
+							profile->ext_tls_sip_port : profile->extsipport, params);
 				}
 			} else {
 				if (rfc_5626) {
@@ -4195,14 +4196,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->extsipport, params, str_rfc_5626);
+							profile->ext_tls_sip_port : profile->extsipport, params, str_rfc_5626);
 
 				} else {
 					format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
 					gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 							sipip,
 							sofia_glue_transport_has_tls(gateway->register_transport) ?
-							profile->tls_sip_port : profile->extsipport, params);
+							profile->ext_tls_sip_port : profile->extsipport, params);
 
 				}
 			}
@@ -4332,13 +4333,14 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 		if (!profile->tls_sip_port && !sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT)) {
 			profile->tls_sip_port = (switch_port_t) atoi(SOFIA_DEFAULT_TLS_PORT);
 		}
+		if (!profile->ext_tls_sip_port) profile->ext_tls_sip_port = profile->tls_sip_port;
 
 		if (profile->extsipip) {
 			char *ipv6 = strchr(profile->extsipip, ':');
 			profile->tls_public_url = switch_core_sprintf(profile->pool,
 														  "sip:%s@%s%s%s:%d",
 														  profile->contact_user,
-														  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port);
+														  ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->ext_tls_sip_port);
 		}
 
 		if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
@@ -4346,7 +4348,7 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 			profile->tls_url =
 				switch_core_sprintf(profile->pool,
 									"sip:%s@%s%s%s:%d",
-									profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->tls_sip_port);
+									profile->contact_user, ipv6 ? "[" : "", profile->extsipip, ipv6 ? "]" : "", profile->ext_tls_sip_port);
 			profile->tls_bindurl =
 				switch_core_sprintf(profile->pool,
 									"sips:%s@%s%s%s:%d;maddr=%s",
@@ -5875,6 +5877,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_clear_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT);
 							profile->tls_sip_port = (switch_port_t) atoi(val);
 						}
+						if (!profile->ext_tls_sip_port) profile->ext_tls_sip_port = profile->tls_sip_port;
+					} else if (!strcasecmp(var, "ext-tls-sip-port") && val) {
+						int tmp = atoi(val);
+						if (tmp > 0) profile->ext_tls_sip_port = (switch_port_t)tmp;
 					} else if (!strcasecmp(var, "tls-cert-dir") && !zstr(val)) {
 						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-passphrase") && !zstr(val)) {
@@ -11032,7 +11038,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if (sip->sip_contact->m_url->url_port) {
 				port = atoi(sip->sip_contact->m_url->url_port);
 			} else {
-				port = sofia_glue_transport_has_tls(transport) ? profile->tls_sip_port : profile->extsipport;
+				port = sofia_glue_transport_has_tls(transport) ? profile->ext_tls_sip_port : profile->extsipport;
 			}
 
 			ipv6 = strchr(host, ':');
