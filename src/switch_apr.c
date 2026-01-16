@@ -1151,17 +1151,41 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 #endif
 }
 
+#ifndef WIN32
+#define uuidv4_new(uuid) uuid_generate(uuid->data);
+#else
+#define uuidv4_new(uuid) UuidCreate((UUID *)uuid);
+#endif
+
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_version(switch_uuid_t *uuid, int version)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_mutex_lock(runtime.uuid_mutex);
+
+	switch(version) {
+	case 4:
+		uuidv4_new(uuid);
+		break;
+	case 7:
+		uuidv7_new(uuid->data);
+		break;
+	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Unsupported UUID version %d\n", version);
+		status = SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_unlock(runtime.uuid_mutex);
+
+	return status;
+}
+
+
 SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
 	switch_mutex_lock(runtime.uuid_mutex);
 	if (runtime.uuid_version == 7) {
 		uuidv7_new(uuid->data);
 	} else {
-#ifndef WIN32
-		uuid_generate(uuid->data);
-#else
-		UuidCreate((UUID *)uuid);
-#endif
+		uuidv4_new(uuid);
 	}
 
 	switch_mutex_unlock(runtime.uuid_mutex);

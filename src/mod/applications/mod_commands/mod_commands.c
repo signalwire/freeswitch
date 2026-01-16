@@ -3173,11 +3173,21 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_GENERATE_SYNTAX "<create_uuid> [4|7]"
 SWITCH_STANDARD_API(uuid_function)
 {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
-	switch_uuid_str(uuid_str, sizeof(uuid_str));
+	int version = 0;
+	if (!zstr(cmd)) {
+		version = atoi(cmd);
+	}
+
+	if (version) {
+		switch_uuid_str_version(uuid_str, sizeof(uuid_str), version);
+	} else {
+		switch_uuid_str(uuid_str, sizeof(uuid_str));
+	}
 
 	stream->write_function(stream, "%s", uuid_str);
 	return SWITCH_STATUS_SUCCESS;
@@ -7609,7 +7619,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "cond", "Evaluate a conditional", cond_function, "<expr> ? <true val> : <false val>");
 	SWITCH_ADD_API(commands_api_interface, "console_complete", "", console_complete_function, "<line>");
 	SWITCH_ADD_API(commands_api_interface, "console_complete_xml", "", console_complete_xml_function, "<line>");
-	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_GENERATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "db_cache", "Manage db cache", db_cache_function, "status");
 	SWITCH_ADD_API(commands_api_interface, "domain_data", "Find domain data", domain_data_function, "<domain> [var|param|attr] <name>");
 	SWITCH_ADD_API(commands_api_interface, "domain_exists", "Check if a domain exists", domain_exists_function, "<domain>");
