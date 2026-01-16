@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Dragos Oancea <dragos.oancea@nexmo.com> (mod_opusfile.c)
- *
+ * Yossi Ne'eman <freeswitch@mashehu.com>
  *
  * mod_opusfile.c -- Read and Write OGG/Opus files . Some parts inspired from mod_shout.c, libopusfile, libopusenc
  *
@@ -59,6 +59,12 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_opusfile_load);
 SWITCH_MODULE_DEFINITION(mod_opusfile, mod_opusfile_load, NULL, NULL);
 
+typedef enum {
+	CHANNELS_FORMAT_DEFAULT = 0,
+	CHANNELS_FORMAT_AMBIX = 1,
+	CHANNELS_FORMAT_DISCRETE = 2
+} CHANNELS_FORMAT;
+
 struct opus_file_context {
 	switch_file_t *fd;
 	OggOpusFile *of;
@@ -88,11 +94,25 @@ struct opus_file_context {
 	switch_size_t opusbuflen;
 	FILE *fp;
 #ifdef HAVE_OPUSFILE_ENCODE
+	size_t original_samplerate;
 	OggOpusEnc *enc;
 	OggOpusComments *comments;
 	unsigned char encode_buf[OPUSFILE_MAX];
 	int encoded_buflen;
 	size_t samples_encode;
+	FILE *fout;
+	opus_int64 total_bytes;
+	opus_int64 bytes_written;
+	opus_int64 nb_encoded;
+	opus_int64 pages_out;
+	opus_int64 packets_out;
+	opus_int32 peak_bytes;
+	opus_int32 min_bytes;
+	opus_int32 last_length;
+	opus_int32 nb_streams;
+	opus_int32 nb_coupled;
+	int mapping_family;
+	FILE *frange;
 #endif
 	switch_memory_pool_t *pool;
 };
@@ -138,6 +158,17 @@ struct opus_stream_context {
 	size_t samples_encode;
 	int enc_channels;
 	unsigned int enc_pagecount;
+	opus_int64 total_bytes;
+	opus_int64 bytes_written;
+	opus_int64 nb_encoded;
+	opus_int64 pages_out;
+	opus_int64 packets_out;
+	opus_int32 peak_bytes;
+	opus_int32 min_bytes;
+	opus_int32 last_length;
+	opus_int32 nb_streams;
+	opus_int32 nb_coupled;
+	FILE *frange;
 #endif
 	unsigned int dec_count;
 	switch_thread_t *read_stream_thread;
@@ -148,7 +179,127 @@ typedef struct opus_stream_context opus_stream_context_t;
 
 static struct {
 	int debug;
+	opus_int32 bitrate[4];
+	int complexity;
+	size_t maximum_samplerate;
+	CHANNELS_FORMAT channels_format;
 } globals;
+
+static int opusfile_write_callback(void *user_data, const unsigned char *ptr, opus_int32 len)
+{
+	opus_file_context *data = (opus_file_context *) user_data;
+	data->bytes_written += len;
+	data->pages_out++;
+	return fwrite(ptr, 1, len, data->fout) != (size_t)len;
+}
+
+static int opusfile_close_callback(void *user_data)
+{
+	opus_file_context *data = (opus_file_context *) user_data;
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing out an opus file.  %lu bytes written.\n", (unsigned long) data->bytes_written);
+	
+	return fclose(data->fout) != 0;
+}
+
+static switch_status_t opus_obj_init(switch_file_handle_t *handle, opus_file_context *context)
+{
+	switch_status_t retval = SWITCH_STATUS_SUCCESS;
+#ifdef HAVE_OPUSFILE_ENCODE
+	const char *fopen_mode = "wb+";
+	char text_samplerate[6] = { 0 };
+	
+	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
+		fopen_mode = "ab+";
+	}
+	
+	if(!context->fout) {
+		context->fout = fopen(handle->file_path, fopen_mode);
+		if(!context->fout) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to open file %s , cannot record the file.\n", handle->file_path);
+			retval = SWITCH_STATUS_FALSE;
+			goto opus_obj_init_end;
+		}
+	}
+	
+	if (!context->comments) {
+		context->comments = ope_comments_create();
+	}
+	
+	context->channels = handle->channels;
+	handle->seekable = 0;
+	
+	// Need to set the proper sample rate for the channel (might override what it currently is
+	if(handle->samplerate > globals.maximum_samplerate) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The global maximum_samplerate is set to %lu kHz, which is less than the channel's samplerate  of %d kHz.  Reducing to the global maximum_samplerate.\n", globals.maximum_samplerate / 1000, handle->samplerate / 1000);
+		handle->samplerate = context->samplerate = globals.maximum_samplerate;
+	} else {
+		context->samplerate = handle->samplerate;
+	}
+	
+	// opus_multistream_surround_encoder_get_size() in libopus will check these
+	// 2024-01-02 current opus-tools git head introduced logic for additional channel modes
+	if(globals.channels_format == CHANNELS_FORMAT_AMBIX) {
+		context->mapping_family = (context->channels >= 4 && context->channels <= 18) ? 3 : 2;
+		ope_comments_add(context->comments,"CHANNELS_MODE", "AMBIX");
+	} else if(globals.channels_format == CHANNELS_FORMAT_DISCRETE) {
+		context->mapping_family = 255;
+		ope_comments_add(context->comments,"CHANNELS_MODE", "DISCRETE");
+	} else {
+		context->mapping_family = context->channels > 8 ? 255 : context->channels > 2;
+		ope_comments_add(context->comments,"CHANNELS_MODE", "DEFAULT");
+	}
+	
+	if(globals.debug) {
+		snprintf(text_samplerate, 6, "%lu", context->original_samplerate);
+		ope_comments_add(context->comments,"SOURCE_SAMPLERATE", text_samplerate);
+	}
+	
+#endif
+opus_obj_init_end:
+	return retval;
+}
+
+static switch_status_t opus_obj_init_secondary(opus_file_context *context)
+{
+	int err = 0;
+	switch_status_t retval = SWITCH_STATUS_SUCCESS;
+	OpusEncCallbacks callbacks = { opusfile_write_callback, opusfile_close_callback };
+	
+	context->enc = ope_encoder_create_callbacks(&callbacks, context, context->comments, context->samplerate, context->channels, context->mapping_family, &err);
+	if (!context->enc) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open file for writing [%d] [%s]\n", err, ope_strerror(err));
+		switch_thread_rwlock_unlock(context->rwlock);
+		retval = SWITCH_STATUS_FALSE;
+	} else {
+		// Let's set the bitrate and complexity, shall we?
+		opus_int32 i;
+		switch(context->samplerate) {
+			case 48000:
+				i = 3;
+				break;
+			case 32000:
+				i = 2;
+				break;
+			case 16000:
+				i = 1;
+				break;
+			case 8000:
+			default:
+				i = 0;
+		}
+		
+		if((err = ope_encoder_ctl(context->enc, OPUS_SET_BITRATE_REQUEST, globals.bitrate[i] * context->channels)) != OPE_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to properly set the bitrate.  err: [%d] [%s]\n", err, ope_strerror(err));
+		}
+		
+		if((err = ope_encoder_ctl(context->enc, OPUS_SET_COMPLEXITY_REQUEST, globals.complexity)) != OPE_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to properly set the complexity.  err: [%d] [%s]\n", err, ope_strerror(err));
+		}
+	}
+	
+	return retval;
+}
 
 static switch_status_t switch_opusfile_decode(opus_file_context *context, void *data, size_t max_bytes, int channels)
 {
@@ -256,7 +407,7 @@ static switch_status_t switch_opusfile_open(switch_file_handle_t *handle, const 
 	}
 
 	handle->samples = 0;
-	handle->samplerate = context->samplerate = DEFAULT_RATE; /*open files at 48 khz always*/
+	context->original_samplerate = handle->samplerate; /* Need to know the source samplerate for proper bitrate selection */
 	handle->format = 0;
 	handle->sections = 0;
 	handle->seekable = 1;
@@ -268,28 +419,20 @@ static switch_status_t switch_opusfile_open(switch_file_handle_t *handle, const 
 
 #ifdef HAVE_OPUSFILE_ENCODE
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		int err; int mapping_family = 0;
-
-		context->channels = handle->channels;
-		context->samplerate = handle->samplerate;
-		handle->seekable = 0;
-		context->comments = ope_comments_create();
-		ope_comments_add(context->comments, "METADATA", "Freeswitch/mod_opusfile");
-		// opus_multistream_surround_encoder_get_size() in libopus will check these
-		if ((context->channels > 2) && (context->channels <= 8)) {
-			mapping_family = 1;
-		} else if ((context->channels > 8) && (context->channels <= 255)) {
-			mapping_family = 255;
+		switch_status_t retval = opus_obj_init(handle, context);
+		if(retval != SWITCH_STATUS_SUCCESS) {
+			return retval;
 		}
-		context->enc = ope_encoder_create_file(handle->file_path, context->comments, context->samplerate, context->channels, mapping_family, &err);
-		if (!context->enc) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open file for writing [%d] [%s]\n", err, ope_strerror(err));
-			switch_thread_rwlock_unlock(context->rwlock);
-			return SWITCH_STATUS_FALSE;
-		}
+		
 		switch_thread_rwlock_unlock(context->rwlock);
 		return SWITCH_STATUS_SUCCESS;
+	} else {
+		// Decoding is always done at 48000 Hz in opus
+		handle->samplerate = context->samplerate = DEFAULT_RATE; // open files for decode at 48 khz always
 	}
+#else
+	// Decoding is always done at 48000 Hz in opus
+	handle->samplerate = context->samplerate = DEFAULT_RATE; /*open files at 48 khz always*/
 #endif 
 	
 	context->of = op_open_file(path, &ret);
@@ -315,7 +458,8 @@ static switch_status_t switch_opusfile_open(switch_file_handle_t *handle, const 
 	}
 
 	context->eof = SWITCH_FALSE;
-	context->pcm_print_offset = context->pcm_offset - DEFAULT_RATE;
+	// context->pcm_print_offset = context->pcm_offset - DEFAULT_RATE;
+	context->pcm_print_offset = context->pcm_offset - handle->samplerate;
 	context->bitrate = 0;
 	context->buffer_seconds = 1;
 
@@ -463,7 +607,6 @@ static switch_status_t switch_opusfile_write(switch_file_handle_t *handle, void 
 #ifdef HAVE_OPUSFILE_ENCODE
 	size_t nsamples = *len;
 	int err;
-	int mapping_family = 0;
 
 	opus_file_context *context;
 
@@ -476,17 +619,10 @@ static switch_status_t switch_opusfile_write(switch_file_handle_t *handle, void 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error no context\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	if (!context->comments) {
-		context->comments = ope_comments_create();
-		ope_comments_add(context->comments, "METADATA", "Freeswitch/mod_opusfile");
-	}
-	if (context->channels > 2) {
-			mapping_family = 1;
-	}
-	if (!context->enc) {
-		context->enc = ope_encoder_create_file(handle->file_path, context->comments, handle->samplerate, handle->channels, mapping_family, &err);
-		if (!context->enc) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open file for writing. err: [%d] [%s]\n", err, ope_strerror(err));
+	
+	if(!context->enc) {
+		if(opus_obj_init_secondary(context) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing the opus encoder context object.\n");
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -511,7 +647,37 @@ static switch_status_t switch_opusfile_write(switch_file_handle_t *handle, void 
 
 static switch_status_t switch_opusfile_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
-	return SWITCH_STATUS_FALSE;
+	opus_file_context *context = handle->private_info;
+	
+	if (!context->comments) {
+		context->comments = ope_comments_create();
+	}
+	
+	switch (col) {
+		case SWITCH_AUDIO_COL_STR_TITLE:
+			ope_comments_add(context->comments,"TITLE", string);
+			break;
+		case SWITCH_AUDIO_COL_STR_COMMENT:
+			ope_comments_add(context->comments,"COMMENT", string);
+			break;
+		case SWITCH_AUDIO_COL_STR_ARTIST:
+			ope_comments_add(context->comments,"ARTIST", string);
+			break;
+		case SWITCH_AUDIO_COL_STR_DATE:
+			ope_comments_add(context->comments,"DATE", string);
+			break;
+		case SWITCH_AUDIO_COL_STR_SOFTWARE:
+			ope_comments_add(context->comments,"ENCODER", string);
+			break;
+		case SWITCH_AUDIO_COL_STR_COPYRIGHT:
+			ope_comments_add(context->comments,"COPYRIGHT", string);
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Value Ignored %d, %s\n", col, string);
+			break;
+	}
+		
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_opusfile_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
@@ -754,19 +920,19 @@ static switch_status_t switch_opusstream_init(switch_codec_t *codec, switch_code
 		}
 #ifdef HAVE_OPUSFILE_ENCODE
 		if (encoding) {
-			if (!context->comments) {
-				context->comments = ope_comments_create();
-				ope_comments_add(context->comments, "METADATA", "Freeswitch/mod_opusfile");
-			}
 			if (!context->enc) {
-				int mapping_family = 0;
+				opus_int32 i;
+				int mapping_family;
 				// opus_multistream_surround_encoder_get_size() in libopus will check these
-				if ((context->enc_channels > 2) && (context->enc_channels <= 8)) {
-					mapping_family = 1;
-				} else if ((context->enc_channels > 8) && (context->enc_channels <= 255)) {
-					// multichannel/multistream mapping family . https://people.xiph.org/~giles/2013/draft-ietf-codec-oggopus.html#rfc.section.5.1.1
+				// 2024-01-02 current opus-tools git head introduced logic for additional channel modes
+				if(globals.channels_format == CHANNELS_FORMAT_AMBIX) {
+					mapping_family = (context->enc_channels >= 4 && context->enc_channels <= 18) ? 3 : 2;
+				} else if(globals.channels_format == CHANNELS_FORMAT_DISCRETE) {
 					mapping_family = 255;
+				} else {
+					mapping_family = context->enc_channels > 8 ? 255 : context->enc_channels > 2;
 				}
+				
 				context->enc = ope_encoder_create_pull(context->comments, !context->samplerate?DEFAULT_RATE:context->samplerate, !context->enc_channels?1:context->enc_channels, mapping_family, &err);
 
 				if (!context->enc) {
@@ -776,8 +942,35 @@ static switch_status_t switch_opusstream_init(switch_codec_t *codec, switch_code
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "[OGG/OPUS Stream Encode] Stream opened for encoding\n"); 
 				}
-				ope_encoder_ctl(context->enc, OPUS_SET_COMPLEXITY_REQUEST, 5);
+				// ope_encoder_ctl(context->enc, OPUS_SET_COMPLEXITY_REQUEST, 5);
 				ope_encoder_ctl(context->enc, OPUS_SET_APPLICATION_REQUEST, OPUS_APPLICATION_VOIP);
+				
+				// Let's set the bitrate and complexity, shall we?
+				switch(context->samplerate) {
+					case 32000:
+						i = 2;
+						break;
+					case 16000:
+						i = 1;
+						break;
+					case 8000:
+						i = 0;
+						break;
+					case 48000:
+					default:
+						i = 3;
+				}
+				
+				err = ope_encoder_ctl(context->enc, OPUS_SET_BITRATE_REQUEST, globals.bitrate[i] * context->enc_channels);
+				if(err != OPE_OK) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to properly set the bitrate.  err: [%d] [%s]\n", err, ope_strerror(err));
+				}
+				
+				// err = ope_encoder_ctl(context->enc, OPUS_SET_COMPLEXITY(globals.complexity));
+				err = ope_encoder_ctl(context->enc, OPUS_SET_COMPLEXITY_REQUEST, globals.complexity);
+				if(err != OPE_OK) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to properly set the complexity.  err: [%d] [%s]\n", err, ope_strerror(err));
+				}
 			}
 		}
 #endif 
@@ -1141,12 +1334,112 @@ end:
 	return status;
 }
 
+/* Load config */
+static switch_status_t opusfile_load_config(switch_bool_t reload)
+{
+	const char *channels_format_str = "Discrete mode";
+	char *cf = "opusfile.conf";
+	switch_xml_t cfg, xml = NULL, param, settings;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opening of %s failed\n", cf);
+		return SWITCH_STATUS_FALSE;;
+	}
+
+	/* Set sane defaults */
+	globals.bitrate[0] = 12000; // Narrowband (8000 Hz)  Values from rfc 6716 sec 2.1.1 (except UWB)
+	globals.bitrate[1] = 20000; // Wideband (16000 Hz)
+	globals.bitrate[2] = 36000; // Ultra wideband (32000 Hz), improvised value
+	globals.bitrate[3] = 40000; // Full band (48000 Hz)
+	globals.complexity = 10;
+	globals.channels_format = CHANNELS_FORMAT_DISCRETE;
+	globals.maximum_samplerate = 48000; // The default will be max possible
+	
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *key = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(key, "bitrate-nb") && !zstr(val)) {
+				int temp_bitrate = atoi(val);
+				if(temp_bitrate >= 6 && temp_bitrate <= 255) {
+					globals.bitrate[0] = (opus_int32) temp_bitrate * 1000;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "The bitrate per channel must be between 6 and 255 kbps.  You set %d kbps.  Forcing 12 kbps for narrowband.\n", temp_bitrate);
+				}
+			} else if (!strcasecmp(key, "bitrate-wb") && !zstr(val)) {
+				int temp_bitrate = atoi(val);
+				if(temp_bitrate >= 6 && temp_bitrate <= 255) {
+					globals.bitrate[1] = (opus_int32) temp_bitrate * 1000;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "The bitrate per channel must be between 6 and 255 kbps.  You set %d kbps.  Forcing 20 kbps for wideband.\n", temp_bitrate);
+				}
+			} else if (!strcasecmp(key, "bitrate-uwb") && !zstr(val)) {
+				int temp_bitrate = atoi(val);
+				if(temp_bitrate >= 6 && temp_bitrate <= 255) {
+					globals.bitrate[2] = (opus_int32) temp_bitrate * 1000;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "The bitrate per channel must be between 6 and 255 kbps.  You set %d kbps.  Forcing 36 kbps for ultrawideband.\n", temp_bitrate);
+				}
+			} else if (!strcasecmp(key, "bitrate-fb") && !zstr(val)) {
+				int temp_bitrate = atoi(val);
+				if(temp_bitrate >= 6 && temp_bitrate <= 255) {
+					globals.bitrate[3] = (opus_int32) temp_bitrate * 1000;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "The bitrate per channel must be between 6 and 255 kbps.  You set %d kbps.  Forcing 40 kbps for fullband.\n", temp_bitrate);
+				}
+			} else if (!strcasecmp(key, "complexity")) {
+				int temp_complexity = atoi(val);
+				if(temp_complexity >= 0 && temp_complexity < 11) {
+					globals.complexity = temp_complexity;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "opusfile complexity must be between 0-10, you set %d which is out of range.  Setting value to 10.\n", temp_complexity);
+				}
+			} else if (!strcasecmp(key, "maximum-samplerate")) {
+				int temp_max_samplerate = atoi(val);
+				if(temp_max_samplerate == 8 || temp_max_samplerate == 16 || temp_max_samplerate == 32 || temp_max_samplerate == 48) {
+					globals.maximum_samplerate = temp_max_samplerate * 1000;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "FreeSWITCH only supports samplerates of 8, 16, 32, or 48 kHz.  %d kHz is not a valid samplerate.  Setting value to 48 kHz.\n", temp_max_samplerate);
+				}
+			} else if (!strcasecmp(key, "channel-format")) {
+				if(!strcasecmp(val, "default")) {
+					globals.channels_format = CHANNELS_FORMAT_DEFAULT;
+					channels_format_str = "Default mode";
+				} else if(!strcasecmp(val, "ambix")) {
+					globals.channels_format = CHANNELS_FORMAT_AMBIX;
+					channels_format_str = "Ambix mode";
+				} else if(!strcasecmp(val, "discrete")) {
+					globals.channels_format = CHANNELS_FORMAT_DISCRETE;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s is not a known channels format.  Using Discrete.", val);
+				}
+			}
+		}
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Runtime configuration parameters:\n\tNarrowband bitrate:\t\t%d kbps\n\tWideband bitrate:\t\t%d kbps\n\tUltrawideband bitrate:\t\t%d kbps\n\tFullband bitrate:\t\t%d kbps\n\tComplexity:\t\t\t%d\n\tChannels format:\t\t%s\n\tGlobal max sample rate:\t\t%lu kHz\n", globals.bitrate[0]/1000, globals.bitrate[1]/1000, globals.bitrate[2]/1000, globals.bitrate[3]/1000, globals.complexity, channels_format_str, globals.maximum_samplerate / 1000);
+
+#ifdef HAVE_OPUSFILE_ENCODE
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opusfile encoding enabled.\n");
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opusfile encoding not built in.  Install libopusenc and then recompile mod_opusfile to enable.\n");
+#endif
+
+	switch_xml_free(xml);
+
+	return status;
+}
+
+
 /* Registration */
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_opusfile_load)
 {
+	switch_status_t status;
 	switch_file_interface_t *file_interface;
 	switch_api_interface_t *commands_api_interface;
 	switch_codec_interface_t *codec_interface;
@@ -1154,6 +1447,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opusfile_load)
 	int RATES[] = {8000, 16000, 24000, 48000};
 	int i;
 
+	if ((status = opusfile_load_config(SWITCH_FALSE)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+	
 	supported_formats[0] = "opus";
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
