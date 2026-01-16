@@ -540,6 +540,7 @@ typedef enum {
 
 static void do_2833(switch_rtp_t *rtp_session);
 
+static int check_recv_payload(switch_rtp_t *rtp_session);
 
 #define rtp_type(rtp_session) rtp_session->flags[SWITCH_RTP_FLAG_TEXT] ?  "text" : (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio")
 
@@ -5745,6 +5746,72 @@ static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_
 			if (switch_rtp_ready(rtp_session)) {
 				bytes = sizeof(rtp_msg_t);
 				switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
+
+#ifdef ENABLE_SRTP
+			// Ensure we decrypt BEFORE attempting to decode DTMF payload
+			// ( the following code was largely copied from read_rtp_packet() )
+			switch_mutex_lock(rtp_session->ice_mutex);
+			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->has_rtp &&
+				(check_recv_payload(rtp_session) ||
+				 rtp_session->last_rtp_hdr.pt == rtp_session->recv_te ||
+				 rtp_session->last_rtp_hdr.pt == rtp_session->cng_pt)) {
+				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->has_rtp)) {
+				int sbytes = bytes;
+				srtp_err_status_t stat = 0;
+
+				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET] || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
+					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
+					srtp_dealloc(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]);
+					rtp_session->recv_ctx[rtp_session->srtp_idx_rtp] = NULL;
+					if ((stat = srtp_create(&rtp_session->recv_ctx[rtp_session->srtp_idx_rtp],
+											&rtp_session->recv_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
+
+						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
+						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
+						switch_mutex_unlock(rtp_session->ice_mutex);
+						return SWITCH_STATUS_FALSE;
+					} else {
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
+						rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
+					}
+				}
+
+				if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+					stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+				} else {
+					stat = srtp_unprotect_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes, 1);
+				}
+
+				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
+					int errs = ++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp];
+					if (rtp_session->flags[SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR] && stat != srtp_err_status_replay_old) {
+						char *msg;
+						switch_srtp_err_to_txt(stat, &msg);
+						if (errs >= MAX_SRTP_ERRS) {
+							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
+											  rtp_type(rtp_session), stat, msg, (long)bytes, errs);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+											  "Ending call due to SRTP error\n");
+							switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
+						} else if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
+											  rtp_type(rtp_session), stat, msg, (long)bytes, errs);
+						}
+					}
+					sbytes = 0;
+				} else {
+					rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
+				}
+
+				bytes = sbytes;
+			}
+			switch_mutex_unlock(rtp_session->ice_mutex);
+#endif
 
 				if (bytes) {
 					int do_cng = 0;
