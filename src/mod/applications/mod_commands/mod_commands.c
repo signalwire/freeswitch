@@ -5697,7 +5697,7 @@ SWITCH_STANDARD_API(coalesce_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|old_calls <seconds>|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -5890,6 +5890,27 @@ SWITCH_STANDARD_API(show_function)
 			if (argv[2] && !strcasecmp(argv[1], "as")) {
 				as = argv[2];
 			}
+		} else if (!strcasecmp(command, "old_calls")) {
+			int age = 14400; // default 4 hours
+			time_t now = time(NULL);
+			time_t threshold_epoch;
+			int format_arg_index = 1;
+
+			if (argv[1] && isdigit(*argv[1])) {
+				age = atoi(argv[1]);
+				format_arg_index = 2;
+			}
+
+			threshold_epoch = now - age;
+
+			switch_snprintfv(sql, sizeof(sql),
+				"SELECT * FROM calls WHERE hostname='%q' AND call_created_epoch < %ld ORDER BY call_created_epoch",
+				switch_core_get_switchname(), threshold_epoch);
+
+			if (argv[format_arg_index] && argv[format_arg_index+1] && !strcasecmp(argv[format_arg_index], "as")) {
+				as = argv[format_arg_index + 1];
+			}
+
 		} else {
 
 			stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
@@ -7844,6 +7865,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add show detailed_calls");
 	switch_console_set_complete("add show bridged_calls");
 	switch_console_set_complete("add show detailed_bridged_calls");
+	switch_console_set_complete("add show old_calls");
 	switch_console_set_complete("add show endpoint");
 	switch_console_set_complete("add show file");
 	switch_console_set_complete("add show interfaces");
