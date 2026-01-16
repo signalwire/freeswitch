@@ -126,6 +126,7 @@ say/mod_say_en
 #say/mod_say_ru
 #say/mod_say_sv
 #say/mod_say_th
+#say/mod_say_tr
 #say/mod_say_zh
 #timers/mod_posix_timer
 #timers/mod_timerfd
