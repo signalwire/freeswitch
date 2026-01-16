@@ -341,6 +341,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
 	FILE *fp = NULL;
 	EVP_PKEY *pkey = NULL;
 	int bits = 0;
+	int min_cert_size_bits;
 
 	if (switch_is_file_path(file)) {
 		pem = strdup(file);
@@ -369,10 +370,15 @@ SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
 	}
 
 	bits = EVP_PKEY_bits(pkey);
+	min_cert_size_bits = 4096;
+	if (switch_true(switch_core_get_variable("allow_ecdsa_256bit_certs")) && EVP_PKEY_EC == EVP_PKEY_id(pkey)) {
+	    min_cert_size_bits = 256;
+	}
 	EVP_PKEY_free(pkey);
 
-	if (bits < 4096) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s cryptographic length is too short (%d), it will be regenerated\n", pem, bits);
+	if (bits < min_cert_size_bits) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s cryptographic length is too short (%d, < %d), it will be regenerated\n",
+			pem, bits, min_cert_size_bits);
 		goto rename_pem;
 	}
 
