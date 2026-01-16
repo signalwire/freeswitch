@@ -3867,7 +3867,9 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 
 		switch_mutex_lock(jsock->flag_mutex);
 
-		if (!(context = switch_event_get_header(jsock->vars, "user_context"))) {
+
+		if (!(context = switch_event_get_header(jsock->vars, "user_chat_context"))
+			&& !(context = switch_event_get_header(jsock->vars, "user_context"))) {
 			context = switch_either(jsock->context, jsock->profile->context);
 		}
 
