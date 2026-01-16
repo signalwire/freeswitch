@@ -33,6 +33,7 @@
 #define SMS_CHAT_PROTO "GLOBAL_SMS"
 #define MY_EVENT_SEND_MESSAGE "SMS::SEND_MESSAGE"
 #define MY_EVENT_DELIVERY_REPORT "SMS::DELIVERY_REPORT"
+#define MY_EVENT_ORIGINATE_MESSAGE "SMS::ORIGINATE_MESSAGE"
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_shutdown);
@@ -484,6 +485,18 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 }
 
+static void event_originate_handler(switch_event_t *event)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SMS Originate event\n");
+
+	if (switch_true(switch_event_get_header(event, "dump_event"))) {
+		DUMP_EVENT(event);
+	}
+
+	chat_send(event);
+}
+
+
 SWITCH_STANDARD_CHAT_APP(info_function)
 {
 	char *buf;
@@ -628,6 +641,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
+	if (switch_event_bind(modname, SWITCH_EVENT_CUSTOM, MY_EVENT_ORIGINATE_MESSAGE, event_originate_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -654,6 +672,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sms_shutdown)
 {
 	switch_event_unbind_callback(event_handler);
+	switch_event_unbind_callback(event_originate_handler);
 
 	switch_event_free_subclass(MY_EVENT_DELIVERY_REPORT);
 
