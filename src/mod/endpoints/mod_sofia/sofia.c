@@ -7695,6 +7695,38 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		{
 			int send_ack = 1;
 
+			/* sdp changed since 18X w sdp */
+			if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&
+				r_sdp && (!is_dup_sdp || sofia_test_flag(tech_pvt, TFLAG_NEW_SDP)) && switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+				uint8_t match = 0;
+				sofia_clear_flag(tech_pvt, TFLAG_NEW_SDP);
+				switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+
+				if (tech_pvt->mparams.num_codecs) {
+					match = sofia_media_negotiate_sdp(session, r_sdp, SDP_ANSWER);
+				}
+
+				if (match) {
+					if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
+						goto done;
+					}
+					switch_core_media_gen_local_sdp(session, SDP_ANSWER, NULL, 0, NULL, 0);
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+					switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+
+					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error!\n");
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						goto done;
+					}
+				} else {
+					switch_channel_clear_flag(tech_pvt->channel, CF_REINVITE);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error! %s\n", r_sdp);
+					goto done;
+				}
+			}
+
 			if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 				const char *wait_for_ack = switch_channel_get_variable(channel, "sip_wait_for_aleg_ack");
 
