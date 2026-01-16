@@ -1421,7 +1421,8 @@ SWITCH_DECLARE(void *) switch_calloc(size_t nmemb, size_t size);
 SWITCH_DECLARE(const char *) switch_inet_ntop(int af, void const *src, char *dst, size_t size);
 #endif
 
-SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len);
+#define switch_uuid_str(buf, len) switch_uuid_str_version(buf, len, DEFAULT_UUID_VERSION);
+SWITCH_DECLARE(char *) switch_uuid_str_version(char *buf, switch_size_t len, int version);
 SWITCH_DECLARE(char *) switch_format_number(const char *num);
 
 SWITCH_DECLARE(unsigned int) switch_atoui(const char *nptr);
@@ -1518,6 +1519,8 @@ SWITCH_DECLARE(const char *) switch_memory_usage_stream(switch_stream_handle_t *
 / Compliant random number generator. Returns the value between 0 and 0x7fff (RAND_MAX).
 **/
 SWITCH_DECLARE(int) switch_rand(void);
+SWITCH_DECLARE(int) switch_getentropy(void *buffer, switch_size_t length);
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v7(switch_uuid_t *uuid);
 
 SWITCH_END_EXTERN_C
 #endif

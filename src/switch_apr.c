@@ -1151,7 +1151,7 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 #endif
 }
 
-SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v4(switch_uuid_t *uuid)
 {
 	switch_mutex_lock(runtime.uuid_mutex);
 	if (runtime.uuid_version == 7) {
@@ -1165,6 +1165,23 @@ SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 	}
 
 	switch_mutex_unlock(runtime.uuid_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_version(switch_uuid_t *uuid, int version)
+{
+	switch(version) {
+		case 4:
+			return switch_uuid_generate_v4(uuid);
+			break;
+		case 7:
+			return switch_uuid_generate_v7(uuid);
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: Unsupported UUID version %d\n", version);
+			return SWITCH_STATUS_FALSE;
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str)

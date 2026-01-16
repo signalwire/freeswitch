@@ -4125,14 +4125,15 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 }
 
 
-SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len)
+SWITCH_DECLARE(char *) switch_uuid_str_version(char *buf, switch_size_t len, int version)
 {
 	switch_uuid_t uuid;
 
 	if (len < (SWITCH_UUID_FORMATTED_LENGTH + 1)) {
 		switch_snprintf(buf, len, "INVALID");
+	} else if (switch_uuid_generate_version(&uuid, version) != SWITCH_STATUS_SUCCESS) {
+		switch_snprintf(buf, len, "INVALID");
 	} else {
-		switch_uuid_get(&uuid);
 		switch_uuid_format(buf, &uuid);
 	}
 
@@ -4885,6 +4886,105 @@ SWITCH_DECLARE(int) switch_rand(void)
 #else
 	return rand();
 #endif
+}
+
+
+static int _switch_getentropy(void *buffer, switch_size_t length)
+{
+#ifdef WIN32
+	BCRYPT_ALG_HANDLE hAlgorithm = NULL;
+	NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptOpenAlgorithmProvider failed with status %d\n", status);
+		errno = EIO; // Input/Output error
+		return -1;
+	}
+
+	status = BCryptGenRandom(hAlgorithm, (PUCHAR)buffer, (ULONG)length, 0);
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptGenRandom failed with status %d\n", status);
+		BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+		errno = EIO; // Input/Output error
+		return -1;
+	}
+
+	BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+	return 0;
+
+#elif defined(__unix__) || defined(__APPLE__)
+	int random_fd = open("/dev/urandom", O_RDONLY);
+	switch_ssize_t result;
+	char error_msg[100];
+
+	if (random_fd == -1) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open failed: %s\n", error_msg);
+		errno = EIO; // Input/Output error
+		return -1;
+	}
+
+	result = read(random_fd, buffer, length);
+	if (result < 0 || (switch_size_t)result != length) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read failed: %s\n", error_msg);
+		close(random_fd);
+		errno = EIO; // Input/Output error
+		return -1;
+	}
+
+	close(random_fd);
+	return 0;
+
+#else
+	// Fallback: Use rand() for platforms that do not support secure randomness
+	unsigned char *buf = (unsigned char *)buffer;
+	for (switch_size_t i = 0; i < length; i++) {
+		buf[i] = (unsigned char)(rand() & 0xFF); // Generate byte-wise randomness
+	}
+	return 0;
+#endif
+}
+
+
+SWITCH_DECLARE(int) switch_getentropy(void *buffer, switch_size_t length)
+{
+	if (!buffer || length > 256) { // Enforce same limit as `getentropy`
+		errno = EIO; // Input/Output error
+		return -1;
+	}
+	return _switch_getentropy(buffer, length);
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_uuid_generate_v7(switch_uuid_t *uuid) {
+	/* random bytes */
+	unsigned char *value = uuid->data;
+
+	/* current timestamp in ms */
+	switch_time_t timestamp = switch_time_now() / 1000;
+
+	if (switch_getentropy(value, 16) != 0) {
+		return -1;
+	}
+
+	// timestamp
+	value[0] = (timestamp >> 40) & 0xFF;
+	value[1] = (timestamp >> 32) & 0xFF;
+	value[2] = (timestamp >> 24) & 0xFF;
+	value[3] = (timestamp >> 16) & 0xFF;
+	value[4] = (timestamp >> 8) & 0xFF;
+	value[5] = timestamp & 0xFF;
+
+	// version and variant
+	value[6] = (value[6] & 0x0F) | 0x70;
+	value[8] = (value[8] & 0x3F) | 0x80;
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* For Emacs:
