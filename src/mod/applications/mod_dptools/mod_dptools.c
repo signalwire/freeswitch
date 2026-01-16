@@ -185,26 +185,30 @@ static switch_status_t digit_action_callback(switch_ivr_dmachine_match_t *match)
 						  switch_channel_get_name(channel), act->string, act->value);
 
 		if (!strncasecmp(string, "exec", 4)) {
-			char *e;
-
+			exec = 1;
 			string += 4;
 			if (*string == ':') {
 				string++;
-				exec = 1;
-			} else if (*string == '[') {
-				flags = string;
-				if ((e = switch_find_end_paren(flags, '[', ']'))) {
-					if (*++e == ':') {
-						flags++;
-						*e++ = '\0';
-						string = e;
-						exec = strchr(flags, 'i') ? 2 : 1;
-					}
-				}
 			}
 		} else if (!strncasecmp(string, "api:", 4)) {
 			string += 4;
 			api = 1;
+		}
+
+		if (*string == '[') {
+			char *e;
+
+			flags = string;
+			if ((e = switch_find_end_paren(flags, '[', ']'))) {
+				if (e && *++e == ':') {
+					flags++;
+					*e++ = '\0';
+					string = e;
+					if (exec) {
+						exec = strchr(flags, 'i') ? 2 : 1;
+					}
+				}
+			}
 		}
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, string, act->value);
