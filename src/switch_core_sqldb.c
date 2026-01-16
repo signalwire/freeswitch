@@ -3553,7 +3553,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_expire_registration(int force)
 	if (force) {
 		sql = switch_mprintf("delete from registrations where hostname='%q'", switch_core_get_switchname());
 	} else {
-		sql = switch_mprintf("delete from registrations where expires > 0 and expires <= %ld and hostname='%q'", now, switch_core_get_switchname());
+		sql = switch_mprintf("delete from registrations where expires > 0 and expires <= %" TIME_T_FMT " and hostname='%q'", TIME_T_CAST(now), switch_core_get_switchname());
 	}
 
 	switch_sql_queue_manager_push(sql_manager.qm, sql, 0, SWITCH_FALSE);
