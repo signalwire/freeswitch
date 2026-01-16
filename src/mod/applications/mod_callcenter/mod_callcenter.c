@@ -3533,7 +3533,7 @@ static int list_result_json_callback(void *pArg, int argc, char **argv, char **c
 "\tcallcenter_config queue list members [queue_name] | \n" \
 "\tcallcenter_config queue list tiers [queue_name] | \n" \
 "\tcallcenter_config queue count | \n" \
-"\tcallcenter_config queue count agents [queue_name] [status] [state] | \n" \
+"\tcallcenter_config queue count agents [queue_name] [status] [state] [external-calls]| \n" \
 "\tcallcenter_config queue count members [queue_name] | \n" \
 "\tcallcenter_config queue count tiers [queue_name]"
 
@@ -3972,6 +3972,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *queue_name = argv[1 + initial_argc];
 				const char *status = NULL;
 				const char *state = NULL;
+				const char *external = NULL;
 				char res[256] = "";
 
 				/* queue count agents */
@@ -3982,7 +3983,14 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					if (argc-initial_argc > 3) {
 						state = argv[3 + initial_argc];
 					}
-					if (state)	{
+					if (argc-initial_argc > 4) {
+						external = argv[4 + initial_argc];
+					}
+
+					if (external)	{
+						sql = switch_mprintf("SELECT count(*) FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q' AND agents.status = '%q' AND agents.state = '%q' AND external_calls_count = '%d' ", queue_name, status, state, atoi(external));
+					}
+					else if (state)	{
 						sql = switch_mprintf("SELECT count(*) FROM agents,tiers WHERE tiers.agent = agents.name AND tiers.queue = '%q' AND agents.status = '%q' AND agents.state = '%q'", queue_name, status, state);
 					}
 					else if (status)	{
