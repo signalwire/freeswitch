@@ -36,6 +36,8 @@
 
 #define MSRP_BUFF_SIZE (SWITCH_RTP_MAX_BUF_LEN - 32)
 #define DEBUG_MSRP 0
+#define MSRP_TRANSACTION_ID_LEN 100
+#define MSRP_LOOP_COUNT 20
 
 struct msrp_socket_s {
 	switch_port_t port;
@@ -59,6 +61,7 @@ static struct {
 	// switch_mutex_t *mutex;
 	char *ip;
 	int message_buffer_size;
+	int fire_event;
 
 	char *cert;
 	char *key;
@@ -81,6 +84,7 @@ typedef struct worker_helper{
 
 SWITCH_DECLARE(void) switch_msrp_msg_set_payload(switch_msrp_msg_t *msrp_msg, const char *buf, switch_size_t payload_bytes)
 {
+	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP message set_payload executed begin.... \n");
 	if (!msrp_msg->payload) {
 		switch_malloc(msrp_msg->payload, payload_bytes + 1);
 	} else if (msrp_msg->payload_bytes < payload_bytes + 1) {
@@ -91,6 +95,50 @@ SWITCH_DECLARE(void) switch_msrp_msg_set_payload(switch_msrp_msg_t *msrp_msg, co
 	memcpy(msrp_msg->payload, buf, payload_bytes);
 	*(msrp_msg->payload + payload_bytes) = '\0';
 	msrp_msg->payload_bytes = payload_bytes;
+}
+
+static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
+{
+        int len = strlen(to_path);
+        int i;
+        int slash_count = 0;
+        switch_assert(to_path);
+        for(i=0; i<len; i++){
+                if (*(to_path + i) == '/') {
+                        if (++slash_count == 3) break;
+                }
+        }
+        if (slash_count < 3) return SWITCH_FALSE;
+        if (len - i++ < 36) return SWITCH_FALSE;
+        switch_snprintf(uuid, 37, to_path + i);
+        return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(void)switch_msrp_msg_generate_event(switch_msrp_msg_t *msrp_msg)
+{
+        switch_event_t *msrp_event;
+        char uuid[128] = { 0 };
+        const char *type_text_plain = "text/plain";
+        const char *type_text_html = "text/html";
+        const char *type_message_cpim = "message/cpim";
+        const char *msrp_content_type = switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE);
+        if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP content type is   :::::::: %s :: \n", msrp_content_type);
+
+
+        if (msrp_find_uuid(uuid, switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH)) != SWITCH_TRUE) {
+               if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid MSRP to-path!\n");
+        } else {
+               if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP CALL UUID : %s\n",uuid);
+        }
+        if (switch_event_create_subclass(&msrp_event, SWITCH_EVENT_CUSTOM, MY_EVENT_MSRP_RECV_MESSAGE) == SWITCH_STATUS_SUCCESS ) {
+               if (msrp_msg->payload && msrp_content_type && ((strstr(msrp_content_type,type_text_plain) != NULL) || (strstr(msrp_content_type,type_text_html) != NULL) || (strstr(msrp_content_type,type_message_cpim) != NULL))) {
+                        switch_event_add_header_string(msrp_event, SWITCH_STACK_BOTTOM, "Unique-ID", uuid);
+                        switch_event_add_header_string(msrp_event, SWITCH_STACK_BOTTOM, "MSRP-Data", msrp_msg->payload);
+                        switch_event_fire(&msrp_event);
+                        if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP event fired \n");
+				}
+        }
+        switch_event_destroy(&msrp_event);
 }
 
 static switch_bool_t msrp_check_success_report(switch_msrp_msg_t *msrp_msg)
@@ -195,6 +243,7 @@ static switch_status_t load_config(void)
 
 	globals.cert = switch_core_sprintf(globals.pool, "%s%swss.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
 	globals.key = globals.cert;
+	globals.fire_event = 0;
 
 	if ( switch_file_exists(globals.key, globals.pool) != SWITCH_STATUS_SUCCESS ) {
 		switch_core_gen_certs(globals.key);
@@ -225,6 +274,9 @@ static switch_status_t load_config(void)
 			} else if (!strcasecmp(var, "message-buffer-size") && val) {
 				globals.message_buffer_size = atoi(val);
 				if (globals.message_buffer_size == 0) globals.message_buffer_size = 50;
+			} else if (!strcasecmp(var, "fire-event")) {
+			        globals.fire_event = switch_true(val);
+                        if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Fire_event value %d \n", globals.fire_event);
 			}
 		}
 	}
@@ -1031,23 +1083,6 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 	return msrp_socket_send(csock, buf, &len);
 }
 
-static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
-{
-	int len = strlen(to_path);
-	int i;
-	int slash_count = 0;
-	switch_assert(to_path);
-	for(i=0; i<len; i++){
-		if (*(to_path + i) == '/') {
-			if (++slash_count == 3) break;
-		}
-	}
-	if (slash_count < 3) return SWITCH_FALSE;
-	if (len - i++ < 36) return SWITCH_FALSE;
-	switch_snprintf(uuid, 37, to_path + i);
-	return SWITCH_TRUE;
-}
-
 static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 {
 	worker_helper_t *helper = (worker_helper_t *) obj;
@@ -1064,6 +1099,13 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	int sanity = 10;
 	SSL *ssl = NULL;
 	int client_mode = helper->csock.client_mode;
+	int counter = 0;
+	char new_buf[MSRP_BUFF_SIZE]; /* buffer to get fragmented messages temporarily */
+	char tmp_buf[MSRP_BUFF_SIZE]; /* buffer to copy value of original buffer for use in strtok func */
+	char *delimiter = NULL;       /* As soon as delimiter is found in buf, loop has to be exited */
+	char *token = NULL;           /* using tokenizer in order to find transaction id in every MSRP message */
+	char transaction_id[MSRP_TRANSACTION_ID_LEN];     /* to create delimiter we need transaction_id followed by $ */
+	char transaction_prefix[MSRP_TRANSACTION_ID_LEN];
 
 	if (client_mode) {
 		switch_sockaddr_t *sa = NULL;
@@ -1239,6 +1281,53 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "status:%d, len:%" SWITCH_SIZE_T_FMT "\n", status, len);
 		}
 
+		while (counter <= MSRP_LOOP_COUNT) {
+			counter++;
+			dump_buffer(buf, len, __LINE__, 0);
+			strcpy(tmp_buf, buf);
+			len = MSRP_BUFF_SIZE;
+			/* if transaction is not set and it is a SEND Method */
+			if ((strlen(transaction_id) == 0) && (strstr(tmp_buf, "SEND"))) {
+				/* return the first string value */
+				token = strtok(tmp_buf, " ");
+				if (strstr(token, "MSRP")) {
+					/* return next value which is transaction id */
+					token = strtok(NULL, " ");
+					strcpy(transaction_prefix, "-----");
+					strcpy(transaction_id, token);
+					strcat(transaction_prefix, transaction_id);
+					delimiter = strcat(transaction_prefix, "$");
+				        if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP message delimiter is : %s \n", delimiter);
+				}
+			}
+			// Break the loop if new segment has delimiter
+			if (!zstr(delimiter) && strstr(buf, delimiter)) {
+				if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got the last message segment with delimiter. \n");
+				break;
+			}
+			// Empty temporary buffer
+			memset(new_buf, 0, sizeof(new_buf));
+			// Get next segment of MSRP message and store it in temporary buf
+			status = msrp_socket_recv(csock, new_buf, &len);
+			if (status != SWITCH_STATUS_SUCCESS) {
+				if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP Socket receive status is not SUCCESS \n");
+				break;
+			}
+			dump_buffer(new_buf, len, __LINE__, 0);
+			if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP current buffer : \n %s \n MSRP New Socket received buffer : \n %s \n", buf, new_buf);
+			/* If a new MSRP message comes arrives, override the content in buf, otherwise it is the new fragment so append it to buf */
+			if (strstr(new_buf, "SEND")) {
+				strcpy(buf, new_buf);
+				delimiter = NULL;
+				memset(transaction_id, 0, sizeof(transaction_id));
+			}
+			else {
+				strcat(buf, new_buf);
+			}
+			len = strlen(buf);
+			dump_buffer(buf, len, __LINE__, 0);
+		}
+
 		if (status == SWITCH_STATUS_SUCCESS) {
 			msrp_msg = msrp_parse_buffer(buf, len, NULL, pool);
 			switch_assert(msrp_msg);
@@ -1250,13 +1339,15 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			char *data = msrp_msg_serialize(msrp_msg);
 
 			if (data) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", data);
 				free(data);
 			}
 		}
 
 		if (msrp_msg->state == MSRP_ST_DONE && msrp_msg->method == MSRP_METHOD_SEND) {
 			msrp_reply(csock, msrp_msg);
+			if (globals.fire_event == 1) {
+			switch_msrp_msg_generate_event(msrp_msg);
+			}
 			if (msrp_check_success_report(msrp_msg)) {
 				msrp_report(csock, msrp_msg, "200 OK");
 			}
@@ -1267,7 +1358,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			goto end;
 		}
 
-		if (msrp_find_uuid(uuid, switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH)) != SWITCH_TRUE) {
+		if (switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH) && msrp_find_uuid(uuid, switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH)) != SWITCH_TRUE) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid MSRP to-path!\n");
 		}
 
@@ -1330,6 +1421,9 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			}
 
 			last_p = msrp_msg->last_p;
+			if (globals.fire_event == 1) {
+			switch_msrp_msg_generate_event(msrp_msg);
+			}
 			switch_msrp_session_push_msg(msrp_session, msrp_msg);
 			msrp_msg = NULL;
 		} else if (msrp_msg->state == MSRP_ST_DONE) { /* throw away */
@@ -1413,7 +1507,7 @@ end:
 
 	if (!client_mode) switch_core_destroy_memory_pool(&pool);
 
-	if (ssl) SSL_free(ssl);
+	if (client_mode && ssl) SSL_free(ssl);
 
 	if (msrp_session) msrp_session->running = 0;
 
