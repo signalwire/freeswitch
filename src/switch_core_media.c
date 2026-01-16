@@ -5517,6 +5517,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
 
+					if (!strcasecmp(map->rm_encoding, "opus")) {
+						codec_rate = imp->actual_samples_per_second;
+					}
+
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
 					}
