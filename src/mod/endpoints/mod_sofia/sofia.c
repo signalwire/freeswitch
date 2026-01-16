@@ -4508,6 +4508,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 	mod_sofia_globals.auto_restart = SWITCH_TRUE;
 	mod_sofia_globals.reg_deny_binding_fetch_and_no_lookup = SWITCH_FALSE; /* handle backwards compatilibity - by default use new behavior */
 	mod_sofia_globals.rewrite_multicasted_fs_path = SWITCH_FALSE;
+	mod_sofia_globals.global_db_lock = SWITCH_TRUE;
 
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -4523,6 +4524,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				mod_sofia_globals.debug_presence = atoi(val);
 			} else if (!strcasecmp(var, "debug-sla")) {
 				mod_sofia_globals.debug_sla = atoi(val);
+			} else if (!strcasecmp(var, "global-db-lock")) {
+				mod_sofia_globals.global_db_lock = switch_true(val);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "sofia global_db_lock : %d \n", mod_sofia_globals.global_db_lock);
 			} else if (!strcasecmp(var, "max-reg-threads") && val) {
 				int x = atoi(val);
 
