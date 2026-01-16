@@ -892,6 +892,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		switch_channel_set_state(channel, CS_INIT);
+		switch_channel_set_flag(channel, CF_AUDIO);
 
 		return SWITCH_CAUSE_SUCCESS;
 
@@ -995,6 +996,7 @@ static switch_status_t create_session(switch_core_session_t **new_session, modem
 	switch_channel_set_caller_profile(channel, caller_profile);
 	tech_pvt->caller_profile = caller_profile;
 	switch_channel_set_state(channel, CS_INIT);
+	switch_channel_set_flag(channel, CF_AUDIO);
 
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error spawning thread\n");
@@ -1228,7 +1230,7 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
 static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 {
 	modem_t *modem = obj;
-	int r, avail;
+	int r, avail, taken;
 #ifdef WIN32
 	DWORD readBytes;
 	OVERLAPPED o;
@@ -1268,30 +1270,49 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 			}
 
 			avail = t31_at_rx_free_space(modem->t31_state);
-			if (avail == 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
+			if (avail == 0 || modem->t31_state->non_ecm_tx.holding) {
+				if (! modem->t31_state->non_ecm_tx.holding)
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer Full, retrying....\n");
 				switch_yield(10000);
 				continue;
 			}
 
-#ifndef WIN32
-			r = read(modem->master, buf, avail);
-#else
-			o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+			/* I'm not sure why this is necessary, but if we don't sleep/yield for a moment here then we end up with
+			   the potential for lost audio data happening. Is it because we're sending audio data to FreeSWITCH faster
+			   than it's being sent over the channel. Is it because of audio data in spandsp getting overwritten?
+			   Whatever the case, this here seems to do the trick. */
+			switch_yield(1000);
 
-			/* Initialize the rest of the OVERLAPPED structure to zero. */
-			o.Internal = 0;
-			o.InternalHigh = 0;
-			o.Offset = 0;
-			o.OffsetHigh = 0;
-			assert(o.hEvent);
-			if (!ReadFile(modem->master, buf, avail, &readBytes, &o)) {
-				GetOverlappedResult(modem->master, &o, &readBytes,TRUE);
-			}
-			CloseHandle (o.hEvent);
-			r = readBytes;
+			do {
+#ifndef WIN32
+				r = read(modem->master, buf, 1);
+#else
+				o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+				/* Initialize the rest of the OVERLAPPED structure to zero. */
+				o.Internal = 0;
+				o.InternalHigh = 0;
+				o.Offset = 0;
+				o.OffsetHigh = 0;
+				assert(o.hEvent);
+				if (!ReadFile(modem->master, buf, 1, &readBytes, &o)) {
+					GetOverlappedResult(modem->master, &o, &readBytes,TRUE);
+				}
+				CloseHandle (o.hEvent);
+				r = readBytes;
 #endif
-			t31_at_rx(modem->t31_state, buf, r);
+				if (r > 0) {
+					taken = t31_at_rx(modem->t31_state, buf, r);
+					if (taken != r) {
+						/* As we checked the available buffer beforehand and only
+						   read and sent that number of bytes, this should not
+						   happen, and if it does will cause data loss and possibly
+						   timing problems. */
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unexpected modem buffering [%s]. Sent %d bytes, modem buffered %d.\n", modem->devlink, r, taken);
+					}
+					avail -= taken;
+				}
+			} while (r > 0 && avail > 0);
 
 			if (!strncasecmp(buf, "AT", 2)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Command on %s [%s]\n", modem->devlink, buf);
