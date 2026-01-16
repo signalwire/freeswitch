@@ -7496,6 +7496,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (r_sdp) {
 			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
+			if (ss_state == nua_callstate_ready && status == 200) {
+				switch_channel_set_flag(tech_pvt->channel, CF_LATE_OFFER);
+			}
+			
 			if (!(profile->mndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->mparams.remote_sdp_str) && !strcmp(tech_pvt->mparams.remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
 				is_dup_sdp = 1;
