@@ -5512,6 +5512,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 
+				if (fmtp_remote_codec_rate) {
+					remote_codec_rate = fmtp_remote_codec_rate;
+				}
 				for (i = 0; i < smh->mparams->num_codecs && i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
@@ -5529,10 +5532,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					} else {
 						match = (!strcasecmp(rm_encoding, imp->iananame) &&
 								 ((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 95 && imp->ianacode > 95)) &&
-								 (remote_codec_rate == codec_rate || fmtp_remote_codec_rate == imp->actual_samples_per_second)) ? 1 : 0;
-						if (fmtp_remote_codec_rate) {
-							remote_codec_rate = fmtp_remote_codec_rate;
-						}
+								 (remote_codec_rate == codec_rate || remote_codec_rate == imp->actual_samples_per_second)) ? 1 : 0;
 					}
 
 					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc") &&
