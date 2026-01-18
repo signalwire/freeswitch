@@ -1652,7 +1652,7 @@ switch_status_t conference_member_say(conference_member_t *member, char *text, u
 	}
 
 	if (zstr(tts_engine) || zstr(tts_voice)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing TTS engine or voice\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing TTS engine or voice\n");
 		status = SWITCH_STATUS_FALSE;                                                                                                                       
 		goto end;
 	}
