@@ -273,20 +273,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, vo
 		}
 
 		switch_resample_process(ah->resampler, data, len / 2);
-		if (ah->resampler->to_len * 2 > orig_len) {
-			if (ah->dbuflen < ah->resampler->to_len * 2) {
-				void *mem;
-				ah->dbuflen = ah->resampler->to_len * 2;
-				mem = realloc(ah->dbuf, ah->dbuflen);
-				switch_assert(mem);
-				ah->dbuf = mem;
-			}
-			switch_assert(ah->resampler->to_len * 2 <= ah->dbuflen);
-			memcpy(ah->dbuf, ah->resampler->to, ah->resampler->to_len * 2);
-			data = ah->dbuf;
-		} else {
-			memcpy(data, ah->resampler->to, ah->resampler->to_len * 2);
+		/* Always use separate buffer to avoid overwriting caller's original data */
+		if (ah->dbuflen < ah->resampler->to_len * 2) {
+			void *mem;
+			ah->dbuflen = ah->resampler->to_len * 2;
+			mem = realloc(ah->dbuf, ah->dbuflen);
+			switch_assert(mem);
+			ah->dbuf = mem;
 		}
+		switch_assert(ah->resampler->to_len * 2 <= ah->dbuflen);
+		memcpy(ah->dbuf, ah->resampler->to, ah->resampler->to_len * 2);
+		data = ah->dbuf;
 
 		len = ah->resampler->to_len * 2;
 	}
