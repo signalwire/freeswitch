@@ -7554,7 +7554,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						if (!zstr(val) && strcasecmp(val, "info") == 0) {
 							switch_channel_set_flag(session->channel, CF_FORCE_INFO_DTMF);
 						}
-						smh->mparams->te = (switch_payload_t) best_te;
+						smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
 						switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
 						smh->mparams->dtmf_type = DTMF_2833;
 					}
