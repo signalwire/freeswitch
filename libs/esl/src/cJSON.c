@@ -874,7 +874,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
                 escape_characters++;
                 break;
             default:
-                if ((*input_pointer < 0x20) || (*input_pointer >= 0x80))
+                if (*input_pointer < 32)
                 {
                     /* UTF-16 escape sequence uXXXX */
                     escape_characters += 5;
@@ -906,7 +906,7 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
     /* copy the string */
     for (input_pointer = input; *input_pointer != '\0'; (void)input_pointer++, output_pointer++)
     {
-        if ((*input_pointer > 0x1f) && (*input_pointer < 0x80) && (*input_pointer != '\"') && (*input_pointer != '\\'))
+        if ((*input_pointer > 31) && (*input_pointer != '\"') && (*input_pointer != '\\'))
         {
             /* normal character, copy */
             *output_pointer = *input_pointer;
