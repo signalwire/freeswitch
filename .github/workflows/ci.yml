@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - v1.10
+  pull_request:
+    types:
+      - opened
+      - synchronize
+  workflow_dispatch:
+    inputs:
+      freeswitch_ref:
+        description: 'FreeSWITCH repository ref'
+        required: false
+        type: string
+      sofia-sip_ref:
+        description: 'Sofia-Sip repository ref'
+        required: false
+        type: string
+      dind:
+        description: 'Run tests using Docker-in-Docker'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  CI_BASE_STATIC_IMAGE: signalwire/freeswitch-public-ci-base:bookworm-amd64
+  DOCKER_BUILD_SUMMARY: false
+  DOCKER_BUILD_CHECKS_ANNOTATIONS: false
+  DOCKER_BUILD_RECORD_UPLOAD: false
+
+jobs:
+  unit-tests-pre-config:
+    if: ${{ !inputs.dind }}
+    name: "Unit-tests pre-config"
+    runs-on: ubuntu-latest
+    env:
+      TOTAL_GROUPS: 2
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      container-image: ${{ steps.set-vars.outputs.container-image }}
+      working-directory: ${{ steps.set-vars.outputs.working-directory }}
+      tests-only: ${{ steps.set-vars.outputs.tests-only }}
+    steps:
+      - id: set-matrix
+        shell: bash
+        run: |
+          MATRIX=$(jq -c -n --argjson groups "${{ env.TOTAL_GROUPS }}" \
+            '{
+              include: [range(1; $groups + 1) | {group: ., total: $groups}]
+            }')
+          echo "matrix=$MATRIX" | tee -a $GITHUB_OUTPUT
+      - id: set-vars
+        shell: bash
+        run: |
+          echo "tests-only=false" >> $GITHUB_OUTPUT
+          echo "working-directory=freeswitch/tests/unit" >> $GITHUB_OUTPUT
+          echo "container-image=$CI_BASE_STATIC_IMAGE" >> $GITHUB_OUTPUT
+
+  unit-tests:
+    if: ${{ !inputs.dind }}
+    name: "Unit-tests (group ${{ matrix.group }})"
+    needs:
+      - unit-tests-pre-config
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.unit-tests-pre-config.outputs.matrix) }}
+    uses: ./.github/workflows/unit-test.yml
+    with:
+      total-groups: ${{ matrix.total }}
+      current-group: ${{ matrix.group }}
+      container-image: ${{ needs.unit-tests-pre-config.outputs.container-image }}
+      working-directory: ${{ needs.unit-tests-pre-config.outputs.working-directory }}
+      tests-only: ${{ fromJson(needs.unit-tests-pre-config.outputs.tests-only) }}
+    secrets: inherit
+
+  validate-unit-tests:
+    if: ${{ always() && !inputs.dind }}
+    name: "Validate Unit-tests"
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check unit tests status
+        run: |
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            exit 1
+          fi
+
+  unit-tests-dind:
+    if: ${{ inputs.dind }}
+    name: "Unit-tests D-in-D"
+    uses: ./.github/workflows/unit-test-dind.yml
+    with:
+      freeswitch_ref: ${{ inputs.freeswitch_ref }}
+      sofia-sip_ref: ${{ inputs.sofia-sip_ref }}
+    secrets: inherit
+
+  scan-build:
+    name: "Scan Build"
+    uses: ./.github/workflows/scan-build.yml
+    secrets: inherit

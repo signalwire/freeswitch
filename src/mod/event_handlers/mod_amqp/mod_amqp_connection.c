@@ -117,7 +117,9 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 
 	while (connection_attempt && amqp_status){
 		if (connection_attempt->ssl_on == 1) {
+#if AMQP_VERSION_INT(AMQP_MAJOR_VERSION, AMQP_MINOR_VERSION) < AMQP_VERSION_INT(0, 13)
 			amqp_set_initialize_ssl_library(connection_attempt->ssl_on);
+#endif
 			if (!(socket = amqp_ssl_socket_new(newConnection))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not create SSL socket\n");
 				goto err;

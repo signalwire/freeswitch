@@ -1795,7 +1795,8 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
 	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
 	SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
-	SWITCH_SPEECH_FLAG_DONE = (1 << 6)
+	SWITCH_SPEECH_FLAG_DONE = (1 << 6),
+	SWITCH_SPEECH_FLAG_MULTI = (1 << 7)
 } switch_speech_flag_enum_t;
 typedef uint32_t switch_speech_flag_t;
 
@@ -2309,7 +2310,8 @@ typedef enum {
 	SCSC_SESSIONS_PEAK,
 	SCSC_SESSIONS_PEAK_FIVEMIN,
 	SCSC_MDNS_RESOLVE,
-	SCSC_SHUTDOWN_CAUSE
+	SCSC_SHUTDOWN_CAUSE,
+	SCSC_UUID_VERSION
 } switch_session_ctl_t;
 
 typedef enum {

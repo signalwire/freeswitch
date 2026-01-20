@@ -32,11 +32,30 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+#include <string.h>
+#include <../../src/switch_uuidv7.c>
+
 #if defined(HAVE_OPENSSL)
 #include <openssl/ssl.h>
 #endif
 
 #define ENABLE_SNPRINTFV_TESTS 0 /* Do not turn on for CI as this requires a lot of RAM */
+
+static void *SWITCH_THREAD_FUNC test_create_uuid_thread_run(switch_thread_t *thread, void *obj)
+{
+	int *tid = (int *)obj;
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid: #%d\n", *tid);
+	for (int i = 0; i < 10; i++) {
+		uint8_t status = uuidv7_new(uuid.data);
+		switch_uuid_format(uuid_str, &uuid);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv7: %s status=%d #%d thread=%lu\n", uuid_str, status, *tid, (unsigned long)switch_thread_self());
+		switch_cond_next();
+	}
+
+	return NULL;
+}
 
 FST_CORE_BEGIN("./conf")
 {
@@ -52,6 +71,34 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+		FST_TEST_BEGIN(test_switch_regex)
+		{
+			switch_regex_match_t *match_data = NULL;
+			switch_regex_t *re = NULL;
+			char buf[100] = { 0 };
+			size_t size = sizeof(buf);
+
+			switch_regex_perform("1234", "^[0-9]+$", &re, &match_data);
+			switch_regex_copy_substring(match_data, 0, buf, &size);
+			switch_regex_match_free(match_data);
+			switch_regex_free(re);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\n%s\n", buf);
+			fst_check_string_equals(buf, "1234");
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_fctstr_safe_cpy)
+		{
+			char *dst;
+			const char *src = "1234567890";
+
+			dst = fctstr_clone(src);
+			fst_check_string_equals(dst, src);
+			free(dst);
+		}
+		FST_TEST_END()
 
 		FST_TEST_BEGIN(test_switch_rand)
 		{
@@ -568,6 +615,79 @@ FST_CORE_BEGIN("./conf")
 			fst_check(switch_channel_get_variable_buf(channel, "test_var_does_not_exist", buf, sizeof(buf)) == SWITCH_STATUS_FALSE);
 		}
 		FST_SESSION_END()
+
+		FST_TEST_BEGIN(test_create_uuid_v4_v7)
+		{
+			switch_uuid_t uuid;
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+			int version = 7;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid:\n");
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			for (int i = 0; i < 100; i++) {
+				uint8_t status = uuidv7_new(uuid.data);
+				switch_uuid_format(uuid_str, &uuid);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv7: %s\n", uuid_str);
+				fst_check(status >=0 && status < 4);
+			}
+
+			version = 4;
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv4: %s\n", uuid_str);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_create_uuid_thread)
+		{
+			int n[10] = {0};
+			switch_thread_t *thread[10] = {0};
+			switch_threadattr_t *thd_attr = NULL;
+			switch_status_t status;
+			int version = 7;
+
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			switch_threadattr_create(&thd_attr, fst_pool);
+			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+
+			for (int i = 0; i < sizeof(thread) / sizeof(thread[0]); i++) {
+				n[i] = i;
+				switch_thread_create(&thread[i], thd_attr, test_create_uuid_thread_run, &n[i], fst_pool);
+			}
+			for (int i = 0; i < sizeof(thread) / sizeof(thread[0]); i++) {
+				switch_thread_join(&status, thread[i]);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_create_uuid_speed)
+		{
+			int n;
+			int version = 4;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid_speed:\n");
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			for (n = 1; n < 4; n++) {
+				switch_time_t started_at = switch_time_now();
+				double delta = 0;
+				switch_uuid_t uuid;
+
+				for (int i = 0; i < 1000 * pow(10, n); i++) {
+					uuidv7_new(uuid.data);
+				}
+				delta = (switch_time_now() - started_at) / 1000000.0;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d uuidv7_new used: %f seconds\n", 1000 * (int)pow(10, n), delta);
+				
+				started_at = switch_time_now();
+				for (long long int i = 0; i < 1000 * pow(10, n); i++) {
+					switch_uuid_get(&uuid);
+				}
+				delta = (switch_time_now() - started_at) / 1000000.0;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d uuid_generate used: %f seconds\n", 1000 * (int)pow(10, n), delta);
+			}
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
