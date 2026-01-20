@@ -639,6 +639,37 @@ SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Processing %s <%s>->%s in context %s\n",
 					  caller_profile->caller_id_name, caller_profile->caller_id_number, caller_profile->destination_number, caller_profile->context);
 
+	/* Check for Telnyx call recovery auto-answer - must originate from local node */
+	{
+		const char *recovery_auto_answer = switch_channel_get_variable(channel, "sip_h_X-Telnyx-Recovery-Auto-Answer");
+		const char *sip_contact_host = switch_channel_get_variable(channel, "sip_contact_host");
+
+		if (recovery_auto_answer && !strcasecmp(recovery_auto_answer, "true") && !zstr(sip_contact_host)) {
+			const char *local_ip = switch_core_get_variable("local_ip_v4");
+
+			if (local_ip && !strcasecmp(sip_contact_host, local_ip)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+								  "Telnyx Call Recovery: Auto-answering same-node recovery call from local node %s\n", local_ip);
+
+				if ((extension = switch_caller_extension_new(session, "recovery_auto_answer", "recovery_auto_answer")) == 0) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");
+					goto done;
+				}
+
+				switch_caller_extension_add_application(session, extension, "set", "telnyx_force_cdr=false");
+				switch_caller_extension_add_application(session, extension, "answer", NULL);
+				switch_caller_extension_add_application(session, extension, "sleep", "200");
+				switch_caller_extension_add_application(session, extension, "call_recovery_process_queued_uas", NULL);
+
+				goto done;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+								  "Telnyx Call Recovery: Rejecting auto-answer request - contact host %s does not match local IP %s\n",
+								  sip_contact_host, local_ip ? local_ip : "NULL");
+			}
+		}
+	}
+
 	/* get our handle to the "dialplan" section of the config */
 
 	if (!zstr(alt_path)) {
