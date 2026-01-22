@@ -2460,12 +2460,20 @@ void sofia_event_callback(nua_event_t event,
 		}
 
 		if (!sofia_private) {
-			if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
-				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
-				nua_handle_destroy(nh);
-				goto end;
-			}
 
+			if (event == nua_i_options) {
+				if (sofia_test_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY) && (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound())) {
+					nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
+					nua_handle_destroy(nh);
+					goto end;
+				}
+			} else {
+				if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
+					nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
+					nua_handle_destroy(nh);
+					goto end;
+				}
+			}
 
 			if (switch_queue_size(mod_sofia_globals.msg_queue) > (unsigned int)critical) {
 				nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
