@@ -46,10 +46,10 @@ find_distro () {
   case "$1" in
     experimental) echo "sid";;
     unstable) echo "sid";;
-    testing) echo "trixie";;
-    stable) echo "bookworm";;
-    oldstable) echo "bullseye";;
-    oldoldstable) echo "buster";;
+    stable) echo "trixie";;
+    oldstable) echo "bookworm";;
+    oldoldstable) echo "bullseye";;
+    oldoldoldstable) echo "buster";;
     *) echo "$1";;
   esac
 }
@@ -57,10 +57,10 @@ find_distro () {
 find_suite () {
   case "$1" in
     sid) echo "unstable";;
-    trixie) echo "testing";;
-    bookworm) echo "stable";;
-    bullseye) echo "oldstable";;
-    buster) echo "oldoldstable";;
+    trixie) echo "stable";;
+    bookworm) echo "oldstable";;
+    bullseye) echo "oldoldstable";;
+    buster) echo "oldoldoldstable";;
     *) echo "$1";;
   esac
 }
@@ -210,8 +210,8 @@ create_orig () {
       orig="../freeswitch_$(debian/version-omit_revision.pl).orig.tar.xz"
       git_archive_prefix="freeswitch/"
     else
-      orig="../freeswitch_$(mk_dver "$uver")~$(lsb_release -sc).orig.tar.xz"
-      git_archive_prefix="freeswitch-$uver/"
+      orig="../freeswitch_${uver}~$(lsb_release -sc)~$(dpkg-architecture -qDEB_BUILD_ARCH).orig.tar.xz"
+      git_archive_prefix="freeswitch/"
     fi
 
     mv .gitattributes .gitattributes.orig
@@ -360,7 +360,7 @@ create_dsc () {
 
     [ "$zl" -ge "1" ] || zl=1
 
-    dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
+    dch -b -m -v "$dver" --force-distribution -D "$distro" "Nightly build."
 
     git add debian/rules debian/changelog && git commit -m "nightly v$orig_ver"
 
