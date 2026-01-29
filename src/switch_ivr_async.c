@@ -2138,12 +2138,17 @@ struct eavesdrop_pvt {
 	switch_mutex_t *resample_mutex;
 	switch_audio_resampler_t *reverse_resampler;
 	switch_mutex_t *reverse_resample_mutex;
+	switch_audio_resampler_t *r_reverse_resampler;
+	switch_mutex_t *r_reverse_resample_mutex;
+	switch_audio_resampler_t *w_reverse_resampler;
+	switch_mutex_t *w_reverse_resample_mutex;
 	uint8_t *r_data;
 	uint8_t *w_data;
 	uint8_t *resample_data;
 	uint8_t *r_reverse_resample_data;
 	uint8_t *w_reverse_resample_data;
 	uint8_t *frame_data;
+	uint8_t *demux_data;
 };
 
 static void handle_replace_frame(switch_media_bug_t *bug, struct eavesdrop_pvt *ep, switch_core_session_t *session, switch_bool_t is_read)
@@ -2151,7 +2156,6 @@ static void handle_replace_frame(switch_media_bug_t *bug, struct eavesdrop_pvt *
 	switch_buffer_t *buffer = is_read ? ep->r_buffer : ep->w_buffer;
 	uint32_t flag = is_read ? ED_MUX_READ : ED_MUX_WRITE;
 	const char *log_prefix = is_read ? "read" : "write";
-	const char *log_skip_prefix = is_read ? "READ_REPLACE" : "WRITE_REPLACE";
 	switch_frame_t *rframe;
 	uint32_t required_bytes;
 	uint8_t *data_buffer = is_read ? ep->r_data : ep->w_data;
@@ -2160,6 +2164,9 @@ static void handle_replace_frame(switch_media_bug_t *bug, struct eavesdrop_pvt *
 	uint32_t buffer_inuse;
 	uint32_t input_samples;
 	int channels;
+	switch_audio_resampler_t *resampler_to_check;
+	switch_audio_resampler_t *resampler_to_use;
+	switch_mutex_t *mutex_to_use;
 
 	if (!switch_test_flag(ep, flag)) {
 		if (flag == ED_MUX_READ) {
@@ -2175,60 +2182,100 @@ static void handle_replace_frame(switch_media_bug_t *bug, struct eavesdrop_pvt *
 
 	channels = rframe->channels ? rframe->channels : 1;
 
+	/* Validate and fix rframe->samples if datalen is set */
+	if (rframe->datalen > 0 && rframe->channels > 0) {
+		uint32_t expected_samples = rframe->datalen / 2 / rframe->channels;
+		if (rframe->samples != expected_samples) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
+							  "Eavesdrop %s: Fixing rframe->samples mismatch - had %u, expected %u (datalen=%u, channels=%u)\n",
+							  log_prefix, rframe->samples, expected_samples, rframe->datalen, rframe->channels);
+			rframe->samples = expected_samples;
+		}
+	}
+
 	/* Calculate how much data we need from buffer */
-	if (ep->reverse_resampler) {
-		/* Calculate input samples needed to produce rframe->samples output samples */
-		input_samples = (uint32_t)((double)rframe->samples * ep->reverse_resampler->rfactor);
+	/* Check if we have a resampler for this direction */
+	resampler_to_check = is_read ? ep->r_reverse_resampler : ep->w_reverse_resampler;
+	if (resampler_to_check) {
+		/* The buffer contains data at ep->read_impl.actual_samples_per_second (already resampled)
+		 * We need to reverse resample it to ep->tread_impl.actual_samples_per_second
+		 * rframe->samples is at the target rate (tread_impl), so calculate input samples at buffer rate (read_impl) */
+		/* rfactor = from_rate / to_rate = read_impl / tread_impl */
+		/* So input_samples at read_impl rate = rframe->samples * rfactor */
+		input_samples = (uint32_t)((double)rframe->samples * resampler_to_check->rfactor);
+		/* Buffer data is at read_impl rate, so calculate bytes needed */
 		required_bytes = input_samples * 2 * ep->read_impl.number_of_channels;
 	} else {
+		/* No resampling needed, buffer data should match frame exactly */
 		required_bytes = rframe->datalen;
 	}
 
 	buffer_inuse = switch_buffer_inuse(buffer);
 
-	if (buffer_inuse >= required_bytes) {
+	/* Use available data even if less than required, to avoid choppy audio from skipping frames */
+	if (buffer_inuse > 0) {
 		uint32_t bytes;
+		uint32_t bytes_to_read = buffer_inuse < required_bytes ? buffer_inuse : required_bytes;
 
 		switch_buffer_lock(buffer);
-		bytes = (uint32_t) switch_buffer_read(buffer, data_buffer, required_bytes);
+		bytes = (uint32_t) switch_buffer_read(buffer, data_buffer, bytes_to_read);
 
 		/* Apply reverse resampling if needed */
-		if (ep->reverse_resampler && bytes > 0) {
+		/* Use separate resamplers for read and write to avoid state corruption */
+		resampler_to_use = is_read ? ep->r_reverse_resampler : ep->w_reverse_resampler;
+		mutex_to_use = is_read ? ep->r_reverse_resample_mutex : ep->w_reverse_resample_mutex;
+
+		if (resampler_to_use && bytes > 0) {
 			int16_t *original_data = (int16_t *)data_buffer;
 			int original_samples = bytes / 2 / ep->read_impl.number_of_channels;
 			uint8_t *reverse_resample_buffer = is_read ? ep->r_reverse_resample_data : ep->w_reverse_resample_data;
 
-			switch_mutex_lock(ep->reverse_resample_mutex);
-			switch_resample_process(ep->reverse_resampler, original_data, original_samples);
+			switch_mutex_lock(mutex_to_use);
+			switch_resample_process(resampler_to_use, original_data, original_samples);
 
 			/* Copy resampled data to thread-specific reverse resample buffer */
 			{
-				uint32_t out_bytes = ep->reverse_resampler->to_len * 2 * ep->read_impl.number_of_channels;
+				/* Use resampler's channel count, not read_impl (they should match but be explicit) */
+				uint32_t out_bytes = resampler_to_use->to_len * 2 * resampler_to_use->channels;
 				if (out_bytes > SWITCH_MAX_L16) out_bytes = SWITCH_MAX_L16;
-				memcpy(reverse_resample_buffer, ep->reverse_resampler->to, out_bytes);
+				memcpy(reverse_resample_buffer, resampler_to_use->to, out_bytes);
 			}
 			data_to_merge = reverse_resample_buffer;
-			merge_samples = ep->reverse_resampler->to_len;
+			merge_samples = resampler_to_use->to_len;
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
-								"Eavesdrop %s callback: Reverse resampled %d->%d samples, %dHz->%dHz\n",
-								log_prefix, original_samples, (int)ep->reverse_resampler->to_len,
-								ep->read_impl.actual_samples_per_second,
-								ep->tread_impl.actual_samples_per_second);
-
-			switch_mutex_unlock(ep->reverse_resample_mutex);
+			switch_mutex_unlock(mutex_to_use);
 		} else {
-			merge_samples = bytes / 2;
+			/* Calculate samples per channel (switch_merge_sln expects per-channel samples)
+			 * Use ep->read_impl.number_of_channels since buffer data is stored with that channel count */
+			merge_samples = bytes / 2 / ep->read_impl.number_of_channels;
 		}
 
-		rframe->datalen = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data_to_merge, merge_samples, channels) * 2 * channels;
-		rframe->samples = rframe->datalen / 2;
+		/* Ensure rframe->channels matches what we're using */
+		rframe->channels = channels;
 
-		if (is_read && switch_test_flag(ep, ED_DEMUX_READ)) {
-			ep->demux_frame.data = data_buffer;
-			ep->demux_frame.datalen = bytes;
-			ep->demux_frame.samples = bytes / 2 / channels;
-			ep->demux_frame.channels = rframe->channels;
+		/* Only merge if we have valid data - switch_merge_sln handles sample count mismatches by merging minimum */
+		if (merge_samples > 0 && bytes > 0) {
+			/* switch_merge_sln will merge min(rframe->samples, merge_samples) samples */
+			rframe->samples = switch_merge_sln(rframe->data, rframe->samples, (int16_t *) data_to_merge, merge_samples, channels);
+			rframe->datalen = rframe->samples * 2 * channels;
+
+			/* Save READ audio stream for unmerge */
+			if (is_read && switch_test_flag(ep, ED_MUX_READ)) {
+				uint32_t demux_bytes = merge_samples * 2 * channels;
+				if (demux_bytes <= SWITCH_MAX_L16) {
+					memcpy(ep->demux_data, data_to_merge, demux_bytes);
+					ep->demux_frame.data = ep->demux_data;
+					ep->demux_frame.datalen = demux_bytes;
+					ep->demux_frame.samples = merge_samples;
+					ep->demux_frame.channels = channels;
+				}
+			}
+		} else {
+			if (is_read) {
+				ep->demux_frame.data = NULL;
+				ep->demux_frame.datalen = 0;
+				ep->demux_frame.samples = 0;
+			}
 		}
 
 		switch_buffer_unlock(buffer);
@@ -2244,8 +2291,12 @@ static void handle_replace_frame(switch_media_bug_t *bug, struct eavesdrop_pvt *
 			switch_core_media_bug_set_write_replace_frame(bug, rframe);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
-							"%s: Not enough data in buffer, skipping\n", log_skip_prefix);
+		/* Buffer is empty - pass through original frame unchanged */
+		if (is_read) {
+			switch_core_media_bug_set_read_replace_frame(bug, rframe);
+		} else {
+			switch_core_media_bug_set_write_replace_frame(bug, rframe);
+		}
 	}
 }
 
@@ -2331,6 +2382,37 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 			if (switch_core_media_bug_read(bug, &frame, SWITCH_FALSE) != SWITCH_STATUS_FALSE) {
 				void *data_to_write = frame.data;
 				uint32_t datalen_to_write = frame.datalen;
+
+				/* Unmerge eavesdrop READ audio to prevent echo */
+				if (switch_test_flag(ep, ED_MUX_READ) && ep->demux_frame.data && ep->demux_frame.datalen > 0 && frame.datalen > 0) {
+					uint32_t frame_samples = frame.datalen / 2 / frame.channels;
+					uint32_t demux_samples = ep->demux_frame.datalen / 2 / ep->demux_frame.channels;
+
+					if (frame_samples == demux_samples && frame.channels == ep->demux_frame.channels) {
+						uint8_t unmerged_data[SWITCH_MAX_L16];
+						uint32_t unmerged_samples;
+						
+						memcpy(unmerged_data, frame.data, frame.datalen);
+						
+						unmerged_samples = switch_unmerge_sln((int16_t *)unmerged_data, frame_samples,
+						                                       (int16_t *)ep->demux_frame.data, demux_samples,
+						                                       frame.channels);
+						
+						frame.data = unmerged_data;
+						frame.datalen = unmerged_samples * 2 * frame.channels;
+						frame.samples = unmerged_samples;
+						data_to_write = unmerged_data;
+						datalen_to_write = frame.datalen;
+						
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
+						                  "Eavesdrop READ_PING: Unmerged eavesdrop READ audio (%u samples, %u bytes)\n",
+						                  unmerged_samples, frame.datalen);
+
+						ep->demux_frame.data = NULL;
+						ep->demux_frame.datalen = 0;
+						ep->demux_frame.samples = 0;
+					}
+				}
 
 				/* Apply resampling if needed */
 				if (ep->tread_impl.actual_samples_per_second != ep->read_impl.actual_samples_per_second &&
@@ -2659,6 +2741,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_zmalloc(ep->r_reverse_resample_data, SWITCH_MAX_L16);
 		switch_zmalloc(ep->w_reverse_resample_data, SWITCH_MAX_L16);
 		switch_zmalloc(ep->frame_data, SWITCH_MAX_L16);
+		switch_zmalloc(ep->demux_data, SWITCH_MAX_L16);
 
 		if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 			goto end;
@@ -2684,7 +2767,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		if (tread_impl.actual_samples_per_second != read_impl.actual_samples_per_second) {
 			switch_mutex_init(&ep->resample_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
 							  "Eavesdrop: Creating resampler %dHz->%dHz for sample rate conversion, %d channels\n",
 							  tread_impl.actual_samples_per_second, read_impl.actual_samples_per_second,
 							  read_impl.number_of_channels);
@@ -2708,16 +2791,35 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 							  read_impl.actual_samples_per_second, tread_impl.actual_samples_per_second,
 							  read_impl.decoded_bytes_per_packet, read_impl.number_of_channels);
 
-			if (switch_resample_create(&ep->reverse_resampler,
-									   read_impl.actual_samples_per_second,
-									   tread_impl.actual_samples_per_second,
-									   tread_impl.decoded_bytes_per_packet,
-									   SWITCH_RESAMPLE_QUALITY,
-									   read_impl.number_of_channels) != SWITCH_STATUS_SUCCESS) {
+			/* Create separate resamplers for read and write to avoid state corruption */
+			/* Resamplers are stateful, so sharing one between read/write causes broken audio */
+			switch_mutex_init(&ep->r_reverse_resample_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+			if (switch_resample_create(&ep->r_reverse_resampler,
+								   read_impl.actual_samples_per_second,
+								   tread_impl.actual_samples_per_second,
+								   tread_impl.decoded_bytes_per_packet,
+								   SWITCH_RESAMPLE_QUALITY,
+								   read_impl.number_of_channels) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-								  "Eavesdrop: Unable to create reverse resampler\n");
+								  "Eavesdrop: Unable to create read reverse resampler\n");
 				goto end;
 			}
+
+			switch_mutex_init(&ep->w_reverse_resample_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
+			if (switch_resample_create(&ep->w_reverse_resampler,
+								   read_impl.actual_samples_per_second,
+								   tread_impl.actual_samples_per_second,
+								   tread_impl.decoded_bytes_per_packet,
+								   SWITCH_RESAMPLE_QUALITY,
+								   read_impl.number_of_channels) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+								  "Eavesdrop: Unable to create write reverse resampler\n");
+				goto end;
+			}
+
+			/* Keep old resampler for backward compatibility, but use separate ones for read/write */
+			ep->reverse_resampler = ep->r_reverse_resampler;  /* Default to read resampler */
+			ep->reverse_resample_mutex = ep->r_reverse_resample_mutex;
 		}
 
 		codec_initialized = 1;
@@ -3182,7 +3284,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 			if (ep->resampler) {
 				switch_resample_destroy(&ep->resampler);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Eavesdrop: Destroyed resampler\n");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Eavesdrop: Destroyed resampler\n");
 			}
 
 			switch_safe_free(ep->r_data);
@@ -3191,10 +3293,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			switch_safe_free(ep->r_reverse_resample_data);
 			switch_safe_free(ep->w_reverse_resample_data);
 			switch_safe_free(ep->frame_data);
+			switch_safe_free(ep->demux_data);
 
+			if (ep->r_reverse_resampler) {
+				switch_resample_destroy(&ep->r_reverse_resampler);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Eavesdrop: Destroyed read reverse resampler\n");
+			}
+			if (ep->w_reverse_resampler) {
+				switch_resample_destroy(&ep->w_reverse_resampler);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Eavesdrop: Destroyed write reverse resampler\n");
+			}
+			/* Keep old resampler pointer for backward compatibility */
 			if (ep->reverse_resampler) {
-				switch_resample_destroy(&ep->reverse_resampler);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Eavesdrop: Destroyed reverse resampler\n");
+				ep->reverse_resampler = NULL;  /* Already destroyed above */
 			}
 		}
 
