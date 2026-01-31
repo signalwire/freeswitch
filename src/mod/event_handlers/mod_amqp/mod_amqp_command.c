@@ -387,7 +387,8 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 			amqp_rpc_reply_t res;
 			amqp_envelope_t envelope;
 			struct timeval timeout = {0};
-			char command[10240];
+			char *command = NULL;
+			char stack_buffer[10240];  // Pre-allocated stack buffer for typical cases
 			enum ECommandFormat {
 				COMMAND_FORMAT_UNKNOWN,
 				COMMAND_FORMAT_PLAINTEXT
@@ -469,9 +470,28 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 
 			if (commandFormat == COMMAND_FORMAT_PLAINTEXT) {
 				switch_stream_handle_t stream = { 0 }; /* Collects the command output */
+				size_t command_len = envelope.message.body.len + 1;  // +1 for null terminator
 
-				/* Convert amqp bytes to c-string */
-				snprintf(command, sizeof(command), "%.*s", (int) envelope.message.body.len, (char *) envelope.message.body.bytes);
+				/* Use stack buffer by default, only allocate from heap if message is larger */
+				if (command_len > sizeof(stack_buffer)) {
+					command = malloc(command_len);
+					if (!command) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
+						                 "Memory allocation failed for command of size %zu bytes\n", 
+						                 command_len);
+						amqp_destroy_envelope(&envelope);
+						continue;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+					                 "Large AMQP command received: %zu bytes, using heap allocation\n", 
+					                 envelope.message.body.len);
+				} else {
+					/* Use stack buffer for typical case - zero allocation overhead */
+					command = stack_buffer;
+				}
+
+				/* Convert amqp bytes to c-string with null termination */
+				snprintf(command, command_len, "%.*s", (int)(command_len - 1), (char *) envelope.message.body.bytes);
 
 				/* Execute the command */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Executing: %s\n", command);
@@ -490,6 +510,12 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 				}
 				switch_safe_free(stream.data);
 			}
+
+			/* Clean up - only free if we allocated from heap */
+			if (command != stack_buffer) {
+				free(command);
+			}
+			command = NULL;
 
 			/* Tidy up */
 			amqp_destroy_envelope(&envelope);
