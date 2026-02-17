@@ -2199,20 +2199,13 @@ static uint32_t DE_THREAD_CNT = 0;
 void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void *obj)
 {
 	sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) obj;
-	switch_memory_pool_t *pool = NULL;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	DE_THREAD_CNT++;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	if (de) {
-		pool = de->pool;
-		de->pool = NULL;
 		sofia_process_dispatch_event(&de);
-	}
-
-	if (pool) {
-		switch_core_destroy_memory_pool(&pool);
 	}
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
@@ -2225,16 +2218,12 @@ void *SWITCH_THREAD_FUNC sofia_msg_thread_run_once(switch_thread_t *thread, void
 void sofia_process_dispatch_event_in_thread(sofia_dispatch_event_t **dep)
 {
 	sofia_dispatch_event_t *de = *dep;
-	switch_memory_pool_t *pool;
-	//sofia_profile_t *profile = (*dep)->profile;
 	switch_thread_data_t *td;
 
-	switch_core_new_memory_pool(&pool);
-
 	*dep = NULL;
-	de->pool = pool;
 
-	td = switch_core_alloc(pool, sizeof(*td));
+	switch_zmalloc(td, sizeof(*td));
+	td->alloc = 1;
 	td->func = sofia_msg_thread_run_once;
 	td->obj = de;
 
