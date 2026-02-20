@@ -42,6 +42,7 @@
 #if OPENSSL_VERSION_NUMBER < 0x0090800 || !defined(SHA256_DIGEST_LENGTH)
 #error Your OpenSSL is too old, need 0.9.8 or newer with SHA256
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #define HMAC_setup(ctx, key, len)	HMAC_CTX_init(&ctx); HMAC_Init_ex(&ctx, key, len, EVP_sha256(), 0)
 #define HMAC_crunch(ctx, buf, len)	HMAC_Update(&ctx, buf, len)
@@ -50,6 +51,7 @@
 #define HMAC_setup(ctx, key, len)ctx=HMAC_CTX_new(); HMAC_Init_ex(ctx, key, len, EVP_sha256(), 0)
 #define HMAC_crunch(ctx, buf, len)HMAC_Update(ctx, buf, len)
 #define HMAC_finish(ctx, dig, dlen) HMAC_Final(ctx, dig, &dlen); HMAC_CTX_free(ctx)
+#endif
 #endif
 
 #define FP10
@@ -155,9 +157,13 @@ static unsigned int GetDigestOffset1(uint8_t *handshake, unsigned int len)
 static getoff *digoff[] = {GetDigestOffset1, GetDigestOffset2};
 // static getoff *dhoff[] = {GetDHOffset1, GetDHOffset2};
 
-static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key, size_t keylen, uint8_t *digest)
+static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key, int keylen, uint8_t *digest)
 {
 	unsigned int digestLen;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	HMAC(EVP_sha256(), key, keylen, (uint8_t *)message, messageLen, digest, &digestLen);
+#else
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	HMAC_CTX ctx;
 #else
@@ -167,11 +173,12 @@ static void HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t 
 	HMAC_setup(ctx, key, (int)keylen);
 	HMAC_crunch(ctx, message, messageLen);
 	HMAC_finish(ctx, digest, digestLen);
+#endif
 
 	assert(digestLen == 32);
 }
 
-static void CalculateDigest(unsigned int digestPos, uint8_t *handshakeMessage, const uint8_t *key, size_t keyLen, uint8_t *digest)
+static void CalculateDigest(unsigned int digestPos, uint8_t *handshakeMessage, const uint8_t *key, int keyLen, uint8_t *digest)
 {
 	const int messageLen = RTMP_SIG_SIZE - SHA256_DIGEST_LENGTH;
 	uint8_t message[RTMP_SIG_SIZE - SHA256_DIGEST_LENGTH];
@@ -184,7 +191,7 @@ static void CalculateDigest(unsigned int digestPos, uint8_t *handshakeMessage, c
 	HMACsha256(message, messageLen, key, keyLen, digest);
 }
 
-static int VerifyDigest(unsigned int digestPos, uint8_t *handshakeMessage, const uint8_t *key, size_t keyLen)
+static int VerifyDigest(unsigned int digestPos, uint8_t *handshakeMessage, const uint8_t *key, int keyLen)
 {
 	uint8_t calcDigest[SHA256_DIGEST_LENGTH];
 

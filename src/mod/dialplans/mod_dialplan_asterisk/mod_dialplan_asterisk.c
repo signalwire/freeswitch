@@ -142,6 +142,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 
 	if (!caller_profile || zstr(caller_profile->destination_number)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
+
 		return NULL;
 	}
 
@@ -150,6 +151,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+
 		return NULL;
 	}
 
@@ -168,9 +170,8 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				char *expression = NULL, expression_buf[1024] = { 0 };
 				char substituted[2048] = "";
 				const char *field_data = caller_profile->destination_number;
-				int proceed = 0;
 				switch_regex_t *re = NULL;
-				int ovector[30] = { 0 };
+				switch_regex_match_t *match_data = NULL;
 				char *cid = NULL;
 
 				expression = expression_buf;
@@ -219,19 +220,22 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 						field_data = "";
 					}
 
-					if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					if (!(switch_regex_perform(field_data, expression, &re, &match_data))) {
+						switch_regex_match_safe_free(match_data);
 						switch_regex_safe_free(re);
 						switch_safe_free(field_expanded);
 						continue;
 					}
 				} else {
 					if (pattern && strcasecmp(pattern, field_data)) {
+						switch_safe_free(field_expanded);
 						continue;
 					}
 				}
 
 				if (cid) {
 					if (strcasecmp(cid, caller_profile->caller_id_number)) {
+						switch_safe_free(field_expanded);
 						continue;
 					}
 				}
@@ -263,18 +267,23 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				}
 
 				if (strchr(expression, '(')) {
-					switch_perform_substitution(re, proceed, argument, field_data, substituted, sizeof(substituted), ovector);
+					switch_perform_substitution(match_data, argument, substituted, sizeof(substituted));
 					argument = substituted;
 				}
+
+				switch_regex_match_safe_free(match_data);
 				switch_regex_safe_free(re);
 
 				if (!extension) {
 					if (zstr(field_data)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No extension!\n");
+						switch_safe_free(field_expanded);
 						break;
 					}
+
 					if ((extension = switch_caller_extension_new(session, field_data, field_data)) == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+						switch_safe_free(field_expanded);
 						break;
 					}
 				}

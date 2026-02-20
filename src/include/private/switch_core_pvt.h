@@ -287,6 +287,7 @@ struct switch_runtime {
 	char *event_channel_key_separator;
 	uint32_t max_audio_channels;
 	switch_call_cause_t shutdown_cause;
+	uint32_t uuid_version;
 };
 
 extern struct switch_runtime runtime;
@@ -310,7 +311,7 @@ extern struct switch_session_manager session_manager;
 
 
 switch_status_t switch_core_sqldb_init(const char **err);
-void switch_core_sqldb_destroy();
+void switch_core_sqldb_destroy(void);
 switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_t manage);
 void switch_core_sqldb_stop(void);
 void switch_core_session_init(switch_memory_pool_t *pool);

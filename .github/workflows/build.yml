@@ -1,0 +1,208 @@
+name: Build and Distribute
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - v1.10
+    paths:
+      - "**"
+  workflow_dispatch:
+    inputs:
+      freeswitch_ref:
+        description: "FreeSWITCH repository ref"
+        required: true
+        default: master
+        type: string
+      release:
+        description: "FreeSWITCH release type"
+        type: choice
+        required: true
+        default: unstable
+        options:
+          - release
+          - unstable
+      publish:
+        description: "Publish build data"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.head_ref || github.ref }}
+
+jobs:
+  preconfig:
+    name: "Preconfig"
+    runs-on: ubuntu-latest
+    outputs:
+      deb: ${{ steps.deb.outputs.excludes }}
+      release: ${{ steps.release.outputs.release }}
+    steps:
+      - name: Generate Matrix excludes for DEB
+        id: deb
+        run: |
+          JSON="[]"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            JSON=$(jq -n '[
+              {
+                "version": "bookworm",
+                "platform": {
+                  "name": "arm64v8"
+                }
+              },
+              {
+                "version": "bullseye",
+                "platform": {
+                  "name": "arm32v7"
+                }
+              }
+            ]')
+          fi
+
+          echo "excludes=$(echo $JSON | jq -c .)" | tee -a $GITHUB_OUTPUT
+
+      - name: Get release type based on branch
+        id: release
+        run: |
+          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            if [[ '${{ github.base_ref }}' == 'v1.10' ]]; then
+              echo 'release=release' | tee -a $GITHUB_OUTPUT
+            else
+              echo 'release=unstable' | tee -a $GITHUB_OUTPUT
+            fi
+          elif [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            echo 'release=${{ inputs.release }}' | tee -a $GITHUB_OUTPUT
+          elif [[ '${{ github.ref }}' == 'refs/heads/v1.10' ]]; then
+            echo 'release=release' | tee -a $GITHUB_OUTPUT
+          else
+            echo 'release=unstable' | tee -a $GITHUB_OUTPUT
+          fi
+
+  get-nonce:
+    name: "Get Nonce for token"
+    runs-on: freeswitch-repo-auth-client
+    outputs:
+      nonce: ${{ steps.get-nonce.outputs.nonce }}
+    steps:
+      - name: Get Nonce
+        id: get-nonce
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@main
+        with:
+          mode: nonce
+
+  issue-token:
+    name: "Issue temporary token"
+    runs-on: ubuntu-latest
+    needs: get-nonce
+    env:
+      NONCE: ${{ needs.get-nonce.outputs.nonce }}
+    outputs:
+      token: ${{ steps.issue-token.outputs.token }}
+    steps:
+      - name: Mask Token
+        run: echo "::add-mask::$NONCE"
+
+      - name: Issue Token
+        id: issue-token
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@main
+        env:
+          NONCE: ${{ needs.get-nonce.outputs.nonce }}
+        with:
+          mode: issue
+
+  deb-public:
+    name: "DEB-PUBLIC"
+    permissions:
+      id-token: write
+      contents: read
+    needs:
+      - preconfig
+      - issue-token
+    uses: signalwire/actions-template/.github/workflows/cicd-docker-build-and-distribute.yml@main
+    strategy:
+      # max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - debian
+        version:
+          - trixie
+          - bookworm
+          - bullseye
+        platform:
+          - name: amd64
+            runner: ubuntu-latest
+          - name: arm32v7
+            runner: ubuntu-24.04-arm
+          - name: arm64v8
+            runner: ubuntu-24.04-arm
+        release:
+          - ${{ needs.preconfig.outputs.release }}
+        exclude: ${{ fromJson(needs.preconfig.outputs.deb) }}
+    with:
+      RUNNER: ${{ matrix.platform.runner }}
+      REF: ${{ inputs.freeswitch_ref }}
+      ARTIFACTS_PATTERN: '.*\.(deb|dsc|changes|tar.bz2|tar.gz|tar.lzma|tar.xz)$'
+      DOCKERFILE: .github/docker/${{ matrix.os }}/${{ matrix.version }}/${{ matrix.platform.name }}/public.${{ matrix.release }}.Dockerfile
+      MAINTAINER: "Andrey Volk <andrey@signalwire.com>"
+      META_FILE_PATH_PREFIX: /var/www/freeswitch/public/${{ matrix.release }}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}
+      PLATFORM: ${{ matrix.platform.name }}
+      REPO_DOMAIN: "freeswitch.signalwire.com"
+      TARGET_ARTIFACT_NAME: ${{ matrix.os }}-${{ matrix.version }}-${{ matrix.platform.name }}-public-${{ matrix.release }}-artifact
+      UPLOAD_BUILD_ARTIFACTS: >-
+        ${{
+          (
+            github.event_name == 'push' &&
+            github.repository == 'signalwire/freeswitch' &&
+            contains(fromJSON('["master", "v1.10"]'), github.ref_name)
+          ) ||
+          (github.event_name == 'workflow_dispatch' && inputs.publish)
+        }}
+    secrets:
+      GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}
+      HOSTNAME: ${{ secrets.HOSTNAME }}
+      PROXY_URL: ${{ secrets.PROXY_URL }}
+      USERNAME: ${{ secrets.USERNAME }}
+      TELEPORT_TOKEN: ${{ secrets.TELEPORT_TOKEN }}
+      REPO_USERNAME: "SWUSERNAME"
+      REPO_PASSWORD: ${{ needs.issue-token.outputs.token }}
+
+  revoke-token:
+    name: "Revoke temporary token"
+    runs-on: ubuntu-latest
+    # if: always()
+    needs:
+      - issue-token
+      - deb-public
+    steps:
+      - name: Revoke Token
+        id: revoke-token
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@main
+        env:
+          TOKEN: ${{ needs.issue-token.outputs.token }}
+        with:
+          mode: revoke
+
+  meta:
+    name: "Publish build data to meta-repo"
+    if: >-
+      ${{
+        github.event_name == 'push' &&
+        github.repository == 'signalwire/freeswitch' &&
+        contains(fromJSON('["master", "v1.10"]'), github.ref_name)
+      }}
+    needs:
+      - deb-public
+    permissions:
+      id-token: write
+      contents: read
+    uses: signalwire/actions-template/.github/workflows/meta-repo-content.yml@main
+    with:
+      META_CONTENT: "/var/www/freeswitch/public/{release,unstable}/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}"
+      META_REPO: signalwire/bamboo_gha_trigger
+      META_REPO_BRANCH: trigger/freeswitch/${{ github.ref_name }}
+    secrets:
+      GH_BOT_DEPLOY_TOKEN: ${{ secrets.PAT }}

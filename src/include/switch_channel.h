@@ -325,6 +325,24 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_scope_variables(switch_channe
 SWITCH_DECLARE(const char *) switch_channel_get_variable_dup(switch_channel_t *channel, const char *varname, switch_bool_t dup, int idx);
 #define switch_channel_get_variable(_c, _v) switch_channel_get_variable_dup(_c, _v, SWITCH_TRUE, -1)
 
+/*!
+  \brief Retrieve a copy of a variable from a given channel. switch_safe_free() call will be required.
+  \param channel channel to retrieve variable from
+  \param varname the name of the variable
+  \return a strdup copy the value of the requested variable without using a memory pool.
+*/
+SWITCH_DECLARE(const char *) switch_channel_get_variable_strdup(switch_channel_t *channel, const char *varname);
+
+/*!
+  \brief Retrieve a variable from a given channel to a pre-allocated buffer without using a memory pool.
+  \param channel channel to retrieve variable from
+  \param varname the name of the variable
+  \param buf a pre allocated buffer to put the value to
+  \param buflen size of the buffer
+  \return SWITCH_STATUS_SUCCESS if the value was copied to the buffer and it is not NULL, SWITCH_STATUS_FALSE otherwise.
+*/
+SWITCH_DECLARE(switch_status_t) switch_channel_get_variable_buf(switch_channel_t *channel, const char *varname, char *buf, switch_size_t buflen);
+
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables_prefix(switch_channel_t *channel, const char *prefix, switch_event_t **event);
 SWITCH_DECLARE(switch_status_t) switch_channel_pass_callee_id(switch_channel_t *channel, switch_channel_t *other_channel);

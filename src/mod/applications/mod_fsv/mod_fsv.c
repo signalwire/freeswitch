@@ -40,6 +40,11 @@ SWITCH_MODULE_DEFINITION(mod_fsv, mod_fsv_load, NULL, NULL);
 #define VID_BIT (1 << 31)
 #define VERSION 4202
 
+typedef struct fsv_video_data_s {
+	uint32_t size;
+	uint8_t data[];
+} fsv_video_data_t;
+
 struct file_header {
 	int32_t version;
 	char video_codec_name[32];
@@ -983,15 +988,16 @@ again:
 	}
 
 	if (size & VID_BIT) { /* video */
-		uint8_t *video_data = malloc(sizeof(size) + size);
+		fsv_video_data_t *video_data;
 		switch_size_t read_size;
 
-		switch_assert(video_data);
 		size &= ~VID_BIT;
+		video_data = malloc(sizeof(fsv_video_data_t) + size);
+		switch_assert(video_data);
 		read_size = size;
-		*(uint32_t *)video_data = size;
+		video_data->size = size;
 
-		status = switch_file_read(context->fd, video_data + sizeof(size), &read_size);
+		status = switch_file_read(context->fd, video_data->data, &read_size);
 
 		if (status != SWITCH_STATUS_SUCCESS || read_size != size) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -1033,7 +1039,7 @@ static switch_status_t fsv_file_read_video(switch_file_handle_t *handle, switch_
 	fsv_file_context *context = handle->private_info;
 	switch_image_t *dup = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	void *video_packet = NULL;
+	fsv_video_data_t *video_packet = NULL;
 	switch_time_t start = switch_time_now();
 	switch_status_t decode_status = SWITCH_STATUS_MORE_DATA;
 	int new_img = 0;
@@ -1047,8 +1053,9 @@ static switch_status_t fsv_file_read_video(switch_file_handle_t *handle, switch_
 		switch_rtp_hdr_t *rtp;
 
 		while (1) {
+			video_packet = NULL;
 			switch_mutex_lock(context->mutex);
-			status = switch_queue_trypop(context->video_queue, &video_packet);
+			status = switch_queue_trypop(context->video_queue, (void**)&video_packet);
 			switch_mutex_unlock(context->mutex);
 
 			if (status != SWITCH_STATUS_SUCCESS || !video_packet) {
@@ -1065,13 +1072,13 @@ static switch_status_t fsv_file_read_video(switch_file_handle_t *handle, switch_
 			break;
 		}
 
-		size = *(uint32_t *)video_packet;
+		size = video_packet->size;
 		if (size > sizeof(context->video_packet_buffer)) {
 			free(video_packet);
 			return SWITCH_STATUS_BREAK;
 		}
 
-		memcpy(context->video_packet_buffer, (uint8_t *)video_packet + sizeof(uint32_t), size);
+		memcpy(context->video_packet_buffer, video_packet->data, size);
 		free(video_packet);
 		video_packet = NULL;
 
@@ -1093,14 +1100,15 @@ static switch_status_t fsv_file_read_video(switch_file_handle_t *handle, switch_
 			uint32_t size;
 			switch_rtp_hdr_t *rtp;
 
-			switch_mutex_lock(context->mutex);
-			status = switch_queue_trypop(context->video_queue, &video_packet);
+			video_packet = NULL;
+			switch_mutex_lock(context->mutex);			
+			status = switch_queue_trypop(context->video_queue, (void**)&video_packet);
 			switch_mutex_unlock(context->mutex);
 
 			if (status != SWITCH_STATUS_SUCCESS || !video_packet) break;
 
-			size = *(uint32_t *)video_packet;
-			rtp = (switch_rtp_hdr_t *)((uint8_t *)video_packet + sizeof(uint32_t));
+			size = video_packet->size;
+			rtp = (switch_rtp_hdr_t *)(video_packet->data);
 
 			rtp_frame.packet = rtp;
 			rtp_frame.packetlen = size;

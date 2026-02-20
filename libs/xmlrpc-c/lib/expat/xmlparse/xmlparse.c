@@ -2416,6 +2416,7 @@ doStartTagNoAtts(XML_Parser       const xmlParserP,
         }
         tag->buf = malloc(INIT_TAG_BUF_SIZE);
         if (!tag->buf) {
+            free(tag);
             *errorCodeP = XML_ERROR_NO_MEMORY;
             return;
         }
@@ -3646,8 +3647,10 @@ doProlog(XML_Parser       const xmlParserP,
       switch (tok) {
       case XML_TOK_PARAM_ENTITY_REF:
         *errorCodeP = XML_ERROR_PARAM_ENTITY_REF;
+        break;
       case XML_TOK_XML_DECL:
         *errorCodeP = XML_ERROR_MISPLACED_XML_PI;
+        break;
       default:
         *errorCodeP = XML_ERROR_SYNTAX;
       }

@@ -179,9 +179,11 @@ sendResponse(xmlrpc_env *      const envP,
 
     ResponseStatus(abyssSessionP, 200);
 
+#if 0 /* Uncomment once http_cookie is not NULL again */
     if (http_cookie)
         /* There's an auth cookie, so pass it back in the response. */
         addAuthCookie(envP, abyssSessionP, http_cookie);
+#endif
 
     if ((size_t)(uint32_t)len != len)
         xmlrpc_faultf(envP, "XML-RPC method generated a response too "

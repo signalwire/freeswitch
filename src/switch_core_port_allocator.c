@@ -150,12 +150,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	switch_mutex_lock(alloc->mutex);
 	srand((unsigned) ((unsigned) (intptr_t) port_ptr + (unsigned) (intptr_t) switch_thread_self() + switch_micro_time_now()));
 
-	while (alloc->track_used < alloc->track_len) {
+	while (alloc->track_len && alloc->track_used < alloc->track_len) {
 		uint32_t index;
 		uint32_t tries = 0;
 
 		/* randomly pick a port */
-		index = rand() % alloc->track_len;
+		index = switch_rand() % alloc->track_len;
 
 		/* if it is used walk up the list to find a free one */
 		while (alloc->track[index] && tries < alloc->track_len) {

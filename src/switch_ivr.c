@@ -1788,6 +1788,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 
 		if (switch_channel_test_flag(channel, CF_MEDIA_TRANS)) {
 			switch_core_session_rwunlock(session);
+
 			return SWITCH_STATUS_INUSE;
 		}
 
@@ -1798,6 +1799,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 		}
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+			switch_status_t res = SWITCH_STATUS_SUCCESS;
+
 			status = SWITCH_STATUS_SUCCESS;
 
 			/* If we had early media in bypass mode before, it is no longer relevant */
@@ -1816,6 +1819,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
 				switch_core_session_rwunlock(session);
+
 				return SWITCH_STATUS_GENERR;
 			}
 
@@ -1832,7 +1836,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_channel_wait_for_flag(channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-				switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+				res = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 
 			if ((flags & SMF_REBRIDGE)
@@ -1844,10 +1848,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 				switch_channel_wait_for_flag(other_channel, CF_REQ_MEDIA, SWITCH_FALSE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_SET, SWITCH_TRUE, 10000, NULL);
-				switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+				res = switch_core_session_read_frame(other_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				switch_core_session_rwunlock(other_session);
 			}
+
+			(void)res;
+
 			if (other_channel) {
 				switch_channel_clear_state_handler(channel, NULL);
 			}
@@ -1862,6 +1869,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			} else {
 				switch_ivr_uuid_bridge(uuid, other_uuid);
 			}
+
 			switch_channel_wait_for_flag(channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
 			switch_channel_wait_for_flag(other_channel, CF_BRIDGED, SWITCH_TRUE, 1000, NULL);
 		}
@@ -2143,7 +2151,7 @@ SWITCH_DECLARE(void) switch_ivr_check_hold(switch_core_session_t *session)
 		msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_RENEG;
 		msg.from = __FILE__;
 
-		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_TYPE_REQUEST);
+		switch_core_media_set_smode(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_FLOW_SENDRECV, SDP_OFFER);
 		switch_core_session_receive_message(session, &msg);
 	}
 
@@ -2806,10 +2814,12 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_call_stats(switch_xml_t xml, switch_core_
 static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const char *val, int off)
 {
 	char *data;
-	switch_size_t dlen = strlen(val) * 3 + 1;
+	switch_size_t dlen;
 	switch_xml_t variable;
 
 	if (!val) val = "";
+
+	dlen = strlen(val) * 3 + 1;
 
 	if (!zstr(var) && ((variable = switch_xml_add_child_d(xml, var, off++)))) {
 		if ((data = malloc(dlen))) {
@@ -4333,8 +4343,6 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 	switch_xml_t cfg, xml, x_domains, x_domain, x_exten;
 	char *r = NULL;
 	switch_event_t *params = NULL;
-	switch_regex_t *re = NULL;
-	int proceed = 0, ovector[100];
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
@@ -4365,17 +4373,11 @@ SWITCH_DECLARE(char *) switch_ivr_check_presence_mapping(const char *exten_name,
 			const char *regex = switch_xml_attr(x_exten, "regex");
 			const char *proto = switch_xml_attr(x_exten, "proto");
 
-			if (!zstr(regex) && !zstr(proto)) {
-				proceed = switch_regex_perform(exten_name, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-				switch_regex_safe_free(re);
-
-				if (proceed) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n",
-									  exten_name, domain_name, proto, regex);
-					r = strdup(proto);
-					goto end;
-				}
-
+			if (!zstr(regex) && !zstr(proto) && switch_regex(exten_name, regex)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Mapping %s@%s to proto %s matching expression [%s]\n",
+								  exten_name, domain_name, proto, regex);
+				r = strdup(proto);
+				goto end;
 			}
 		}
 	}

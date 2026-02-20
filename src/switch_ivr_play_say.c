@@ -178,7 +178,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		char *field_expanded = NULL;
 		char *field_expanded_alloc = NULL;
 		switch_regex_t *re = NULL;
-		int proceed = 0, ovector[100];
+		switch_regex_match_t *match_data = NULL;
+		int proceed = 0;
 		switch_xml_t match = NULL;
 
 		searched = 1;
@@ -204,7 +205,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 
 		status = SWITCH_STATUS_SUCCESS;
 
-		if ((proceed = switch_regex_perform(field_expanded, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if ((proceed = switch_regex_perform(field_expanded, pattern, &re, &match_data))) {
 			match = switch_xml_child(input, "match");
 		} else {
 			match = switch_xml_child(input, "nomatch");
@@ -224,12 +225,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 					len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
 					if (!(substituted = malloc(len))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
+						switch_regex_match_safe_free(match_data);
 						switch_regex_safe_free(re);
 						switch_safe_free(field_expanded_alloc);
 						goto done;
 					}
 					memset(substituted, 0, len);
-					switch_perform_substitution(re, proceed, adata, field_expanded, substituted, len, ovector);
+					switch_perform_substitution(match_data, adata, substituted, len);
 					odata = substituted;
 				} else {
 					odata = adata;
@@ -326,6 +328,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 			}
 		}
 
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 		switch_safe_free(field_expanded_alloc);
 
@@ -1271,7 +1274,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int sleep_val_i = 250;
 	int eof = 0;
 	switch_size_t bread = 0;
-	int l16 = 0;
 	switch_codec_implementation_t read_impl = { 0 };
 	char *file_dup;
 	char *argv[128] = { 0 };
@@ -1333,10 +1335,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	arg_recursion_check_start(args);
-
-	if (!zstr(read_impl.iananame) && !strcasecmp(read_impl.iananame, "l16")) {
-		l16++;
-	}
 
 	if (play_delimiter) {
 		file_dup = switch_core_session_strdup(session, file);
@@ -2828,6 +2826,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	}
 
 	switch_core_speech_feed_tts(sh, text, &flags);
+
+	if ((sh->flags & SWITCH_SPEECH_FLAG_MULTI)) {
+		flags = SWITCH_SPEECH_FLAG_DONE;
+		switch_core_speech_feed_tts(sh, "DONE", &flags);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Speaking text: %s\n", text);
 	switch_safe_free(tmp);
 	text = NULL;
@@ -3207,6 +3211,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 	const char *other_uuid, *moh = NULL;
 	int moh_br = 0;
 	switch_input_args_t args = { 0 };
+	switch_status_t res;
+
 	args.input_callback = hold_on_dtmf;
 	args.buf = (void *) unhold_key;
 	args.buflen = (uint32_t) strlen(unhold_key);
@@ -3237,10 +3243,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 			}
 
 			if (!zstr(moh) && strcasecmp(moh, "silence")) {
-				switch_ivr_play_file(session, NULL, moh, &args);
+				res = switch_ivr_play_file(session, NULL, moh, &args);
 			} else {
-				switch_ivr_collect_digits_callback(session, &args, 0, 0);
+				res = switch_ivr_collect_digits_callback(session, &args, 0, 0);
 			}
+
+			(void)res;
 
 			if (moh_br) {
 				switch_channel_stop_broadcast(other_channel);
@@ -3251,10 +3259,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *sess
 
 			return SWITCH_STATUS_SUCCESS;
 		}
-
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel %s is not in a bridge\n", switch_channel_get_name(channel));
+
 	return SWITCH_STATUS_FALSE;
 
 }

@@ -147,7 +147,7 @@ static void check_ip(void)
 	} else if (strcmp(hostname, runtime.hostname)) {
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "hostname-change");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname ? hostname : "nil");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "new-hostname", runtime.hostname);
 			switch_event_fire(&event);
 		}
@@ -1904,6 +1904,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	load_mime_types();
 	runtime.flags |= flags;
 	runtime.sps_total = 30;
+	runtime.uuid_version = 4;
 
 	*err = NULL;
 
@@ -2212,6 +2213,8 @@ static void switch_load_core_config(const char *file)
 					switch_time_set_use_system_time(switch_true(val));
 				} else if (!strcasecmp(var, "enable-monotonic-timing")) {
 					switch_time_set_monotonic(switch_true(val));
+				} else if (!strcasecmp(var, "uuid-version") && !zstr(val)) {
+					runtime.uuid_version = atoi(val);
 				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
 					int ival = 0;
 					if (val) {
@@ -2960,10 +2963,17 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		if (oldintval > 0) {
 			runtime.sps_total = oldintval;
 		}
+
 		newintval = runtime.sps_total;
 		switch_mutex_unlock(runtime.throttle_mutex);
 		break;
+	case SCSC_UUID_VERSION:
+		if(oldintval > 0){
+			runtime.uuid_version = oldintval;
+		}
 
+		newintval = runtime.uuid_version;
+		break;
 	case SCSC_RECLAIM:
 		switch_core_memory_reclaim_all();
 		newintval = 0;
@@ -3009,7 +3019,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_ready_outbound(void)
 	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_OUTBOUND_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
 
-void switch_core_sqldb_destroy()
+void switch_core_sqldb_destroy(void)
 {
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();
@@ -3566,7 +3576,7 @@ SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t
 	}
 }
 
-SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port(void)
 {
 	uint16_t start_port = 0;
 
@@ -3577,7 +3587,7 @@ SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_start_port()
 	return start_port;
 }
 
-SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port()
+SWITCH_DECLARE(uint16_t) switch_core_get_rtp_port_range_end_port(void)
 {
 	uint16_t end_port = 0;
 

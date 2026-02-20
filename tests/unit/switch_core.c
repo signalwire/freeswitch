@@ -32,11 +32,30 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+#include <string.h>
+#include <../../src/switch_uuidv7.c>
+
 #if defined(HAVE_OPENSSL)
 #include <openssl/ssl.h>
 #endif
 
 #define ENABLE_SNPRINTFV_TESTS 0 /* Do not turn on for CI as this requires a lot of RAM */
+
+static void *SWITCH_THREAD_FUNC test_create_uuid_thread_run(switch_thread_t *thread, void *obj)
+{
+	int *tid = (int *)obj;
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid: #%d\n", *tid);
+	for (int i = 0; i < 10; i++) {
+		uint8_t status = uuidv7_new(uuid.data);
+		switch_uuid_format(uuid_str, &uuid);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv7: %s status=%d #%d thread=%lu\n", uuid_str, status, *tid, (unsigned long)switch_thread_self());
+		switch_cond_next();
+	}
+
+	return NULL;
+}
 
 FST_CORE_BEGIN("./conf")
 {
@@ -52,6 +71,135 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+		FST_TEST_BEGIN(test_switch_regex)
+		{
+			switch_regex_match_t *match_data = NULL;
+			switch_regex_t *re = NULL;
+			char buf[100] = { 0 };
+			size_t size = sizeof(buf);
+
+			switch_regex_perform("1234", "^[0-9]+$", &re, &match_data);
+			switch_regex_copy_substring(match_data, 0, buf, &size);
+			switch_regex_match_free(match_data);
+			switch_regex_free(re);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\n%s\n", buf);
+			fst_check_string_equals(buf, "1234");
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_fctstr_safe_cpy)
+		{
+			char *dst;
+			const char *src = "1234567890";
+
+			dst = fctstr_clone(src);
+			fst_check_string_equals(dst, src);
+			free(dst);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_rand)
+		{
+			int i, c = 0;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLet's generate a few random numbers.\n");
+
+			for (i = 0; i < 10; i++) {
+				uint32_t rnd = switch_rand();
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Random number %d\n", rnd);
+
+				if (rnd == 1) {
+					c++;
+				}
+			}
+
+			/* We do not expect all random numbers to be 1 all 10 times. That would mean we have an error OR we are lucky to have 10 random ones! */
+			fst_check(c < 10);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_uint31_t_overflow)
+		{
+			switch_uint31_t x;
+			uint32_t overflow;
+
+			x.value = 0x7fffffff;
+			x.value++;
+
+			fst_check_int_equals(x.value, 0);
+			x.value++;
+			fst_check_int_equals(x.value, 1);
+			x.value -= 2;
+			fst_check_int_equals(x.value, 0x7fffffff);
+
+			overflow = (uint32_t)0x7fffffff + 1;
+			x.value = overflow;
+			fst_check_int_equals(x.value, 0);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_parse_cidr_v6)
+		{
+			ip_t ip, mask;
+			uint32_t bits;
+
+			fst_check(!switch_parse_cidr("fe80::/10", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 10);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0xfe);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0x80);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xc0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::/0", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 0);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0);
+
+			fst_check(!switch_parse_cidr("::1/128", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 128);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(ip.v6.s6_addr[2], 0);
+			fst_check_int_equals(ip.v6.s6_addr[3], 0);
+			fst_check_int_equals(ip.v6.s6_addr[4], 0);
+			fst_check_int_equals(ip.v6.s6_addr[5], 0);
+			fst_check_int_equals(ip.v6.s6_addr[6], 0);
+			fst_check_int_equals(ip.v6.s6_addr[7], 0);
+			fst_check_int_equals(ip.v6.s6_addr[8], 0);
+			fst_check_int_equals(ip.v6.s6_addr[9], 0);
+			fst_check_int_equals(ip.v6.s6_addr[10], 0);
+			fst_check_int_equals(ip.v6.s6_addr[11], 0);
+			fst_check_int_equals(ip.v6.s6_addr[12], 0);
+			fst_check_int_equals(ip.v6.s6_addr[13], 0);
+			fst_check_int_equals(ip.v6.s6_addr[14], 0);
+			fst_check_int_equals(ip.v6.s6_addr[15], 1);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[2], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[3], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[4], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[5], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[6], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[7], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[8], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[9], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[10], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[11], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[12], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[13], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[14], 0xff);
+			fst_check_int_equals(mask.v6.s6_addr[15], 0xff);
+		}
+		FST_TEST_END()
 
 #if ENABLE_SNPRINTFV_TESTS
 		FST_TEST_BEGIN(test_snprintfv_1)
@@ -94,6 +242,21 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 #endif
+
+		FST_TEST_BEGIN(test_switch_is_number_in_range)
+		{
+			fst_check_int_equals(switch_is_uint_in_range("x5", 0, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 1, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-11", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-10", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("-5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("5", -10, 10), SWITCH_FALSE);
+			fst_check_int_equals(switch_is_uint_in_range("0", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("10", 0, 10), SWITCH_TRUE);
+			fst_check_int_equals(switch_is_uint_in_range("11", 0, 10), SWITCH_FALSE);
+		}
+		FST_TEST_END()
 
 		FST_TEST_BEGIN(test_md5)
 		{
@@ -414,6 +577,115 @@ FST_CORE_BEGIN("./conf")
 
 			switch_core_hash_destroy(&hash);
 			fst_requires(hash == NULL);
+		}
+		FST_TEST_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_strdup)
+		{
+			const char *val;
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(!switch_channel_get_variable_strdup(channel, "test_var_does_not_exist"));
+
+			val = switch_channel_get_variable_strdup(channel, "test_var");
+
+			fst_check(val);
+			fst_check_string_equals(val, "test_value");
+
+			free((char *)val);
+		}
+		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(test_switch_channel_get_variable_buf)
+		{
+			char buf[16] = { 0 };
+			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
+
+			fst_check(channel);
+
+			switch_channel_set_variable(channel, "test_var", "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var", buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS);
+			fst_check_string_equals(buf, "test_value");
+
+			fst_check(switch_channel_get_variable_buf(channel, "test_var_does_not_exist", buf, sizeof(buf)) == SWITCH_STATUS_FALSE);
+		}
+		FST_SESSION_END()
+
+		FST_TEST_BEGIN(test_create_uuid_v4_v7)
+		{
+			switch_uuid_t uuid;
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
+			int version = 7;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid:\n");
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			for (int i = 0; i < 100; i++) {
+				uint8_t status = uuidv7_new(uuid.data);
+				switch_uuid_format(uuid_str, &uuid);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv7: %s\n", uuid_str);
+				fst_check(status >=0 && status < 4);
+			}
+
+			version = 4;
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "uuidv4: %s\n", uuid_str);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_create_uuid_thread)
+		{
+			int n[10] = {0};
+			switch_thread_t *thread[10] = {0};
+			switch_threadattr_t *thd_attr = NULL;
+			switch_status_t status;
+			int version = 7;
+
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			switch_threadattr_create(&thd_attr, fst_pool);
+			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+
+			for (int i = 0; i < sizeof(thread) / sizeof(thread[0]); i++) {
+				n[i] = i;
+				switch_thread_create(&thread[i], thd_attr, test_create_uuid_thread_run, &n[i], fst_pool);
+			}
+			for (int i = 0; i < sizeof(thread) / sizeof(thread[0]); i++) {
+				switch_thread_join(&status, thread[i]);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_create_uuid_speed)
+		{
+			int n;
+			int version = 4;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test_create_uuid_speed:\n");
+			switch_core_session_ctl(SCSC_UUID_VERSION, &version);
+			for (n = 1; n < 4; n++) {
+				switch_time_t started_at = switch_time_now();
+				double delta = 0;
+				switch_uuid_t uuid;
+
+				for (int i = 0; i < 1000 * pow(10, n); i++) {
+					uuidv7_new(uuid.data);
+				}
+				delta = (switch_time_now() - started_at) / 1000000.0;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d uuidv7_new used: %f seconds\n", 1000 * (int)pow(10, n), delta);
+				
+				started_at = switch_time_now();
+				for (long long int i = 0; i < 1000 * pow(10, n); i++) {
+					switch_uuid_get(&uuid);
+				}
+				delta = (switch_time_now() - started_at) / 1000000.0;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d uuid_generate used: %f seconds\n", 1000 * (int)pow(10, n), delta);
+			}
 		}
 		FST_TEST_END()
 	}

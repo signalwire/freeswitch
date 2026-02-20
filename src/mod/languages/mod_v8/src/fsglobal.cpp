@@ -169,6 +169,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 			} else {
 				/* The var exists, but is wrong type - exit with error */
 				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Second argument is the name of an existing var of the wrong type"));
+
 				return;
 			}
 		} else if (info.Length() > 1 && info[1]->IsArray()) {
@@ -177,6 +178,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 		} else if (info.Length() > 1) {
 			/* The var exists, but is wrong type - exit with error */
 			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Second argument is of the wrong type"));
+
 			return;
 		} else {
 			/* Second argument doesn't exist, this is also ok. The hash will be returned as the result */
@@ -185,6 +187,11 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 		}
 
 		curl_handle = switch_curl_easy_init();
+		if (!curl_handle) {
+			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to initiate curl easy session."));
+
+			return;
+		}
 
 		if (!strncasecmp(js_safe_str(*url), "https", 5)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -224,14 +231,22 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLFile)
 		const char *url = NULL, *filename = NULL;
 		String::Utf8Value str1(info[0]);
 		String::Utf8Value str2(info[1]);
+
 		url = js_safe_str(*str1);
 		filename = js_safe_str(*str2);
 
 		curl_handle = switch_curl_easy_init();
+		if (!curl_handle) {
+			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to initiate curl easy session."));
+
+			return;
+		}
+
 		if (!strncasecmp(url, "https", 5)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 		}
+
 		config_data.isolate = info.GetIsolate();
 
 		if ((config_data.fileHandle = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
@@ -245,13 +260,14 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLFile)
 
 			switch_curl_easy_perform(curl_handle);
 
-			switch_curl_easy_cleanup(curl_handle);
 			close(config_data.fileHandle);
 			info.GetReturnValue().Set(true);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file [%s]\n", filename);
 			info.GetReturnValue().Set(false);
 		}
+
+		switch_curl_easy_cleanup(curl_handle);
 	} else {
 		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
 	}
@@ -270,12 +286,19 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 	if (info.Length() >= 1) {
 		const char *url;
 		String::Utf8Value str(info[0]);
+
 		url = js_safe_str(*str);
 		if (info.Length() > 1) {
 			buffer_size = info[1]->Int32Value();
 		}
 
 		curl_handle = switch_curl_easy_init();
+		if (!curl_handle) {
+			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to initiate curl easy session."));
+
+			return;
+		}
+
 		if (!strncasecmp(url, "https", 5)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
@@ -289,6 +312,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 		if (config_data.buffer == NULL) {
 			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to allocate data buffer."));
 			switch_curl_easy_cleanup(curl_handle);
+
 			return;
 		}
 

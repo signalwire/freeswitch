@@ -1969,9 +1969,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			playback_array(agent_session, o_announce);
 		}
 
-		/* This is used for the waiting caller to quit waiting for a agent */
+		/* This is used to set the reason for callcenter_function breakout */
 		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
 		switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+
 		if (switch_true(switch_channel_get_variable(member_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) || switch_true(switch_channel_get_variable(agent_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_set_flag(member_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 		}
@@ -1989,6 +1990,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 										   h->member_cid_name, h->member_cid_number, h->agent_name);
 			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "false");
 			switch_channel_set_variable(member_channel, "cc_agent_bridged", "false");
+
+			/* Set member to Abandoned state, previous Trying */
+			sql = switch_mprintf("UPDATE members SET state = '%q', session_uuid = '', abandoned_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED), local_epoch_time_now(NULL), h->member_uuid, globals.cc_instance_id);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
 
 			if ((o_announce = switch_channel_get_variable(member_channel, "cc_bridge_failed_outbound_announce"))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Playing bridge failed audio to agent %s, audio: %s\n", h->agent_name, o_announce);
@@ -2008,9 +2015,15 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			bridged = 1;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member \"%s\" %s is bridged to agent %s\n",
 										   h->member_cid_name, h->member_cid_number, h->agent_name);
+
 			switch_channel_set_variable(member_channel, "cc_agent_bridged", "true");
 			switch_channel_set_variable(agent_channel, "cc_agent_bridged", "true");
-			switch_channel_set_variable(member_channel, "cc_agent_uuid", agent_uuid);
+
+			/* Update member to Answered state, previous Trying */
+			sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
+					cc_member_state2str(CC_MEMBER_STATE_ANSWERED), local_epoch_time_now(NULL), h->member_uuid, globals.cc_instance_id);
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
 		}
 
 		if (bridged) {
@@ -2111,7 +2124,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		}
 
 	} else {
-		/* Agent didn't answer or originate failed */
+		/* Agent didn't answer or originate/bridge failed */
 		int delay_next_agent_call = 0;
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
 		switch_channel_clear_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
@@ -3051,6 +3064,10 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_channel_set_variable(member_channel, "cc_side", "member");
 	switch_channel_set_variable(member_channel, "cc_member_uuid", member_uuid);
 
+	/* Clear flags in case previously set */
+	switch_channel_set_variable(member_channel, "cc_agent_found", NULL);
+	switch_channel_set_variable(member_channel, "cc_agent_bridged", NULL);
+
 	/* Add manually imported score */
 	if (cc_base_score) {
 		cc_base_score_int += atoi(cc_base_score);
@@ -3178,8 +3195,8 @@ SWITCH_STANDARD_APP(callcenter_function)
 		args.buf = (void *) &ht;
 		args.buflen = sizeof(h);
 
-		/* An agent was found, time to exit and let the bridge do it job */
-		if ((p = switch_channel_get_variable(member_channel, "cc_agent_found")) && (agent_found = switch_true(p))) {
+		/* If the bridge didn't break the loop, break out now */
+		if ((p = switch_channel_get_variable(member_channel, "cc_agent_bridged")) && (agent_found = switch_true(p))) {
 			break;
 		}
 		/* If the member thread set a different reason, we monitor it so we can quit the wait */
@@ -3200,8 +3217,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 				char buf[2] = { ht.dtmf, 0 };
 				switch_channel_set_variable(member_channel, "cc_exit_key", buf);
 				h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_EXIT_WITH_KEY;
-				break;
-			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
 		} else {
@@ -3230,12 +3245,18 @@ SWITCH_STANDARD_APP(callcenter_function)
 		h->running = 0;
 	}
 
+	/* Stop uuid_broadcasts */
+	switch_core_session_flush_private_events(member_session);
+	switch_channel_stop_broadcast(member_channel);
+	switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
+
 	/* Check if we were removed because FS Core(BREAK) asked us to */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
 	}
 
 	switch_channel_set_variable(member_channel, "cc_agent_found", NULL);
+
 	/* Canceled for some reason */
 	if (!switch_channel_up(member_channel) || h->member_cancel_reason != CC_MEMBER_CANCEL_REASON_NONE) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> abandoned waiting in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
@@ -3281,12 +3302,6 @@ SWITCH_STANDARD_APP(callcenter_function)
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> is answered by an agent in queue %s\n", switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_name")), switch_str_nil(switch_channel_get_variable(member_channel, "caller_id_number")), queue_name);
-
-		/* Update member state */
-		sql = switch_mprintf("UPDATE members SET state = '%q', bridge_epoch = '%" SWITCH_TIME_T_FMT "' WHERE uuid = '%q' AND instance_id = '%q'",
-				cc_member_state2str(CC_MEMBER_STATE_ANSWERED), local_epoch_time_now(NULL), member_uuid, globals.cc_instance_id);
-		cc_execute_sql(NULL, sql, NULL);
-		switch_safe_free(sql);
 
 		/* Update some channel variables for xml_cdr needs */
 		switch_channel_set_variable_printf(member_channel, "cc_cause", "%s", "answered");

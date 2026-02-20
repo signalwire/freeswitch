@@ -74,12 +74,23 @@
 #if (defined(HAVE_LIBMD5) || defined(HAVE_LIBMD) || defined(HAVE_MD5INIT))
 #include <md5.h>
 #elif defined(HAVE_LIBCRYPTO)
-#include <openssl/md5.h>
+	#ifndef OPENSSL_VERSION_NUMBER
+		#include <openssl/opensslv.h>
+	#endif
+	#if OPENSSL_VERSION_NUMBER < 0x30000000
+		#include <openssl/md5.h>
+	#else
+		#include <openssl/evp.h>
+	#endif
+#else
+	#include <apr_md5.h>
 #endif
 
 #ifndef WIN32
 #include <uuid/uuid.h>
 #endif
+
+#include <private/switch_uuidv7_pvt.h>
 
 /* apr stubs */
 
@@ -1143,11 +1154,16 @@ SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
 	switch_mutex_lock(runtime.uuid_mutex);
+	if (runtime.uuid_version == 7) {
+		uuidv7_new(uuid->data);
+	} else {
 #ifndef WIN32
-	uuid_generate(uuid->data);
+		uuid_generate(uuid->data);
 #else
-	UuidCreate((UUID *) uuid);
+		UuidCreate((UUID *)uuid);
 #endif
+	}
+
 	switch_mutex_unlock(runtime.uuid_mutex);
 }
 
@@ -1174,11 +1190,24 @@ SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGES
 
 	return SWITCH_STATUS_SUCCESS;
 #elif defined(HAVE_LIBCRYPTO)
-	MD5_CTX md5_context;
+	#if OPENSSL_VERSION_NUMBER < 0x30000000
+		MD5_CTX md5_context;
 
-	MD5_Init(&md5_context);
-	MD5_Update(&md5_context, input, inputLen);
-	MD5_Final(digest, &md5_context);
+		MD5_Init(&md5_context);
+		MD5_Update(&md5_context, input, inputLen);
+		MD5_Final(digest, &md5_context);
+	#else
+		EVP_MD_CTX *md5_context;
+
+		/* MD5_Init */
+		md5_context = EVP_MD_CTX_new();
+		EVP_DigestInit_ex(md5_context, EVP_md5(), NULL);
+		/* MD5_Update */
+		EVP_DigestUpdate(md5_context, input, inputLen);
+		/* MD5_Final */
+		EVP_DigestFinal_ex(md5_context, digest, NULL);
+		EVP_MD_CTX_free(md5_context);
+	#endif
 
 	return SWITCH_STATUS_SUCCESS;
 #else

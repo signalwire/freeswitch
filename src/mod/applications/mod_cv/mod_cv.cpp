@@ -854,7 +854,7 @@ static switch_status_t video_thread_callback(switch_core_session_t *session, swi
     }
 
     if (context->rawImage && (context->debug || !context->overlay_count)) {
-        switch_img_from_raw(frame->img, (uint8_t *)context->rawImage->imageData, SWITCH_IMG_FMT_RGB24, context->rawImage->width, context->rawImage->height);
+        switch_img_from_raw(&frame->img, (uint8_t *)context->rawImage->imageData, SWITCH_IMG_FMT_RGB24, context->rawImage->width, context->rawImage->height);
     }
 
     int abs = 0;

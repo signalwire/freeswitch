@@ -1,0 +1,100 @@
+name: Unit-tests D-in-D
+
+on:
+  workflow_call:
+    inputs:
+      freeswitch_ref:
+        description: 'FreeSWITCH repository ref'
+        required: false
+        type: string
+      sofia-sip_ref:
+        description: 'Sofia-Sip repository ref'
+        required: false
+        type: string
+
+env:
+  MAX_CONTAINERS: 8
+  NUM_CPU_PER_CONTAINER: 1
+  DOCKER_BUILD_SUMMARY: false
+  DOCKER_BUILD_CHECKS_ANNOTATIONS: false
+  DOCKER_BUILD_RECORD_UPLOAD: false
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: signalwire/freeswitch-public-ci-base:bookworm-amd64
+      options: --privileged
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      ASAN_OPTIONS: log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
+
+    steps:
+      - name: Checkout Sofia-Sip (via ref)
+        if: inputs.sofia-sip_ref != ''
+        uses: actions/checkout@v4
+        with:
+          repository: freeswitch/sofia-sip
+          ref: ${{ inputs.sofia-sip_ref }}
+          path: sofia-sip
+
+      - name: Checkout Sofia-Sip
+        if: inputs.sofia-sip_ref == ''
+        uses: actions/checkout@v4
+        with:
+          repository: freeswitch/sofia-sip
+          path: sofia-sip
+
+      - name: Checkout FreeSWITCH (via ref)
+        if: inputs.freeswitch_ref != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.freeswitch_ref }}
+          path: freeswitch
+
+      - name: Checkout FreeSWITCH
+        if: inputs.freeswitch_ref == ''
+        uses: actions/checkout@v4
+        with:
+          path: freeswitch
+
+      - name: Run Unit-Test containers and collect artifacts
+        id: unit_tests
+        shell: bash
+        run: |
+          echo "logs_path=${GITHUB_WORKSPACE}/freeswitch/tests/unit/logs" >> $GITHUB_OUTPUT
+
+          "${GITHUB_WORKSPACE}/freeswitch/tests/unit/run-tests-docker.sh" \
+            --base-image signalwire/freeswitch-public-ci-base:bookworm-amd64 \
+            --cpus ${{ env.NUM_CPU_PER_CONTAINER }} \
+            --image-tag ci.local \
+            --max-containers ${{ env.MAX_CONTAINERS }} \
+            --output-dir "${GITHUB_WORKSPACE}/freeswitch/tests/unit/logs" \
+            --sofia-sip-path "${GITHUB_WORKSPACE}/sofia-sip" \
+            --freeswitch-path "${GITHUB_WORKSPACE}/freeswitch"
+
+          test -d "/cores" && ls -lah /cores
+
+          cd "${GITHUB_WORKSPACE}/freeswitch/tests/unit/" && \
+          ./collect-test-logs.sh --dir logs --print
+
+      - name: Upload Unit-Test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.sha }}-${{ github.run_number }}
+          path: ${{ steps.unit_tests.outputs.logs_path }}
+          if-no-files-found: ignore
+          compression-level: 9
+
+      - name: Notify run tests result to slack
+        if: |
+          failure() &&
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10')
+        uses: signalwire/actions-template/.github/actions/slack@main
+        with:
+          CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}
+          MESSAGE: Unit-Tests ${{ github.repository }} > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>. Some tests are failing.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

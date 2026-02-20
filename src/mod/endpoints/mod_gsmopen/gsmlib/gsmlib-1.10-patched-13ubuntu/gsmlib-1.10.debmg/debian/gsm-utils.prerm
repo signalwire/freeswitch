@@ -1,7 +1,0 @@
-#!/bin/sh -e
-
-deluser gsmsms  || true
-delgroup gsmsms || true
-
-# Add the rest automatically..
-#DEBHELPER#

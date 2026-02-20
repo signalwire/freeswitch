@@ -206,7 +206,7 @@ static switch_status_t rtp_test_start_call(switch_core_session_t **psession)
 		return SWITCH_STATUS_FALSE;
 	}
 	   
-	match = switch_core_media_negotiate_sdp(session, r_sdp, &p, SDP_TYPE_REQUEST);
+	match = switch_core_media_negotiate_sdp(session, r_sdp, &p, SDP_OFFER);
 	if (match != 1) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_core_media_negotiate_sdp() failed\n");
 		return SWITCH_STATUS_FALSE;

@@ -1429,7 +1429,7 @@ static switch_status_t null_tech_init(null_private_t *tech_pvt, switch_core_sess
 		// switch_core_media_check_video_codecs(session);
 		// switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_AUDIO, 0);
 		// switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 0);
-		// switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, "127.0.0.1", 2000, NULL, 0);
+		// switch_core_media_gen_local_sdp(session, SDP_OFFER, "127.0.0.1", 2000, NULL, 0);
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", mparams.local_sdp_str);
 	}
 

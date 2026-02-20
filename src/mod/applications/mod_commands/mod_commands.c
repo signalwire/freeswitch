@@ -2014,7 +2014,7 @@ SWITCH_STANDARD_API(replace_function)
 SWITCH_STANDARD_API(regex_function)
 {
 	switch_regex_t *re = NULL;
-	int ovector[30];
+	switch_regex_match_t *match_data = NULL;
 	int argc;
 	char *mydata = NULL, *argv[4];
 	size_t len = 0;
@@ -2054,7 +2054,7 @@ SWITCH_STANDARD_API(regex_function)
 		goto error;
 	}
 
-	proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+	proceed = switch_regex_perform(argv[0], argv[1], &re, &match_data);
 
 	if (argc > 2) {
 		char *flags = "";
@@ -2069,7 +2069,7 @@ SWITCH_STANDARD_API(regex_function)
 			switch_assert(substituted);
 			memset(substituted, 0, len);
 			switch_replace_char(argv[2], '%', '$', SWITCH_FALSE);
-			switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+			switch_perform_substitution(match_data, argv[2], substituted, len);
 
 			stream->write_function(stream, "%s", substituted);
 			free(substituted);
@@ -2091,6 +2091,7 @@ SWITCH_STANDARD_API(regex_function)
   error:
 	stream->write_function(stream, "-ERR");
   ok:
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
@@ -2417,7 +2418,7 @@ SWITCH_STANDARD_API(uptime_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
+#define CTL_SYNTAX "[api_expansion [on|off]|recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|uuid_version [4|7]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]|mdns_resolve [enable|disable]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -2659,8 +2660,18 @@ SWITCH_STANDARD_API(ctl_function)
 			} else {
 				arg = 0;
 			}
+
 			switch_core_session_ctl(SCSC_SPS, &arg);
 			stream->write_function(stream, "+OK sessions per second: %d\n", arg);
+		} else if (!strcasecmp(argv[0], "uuid_version")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			} else {
+				arg = 0;
+			}
+
+			switch_core_session_ctl(SCSC_UUID_VERSION, &arg);
+			stream->write_function(stream, "+OK set uuid version: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "sync_clock")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SYNC_CLOCK, &arg);
@@ -3225,6 +3236,7 @@ SWITCH_STANDARD_API(uuid_capture_text)
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_ivr_capture_text(tsession, switch_true(onoff));
+			switch_core_session_rwunlock(tsession);
 		} else {
 			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
 		}
@@ -5653,22 +5665,26 @@ SWITCH_STANDARD_API(alias_function)
 #define COALESCE_SYNTAX "[^^<delim>]<value1>,<value2>,..."
 SWITCH_STANDARD_API(coalesce_function)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *data = (char *) cmd;
 	char *mydata = NULL, *argv[256] = { 0 };
+	char *arg = (char *) cmd;
 	int argc = -1;
+	char delim = ',';
 
-	if (data && *data && (mydata = strdup(data))) {
-		argc = switch_separate_string(mydata, ',', argv,
+	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
+		arg += 2;
+		delim = *arg++;
+	}
+
+	if (!zstr(arg) && (mydata = strdup(arg))) {
+		argc = switch_separate_string(mydata, delim, argv,
 				(sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argc > 0) {
 		int i;
 		for (i = 0; i < argc; i++) {
-			if (argv[i] && *argv[i]) {
+			if (!zstr(argv[i])) {
 				stream->write_function(stream, argv[i]);
-				status = SWITCH_STATUS_SUCCESS;
 				break;
 			}
 		}
@@ -5676,7 +5692,9 @@ SWITCH_STANDARD_API(coalesce_function)
 		stream->write_function(stream, "-USAGE: %s\n", COALESCE_SYNTAX);
 	}
 
-	return status;
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
@@ -7745,6 +7763,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add complete add");
 	switch_console_set_complete("add complete del");
 	switch_console_set_complete("add db_cache status");
+	switch_console_set_complete("add fsctl api_expansion on");
+	switch_console_set_complete("add fsctl api_expansion off");
 	switch_console_set_complete("add fsctl debug_level");
 	switch_console_set_complete("add fsctl debug_pool");
 	switch_console_set_complete("add fsctl debug_sql");
@@ -7793,11 +7813,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown restart elegant");
 	switch_console_set_complete("add fsctl sps");
 	switch_console_set_complete("add fsctl sync_clock");
+	switch_console_set_complete("add fsctl sync_clock_when_idle");
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");
 	switch_console_set_complete("add fsctl mdns_resolve disable");
 	switch_console_set_complete("add fsctl mdns_resolve enable");
+	switch_console_set_complete("add fsctl uuid_version");
+	switch_console_set_complete("add fsctl uuid_version 4");
+	switch_console_set_complete("add fsctl uuid_version 7");
 	switch_console_set_complete("add interface_ip auto ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv4 ::console::list_interfaces");
 	switch_console_set_complete("add interface_ip ipv6 ::console::list_interfaces");

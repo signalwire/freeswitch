@@ -256,7 +256,7 @@ system_listMethods(xmlrpc_env *   const envP,
 
     xmlrpc_registry * const registryP = serverInfo;
 
-    xmlrpc_value * retvalP;
+    xmlrpc_value * retvalP = NULL;
 
     XMLRPC_ASSERT_ENV_OK(envP);
     XMLRPC_ASSERT_VALUE_OK(paramArrayP);
@@ -378,7 +378,7 @@ system_methodHelp(xmlrpc_env *   const envP,
 
     xmlrpc_registry * const registryP = serverInfo;
 
-    xmlrpc_value * retvalP;
+    xmlrpc_value * retvalP = NULL;
     
     const char * methodName;
 
@@ -546,7 +546,7 @@ system_methodSignature(xmlrpc_env *   const envP,
 
     xmlrpc_registry * const registryP = (xmlrpc_registry *) serverInfo;
 
-    xmlrpc_value * retvalP;
+    xmlrpc_value * retvalP = NULL;
     const char * methodName;
     xmlrpc_env env;
 
@@ -615,7 +615,7 @@ system_shutdown(xmlrpc_env *   const envP,
     
     xmlrpc_registry * const registryP = (xmlrpc_registry *) serverInfo;
 
-    xmlrpc_value * retvalP;
+    xmlrpc_value * retvalP = NULL;
     const char * comment;
     xmlrpc_env env;
 
@@ -700,7 +700,7 @@ system_capabilities(xmlrpc_env *   const envP,
     
     xmlrpc_registry * const registryP = serverInfo;
 
-    xmlrpc_value * retvalP;
+    xmlrpc_value * retvalP = NULL;
     
     unsigned int paramCount;
 
@@ -766,7 +766,7 @@ system_getCapabilities(xmlrpc_env *   const envP,
     
     xmlrpc_registry * const registryP = serverInfo;
 
-    xmlrpc_value * retvalP;
+    xmlrpc_value * retvalP = NULL;
     
     unsigned int paramCount;
 

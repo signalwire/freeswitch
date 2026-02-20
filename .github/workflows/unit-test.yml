@@ -1,0 +1,137 @@
+name: Unit tests
+
+on:
+  workflow_call:
+    inputs:
+      total-groups:
+        description: 'Total number of test groups'
+        required: true
+        type: number
+        default: 1
+      current-group:
+        description: 'Current test group number'
+        required: true
+        type: number
+        default: 1
+      freeswitch_ref:
+        description: 'FreeSWITCH repository ref'
+        required: false
+        type: string
+      sofia-sip_ref:
+        description: 'Sofia-Sip repository ref'
+        required: false
+        type: string
+      container-image:
+        description: 'Container image to use for running tests'
+        required: false
+        type: string
+        default: 'signalwire/freeswitch-public-ci-base:bookworm-amd64'
+      working-directory:
+        description: 'Working directory for running tests'
+        required: false
+        type: string
+        default: 'freeswitch/tests/unit'
+      tests-only:
+        description: 'Run only tests, skip other tasks'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ inputs.container-image }}
+      options: --privileged
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      ASAN_OPTIONS: log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0
+
+    steps:
+      - name: Override core_pattern
+        shell: bash
+        run: |
+          echo '/cores/core.%s.%E.%e.%p.%t' > /proc/sys/kernel/core_pattern
+          cat /proc/sys/kernel/core_pattern
+
+      - name: Checkout Sofia-Sip (via ref)
+        if: ${{ !inputs.tests-only && inputs.sofia-sip_ref != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: freeswitch/sofia-sip
+          ref: ${{ inputs.sofia-sip_ref }}
+          path: sofia-sip
+
+      - name: Checkout Sofia-Sip
+        if: ${{ !inputs.tests-only && inputs.sofia-sip_ref == '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: freeswitch/sofia-sip
+          path: sofia-sip
+
+      - name: Checkout FreeSWITCH (via ref)
+        if: ${{ !inputs.tests-only && inputs.freeswitch_ref != '' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.freeswitch_ref }}
+          path: freeswitch
+
+      - name: Checkout FreeSWITCH
+        if: ${{ !inputs.tests-only && inputs.freeswitch_ref == '' }}
+        uses: actions/checkout@v4
+        with:
+          path: freeswitch
+
+      - name: Configure, Build and Install Sofia-Sip
+        if: ${{ !inputs.tests-only }}
+        shell: bash
+        working-directory: freeswitch
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y libpcre2-dev libsphinxbase-dev libpocketsphinx-dev
+          ./ci.sh -t unit-test -a configure -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
+          ./ci.sh -t unit-test -a build -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
+          ./ci.sh -t unit-test -a install -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
+
+      - name: Configure, Build and Install FreeSWITCH
+        if: ${{ !inputs.tests-only }}
+        shell: bash
+        working-directory: freeswitch
+        run: |
+          ./ci.sh -t unit-test -a configure -c freeswitch -p "$GITHUB_WORKSPACE/freeswitch"
+          ./ci.sh -t unit-test -a build -c freeswitch -p "$GITHUB_WORKSPACE/freeswitch"
+          ./ci.sh -t unit-test -a install -c freeswitch -p "$GITHUB_WORKSPACE/freeswitch"
+
+      - name: Run unit tests
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          ./run-tests.sh ${{ inputs.total-groups }} ${{ inputs.current-group }} --output-dir logs || exit 1
+
+      - name: Collect unit test logs
+        if: always()
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          test -d "/cores" && ls -lah /cores
+          ./collect-test-logs.sh --dir logs --print
+
+      - name: Upload Unit-Test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.sha }}-${{ github.run_number }}-${{ inputs.current-group }}-of-${{ inputs.total-groups }}
+          path: ${{ inputs.working-directory }}/logs
+          if-no-files-found: ignore
+          compression-level: 9
+
+      - name: Notify run tests result to slack
+        if: |
+          failure() &&
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10')
+        uses: signalwire/actions-template/.github/actions/slack@main
+        with:
+          CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}
+          MESSAGE: Unit-Tests ${{ github.repository }} > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>. Some tests are failing.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1347,6 +1347,9 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 		x_tag = switch_xml_add_child_d(x_flags, "end_conference", count++);
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_ENDCONF) ? "true" : "false");
 
+		x_tag = switch_xml_add_child_d(x_flags, "mandatory_member_end_conference", count++);
+		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_MANDATORY_MEMBER_ENDCONF) ? "true" : "false");
+
 		x_tag = switch_xml_add_child_d(x_flags, "is_ghost", count++);
 		switch_xml_set_txt_d(x_tag, conference_utils_member_test_flag(member, MFLAG_GHOST) ? "true" : "false");
 
@@ -1360,7 +1363,7 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 {
 	conference_member_t *member = NULL;
-	static cJSON *json_conference, *json_conference_variables, *json_conference_members, *json_conference_member, *json_conference_member_flags;
+	cJSON *json_conference, *json_conference_variables, *json_conference_members, *json_conference_member, *json_conference_member_flags;
 	switch_event_header_t *hp;
 
 	switch_assert(conference != NULL);
@@ -1456,6 +1459,7 @@ void conference_jlist(conference_obj_t *conference, cJSON *json_conferences)
 		ADDBOOL(json_conference_member_flags, "has_floor", member->id == member->conference->floor_holder);
 		ADDBOOL(json_conference_member_flags, "is_moderator", conference_utils_member_test_flag(member, MFLAG_MOD));
 		ADDBOOL(json_conference_member_flags, "end_conference", conference_utils_member_test_flag(member, MFLAG_ENDCONF));
+		ADDBOOL(json_conference_member_flags, "mandatory_member_end_conference", conference_utils_member_test_flag(member, MFLAG_MANDATORY_MEMBER_ENDCONF));
 		ADDBOOL(json_conference_member_flags, "pass_digits", conference_utils_member_test_flag(member, MFLAG_DIST_DTMF));
 	}
 	switch_mutex_unlock(conference->member_mutex);

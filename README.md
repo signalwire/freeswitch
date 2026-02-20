@@ -33,19 +33,24 @@ The main index for documentation is available at:
 
 Step by step tutorials to install FreeSWITCH from packages:
 
-  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian) [<b>Recommended</b>]
+  * [Using FSGET](/scripts/packaging) [<b>Recommended</b>]
+  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian)
   * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
   * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
 
 ### Build from source
 
 Example Dockerfiles to build FreeSWITCH and dependencies from source:
-  * https://github.com/signalwire/freeswitch/tree/dockerfile/docker/examples
+  * https://github.com/signalwire/freeswitch/tree/master/docker/examples
 
 Step by step tutorials to build FreeSWITCH with provided dependency packages:
   * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian#Debian-buildfromsource) [<b>Recommended</b>]
   * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
   * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
+
+### How to build Debian packages
+
+  * [Using FSDEB](/scripts/packaging/build)
 
 ## Downloads
 
@@ -67,8 +72,8 @@ This is the place to get answers faster and chat with other users in real time. 
 Slack Community:
   * https://signalwire.community/
 
-Mailing list:
+Mailing list (ARCHIVED):
 
-  * http://lists.freeswitch.org/mailman/listinfo/freeswitch-users
+  * http://lists.freeswitch.org/pipermail/freeswitch-users/
 
 **Thank you for using FreeSWITCH!**

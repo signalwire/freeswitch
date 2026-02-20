@@ -117,7 +117,8 @@ static void translate_number(char *number, char *profile, char **translated, swi
 	translate_rule_t *hi = NULL;
 	translate_rule_t *rule = NULL;
 	switch_regex_t *re = NULL;
-	int proceed = 0, ovector[30];
+	switch_regex_match_t *match_data = NULL;
+	int proceed = 0;
 	char *substituted = NULL, *subbed = NULL;
 	uint32_t len = 0;
 
@@ -130,21 +131,24 @@ static void translate_number(char *number, char *profile, char **translated, swi
 	hi = switch_core_hash_find_rdlock(globals.translate_profiles, (const char *)profile, globals.profile_hash_rwlock);
 	if (!hi) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "can't find key for profile matching [%s]\n", profile);
+
 		return;
 	}
 
 	for (rule = hi; rule; rule = rule->next) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s =~ /%s/\n", number, rule->regex);
-		if ((proceed = switch_regex_perform(number, rule->regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if ((proceed = switch_regex_perform(number, rule->regex, &re, &match_data))) {
 			len = (uint32_t) (strlen(number) + strlen(rule->replace) + 10) * proceed;
 			if (!(substituted = malloc(len))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+				switch_regex_match_safe_free(match_data);
 				switch_regex_safe_free(re);
 				goto end;
 			}
+
 			memset(substituted, 0, len);
 
-			switch_perform_substitution(re, proceed, rule->replace, number, substituted, len, ovector);
+			switch_perform_substitution(match_data, rule->replace, substituted, len);
 
 			if ((switch_string_var_check_const(substituted) || switch_string_has_escaped_data(substituted))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "perform variable expansion\n");
@@ -153,16 +157,22 @@ static void translate_number(char *number, char *profile, char **translated, swi
 				} else if (event) {
 					subbed = switch_event_expand_headers(event, substituted);
 				}
+
+				if (subbed != substituted) {
+					switch_safe_free(substituted);
+				}
+
 				if (session) {
 					substituted = switch_core_session_strdup(session, subbed);
 				} else {
 					substituted = switch_core_strdup(pool, subbed);
 				}
-				if (subbed != substituted) {
-					switch_safe_free(subbed);
-				}
+
+				switch_safe_free(subbed);
 			}
 
+			switch_regex_match_safe_free(match_data);
+			switch_regex_safe_free(re);
 			break;
 		}
 	}

@@ -43,6 +43,11 @@ switch_xml
 switch_estimators
 switch_jitter_buffer
 test_sofia
+switch_core_asr
+switch_core_media
+switch_sip
+switch_rtp_pcap
+test_tts_format
 .deps/
 Makefile
 conf/*/
@@ -51,3 +56,4 @@ conf_async/*/
 x64
 win32
 *.vcxproj.user
+

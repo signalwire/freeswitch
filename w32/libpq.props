@@ -35,7 +35,7 @@
 
   <Target Name="libpqBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/libpq/$(libpqVersion)/libpq-$(libpqVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="https://files.freeswitch.org/windows/packages/libpq/$(libpqVersion)_$(libpqBuildNumber)/libpq-$(libpqVersion)_$(libpqBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(libpqlibDir)\binaries\$(Platform)\$(Configuration)\libpq.dll" 
            outputfolder=""
            outputfilename="" 
@@ -44,7 +44,7 @@
   </Target> 
   <Target Name="libpqHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/libpq/$(libpqVersion)/libpq-$(libpqVersion)-headers.zip"
+           package="https://files.freeswitch.org/windows/packages/libpq/$(libpqVersion)_$(libpqBuildNumber)/libpq-$(libpqVersion)_$(libpqBuildNumber)-headers.zip"
            expectfileordirectory="$(libpqlibDir)\include\libpq-fe.h" 
            outputfolder=""
            outputfilename="" 

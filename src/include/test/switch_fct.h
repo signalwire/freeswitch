@@ -254,10 +254,18 @@ fctstr_safe_cpy(char *dst, char const *src, size_t num)
     FCT_ASSERT( num > 0 );
 #if defined(WIN32) && _MSC_VER >= 1400
     strncpy_s(dst, num, src, _TRUNCATE);
+    dst[num - 1] = '\0';
 #else
-    strncpy(dst, src, num);
+    {
+        size_t i;
+
+        for (i = 0; (i < num - 1) && src[i] != '\0'; ++i) {
+            dst[i] = src[i];
+        }
+
+        dst[i] = '\0';
+    }
 #endif
-    dst[num-1] = '\0';
 }
 
 /* Isolate the vsnprintf implementation */
@@ -760,6 +768,7 @@ fct_nlist__init2(fct_nlist_t *list, size_t start_sz)
         list->itm_list = (void**)malloc(sizeof(void*)*start_sz);
         if ( list->itm_list == NULL )
         {
+            list->used_itm_num = 0;
             return 0;
         }
     }

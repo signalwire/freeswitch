@@ -448,7 +448,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 * \param[in]    width     The raw data width
 * \param[in]    height    The raw data height
 */
-SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t** destP, void *src, switch_img_fmt_t fmt, int width, int height);
 SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text);
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);

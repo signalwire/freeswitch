@@ -59,14 +59,6 @@
        G729             - G729 in passthru mode. (mod_g729)
        G723             - G723.1 in passthru mode. (mod_g723_1)
        AMR              - AMR in passthru mode. (mod_amr)
-       
-       These are the passthru video codecs: (mod_h26x)
-       
-       H261             - H.261 Video
-       H263             - H.263 Video
-       H263-1998        - H.263-1998 Video
-       H263-2000        - H.263-2000 Video
-       H264             - H.264 Video
 
   -->
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G722,PCMU,PCMA,GSM"/>

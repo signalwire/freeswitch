@@ -370,12 +370,11 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 	for(bp = dmachine->realm->binding_list; bp; bp = bp->next) {
 		if (bp->is_regex) {
 			if (bp->repl) {
-				int ovector[30] = { 0 };
 				int proceed = 0;
 				switch_regex_t *re = NULL;
-
+				switch_regex_match_t *match_data = NULL;
 				
-				proceed = switch_regex_perform(dmachine->digits, bp->digits, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+				proceed = switch_regex_perform(dmachine->digits, bp->digits, &re, &match_data);
 				
 				if (proceed) {
 					char *substituted = NULL;
@@ -385,12 +384,14 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 					substituted = malloc(len);
 					switch_assert(substituted);
 					memset(substituted, 0, len);
-					switch_perform_substitution(re, proceed, bp->repl, dmachine->digits, substituted, len, ovector);
+					switch_perform_substitution(match_data, bp->repl, substituted, len);
 
 					if (!bp->substituted || strcmp(substituted, bp->substituted)) {
 						bp->substituted = switch_core_strdup(dmachine->pool, substituted);
 					}
+
 					free(substituted);
+					switch_regex_match_safe_free(match_data);
 					switch_regex_safe_free(re);
 					bp->rmatch = 1;
 				} else {
@@ -474,7 +475,7 @@ static dm_match_t switch_ivr_dmachine_check_match(switch_ivr_dmachine_t *dmachin
 
 	if (is_timeout) {
 		if (both_bp) {
-			r_bp = exact_bp ? exact_bp : both_bp;
+			r_bp = exact_bp;
 		}
 	}
 
@@ -546,6 +547,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	}
 
 	if (dmachine->pinging) {
+		switch_mutex_unlock(dmachine->mutex);
 		return SWITCH_STATUS_BREAK;
 	}
 
@@ -2129,7 +2131,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 				break;
 			}
 
-			if (ep->eavesdropper && switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_session_write_video_frame(ep->eavesdropper, bug->video_ping_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing video to %s\n", switch_core_session_get_name(ep->eavesdropper));
 					ep->errs++;
@@ -2177,10 +2179,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_pop_eavesdropper(switch_cor
 		struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) switch_core_media_bug_get_user_data(bug);
 
 		if (ep && ep->eavesdropper && ep->eavesdropper != session) {
-			switch_core_session_read_lock(ep->eavesdropper);
-			*sessionp = ep->eavesdropper;
-			switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
-			status = SWITCH_STATUS_SUCCESS;
+			if (switch_core_session_read_lock(ep->eavesdropper) == SWITCH_STATUS_SUCCESS) {
+				*sessionp = ep->eavesdropper;
+				switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+				status = SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 

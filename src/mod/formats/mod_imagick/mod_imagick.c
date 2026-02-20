@@ -384,10 +384,11 @@ static switch_status_t read_page(pdf_file_context_t *context)
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
 			free(storage);
+
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_img_from_raw(context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
+		switch_img_from_raw(&context->img, storage, SWITCH_IMG_FMT_BGR24, w, h);
 		free(storage);
 	} else {
 		switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, image->columns, image->rows, 0);
@@ -397,6 +398,8 @@ static switch_status_t read_page(pdf_file_context_t *context)
 
 		if (ret == MagickFalse && context->exception->severity != UndefinedException) {
 			CatchException(context->exception);
+			switch_img_free(&img);
+
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -485,9 +488,16 @@ static void myErrorHandler(const ExceptionType t, const char *reason, const char
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: %s\n", reason, description);
 }
 
-static void myFatalErrorHandler(const ExceptionType t, const char *reason, const char *description)
+static
+#if defined(_MSC_VER) && defined(_WIN32)
+#else
+ __attribute__((noreturn)) 
+#endif
+void myFatalErrorHandler(const ExceptionType t, const char *reason, const char *description)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s: %s\n", reason, description);
+	/* Make sure the function never returns */
+	abort();
 }
 
 static void myWarningHandler(const ExceptionType t, const char *reason, const char *description)

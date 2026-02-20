@@ -1,4 +1,0 @@
-default:
-    ${destination_number} =~ (9664):
-        set: foo=bar
-        playback: ${hold_music}

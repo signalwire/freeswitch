@@ -247,7 +247,7 @@ freeswitch_debian_source() {
 }
 
 freeswitch_raspbian_source() {
-	apt-get install -o Dpkg::Progress=1 -y autoconf automake devscripts gawk libjpeg-dev libncurses5-dev libtool-bin python-dev \
+	apt-get install -o Dpkg::Progress=1 -y autoconf automake devscripts gawk libjpeg-dev libncurses5-dev libtool-bin \
 		libtiff5-dev libperl-dev libgdbm-dev libdb-dev gettext libssl-dev libcurl4-openssl-dev libpcre3-dev libspeex-dev \
 		libspeexdsp-dev libsqlite3-dev libedit-dev libldns-dev libpq-dev libsndfile-dev libopus-dev liblua5.1-0-dev 2>&1 | \
 		awk -W interactive '/Progress/ { print }'| sed -u 's/[^0-9]//g' | dialog --gauge "Please wait.\n Installing Build Requirements..." 10 70 0

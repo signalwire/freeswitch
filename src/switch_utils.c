@@ -139,13 +139,10 @@ struct switch_frame_buffer_s {
 static switch_frame_t *find_free_frame(switch_frame_buffer_t *fb, switch_frame_t *orig)
 {
 	switch_frame_node_t *np;
-	int x = 0;
 
 	switch_mutex_lock(fb->mutex);
 
 	for (np = fb->head; np; np = np->next) {
-		x++;
-
 		if (!np->inuse && ((orig->packet && np->frame->packet) || (!orig->packet && !np->frame->packet))) {
 
 			if (np == fb->head) {
@@ -750,7 +747,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	ip_t *maskv = mask;
 	ip_t *ipv = ip;
 
-	switch_copy_string(host, string, sizeof(host)-1);
+	switch_copy_string(host, string, sizeof(host) - 1);
 	bit_str = strchr(host, '/');
 
 	if (!bit_str) {
@@ -761,22 +758,20 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 	bits = atoi(bit_str);
 	ipv6 = strchr(string, ':');
 	if (ipv6) {
-		int i,n;
+		int32_t i, n;
+		uint32_t k;
+
 		if (bits < 0 || bits > 128) {
 			return -2;
 		}
+
 		bits = atoi(bit_str);
 		switch_inet_pton(AF_INET6, host, (unsigned char *)ip);
-		for (n=bits,i=0 ;i < 16; i++){
-			if (n >= 8) {
-				maskv->v6.s6_addr[i] = 0xFF;
-				n -= 8;
-			} else if (n < 8) {
-				maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> n);
-				n -= n;
-			} else if (n == 0) {
-				maskv->v6.s6_addr[i] = 0x00;
-			}
+
+		for (n = bits, i = 0; i < 16; i++) {
+			k = (n > 8) ? 8 : n;
+			maskv->v6.s6_addr[i] = 0xFF & ~(0xFF >> k);	/* k = 0 gives 0x00, k = 8 gives 0xFF */
+			n -= k;
 		}
 	} else {
 		if (bits < 0 || bits > 32) {
@@ -789,6 +784,7 @@ SWITCH_DECLARE(int) switch_parse_cidr(const char *string, ip_t *ip, ip_t *mask, 
 
 		maskv->v4 = 0xFFFFFFFF & ~(0xFFFFFFFF >> bits);
 	}
+
 	*bitp = bits;
 
 	return 0;
@@ -1080,7 +1076,7 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 		l64[(int) switch_b64_table[i]] = (char) i;
 	}
 
-	for (ip = in; ip && *ip; ip++) {
+	for (ip = in; ip && *ip && (*ip != '='); ip++) {
 		c = l64[(int) *ip];
 		if (c == -1) {
 			continue;
@@ -1164,7 +1160,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		switch_safe_free(dupfile);
 	}
 
-	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int) switch_epoch_time_now(NULL), rand() & 0xffff);
+	switch_snprintf(filename, 80, "%s%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, (int)(switch_time_t) switch_epoch_time_now(NULL), switch_rand() & 0xffff);
 
 	if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)) > -1) {
 		if (file) {
@@ -1610,6 +1606,30 @@ SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
 	return args;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_is_uint_in_range(const char *str, unsigned int from, unsigned int to)
+{
+	unsigned int number;
+	const char *original_str = str;
+
+	if (str == NULL || *str == '\0' || from > to) {
+		return SWITCH_FALSE;
+	}
+
+	for (; *str != '\0'; str++) {
+		if (!isdigit(*str)) {
+			return SWITCH_FALSE;
+		}
+	}
+
+	number = atoi(original_str);
+
+	if (number < from || number > to) {
+		return SWITCH_FALSE;
+	}
+
+	return SWITCH_TRUE;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 {
 	const char *p;
@@ -1995,7 +2015,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 	}
 
   doh:
-	if (tmp_socket > 0) {
+	if (tmp_socket >= 0) {
 		close(tmp_socket);
 	}
 #endif
@@ -2061,8 +2081,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(char *buf, int len, int
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {
 	switch_time_exp_t tm = { 0 }, local_tm = { 0 };
-	int proceed = 0, ovector[30], time_only = 0;
+	int proceed = 0, time_only = 0;
 	switch_regex_t *re = NULL;
+	switch_regex_match_t *match_data = NULL;
 	char replace[1024] = "";
 	switch_time_t ret = 0, local_time = 0;
 	char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
@@ -2072,66 +2093,78 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 	switch_time_exp_lt(&tm, switch_micro_time_now());
 
 
-	if ((time_only = switch_regex_perform(in, pattern3, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+	if ((time_only = switch_regex_perform(in, pattern3, &re, &match_data))) {
 		tm.tm_hour = 0;
 		tm.tm_min = 0;
 		tm.tm_sec = 0;
 	} else {
 		tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = tm.tm_usec = 0;
 
-		if (!(proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if (!(proceed = switch_regex_perform(in, pattern, &re, &match_data))) {
+			switch_regex_match_safe_free(match_data);
 			switch_regex_safe_free(re);
-			proceed = switch_regex_perform(in, pattern2, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+			proceed = switch_regex_perform(in, pattern2, &re, &match_data);
 		}
 	}
 
 	if (proceed || time_only) {
+		size_t replace_size;
 
 		if (time_only > 1) {
-			switch_regex_copy_substring(in, ovector, time_only, 1, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 1, replace, &replace_size);
 			tm.tm_hour = atoi(replace);
 		}
 
 		if (time_only > 2) {
-			switch_regex_copy_substring(in, ovector, time_only, 2, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 2, replace, &replace_size);
 			tm.tm_min = atoi(replace);
 		}
 
 		if (time_only > 3) {
-			switch_regex_copy_substring(in, ovector, time_only, 3, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 3, replace, &replace_size);
 			tm.tm_sec = atoi(replace);
 		}
 
 		if (proceed > 1) {
-			switch_regex_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 1, replace, &replace_size);
 			tm.tm_year = atoi(replace) - 1900;
 		}
 
 		if (proceed > 2) {
-			switch_regex_copy_substring(in, ovector, proceed, 2, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 2, replace, &replace_size);
 			tm.tm_mon = atoi(replace) - 1;
 		}
 
 		if (proceed > 3) {
-			switch_regex_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 3, replace, &replace_size);
 			tm.tm_mday = atoi(replace);
 		}
 
 		if (proceed > 4) {
-			switch_regex_copy_substring(in, ovector, proceed, 4, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 4, replace, &replace_size);
 			tm.tm_hour = atoi(replace);
 		}
 
 		if (proceed > 5) {
-			switch_regex_copy_substring(in, ovector, proceed, 5, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 5, replace, &replace_size);
 			tm.tm_min = atoi(replace);
 		}
 
 		if (proceed > 6) {
-			switch_regex_copy_substring(in, ovector, proceed, 6, replace, sizeof(replace));
+			replace_size = sizeof(replace);
+			switch_regex_copy_substring(match_data, 6, replace, &replace_size);
 			tm.tm_sec = atoi(replace);
 		}
 		
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 
 		switch_time_exp_get(&local_time, &tm);
@@ -2140,9 +2173,11 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 		tm.tm_gmtoff = local_tm.tm_gmtoff;
 
 		switch_time_exp_gmt_get(&ret, &tm);
+
 		return ret;
 	}
 
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 
 	return ret;
@@ -2383,7 +2418,7 @@ SWITCH_DECLARE(int) switch_cmp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *s
 			return (s1->sin_addr.s_addr == s2->sin_addr.s_addr && s1->sin_port == s2->sin_port);
 		}
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			if (!ip_only) {
@@ -2437,7 +2472,7 @@ SWITCH_DECLARE(int) switch_cp_addr(switch_sockaddr_t *sa1, switch_sockaddr_t *sa
 
 		return 1;
 	case AF_INET6:
-		if (s16->sin6_addr.s6_addr && s26->sin6_addr.s6_addr) {
+		{
 			int i;
 
 			s16->sin6_port = s26->sin6_port;
@@ -4789,6 +4824,67 @@ cleanup:
 #endif
 done:
 	return status;
+}
+
+SWITCH_DECLARE(int) switch_rand(void)
+{
+	uint32_t random_number = 0;
+#ifdef WIN32
+	BCRYPT_ALG_HANDLE hAlgorithm = NULL;
+	NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptOpenAlgorithmProvider failed with status %d\n", status);
+
+		return 1;
+	}
+
+	status = BCryptGenRandom(hAlgorithm, (PUCHAR)&random_number, sizeof(random_number), 0);
+	if (!BCRYPT_SUCCESS(status)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "BCryptGenRandom failed with status %d\n", status);
+
+		BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
+		return 1;
+	}
+
+	BCryptCloseAlgorithmProvider(hAlgorithm, 0);
+
+	/* Make sure we return from 0 to SWITCH_RAND_MAX */
+	return (random_number & (SWITCH_RAND_MAX));
+#elif defined(__unix__) || defined(__APPLE__)
+	int random_fd = open("/dev/urandom", O_RDONLY);
+	ssize_t result;
+	char error_msg[100];
+
+	if (random_fd == -1) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open failed: %s\n", error_msg);
+
+		return 1;
+	}
+
+	result = read(random_fd, &random_number, sizeof(random_number));
+	if (result < 0) {
+		strncpy(error_msg, strerror(errno), sizeof(error_msg) - 1);
+		error_msg[sizeof(error_msg) - 1] = '\0';
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read failed: %s\n", error_msg);
+
+		close(random_fd);
+
+		return 1;
+	}
+	
+	close(random_fd);
+
+	/* Make sure we return from 0 to SWITCH_RAND_MAX */
+	return (random_number & (SWITCH_RAND_MAX));
+#else
+	return rand();
+#endif
 }
 
 /* For Emacs:
