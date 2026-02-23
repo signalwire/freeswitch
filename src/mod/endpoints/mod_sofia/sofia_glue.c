@@ -76,6 +76,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 {
 
 	unsigned int x, i;
+	char timeout_str[32];
 
 	switch_assert(session != NULL);
 	switch_assert(profile != NULL);
@@ -150,6 +151,14 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_RTP_NOTIMER_DURING_BRIDGE)) {
 		switch_channel_set_flag(tech_pvt->channel, CF_RTP_NOTIMER_DURING_BRIDGE);
+	}
+
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_IGNORE_RTP_DURING_DTMF)) {
+		switch_channel_set_variable(tech_pvt->channel, "ignore_rtp_during_dtmf", "true");
+		if (tech_pvt->profile->ignore_rtp_during_dtmf_timeout > 0) {
+			switch_snprintf(timeout_str, sizeof(timeout_str), "%u", tech_pvt->profile->ignore_rtp_during_dtmf_timeout);
+			switch_channel_set_variable(tech_pvt->channel, "ignore_rtp_during_dtmf_timeout", timeout_str);
+		}
 	}
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_T38_PASSTHRU)) {

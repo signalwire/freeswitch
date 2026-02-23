@@ -53,6 +53,7 @@ SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_RTP_BUNDLE_INTERNAL_PT 21
 #define TELNYX_RTP_DEFAULT_POLL_TIMEOUT_S 5
+#define SWITCH_RTP_DEFAULT_IGNORE_DTMF_TIMEOUT_MS 2000
 
 typedef struct {
 	switch_rtp_hdr_t header;
@@ -784,6 +785,7 @@ SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, swit
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_session, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_byte_t) switch_rtp_check_auto_adj(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, uint32_t delay);
+SWITCH_DECLARE(void) switch_rtp_set_ignore_rtp_during_dtmf_timeout(switch_rtp_t *rtp_session, uint32_t timeout_ms);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, dtls_fingerprint_t *local_fp, dtls_fingerprint_t *remote_fp, dtls_type_t type, uint8_t want_DTLSv1_2);
 SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, dtls_type_t type);

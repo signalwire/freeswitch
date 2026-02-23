@@ -515,6 +515,7 @@ struct switch_rtp {
 	int publish_stats_interval_ms;
 	switch_size_t last_flush_packet_count;
 	uint32_t interdigit_delay;
+	uint32_t ignore_rtp_during_dtmf_timeout;
 	switch_core_session_t *session;
 	payload_map_t **pmaps;
 	payload_map_t *pmap_tail;
@@ -5100,6 +5101,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->cng_pt = INVALID_PT;
 	rtp_session->session = session;
 	rtp_session->rtcp_probe = 0;
+	rtp_session->ignore_rtp_during_dtmf_timeout = SWITCH_RTP_DEFAULT_IGNORE_DTMF_TIMEOUT_MS;
 
 	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&rtp_session->read_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -6039,6 +6041,11 @@ SWITCH_DECLARE(void) switch_rtp_set_interdigit_delay(switch_rtp_t *rtp_session, 
 	rtp_session->interdigit_delay = delay;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_ignore_rtp_during_dtmf_timeout(switch_rtp_t *rtp_session, uint32_t timeout_ms)
+{
+	rtp_session->ignore_rtp_during_dtmf_timeout = timeout_ms;
+}
+
 SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session)
 {
 	return rtp_session->sock_input;
@@ -6818,6 +6825,71 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 									  "Invalid Packet SEQ: %d TS: %d PT:%d ignored\n",
 									  ntohs(rtp_session->recv_msg.header.seq), ntohl(rtp_session->last_rtp_hdr.ts), rtp_session->last_rtp_hdr.pt);
 					*bytes = 0;
+				}
+			}
+
+			/* Drop audio packets during active DTMF events to prevent corruption (MS Teams RFC2833 workaround) */
+			if (accept_packet &&
+				rtp_session->flags[SWITCH_RTP_FLAG_IGNORE_RTP_DURING_DTMF] &&
+				rtp_session->dtmf_data.in_digit_ts != 0 &&
+				rtp_session->last_rtp_hdr.pt != rtp_session->recv_te &&
+				rtp_session->last_rtp_hdr.pt != rtp_session->cng_pt) {
+				uint32_t current_ts;
+				uint32_t elapsed_samples;
+				uint32_t elapsed_ms;
+
+				current_ts = ntohl(rtp_session->last_rtp_hdr.ts);
+
+				/* Check for timestamp progression to avoid wraparound issues */
+				if (current_ts >= rtp_session->dtmf_data.in_digit_ts) {
+					elapsed_samples = current_ts - rtp_session->dtmf_data.in_digit_ts;
+					if (rtp_session->samples_per_second > 0) {
+						elapsed_ms = (elapsed_samples * 1000) / rtp_session->samples_per_second;
+					} else {
+						/* Guard against division by zero - force timeout */
+						elapsed_ms = rtp_session->ignore_rtp_during_dtmf_timeout + 1;
+					}
+				} else {
+					/* Timestamp wrapped around or went backwards - treat as timeout to be safe */
+					elapsed_ms = rtp_session->ignore_rtp_during_dtmf_timeout + 1;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
+									  SWITCH_LOG_WARNING,
+									  "DTMF timestamp anomaly: current_ts=%u < dtmf_ts=%u, forcing timeout\n",
+									  current_ts,
+									  rtp_session->dtmf_data.in_digit_ts);
+				}
+
+				/* Timeout to handle lost DTMF END packets (configurable via ignore_rtp_during_dtmf_timeout) */
+				if (elapsed_ms > rtp_session->ignore_rtp_during_dtmf_timeout) {
+					if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
+										  SWITCH_LOG_DEBUG,
+										  "DTMF timeout: No END packet received after %ums, resuming audio (dtmf_ts=%u current_ts=%u)\n",
+										  elapsed_ms,
+										  rtp_session->dtmf_data.in_digit_ts,
+										  current_ts);
+					}
+
+					rtp_session->dtmf_data.in_digit_ts = 0;
+					rtp_session->dtmf_data.last_digit = 0;
+					rtp_session->dtmf_data.in_digit_sanity = 0;
+					rtp_session->dtmf_data.in_digit_queued = 0;
+					/* Do not drop this packet, let it process normally */
+				} else {
+					/* Drop audio packet during active DTMF */
+					if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
+										  SWITCH_LOG_DEBUG,
+										  "Dropping audio packet (pt=%d seq=%d ts=%u elapsed=%ums) during active DTMF event (dtmf_ts=%u) - RFC2833 workaround\n",
+										  rtp_session->last_rtp_hdr.pt,
+										  ntohs(rtp_session->recv_msg.header.seq),
+										  current_ts,
+										  elapsed_ms,
+										  rtp_session->dtmf_data.in_digit_ts);
+					}
+
+					*bytes = 0;
+					goto more;
 				}
 			}
 
