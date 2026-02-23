@@ -2427,13 +2427,17 @@ SWITCH_DECLARE(void) switch_media_handle_destroy(switch_core_session_t *session)
 		switch_core_timer_destroy(&smh->video_timer);
 	}
 
+	switch_mutex_lock(session->codec_read_mutex);
 	if (switch_core_codec_ready(&a_engine->read_codec)) {
 		switch_core_codec_destroy(&a_engine->read_codec);
 	}
+	switch_mutex_unlock(session->codec_read_mutex);
 
+	switch_mutex_lock(session->codec_write_mutex);
 	if (switch_core_codec_ready(&a_engine->write_codec)) {
 		switch_core_codec_destroy(&a_engine->write_codec);
 	}
+	switch_mutex_unlock(session->codec_write_mutex);
 
 	if (switch_core_codec_ready(&v_engine->read_codec)) {
 		switch_core_codec_destroy(&v_engine->read_codec);
