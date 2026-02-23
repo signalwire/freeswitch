@@ -830,6 +830,80 @@ fail:
     return false;
 }
 
+/* Check if input_pointer points to a valid UTF-8 sequence
+ * Returns the number of bytes in the sequence (1-4) if valid
+ * Returns 0 if it's an invalid UTF-8 sequence that should be escaped
+ */
+static size_t is_valid_utf8_sequence(const unsigned char *input)
+{
+    unsigned char byte = *input;
+
+    /* Single byte ASCII (0x00-0x7F) */
+    if (byte < 0x80)
+    {
+        return 1;
+    }
+
+    /* 2-byte sequence: 110xxxxx 10xxxxxx (U+0080 to U+07FF) */
+    if ((byte >= 0xC2) && (byte <= 0xDF))
+    {
+        if (input[1] == '\0' || (input[1] & 0xC0) != 0x80)
+        {
+            return 0; /* Invalid or incomplete */
+        }
+        return 2;
+    }
+
+    /* 3-byte sequence: 1110xxxx 10xxxxxx 10xxxxxx (U+0800 to U+FFFF) */
+    if ((byte >= 0xE0) && (byte <= 0xEF))
+    {
+        if (input[1] == '\0' || input[2] == '\0' ||
+            (input[1] & 0xC0) != 0x80 || (input[2] & 0xC0) != 0x80)
+        {
+            return 0; /* Invalid or incomplete */
+        }
+
+        /* Check for overlong encodings */
+        if (byte == 0xE0 && input[1] < 0xA0)
+        {
+            return 0; /* Overlong */
+        }
+        /* Check for UTF-16 surrogates (U+D800-U+DFFF) */
+        if (byte == 0xED && input[1] >= 0xA0)
+        {
+            return 0; /* Surrogate */
+        }
+        return 3;
+    }
+
+    /* 4-byte sequence: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx (U+10000 to U+10FFFF) */
+    if ((byte >= 0xF0) && (byte <= 0xF4))
+    {
+        if (input[1] == '\0' || input[2] == '\0' || input[3] == '\0' ||
+            (input[1] & 0xC0) != 0x80 || (input[2] & 0xC0) != 0x80 ||
+            (input[3] & 0xC0) != 0x80)
+        {
+            return 0; /* Invalid or incomplete */
+        }
+
+        /* Check for overlong encodings */
+        if (byte == 0xF0 && input[1] < 0x90)
+        {
+            return 0; /* Overlong */
+        }
+        /* Check for code points > U+10FFFF */
+        if (byte == 0xF4 && input[1] >= 0x90)
+        {
+            return 0; /* Too large */
+        }
+        return 4;
+    }
+
+    /* Invalid UTF-8 leading byte (0x80-0xBF, 0xC0-0xC1, 0xF5-0xFF)
+     * or continuation byte appearing where leading byte expected */
+    return 0;
+}
+
 /* Render the cstring provided to an escaped version that can be printed. */
 static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffer * const output_buffer)
 {
@@ -874,10 +948,25 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
                 escape_characters++;
                 break;
             default:
-                if (*input_pointer < 32)
+                if (*input_pointer < 0x20)
                 {
-                    /* UTF-16 escape sequence uXXXX */
+                    /* Control character - UTF-16 escape sequence uXXXX */
                     escape_characters += 5;
+                }
+                else if (*input_pointer >= 0x80)
+                {
+                    /* Check if it's a valid UTF-8 sequence */
+                    size_t utf8_len = is_valid_utf8_sequence(input_pointer);
+                    if (utf8_len == 0)
+                    {
+                        /* Invalid UTF-8 byte - escape as \uXXXX */
+                        escape_characters += 5;
+                    }
+                    else
+                    {
+                        /* Valid UTF-8 sequence - skip remaining bytes */
+                        input_pointer += utf8_len - 1;
+                    }
                 }
                 break;
         }
@@ -904,16 +993,38 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
     output[0] = '\"';
     output_pointer = output + 1;
     /* copy the string */
-    for (input_pointer = input; *input_pointer != '\0'; (void)input_pointer++, output_pointer++)
+    for (input_pointer = input; *input_pointer != '\0'; input_pointer++)
     {
-        if ((*input_pointer > 31) && (*input_pointer != '\"') && (*input_pointer != '\\'))
+        /* Check for valid UTF-8 multi-byte sequence */
+        if (*input_pointer >= 0x80)
         {
-            /* normal character, copy */
+            size_t utf8_len = is_valid_utf8_sequence(input_pointer);
+            if (utf8_len > 0)
+            {
+                /* Valid UTF-8 sequence - copy all bytes */
+                size_t i;
+                for (i = 0; i < utf8_len; i++)
+                {
+                    *output_pointer++ = input_pointer[i];
+                }
+                input_pointer += utf8_len - 1;
+                output_pointer--;
+            }
+            else
+            {
+                /* Invalid UTF-8 byte - escape as \uXXXX */
+                sprintf((char*)output_pointer, "\\u%04x", *input_pointer);
+                output_pointer += 5;
+            }
+        }
+        else if ((*input_pointer > 0x1f) && (*input_pointer != '\"') && (*input_pointer != '\\'))
+        {
+            /* Normal ASCII character, copy */
             *output_pointer = *input_pointer;
         }
         else
         {
-            /* character needs to be escaped */
+            /* Character needs to be escaped */
             *output_pointer++ = '\\';
             switch (*input_pointer)
             {
@@ -939,12 +1050,13 @@ static cJSON_bool print_string_ptr(const unsigned char * const input, printbuffe
                     *output_pointer = 't';
                     break;
                 default:
-                    /* escape and print as unicode codepoint */
+                    /* Control character - escape and print as unicode codepoint */
                     sprintf((char*)output_pointer, "u%04x", *input_pointer);
                     output_pointer += 4;
                     break;
             }
         }
+        output_pointer++;
     }
     output[output_length + 1] = '\"';
     output[output_length + 2] = '\0';
