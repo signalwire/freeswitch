@@ -1875,6 +1875,35 @@ static void check_bridge_export(switch_channel_t *channel, switch_channel_t *pee
 	switch_channel_process_export(channel, peer_channel, NULL, SWITCH_BRIDGE_EXPORT_VARS_VARIABLE);
 }
 
+/**
+ * Copy codec names from each channel to the peer channel with "bridge_" prefix
+ * This allows detection of transcoding by comparing codec variables in a single CDR
+ */
+static void set_bridge_codec_vars(switch_channel_t *channel_a, switch_channel_t *channel_b)
+{
+	const char *codec_var;
+
+	/* Copy audio codec name from channel_a to channel_b */
+	if ((codec_var = switch_channel_get_variable(channel_a, "rtp_use_codec_name"))) {
+		switch_channel_set_variable(channel_b, "bridge_rtp_use_codec_name", codec_var);
+	}
+
+	/* Copy audio codec name from channel_b to channel_a */
+	if ((codec_var = switch_channel_get_variable(channel_b, "rtp_use_codec_name"))) {
+		switch_channel_set_variable(channel_a, "bridge_rtp_use_codec_name", codec_var);
+	}
+
+	/* Copy video codec name from channel_a to channel_b (if present) */
+	if ((codec_var = switch_channel_get_variable(channel_a, "rtp_use_video_codec_name"))) {
+		switch_channel_set_variable(channel_b, "bridge_rtp_use_video_codec_name", codec_var);
+	}
+
+	/* Copy video codec name from channel_b to channel_a (if present) */
+	if ((codec_var = switch_channel_get_variable(channel_b, "rtp_use_video_codec_name"))) {
+		switch_channel_set_variable(channel_a, "bridge_rtp_use_video_codec_name", codec_var);
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session)
 {
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
@@ -1892,6 +1921,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	}
 
 	check_bridge_export(caller_channel, peer_channel);
+	set_bridge_codec_vars(caller_channel, peer_channel);
 
 	switch_channel_set_flag_recursive(caller_channel, CF_SIGNAL_BRIDGE_TTL);
 	switch_channel_set_flag_recursive(peer_channel, CF_SIGNAL_BRIDGE_TTL);
@@ -2036,6 +2066,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 		switch_channel_set_bridge_time(caller_channel);
 		switch_channel_set_bridge_time(peer_channel);
+		set_bridge_codec_vars(caller_channel, peer_channel);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Bridge-A-Unique-ID", switch_core_session_get_uuid(session));
@@ -2491,6 +2522,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_set_variable(originatee_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(originator_channel));
 			switch_channel_set_variable(originatee_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(originator_session));
 			switch_channel_set_variable(originatee_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(originator_session));
+			set_bridge_codec_vars(originator_channel, originatee_channel);
 
 
 			originator_cp = switch_channel_get_caller_profile(originator_channel);
