@@ -51,9 +51,7 @@ int ServiceDaemon::pre_initialize()
   
   TELNYX_ASSERT(!_runDir.empty());
   
-  ::chdir(_runDir.c_str());
-  
-  return 0;
+  return ::chdir(_runDir.c_str());
 }
 
 
