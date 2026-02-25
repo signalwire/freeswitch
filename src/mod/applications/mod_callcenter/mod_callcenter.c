@@ -3687,6 +3687,17 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *agent = argv[1 + initial_argc];
 				const char *value = argv[2 + initial_argc];
 
+				/* agent_originate_check value is a full API command string with spaces
+				   (e.g. "lua agent_handler.lua 1001 example.com").
+				   switch_separate_string replaced spaces with NULs — restore them
+				   so value points to the complete string. */
+				if (!strcasecmp(key, "agent_originate_check")) {
+					int i;
+					for (i = 3 + initial_argc; i < argc; i++) {
+						*(argv[i] - 1) = ' ';
+					}
+				}
+
 				switch (cc_agent_update(key, value, agent)) {
 					case CC_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
