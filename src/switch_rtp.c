@@ -2963,6 +2963,7 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 
 			if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
 				switch_socket_close(rtp_session->rtcp_sock_output);
+				rtp_session->rtcp_sock_output = NULL;
 			}
 
 			if ((status = switch_socket_create(&rtp_session->rtcp_sock_output,

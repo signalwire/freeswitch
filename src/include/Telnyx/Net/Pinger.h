@@ -19,6 +19,7 @@
 
 #include "icmp_header.h"
 #include "ipv4_header.h"
+#include "Resolver.h"
 
 using boost::asio::ip::icmp;
 using boost::asio::deadline_timer;
@@ -46,7 +47,7 @@ private:
   static void on_send_error(Pinger* pinger);
 
   boost::asio::io_service& io_service_;
-  icmp::resolver resolver_;
+  Telnyx::Net::icmp_resolver resolver_;
   icmp::endpoint destination_;
   icmp::socket socket_;
   deadline_timer timer_;

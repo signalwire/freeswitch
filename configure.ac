@@ -1442,6 +1442,19 @@ PKG_CHECK_MODULES([EVS], [3gpp-evs-fp >= 26.443],[
   AM_CONDITIONAL([HAVE_3GPP_EVS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_3GPP_EVS],[false])])
 
+AC_ARG_WITH(cares,
+  [AS_HELP_STRING([--with-cares],
+    [enable support for c-ares])],
+  [with_cares="$withval"],
+  [with_cares="no"])
+if test "$with_cares" = "yes"; then
+  PKG_CHECK_MODULES([CARES], [libcares >= 1.27.0],[
+    AM_CONDITIONAL([HAVE_CARES],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_CARES],[false])])
+else
+  AM_CONDITIONAL([HAVE_CARES],[false])
+fi
+
 PKG_CHECK_MODULES([BROADVOICE], [broadvoice >= 0.1.0],[
   AM_CONDITIONAL([HAVE_BROADVOICE],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_BROADVOICE],[false])])

@@ -395,7 +395,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 		if (switch_core_codec_ready(&conninfo->read_codec)) {
 			switch_core_codec_destroy(&conninfo->read_codec);
 		}
-		switch_socket_close(conninfo->socket);
+		if (conninfo->socket) {
+			switch_socket_close(conninfo->socket);
+			conninfo->socket = NULL;
+		}
 	}
 	switch_channel_clear_flag(channel, CF_UNICAST);
 	return SWITCH_STATUS_SUCCESS;

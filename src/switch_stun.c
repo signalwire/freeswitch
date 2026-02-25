@@ -760,6 +760,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 
 	if (switch_socket_bind(sock, local_addr) != SWITCH_STATUS_SUCCESS) {
 		*err = "Bind Error!";
+		switch_socket_close(sock);
 
 		return SWITCH_STATUS_FALSE;
 	}

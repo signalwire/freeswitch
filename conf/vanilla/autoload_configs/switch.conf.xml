@@ -45,6 +45,9 @@
     <!-- Maximum number of seconds to wait for a new DB handle before failing -->
     <param name="db-handle-timeout" value="10"/>
 
+    <!-- c-ares DNS resolution timeout in milliseconds (100-3000, default 1000) -->
+    <!-- <param name="ares-dns-timeout" value="1000"/> -->
+
     <!-- Minimum idle CPU before refusing calls -->
     <!-- <param name="min-idle-cpu" value="25"/> -->
 

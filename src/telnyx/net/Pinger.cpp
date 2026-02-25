@@ -29,8 +29,8 @@ bool Pinger::ping_host(boost::asio::io_service& io_service, const std::string& d
 {
   try {
     Pinger* pinger = new Pinger(io_service);
-    icmp::resolver::query query(icmp::v4(), destination.c_str(), "");
-    try 
+    Telnyx::Net::icmp_resolver::query query(icmp::v4(), destination.c_str(), "");
+    try
     {
       pinger->destination_ = *pinger->resolver_.resolve(query);
     }

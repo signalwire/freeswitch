@@ -48,6 +48,12 @@
 #include <fspr_thread_proc.h>
 #include <fspr_portable.h>
 #include <fspr_thread_mutex.h>
+
+/* c-ares for async DNS resolution */
+#ifdef HAVE_CARES
+#include <ares.h>
+#include <arpa/inet.h>
+#endif
 #include <fspr_thread_cond.h>
 #include <fspr_thread_rwlock.h>
 #include <fspr_file_io.h>
@@ -836,10 +842,296 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef HAVE_CARES
+
+/**
+ * Internal state structure for async DNS resolution
+ * Holds c-ares channel and results during resolution process
+ */
+struct dns_resolve_state {
+	ares_channel dns_channel;
+	struct ares_addrinfo *resolved_info;
+	int resolution_status;
+	switch_memory_pool_t *mem_pool;
+};
+
+/**
+ * Callback invoked by c-ares when DNS resolution completes
+ * Stores the result and status in the state structure
+ */
+static void dns_completion_callback(void *user_data, int status, int timeouts, struct ares_addrinfo *result)
+{
+	struct dns_resolve_state *resolve_state = (struct dns_resolve_state *)user_data;
+
+	(void)timeouts; /* Unused parameter */
+
+	if (status == ARES_SUCCESS && result != NULL) {
+		resolve_state->resolved_info = result;
+	}
+	resolve_state->resolution_status = status;
+}
+
+/**
+ * Convert c-ares addrinfo results to FreeSWITCH's sockaddr format
+ * Creates a linked list of fspr_sockaddr_t structures from c-ares results
+ */
+static switch_status_t convert_cares_to_sockaddr(const struct ares_addrinfo *ai_head, fspr_sockaddr_t **sa,
+												  fspr_port_t port, switch_memory_pool_t *pool)
+{
+	const struct ares_addrinfo_node *ai_node;
+	fspr_sockaddr_t *head_addr = NULL;
+	fspr_sockaddr_t *tail_addr = NULL;
+	const char *canonical_name = ai_head->name;
+
+	if (!ai_head || !ai_head->nodes || !sa || !pool) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	/* Iterate through c-ares result nodes */
+	for (ai_node = ai_head->nodes; ai_node != NULL; ai_node = ai_node->ai_next) {
+		fspr_sockaddr_t *new_sockaddr;
+		fspr_socklen_t sockaddr_size;
+		int addr_str_len;
+		int ipaddr_len;
+
+		/* Only handle IPv4 and IPv6 */
+		if (ai_node->ai_family == AF_INET) {
+			sockaddr_size = sizeof(struct sockaddr_in);
+			addr_str_len = 16;  /* xxx.xxx.xxx.xxx\0 */
+			ipaddr_len = sizeof(struct in_addr);
+		} else if (ai_node->ai_family == AF_INET6) {
+			sockaddr_size = sizeof(struct sockaddr_in6);
+			addr_str_len = 46;  /* INET6_ADDRSTRLEN */
+			ipaddr_len = sizeof(struct in6_addr);
+		} else {
+			/* Skip unsupported address families */
+			continue;
+		}
+
+		/* Validate c-ares provided valid address data */
+		if (!ai_node->ai_addr || ai_node->ai_addrlen < (int)sockaddr_size) {
+			continue;
+		}
+
+		/* Allocate new sockaddr structure from pool */
+		new_sockaddr = fspr_pcalloc(pool, sizeof(fspr_sockaddr_t));
+		if (!new_sockaddr) {
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		/* Populate basic fields */
+		new_sockaddr->pool = pool;
+		new_sockaddr->family = ai_node->ai_family;
+		new_sockaddr->salen = sockaddr_size;
+		new_sockaddr->ipaddr_len = ipaddr_len;
+		new_sockaddr->addr_str_len = addr_str_len;
+		new_sockaddr->next = NULL;
+
+		/* Copy sockaddr data and set up pointer to IP address within sockaddr union */
+		if (ai_node->ai_family == AF_INET) {
+			memcpy(&new_sockaddr->sa.sin, ai_node->ai_addr, sockaddr_size);
+			new_sockaddr->sa.sin.sin_port = htons(port);
+			new_sockaddr->ipaddr_ptr = &(new_sockaddr->sa.sin.sin_addr);
+			new_sockaddr->port = port;
+		} else {  /* AF_INET6 */
+			memcpy(&new_sockaddr->sa.sin6, ai_node->ai_addr, sockaddr_size);
+			new_sockaddr->sa.sin6.sin6_port = htons(port);
+			new_sockaddr->ipaddr_ptr = &(new_sockaddr->sa.sin6.sin6_addr);
+			new_sockaddr->port = port;
+		}
+
+		/* Store canonical name in first entry only */
+		if (canonical_name != NULL) {
+			new_sockaddr->hostname = fspr_pstrdup(pool, canonical_name);
+			canonical_name = NULL;  /* Only set in first entry */
+		}
+
+		/* Build linked list */
+		if (head_addr == NULL) {
+			head_addr = new_sockaddr;
+		}
+		if (tail_addr != NULL) {
+			tail_addr->next = new_sockaddr;
+		}
+		tail_addr = new_sockaddr;
+	}
+
+	if (head_addr == NULL) {
+		return SWITCH_STATUS_NOTFOUND;
+	}
+
+	*sa = head_addr;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
+ * Resolve hostname using c-ares asynchronous DNS resolver
+ * Blocks until resolution completes, then converts results to FreeSWITCH format
+ */
+static switch_status_t resolve_hostname_cares(fspr_sockaddr_t **sa, const char *hostname, fspr_int32_t family,
+											   fspr_port_t port, fspr_int32_t flags, switch_memory_pool_t *pool)
+{
+	struct dns_resolve_state resolve_state;
+	struct ares_options ares_opts;
+	struct ares_addrinfo_hints hints;
+	int ares_optmask = 0;
+	int init_status;
+	switch_status_t result_status;
+
+	memset(&resolve_state, 0, sizeof(resolve_state));
+	memset(&ares_opts, 0, sizeof(ares_opts));
+	memset(&hints, 0, sizeof(hints));
+
+	resolve_state.mem_pool = pool;
+	resolve_state.resolution_status = ARES_ETIMEOUT;
+
+	/* Configure c-ares to use internal event thread for async processing */
+	ares_optmask |= ARES_OPT_EVENT_THREAD | ARES_OPT_TIMEOUT | ARES_OPT_TRIES;
+	ares_opts.evsys = ARES_EVSYS_DEFAULT;
+	ares_opts.timeout = runtime.ares_dns_timeout;
+	ares_opts.tries = 2;
+
+	/* Initialize c-ares channel */
+	init_status = ares_init_options(&resolve_state.dns_channel, &ares_opts, ares_optmask);
+	if (init_status != ARES_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+						 "c-ares initialization failed: %s\n", ares_strerror(init_status));
+		return SWITCH_STATUS_GENERR;
+	}
+
+	/* Set ai_family based on flags, falling back to family parameter */
+	if ((flags & APR_IPV4_ADDR_OK) && !(flags & APR_IPV6_ADDR_OK)) {
+		hints.ai_family = AF_INET;
+	} else if ((flags & APR_IPV6_ADDR_OK) && !(flags & APR_IPV4_ADDR_OK)) {
+		hints.ai_family = AF_INET6;
+	} else {
+		hints.ai_family = family;
+	}
+	hints.ai_socktype = SOCK_DGRAM;  /* VoIP typically uses UDP */
+	hints.ai_protocol = IPPROTO_UDP;
+
+	/* Start asynchronous DNS query */
+	ares_getaddrinfo(resolve_state.dns_channel, hostname, NULL, &hints,
+					dns_completion_callback, &resolve_state);
+
+	/* Block until the async DNS resolution completes or ares_dns_timeout expires (c-ares processes it internally) */
+	ares_queue_wait_empty(resolve_state.dns_channel, runtime.ares_dns_timeout);
+
+	/* Map c-ares status to FreeSWITCH status codes */
+	switch (resolve_state.resolution_status) {
+		case ARES_SUCCESS:
+			/* Convert results to FreeSWITCH sockaddr format */
+			result_status = convert_cares_to_sockaddr(resolve_state.resolved_info, sa, port, pool);
+
+			/* Free c-ares allocated result */
+			if (resolve_state.resolved_info) {
+				ares_freeaddrinfo(resolve_state.resolved_info);
+			}
+			break;
+
+		case ARES_ENOTFOUND:
+		case ARES_ENODATA:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							 "DNS resolution failed for %s: not found\n", hostname);
+			result_status = SWITCH_STATUS_NOTFOUND;
+			break;
+
+		case ARES_ENOMEM:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							 "DNS resolution failed for %s: out of memory\n", hostname);
+			result_status = SWITCH_STATUS_MEMERR;
+			break;
+
+		case ARES_ETIMEOUT:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							 "DNS resolution failed for %s: timeout\n", hostname);
+			result_status = SWITCH_STATUS_TIMEOUT;
+			break;
+
+		default:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							 "DNS resolution failed for %s: %s\n", hostname,
+							 ares_strerror(resolve_state.resolution_status));
+			result_status = SWITCH_STATUS_GENERR;
+			break;
+	}
+
+	/* Cleanup c-ares channel */
+	ares_destroy(resolve_state.dns_channel);
+
+	return result_status;
+}
+
+/**
+ * Helper function to detect if a string is a numeric IP address
+ * Returns 1 for numeric IPs, 0 for hostnames that need DNS resolution
+ */
+static int is_numeric_address(const char *hostname, fspr_int32_t family)
+{
+	unsigned char buf[sizeof(struct in6_addr)];
+
+	if (!hostname) {
+		return 0;
+	}
+
+	/* Try IPv4 first if family allows */
+	if (family == APR_UNSPEC || family == APR_INET) {
+		if (inet_pton(AF_INET, hostname, buf) == 1) {
+			return 1;
+		}
+	}
+
+	/* Try IPv6 if family allows */
+	if (family == APR_UNSPEC || family == APR_INET6) {
+		/* Handle bracketed IPv6 addresses like [::1] */
+		if (hostname[0] == '[') {
+			char stripped[APRMAXHOSTLEN];
+			char *bracket;
+			size_t len = strlen(hostname + 1);
+			if (len < sizeof(stripped)) {
+				strcpy(stripped, hostname + 1);
+				bracket = strchr(stripped, ']');
+				if (bracket) {
+					*bracket = '\0';
+					if (inet_pton(AF_INET6, stripped, buf) == 1) {
+						return 1;
+					}
+				}
+			}
+		} else {
+			if (inet_pton(AF_INET6, hostname, buf) == 1) {
+				return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+#endif /* HAVE_CARES */
+
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname, int32_t family,
 														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
+#ifdef HAVE_CARES
+	/* Fast path: NULL hostname means wildcard bind (0.0.0.0/::) - use APR */
+	if (hostname == NULL) {
+		return fspr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
+	}
+
+	/* Fast path: numeric IP addresses don't need DNS resolution - use APR */
+	if (is_numeric_address(hostname, family)) {
+		return fspr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
+	}
+
+	/* Use c-ares for actual DNS hostname resolution */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+					 "Using c-ares for DNS resolution of %s\n", hostname);
+	return resolve_hostname_cares(sa, hostname, family, port, flags, pool);
+#else
+	/* Fall back to APR when c-ares is not available */
 	return fspr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_new(switch_sockaddr_t ** sa, const char *ip, switch_port_t port, switch_memory_pool_t *pool)

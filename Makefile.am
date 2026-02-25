@@ -166,6 +166,10 @@ if HAVE_FVAD
 CORE_CFLAGS += -DSWITCH_HAVE_FVAD $(LIBFVAD_CFLAGS)
 endif
 
+if HAVE_CARES
+CORE_CFLAGS += -DHAVE_CARES $(CARES_CFLAGS)
+endif
+
 ##
 ## libfreeswitch
 ##
@@ -242,6 +246,10 @@ endif
 
 if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
+endif
+
+if HAVE_CARES
+libfreeswitch_la_LIBADD += $(CARES_LIBS)
 endif
 
 library_includetestdir = $(includedir)/test

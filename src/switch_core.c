@@ -1829,6 +1829,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.max_db_handles = 50;
 	runtime.db_handle_timeout = 5000000;
 	runtime.event_heartbeat_interval = 20;
+	runtime.ares_dns_timeout = 1000;
 
 	runtime.runlevel++;
 	runtime.dummy_cng_frame.data = runtime.dummy_data;
@@ -2168,6 +2169,15 @@ static void switch_load_core_config(const char *file)
 						runtime.event_heartbeat_interval = (uint32_t) tmp;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "heartbeat-interval must be a greater than 0\n");
+					}
+
+				} else if (!strcasecmp(var, "ares-dns-timeout")) {
+					long tmp = atol(val);
+
+					if (tmp >= 100 && tmp <= 3000) {
+						runtime.ares_dns_timeout = (uint32_t) tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ares-dns-timeout must be between 100 and 3000 ms\n");
 					}
 
 				} else if (!strcasecmp(var, "multiple-registrations")) {
