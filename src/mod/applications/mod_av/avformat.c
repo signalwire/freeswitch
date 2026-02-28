@@ -3525,6 +3525,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_avformat_load)
 	file_interface->interface_name = modname;
 	file_interface->extens = supported_formats;
 	file_interface->file_open = av_file_open;
+    free_packet_buffer(&s->packet_buffer, &s->packet_buffer_end);
 	file_interface->file_close = av_file_close;
 	file_interface->file_truncate = av_file_truncate;
 	file_interface->file_read = av_file_read;
