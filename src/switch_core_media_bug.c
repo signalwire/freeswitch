@@ -316,8 +316,34 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 
 	if (bug->record_frame_size) {
-		if ((do_read && do_read < bug->record_frame_size) || (do_write && do_write < bug->record_frame_size)) {
-			return SWITCH_STATUS_FALSE;
+		/* If one side has a partial frame that will never be completed
+		 * (e.g. leftover TTS write data after speak ends), flush the
+		 * partial data and treat that side as needing silence fill,
+		 * rather than blocking both sides forever. */
+		if (do_read && do_read < bug->record_frame_size) {
+			if (do_write >= bug->record_frame_size) {
+				/* Read has partial, write has enough - flush partial read */
+				switch_mutex_lock(bug->read_mutex);
+				switch_buffer_zero(bug->raw_read_buffer);
+				switch_mutex_unlock(bug->read_mutex);
+				do_read = 0;
+				fill_read = 1;
+			} else {
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+
+		if (do_write && do_write < bug->record_frame_size) {
+			if (do_read >= bug->record_frame_size) {
+				/* Write has partial, read has enough - flush partial write */
+				switch_mutex_lock(bug->write_mutex);
+				switch_buffer_zero(bug->raw_write_buffer);
+				switch_mutex_unlock(bug->write_mutex);
+				do_write = 0;
+				fill_write = 1;
+			} else {
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 
 		if (do_read && do_read > bug->record_frame_size) {
