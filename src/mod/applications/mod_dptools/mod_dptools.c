@@ -942,10 +942,11 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 		const char *bridge_partner = switch_channel_get_variable(channel, "eavesdrop_bridge_partner");
 
 		if (enable_dtmf) {
+			flags &= ~(ED_DTMF | ED_DTMF_EVENTS_ONLY);
 			if (!strcasecmp(enable_dtmf, "events")) {
-				flags = ED_DTMF_EVENTS_ONLY;
-			} else {
-				flags = switch_true(enable_dtmf) ? ED_DTMF : ED_NONE;
+				flags |= ED_DTMF_EVENTS_ONLY;
+			} else if (switch_true(enable_dtmf)) {
+				flags |= ED_DTMF;
 			}
 		}
 

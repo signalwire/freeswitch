@@ -2383,37 +2383,6 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 				void *data_to_write = frame.data;
 				uint32_t datalen_to_write = frame.datalen;
 
-				/* Unmerge eavesdrop READ audio to prevent echo */
-				if (switch_test_flag(ep, ED_MUX_READ) && ep->demux_frame.data && ep->demux_frame.datalen > 0 && frame.datalen > 0) {
-					uint32_t frame_samples = frame.datalen / 2 / frame.channels;
-					uint32_t demux_samples = ep->demux_frame.datalen / 2 / ep->demux_frame.channels;
-
-					if (frame_samples == demux_samples && frame.channels == ep->demux_frame.channels) {
-						uint8_t unmerged_data[SWITCH_MAX_L16];
-						uint32_t unmerged_samples;
-						
-						memcpy(unmerged_data, frame.data, frame.datalen);
-						
-						unmerged_samples = switch_unmerge_sln((int16_t *)unmerged_data, frame_samples,
-						                                       (int16_t *)ep->demux_frame.data, demux_samples,
-						                                       frame.channels);
-						
-						frame.data = unmerged_data;
-						frame.datalen = unmerged_samples * 2 * frame.channels;
-						frame.samples = unmerged_samples;
-						data_to_write = unmerged_data;
-						datalen_to_write = frame.datalen;
-						
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,
-						                  "Eavesdrop READ_PING: Unmerged eavesdrop READ audio (%u samples, %u bytes)\n",
-						                  unmerged_samples, frame.datalen);
-
-						ep->demux_frame.data = NULL;
-						ep->demux_frame.datalen = 0;
-						ep->demux_frame.samples = 0;
-					}
-				}
-
 				/* Apply resampling if needed */
 				if (ep->tread_impl.actual_samples_per_second != ep->read_impl.actual_samples_per_second &&
 				    ep->resampler && frame.datalen > 0) {
