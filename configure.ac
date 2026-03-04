@@ -1449,6 +1449,8 @@ AC_ARG_WITH(cares,
   [with_cares="no"])
 if test "$with_cares" = "yes"; then
   PKG_CHECK_MODULES([CARES], [libcares >= 1.27.0],[
+    AC_DEFINE([HAVE_CARES], [1], [Define if c-ares is available])
+    APR_ADDTO(SWITCH_AM_CXXFLAGS, [-DHAVE_CARES $CARES_CFLAGS])
     AM_CONDITIONAL([HAVE_CARES],[true])],[
     AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_CARES],[false])])
 else

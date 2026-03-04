@@ -1125,8 +1125,6 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa
 	}
 
 	/* Use c-ares for actual DNS hostname resolution */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-					 "Using c-ares for DNS resolution of %s\n", hostname);
 	return resolve_hostname_cares(sa, hostname, family, port, flags, pool);
 #else
 	/* Fall back to APR when c-ares is not available */

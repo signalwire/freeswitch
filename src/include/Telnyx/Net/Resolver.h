@@ -79,6 +79,11 @@ public:
     class query
     {
     public:
+        query(const std::string& host, const std::string& service)
+            : protocol_(protocol_type::v4()), host_(host), service_(service)
+        {
+        }
+
         query(const protocol_type& protocol, const std::string& host, const std::string& service)
             : protocol_(protocol), host_(host), service_(service)
         {
@@ -97,6 +102,12 @@ public:
     class iterator
     {
     public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = endpoint_type;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const endpoint_type*;
+        using reference = const endpoint_type&;
+
         // Default constructor creates an "end" iterator
         iterator() : endpoints_(), index_(0) {}
 
@@ -153,6 +164,21 @@ public:
         bool operator!=(const iterator& other) const
         {
             return !(*this == other);
+        }
+
+        // EndpointSequence support: begin()/end() allow this iterator
+        // to be passed directly to boost::asio::connect/async_connect
+        iterator begin() const
+        {
+            if (!endpoints_ || endpoints_->empty()) {
+                return iterator();
+            }
+            return iterator(*endpoints_, 0);
+        }
+
+        iterator end() const
+        {
+            return iterator();
         }
 
     private:
