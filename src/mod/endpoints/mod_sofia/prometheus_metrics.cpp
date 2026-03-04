@@ -28,7 +28,9 @@ public:
 		_call_counter(0),
 		_outgoing_invite_counter(0),
 		_increment_new_invite_counter(0),
-		_outgoing_invite_retransmission_counter(0)
+		_outgoing_invite_retransmission_counter(0),
+		_rtp_ob_calls(0),
+		_rtp_ob_failed_calls(0)
 	{
 		switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
 	}
@@ -97,6 +99,18 @@ public:
 		++_outgoing_invite_retransmission_counter;
 	}
 
+	void increment_rtp_outgoing_calls()
+	{
+		auto_lock lock(_mutex);
+		++_rtp_ob_calls;
+	}
+
+	void increment_rtp_outgoing_failed_calls()
+	{
+		auto_lock lock(_mutex);
+		++_rtp_ob_failed_calls;
+	}
+
 	ssize_t get_request_method(const char* method)
 	{
 		auto_lock lock(_mutex);
@@ -126,7 +140,16 @@ public:
 		stream->write_function(stream, "# HELP sofia_outgoing_invite_retransmission Sofia outgoing INVITE retransmission count\n");
 		stream->write_function(stream, "# TYPE sofia_outgoing_invite_retransmission counter\n");
 		stream->write_function(stream, "sofia_outgoing_invite_retransmission %u\n", _outgoing_invite_retransmission_counter);
-		
+
+		// RTP endpoint call metrics (for eavesdrop and direct RTP sessions)
+		stream->write_function(stream, "# HELP sofia_rtp_outgoing_calls Sofia RTP endpoint outgoing call count\n");
+		stream->write_function(stream, "# TYPE sofia_rtp_outgoing_calls counter\n");
+		stream->write_function(stream, "sofia_rtp_outgoing_calls %u\n", _rtp_ob_calls);
+
+		stream->write_function(stream, "# HELP sofia_rtp_outgoing_failed_calls Sofia RTP endpoint outgoing failed call count\n");
+		stream->write_function(stream, "# TYPE sofia_rtp_outgoing_failed_calls counter\n");
+		stream->write_function(stream, "sofia_rtp_outgoing_failed_calls %u\n", _rtp_ob_failed_calls);
+
 		bool write_header = true;
 		for (terminated_counter::iterator iter = _terminated_sip_counter.begin(); iter != _terminated_sip_counter.end(); iter++) {
 			if (write_header) {
@@ -170,6 +193,8 @@ private:
 	ssize_t _increment_new_invite_counter;
 	request_counter _request_counter;
 	ssize_t _outgoing_invite_retransmission_counter;
+	ssize_t _rtp_ob_calls;
+	ssize_t _rtp_ob_failed_calls;
 };
 
 static prometheus_metrics* instance = 0;
@@ -243,6 +268,16 @@ void prometheus_increment_incoming_new_invite(void)
 void prometheus_increment_invite_retransmission(void)
 {
 	instance->increment_invite_retransmission();
+}
+
+void prometheus_increment_rtp_outgoing_calls(void)
+{
+	instance->increment_rtp_outgoing_calls();
+}
+
+void prometheus_increment_rtp_outgoing_failed_calls(void)
+{
+	instance->increment_rtp_outgoing_failed_calls();
 }
 
 SWITCH_END_EXTERN_C

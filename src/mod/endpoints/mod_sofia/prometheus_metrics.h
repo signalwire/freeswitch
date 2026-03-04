@@ -15,6 +15,8 @@ void prometheus_increment_request_method(const char* method);
 void prometheus_increment_outgoing_invite(void);
 void prometheus_increment_incoming_new_invite(void);
 void prometheus_increment_invite_retransmission(void);
+void prometheus_increment_rtp_outgoing_calls(void);
+void prometheus_increment_rtp_outgoing_failed_calls(void);
 
 SWITCH_END_EXTERN_C
 #endif /* PROMETHEUS_METRICS_H */
