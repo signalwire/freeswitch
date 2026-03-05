@@ -274,7 +274,7 @@ public:
         return 0;
     }
 
-    static void setup_socket_operations(resolve_context* ctx)
+    static void setup_socket_operations(std::shared_ptr<resolve_context> ctx)
     {
         if (ctx->done) {
             return;
@@ -349,7 +349,7 @@ public:
         }
     }
 
-    static void update_timeout(resolve_context* ctx)
+    static void update_timeout(std::shared_ptr<resolve_context> ctx)
     {
         if (ctx->done) {
             return;
@@ -373,7 +373,7 @@ public:
         }
     }
 
-    static void handle_socket_read(resolve_context* ctx, ares_socket_t socket_fd, const boost::system::error_code& ec)
+    static void handle_socket_read(std::shared_ptr<resolve_context> ctx, ares_socket_t socket_fd, const boost::system::error_code& ec)
     {
         if (ctx->done) {
             return;
@@ -395,7 +395,7 @@ public:
         }
     }
 
-    static void handle_socket_write(resolve_context* ctx, ares_socket_t socket_fd, const boost::system::error_code& ec)
+    static void handle_socket_write(std::shared_ptr<resolve_context> ctx, ares_socket_t socket_fd, const boost::system::error_code& ec)
     {
         if (ctx->done) {
             return;
@@ -417,7 +417,7 @@ public:
         }
     }
 
-    static void handle_timeout(resolve_context* ctx, const boost::system::error_code& ec)
+    static void handle_timeout(std::shared_ptr<resolve_context> ctx, const boost::system::error_code& ec)
     {
         if (ctx->done) {
             return;
@@ -452,16 +452,23 @@ public:
         }
 
         // Need DNS resolution via c-ares
-        resolve_context ctx;
-        ctx.endpoints = &endpoints;
-        ctx.port = port;
-        ctx.done = false;
-        ctx.status = ARES_SUCCESS;
-        ctx.io_service = &io_service_;
-        ctx.channel = channel_;
+        // Use a private io_service for the DNS event loop to avoid
+        // stealing handlers from the caller's shared io_service, which
+        // would cause race conditions (e.g. mod_xml_http's semaphore handlers)
+        boost::asio::io_service dns_io_service;
+
+        // Heap-allocate context so async handlers can safely reference it
+        // even after this function returns (e.g. cancellation handlers)
+        auto ctx = std::make_shared<resolve_context>();
+        ctx->endpoints = &endpoints;
+        ctx->port = port;
+        ctx->done = false;
+        ctx->status = ARES_SUCCESS;
+        ctx->io_service = &dns_io_service;
+        ctx->channel = channel_;
 
         // Setup socket create callback (optional)
-        ares_set_socket_callback(channel_, socket_create_callback, &ctx);
+        ares_set_socket_callback(channel_, socket_create_callback, ctx.get());
 
         // Setup hints for getaddrinfo based on protocol type
         struct ares_addrinfo_hints hints;
@@ -474,30 +481,38 @@ public:
 
         // Start async resolution using modern API
         ares_getaddrinfo(channel_, q.host_name().c_str(), nullptr, &hints,
-            addrinfo_callback, &ctx);
+            addrinfo_callback, ctx.get());
 
         // Initial socket operations and timeout setup
-        setup_socket_operations(&ctx);
-        update_timeout(&ctx);
+        setup_socket_operations(ctx);
+        update_timeout(ctx);
 
-        // Process events using boost::asio event loop
-        while (!ctx.done && !io_service_.stopped()) {
-            // Run one iteration of the event loop
-            io_service_.run_one();
+        // Process events using private DNS event loop only
+        while (!ctx->done && !dns_io_service.stopped()) {
+            dns_io_service.run_one();
         }
 
         // Clear socket callback
         ares_set_socket_callback(channel_, nullptr, nullptr);
 
-        // Cleanup sockets and timers
-        if (ctx.timeout_timer) {
-            ctx.timeout_timer->cancel();
+        // Cleanup: destroy all io_service-dependent objects (timers, stream
+        // descriptors) while dns_io_service is still alive, then save results
+        if (ctx->timeout_timer) {
+            ctx->timeout_timer->cancel();
+            ctx->timeout_timer.reset();
         }
-        ctx.sockets.clear();
+        ctx->sockets.clear();
 
-        if (ctx.status != ARES_SUCCESS) {
-            // Map c-ares errors to boost error codes
-            switch (ctx.status) {
+        int status = ctx->status;
+
+        // Release our reference so ctx can be fully destroyed now while
+        // dns_io_service is still valid (pending cancellation handlers in
+        // dns_io_service also hold references and will be dropped when
+        // dns_io_service is destroyed)
+        ctx.reset();
+
+        if (status != ARES_SUCCESS) {
+            switch (status) {
                 case ARES_ENOTFOUND:
                 case ARES_ENODATA:
                     ec = boost::asio::error::host_not_found;
@@ -506,7 +521,7 @@ public:
                     ec = boost::asio::error::timed_out;
                     break;
                 default:
-                    ec = boost::system::error_code(ctx.status, boost::system::system_category());
+                    ec = boost::system::error_code(status, boost::system::system_category());
                     break;
             }
             return iterator();
