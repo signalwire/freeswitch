@@ -1010,6 +1010,11 @@ static switch_status_t resolve_hostname_cares(fspr_sockaddr_t **sa, const char *
 	hints.ai_socktype = SOCK_DGRAM;  /* VoIP typically uses UDP */
 	hints.ai_protocol = IPPROTO_UDP;
 
+	/* NULL hostname means wildcard bind address */
+	if (hostname == NULL) {
+		hostname = (hints.ai_family == AF_INET6) ? "::" : "0.0.0.0";
+	}
+
 	/* Start asynchronous DNS query */
 	ares_getaddrinfo(resolve_state.dns_channel, hostname, NULL, &hints,
 					dns_completion_callback, &resolve_state);
@@ -1062,68 +1067,12 @@ static switch_status_t resolve_hostname_cares(fspr_sockaddr_t **sa, const char *
 	return result_status;
 }
 
-/**
- * Helper function to detect if a string is a numeric IP address
- * Returns 1 for numeric IPs, 0 for hostnames that need DNS resolution
- */
-static int is_numeric_address(const char *hostname, fspr_int32_t family)
-{
-	unsigned char buf[sizeof(struct in6_addr)];
-
-	if (!hostname) {
-		return 0;
-	}
-
-	/* Try IPv4 first if family allows */
-	if (family == APR_UNSPEC || family == APR_INET) {
-		if (inet_pton(AF_INET, hostname, buf) == 1) {
-			return 1;
-		}
-	}
-
-	/* Try IPv6 if family allows */
-	if (family == APR_UNSPEC || family == APR_INET6) {
-		/* Handle bracketed IPv6 addresses like [::1] */
-		if (hostname[0] == '[') {
-			char stripped[APRMAXHOSTLEN];
-			char *bracket;
-			size_t len = strlen(hostname + 1);
-			if (len < sizeof(stripped)) {
-				strcpy(stripped, hostname + 1);
-				bracket = strchr(stripped, ']');
-				if (bracket) {
-					*bracket = '\0';
-					if (inet_pton(AF_INET6, stripped, buf) == 1) {
-						return 1;
-					}
-				}
-			}
-		} else {
-			if (inet_pton(AF_INET6, hostname, buf) == 1) {
-				return 1;
-			}
-		}
-	}
-
-	return 0;
-}
-
 #endif /* HAVE_CARES */
 
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname, int32_t family,
 														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
 #ifdef HAVE_CARES
-	/* Fast path: NULL hostname means wildcard bind (0.0.0.0/::) - use APR */
-	if (hostname == NULL) {
-		return fspr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
-	}
-
-	/* Fast path: numeric IP addresses don't need DNS resolution - use APR */
-	if (is_numeric_address(hostname, family)) {
-		return fspr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
-	}
-
 	/* Use c-ares for actual DNS hostname resolution */
 	return resolve_hostname_cares(sa, hostname, family, port, flags, pool);
 #else
