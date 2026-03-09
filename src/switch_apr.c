@@ -881,11 +881,13 @@ static switch_status_t convert_cares_to_sockaddr(const struct ares_addrinfo *ai_
 	const struct ares_addrinfo_node *ai_node;
 	fspr_sockaddr_t *head_addr = NULL;
 	fspr_sockaddr_t *tail_addr = NULL;
-	const char *canonical_name = ai_head->name;
+	const char *canonical_name;
 
 	if (!ai_head || !ai_head->nodes || !sa || !pool) {
 		return SWITCH_STATUS_GENERR;
 	}
+
+	canonical_name = ai_head->name;
 
 	/* Iterate through c-ares result nodes */
 	for (ai_node = ai_head->nodes; ai_node != NULL; ai_node = ai_node->ai_next) {
@@ -1019,8 +1021,20 @@ static switch_status_t resolve_hostname_cares(fspr_sockaddr_t **sa, const char *
 	ares_getaddrinfo(resolve_state.dns_channel, hostname, NULL, &hints,
 					dns_completion_callback, &resolve_state);
 
-	/* Block until the async DNS resolution completes or ares_dns_timeout expires (c-ares processes it internally) */
-	ares_queue_wait_empty(resolve_state.dns_channel, runtime.ares_dns_timeout);
+	/* Block until the async DNS resolution completes.
+	 * The wait timeout is a safety backstop — c-ares enforces timeout × tries
+	 * internally. Worst case: ares_dns_timeout * tries + margin. */
+	{
+		ares_status_t wait_status = ares_queue_wait_empty(resolve_state.dns_channel,
+			runtime.ares_dns_timeout * 2 + 500);
+
+		if (wait_status == ARES_ETIMEOUT) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							 "DNS resolution failed for %s: wait timeout\n", hostname);
+			ares_destroy(resolve_state.dns_channel);
+			return SWITCH_STATUS_TIMEOUT;
+		}
+	}
 
 	/* Map c-ares status to FreeSWITCH status codes */
 	switch (resolve_state.resolution_status) {
@@ -1048,6 +1062,7 @@ static switch_status_t resolve_hostname_cares(fspr_sockaddr_t **sa, const char *
 			break;
 
 		case ARES_ETIMEOUT:
+		case ARES_EDESTRUCTION:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							 "DNS resolution failed for %s: timeout\n", hostname);
 			result_status = SWITCH_STATUS_TIMEOUT;

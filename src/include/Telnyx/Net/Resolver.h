@@ -10,16 +10,10 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include <boost/asio/deadline_timer.hpp>
-#include <boost/asio/posix/stream_descriptor.hpp>
-#include <boost/bind/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/system/error_code.hpp>
 
 #include <cstring>
-#include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -50,7 +44,6 @@ private:
 
     ~ares_library_initializer() = default;
 
-    // Prevent copying
     ares_library_initializer(const ares_library_initializer&) = delete;
     ares_library_initializer& operator=(const ares_library_initializer&) = delete;
 
@@ -119,7 +112,6 @@ public:
 
         const endpoint_type& operator*() const
         {
-            // Safe dereference - caller must ensure not at end
             return (*endpoints_)[index_];
         }
 
@@ -143,21 +135,15 @@ public:
 
         bool operator==(const iterator& other) const
         {
-            // Check if both are end iterators
             bool this_at_end = !endpoints_ || index_ >= endpoints_->size();
             bool other_at_end = !other.endpoints_ || other.index_ >= other.endpoints_->size();
 
-            // If both at end, they're equal (regardless of which vector)
             if (this_at_end && other_at_end) {
                 return true;
             }
-
-            // If only one is at end, they're not equal
             if (this_at_end || other_at_end) {
                 return false;
             }
-
-            // Both valid - must point to same vector and same index
             return endpoints_.get() == other.endpoints_.get() && index_ == other.index_;
         }
 
@@ -186,16 +172,12 @@ public:
         size_t index_;
     };
 
-    explicit resolver(boost::asio::io_service& io_service)
-        : channel_(nullptr), initialized_(false), io_service_(io_service)
+    explicit resolver(boost::asio::io_service& /* io_service */)
     {
-        init();
+        ares_library_initializer::instance();
     }
 
-    ~resolver()
-    {
-        cleanup();
-    }
+    ~resolver() = default;
 
     iterator resolve(const query& q)
     {
@@ -207,236 +189,9 @@ public:
         return result;
     }
 
-    struct socket_wrapper {
-        std::shared_ptr<boost::asio::posix::stream_descriptor> descriptor;
-        bool read_pending;
-        bool write_pending;
-
-        socket_wrapper(boost::asio::io_service* io_service, ares_socket_t fd)
-            : descriptor(std::make_shared<boost::asio::posix::stream_descriptor>(*io_service, fd)),
-              read_pending(false), write_pending(false)
-        {
-        }
-    };
-
-    struct resolve_context {
-        std::vector<endpoint_type>* endpoints;
-        unsigned short port;
-        bool done;
-        int status;
-        boost::asio::io_service* io_service;
-        ares_channel channel;
-        std::map<ares_socket_t, std::shared_ptr<socket_wrapper>> sockets;
-        std::shared_ptr<boost::asio::deadline_timer> timeout_timer;
-    };
-
-    static void addrinfo_callback(void* arg, int status, int /* timeouts */, struct ares_addrinfo* result)
-    {
-        resolve_context* ctx = static_cast<resolve_context*>(arg);
-        ctx->status = status;
-
-        if (status == ARES_SUCCESS && result) {
-            for (struct ares_addrinfo_node* node = result->nodes; node != nullptr; node = node->ai_next) {
-                if (node->ai_family == AF_INET && node->ai_addr) {
-                    struct sockaddr_in* addr_in = reinterpret_cast<struct sockaddr_in*>(node->ai_addr);
-
-                    boost::asio::ip::address_v4::bytes_type bytes;
-                    memcpy(bytes.data(), &addr_in->sin_addr, sizeof(struct in_addr));
-
-                    ctx->endpoints->push_back(
-                        endpoint_type(boost::asio::ip::address_v4(bytes), ctx->port)
-                    );
-                }
-                else if (node->ai_family == AF_INET6 && node->ai_addr) {
-                    struct sockaddr_in6* addr_in6 = reinterpret_cast<struct sockaddr_in6*>(node->ai_addr);
-
-                    boost::asio::ip::address_v6::bytes_type bytes;
-                    memcpy(bytes.data(), &addr_in6->sin6_addr, sizeof(struct in6_addr));
-
-                    ctx->endpoints->push_back(
-                        endpoint_type(boost::asio::ip::address_v6(bytes), ctx->port)
-                    );
-                }
-            }
-            ares_freeaddrinfo(result);
-        }
-
-        ctx->done = true;
-    }
-
-    static int socket_create_callback(int socket_fd, int type, void* user_data)
-    {
-        // This callback is called when c-ares needs to create a socket
-        // We return 0 to indicate success, socket_fd is already created
-        (void)socket_fd;
-        (void)type;
-        (void)user_data;
-        return 0;
-    }
-
-    static void setup_socket_operations(std::shared_ptr<resolve_context> ctx)
-    {
-        if (ctx->done) {
-            return;
-        }
-
-        ares_socket_t sockets[ARES_GETSOCK_MAXNUM];
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        int bitmask = ares_getsock(ctx->channel, sockets, ARES_GETSOCK_MAXNUM);
-#pragma GCC diagnostic pop
-
-        std::set<ares_socket_t> active_sockets;
-
-        for (int i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
-            bool readable = ARES_GETSOCK_READABLE(bitmask, i);
-            bool writable = ARES_GETSOCK_WRITABLE(bitmask, i);
-
-            if (!readable && !writable) {
-                continue;
-            }
-
-            ares_socket_t socket_fd = sockets[i];
-            active_sockets.insert(socket_fd);
-
-            // Get or create socket wrapper. The stream_descriptor constructor
-            // or async operations can throw if the fd is invalid or in a bad
-            // state (e.g. c-ares closed it between ares_getsock and here).
-            try {
-                std::shared_ptr<socket_wrapper> wrapper;
-                auto it = ctx->sockets.find(socket_fd);
-                if (it == ctx->sockets.end()) {
-                    wrapper = std::make_shared<socket_wrapper>(ctx->io_service, socket_fd);
-                    ctx->sockets[socket_fd] = wrapper;
-                } else {
-                    wrapper = it->second;
-                }
-
-                // Setup async wait for read
-                if (readable && !wrapper->read_pending) {
-                    wrapper->read_pending = true;
-                    wrapper->descriptor->async_read_some(
-                        boost::asio::null_buffers(),
-                        boost::bind(&resolver::handle_socket_read, ctx, socket_fd, boost::asio::placeholders::error)
-                    );
-                }
-
-                // Setup async wait for write
-                if (writable && !wrapper->write_pending) {
-                    wrapper->write_pending = true;
-                    wrapper->descriptor->async_write_some(
-                        boost::asio::null_buffers(),
-                        boost::bind(&resolver::handle_socket_write, ctx, socket_fd, boost::asio::placeholders::error)
-                    );
-                }
-            } catch (const boost::system::system_error&) {
-                ctx->sockets.erase(socket_fd);
-                active_sockets.erase(socket_fd);
-            }
-        }
-
-        // Remove sockets that are no longer active
-        for (auto it = ctx->sockets.begin(); it != ctx->sockets.end();) {
-            if (active_sockets.find(it->first) == active_sockets.end()) {
-                // Cancel any pending operations — cancel itself may throw
-                // if the descriptor is already in a bad state
-                try {
-                    if (it->second->read_pending || it->second->write_pending) {
-                        it->second->descriptor->cancel();
-                    }
-                } catch (const boost::system::system_error&) {
-                }
-                it = ctx->sockets.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-
-    static void update_timeout(std::shared_ptr<resolve_context> ctx)
-    {
-        if (ctx->done) {
-            return;
-        }
-
-        struct timeval tv;
-        struct timeval* tvp = ares_timeout(ctx->channel, nullptr, &tv);
-
-        if (!ctx->timeout_timer) {
-            ctx->timeout_timer = std::make_shared<boost::asio::deadline_timer>(*ctx->io_service);
-        }
-
-        if (tvp && (tvp->tv_sec > 0 || tvp->tv_usec > 0)) {
-            long milliseconds = tvp->tv_sec * 1000 + tvp->tv_usec / 1000;
-            ctx->timeout_timer->expires_from_now(boost::posix_time::milliseconds(milliseconds));
-            ctx->timeout_timer->async_wait(
-                boost::bind(&resolver::handle_timeout, ctx, boost::asio::placeholders::error)
-            );
-        } else {
-            ctx->timeout_timer->cancel();
-        }
-    }
-
-    static void handle_socket_read(std::shared_ptr<resolve_context> ctx, ares_socket_t socket_fd, const boost::system::error_code& ec)
-    {
-        if (ctx->done) {
-            return;
-        }
-
-        auto it = ctx->sockets.find(socket_fd);
-        if (it != ctx->sockets.end()) {
-            it->second->read_pending = false;
-        }
-
-        if (!ec) {
-            ares_process_fd(ctx->channel, socket_fd, ARES_SOCKET_BAD);
-            // Re-setup socket operations for next iteration
-            setup_socket_operations(ctx);
-        } else if (ec != boost::asio::error::operation_aborted) {
-            // Error occurred, process anyway
-            ares_process_fd(ctx->channel, socket_fd, ARES_SOCKET_BAD);
-            setup_socket_operations(ctx);
-        }
-    }
-
-    static void handle_socket_write(std::shared_ptr<resolve_context> ctx, ares_socket_t socket_fd, const boost::system::error_code& ec)
-    {
-        if (ctx->done) {
-            return;
-        }
-
-        auto it = ctx->sockets.find(socket_fd);
-        if (it != ctx->sockets.end()) {
-            it->second->write_pending = false;
-        }
-
-        if (!ec) {
-            ares_process_fd(ctx->channel, ARES_SOCKET_BAD, socket_fd);
-            // Re-setup socket operations for next iteration
-            setup_socket_operations(ctx);
-        } else if (ec != boost::asio::error::operation_aborted) {
-            // Error occurred, process anyway
-            ares_process_fd(ctx->channel, ARES_SOCKET_BAD, socket_fd);
-            setup_socket_operations(ctx);
-        }
-    }
-
-    static void handle_timeout(std::shared_ptr<resolve_context> ctx, const boost::system::error_code& ec)
-    {
-        if (ctx->done) {
-            return;
-        }
-
-        if (!ec) {
-            // Timeout occurred, process with timeout
-            ares_process_fd(ctx->channel, ARES_SOCKET_BAD, ARES_SOCKET_BAD);
-            update_timeout(ctx);
-        }
-    }
-
     iterator resolve(const query& q, boost::system::error_code& ec)
     {
-        if (!initialized_) {
+        if (!ares_library_initializer::instance().is_initialized()) {
             ec = boost::asio::error::not_connected;
             return iterator();
         }
@@ -444,88 +199,79 @@ public:
         std::vector<endpoint_type> endpoints;
         unsigned short port = static_cast<unsigned short>(atoi(q.service_name().c_str()));
 
-        // Try parsing as IP address first
+        // Fast path: numeric IP addresses don't need DNS resolution
         boost::system::error_code parse_ec;
         boost::asio::ip::address addr = boost::asio::ip::address::from_string(q.host_name(), parse_ec);
 
         if (!parse_ec) {
-            // It's already an IP address
             endpoints.push_back(endpoint_type(addr, port));
             ec.clear();
             return iterator(endpoints, 0);
         }
 
-        // Need DNS resolution via c-ares
-        // Use a private io_service for the DNS event loop to avoid
-        // stealing handlers from the caller's shared io_service, which
-        // would cause race conditions (e.g. mod_xml_http's semaphore handlers)
-        boost::asio::io_service dns_io_service;
+        // DNS resolution via c-ares with internal event thread.
+        static const int DNS_TIMEOUT_MS = 1000;
+        static const int DNS_TRIES = 2;
 
-        // Heap-allocate context so async handlers can safely reference it
-        // even after this function returns (e.g. cancellation handlers)
-        auto ctx = std::make_shared<resolve_context>();
-        ctx->endpoints = &endpoints;
-        ctx->port = port;
-        ctx->done = false;
-        ctx->status = ARES_SUCCESS;
-        ctx->io_service = &dns_io_service;
-        ctx->channel = channel_;
+        ares_options options;
+        memset(&options, 0, sizeof(options));
+        options.evsys = ARES_EVSYS_DEFAULT;
+        options.timeout = DNS_TIMEOUT_MS;
+        options.tries = DNS_TRIES;
 
-        // Setup socket create callback (optional)
-        ares_set_socket_callback(channel_, socket_create_callback, ctx.get());
+        ares_channel channel = nullptr;
+        int init_status = ares_init_options(&channel, &options,
+            ARES_OPT_EVENT_THREAD | ARES_OPT_TIMEOUT | ARES_OPT_TRIES);
 
-        // Setup hints for getaddrinfo based on protocol type
-        struct ares_addrinfo_hints hints;
+        if (init_status != ARES_SUCCESS) {
+            ec = boost::system::error_code(init_status, boost::system::system_category());
+            return iterator();
+        }
+
+        resolve_result result_ctx;
+        result_ctx.endpoints = &endpoints;
+        result_ctx.port = port;
+        result_ctx.status = ARES_SUCCESS;
+
+        // Setup hints
+        ares_addrinfo_hints hints;
         memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_UNSPEC;  // Support both IPv4 and IPv6
-
-        // Set socket type based on protocol
+        hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = get_socktype();
         hints.ai_protocol = get_protocol();
 
-        // Start async resolution using modern API
-        ares_getaddrinfo(channel_, q.host_name().c_str(), nullptr, &hints,
-            addrinfo_callback, ctx.get());
+        // Start async resolution — c-ares event thread handles all I/O
+        ares_getaddrinfo(channel, q.host_name().c_str(), nullptr, &hints,
+            addrinfo_callback, &result_ctx);
 
-        // Initial socket operations and timeout setup
-        setup_socket_operations(ctx);
-        update_timeout(ctx);
+        // Block until done. The wait timeout is a safety backstop, not the
+        // primary timeout — c-ares enforces timeout × tries internally.
+        // Worst case: DNS_TIMEOUT_MS * DNS_TRIES + margin for processing.
+        static const int DNS_WAIT_MS = DNS_TIMEOUT_MS * DNS_TRIES + 500;
+        ares_status_t wait_status = ares_queue_wait_empty(channel, DNS_WAIT_MS);
 
-        // Process events using private DNS event loop only
-        while (!ctx->done && !dns_io_service.stopped()) {
-            dns_io_service.run_one();
+        // Cleanup channel (closes all c-ares sockets)
+        ares_destroy(channel);
+
+        // If wait timed out, the callback may never have fired
+        if (wait_status == ARES_ETIMEOUT) {
+            ec = boost::asio::error::timed_out;
+            return iterator();
         }
 
-        // Clear socket callback
-        ares_set_socket_callback(channel_, nullptr, nullptr);
-
-        // Cleanup: destroy all io_service-dependent objects (timers, stream
-        // descriptors) while dns_io_service is still alive, then save results
-        if (ctx->timeout_timer) {
-            ctx->timeout_timer->cancel();
-            ctx->timeout_timer.reset();
-        }
-        ctx->sockets.clear();
-
-        int status = ctx->status;
-
-        // Release our reference so ctx can be fully destroyed now while
-        // dns_io_service is still valid (pending cancellation handlers in
-        // dns_io_service also hold references and will be dropped when
-        // dns_io_service is destroyed)
-        ctx.reset();
-
-        if (status != ARES_SUCCESS) {
-            switch (status) {
+        // Map result status
+        if (result_ctx.status != ARES_SUCCESS) {
+            switch (result_ctx.status) {
                 case ARES_ENOTFOUND:
                 case ARES_ENODATA:
                     ec = boost::asio::error::host_not_found;
                     break;
                 case ARES_ETIMEOUT:
+                case ARES_EDESTRUCTION:
                     ec = boost::asio::error::timed_out;
                     break;
                 default:
-                    ec = boost::system::error_code(status, boost::system::system_category());
+                    ec = boost::system::error_code(result_ctx.status, boost::system::system_category());
                     break;
             }
             return iterator();
@@ -542,59 +288,60 @@ public:
 
     void cancel()
     {
-        if (channel_) {
-            ares_cancel(channel_);
-        }
+        // No-op: each resolve() uses its own short-lived channel.
+        // Cancellation is handled by ares_destroy() when resolve() completes.
     }
 
 private:
-    // Protocol-specific helpers using template specialization
+    struct resolve_result {
+        std::vector<endpoint_type>* endpoints;
+        unsigned short port;
+        int status;
+    };
+
     static int get_socktype()
     {
-        // Default to DGRAM for UDP/ICMP-like protocols
         return SOCK_DGRAM;
     }
 
     static int get_protocol()
     {
-        // Default to UDP
         return IPPROTO_UDP;
     }
 
-    void init()
+    static void addrinfo_callback(void* arg, int status, int /* timeouts */, ares_addrinfo* result)
     {
-        // Ensure global c-ares library is initialized (once per process)
-        if (!ares_library_initializer::instance().is_initialized()) {
-            initialized_ = false;
-            return;
+        resolve_result* ctx = static_cast<resolve_result*>(arg);
+        ctx->status = status;
+
+        if (status == ARES_SUCCESS && result) {
+            for (ares_addrinfo_node* node = result->nodes; node != nullptr; node = node->ai_next) {
+                if (node->ai_family == AF_INET && node->ai_addr) {
+                    sockaddr_in* addr_in = reinterpret_cast<sockaddr_in*>(node->ai_addr);
+
+                    boost::asio::ip::address_v4::bytes_type bytes;
+                    memcpy(bytes.data(), &addr_in->sin_addr, sizeof(in_addr));
+
+                    ctx->endpoints->push_back(
+                        endpoint_type(boost::asio::ip::address_v4(bytes), ctx->port)
+                    );
+                }
+                else if (node->ai_family == AF_INET6 && node->ai_addr) {
+                    sockaddr_in6* addr_in6 = reinterpret_cast<sockaddr_in6*>(node->ai_addr);
+
+                    boost::asio::ip::address_v6::bytes_type bytes;
+                    memcpy(bytes.data(), &addr_in6->sin6_addr, sizeof(in6_addr));
+
+                    ctx->endpoints->push_back(
+                        endpoint_type(boost::asio::ip::address_v6(bytes), ctx->port)
+                    );
+                }
+            }
+            ares_freeaddrinfo(result);
         }
 
-        struct ares_options options;
-        memset(&options, 0, sizeof(options));
-        options.timeout = 5000;  // 5 second timeout
-        options.tries = 3;       // 3 retries
-
-        int status = ares_init_options(&channel_, &options, ARES_OPT_TIMEOUT | ARES_OPT_TRIES);
-        if (status != ARES_SUCCESS) {
-            initialized_ = false;
-            return;
-        }
-
-        initialized_ = true;
     }
 
-    void cleanup()
-    {
-        if (channel_) {
-            ares_destroy(channel_);
-            channel_ = nullptr;
-        }
-        initialized_ = false;
-    }
-
-    ares_channel channel_;
-    bool initialized_;
-    boost::asio::io_service& io_service_;
 };
 
 // Template specializations for protocol-specific socket types
