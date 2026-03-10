@@ -2860,6 +2860,22 @@ SWITCH_STANDARD_API(reload_xml_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(reload_cert_function)
+{
+	switch_event_t *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_CERT_RELOAD) == SWITCH_STATUS_SUCCESS) {
+		switch_event_fire(&event);
+		stream->write_function(stream, "+OK cert reload event sent\n");
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	stream->write_function(stream, "-ERR failed to create event\n");
+
+	return SWITCH_STATUS_FALSE;
+}
+
 #define KILL_SYNTAX "<uuid> [cause]"
 SWITCH_STANDARD_API(kill_function)
 {
@@ -7656,6 +7672,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
+	SWITCH_ADD_API(commands_api_interface, "reloadcert", "Reload SSL/TLS certificates", reload_cert_function, "");
 	SWITCH_ADD_API(commands_api_interface, "replace", "Replace a string", replace_function, "<data>|<string1>|<string2>");
 	SWITCH_ADD_API(commands_api_interface, "say_string", "", say_string_function, SAY_STRING_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, SCHED_SYNTAX);
@@ -7831,6 +7848,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add nat_map status");
 	switch_console_set_complete("add reload ::console::list_loaded_modules");
 	switch_console_set_complete("add reloadacl reloadxml");
+	switch_console_set_complete("add reloadcert");
 	switch_console_set_complete("add show aliases");
 	switch_console_set_complete("add show api");
 	switch_console_set_complete("add show application");

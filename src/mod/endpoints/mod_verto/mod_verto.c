@@ -150,6 +150,114 @@ static void verto_deinit_ssl(verto_profile_t *profile)
 	}
 }
 
+static SSL_CTX *verto_create_ssl_ctx(verto_profile_t *profile, const char **errp)
+{
+	SSL_CTX *ctx = SSL_CTX_new(profile->ssl_method);
+
+	if (!ctx) {
+		*errp = "Failed to create SSL context";
+
+		return NULL;
+	}
+
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
+
+	if (!zstr(profile->chain)) {
+		if (switch_file_exists(profile->chain, NULL) != SWITCH_STATUS_SUCCESS) {
+			*errp = "SUPPLIED CHAIN FILE NOT FOUND";
+			goto fail;
+		}
+
+		if (!SSL_CTX_use_certificate_chain_file(ctx, profile->chain)) {
+			*errp = "CERT CHAIN FILE ERROR";
+			goto fail;
+		}
+	}
+
+	if (switch_file_exists(profile->cert, NULL) != SWITCH_STATUS_SUCCESS) {
+		*errp = "SUPPLIED CERT FILE NOT FOUND";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_certificate_file(ctx, profile->cert, SSL_FILETYPE_PEM)) {
+		*errp = "CERT FILE ERROR";
+		goto fail;
+	}
+
+	if (switch_file_exists(profile->key, NULL) != SWITCH_STATUS_SUCCESS) {
+		*errp = "SUPPLIED KEY FILE NOT FOUND";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_PrivateKey_file(ctx, profile->key, SSL_FILETYPE_PEM)) {
+		*errp = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
+	if (!SSL_CTX_check_private_key(ctx)) {
+		*errp = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
+	SSL_CTX_set_cipher_list(ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+
+	return ctx;
+
+ fail:
+	SSL_CTX_free(ctx);
+
+	return NULL;
+}
+
+static int verto_reload_ssl(verto_profile_t *profile)
+{
+	const char *err = NULL;
+	SSL_CTX *new_ctx = verto_create_ssl_ctx(profile, &err);
+
+	if (!new_ctx) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL reload failed for profile %s: %s\n", profile->name, err);
+
+		return 0;
+	}
+
+	SSL_CTX_free(profile->ssl_ctx);
+
+	profile->ssl_ctx = new_ctx;
+	profile->ssl_ready = 1;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SSL certificates reloaded for profile %s\n", profile->name);
+
+	return 1;
+}
+
+static void cert_reload_handler(switch_event_t *event)
+{
+	verto_profile_t *p;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event received, processing\n");
+
+	switch_mutex_lock(verto_globals.mutex);
+
+	for (p = verto_globals.profile_head; p; p = p->next) {
+		if (p->running) {
+			switch_thread_rwlock_wrlock(p->rwlock);
+			verto_reload_ssl(p);
+			switch_thread_rwlock_unlock(p->rwlock);
+		}
+	}
+
+	switch_mutex_unlock(verto_globals.mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event processed\n");
+}
+
 static void close_file(ks_socket_t *sock)
 {
 	if (*sock != KS_SOCK_INVALID) {
@@ -174,84 +282,30 @@ void verto_broadcast(const char *event_channel, cJSON *json, const char *key, sw
 
 static int verto_init_ssl(verto_profile_t *profile)
 {
-	const char *err;
+	const char *err = NULL;
 	int i = 0;
 
-	profile->ssl_method = SSLv23_server_method();   /* create server instance */
-	profile->ssl_ctx = SSL_CTX_new(profile->ssl_method);         /* create context */
+	profile->ssl_method = SSLv23_server_method();
+	profile->ssl_ctx = verto_create_ssl_ctx(profile, &err);
+
+	if (!profile->ssl_ctx) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
+
+		profile->ssl_ready = 0;
+
+		for (i = 0; i < profile->i; i++) {
+			if (profile->ip[i].secure) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SSL NOT READY FOR LISTENER %s:%d. USE reloadcert AFTER FIXING CERTIFICATES\n",
+								  profile->ip[i].local_ip, profile->ip[i].local_port);
+			}
+		}
+
+		return 0;
+	}
+
 	profile->ssl_ready = 1;
-	assert(profile->ssl_ctx);
-
-	/* Disable SSLv2 */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_SSLv2);
-	/* Disable SSLv3 */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_SSLv3);
-	/* Disable TLSv1 */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_TLSv1);
-	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_COMPRESSION);
-
-	/* set the local certificate from CertFile */
-	if (!zstr(profile->chain)) {
-		if (switch_file_exists(profile->chain, NULL) != SWITCH_STATUS_SUCCESS) {
-			err = "SUPPLIED CHAIN FILE NOT FOUND\n";
-			goto fail;
-		}
-
-		if (!SSL_CTX_use_certificate_chain_file(profile->ssl_ctx, profile->chain)) {
-			err = "CERT CHAIN FILE ERROR";
-			goto fail;
-		}
-	}
-
-	if (switch_file_exists(profile->cert, NULL) != SWITCH_STATUS_SUCCESS) {
-		err = "SUPPLIED CERT FILE NOT FOUND\n";
-		goto fail;
-	}
-
-	if (!SSL_CTX_use_certificate_file(profile->ssl_ctx, profile->cert, SSL_FILETYPE_PEM)) {
-		err = "CERT FILE ERROR";
-		goto fail;
-	}
-
-	/* set the private key from KeyFile */
-
-	if (switch_file_exists(profile->key, NULL) != SWITCH_STATUS_SUCCESS) {
-		err = "SUPPLIED KEY FILE NOT FOUND\n";
-		goto fail;
-	}
-
-	if (!SSL_CTX_use_PrivateKey_file(profile->ssl_ctx, profile->key, SSL_FILETYPE_PEM)) {
-		err = "PRIVATE KEY FILE ERROR";
-		goto fail;
-	}
-
-	/* verify private key */
-	if ( !SSL_CTX_check_private_key(profile->ssl_ctx) ) {
-		err = "PRIVATE KEY FILE ERROR";
-		goto fail;
-	}
-
-	SSL_CTX_set_cipher_list(profile->ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
 
 	return 1;
-
- fail:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
-
-	profile->ssl_ready = 0;
-	verto_deinit_ssl(profile);
-
-	for (i = 0; i < profile->i; i++) {
-		if (profile->ip[i].secure) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL NOT ENABLED FOR LISTENER %s:%d. REVERTING TO WS\n",
-							  profile->ip[i].local_ip, profile->ip[i].local_port);
-			profile->ip[i].secure = 0;
-		}
-	}
-
-	return 0;
-
 }
 
 
@@ -1972,6 +2026,7 @@ static void client_run(jsock_t *jsock)
 
 	ks_pool_open(&jsock->kpool);
 
+	switch_thread_rwlock_rdlock(jsock->profile->rwlock);
 #if defined(KS_VERSION_NUM) && KS_VERSION_NUM >= 20000
 	params = ks_json_create_object();
 	ks_json_add_number_to_object(params, "payload_size_max", 1000000);
@@ -1979,8 +2034,10 @@ static void client_run(jsock_t *jsock)
 #else
 	if (kws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool) != KS_STATUS_SUCCESS) {
 #endif
+		switch_thread_rwlock_unlock(jsock->profile->rwlock);
 		log_and_exit(SWITCH_LOG_NOTICE, "%s WS SETUP FAILED\n", jsock->name);
 	}
+	switch_thread_rwlock_unlock(jsock->profile->rwlock);
 
 	if (kws_test_flag(jsock->ws, KWS_HTTP)) {
 		http_run(jsock);
@@ -4690,7 +4747,7 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 
 	for (i = 0; i < profile->i; i++) {
 		if ( profile->server_socket[i] == sock ) {
-			if (profile->ip[i].secure) {
+			if (profile->ip[i].secure && profile->ssl_ready) {
 				ptype = PTYPE_CLIENT_SSL;
 			}
 			break;
@@ -6887,6 +6944,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	switch_core_register_secondary_recover_callback(modname, verto_recover_callback);
 
+	switch_event_bind(modname, SWITCH_EVENT_CERT_RELOAD, SWITCH_EVENT_SUBCLASS_ANY, cert_reload_handler, NULL);
+
 	if (verto_globals.enable_presence) {
 		switch_event_bind(modname, SWITCH_EVENT_CHANNEL_CALLSTATE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
 	}
@@ -6922,6 +6981,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
 
 	switch_event_channel_unbind(NULL, verto_broadcast, NULL);
+	switch_event_unbind_callback(cert_reload_handler);
 	switch_event_unbind_callback(presence_event_handler);
 	switch_event_unbind_callback(event_handler);
 
