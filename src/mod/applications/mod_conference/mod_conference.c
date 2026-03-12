@@ -222,8 +222,19 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	conference_cdr_node_t *np;
 	switch_time_t last_heartbeat_time = switch_epoch_time_now(NULL);
 
+	/* --- Optimized distribution variables --- */
+	int16_t *listener_frame;    /* Pre-clamped full mix for non-contributing members */
+	int16_t *silence_frame;     /* Pre-generated comfort noise frame */
+	uint8_t  listener_frame_ready;
+	uint8_t  silence_frame_ready;
+	uint32_t speaker_count;
+
 	file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	async_file_frame = switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
+
+	/* Pre-allocated frames for the optimized distribution path */
+	listener_frame = (int16_t *) switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
+	silence_frame  = (int16_t *) switch_core_alloc(conference->pool, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, conference->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", conference->interval, samples);
@@ -256,6 +267,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 		switch_mutex_lock(conference->mutex);
 		has_file_data = ready = total = 0;
+		speaker_count = 0;
 
 		floor_holder = conference->floor_holder;
 
@@ -377,6 +389,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				imember->read = buf_read;
 				conference_utils_member_set_flag_locked(imember, MFLAG_HAS_AUDIO);
 				ready++;
+				speaker_count++;
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
@@ -576,6 +589,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
 			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int use_optimized = (total >= CONF_OPTIMIZE_THRESHOLD);
 
 
 			/* Init the main frame with file data if there is any. */
@@ -609,6 +623,23 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				}
 			}
 
+			/* --- BEGIN OPTIMIZATION: Pre-compute shared output frames --- */
+			listener_frame_ready = 0;
+			silence_frame_ready  = 0;
+
+			if (use_optimized) {
+				/* Pre-clamp the full mix into listener_frame (int16_t).
+				 * This is what every non-contributing member will hear. */
+				for (x = 0; x < samples * conference->channels; x++) {
+					z = main_frame[x];
+					if (z > 32767)       z = 32767;
+					else if (z < -32768) z = -32768;
+					listener_frame[x] = (int16_t) z;
+				}
+				listener_frame_ready = 1;
+			}
+			/* --- END OPTIMIZATION: Pre-compute shared output frames --- */
+
 			/* Create write frame once per member who is not deaf for each sample in the main frame
 			   check if our audio is involved and if so, subtract it from the sample so we don't hear ourselves.
 			   Since main frame was 32 bit int, we did not lose any detail, now that we have to convert to 16 bit we can
@@ -621,7 +652,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					(!conference_utils_member_test_flag(omember, MFLAG_NOCHANNEL) && !switch_channel_test_flag(omember->channel, CF_AUDIO))) {
 					continue;
 				}
-				
+
 				if (!conference_utils_member_test_flag(omember, MFLAG_CAN_HEAR)) {
 					switch_mutex_lock(omember->audio_out_mutex);
 					memset(write_frame, 255, bytes);
@@ -634,59 +665,108 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					continue;
 				}
 
-				bptr = (int16_t *) omember->frame;
+				/* --- BEGIN OPTIMIZATION: Fast path for non-contributing members --- */
+				{
+					int member_contributed = (
+						conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) &&
+						omember->read > 0
+					);
 
-				for (x = 0; x < bytes / 2 ; x++) {
-					z = main_frame[x];
+					int needs_custom_mix = (
+						member_contributed ||
+						conference->relationship_total > 0 ||
+						omember->relationships != NULL ||
+						omember->fnode != NULL ||
+						omember->volume_out_level != 0 ||
+						conference_utils_member_test_flag(omember, MFLAG_POSITIONAL)
+					);
 
-					/* bptr[x] represents my own contribution to this audio sample */
-					if (conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
-						z -= (int32_t) bptr[x];
-					}
+					if (use_optimized && !needs_custom_mix) {
 
-					/* when there are relationships, we have to do more work by scouring all the members to see if there are any
-					   reasons why we should not be hearing a paticular member, and if not, delete their samples as well.
-					*/
-					if (conference->relationship_total) {
-						for (imember = conference->members; imember; imember = imember->next) {
-							if (imember != omember && conference_utils_member_test_flag(imember, MFLAG_HAS_AUDIO)) {
-								conference_relationship_t *rel;
-								switch_size_t found = 0;
-								int16_t *rptr = (int16_t *) imember->frame;
-								for (rel = imember->relationships; rel; rel = rel->next) {
-									if ((rel->id == omember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
-										z -= (int32_t) rptr[x];
-										found = 1;
-										break;
-									}
+						/* FAST PATH: Copy shared pre-clamped frame directly */
+						if (listener_frame_ready) {
+							if (!omember->channel || switch_channel_test_flag(omember->channel, CF_AUDIO)) {
+								switch_mutex_lock(omember->audio_out_mutex);
+								ok = switch_buffer_write(omember->mux_buffer, listener_frame, bytes);
+								switch_mutex_unlock(omember->audio_out_mutex);
+								if (!ok) {
+									switch_mutex_unlock(conference->mutex);
+									goto end;
 								}
-								if (!found) {
-									for (rel = omember->relationships; rel; rel = rel->next) {
-										if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
-											z -= (int32_t) rptr[x];
-											break;
+							}
+						}
+
+					} else {
+
+						/* SLOW PATH: Original subtract-self logic, unchanged */
+
+						bptr = (int16_t *) omember->frame;
+
+						for (x = 0; x < bytes / 2 ; x++) {
+							z = main_frame[x];
+
+							/* bptr[x] represents my own contribution to this audio sample */
+							if (conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
+								z -= (int32_t) bptr[x];
+							}
+
+							/* when there are relationships, we have to do more work by scouring all the members to see if there are any
+							   reasons why we should not be hearing a paticular member, and if not, delete their samples as well.
+							*/
+							if (conference->relationship_total) {
+								for (imember = conference->members; imember; imember = imember->next) {
+									if (imember != omember && conference_utils_member_test_flag(imember, MFLAG_HAS_AUDIO)) {
+										conference_relationship_t *rel;
+										switch_size_t found = 0;
+										int16_t *rptr = (int16_t *) imember->frame;
+										for (rel = imember->relationships; rel; rel = rel->next) {
+											if ((rel->id == omember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
+												z -= (int32_t) rptr[x];
+												found = 1;
+												break;
+											}
 										}
+										if (!found) {
+											for (rel = omember->relationships; rel; rel = rel->next) {
+												if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
+													z -= (int32_t) rptr[x];
+													break;
+												}
+											}
+										}
+
 									}
 								}
+							}
 
+							/* Now we can convert to 16 bit. */
+							switch_normalize_to_16bit(z);
+							write_frame[x] = (int16_t) z;
+						}
+
+						/* Apply per-member volume adjustment if configured */
+						if (omember->volume_out_level) {
+							switch_change_sln_volume(write_frame, samples * conference->channels,
+								omember->volume_out_level);
+						}
+
+						/* Mix in per-member file playback if active */
+						if (omember->fnode) {
+							conference_member_add_file_data(omember, write_frame, file_data_len);
+						}
+
+						if (!omember->channel || switch_channel_test_flag(omember->channel, CF_AUDIO)) {
+							switch_mutex_lock(omember->audio_out_mutex);
+							ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
+							switch_mutex_unlock(omember->audio_out_mutex);
+							if (!ok) {
+								switch_mutex_unlock(conference->mutex);
+								goto end;
 							}
 						}
 					}
-
-					/* Now we can convert to 16 bit. */
-					switch_normalize_to_16bit(z);
-					write_frame[x] = (int16_t) z;
 				}
-
-				if (!omember->channel || switch_channel_test_flag(omember->channel, CF_AUDIO)) {
-					switch_mutex_lock(omember->audio_out_mutex);
-					ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
-					switch_mutex_unlock(omember->audio_out_mutex);
-					if (!ok) {
-						switch_mutex_unlock(conference->mutex);
-						goto end;
-					}
-				}
+				/* --- END OPTIMIZATION: Fast path for non-contributing members --- */
 			}
 		} else { /* There is no source audio.  Push silence into all of the buffers */
 			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };

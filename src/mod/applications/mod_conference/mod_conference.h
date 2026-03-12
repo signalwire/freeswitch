@@ -69,6 +69,13 @@
 #define CONF_DBUFFER_MAX 0
 #define CONF_CHAT_PROTO "conf"
 
+/* Threshold for using optimized distribution path.
+ * Below this count, the overhead of the optimization check isn't worth it.
+ * Set to 0 to always use the optimized path. */
+#ifndef CONF_OPTIMIZE_THRESHOLD
+#define CONF_OPTIMIZE_THRESHOLD 10
+#endif
+
 #ifndef MIN
 #define MIN(a, b) ((a)<(b)?(a):(b))
 #endif
