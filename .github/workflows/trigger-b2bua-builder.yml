@@ -1,0 +1,110 @@
+name: Trigger telnyx_b2bua_builder
+on:
+  push:
+    branches:
+      - master
+      - main
+      - deploy-*
+      - release-*
+      - telnyx/telephony/deploy-*
+      - telnyx/telephony/release-*
+  delete:
+  pull_request:
+    branches:
+      - telnyx/telephony/master
+      - telnyx/telephony/main
+      - telnyx/telephony/deploy-*
+      - telnyx/telephony/release-*
+      - deploy-*
+      - release-*
+
+jobs:
+  trigger:
+    runs-on: telnyx-small
+    steps:
+      - name: Create branch in downstream repos
+        if: github.event_name == 'push' && (startsWith(github.ref_name, 'deploy-') || startsWith(github.ref_name, 'release-') || startsWith(github.ref_name, 'telnyx/telephony/deploy-') || startsWith(github.ref_name, 'telnyx/telephony/release-'))
+        env:
+          GH_TOKEN: ${{ secrets.GIT_TOKEN }}
+          RAW_BRANCH: ${{ github.ref_name }}
+          SOURCE: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          BRANCH="${RAW_BRANCH#telnyx/telephony/}"
+          ORG="team-telnyx"
+          TARGETS=("telnyx_b2bua_builder" "b2bua" "b2bua-rtc")
+          ERRORS=0
+
+          for target in "${TARGETS[@]}"; do
+            DEFAULT=$(gh api "repos/$ORG/$target" --jq '.default_branch')
+            SHA=$(gh api "repos/$ORG/$target/git/ref/heads/$DEFAULT" --jq '.object.sha')
+
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"ref\":\"refs/heads/$BRANCH\",\"sha\":\"$SHA\"}" \
+              "https://api.github.com/repos/$ORG/$target/git/refs")
+
+            if [ "$HTTP_CODE" = "201" ]; then
+              echo "Created $BRANCH in $target"
+            elif [ "$HTTP_CODE" = "422" ]; then
+              echo "Branch $BRANCH already exists in $target (skipped)"
+            else
+              echo "Failed to create $BRANCH in $target (HTTP $HTTP_CODE)"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "$ERRORS branch creation(s) failed -- blocking dispatch"
+            exit 1
+          fi
+      - name: Delete branch in downstream repos
+        if: github.event_name == 'delete' && github.event.ref_type == 'branch' && (startsWith(github.event.ref, 'deploy-') || startsWith(github.event.ref, 'release-') || startsWith(github.event.ref, 'telnyx/telephony/deploy-') || startsWith(github.event.ref, 'telnyx/telephony/release-')) && github.event.ref != 'deploy-development'
+        env:
+          GH_TOKEN: ${{ secrets.GIT_TOKEN }}
+          RAW_BRANCH: ${{ github.event.ref }}
+          SOURCE: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          BRANCH="${RAW_BRANCH#telnyx/telephony/}"
+          ORG="team-telnyx"
+          TARGETS=("telnyx_b2bua_builder" "b2bua" "b2bua-rtc")
+
+          for target in "${TARGETS[@]}"; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X DELETE \
+              -H "Authorization: token $GH_TOKEN" \
+              "https://api.github.com/repos/$ORG/$target/git/refs/heads/$BRANCH")
+
+            if [ "$HTTP_CODE" = "204" ]; then
+              echo "Deleted $BRANCH from $target"
+            elif [ "$HTTP_CODE" = "422" ] || [ "$HTTP_CODE" = "404" ]; then
+              echo "Branch $BRANCH not found in $target (already deleted or never existed)"
+            else
+              echo "Failed to delete $BRANCH from $target (HTTP $HTTP_CODE)"
+            fi
+          done
+      - name: Trigger upstream build
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GIT_TOKEN }}
+          script: |
+            const rawBranch = context.eventName === 'pull_request'
+              ? context.payload.pull_request.head.ref
+              : context.ref.replace('refs/heads/', '');
+            // Strip telnyx/telephony/ prefix -- builder branches use the short form (e.g. deploy-tel-1234)
+            const branchName = rawBranch.replace('telnyx/telephony/', '');
+
+            await github.rest.repos.createDispatchEvent({
+              owner: 'team-telnyx',
+              repo: 'telnyx_b2bua_builder',
+              event_type: 'upstream-build',
+              client_payload: {
+                branch: branchName,
+                source_repo: context.repo.repo,
+                run_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+              }
+            });
