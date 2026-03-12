@@ -974,26 +974,10 @@ static inline int check_jb_size(switch_jb_t *jb)
 
 	/* update the stats every x packets */
 	if (target_seq_hs % 50 == 0) {
-		int packet_ms = jb->jitter.samples_per_frame / (jb->jitter.samples_per_second / 1000);
-
 		jb->jitter.stats.estimate_ms = (*jb->jitter.estimate) / jb->jitter.samples_per_second * 1000;
-		if (jb->channel) {
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_max_ms", "%u", jb->jitter.stats.size_max * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_est_ms", "%u", jb->jitter.stats.size_est * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", jb->jitter.stats.acceleration * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_fast_acceleration_ms", "%u", jb->jitter.stats.fast_acceleration * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_forced_acceleration_ms", "%u", jb->jitter.stats.forced_acceleration * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffering_skip", "%u", jb->jitter.stats.buffering_skip);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", jb->jitter.stats.expand * packet_ms);
-		}
 
 		if (jb->jitter.stats.jitter_max_ms < jb->jitter.stats.estimate_ms) {
 			jb->jitter.stats.jitter_max_ms = jb->jitter.stats.estimate_ms;
-		}
-
-		if (jb->channel) {
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", jb->jitter.stats.jitter_max_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_est_ms", "%u", jb->jitter.stats.estimate_ms);
 		}
 	}
 
@@ -1119,22 +1103,6 @@ SWITCH_DECLARE(void) switch_jb_set_jitter_estimator(switch_jb_t *jb, double *jit
 {
 	if (jb && jitter) {
 		memset(&jb->jitter, 0, sizeof(switch_jb_jitter_t));
-		if (jb->channel) {
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_fast_acceleration_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_forced_acceleration_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffering_skip", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_count", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_missing_frames", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_ts_jump", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_error", "%u", 0);
-		}
 
 		jb->jitter.estimate = jitter;
 		jb->jitter.samples_per_frame = samples_per_frame;
@@ -1217,15 +1185,6 @@ SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 {
 	jb->jitter.stats.reset++;
 	jb->jitter.stats.expand_frame_len = 0;
-	if (jb->channel) {
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_count", "%u", jb->jitter.stats.reset);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big", "%u", jb->jitter.stats.reset_too_big);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_expanded", "%u", jb->jitter.stats.reset_too_expanded);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_missing_frames", "%u", jb->jitter.stats.reset_missing_frames);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_ts_jump", "%u", jb->jitter.stats.reset_ts_jump);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_error", "%u", jb->jitter.stats.reset_error);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffering_skip", "%u", jb->jitter.stats.buffering_skip);
-	}
 
 	if (jb->type == SJB_VIDEO) {
 		switch_mutex_lock(jb->mutex);
@@ -1397,6 +1356,90 @@ SWITCH_DECLARE(switch_status_t) switch_jb_create(switch_jb_t **jbp, switch_jb_ty
 	*jbp = jb;
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_jb_export_stats(switch_jb_t *jb)
+{
+	int packet_ms = 0;
+
+	if (!jb || !jb->channel) {
+		return;
+	}
+
+	switch_mutex_lock(jb->mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(jb->channel), SWITCH_LOG_INFO,
+		"switch_jb_export_stats: type=%s elastic=%s reset_count=%u\n",
+		jb->type == SJB_VIDEO ? "video" : (jb->type == SJB_AUDIO ? "audio" : "text"),
+		jb->elastic ? "true" : "false",
+		jb->jitter.stats.reset);
+
+	/* Export jitter buffer configuration */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_type", "%s",
+		jb->type == SJB_VIDEO ? "video" : (jb->type == SJB_AUDIO ? "audio" : "text"));
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_min_frame_len", "%u", jb->min_frame_len);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_frame_len", "%u", jb->max_frame_len);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_cur_frame_len", "%u", jb->frame_len);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_highest_frame_len", "%u", jb->highest_frame_len);
+
+	/* Export buffer state */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_visible_nodes", "%u", jb->visible_nodes);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_allocated_nodes", "%u", jb->allocated_nodes);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_complete_frames", "%u", jb->complete_frames);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_packets_in_buffer", "%d", jb->packets_in_buffer);
+
+	/* Export miss/hit statistics */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_period_miss_count", "%u", jb->period_miss_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_consec_miss_count", "%u", jb->consec_miss_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_period_good_count", "%u", jb->period_good_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_consec_good_count", "%u", jb->consec_good_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_period_miss_pct", "%.2f", jb->period_miss_pct);
+
+	/* Export jitter estimator statistics */
+	if (jb->jitter.samples_per_frame && jb->jitter.samples_per_second) {
+		packet_ms = jb->jitter.samples_per_frame / (jb->jitter.samples_per_second / 1000);
+	}
+
+	if (jb->jitter.estimate && jb->jitter.samples_per_second) {
+		jb->jitter.stats.estimate_ms = (*jb->jitter.estimate) / jb->jitter.samples_per_second * 1000;
+	}
+
+	if (packet_ms) {
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_max_ms", "%u", jb->jitter.stats.size_max * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_est_ms", "%u", jb->jitter.stats.size_est * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", jb->jitter.stats.acceleration * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_fast_acceleration_ms", "%u", jb->jitter.stats.fast_acceleration * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_forced_acceleration_ms", "%u", jb->jitter.stats.forced_acceleration * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", jb->jitter.stats.expand * packet_ms);
+	}
+
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffering_skip", "%u", jb->jitter.stats.buffering_skip);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", jb->jitter.stats.jitter_max_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_est_ms", "%u", jb->jitter.stats.estimate_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffer_size_ms", "%u", jb->jitter.stats.buffer_size_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_frame_len", "%d", jb->jitter.stats.expand_frame_len);
+
+	/* Export reset statistics */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_count", "%u", jb->jitter.stats.reset);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big", "%u", jb->jitter.stats.reset_too_big);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_expanded", "%u", jb->jitter.stats.reset_too_expanded);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_missing_frames", "%u", jb->jitter.stats.reset_missing_frames);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_ts_jump", "%u", jb->jitter.stats.reset_ts_jump);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_error", "%u", jb->jitter.stats.reset_error);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_consecutive_miss", "%u", jb->jitter.stats.consecutive_miss);
+
+	/* Export video-specific statistics */
+	if (jb->type == SJB_VIDEO) {
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_nack_saved_the_day", "%u", jb->nack_saved_the_day);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_nack_didnt_save_the_day", "%u", jb->nack_didnt_save_the_day);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_packet_len", "%u", jb->max_packet_len);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_packet_count", "%u", jb->packet_count);
+	}
+
+	/* Export elastic buffer info */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_elastic", "%s", jb->elastic ? "true" : "false");
+
+	switch_mutex_unlock(jb->mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_jb_destroy(switch_jb_t **jbp)
@@ -1634,7 +1677,6 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		if (!jb->flush) {
 			jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
 			jb->jitter.stats.buffering_skip++;
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffering_skip", "%u", jb->jitter.stats.buffering_skip);
 			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 		}
 	}
