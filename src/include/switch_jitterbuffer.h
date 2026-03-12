@@ -67,6 +67,7 @@ SWITCH_DECLARE(void) switch_jb_set_flag(switch_jb_t *jb, switch_jb_flag_t flag);
 SWITCH_DECLARE(void) switch_jb_clear_flag(switch_jb_t *jb, switch_jb_flag_t flag);
 SWITCH_DECLARE(uint32_t) switch_jb_get_nack_success(switch_jb_t *jb);
 SWITCH_DECLARE(uint32_t) switch_jb_get_packets_per_frame(switch_jb_t *jb);
+SWITCH_DECLARE(void) switch_jb_export_stats(switch_jb_t *jb);
 
 SWITCH_END_EXTERN_C
 #endif
