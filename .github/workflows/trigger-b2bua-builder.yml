@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           BRANCH="${RAW_BRANCH#telnyx/telephony/}"
           ORG="team-telnyx"
-          TARGETS=("telnyx_b2bua_builder" "b2bua" "b2bua-rtc")
+          TARGETS=("telnyx_b2bua_builder" "b2bua")
           ERRORS=0
 
           for target in "${TARGETS[@]}"; do
@@ -70,7 +70,7 @@ jobs:
           set -euo pipefail
           BRANCH="${RAW_BRANCH#telnyx/telephony/}"
           ORG="team-telnyx"
-          TARGETS=("telnyx_b2bua_builder" "b2bua" "b2bua-rtc")
+          TARGETS=("telnyx_b2bua_builder" "b2bua")
 
           for target in "${TARGETS[@]}"; do
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
