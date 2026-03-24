@@ -36,15 +36,6 @@
 
 #include <switch.h>
 
-/* Global function pointer for SoundTouch pitch-preserving time-stretching (set by mod_soundtouch) */
-SWITCH_DECLARE_DATA switch_status_t (*switch_ivr_soundtouch_process)(switch_core_session_t *session,
-																	 int16_t *data,
-																	 switch_size_t inlen,
-																	 switch_buffer_t *sp_audio_buffer,
-																	 int speed,
-																	 uint32_t rate,
-																	 uint32_t channels) = NULL;
-
 SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_session_t *session, const char *macro_name, const char *data, switch_event_t *event, const char *lang,
 														switch_input_args_t *args)
 {
@@ -1865,59 +1856,45 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
 			if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->speed && do_speed) {
-				const char *use_st = switch_channel_get_variable(channel, "use_soundtouch");
+				float factor = 0.25f * abs(fh->speed);
+				switch_size_t newlen, supplement, step;
+				short *bp = write_frame.data;
+				switch_size_t wrote = 0;
 
-				if (switch_true(use_st) && switch_ivr_soundtouch_process) {
-					/* Use SoundTouch for pitch-preserving tempo change */
-					if (!fh->sp_audio_buffer) {
-						switch_buffer_create_dynamic(&fh->sp_audio_buffer, 1024, 1024, 0);
-					}
-					switch_ivr_soundtouch_process(session, (int16_t *) write_frame.data, olen,
-												  fh->sp_audio_buffer, fh->speed,
-												  fh->samplerate, fh->channels);
-					last_speed = fh->speed;
-					continue;
-				} else {
-					float factor = 0.25f * abs(fh->speed);
-					switch_size_t newlen, supplement, step;
-					short *bp = write_frame.data;
-					switch_size_t wrote = 0;
-
-					supplement = (int) (factor * olen);
-					if (!supplement) {
-						supplement = 1;
-					}
-					newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
-
-					step = (fh->speed > 0) ? (newlen / supplement) : (olen / supplement);
-
-					if (!fh->sp_audio_buffer) {
-						switch_buffer_create_dynamic(&fh->sp_audio_buffer, 1024, 1024, 0);
-					}
-
-					while ((wrote + step) < newlen) {
-						switch_buffer_write(fh->sp_audio_buffer, bp, step * 2);
-						wrote += step;
-						bp += step;
-						if (fh->speed > 0) {
-							bp++;
-						} else {
-							float f;
-							short s;
-							f = (float) (*bp + *(bp + 1) + *(bp - 1));
-							f /= 3;
-							s = (short) f;
-							switch_buffer_write(fh->sp_audio_buffer, &s, 2);
-							wrote++;
-						}
-					}
-					if (wrote < newlen) {
-						switch_size_t r = newlen - wrote;
-						switch_buffer_write(fh->sp_audio_buffer, bp, r * 2);
-					}
-					last_speed = fh->speed;
-					continue;
+				supplement = (int) (factor * olen);
+				if (!supplement) {
+					supplement = 1;
 				}
+				newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
+
+				step = (fh->speed > 0) ? (newlen / supplement) : (olen / supplement);
+
+				if (!fh->sp_audio_buffer) {
+					switch_buffer_create_dynamic(&fh->sp_audio_buffer, 1024, 1024, 0);
+				}
+
+				while ((wrote + step) < newlen) {
+					switch_buffer_write(fh->sp_audio_buffer, bp, step * 2);
+					wrote += step;
+					bp += step;
+					if (fh->speed > 0) {
+						bp++;
+					} else {
+						float f;
+						short s;
+						f = (float) (*bp + *(bp + 1) + *(bp - 1));
+						f /= 3;
+						s = (short) f;
+						switch_buffer_write(fh->sp_audio_buffer, &s, 2);
+						wrote++;
+					}
+				}
+				if (wrote < newlen) {
+					switch_size_t r = newlen - wrote;
+					switch_buffer_write(fh->sp_audio_buffer, bp, r * 2);
+				}
+				last_speed = fh->speed;
+				continue;
 			}
 
 			if (olen < llen) {
