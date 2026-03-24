@@ -44,22 +44,7 @@
 #include <switch_core_video.h>
 #include "switch_json.h"
 
-SWITCH_BEGIN_EXTERN_C
-
-/*
- * Global function pointer for SoundTouch pitch-preserving time-stretching.
- * Set by mod_soundtouch when loaded, cleared when unloaded.
- * Called from switch_ivr_play_file() when channel variable use_soundtouch=true.
- */
-SWITCH_DECLARE_DATA extern switch_status_t (*switch_ivr_soundtouch_process)(switch_core_session_t *session,
-																			int16_t *data,
-																			switch_size_t inlen,
-																			switch_buffer_t *sp_audio_buffer,
-																			int speed,
-																			uint32_t rate,
-																			uint32_t channels);
-
-struct switch_unicast_conninfo {
+SWITCH_BEGIN_EXTERN_C struct switch_unicast_conninfo {
 	switch_core_session_t *session;
 	switch_codec_t read_codec;
 	switch_frame_t write_frame;

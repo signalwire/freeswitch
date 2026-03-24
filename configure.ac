@@ -1405,10 +1405,6 @@ PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
     AM_CONDITIONAL([HAVE_OPENCV],[true])],[
     AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])])
 
-PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.1],[
-  AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
-
 PKG_CHECK_MODULES([OPUSFILE_DECODE], [opusfile >= 0.5],[
    AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[true])],[
    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[false])])
@@ -2033,7 +2029,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
 		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_soundtouch/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
 		src/mod/applications/mod_test/Makefile

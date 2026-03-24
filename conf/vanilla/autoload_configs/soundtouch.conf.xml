@@ -1,7 +1,0 @@
-<configuration name="soundtouch.conf" description="SoundTouch Time-Stretching">
-  <settings>
-    <param name="default-enabled" value="true"/>
-    <param name="min-tempo" value="0.5"/>
-    <param name="max-tempo" value="2.0"/>
-  </settings>
-</configuration>
