@@ -419,7 +419,7 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	return false;
 }
 
-SWITCH_DECLARE(void) Event::verboseCustomEvent(void)
+SWITCH_DECLARE(void) Event::verboseEvent(void)
 {
 	const char *uuid;
 	switch_core_session_t *session;
@@ -427,7 +427,7 @@ SWITCH_DECLARE(void) Event::verboseCustomEvent(void)
 	this_check_void();
 
 	if (!event) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to verboseCustomEvent an event that does not exist!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to verboseEvent an event that does not exist!\n");
 		return;
 	}
 
@@ -441,7 +441,7 @@ SWITCH_DECLARE(void) Event::verboseCustomEvent(void)
 		return;
 	}
 
-	switch_event_set_verbose_custom(session, event);
+	switch_event_verbose_channel_data(session, event);
 	switch_core_session_rwunlock(session);
 }
 

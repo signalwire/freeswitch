@@ -3765,6 +3765,25 @@ SWITCH_DECLARE(void) switch_live_array_parse_json(cJSON *json, switch_event_chan
 
 }
 
+SWITCH_DECLARE(void) switch_event_verbose_channel_data(switch_core_session_t *session, switch_event_t *event)
+{
+	switch_channel_t *channel;
+
+	if (!session || !event) {
+		return;
+	}
+
+	channel = switch_core_session_get_channel(session);
+	if (!channel) {
+		return;
+	}
+
+	/* Avoid duplicate header names (e.g. Unique-ID) when the event already had headers set. */
+	switch_set_flag(event, EF_UNIQ_HEADERS);
+
+	switch_channel_event_set_data(channel, event);
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

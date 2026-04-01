@@ -2840,27 +2840,6 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
-SWITCH_DECLARE(void) switch_event_set_verbose_custom(switch_core_session_t *session, switch_event_t *event)
-{
-	switch_channel_t *channel;
-
-	if (!session || !event) {
-		return;
-	}
-
-	channel = switch_core_session_get_channel(session);
-	if (!channel) {
-		return;
-	}
-
-	/* Avoid duplicate header names (e.g. Unique-ID) when the event already had headers set. */
-	switch_set_flag(event, EF_UNIQ_HEADERS);
-
-	switch_channel_event_set_data(channel, event);
-
-}
-
-
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
 {
 	switch_mutex_lock(channel->profile_mutex);
