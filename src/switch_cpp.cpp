@@ -419,7 +419,7 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	return false;
 }
 
-SWITCH_DECLARE(void) Event::verboseEvent(void)
+SWITCH_DECLARE(void) Event::verboseChannelData(void)
 {
 	const char *uuid;
 	switch_core_session_t *session;
@@ -427,7 +427,7 @@ SWITCH_DECLARE(void) Event::verboseEvent(void)
 	this_check_void();
 
 	if (!event) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to verboseEvent an event that does not exist!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to verboseChannelData an event that does not exist!\n");
 		return;
 	}
 
