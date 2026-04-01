@@ -5025,6 +5025,29 @@ static int _wrap_Event_fire(lua_State* L) {
 }
 
 
+static int _wrap_Event_verboseCustomEvent(lua_State* L) {
+  {
+    int SWIG_arg = 0;
+    Event *arg1 = (Event *) 0 ;
+    
+    SWIG_check_num_args("Event::verboseCustomEvent",1,1)
+    if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Event::verboseCustomEvent",1,"Event *");
+    
+    if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
+      SWIG_fail_ptr("Event_verboseCustomEvent",1,SWIGTYPE_p_Event);
+    }
+    
+    (arg1)->verboseCustomEvent();
+    
+    return SWIG_arg;
+    
+    fail: SWIGUNUSED;
+  }
+  lua_error(L);
+  return 0;
+}
+
+
 static int _wrap_Event_merge(lua_State* L) {
   {
     int SWIG_arg = 0;
@@ -5086,6 +5109,7 @@ static swig_lua_method swig_Event_methods[]= {
     { "addHeader", _wrap_Event_addHeader},
     { "delHeader", _wrap_Event_delHeader},
     { "fire", _wrap_Event_fire},
+    { "verboseCustomEvent", _wrap_Event_verboseCustomEvent},
     { "merge", _wrap_Event_merge},
     {0,0}
 };

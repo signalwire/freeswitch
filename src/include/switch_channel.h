@@ -643,6 +643,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(_In_ switch_channel_t *channe
 SWITCH_DECLARE(void) switch_channel_event_set_basic_data(_In_ switch_channel_t *channel, _In_ switch_event_t *event);
 SWITCH_DECLARE(void) switch_channel_event_set_extended_data(_In_ switch_channel_t *channel, _In_ switch_event_t *event);
 
+SWITCH_DECLARE(void) switch_event_set_verbose_custom(_In_ switch_core_session_t *session, _In_ switch_event_t *event);
+
 /*!
   \brief Expand varaibles in a string based on the variables in a paticular channel
   \param channel channel to expand the variables from

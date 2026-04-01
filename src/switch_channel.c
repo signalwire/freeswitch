@@ -2840,6 +2840,37 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
+SWITCH_DECLARE(void) switch_event_set_verbose_custom(switch_core_session_t *session, switch_event_t *event)
+{
+	switch_channel_t *channel;
+	char *global_custom;
+	const char *chan_custom;
+
+	if (!session || !event) {
+		return;
+	}
+
+	channel = switch_core_session_get_channel(session);
+	if (!channel) {
+		return;
+	}
+
+	global_custom = switch_core_get_variable("verbose_custom_events");
+	chan_custom = switch_channel_get_variable(channel, "verbose-custom-events");
+
+	if (!((global_custom && switch_true(global_custom)) || (chan_custom && switch_true(chan_custom)))) {
+		return;
+	}
+
+	/* Avoid duplicate header names (e.g. Unique-ID) when the event already had headers set. */
+	switch_set_flag(event, EF_UNIQ_HEADERS);
+
+	switch_channel_event_set_basic_data(channel, event);
+
+	switch_channel_event_set_extended_data(channel, event);
+
+}
+
 
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
 {

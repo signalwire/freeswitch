@@ -419,6 +419,32 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	return false;
 }
 
+SWITCH_DECLARE(void) Event::verboseCustomEvent(void)
+{
+	const char *uuid;
+	switch_core_session_t *session;
+
+	this_check_void();
+
+	if (!event) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to verboseCustomEvent an event that does not exist!\n");
+		return;
+	}
+
+	uuid = switch_event_get_header(event, "Unique-ID");
+	if (zstr(uuid)) {
+		return;
+	}
+
+	session = switch_core_session_locate(uuid);
+	if (!session) {
+		return;
+	}
+
+	switch_event_set_verbose_custom(session, event);
+	switch_core_session_rwunlock(session);
+}
+
 SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)
 {
 	this_check(false);
