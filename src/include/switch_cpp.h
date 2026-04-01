@@ -176,7 +176,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(bool) addHeader(const char *header_name, const char *value);
 		 SWITCH_DECLARE(bool) delHeader(const char *header_name);
 		 SWITCH_DECLARE(bool) fire(void);
-		 SWITCH_DECLARE(void) verboseChannelData(void);
+		 SWITCH_DECLARE(void) verboseChannelData(const char *uuid_header_name = NULL);
 		 SWITCH_DECLARE(bool) merge(Event *to_merge);
 
 	 };

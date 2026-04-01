@@ -5029,15 +5029,27 @@ static int _wrap_Event_verboseChannelData(lua_State* L) {
   {
     int SWIG_arg = 0;
     Event *arg1 = (Event *) 0 ;
+    const char *arg2 = (const char *) 0 ;
+    int argc;
     
-    SWIG_check_num_args("Event::verboseChannelData",1,1)
+    argc = lua_gettop(L);
+    if (argc < 1 || argc > 2) {
+      SWIG_Lua_pusherrstring(L,"Wrong number of arguments for Event::verboseChannelData (expected 1 or 2)");
+      lua_error(L);
+      return 0;
+    }
     if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("Event::verboseChannelData",1,"Event *");
+    if (argc == 2 && !SWIG_lua_isnilstring(L,2)) SWIG_fail_arg("Event::verboseChannelData",2,"char const *");
     
     if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Event,0))){
       SWIG_fail_ptr("Event_verboseChannelData",1,SWIGTYPE_p_Event);
     }
     
-    (arg1)->verboseChannelData();
+    if (argc == 2) {
+      arg2 = (char *)lua_tostring(L, 2);
+    }
+    
+    (arg1)->verboseChannelData(arg2);
     
     return SWIG_arg;
     

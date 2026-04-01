@@ -419,11 +419,8 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	return false;
 }
 
-SWITCH_DECLARE(void) Event::verboseChannelData(void)
+SWITCH_DECLARE(void) Event::verboseChannelData(const char *uuid_header_name)
 {
-	const char *uuid;
-	switch_core_session_t *session;
-
 	this_check_void();
 
 	if (!event) {
@@ -431,18 +428,7 @@ SWITCH_DECLARE(void) Event::verboseChannelData(void)
 		return;
 	}
 
-	uuid = switch_event_get_header(event, "Unique-ID");
-	if (zstr(uuid)) {
-		return;
-	}
-
-	session = switch_core_session_locate(uuid);
-	if (!session) {
-		return;
-	}
-
-	switch_event_verbose_channel_data(session, event);
-	switch_core_session_rwunlock(session);
+	switch_event_verbose_channel_data(event, uuid_header_name);
 }
 
 SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)

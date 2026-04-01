@@ -426,7 +426,7 @@ SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, con
 SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *channel, switch_event_t *event, const char *prefix);
 SWITCH_DECLARE(void) switch_json_add_presence_data_cols(switch_event_t *event, cJSON *json, const char *prefix);
 
-SWITCH_DECLARE(void) switch_event_verbose_channel_data(switch_core_session_t *session, switch_event_t *event);
+SWITCH_DECLARE(void) switch_event_verbose_channel_data(switch_event_t *event, const char *uuid_header_name);
 
 SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max);
 
