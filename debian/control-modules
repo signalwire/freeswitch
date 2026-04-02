@@ -399,10 +399,6 @@ Module: event_handlers/mod_cdr_csv
 Description: mod_cdr_csv
  Adds mod_cdr_csv.
 
-Module: event_handlers/mod_cdr_mongodb
-Description: mod_cdr_mongodb
- Adds mod_cdr_mongodb.
-
 Module: event_handlers/mod_cdr_pg_csv
 Description: mod_cdr_pg_csv
  Adds mod_cdr_pg_csv.
