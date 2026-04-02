@@ -3765,6 +3765,44 @@ SWITCH_DECLARE(void) switch_live_array_parse_json(cJSON *json, switch_event_chan
 
 }
 
+SWITCH_DECLARE(void) switch_event_verbose_channel_data(switch_event_t *event, const char *uuid_header_name)
+{
+	const char *uuid;
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+
+	if (!event) {
+		return;
+	}
+
+	if (zstr(uuid_header_name)) {
+		uuid_header_name = "Unique-ID";
+	}
+
+	uuid = switch_event_get_header(event, uuid_header_name);
+	if (zstr(uuid)) {
+		return;
+	}
+
+	session = switch_core_session_locate(uuid);
+	if (!session) {
+		return;
+	}
+
+	channel = switch_core_session_get_channel(session);
+	if (!channel) {
+		switch_core_session_rwunlock(session);
+		return;
+	}
+
+	/* Avoid duplicate header names (e.g. Unique-ID) when the event already had headers set. */
+	switch_set_flag(event, EF_UNIQ_HEADERS);
+
+	switch_channel_event_set_data(channel, event);
+
+	switch_core_session_rwunlock(session);
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c
