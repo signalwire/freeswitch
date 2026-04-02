@@ -92,19 +92,18 @@ jobs:
         uses: signalwire/actions-template/.github/actions/repo-auth-client@main
         with:
           mode: nonce
+      - name: Mask nonce in logs
+        run: echo "::add-mask::${{ steps.get-nonce.outputs.nonce }}"
 
   issue-token:
     name: "Issue temporary token"
     runs-on: ubuntu-latest
     needs: get-nonce
-    env:
-      NONCE: ${{ needs.get-nonce.outputs.nonce }}
     outputs:
       token: ${{ steps.issue-token.outputs.token }}
     steps:
-      - name: Mask Token
-        run: echo "::add-mask::$NONCE"
-
+      - name: Mask nonce in logs
+        run: echo "::add-mask::${{ needs.get-nonce.outputs.nonce }}"
       - name: Issue Token
         id: issue-token
         uses: signalwire/actions-template/.github/actions/repo-auth-client@main
