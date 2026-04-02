@@ -5832,14 +5832,24 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				if (smh->mparams->dtmf_type == DTMF_AUTO || smh->mparams->dtmf_type == DTMF_2833 ||
 					switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF)) {
+					switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
+					smh->mparams->dtmf_type = DTMF_2833;
+					smh->mparams->te = (switch_payload_t) best_te;
+
 					if (sdp_type == SDP_OFFER) {
-						smh->mparams->te = smh->mparams->recv_te = (switch_payload_t) best_te;
-						switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
-						smh->mparams->dtmf_type = DTMF_2833;
+						// always being symmetric in a-leg
+						smh->mparams->recv_te = (switch_payload_t) best_te;
 					} else {
-						smh->mparams->te = (switch_payload_t) best_te;
-						switch_channel_set_variable(session->channel, "dtmf_type", "rfc2833");
-						smh->mparams->dtmf_type = DTMF_2833;
+						payload_map_t *pmap;
+						switch_mutex_lock(smh->sdp_mutex);
+						for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+							if (pmap->pt == best_te) {
+								// try being symmetric in b-leg
+								smh->mparams->recv_te = (switch_payload_t) best_te;
+								break;
+							}
+						}
+						switch_mutex_unlock(smh->sdp_mutex);
 					}
 				}
 
