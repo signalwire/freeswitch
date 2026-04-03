@@ -4776,7 +4776,7 @@ SWITCH_STANDARD_API(session_record_function)
 	}
 
 	if (!strcasecmp(action, "start")) {
-		if(argc > 3) {
+		if(argc > 4) {
 			switch_url_decode(argv[4]);
 			switch_event_create_brackets(argv[4], '{', '}',',', &vars, &new_fp, SWITCH_FALSE);
 		}
