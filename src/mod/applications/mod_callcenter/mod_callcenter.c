@@ -2486,6 +2486,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	const char *member_state = NULL;
 	const char *member_abandoned_epoch = NULL;
 	const char *serving_agent = NULL;
+	const char *serving_system = NULL;
 	const char *last_originated_call = NULL;
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -2499,7 +2500,8 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	member_state = argv[7];
 	member_abandoned_epoch = argv[8];
 	serving_agent = argv[9];
-	cbt.member_system = argv[10];
+	serving_system = argv[10];
+	cbt.member_system = argv[11];
 
 	if (!cbt.queue_name || !(queue = get_queue(cbt.queue_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Queue %s not found locally, delete this member\n", cbt.queue_name);
@@ -2543,6 +2545,110 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 		}
 		/* Skip this member */
 		goto end;
+	}
+
+	/*
+	 * If a member is stuck in TRYING (non ring-all / ring-progressively) and the mapped agent is no longer in a
+	 * state where it can complete the offer, this member would otherwise be skipped forever by the dispatcher.
+	 * Reset it back to WAITING so it can be served in FIFO order again.
+	 */
+	if (!strcasecmp(member_state, cc_member_state2str(CC_MEMBER_STATE_TRYING)) &&
+		!zstr(serving_agent) &&
+		strcasecmp(serving_agent, "ring-all") &&
+		strcasecmp(serving_agent, "ring-progressively")) {
+		char agent_state_res[128] = "";
+		char agent_status_res[128] = "";
+		char agent_last_offered_call_res[64] = "";
+		char tier_state_res[128] = "";
+		const char *agent_instance_id = !zstr(serving_system) ? serving_system : globals.cc_instance_id;
+		switch_time_t now_epoch = local_epoch_time_now(NULL);
+		char *agent_sql = NULL;
+		switch_bool_t reset_trying = SWITCH_FALSE;
+		const char *reset_reason = NULL;
+
+		agent_sql = switch_mprintf("SELECT state FROM agents WHERE name = '%q' AND instance_id = '%q' LIMIT 1", serving_agent, agent_instance_id);
+		cc_execute_sql2str(NULL, NULL, agent_sql, agent_state_res, sizeof(agent_state_res));
+		switch_safe_free(agent_sql);
+
+		agent_sql = switch_mprintf("SELECT status FROM agents WHERE name = '%q' AND instance_id = '%q' LIMIT 1", serving_agent, agent_instance_id);
+		cc_execute_sql2str(NULL, NULL, agent_sql, agent_status_res, sizeof(agent_status_res));
+		switch_safe_free(agent_sql);
+
+		agent_sql = switch_mprintf("SELECT last_offered_call FROM agents WHERE name = '%q' AND instance_id = '%q' LIMIT 1", serving_agent, agent_instance_id);
+		cc_execute_sql2str(NULL, NULL, agent_sql, agent_last_offered_call_res, sizeof(agent_last_offered_call_res));
+		switch_safe_free(agent_sql);
+
+		agent_sql = switch_mprintf("SELECT state FROM tiers WHERE agent = '%q' AND queue = '%q' LIMIT 1", serving_agent, cbt.queue_name);
+		cc_execute_sql2str(NULL, NULL, agent_sql, tier_state_res, sizeof(tier_state_res));
+		switch_safe_free(agent_sql);
+
+		/* Agent missing or not available -> member can't complete offer */
+		if (zstr(agent_state_res) || zstr(agent_status_res)) {
+			reset_trying = SWITCH_TRUE;
+			reset_reason = "agent-missing";
+		} else if (strcasecmp(agent_status_res, cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE)) &&
+				   strcasecmp(agent_status_res, cc_agent_status2str(CC_AGENT_STATUS_AVAILABLE_ON_DEMAND))) {
+			reset_trying = SWITCH_TRUE;
+			reset_reason = "agent-status-not-available";
+		}
+
+		/* Tier must be in a state compatible with offering */
+		if (reset_trying == SWITCH_FALSE) {
+			if (zstr(tier_state_res) ||
+				(strcasecmp(tier_state_res, cc_tier_state2str(CC_TIER_STATE_READY)) &&
+				 strcasecmp(tier_state_res, cc_tier_state2str(CC_TIER_STATE_NO_ANSWER)) &&
+				 strcasecmp(tier_state_res, cc_tier_state2str(CC_TIER_STATE_OFFERING)))) {
+				reset_trying = SWITCH_TRUE;
+				reset_reason = "tier-state-not-eligible";
+			}
+		}
+
+		/* Agent must still be in offer-receiving state */
+		if (reset_trying == SWITCH_FALSE) {
+			if (strcasecmp(agent_state_res, cc_agent_state2str(CC_AGENT_STATE_RECEIVING)) &&
+				strcasecmp(agent_state_res, cc_agent_state2str(CC_AGENT_STATE_RESERVED))) {
+				reset_trying = SWITCH_TRUE;
+				reset_reason = "agent-state-not-receiving";
+			}
+		}
+
+		/*
+		 * If the agent has been in RECEIVING for longer than originate timeout,
+		 * consider this offer stale and put the member back to WAITING.
+		 */
+		if (reset_trying == SWITCH_FALSE && !zstr(agent_last_offered_call_res)) {
+			switch_time_t offered_epoch = (switch_time_t) atoll(agent_last_offered_call_res);
+			if (offered_epoch > 0 && (now_epoch - offered_epoch) > (globals.agent_originate_timeout + 10)) {
+				reset_trying = SWITCH_TRUE;
+				reset_reason = "stale-offer-timeout";
+			}
+		}
+
+		if (reset_trying == SWITCH_TRUE) {
+			switch_time_t offered_epoch = (switch_time_t) atoll(agent_last_offered_call_res);
+			switch_time_t offered_age = (offered_epoch > 0) ? (now_epoch - offered_epoch) : (switch_time_t) -1;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "Callcenter: reset stuck TRYING member uuid=%s queue=%s joined_epoch=%s serving_agent=%s serving_system=%s agent_status=%s agent_state=%s tier_state=%s last_offered_call=%s offered_age=%" SWITCH_TIME_T_FMT " originate_timeout=%d reason=%s\n",
+							  cbt.member_uuid, cbt.queue_name, cbt.member_joined_epoch,
+							  serving_agent, !zstr(serving_system) ? serving_system : "",
+							  !zstr(agent_status_res) ? agent_status_res : "",
+							  !zstr(agent_state_res) ? agent_state_res : "",
+							  !zstr(tier_state_res) ? tier_state_res : "",
+							  !zstr(agent_last_offered_call_res) ? agent_last_offered_call_res : "",
+							  offered_age, globals.agent_originate_timeout,
+							  reset_reason ? reset_reason : "unknown");
+
+			sql = switch_mprintf("UPDATE members SET state = '%q', serving_agent = '', serving_system = ''"
+								 " WHERE uuid = '%q' AND instance_id = '%q' AND state = '%q'",
+								 cc_member_state2str(CC_MEMBER_STATE_WAITING),
+								 cbt.member_uuid, cbt.member_system,
+								 cc_member_state2str(CC_MEMBER_STATE_TRYING));
+			cc_execute_sql(NULL, sql, NULL);
+			switch_safe_free(sql);
+			member_state = cc_member_state2str(CC_MEMBER_STATE_WAITING);
+			serving_agent = "";
+			serving_system = "";
+		}
 	}
 
 	/* Tracking queue strategy changes */
@@ -2778,10 +2884,15 @@ void *SWITCH_THREAD_FUNC cc_agent_dispatch_thread_run(switch_thread_t *thread, v
 
 	while (globals.running == 1) {
 		char *sql = NULL;
-		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch, serving_agent, instance_id FROM members"
-				" WHERE (state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') OR (serving_agent = 'ring-progressively' AND state = '%q')) AND instance_id = '%q' ORDER BY score DESC",
+		sql = switch_mprintf("SELECT queue,uuid,session_uuid,cid_number,cid_name,joined_epoch,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score, state, abandoned_epoch, serving_agent, serving_system, instance_id FROM members"
+				" WHERE (state = '%q' OR state = '%q' OR state = '%q' OR (serving_agent = 'ring-all' AND state = '%q') OR (serving_agent = 'ring-progressively' AND state = '%q')) AND instance_id = '%q' ORDER BY score DESC",
 				local_epoch_time_now(NULL),
-				cc_member_state2str(CC_MEMBER_STATE_WAITING), cc_member_state2str(CC_MEMBER_STATE_ABANDONED), cc_member_state2str(CC_MEMBER_STATE_TRYING), cc_member_state2str(CC_MEMBER_STATE_TRYING), globals.cc_instance_id);
+				cc_member_state2str(CC_MEMBER_STATE_WAITING),
+				cc_member_state2str(CC_MEMBER_STATE_ABANDONED),
+				cc_member_state2str(CC_MEMBER_STATE_TRYING),
+				cc_member_state2str(CC_MEMBER_STATE_TRYING),
+				cc_member_state2str(CC_MEMBER_STATE_TRYING),
+				globals.cc_instance_id);
 
 		cc_execute_sql_callback(NULL /* queue */, NULL /* mutex */, sql, members_callback, NULL /* Call back variables */);
 		switch_safe_free(sql);
