@@ -348,7 +348,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 					switch_safe_free(save_expression);
 					switch_safe_free(save_field_data);
-					switch_regex_match_safe_free(match_data);
+					switch_regex_match_safe_free(save_match_data);
 					switch_regex_safe_free(save_re);
 
 					save_expression = strdup(expression);
@@ -358,6 +358,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					save_proceed = proceed;
 
 					re = NULL;
+					match_data = NULL;
 				}
 
 				switch_regex_match_safe_free(match_data);
