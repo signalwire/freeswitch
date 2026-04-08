@@ -964,7 +964,7 @@ Requires:        %{name} = %{version}-%{release}
 Russian language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
-Summary:        Provides french language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides french language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -972,7 +972,7 @@ Requires:        %{name} = %{version}-%{release}
 French language phrases module and directory structure for say module and voicemail
 
 %package lang-de
-Summary:        Provides german language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides german language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -980,7 +980,7 @@ Requires:        %{name} = %{version}-%{release}
 German language phrases module and directory structure for say module and voicemail
 
 %package lang-he
-Summary:        Provides hebrew language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides hebrew language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -988,7 +988,7 @@ Requires:        %{name} = %{version}-%{release}
 Hebrew language phrases module and directory structure for say module and voicemail
 
 %package lang-es
-Summary:        Provides Spanish language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides Spanish language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -996,7 +996,7 @@ Requires:        %{name} = %{version}-%{release}
 Spanish language phrases module and directory structure for say module and voicemail
 
 %package lang-pt
-Summary:        Provides Portuguese language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides Portuguese language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
@@ -1004,7 +1004,7 @@ Requires:        %{name} = %{version}-%{release}
 Portuguese language phrases module and directory structure for say module and voicemail
 
 %package lang-sv
-Summary:        Provides Swedish language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Summary:        Provides Swedish language dependent modules and speech config for the FreeSWITCH Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
