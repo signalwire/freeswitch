@@ -95,7 +95,8 @@ getlib () {
   local url="$1" f="${1##*/}"
   cwget "$url"
   tar -xv --no-same-owner --no-same-permissions -f "$f"
-  rm -f "$f" && mkdir -p $f && touch $f/.download-stamp
+  rm -f "$f"
+  # && mkdir -p $f && touch $f/.download-stamp
 }
 
 getlibs () {
