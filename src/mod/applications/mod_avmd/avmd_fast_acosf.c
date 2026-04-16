@@ -146,7 +146,7 @@ extern int init_fast_acosf(void)
 		ret = access(ACOS_TABLE_FILENAME, F_OK);
 		if (ret == -1) {
 			/* file doesn't exist, bad permissions,
-			 * or some other error occured */
+			 * or some other error occurred */
 			errsv = errno;
 			strerror_r(errsv, err, 150);
 			if (errsv != ENOENT) {
