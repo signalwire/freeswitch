@@ -152,7 +152,7 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, 
 #if defined(LIBCURL_VERSION_NUM) && (LIBCURL_VERSION_NUM >= 0x073800)
  error:
 	if (curl_code) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CURL error occured. Error code: %d Error msg: [%s]\n", curl_code, switch_curl_easy_strerror(curl_code));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CURL error occurred. Error code: %d Error msg: [%s]\n", curl_code, switch_curl_easy_strerror(curl_code));
 	}
 
 	if (!added) {
