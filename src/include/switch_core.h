@@ -864,7 +864,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_pool_wait(switch_thread_data_t *td
 	 _Ret_ SWITCH_DECLARE(switch_channel_t *) switch_core_session_get_channel(_In_ switch_core_session_t *session);
 
 /*!
-  \brief Signal a session's state machine thread that a state change has occured
+  \brief Signal a session's state machine thread that a state change has occurred
 */
 SWITCH_DECLARE(switch_mutex_t *) switch_core_session_get_mutex(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_wake_session_thread(_In_ switch_core_session_t *session);
