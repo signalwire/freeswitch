@@ -2114,7 +2114,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error %d %d\n", erl_errno, errno);
 #endif
 			} else {
-				/* if errno didn't get set, assume nothing *too* horrible occured */
+				/* if errno didn't get set, assume nothing *too* horrible occurred */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 								  "Ignorable error in ei_accept - probable bad client version, bad cookie or bad nodename\n");
 			}
