@@ -1224,13 +1224,13 @@ typedef enum {
 <pre>
     SWITCH_STATUS_SUCCESS	- General Success (common return value for most functions)
     SWITCH_STATUS_FALSE		- General Falsehood
-    SWITCH_STATUS_TIMEOUT	- A Timeout has occured
+    SWITCH_STATUS_TIMEOUT	- A Timeout has occurred
     SWITCH_STATUS_RESTART	- An indication to restart the previous operation
     SWITCH_STATUS_TERM		- An indication to terminate
     SWITCH_STATUS_NOTIMPL	- An indication that requested resource is not impelemented
     SWITCH_STATUS_MEMERR	- General memory error
     SWITCH_STATUS_NOOP		- NOTHING
-    SWITCH_STATUS_RESAMPLE	- An indication that a resample has occured
+    SWITCH_STATUS_RESAMPLE	- An indication that a resample has occurred
     SWITCH_STATUS_GENERR	- A general Error
     SWITCH_STATUS_INUSE		- An indication that requested resource is in use
 	SWITCH_STATUS_BREAK     - A non-fatal break of an operation
