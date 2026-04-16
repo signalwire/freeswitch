@@ -73,7 +73,7 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	vmivr_menu_t menu = { "std_main_menu" };
 	int retry;
-	switch_bool_t action_on_new_message_occured = SWITCH_FALSE;
+	switch_bool_t action_on_new_message_occurred = SWITCH_FALSE;
 
 	/* Initialize Menu Configs */
 	menu_init(profile, &menu);
@@ -106,10 +106,10 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, menu.phrase_params, NULL, 0);
 
-		if (atoi(switch_event_get_header(menu.phrase_params, "VM-Total-New-Messages")) > 0 && menu.ivre_d.result == RES_WAITFORMORE && !action_on_new_message_occured && action_on_new_message) {
+		if (atoi(switch_event_get_header(menu.phrase_params, "VM-Total-New-Messages")) > 0 && menu.ivre_d.result == RES_WAITFORMORE && !action_on_new_message_occurred && action_on_new_message) {
 			menu.ivre_d.result = RES_FOUND;
 			action = action_on_new_message;
-			action_on_new_message_occured = SWITCH_TRUE;
+			action_on_new_message_occurred = SWITCH_TRUE;
 
 		} else {
 			ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "menu_options"), NULL, menu.phrase_params, NULL, menu.ivr_entry_timeout);
