@@ -112,14 +112,14 @@ struct switch_xml {
  * \brief Parses a string into a switch_xml_t, ensuring the memory will be freed with switch_xml_free
  * \param s The string to parse
  * \param dup true if you want the string to be strdup()'d automatically
- * \return the switch_xml_t or NULL if an error occured
+ * \return the switch_xml_t or NULL if an error occurred
  */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(_In_z_ char *s, _In_ switch_bool_t dup);
 
 /*!
  * \brief Parses a string into a switch_xml_t
  * \param s The string to parse
- * \return the switch_xml_t or NULL if an error occured
+ * \return the switch_xml_t or NULL if an error occurred
  */
 #define switch_xml_parse_str_dup(x)  switch_xml_parse_str_dynamic(x, SWITCH_TRUE)
 
