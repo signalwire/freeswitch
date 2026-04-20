@@ -4226,8 +4226,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CALLCENTER_EVENT);
 		return SWITCH_STATUS_TERM;
 	}
-
-
+	
+	
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
