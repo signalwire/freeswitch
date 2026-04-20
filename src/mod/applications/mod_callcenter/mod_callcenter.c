@@ -2638,8 +2638,8 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 
 			if (reset_trying == SWITCH_TRUE) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-								  "Callcenter: reset stuck TRYING member uuid=%s queue=%s joined_epoch=%s serving_agent=%s serving_system=%s agent_status=%s agent_state=%s tier_state=%s last_offered_call=%s offered_age=%" SWITCH_TIME_T_FMT " originate_timeout=%d reason=%s\n",
-								  cbt.member_uuid, cbt.queue_name, cbt.member_joined_epoch,
+								  "Callcenter: reset stuck TRYING member session_uuid=%s cid_number=%s queue=%s joined_epoch=%s serving_agent=%s serving_system=%s agent_status=%s agent_state=%s tier_state=%s last_offered_call=%s offered_age=%" SWITCH_TIME_T_FMT " originate_timeout=%d reason=%s\n",
+								  cbt.member_session_uuid, cbt.member_cid_number, cbt.queue_name, cbt.member_joined_epoch,
 								  serving_agent, !zstr(serving_system) ? serving_system : "",
 								  !zstr(agent_status_res) ? agent_status_res : "",
 								  !zstr(agent_state_res) ? agent_state_res : "",
