@@ -1,7 +1,12 @@
 {
-    "files.eol": "\n", // Force LF (Linux-style) line endings
-    "files.trimTrailingWhitespace": false, // Prevent automatic removal of trailing whitespaces
-    "files.insertFinalNewline": false, // Disable adding a newline at the end of the file
-    "files.trimFinalNewlines": true, // Automatically trim any existing empty lines at the end of the file
-    "editor.formatOnSave": false // Disable automatic formatting on save for this project
+    "files.eol": "auto", // Keeps the original line endings (LF or CRLF) as they are
+    "files.trimTrailingWhitespace": false, // Does not remove spaces at the end of lines
+    "files.insertFinalNewline": false, // Does not add a new blank line at the end of the file
+    "files.trimFinalNewlines": false, // Does not remove existing blank lines at the end of the file
+    "editor.formatOnSave": false, // Disables automatic code formatting when saving
+    "editor.formatOnType": false, // Disables formatting while typing
+    "editor.formatOnPaste": false, // Disables formatting when pasting code
+    "editor.codeActionsOnSave": {
+        "source.fixAll": false // Disables all auto-fixes on save
+    }
 }
