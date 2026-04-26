@@ -2381,6 +2381,8 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
 					switch_core_max_audio_channels(atoi(val));
+				} else if (!strcasecmp(var, "recovery-renegotiate-media") && !zstr(val)) {
+					runtime.recovery_renegotiate_media = switch_true(val) ? SWITCH_TRUE : SWITCH_FALSE;
 				}
 			}
 		}
