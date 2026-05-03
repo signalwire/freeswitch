@@ -905,9 +905,37 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	return new_uri;
 }
 
-char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix)
+static void sofia_glue_write_extra_header_for_variable(switch_stream_handle_t *stream, const char *prefix, const char *name, const char *value, const char *exclude_regex)
+{
+	if (!strcasecmp(name, "sip_geolocation")) {
+		stream->write_function(stream, "Geolocation: %s\r\n", value);
+	}
+
+	if (!strncasecmp(name, prefix, strlen(prefix))) {
+		if ( !exclude_regex || !(/*proceed*/ switch_regex(name, exclude_regex))) {
+			const char *hname = name + strlen(prefix);
+			stream->write_function(stream, "%s: %s\r\n", hname, value);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
+		}
+	}
+}
+
+static char *sofia_glue_collect_extra_headers(switch_stream_handle_t *stream)
 {
 	char *extra_headers = NULL;
+
+	if (!zstr((char *) stream->data)) {
+		extra_headers = stream->data;
+	} else {
+		switch_safe_free(stream->data);
+	}
+
+	return extra_headers;
+}
+
+char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix)
+{
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hi = NULL;
 	const char *exclude_regex = NULL;
@@ -919,29 +947,44 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
 
-			if (!strcasecmp(name, "sip_geolocation")) {
-				stream.write_function(&stream, "Geolocation: %s\r\n", value);
-			}
-
-			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				if ( !exclude_regex || !(/*proceed*/ switch_regex(name, exclude_regex))) {
-					const char *hname = name + strlen(prefix);
-					stream.write_function(&stream, "%s: %s\r\n", hname, value);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
-				}
-			}
+			sofia_glue_write_extra_header_for_variable(&stream, prefix, name, value, exclude_regex);
 		}
 		switch_channel_variable_last(channel);
 	}
 
-	if (!zstr((char *) stream.data)) {
-		extra_headers = stream.data;
-	} else {
-		switch_safe_free(stream.data);
+	return sofia_glue_collect_extra_headers(&stream);
+}
+
+/*
+ * INVITE generation handles Identity explicitly with SIPTAG_IDENTITY_STR().
+ * Keep the normal sip_h_* contract everywhere else, but do not also render
+ * sip_h_identity through generic extra headers here or the INVITE can carry
+ * duplicate Identity headers.
+ */
+static char *sofia_glue_get_invite_extra_headers(switch_channel_t *channel)
+{
+	switch_stream_handle_t stream = { 0 };
+	switch_event_header_t *hi = NULL;
+	const char *exclude_regex = NULL;
+
+	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
+	SWITCH_STANDARD_STREAM(stream);
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			const char *name = (char *) hi->name;
+			char *value = (char *) hi->value;
+
+			/* Already emitted explicitly as the INVITE Identity header. */
+			if (!strcasecmp(name, "sip_h_identity")) {
+				continue;
+			}
+
+			sofia_glue_write_extra_header_for_variable(&stream, SOFIA_SIP_HEADER_PREFIX, name, value, exclude_regex);
+		}
+		switch_channel_variable_last(channel);
 	}
 
-	return extra_headers;
+	return sofia_glue_collect_extra_headers(&stream);
 }
 
 void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *sip, const char *prefix)
@@ -1027,6 +1070,48 @@ char *sofia_glue_get_non_extra_unknown_headers(sip_t const *sip)
 	return unknown;
 }
 
+static const char *sofia_glue_get_shaken_identity_header(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_header_t *hi = NULL;
+	const char *identity = NULL;
+
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			const char *name = (char *) hi->name;
+			char *value = (char *) hi->value;
+
+			if (strcasecmp(name, "sip_identity") && strcasecmp(name, "sip_h_identity")) {
+				continue;
+			}
+
+			if (hi->idx && hi->array) {
+				int i;
+
+				for (i = 0; i < hi->idx; i++) {
+					if (sofia_stir_shaken_identity_type(hi->array[i]) == SOFIA_STIR_SHAKEN_IDENTITY_SHAKEN) {
+						identity = switch_core_session_strdup(session, hi->array[i]);
+						break;
+					}
+				}
+				if (identity) {
+					break;
+				}
+			} else if (sofia_stir_shaken_identity_type(value) == SOFIA_STIR_SHAKEN_IDENTITY_SHAKEN) {
+				identity = switch_core_session_strdup(session, value);
+				break;
+			}
+		}
+		switch_channel_variable_last(channel);
+	}
+
+	if (!identity) {
+		identity = switch_channel_get_variable(channel, "sip_h_identity");
+	}
+
+	return identity;
+}
+
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
 	char *alert_info = NULL;
@@ -1072,7 +1157,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 #endif
 	const char *stir_shaken_attest = NULL;
 	char *identity_to_free = NULL;
+	char *div_identity_value = NULL;
+	const char *div_identity_header = NULL;
 	const char *date = NULL;
+	switch_bool_t stir_shaken_div = SWITCH_FALSE;
 
 
 	if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD_INACTIVE) ||
@@ -1132,7 +1220,34 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		alert_info = switch_core_session_sprintf(tech_pvt->session, "Alert-Info: %s", alertbuf);
 	}
 
-	if ((stir_shaken_attest = switch_channel_get_variable(tech_pvt->channel, "sip_stir_shaken_attest"))) {
+	stir_shaken_div = switch_true(switch_channel_get_variable(tech_pvt->channel, "sip_stir_shaken_div"));
+
+	if (stir_shaken_div) {
+		char date_buf[80] = "";
+		char *dest = caller_profile->destination_number;
+		const char *base_shaken_identity_header = switch_channel_get_variable(channel, "sip_stir_shaken_div_shaken_identity");
+
+		if (zstr(base_shaken_identity_header)) {
+			base_shaken_identity_header = sofia_glue_get_shaken_identity_header(session);
+		}
+		if (!zstr(base_shaken_identity_header)) {
+			identity = base_shaken_identity_header;
+		}
+
+		check_decode(dest, session);
+		switch_rfc822_date(date_buf, switch_micro_time_now());
+		date = switch_core_session_strdup(tech_pvt->session, date_buf);
+		div_identity_value = sofia_stir_shaken_as_create_div_identity_header(tech_pvt->session, base_shaken_identity_header, dest);
+		if (!zstr(div_identity_value)) {
+			div_identity_header = switch_core_session_sprintf(tech_pvt->session, "Identity: %s\r\n", div_identity_value);
+		} else if (switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_div_hangup_on_fail"))) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+			goto end;
+		}
+		if ((stir_shaken_attest = switch_channel_get_variable(tech_pvt->channel, "sip_stir_shaken_attest"))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_WARNING, "Ignoring sip_stir_shaken_attest while sip_stir_shaken_div is enabled\n");
+		}
+	} else if ((stir_shaken_attest = switch_channel_get_variable(tech_pvt->channel, "sip_stir_shaken_attest"))) {
 		char date_buf[80] = "";
 		char *dest = caller_profile->destination_number;
 		check_decode(dest, session);
@@ -1140,7 +1255,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		date = switch_core_session_strdup(tech_pvt->session, date_buf);
 		identity = identity_to_free = sofia_stir_shaken_as_create_identity_header(tech_pvt->session, stir_shaken_attest, cid_num, dest);
 	}
-	if (!identity) {
+	if (!identity && !stir_shaken_div) {
 		identity = switch_channel_get_variable(channel, "sip_h_identity");
 	}
 	if (!date) {
@@ -1588,7 +1703,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sofia_profile_url", tech_pvt->profile->url);
 	}
 
-	extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+	extra_headers = sofia_glue_get_invite_extra_headers(channel);
 
 	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
 		int v_session_timeout = atoi(val);
@@ -1693,6 +1808,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
 				   TAG_IF(!zstr(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 				   TAG_IF(!zstr(identity), SIPTAG_IDENTITY_STR(identity)),
+				   TAG_IF(!zstr(div_identity_header), SIPTAG_HEADER_STR(div_identity_header)),
 				   TAG_IF(!zstr(date), SIPTAG_DATE_STR(date)),
 				   TAG_IF(!zstr(alert_info), SIPTAG_HEADER_STR(alert_info)),
 				   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
@@ -1732,11 +1848,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
 				   TAG_IF(!zstr(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
 				   TAG_IF(!zstr(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
+				   TAG_IF(!zstr(identity), SIPTAG_IDENTITY_STR(identity)),
+				   TAG_IF(!zstr(div_identity_header), SIPTAG_HEADER_STR(div_identity_header)),
 				   TAG_IF(!zstr(alert_info), SIPTAG_HEADER_STR(alert_info)),
 				   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 				   TAG_IF(sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_CALLEE_ID), SIPTAG_HEADER_STR("X-FS-Support: " FREESWITCH_SUPPORT)),
 				   TAG_IF(!zstr(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-				   TAG_IF(!zstr(identity), SIPTAG_IDENTITY_STR(identity)),
 				   TAG_IF(!zstr(route_uri), NUTAG_PROXY(route_uri)),
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
 				   TAG_IF(!zstr(invite_route_uri), NUTAG_INITIAL_ROUTE_STR(invite_route_uri)),
@@ -1762,6 +1879,7 @@ end:
 	}
 
 	switch_safe_free(identity_to_free);
+	switch_safe_free(div_identity_value);
 
 	return status;
 }
