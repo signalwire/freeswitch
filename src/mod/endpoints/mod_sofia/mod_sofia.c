@@ -6341,6 +6341,455 @@ static char* sofia_stir_shaken_passport_get_dest(stir_shaken_passport_t *passpor
 	return id;
 }
 
+#endif
+
+typedef struct sofia_stir_shaken_identity_headers_s {
+	const char *original;
+	const char *div;
+	uint32_t original_count;
+	uint32_t div_count;
+	uint32_t invalid_count;
+	uint32_t unsupported_count;
+} sofia_stir_shaken_identity_headers_t;
+
+sofia_stir_shaken_identity_type_t sofia_stir_shaken_identity_type(const char *identity_header)
+{
+#if HAVE_STIRSHAKEN
+	stir_shaken_context_t parse_context = { 0 };
+	stir_shaken_parsed_identity_t parsed = { 0 };
+	sofia_stir_shaken_identity_type_t type = SOFIA_STIR_SHAKEN_IDENTITY_INVALID;
+
+	if (zstr(identity_header)) {
+		return SOFIA_STIR_SHAKEN_IDENTITY_NONE;
+	}
+
+	if (stir_shaken_sih_parse(&parse_context, identity_header, &parsed) != STIR_SHAKEN_STATUS_OK) {
+		goto done;
+	}
+
+	if (!parsed.ppt || !strcmp(parsed.ppt, STIR_SHAKEN_PPT_SHAKEN)) {
+		type = SOFIA_STIR_SHAKEN_IDENTITY_SHAKEN;
+	} else if (!strcmp(parsed.ppt, STIR_SHAKEN_PPT_DIV)) {
+		type = SOFIA_STIR_SHAKEN_IDENTITY_DIV;
+	} else {
+		type = SOFIA_STIR_SHAKEN_IDENTITY_UNSUPPORTED;
+	}
+
+done:
+	stir_shaken_sih_parse_destroy(&parsed);
+	return type;
+#else
+	return zstr(identity_header) ? SOFIA_STIR_SHAKEN_IDENTITY_NONE : SOFIA_STIR_SHAKEN_IDENTITY_UNSUPPORTED;
+#endif
+}
+
+#if HAVE_STIRSHAKEN
+
+static int sofia_stir_shaken_vs_max_age(switch_channel_t *channel)
+{
+	int timeout = 60;
+	const char *timeout_str = switch_channel_get_variable(channel, "sip_stir_shaken_vs_max_age");
+
+	if (timeout_str && switch_is_number(timeout_str)) {
+		int new_timeout = atoi(timeout_str);
+
+		if (new_timeout > 0) {
+			timeout = new_timeout;
+		}
+	}
+
+	return timeout;
+}
+
+static void sofia_stir_shaken_vs_note_identity_header(switch_core_session_t *session, const char *identity_header, sofia_stir_shaken_identity_headers_t *headers)
+{
+	switch (sofia_stir_shaken_identity_type(identity_header)) {
+	case SOFIA_STIR_SHAKEN_IDENTITY_NONE:
+		break;
+	case SOFIA_STIR_SHAKEN_IDENTITY_INVALID:
+		headers->invalid_count++;
+		break;
+	case SOFIA_STIR_SHAKEN_IDENTITY_SHAKEN:
+		headers->original_count++;
+		if (!headers->original) {
+			headers->original = switch_core_session_strdup(session, identity_header);
+		}
+		break;
+	case SOFIA_STIR_SHAKEN_IDENTITY_DIV:
+		headers->div_count++;
+		if (!headers->div) {
+			headers->div = switch_core_session_strdup(session, identity_header);
+		}
+		break;
+	case SOFIA_STIR_SHAKEN_IDENTITY_UNSUPPORTED:
+		headers->unsupported_count++;
+		break;
+	}
+}
+
+static void sofia_stir_shaken_vs_find_identity_headers(switch_core_session_t *session, sofia_stir_shaken_identity_headers_t *headers)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_header_t *hi = NULL;
+	switch_bool_t found_identity_list = SWITCH_FALSE;
+
+	memset(headers, 0, sizeof(*headers));
+
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			const char *name = (char *) hi->name;
+
+			if (strcasecmp(name, "sip_identity")) {
+				continue;
+			}
+
+			found_identity_list = SWITCH_TRUE;
+			if (hi->idx && hi->array) {
+				int i;
+
+				for (i = 0; i < hi->idx; i++) {
+					sofia_stir_shaken_vs_note_identity_header(session, hi->array[i], headers);
+				}
+			} else {
+				sofia_stir_shaken_vs_note_identity_header(session, hi->value, headers);
+			}
+		}
+		switch_channel_variable_last(channel);
+	}
+
+	/* Prefer the inbound sip_identity list so DIV validation can see multiple Identity headers; sip_h_identity remains the single-header fallback. */
+	if (!found_identity_list) {
+		sofia_stir_shaken_vs_note_identity_header(session, switch_channel_get_variable(channel, "sip_h_identity"), headers);
+	}
+}
+
+static switch_status_t sofia_stir_shaken_validate_passport_against_sip(switch_core_session_t *session, stir_shaken_passport_t *passport, int *orig_is_tn)
+{
+	stir_shaken_context_t validate_claims_context = { 0 };
+	int dest_is_tn = 0;
+	long iat = 0;
+	char *orig = NULL;
+	char *dest = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (orig_is_tn) {
+		*orig_is_tn = 0;
+	}
+
+	if (!passport) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	orig = stir_shaken_passport_get_identity(&validate_claims_context, passport, orig_is_tn);
+	dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
+	iat = stir_shaken_passport_get_grant_int(&validate_claims_context, passport, "iat");
+
+	status = sofia_stir_shaken_validate_passport_claims(session, iat, orig, orig_is_tn ? *orig_is_tn : 0, dest, dest_is_tn);
+
+	switch_safe_free(orig);
+	switch_safe_free(dest);
+	return status;
+}
+
+static switch_status_t sofia_stir_shaken_validate_div_passport_against_sip(switch_core_session_t *session, stir_shaken_passport_t *passport)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
+	int dest_is_tn = 0;
+	char *dest = NULL;
+	char *canonical_target = NULL;
+	const char *expected_key = NULL;
+	const char *target = NULL;
+	stir_shaken_context_t validate_dest_context = { 0 };
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (!passport) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn);
+	if (dest_is_tn) {
+		expected_key = "tn";
+		target = switch_channel_get_variable(channel, "sip_req_user");
+		if (zstr(target) && caller_profile) {
+			target = caller_profile->destination_number;
+		}
+		canonical_target = canonicalize_phone_number(target);
+		target = canonical_target;
+	} else {
+		expected_key = "uri";
+		target = switch_channel_get_variable(channel, "sip_req_uri");
+		if (zstr(target) && caller_profile) {
+			target = caller_profile->destination_number;
+		}
+	}
+
+	if (zstr(target) || zstr(dest)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing data to verify SIP request target matches DIV PASSporT dest. Target=%s, dest=%s\n", target ? target : "", dest ? dest : "");
+	} else if (stir_shaken_div_passport_validate_dest(&validate_dest_context, passport, expected_key, target) != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "SIP request target does not match DIV PASSporT dest. Target=%s, dest=%s\n", target, dest);
+	} else {
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_safe_free(canonical_target);
+	switch_safe_free(dest);
+	return status;
+}
+
+static stir_shaken_status_t sofia_stir_shaken_validate_div_passport_headers_and_grants(stir_shaken_context_t *context, stir_shaken_passport_t *passport)
+{
+	char *json = NULL;
+	const char *header = NULL;
+
+	if (!passport) {
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+
+	header = stir_shaken_passport_get_header(context, passport, "alg");
+	if (zstr(header) || strcmp(header, "ES256")) {
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+
+	header = stir_shaken_passport_get_header(context, passport, "ppt");
+	if (zstr(header) || strcmp(header, STIR_SHAKEN_PPT_DIV)) {
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+
+	header = stir_shaken_passport_get_header(context, passport, "typ");
+	if (zstr(header) || strcmp(header, "passport")) {
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+
+	header = stir_shaken_passport_get_header(context, passport, "x5u");
+	if (zstr(header)) {
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+
+	json = stir_shaken_passport_get_grants_json(context, passport, "orig");
+	if (zstr(json)) {
+		switch_safe_free(json);
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+	switch_safe_free(json);
+
+	json = stir_shaken_passport_get_grants_json(context, passport, "dest");
+	if (zstr(json)) {
+		switch_safe_free(json);
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+	switch_safe_free(json);
+
+	json = stir_shaken_passport_get_grants_json(context, passport, "div");
+	if (zstr(json)) {
+		switch_safe_free(json);
+		return STIR_SHAKEN_STATUS_FALSE;
+	}
+	switch_safe_free(json);
+
+	return STIR_SHAKEN_STATUS_OK;
+}
+
+static int sofia_stir_shaken_passport_orig_is_tn(stir_shaken_context_t *context, stir_shaken_passport_t *passport)
+{
+	char *orig = NULL;
+	int orig_is_tn = 0;
+
+	orig = stir_shaken_passport_get_identity(context, passport, &orig_is_tn);
+	switch_safe_free(orig);
+
+	return orig_is_tn;
+}
+
+static void sofia_stir_shaken_vs_set_verstat_success(switch_core_session_t *session, const char *attestation, int orig_is_tn)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (orig_is_tn) {
+		switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Passed-%s", attestation);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT orig is not a telephone number\n");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+	}
+
+	if (orig_is_tn && !strcmp(attestation, "A")) {
+		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Passed");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT only has \"%s\" attestation\n", attestation);
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+	}
+}
+
+static void sofia_stir_shaken_vs_set_verstat_failed(switch_channel_t *channel, const char *attestation)
+{
+	if (zstr(attestation)) {
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+	} else {
+		switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Failed-%s", attestation);
+		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Failed");
+	}
+}
+
+static void sofia_stir_shaken_vs_verify_identity(switch_core_session_t *session, const char *identity_header, switch_bool_t hangup_on_fail)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	stir_shaken_status_t verify_signature_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_context_t verify_signature_context = { 0 };
+	stir_shaken_status_t validate_passport_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_context_t validate_passport_context = { 0 };
+	stir_shaken_context_t get_grant_context = { 0 };
+	stir_shaken_passport_t *passport = NULL;
+	stir_shaken_cert_t *cert = NULL;
+	stir_shaken_error_t stir_error = { 0 };
+	switch_status_t claim_status = SWITCH_STATUS_FALSE;
+	const char *attestation = NULL;
+	int orig_is_tn = 0;
+
+	verify_signature_status = stir_shaken_vs_sih_verify(&verify_signature_context, sofia_stir_shaken_vs, identity_header, &cert, &passport);
+	if (verify_signature_status != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed signature verification: %s\n", stir_shaken_get_error(&verify_signature_context, &stir_error));
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+			goto done;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed signature verification\n");
+	}
+
+	if (passport) {
+		validate_passport_status = stir_shaken_passport_validate_iat_against_freshness(&validate_passport_context, passport, sofia_stir_shaken_vs_max_age(channel));
+		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed stale check: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_STALE_DATE);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed stale check\n");
+		}
+
+		validate_passport_status = stir_shaken_passport_validate_headers_and_grants(&validate_passport_context, passport);
+		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed header and grant validation\n");
+		}
+	}
+
+	if (passport) {
+		claim_status = sofia_stir_shaken_validate_passport_against_sip(session, passport, &orig_is_tn);
+		if (claim_status != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
+			if (hangup_on_fail) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+				goto done;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims match SIP request\n");
+		}
+	}
+
+	if (passport) {
+		attestation = stir_shaken_passport_get_grant(&get_grant_context, passport, "attest");
+	}
+
+	if (!zstr(attestation) && verify_signature_status == STIR_SHAKEN_STATUS_OK && validate_passport_status == STIR_SHAKEN_STATUS_OK && claim_status == SWITCH_STATUS_SUCCESS) {
+		sofia_stir_shaken_vs_set_verstat_success(session, attestation, orig_is_tn);
+	} else if (!passport || !cert || zstr(attestation) || verify_signature_status == STIR_SHAKEN_STATUS_OK) {
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+	} else {
+		sofia_stir_shaken_vs_set_verstat_failed(channel, attestation);
+	}
+
+done:
+	stir_shaken_passport_destroy(&passport);
+	stir_shaken_cert_destroy(&cert);
+}
+
+static void sofia_stir_shaken_vs_verify_div_identity(switch_core_session_t *session, const char *original_identity, const char *div_identity, switch_bool_t hangup_on_fail)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	stir_shaken_context_t vs_context = { 0 };
+	stir_shaken_context_t validate_passport_context = { 0 };
+	stir_shaken_context_t get_grant_context = { 0 };
+	stir_shaken_vs_div_result_t result = { 0 };
+	stir_shaken_error_t stir_error = { 0 };
+	stir_shaken_status_t verify_status = STIR_SHAKEN_STATUS_FALSE;
+	stir_shaken_status_t validate_passport_status = STIR_SHAKEN_STATUS_FALSE;
+	switch_status_t claim_status = SWITCH_STATUS_FALSE;
+	const char *attestation = NULL;
+	int orig_is_tn = 0;
+
+	verify_status = stir_shaken_vs_div_sih_verify(&vs_context, sofia_stir_shaken_vs, original_identity, div_identity, &result);
+	if (verify_status != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT chain failed verification: %s\n", stir_shaken_get_error(&vs_context, &stir_error));
+		sofia_stir_shaken_vs_set_verstat_failed(channel, NULL);
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+		}
+		goto done;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT chain passed verification\n");
+
+	validate_passport_status = stir_shaken_passport_validate_iat_against_freshness(&validate_passport_context, result.div_passport, sofia_stir_shaken_vs_max_age(channel));
+	if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT failed stale check: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+		sofia_stir_shaken_vs_set_verstat_failed(channel, NULL);
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_STALE_DATE);
+		}
+		goto done;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT passed stale check\n");
+
+	validate_passport_status = sofia_stir_shaken_validate_div_passport_headers_and_grants(&validate_passport_context, result.div_passport);
+	if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
+		sofia_stir_shaken_vs_set_verstat_failed(channel, NULL);
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+		}
+		goto done;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT passed header and grant validation\n");
+
+	claim_status = sofia_stir_shaken_validate_div_passport_against_sip(session, result.div_passport);
+	if (claim_status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT claims do not match SIP request\n");
+		attestation = stir_shaken_passport_get_grant(&get_grant_context, result.original_passport, "attest");
+		sofia_stir_shaken_vs_set_verstat_failed(channel, attestation);
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+		}
+		goto done;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "DIV PASSporT claims match SIP request\n");
+
+	attestation = stir_shaken_passport_get_grant(&get_grant_context, result.original_passport, "attest");
+	if (zstr(attestation)) {
+		sofia_stir_shaken_vs_set_verstat_failed(channel, NULL);
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+		}
+		goto done;
+	}
+
+	orig_is_tn = sofia_stir_shaken_passport_orig_is_tn(&get_grant_context, result.original_passport);
+	sofia_stir_shaken_vs_set_verstat_success(session, attestation, orig_is_tn);
+
+done:
+	stir_shaken_vs_div_result_deinit(&result);
+}
 
 #endif
 
@@ -6354,23 +6803,14 @@ SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 #if HAVE_STIRSHAKEN
-	stir_shaken_status_t verify_signature_status = STIR_SHAKEN_STATUS_FALSE;
-	stir_shaken_context_t verify_signature_context = { 0 };
-	stir_shaken_status_t validate_passport_status = STIR_SHAKEN_STATUS_FALSE;
-	stir_shaken_context_t validate_passport_context = { 0 };
-	stir_shaken_context_t get_grant_context = { 0 };
-	stir_shaken_passport_t *passport = NULL;
-	stir_shaken_cert_t *cert = NULL;
-	stir_shaken_error_t stir_error = { 0 };
-	switch_status_t claim_status = SWITCH_STATUS_FALSE;
-	const char *identity_header = switch_channel_get_variable(channel, "sip_h_identity");
-	const char *attestation = NULL;
-	int orig_is_tn = 0;
+	sofia_stir_shaken_identity_headers_t identity_headers = { 0 };
 	switch_bool_t hangup_on_fail = switch_true(switch_channel_get_variable(channel, "sip_stir_shaken_vs_hangup_on_fail"));
 
 	// TODO: compact Identity header is not supported - this will require construction of PASSporT from SIP headers in order to check signature
 
-	if (zstr(identity_header)) {
+	sofia_stir_shaken_vs_find_identity_headers(session, &identity_headers);
+
+	if (!identity_headers.original_count && !identity_headers.div_count && !identity_headers.invalid_count && !identity_headers.unsupported_count) {
 		// Nothing to do
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: no SIP Identity\n");
 		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
@@ -6381,112 +6821,41 @@ SWITCH_STANDARD_APP(sofia_stir_shaken_vs_function)
 		goto done;
 	}
 
-	// verify the JWT signature in the SIP Identity header
-	verify_signature_status = stir_shaken_vs_sih_verify(&verify_signature_context, sofia_stir_shaken_vs, identity_header, &cert, &passport);
-	if (verify_signature_status != STIR_SHAKEN_STATUS_OK) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed signature verification: %s\n", stir_shaken_get_error(&verify_signature_context, &stir_error));
-		if (hangup_on_fail) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-			goto done;
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed signature verification\n");
-	}
-
-	if (passport) {
-		// validate the PASSporT is not expired
-		int timeout = 60;
-		const char *timeout_str = switch_channel_get_variable(channel, "sip_stir_shaken_vs_max_age");
-		if (timeout_str && switch_is_number(timeout_str)) {
-			int new_timeout = atoi(timeout_str);
-			if (new_timeout > 0) {
-				timeout = new_timeout;
-			}
-		}
-		validate_passport_status = stir_shaken_passport_validate_iat_against_freshness(&validate_passport_context, passport, timeout);
-		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed stale check: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
-			if (hangup_on_fail) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_STALE_DATE);
-				goto done;
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed stale check\n");
-		}
-
-		// validate the required PASSporT headers and grants are set
-		validate_passport_status = stir_shaken_passport_validate_headers_and_grants(&validate_passport_context, passport);
-		if (validate_passport_status != STIR_SHAKEN_STATUS_OK) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT failed header and grant validation: %s\n", stir_shaken_get_error(&validate_passport_context, &stir_error));
-			if (hangup_on_fail) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-				if (validate_passport_status == STIR_SHAKEN_STATUS_OK && verify_signature_status == STIR_SHAKEN_STATUS_OK) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMING_CALL_BARRED);
-				} else {
-					switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-				}
-				goto done;
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT passed header and grant validation\n");
-		}
-	}
-
-	if (passport) {
-		// validate the PASSporT claims match the SIP headers
-		stir_shaken_context_t validate_claims_context = { 0 };
-		int dest_is_tn = 0;
-		char *orig = stir_shaken_passport_get_identity(&validate_claims_context, passport, &orig_is_tn);
-		char *dest = sofia_stir_shaken_passport_get_dest(passport, &dest_is_tn); // TODO libstirshaken should provide helper for 'dest' values
-		long iat = stir_shaken_passport_get_grant_int(&validate_claims_context, passport, "iat");
-		claim_status = sofia_stir_shaken_validate_passport_claims(session, iat, orig, orig_is_tn, dest, dest_is_tn);
-		if (claim_status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims do not match SIP request\n");
-			if (hangup_on_fail) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
-				switch_safe_free(orig);
-				switch_safe_free(dest);
-				goto done;
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "PASSporT claims match SIP request\n");
-		}
-		switch_safe_free(orig);
-		switch_safe_free(dest);
-	}
-
-	attestation = stir_shaken_passport_get_grant(&get_grant_context, passport, "attest");
-
-	if (!zstr(attestation) && verify_signature_status == STIR_SHAKEN_STATUS_OK && validate_passport_status == STIR_SHAKEN_STATUS_OK && claim_status == SWITCH_STATUS_SUCCESS) {
-		if (orig_is_tn) {
-			switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Passed-%s", attestation);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT orig is not a telephone number\n");
-			switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
-		}
-		if (orig_is_tn && !strcmp(attestation, "A")) {
-			// Signature is valid and call has "A" attestation
-			switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Passed");
-		} else {
-			// Signature is valid and call has "B" or "C" attestation or is not from a phone number
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No-TN-Validation: PASSporT only has \"%s\" attestation\n", attestation);
-			switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
-		}
-	} else if (!passport || !cert || zstr(attestation) || verify_signature_status == STIR_SHAKEN_STATUS_OK) {
-		// failed to get cert / bad passport / no attestation / claims don't match SIP
+	if (!identity_headers.original_count && !identity_headers.div_count && !identity_headers.invalid_count && identity_headers.unsupported_count) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						  "Unsupported SIP Identity header set: invalid=%u unsupported=%u\n",
+						  identity_headers.invalid_count, identity_headers.unsupported_count);
 		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
 		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
-	} else {
-		// bad signature
-		switch_channel_set_variable_printf(channel, "sip_verstat_detailed", "TN-Validation-Failed-%s", attestation);
-		switch_channel_set_variable(channel, "sip_verstat", "TN-Validation-Failed");
+		goto done;
 	}
 
+	if ((identity_headers.invalid_count && !identity_headers.original_count && !identity_headers.div_count) ||
+		identity_headers.original_count > 1 || identity_headers.div_count > 1 || (identity_headers.div_count && !identity_headers.original_count)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						  "Invalid SIP Identity header set: original=%u div=%u invalid=%u unsupported=%u\n",
+						  identity_headers.original_count, identity_headers.div_count, identity_headers.invalid_count, identity_headers.unsupported_count);
+		switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
+		switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
+		if (hangup_on_fail) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_INVALID_IDENTITY);
+		}
+		goto done;
+	}
+
+	if (identity_headers.invalid_count || identity_headers.unsupported_count) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						  "Ignoring unsupported SIP Identity headers while verifying supported set: invalid=%u unsupported=%u\n",
+						  identity_headers.invalid_count, identity_headers.unsupported_count);
+	}
+
+	if (identity_headers.div_count) {
+		sofia_stir_shaken_vs_verify_div_identity(session, identity_headers.original, identity_headers.div, hangup_on_fail);
+	} else {
+		sofia_stir_shaken_vs_verify_identity(session, identity_headers.original, hangup_on_fail);
+	}
 
 done:
-	stir_shaken_passport_destroy(&passport);
-	stir_shaken_cert_destroy(&cert);
-
 #else
 	switch_channel_set_variable(channel, "sip_verstat_detailed", "No-TN-Validation");
 	switch_channel_set_variable(channel, "sip_verstat", "No-TN-Validation");
@@ -6522,6 +6891,91 @@ char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session
 	switch_safe_free(canonical_desttn);
 	switch_safe_free(canonical_origtn);
 	return passport;
+#else
+	return NULL;
+#endif
+}
+
+char *sofia_stir_shaken_as_create_div_identity_header(switch_core_session_t *session, const char *base_shaken_identity_header, const char *dest)
+{
+#if HAVE_STIRSHAKEN
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	stir_shaken_context_t as_context = { 0 };
+	stir_shaken_div_passport_params_t div_params = { 0 };
+	stir_shaken_error_t stir_error = { 0 };
+	const char *x5u = switch_channel_get_variable(channel, "sip_stir_shaken_div_x5u");
+	const char *dest_key = switch_channel_get_variable(channel, "sip_stir_shaken_div_dest_key");
+	const char *dest_val = switch_channel_get_variable(channel, "sip_stir_shaken_div_dest");
+	const char *selected_original_dest_key = switch_channel_get_variable(channel, "sip_stir_shaken_div_orig_dest_key");
+	const char *selected_original_dest_val = switch_channel_get_variable(channel, "sip_stir_shaken_div_orig_dest");
+	const char *reason = switch_channel_get_variable(channel, "sip_stir_shaken_div_reason");
+	const char *hi = switch_channel_get_variable(channel, "sip_stir_shaken_div_hi");
+	const char *new_dests[1] = { NULL };
+	char *canonical_dest = NULL;
+	char *div_identity = NULL;
+
+	if (zstr(x5u)) {
+		x5u = mod_sofia_globals.stir_shaken_div_as_url;
+	}
+	if (zstr(x5u)) {
+		x5u = mod_sofia_globals.stir_shaken_as_url;
+	}
+	if (zstr(dest_key)) {
+		dest_key = "tn";
+	}
+	if (zstr(dest_val)) {
+		dest_val = dest;
+	}
+	if (zstr(reason)) {
+		reason = mod_sofia_globals.stir_shaken_div_reason;
+	}
+	if (zstr(hi)) {
+		hi = mod_sofia_globals.stir_shaken_div_hi;
+	}
+
+	if (zstr(base_shaken_identity_header) || zstr(x5u) || zstr(dest_val) || !sofia_stir_shaken_as) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Missing required parameter to create DIV PASSporT\n");
+		return NULL;
+	}
+
+	if (!strcasecmp(dest_key, "tn")) {
+		canonical_dest = canonicalize_phone_number(dest_val);
+		new_dests[0] = canonical_dest;
+	} else {
+		new_dests[0] = dest_val;
+	}
+
+	if (stir_shaken_div_params_from_original_sih(&as_context, base_shaken_identity_header, x5u, dest_key, new_dests, 1,
+												 selected_original_dest_key, selected_original_dest_val, &div_params) != STIR_SHAKEN_STATUS_OK) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to prepare DIV PASSporT params: %s\n", stir_shaken_get_error(&as_context, &stir_error));
+		goto done;
+	}
+
+	div_params.iat = switch_epoch_time_now(NULL);
+	if (!zstr(reason)) {
+		div_params.reason = strdup(reason);
+		if (!div_params.reason) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to allocate DIV PASSporT reason\n");
+			goto done;
+		}
+	}
+	if (!zstr(hi)) {
+		div_params.hi = strdup(hi);
+		if (!div_params.hi) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to allocate DIV PASSporT hi\n");
+			goto done;
+		}
+	}
+
+	div_identity = stir_shaken_as_div_authenticate_to_sih(&as_context, sofia_stir_shaken_as, &div_params, NULL);
+	if (!div_identity) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to create DIV PASSporT: %s\n", stir_shaken_get_error(&as_context, &stir_error));
+	}
+
+done:
+	stir_shaken_div_passport_params_destroy(&div_params);
+	switch_safe_free(canonical_dest);
+	return div_identity;
 #else
 	return NULL;
 #endif
