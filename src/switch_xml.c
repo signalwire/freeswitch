@@ -838,6 +838,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 	char q, *c, *t, *n = NULL, *v, **ent, **pe;
 	int i, j;
 	char **sstmp;
+	switch_bool_t disable_dtd = switch_true(switch_core_get_variable("xml_disable_dtd"));
 
 	pe = (char **) memcpy(switch_must_malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
 
@@ -847,7 +848,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 
 		if (!*s)
 			break;
-		else if (!strncmp(s, "<!ENTITY", 8)) {	/* parse entity definitions */
+		else if (!strncmp(s, "<!ENTITY", 8) && !disable_dtd) {	/* parse entity definitions if dtd is not explicitly disabled */
 			int use_pe;
 
 			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	/* skip white space separator */
@@ -881,7 +882,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				break;
 			} else
 				ent[i] = n;		/* set entity name */
-		} else if (!strncmp(s, "<!ATTLIST", 9)) {	/* parse default attributes */
+		} else if (!strncmp(s, "<!ATTLIST", 9) && !disable_dtd) {	/* parse default attributes if dtd is not explicitly disabled */
 			t = s + strspn(s + 9, SWITCH_XML_WS) + 9;	/* skip whitespace separator */
 			if (!*t) {
 				switch_xml_err(root, t, "unclosed <!ATTLIST");
