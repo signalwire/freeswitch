@@ -1,6 +1,0 @@
-settings:
-#look for foo.conf.yaml when foo.conf is looked for in the xml
-   bind_config: true 
-
-
-

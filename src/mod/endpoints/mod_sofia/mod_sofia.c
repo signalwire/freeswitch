@@ -254,7 +254,7 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	callee_number = switch_sanitize_number(switch_core_session_strdup(session, callee_number));
 	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
-	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("polycom", ua))) {
+	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("poly", ua))) {
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, host);
 	}
 
@@ -1339,6 +1339,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	if (msg->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
 		sofia_dispatch_event_t *de = (sofia_dispatch_event_t *) msg->pointer_arg;
+
+		switch_core_session_lock_codec_write(session);
 		switch_mutex_lock(tech_pvt->sofia_mutex);
 		if (switch_core_session_in_thread(session)) {
 			de->session = session;
@@ -1346,8 +1348,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 		sofia_process_dispatch_event(&de);
 
-
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
+		switch_core_session_unlock_codec_write(session);
 		goto end;
 	}
 
@@ -1363,6 +1365,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	/* ones that do not need to lock sofia mutex */
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
+	case SWITCH_MESSAGE_RESAMPLE_EVENT:
+		goto end;
 	case SWITCH_MESSAGE_INDICATE_KEEPALIVE:
 		{
 			if (msg->numeric_arg) {
@@ -1523,6 +1528,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 
 	/* ones that do need to lock sofia mutex */
+	switch_core_session_lock_codec_write(session);
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
 	if (switch_channel_down(channel) || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -1557,7 +1563,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			tech_pvt->proxy_refer_uuid = (char *)msg->string_array_arg[0];
 		} else if (!switch_channel_var_true(tech_pvt->channel, "sip_refer_continue_after_reply")) {
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
+			switch_core_session_unlock_codec_write(session);
 			sofia_wait_for_reply(tech_pvt, 9999, 10);
+			switch_core_session_lock_codec_write(session);
 			switch_mutex_lock(tech_pvt->sofia_mutex);
 
 			if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
@@ -2067,13 +2075,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 									 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)), SIPTAG_PAYLOAD_STR(message), TAG_END());
 						} else if (update_allowed && ua && (switch_channel_var_true(tech_pvt->channel, "update_ignore_ua") ||
-									  switch_stristr("polycom", ua) ||
+									  switch_stristr("poly", ua) ||
 									  (switch_stristr("aastra", ua) && !switch_stristr("Intelligate", ua)) ||
 									  (switch_stristr("cisco/spa50", ua) ||
 									  switch_stristr("cisco/spa525", ua)) ||
 									  switch_stristr("cisco/spa30", ua) ||
 									  switch_stristr("Fanvil", ua) ||
 									  switch_stristr("Grandstream", ua) ||
+									  switch_stristr("Ringotel", ua) ||
+									  switch_stristr("Groundwire", ua) ||									  
 									  switch_stristr("Yealink", ua) ||
 									  switch_stristr("Mitel", ua) ||
 									  switch_stristr("Panasonic", ua))) {
@@ -2144,7 +2154,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								 SIPTAG_PAYLOAD_STR(message),
 								 TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
 								 TAG_END());
-					} else if (ua && switch_stristr("polycom", ua)) {
+					} else if (ua && switch_stristr("poly", ua)) {
 						snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
 						nua_update(tech_pvt->nh,
 								   NUTAG_SESSION_TIMER(tech_pvt->session_timeout),
@@ -2391,6 +2401,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								/* Unlock the session signal to allow the ack to make it in */
 								// Maybe we should timeout?
 								switch_mutex_unlock(tech_pvt->sofia_mutex);
+								switch_core_session_unlock_codec_write(session);
 
 								while (switch_channel_ready(channel) && !sofia_test_flag(tech_pvt, TFLAG_3PCC_HAS_ACK)) {
 									switch_ivr_parse_all_events(session);
@@ -2398,6 +2409,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								}
 
 								/*  Regain lock on sofia */
+								switch_core_session_lock_codec_write(session);
 								switch_mutex_lock(tech_pvt->sofia_mutex);
 
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
@@ -2706,6 +2718,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	//}
 
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
+	switch_core_session_unlock_codec_write(session);
 
   end:
 

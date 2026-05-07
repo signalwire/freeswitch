@@ -59,6 +59,27 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 	switch_mutex_unlock(session->codec_read_mutex);
 }
 
+SWITCH_DECLARE(void) switch_core_codec_lock_full(switch_core_session_t *session)
+{
+	do {
+		if (switch_mutex_trylock(session->codec_write_mutex) == SWITCH_STATUS_SUCCESS) {
+			if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
+				return;
+			}
+
+			switch_mutex_unlock(session->codec_write_mutex);
+		}
+
+		switch_cond_next();
+	} while (1);
+}
+
+SWITCH_DECLARE(void) switch_core_codec_unlock_full(switch_core_session_t *session)
+{
+	switch_mutex_unlock(session->codec_read_mutex);
+	switch_mutex_unlock(session->codec_write_mutex);
+}
+
 SWITCH_DECLARE(void) switch_core_session_lock_codec_write(switch_core_session_t *session)
 {
 	switch_mutex_lock(session->codec_write_mutex);

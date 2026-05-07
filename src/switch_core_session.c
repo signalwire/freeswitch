@@ -1392,6 +1392,8 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	switch_core_codec_lock_full(session);
+
 	if (reset_read_codec) {
 		switch_core_session_set_read_codec(session, NULL);
 		if (session->sdata && switch_core_codec_ready(&session->sdata->codec)) {
@@ -1425,6 +1427,8 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_clear_flag(session, SSF_WARN_TRANSCODE);
 	switch_ivr_deactivate_unicast(session);
 	switch_channel_clear_flag(channel, CF_BREAK);
+
+	switch_core_codec_unlock_full(session);
 }
 
 

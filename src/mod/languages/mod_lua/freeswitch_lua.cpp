@@ -482,6 +482,62 @@ bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
   return false;
 }
 
+struct query_callback_data {
+    lua_State *L;
+    int stack_index;
+    int *row_num;
+};
+
+int query2_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    struct query_callback_data *data = (struct query_callback_data *) pArg;
+    lua_State *tL = data->L;
+    lua_createtable(tL, 0, argc);
+    for (int i = 0; i < argc; i++) {
+        lua_pushstring(tL, argv[i]);
+        lua_setfield(tL, -2, switch_str_nil(columnNames[i]));
+    }
+    lua_rawseti(tL, data->stack_index + 2, (*data->row_num)++);
+    return 0;
+}
+
+DbhQueryRowsReturn Dbh::query_rows(lua_State* L, char *sql)
+{
+    int stack_index = lua_gettop(L);
+    clear_error();
+    lua_pushboolean(L, 0); // result success error: stack_index + 1
+    lua_newtable(L);       // the rows: stack_index + 2
+    lua_pushnil(L);        // error message if any: stack_index + 3
+
+    if (zstr(sql)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing SQL query.\n");
+        lua_pushstring(L, "Missing SQL query.");
+	lua_replace(L, stack_index + 3);
+        return 3;
+    }
+
+    if (dbh) {
+        int index = 1;
+        struct query_callback_data pData = {L, stack_index, &index};
+
+        if (switch_cache_db_execute_sql_callback(dbh, sql, query2_callback, &pData, &err) == SWITCH_STATUS_SUCCESS) {
+            // no errors
+	    lua_pushboolean(L, 1);
+            lua_replace(L, stack_index + 1);
+        } else {
+            lua_pushstring(L, !zstr(err) ? err : "Failed to execute sql query");
+	    lua_replace(L, stack_index + 3);
+        }
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
+        lua_pushstring(L, "DBH NOT Connected.");
+	lua_replace(L, stack_index + 3);
+    }
+
+    return 3;
+}
+
+
 int Dbh::affected_rows()
 {
   if (dbh) {

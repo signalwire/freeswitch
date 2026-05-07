@@ -97,7 +97,7 @@ static opus_int16 switch_opus_get_silk_frame_ms_per_flag(int16_t config, opus_in
  * for stereo : the mid frame VAD_flags and the LBRR_flag could be obtained
  * yet, to get the LBRR_flags of the mid frame the routine should be modified
  * to skip the side VAD flags and the side LBRR flag and to get the mid LBRR_symbol */
-static void switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk_frame_nb_flags,
+static switch_bool_t switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 buf_size, opus_int16 silk_frame_nb_flags,
 										   opus_int16 *VAD_flags, opus_int16 *LBRR_flags, opus_int16 *nb_VAD1, opus_int16 *nb_FEC)
 {
 	const opus_int16 *ptr_pdf_cum;
@@ -108,6 +108,10 @@ static void switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk_f
 	opus_int16 LBRR_flag;
 	opus_int16 nb_vad, nb_fec;
 	int i;
+
+	if (buf_size <= 0) {
+		return SWITCH_FALSE;
+	}
 
 	nb_vad = 0;
 	nb_fec = 0;
@@ -143,6 +147,9 @@ static void switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk_f
 		if (silk_frame_nb_flags == 1) {
 			LBRR_flags[0] = 1;
 			nb_fec = 1;
+		} else if (buf_size < 2) {
+			/* not enough data in the buffer to get LBRR_symbol and LBRR_flags */
+			return SWITCH_FALSE;
 		} else { /* get LBRR_symbol  then LBRR_flags */
 			/* LBRR symbol is encoded with range encoder : range on 8 bits
 			 * silk_frame_nb_flags  = 2  ; 3 possible values for LBRR_flags(1) | LBRR_flags(0))=  01, 10, 11
@@ -182,7 +189,7 @@ static void switch_opus_get_VAD_LBRR_flags(const uint8_t *buf, opus_int16 silk_f
 	*nb_VAD1 = nb_vad;
 	*nb_FEC = nb_fec;
 
-	return;
+	return SWITCH_TRUE;
 }
 
 /* Parse the packet to retrieve informations about its content
@@ -197,7 +204,7 @@ switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_lengt
 	int16_t vad_flags_per_silk_frame, fec_flags_per_silk_frame;
 	opus_int16 frame_sizes[48];
 	const unsigned char *frame_data[48];
-	opus_int16 packet_LBBR_FLAGS[3 * 48], packet_VAD_FLAGS[3 * 48];
+	opus_int16 packet_LBBR_FLAGS[3 * 48] = { 0 }, packet_VAD_FLAGS[3 * 48] = { 0 };
 	opus_int16 *ptr_LBBR_FLAGS, *ptr_VAD_FLAGS;
 	opus_int16 silk_frame_nb_flags, silk_size_frame_ms_per_flag;
 	opus_int16 silk_frame_nb_fec, silk_frame_nb_vad1;
@@ -276,14 +283,6 @@ switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_lengt
 
 	packet_info->ptime_ts = packet_info->frames * sample_per_frame;
 
-	if (frame_sizes[0] <= 1) {
-		if (debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opus_packet_parse: opus_packet_parse frame size too small.\n");
-		}
-
-		return SWITCH_FALSE;
-	}
-
 	/* +---------------+-----------+-----------+-------------------+
 	   | Configuration | Mode      | Bandwidth | Frame Sizes       |
 	   | Number(s)     |           |           |                   |
@@ -319,8 +318,11 @@ switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_lengt
 		ptr_VAD_FLAGS = packet_VAD_FLAGS;
 
 		for (f = 0; f < packet_info->frames; f++) {
-			switch_opus_get_VAD_LBRR_flags(frame_data[f], silk_frame_nb_flags, ptr_VAD_FLAGS, ptr_LBBR_FLAGS,
-										   &silk_frame_nb_vad1, &silk_frame_nb_fec);
+			if (!switch_opus_get_VAD_LBRR_flags(frame_data[f], frame_sizes[f], silk_frame_nb_flags, ptr_VAD_FLAGS, ptr_LBBR_FLAGS,
+				&silk_frame_nb_vad1, &silk_frame_nb_fec)) {
+				continue; /* ignore frame as it was abnormal */
+			}
+
 			packet_info->vad += silk_frame_nb_vad1;
 			packet_info->fec += silk_frame_nb_fec;
 			packet_info->vad_ms += silk_frame_nb_vad1 * silk_size_frame_ms_per_flag;
@@ -370,6 +372,8 @@ switch_bool_t switch_opus_packet_parse(const uint8_t *payload, int payload_lengt
 	 *  Parse the VAD and LBRR flags in each Opus frame
 	 * */
 	for (f = 0; f < packet_info->frames; f++) {
+		if (frame_sizes[f] <= 0) continue;
+
 		if (frame_data[f][0] & 0x80) {
 			packet_info->vad++;
 		}

@@ -94,7 +94,7 @@ static struct {
 
 const int switch_amrwb_frame_sizes[] = {17, 23, 32, 36, 40, 46, 50, 58, 60, 5, 0, 0, 0, 0, 1, 1};
 
-#define SWITCH_AMRWB_OUT_MAX_SIZE 61
+#define SWITCH_AMRWB_OUT_MAX_SIZE 62
 #define SWITCH_AMRWB_MODES 10 /* Silence Indicator (SID) included */
 
 #define invalid_frame_type (index > SWITCH_AMRWB_MODES && index != 0xe && index != 0xf) /* include SPEECH_LOST and NO_DATA*/

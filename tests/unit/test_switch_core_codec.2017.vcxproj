@@ -22,7 +22,7 @@
     <ProjectName>test_switch_core_codec</ProjectName>
     <RootNamespace>test_switch_core_codec</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectGuid>{589A07E7-5DE5-49FD-A62C-27795B806AFB}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

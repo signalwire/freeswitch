@@ -505,7 +505,7 @@ static switch_status_t _timerfd_check(switch_timer_t *timer, switch_bool_t step)
 	}
 
 	timerfd_gettime(it->fd, &val);
-	diff = val.it_interval.tv_nsec / 1000;
+	diff = val.it_value.tv_nsec / 1000;
 
 	if (diff > 0) {
 		/* still pending */

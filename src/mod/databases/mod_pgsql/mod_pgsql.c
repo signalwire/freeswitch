@@ -106,6 +106,22 @@ char * pgsql_handle_get_error(switch_pgsql_handle_t *handle)
 	return err_str;
 }
 
+void pgsql_handle_set_error_if_not_set(switch_pgsql_handle_t *handle, char **err)
+{
+	char *err_str;
+
+	if (err && !(*err)) {
+		err_str = pgsql_handle_get_error(handle);
+
+		if (zstr(err_str)) {
+			switch_safe_free(err_str);
+			err_str = strdup((char *)"SQL ERROR!");
+		}
+
+		*err = err_str;
+	}
+}
+
 static int db_is_up(switch_pgsql_handle_t *handle)
 {
 	int ret = 0;
@@ -553,8 +569,15 @@ switch_status_t pgsql_handle_exec_detailed(const char *file, const char *func, i
 		goto error;
 	}
 
-	return pgsql_finish_results(handle);
+	if (pgsql_finish_results(handle) != SWITCH_STATUS_SUCCESS) {
+		goto error;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
 error:
+	pgsql_handle_set_error_if_not_set(handle, err);
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -606,6 +629,10 @@ switch_status_t database_handle_exec_string(switch_database_interface_handle_t *
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
 #endif
+#if PG_VERSION_NUM >= 170000
+		case PGRES_TUPLES_CHUNK:
+			/* Added in PostgreSQL 17 */
+#endif
 		case PGRES_COMMAND_OK:
 		case PGRES_TUPLES_OK:
 			break;
@@ -626,6 +653,7 @@ done:
 
 	pgsql_free_result(&result);
 	if (pgsql_finish_results(handle) != SWITCH_STATUS_SUCCESS) {
+		pgsql_handle_set_error_if_not_set(handle, err);
 		sstatus = SWITCH_STATUS_FALSE;
 	}
 
@@ -634,6 +662,7 @@ done:
 error:
 
 	pgsql_free_result(&result);
+	pgsql_handle_set_error_if_not_set(handle, err);
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -766,6 +795,10 @@ switch_status_t pgsql_next_result_timed(switch_pgsql_handle_t *handle, switch_pg
 #if PG_VERSION_NUM >= 90002
 		case PGRES_SINGLE_TUPLE:
 			/* Added in PostgreSQL 9.2 */
+#endif
+#if PG_VERSION_NUM >= 170000
+		case PGRES_TUPLES_CHUNK:
+			/* Added in PostgreSQL 17 */
 #endif
 		case PGRES_TUPLES_OK:
 		{
@@ -1041,6 +1074,8 @@ switch_status_t pgsql_handle_callback_exec_detailed(const char *file, const char
 
 	return SWITCH_STATUS_SUCCESS;
 error:
+
+	pgsql_handle_set_error_if_not_set(handle, err);
 
 	return SWITCH_STATUS_FALSE;
 }

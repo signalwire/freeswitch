@@ -1,8 +1,0 @@
-For Linux distros without gsmlib (eg: CentOS):
-
-In the directory gsmlib-1.10-patched-13ubuntu is the source for gsmlib
-as patched by Ubuntu for modern compilers:
-
-	./configure
-	make
-	make install

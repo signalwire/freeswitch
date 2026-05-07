@@ -249,10 +249,7 @@ static void event_handler(switch_event_t *event)
 						}
 
 						if (*hp->value == '/') {
-							switch_regex_t *re = NULL;
-							int ovector[30];
-							cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-							switch_regex_safe_free(re);
+							cmp = !!switch_regex(hval, comp_to);
 						} else {
 							cmp = !strcasecmp(hval, comp_to);
 						}

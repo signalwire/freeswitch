@@ -170,7 +170,7 @@ decodeMultibyte(xmlrpc_env * const envP,
 
    Return the character in UTF-16 format as *wcP.
 -----------------------------------------------------------------------------*/
-    wchar_t wc;
+    wchar_t wc = 0;
 
     assert(utf8_seq[0] & 0x80); /* High bit set: this is multibyte seq */
 
