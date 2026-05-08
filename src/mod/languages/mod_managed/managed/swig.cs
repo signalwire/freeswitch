@@ -16428,6 +16428,7 @@ else
   public static readonly int SWITCH_CORE_DB_NOTADB = freeswitchPINVOKE.SWITCH_CORE_DB_NOTADB_get();
   public static readonly int SWITCH_CORE_DB_ROW = freeswitchPINVOKE.SWITCH_CORE_DB_ROW_get();
   public static readonly int SWITCH_CORE_DB_DONE = freeswitchPINVOKE.SWITCH_CORE_DB_DONE_get();
+  public static readonly int SWITCH_PCRE2 = freeswitchPINVOKE.SWITCH_PCRE2_get();
   public static readonly int SWITCH_MAX_CORE_THREAD_SESSION_OBJS = freeswitchPINVOKE.SWITCH_MAX_CORE_THREAD_SESSION_OBJS_get();
   public static readonly int SWITCH_MAX_STREAMS = freeswitchPINVOKE.SWITCH_MAX_STREAMS_get();
   public static readonly string DTLS_SRTP_FNAME = freeswitchPINVOKE.DTLS_SRTP_FNAME_get();
@@ -19062,6 +19063,9 @@ class freeswitchPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_sql_concat___")]
   public static extern string switch_sql_concat();
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_SWITCH_PCRE2_get___")]
+  public static extern int SWITCH_PCRE2_get();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_switch_regex_compile___")]
   public static extern global::System.IntPtr switch_regex_compile(string jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3, global::System.Runtime.InteropServices.HandleRef jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
@@ -48490,7 +48494,8 @@ public enum switch_session_ctl_t {
   SCSC_SESSIONS_PEAK,
   SCSC_SESSIONS_PEAK_FIVEMIN,
   SCSC_MDNS_RESOLVE,
-  SCSC_SHUTDOWN_CAUSE
+  SCSC_SHUTDOWN_CAUSE,
+  SCSC_UUID_VERSION
 }
 
 }

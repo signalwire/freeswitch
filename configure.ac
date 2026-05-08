@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.13-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.11.1-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
-AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [13-dev])
+AC_SUBST(SWITCH_VERSION_MINOR, [11])
+AC_SUBST(SWITCH_VERSION_MICRO, [1-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -2072,7 +2072,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_amqp/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
-		src/mod/event_handlers/mod_cdr_mongodb/Makefile
 		src/mod/event_handlers/mod_cdr_pg_csv/Makefile
 		src/mod/event_handlers/mod_cdr_sqlite/Makefile
 		src/mod/event_handlers/mod_erlang_event/Makefile
