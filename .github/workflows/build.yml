@@ -90,7 +90,7 @@ jobs:
     steps:
       - name: Get Nonce
         id: get-nonce
-        uses: signalwire/actions-template/.github/actions/repo-auth-client@main
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@tokenmask
         with:
           mode: nonce
 
@@ -108,7 +108,7 @@ jobs:
 
       - name: Issue Token
         id: issue-token
-        uses: signalwire/actions-template/.github/actions/repo-auth-client@main
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@tokenmask
         env:
           NONCE: ${{ needs.get-nonce.outputs.nonce }}
         with:
@@ -181,7 +181,7 @@ jobs:
     steps:
       - name: Revoke Token
         id: revoke-token
-        uses: signalwire/actions-template/.github/actions/repo-auth-client@main
+        uses: signalwire/actions-template/.github/actions/repo-auth-client@tokenmask
         env:
           TOKEN: ${{ needs.issue-token.outputs.token }}
         with:
