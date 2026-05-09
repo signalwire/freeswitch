@@ -6,6 +6,7 @@ on:
     branches:
       - master
       - v1.10
+      - v1.11
     paths:
       - "**"
   workflow_dispatch:
@@ -68,14 +69,14 @@ jobs:
         id: release
         run: |
           if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            if [[ '${{ github.base_ref }}' == 'v1.10' ]]; then
+            if [[ '${{ github.base_ref }}' == 'v1.10' || '${{ github.base_ref }}' == 'v1.11' ]]; then
               echo 'release=release' | tee -a $GITHUB_OUTPUT
             else
               echo 'release=unstable' | tee -a $GITHUB_OUTPUT
             fi
           elif [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
             echo 'release=${{ inputs.release }}' | tee -a $GITHUB_OUTPUT
-          elif [[ '${{ github.ref }}' == 'refs/heads/v1.10' ]]; then
+          elif [[ '${{ github.ref }}' == 'refs/heads/v1.10' || '${{ github.ref }}' == 'refs/heads/v1.11' ]]; then
             echo 'release=release' | tee -a $GITHUB_OUTPUT
           else
             echo 'release=unstable' | tee -a $GITHUB_OUTPUT
@@ -157,7 +158,7 @@ jobs:
           (
             github.event_name == 'push' &&
             github.repository == 'signalwire/freeswitch' &&
-            contains(fromJSON('["master", "v1.10"]'), github.ref_name)
+            contains(fromJSON('["master", "v1.10", "v1.11"]'), github.ref_name)
           ) ||
           (github.event_name == 'workflow_dispatch' && inputs.publish)
         }}
@@ -192,7 +193,7 @@ jobs:
       ${{
         github.event_name == 'push' &&
         github.repository == 'signalwire/freeswitch' &&
-        contains(fromJSON('["master", "v1.10"]'), github.ref_name)
+        contains(fromJSON('["master", "v1.10", "v1.11"]'), github.ref_name)
       }}
     needs:
       - deb-public
