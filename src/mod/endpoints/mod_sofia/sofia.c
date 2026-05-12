@@ -2460,7 +2460,6 @@ void sofia_event_callback(nua_event_t event,
 		}
 
 		if (!sofia_private) {
-
 			int unavailable = (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound());
 			int bypass = (event == nua_i_options && !sofia_test_pflag(profile, PFLAG_OPTIONS_RESPOND_503_ON_BUSY));
 
