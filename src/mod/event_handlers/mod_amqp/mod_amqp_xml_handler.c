@@ -530,7 +530,6 @@ void *SWITCH_THREAD_FUNC mod_amqp_xml_handler_reader_thread(switch_thread_t *thr
 
 				switch_mutex_lock(profile->response_hash_mutex);
 				resp_queue = switch_core_hash_find(profile->response_hash, corr_str);
-				switch_mutex_unlock(profile->response_hash_mutex);
 
 				if (resp_queue) {
 					char *xml_str = malloc(envelope.message.body.len + 1);
@@ -548,6 +547,7 @@ void *SWITCH_THREAD_FUNC mod_amqp_xml_handler_reader_thread(switch_thread_t *thr
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 									  "Profile[%s] reader: no waiter for %s\n", profile->name, corr_str);
 				}
+				switch_mutex_unlock(profile->response_hash_mutex);
 			}
 		}
 
