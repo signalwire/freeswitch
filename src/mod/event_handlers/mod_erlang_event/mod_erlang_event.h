@@ -238,6 +238,7 @@ extern prefs_t prefs;
 int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf);
 
 /* ei_helpers.c */
+#define EI_HASH_REF_LEN (MAXATOMLEN_UTF8 + 64)
 void ei_link(listener_t *listener, erlang_pid * from, erlang_pid * to);
 void ei_encode_switch_event_headers(ei_x_buff * ebuf, switch_event_t *event);
 void ei_encode_switch_event_tag(ei_x_buff * ebuf, switch_event_t *event, char *tag);

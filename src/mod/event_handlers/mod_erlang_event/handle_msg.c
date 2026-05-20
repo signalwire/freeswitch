@@ -804,13 +804,13 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 	} else {
 		switch_event_types_t etype;
 		if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
-			switch_event_t *event;
+			switch_event_t *event = NULL;
 			if ((strlen(esname) && switch_event_create_subclass(&event, etype, esname) == SWITCH_STATUS_SUCCESS) ||
 				switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
 				char key[1024];
-				char *value;
-                                int type;
-                                int size;
+				char *value = NULL;
+				int type;
+				int size;
 				int i = 0;
 				switch_bool_t fail = SWITCH_FALSE;
 
@@ -828,14 +828,15 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 					value = malloc(size + 1);
 
 					if (ei_decode_string(buf->buff, &buf->index, value)) {
-       						fail = SWITCH_TRUE;
+						switch_safe_free(value);
+						fail = SWITCH_TRUE;
 						break;
 					}
 
-					if (!fail && !strcmp(key, "body")) {
+					if (!strcmp(key, "body")) {
 						switch_safe_free(event->body);
 						event->body = value;
-					} else if (!fail)  {
+					} else {
 						switch_event_add_header_string_nodup(event, SWITCH_STACK_BOTTOM, key, value);
 					}
 
@@ -896,13 +897,12 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					value = malloc(size + 1);
 
 					if (ei_decode_string(buf->buff, &buf->index, value)) {
+						switch_safe_free(value);
 						fail = SWITCH_TRUE;
 						break;
 					}
 
-					if (!fail) {
-						switch_event_add_header_string_nodup(event, SWITCH_STACK_BOTTOM, key, value);
-					}
+					switch_event_add_header_string_nodup(event, SWITCH_STACK_BOTTOM, key, value);
 				}
 
 				if (headerlength != i || fail) {
@@ -1204,7 +1204,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 {
 	erlang_ref ref;
 	erlang_pid pid;
-	char hash[100];
+	char hash[EI_HASH_REF_LEN];
 	int arity;
 	const void *key;
 	void *val;
@@ -1232,7 +1232,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &val);
 		se = (session_elem_t*)val;
-		if (switch_test_flag(se, LFLAG_WAITING_FOR_PID) && se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
+		if (switch_test_flag(se, LFLAG_WAITING_FOR_PID) && se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, EI_HASH_REF_LEN)) {
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "found matching session for %s : %s\n", hash, se->uuid_str);
 
@@ -1376,6 +1376,7 @@ int handle_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buf
 				break;
 			case ERL_REFERENCE_EXT:
 			case ERL_NEW_REFERENCE_EXT:
+			case ERL_NEWER_REFERENCE_EXT:
 				ret = handle_ref_tuple(listener, msg, buf, rbuf);
 				break;
 			default:
