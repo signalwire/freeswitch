@@ -1139,7 +1139,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			}
 
 
-			if (!use_passwd || zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
+			if (zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
 				r = SWITCH_FALSE;
 				*code = CODE_AUTH_FAILED;
 				switch_snprintf(message, mlen, "Authentication Failure");
