@@ -4270,7 +4270,8 @@ switch_status_t clean_uri(char *uri)
 
 	argc = switch_separate_string(uri, '/', argv, sizeof(argv) / sizeof(argv[0]));
 
-	if (argc == sizeof(argv)) { /* too deep */
+	/* Intentionally using == instead of > because this way we would know that the url was fully parsed for sure */
+	if (argc == (sizeof(argv) / sizeof(argv[0]))) { /* too deep */
 		return SWITCH_STATUS_FALSE;
 	}
 
