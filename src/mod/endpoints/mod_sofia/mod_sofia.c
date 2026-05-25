@@ -6528,6 +6528,42 @@ char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session
 }
 
 
+#ifdef HAVE_NUA_RELOAD_TLS
+static void sofia_cert_reload_handler(switch_event_t *event)
+{
+	switch_hash_index_t *hi;
+	const void *vvar;
+	void *val;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event received, processing\n");
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+
+	for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+		sofia_profile_t *profile;
+
+		switch_core_hash_this(hi, &vvar, NULL, &val);
+		profile = (sofia_profile_t *) val;
+
+		if (!sofia_test_pflag(profile, PFLAG_RUNNING) || !profile->nua || !profile->tls_cert_dir) {
+			continue;
+		}
+
+		if (strcmp(vvar, profile->name)) {
+			continue;
+		}
+
+		nua_reload_tls(profile->nua, profile->tls_cert_dir);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "TLS certificate reload signaled for sofia profile %s\n", profile->name);
+	}
+
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event processed\n");
+}
+#endif
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
 	switch_chat_interface_t *chat_interface;
@@ -6693,6 +6729,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
 	switch_yield(1500000);
+
+#ifdef HAVE_NUA_RELOAD_TLS
+	switch_event_bind(modname, SWITCH_EVENT_CERT_RELOAD, SWITCH_EVENT_SUBCLASS_ANY, sofia_cert_reload_handler, NULL);
+#endif
 
 	if (switch_event_bind(modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -6876,6 +6916,9 @@ void mod_sofia_shutdown_cleanup(void) {
 	}
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
+#ifdef HAVE_NUA_RELOAD_TLS
+	switch_event_unbind_callback(sofia_cert_reload_handler);
+#endif
 	switch_event_unbind_callback(sofia_presence_event_handler);
 
 	switch_event_unbind_callback(general_queue_event_handler);
