@@ -2075,6 +2075,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CALL_DETAIL
     SWITCH_EVENT_DEVICE_STATE
     SWITCH_EVENT_SHUTDOWN_REQUESTED		- Shutdown of the system has been requested
+    SWITCH_EVENT_CERT_RELOAD			- SSL/TLS certificates reload has been requested
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -2172,6 +2173,7 @@ typedef enum {
 	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_TEXT,
 	SWITCH_EVENT_SHUTDOWN_REQUESTED,
+	SWITCH_EVENT_CERT_RELOAD,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
