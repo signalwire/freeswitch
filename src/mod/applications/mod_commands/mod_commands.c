@@ -7653,7 +7653,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "pool_stats", "Core pool memory usage", pool_stats_function, "Core pool memory usage.");
 	SWITCH_ADD_API(commands_api_interface, "quote_shell_arg", "Quote/escape a string for use on shell command line", quote_shell_arg_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Evaluate a regex", regex_function, "<data>|<pattern>[|<subst string>][n|b]");
-	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload XML", reload_acl_function, "");
+	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
 	SWITCH_ADD_API(commands_api_interface, "replace", "Replace a string", replace_function, "<data>|<string1>|<string2>");
