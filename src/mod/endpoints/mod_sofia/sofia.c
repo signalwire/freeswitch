@@ -1210,7 +1210,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	sip_p_asserted_identity_t *passerted = NULL;
 	char *name = NULL;
-	const char *number = "unknown", *tmp;
+	const char *number, *tmp;
 	switch_caller_profile_t *caller_profile;
 	char *dup = NULL;
 	switch_event_t *event;
@@ -7535,7 +7535,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (channel && profile->pres_type && ss_state == nua_callstate_ready && status == 200) {
-		const char* to_tag = "";
+		const char* to_tag;
 		char *sql = NULL;
 		to_tag = switch_str_nil(switch_channel_get_variable(channel, "sip_to_tag"));
 		sql = switch_mprintf("update sip_dialogs set sip_to_tag='%q' "
@@ -10392,7 +10392,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	nua_handle_t *bnh = NULL;
 	char sip_acl_authed_by[512] = "";
 	char sip_acl_token[512] = "";
-	const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user = "", *contact_host = "";
+	const char *dialog_from_user = "", *dialog_from_host = "", *to_user = "", *to_host = "", *contact_user, *contact_host;
 	const char *user_agent = "", *call_id = "";
 	url_t *from = NULL, *to = NULL, *contact = NULL;
 	const char *to_tag = "";
@@ -11635,7 +11635,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	if (profile->pres_type) {
 		const char *presence_data = switch_channel_get_variable(channel, "presence_data");
 		const char *presence_id = switch_channel_get_variable(channel, "presence_id");
-		char *full_contact = "";
+		char *full_contact;
 		char *p = NULL;
 		time_t now;
 

@@ -549,7 +549,7 @@ SWITCH_STANDARD_API(reg_url_function)
 	char *domain = NULL, *dup_domain = NULL;
 	char *concat = NULL;
 	const char *exclude_contact = NULL;
-	char *reply = "error/facility_not_subscribed";
+	char *reply;
 	switch_stream_handle_t mystream = { 0 };
 
 	if (!cmd) {
@@ -2324,7 +2324,7 @@ SWITCH_STANDARD_API(status_function)
 	int sps = 0, last_sps = 0, max_sps = 0, max_sps_fivemin = 0;
 	int sessions_peak = 0, sessions_peak_fivemin = 0; /* Max Concurrent Sessions buffers */
 	switch_bool_t html = SWITCH_FALSE;	/* shortcut to format.html	*/
-	char * nl = "\n";					/* shortcut to format.nl	*/
+	char *nl;						/* shortcut to format.nl	*/
 	stream_format format = { 0 };
 	switch_size_t cur = 0, max = 0;
 
@@ -7523,7 +7523,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 SWITCH_STANDARD_API(json_function)
 {
 	cJSON *jcmd = NULL, *format = NULL;
-	const char *message = "";
+	const char *message;
 	char *response = NULL;
 
 	if (zstr(cmd)) {
