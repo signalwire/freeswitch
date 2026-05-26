@@ -293,7 +293,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 
 	PyObject *pyresult, *arglist, *io = NULL;
 	int ts = 0;
-	char *str = NULL, *what = (char*)"";
+	char *str = NULL, *what;
 
 	if (TS) {
 		ts++;

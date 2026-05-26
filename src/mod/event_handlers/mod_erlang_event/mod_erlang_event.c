@@ -968,9 +968,10 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 static void listener_main_loop(listener_t *listener)
 {
 	int status = 1;
+	int recv_erl_errno = ETIMEDOUT;
 	int msgs_sent = 0; /* how many messages we sent in a loop */
 
-	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN) && !prefs.done) {
+	while ((status >= 0 || recv_erl_errno == ETIMEDOUT || recv_erl_errno == EAGAIN) && !prefs.done) {
 		erlang_msg msg;
 		ei_x_buff buf;
 		ei_x_buff rbuf;
@@ -983,6 +984,9 @@ static void listener_main_loop(listener_t *listener)
 		/* do we need the mutex when reading? */
 		/*switch_mutex_lock(listener->sock_mutex); */
 		status = ei_xreceive_msg_tmo(listener->sockdes, &msg, &buf, 1);
+		/* snapshot erl_errno before any outbound ei call (queue flushers below)
+		   clobbers this thread-local slot. */
+		recv_erl_errno = erl_errno;
 		/*switch_mutex_unlock(listener->sock_mutex); */
 
 		switch (status) {
@@ -1001,6 +1005,8 @@ static void listener_main_loop(listener_t *listener)
 
 				if (handle_msg(listener, &msg, &buf, &rbuf)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "handle_msg requested exit\n");
+					ei_x_free(&buf);
+					ei_x_free(&rbuf);
 					return;
 				}
 				break;
@@ -1016,6 +1022,8 @@ static void listener_main_loop(listener_t *listener)
 
 				if (handle_msg(listener, &msg, &buf, &rbuf)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "handle_msg requested exit\n");
+					ei_x_free(&buf);
+					ei_x_free(&rbuf);
 					return;
 				}
 				break;
@@ -1026,6 +1034,7 @@ static void listener_main_loop(listener_t *listener)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_unlink\n");
 				break;
 			case ERL_EXIT:
+			case ERL_EXIT2:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit from %s <%d.%d.%d>\n", msg.from.node, msg.from.creation, msg.from.num,
 								  msg.from.serial);
 
@@ -1037,8 +1046,8 @@ static void listener_main_loop(listener_t *listener)
 			}
 			break;
 		case ERL_ERROR:
-			if (erl_errno != ETIMEDOUT && erl_errno != EAGAIN) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "erl_error: status=%d, erl_errno=%d errno=%d\n", status,  erl_errno, errno);
+			if (recv_erl_errno != ETIMEDOUT && recv_erl_errno != EAGAIN) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "erl_error: status=%d, erl_errno=%d errno=%d\n", status,  recv_erl_errno, errno);
 			}
 			break;
 		default:
@@ -1069,7 +1078,7 @@ static void listener_main_loop(listener_t *listener)
 	if (prefs.done) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "shutting down listener\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "listener exit: status=%d, erl_errno=%d errno=%d\n", status,  erl_errno, errno);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "listener exit: status=%d, erl_errno=%d errno=%d\n", status,  recv_erl_errno, errno);
 	}
 }
 
@@ -1513,7 +1522,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 {
 	/* create a session list element */
 	session_elem_t *session_element = session_elem_create(listener, session);
-	char hash[100];
+	char hash[EI_HASH_REF_LEN];
 	spawn_reply_t *p;
 	erlang_ref ref;
 
@@ -1720,8 +1729,6 @@ SWITCH_STANDARD_APP(erlang_sendmsg_function)
 	ei_x_buff buf;
 	listener_t *listener;
 
-	ei_x_new_with_version(&buf);
-
 	/* process app arguments */
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, 3);
@@ -1737,6 +1744,7 @@ SWITCH_STANDARD_APP(erlang_sendmsg_function)
 
 	/*switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sendmsg: {%s, %s} ! %s\n", reg_name, node, argv[2]); */
 
+	ei_x_new_with_version(&buf);
 	ei_x_encode_tuple_header(&buf, 2);
 	ei_x_encode_atom(&buf, "freeswitch_sendmsg");
 	_ei_x_encode_string(&buf, argv[2]);
@@ -1754,6 +1762,8 @@ SWITCH_STANDARD_APP(erlang_sendmsg_function)
 
 		switch_thread_rwlock_unlock(listener->rwlock);
 	}
+
+	ei_x_free(&buf);
 }
 
 

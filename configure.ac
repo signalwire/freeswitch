@@ -1518,7 +1518,7 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks2 >= 2.0.0],[
+PKG_CHECK_MODULES([KS], [libks2 >= 2.0.11],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
   PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
     AM_CONDITIONAL([HAVE_KS],[true])],[
