@@ -6,6 +6,7 @@ noinst_PROGRAMS += switch_core_video switch_core_db switch_vad switch_packetizer
 noinst_PROGRAMS += switch_stun
 noinst_PROGRAMS += test_tts_format
 noinst_PROGRAMS+= switch_hold switch_sip
+noinst_PROGRAMS += test_mod_verto
 
 if HAVE_PCAP
 noinst_PROGRAMS += switch_rtp_pcap

@@ -41,6 +41,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_verto_runtime);
 SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_verto_runtime);
 
 #define HTTP_CHUNK_SIZE 1024 * 32
+#define HTTP_POST_MAX_BODY (10 * 1024 * 1024)   /* max accepted Content-Length for form-urlencoded POST */
 #define EP_NAME "verto.rtc"
 //#define WSS_STANDALONE 1
 #include "libks/ks.h"
@@ -1824,7 +1825,7 @@ new_req:
 		char *buffer = NULL;
 		switch_ssize_t len = 0, bytes = 0;
 
-		if (request->content_length && request->content_length > 10 * 1024 * 1024 - 1) {
+		if (request->content_length && request->content_length >= HTTP_POST_MAX_BODY) {
 			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
 				"Content-Length: 0\r\n\r\n";
 			kws_raw_write(jsock->ws, data, strlen(data));
@@ -1832,16 +1833,16 @@ new_req:
 			goto done;
 		}
 
-		if (!(buffer = malloc(2 * 1024 * 1024))) {
+		if (!(buffer = malloc(request->content_length + 1))) {
 			goto request_err;
 		}
 
 		while(bytes < (switch_ssize_t)request->content_length) {
 			len = request->content_length - bytes;
 
-#define WS_BLOCK 1
+#define WS_BLOCK 10000   /* ms; matches libks's internal default */
 
-			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) < 0) {
+			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
 				goto done;
 			}
