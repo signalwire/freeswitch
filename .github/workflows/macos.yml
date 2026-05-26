@@ -35,11 +35,11 @@ jobs:
             autoconf \
             automake \
             curl \
-            ffmpeg@5 \
+            ffmpeg@7 \
             gnu-sed \
             jpeg \
             ldns \
-            libpq@16 \
+            libpq@18 \
             libsndfile \
             libtool \
             lua \
@@ -60,8 +60,8 @@ jobs:
             signalwire/homebrew-signalwire/spandsp \
           && \
           brew link --force --overwrite \
-            ffmpeg@5 \
-            libpq@16
+            ffmpeg@7 \
+            libpq@18
 
       - name: Bootstrap FreeSWITCH
         run: ./bootstrap.sh -j
