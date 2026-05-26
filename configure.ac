@@ -2145,6 +2145,7 @@ AC_CONFIG_FILES([Makefile
 		build/standalone_module/freeswitch.pc
 		build/modmake.rules
                 libs/esl/Makefile
+                libs/esl/tests/Makefile
                 libs/esl/perl/Makefile
                 libs/esl/php/Makefile
 		libs/xmlrpc-c/include/xmlrpc-c/config.h
