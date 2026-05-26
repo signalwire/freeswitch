@@ -43,6 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 #define HTTP_CHUNK_SIZE 1024 * 32
 #define HTTP_POST_MAX_BODY (10 * 1024 * 1024)   /* max accepted Content-Length for form-urlencoded POST */
 #define EP_NAME "verto.rtc"
+#define VERTO_SPEED_TEST_MAX_SIZE (10 * 1024 * 1024)
 //#define WSS_STANDALONE 1
 #include "libks/ks.h"
 
@@ -2112,16 +2113,26 @@ static void client_run(jsock_t *jsock)
 					char repl[2048] = "";
 					switch_time_t a, b;
 
+					if (!switch_test_flag(jsock, JPFLAG_AUTHED)) {
+						die("%s Speed-test request before authentication\n", jsock->name);
+					}
+
+					if (bytes < 4) {
+						continue;
+					}
+
 					if (s[1] == 'S' && s[2] == 'P') {
 
 						if (s[3] == 'U') {
-							int i, size = 0;
+							int i;
+							long size;
 							char *p = s+4;
 							int loops = 0;
 							int rem = 0;
 							int dur = 0, j = 0;
 
-							if ((size = atoi(p)) <= 0) {
+							size = strtol(p, NULL, 10);
+							if (size <= 0 || size > VERTO_SPEED_TEST_MAX_SIZE) {
 								continue;
 							}
 
@@ -2129,7 +2140,7 @@ static void client_run(jsock_t *jsock)
 							do {
 								bytes = kws_read_frame(jsock->ws, &oc, &data);
 								s = (char *) data;
-							} while (bytes && data && s[0] == '#' && s[3] == 'B');
+							} while (bytes >= 4 && data && s[0] == '#' && s[3] == 'B');
 							b = switch_time_now();
 
 							if (!bytes || !data) continue;
