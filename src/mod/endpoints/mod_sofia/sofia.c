@@ -6645,12 +6645,19 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		if (status >= 400) {
+			char *reason_header = NULL;
 			char status_str[5];
 			switch_snprintf(status_str, sizeof(status_str), "%d", status);
 			switch_channel_set_variable(channel, "sip_invite_failure_status", status_str);
 			switch_channel_set_variable(channel, "sip_invite_failure_phrase", phrase);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", status_str);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", phrase);
+
+			reason_header = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_reason);
+			if (!zstr(reason_header)) {
+				switch_channel_set_variable(channel, "sip_reason", reason_header);
+				switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+			}
 		} else {
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", NULL);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", NULL);
