@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.11.0-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.11.1-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [11])
-AC_SUBST(SWITCH_VERSION_MICRO, [0-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [1-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -307,6 +307,11 @@ SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/includ
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_CPPFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_LDFLAGS="-lm"
+
+# Cap cJSON parser recursion depth. Default upstream limit (1000) can overflow
+# small thread stacks; both vendored cJSON copies (src/ and libs/esl/) honor this.
+APR_ADDTO(SWITCH_AM_CFLAGS,   [-DCJSON_NESTING_LIMIT=64])
+APR_ADDTO(SWITCH_AM_CXXFLAGS, [-DCJSON_NESTING_LIMIT=64])
 
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
@@ -1518,7 +1523,7 @@ PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks2 >= 2.0.0],[
+PKG_CHECK_MODULES([KS], [libks2 >= 2.0.11],[
   AM_CONDITIONAL([HAVE_KS],[true])],[
   PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
     AM_CONDITIONAL([HAVE_KS],[true])],[
@@ -2140,6 +2145,7 @@ AC_CONFIG_FILES([Makefile
 		build/standalone_module/freeswitch.pc
 		build/modmake.rules
                 libs/esl/Makefile
+                libs/esl/tests/Makefile
                 libs/esl/perl/Makefile
                 libs/esl/php/Makefile
 		libs/xmlrpc-c/include/xmlrpc-c/config.h

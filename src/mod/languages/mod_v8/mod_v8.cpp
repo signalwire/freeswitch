@@ -424,7 +424,7 @@ static void v8_error(Isolate* isolate, TryCatch* try_catch)
 	String::Utf8Value exception(try_catch->Exception());
 	const char *exception_string = js_safe_str(*exception);
 	Handle<Message> message = try_catch->Message();
-	const char *msg = "";
+	const char *msg;
 	string filename = __FILE__;
 	int line = __LINE__;
 	string text = "";

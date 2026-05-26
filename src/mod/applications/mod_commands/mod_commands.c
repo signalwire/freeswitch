@@ -549,7 +549,7 @@ SWITCH_STANDARD_API(reg_url_function)
 	char *domain = NULL, *dup_domain = NULL;
 	char *concat = NULL;
 	const char *exclude_contact = NULL;
-	char *reply = "error/facility_not_subscribed";
+	char *reply;
 	switch_stream_handle_t mystream = { 0 };
 
 	if (!cmd) {
@@ -2324,7 +2324,7 @@ SWITCH_STANDARD_API(status_function)
 	int sps = 0, last_sps = 0, max_sps = 0, max_sps_fivemin = 0;
 	int sessions_peak = 0, sessions_peak_fivemin = 0; /* Max Concurrent Sessions buffers */
 	switch_bool_t html = SWITCH_FALSE;	/* shortcut to format.html	*/
-	char * nl = "\n";					/* shortcut to format.nl	*/
+	char *nl;						/* shortcut to format.nl	*/
 	stream_format format = { 0 };
 	switch_size_t cur = 0, max = 0;
 
@@ -2858,6 +2858,22 @@ SWITCH_STANDARD_API(reload_xml_function)
 	stream->write_function(stream, "+OK [%s]\n", err);
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(reload_cert_function)
+{
+	switch_event_t *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_CERT_RELOAD) == SWITCH_STATUS_SUCCESS) {
+		switch_event_fire(&event);
+		stream->write_function(stream, "+OK cert reload event sent\n");
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	stream->write_function(stream, "-ERR failed to create event\n");
+
+	return SWITCH_STATUS_FALSE;
 }
 
 #define KILL_SYNTAX "<uuid> [cause]"
@@ -7523,7 +7539,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 SWITCH_STANDARD_API(json_function)
 {
 	cJSON *jcmd = NULL, *format = NULL;
-	const char *message = "";
+	const char *message;
 	char *response = NULL;
 
 	if (zstr(cmd)) {
@@ -7653,9 +7669,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "pool_stats", "Core pool memory usage", pool_stats_function, "Core pool memory usage.");
 	SWITCH_ADD_API(commands_api_interface, "quote_shell_arg", "Quote/escape a string for use on shell command line", quote_shell_arg_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Evaluate a regex", regex_function, "<data>|<pattern>[|<subst string>][n|b]");
-	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload XML", reload_acl_function, "");
+	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload ACL", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
+	SWITCH_ADD_API(commands_api_interface, "reloadcert", "Reload SSL/TLS certificates", reload_cert_function, "");
 	SWITCH_ADD_API(commands_api_interface, "replace", "Replace a string", replace_function, "<data>|<string1>|<string2>");
 	SWITCH_ADD_API(commands_api_interface, "say_string", "", say_string_function, SAY_STRING_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, SCHED_SYNTAX);
@@ -7831,6 +7848,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add nat_map status");
 	switch_console_set_complete("add reload ::console::list_loaded_modules");
 	switch_console_set_complete("add reloadacl reloadxml");
+	switch_console_set_complete("add reloadcert");
 	switch_console_set_complete("add show aliases");
 	switch_console_set_complete("add show api");
 	switch_console_set_complete("add show application");

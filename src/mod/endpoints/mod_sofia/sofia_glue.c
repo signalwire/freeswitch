@@ -1038,7 +1038,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 	const char *cid_name, *cid_num;
 	char *e_dest = NULL;
-	const char *holdstr = "";
+	const char *holdstr;
 	char *extra_headers = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint32_t session_timeout = tech_pvt->profile->session_timeout;
@@ -3334,7 +3334,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 	const char *contact_host;//, *contact_user;
 	sip_contact_t const *contact;
 	char *port;
-	const char *display = "\"user\"";
+	const char *display;
 	char new_port[25] = "";
 	sofia_nat_parse_t lnp = { { 0 } };
 	const char *ipv6;

@@ -124,6 +124,69 @@ FST_TEST_BEGIN(b64_pad1)
 }
 FST_TEST_END()
 
+#define test_uri_count 6
+
+/* Currently tests only clear_uri() */
+FST_TEST_BEGIN(test_switch_http_parse_header)
+{
+	int i = 0;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_http_request_t request = {0};
+	char bad_uris[][200] = {
+		"/t/o/o/_/l/o/n/g/_/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/a/2/3/4",
+		"without_a_slash/",
+	};
+	char raw_uris[test_uri_count][200] = {
+		"/////////uri1",
+		"/././././uri2",
+		"/uri3/uri3_1/.//uri3_2/../../uri3_3",
+		"/../../../uri4",
+		"/uri5/uri5_1/",
+		"/uri6/uri6_1",
+	};
+	const char clear_uris[test_uri_count][200] = {
+		"/uri1",
+		"/uri2",
+		"/uri3/uri3_3",
+		"/uri4",
+		"/uri5/uri5_1",
+		"/uri6/uri6_1",
+	};
+
+	for (i = 0; i < (sizeof(bad_uris) / sizeof(bad_uris[0])); i++) {
+		char bad_header[256];
+		const char *bad_uri = bad_uris[i];
+
+		/* Use precision specifier to suppress false-positive "format-truncation" warning.  */
+		snprintf(bad_header, sizeof(bad_header), "GET %.199s HTTP/1.1\r\n\r\nBODY", bad_uri);
+
+		fst_check((status = switch_http_parse_header(bad_header, sizeof(bad_header), &request)) == SWITCH_STATUS_FALSE);
+
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad uri parsed [%d]: [%s]\n", i, request.uri);
+			switch_http_free_request(&request);
+		}
+	}
+
+	for (i = 0; i < test_uri_count; i++) {
+		char raw_header[256];
+		const char *clear_uri = clear_uris[i];
+		const char *raw_uri = raw_uris[i];
+
+		/* Use precision specifier to suppress false-positive "format-truncation" warning.  */
+		snprintf(raw_header, sizeof(raw_header), "GET %.199s HTTP/1.1\r\n\r\nBODY", raw_uri);
+
+		fst_check((status = switch_http_parse_header(raw_header, sizeof(raw_header), &request)) == SWITCH_STATUS_SUCCESS);
+		fst_check_string_equals(clear_uri, request.uri);
+
+		if (status == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "URI [%d]: [%s] => [%s]\n", i, raw_uri, request.uri);
+			switch_http_free_request(&request);
+		}
+	}
+}
+FST_TEST_END()
+
 FST_SUITE_END()
 
 FST_MINCORE_END()
