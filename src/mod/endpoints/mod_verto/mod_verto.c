@@ -1272,10 +1272,11 @@ static jsock_t *get_jsock(const char *uuid)
 
 static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock);
 
-static void attach_jsock(jsock_t *jsock)
+static switch_bool_t attach_jsock(jsock_t *jsock)
 {
 	jsock_t *jp;
 	int proceed = 1;
+	switch_bool_t result = SWITCH_TRUE;
 
 	switch_mutex_lock(verto_globals.jsock_mutex);
 
@@ -1284,6 +1285,17 @@ static void attach_jsock(jsock_t *jsock)
 	if ((jp = switch_core_hash_find(verto_globals.jsock_hash, jsock->uuid_str))) {
 		if (jp == jsock) {
 			proceed = 0;
+		} else if (!zstr(jp->uid) && !zstr(jsock->uid) && strcmp(jp->uid, jsock->uid)) {
+			/* Refuse cross-identity takeover when both jsocks are authenticated under different uids.
+			 * Clear uuid_str and set nodelete to prevent any uuid_str-keyed teardown
+			 * (detach_jsock, del_jsock, detach_calls) from touching jp. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"User %s blocked from taking over session %s owned by %s\n",
+				jsock->uid, jsock->uuid_str, jp->uid);
+			jsock->nodelete = 1;
+			jsock->uuid_str[0] = '\0';
+			proceed = 0;
+			result = SWITCH_FALSE;
 		} else {
 			cJSON *params = NULL;
 			cJSON *msg = NULL;
@@ -1304,6 +1316,7 @@ static void attach_jsock(jsock_t *jsock)
 	}
 
 	switch_mutex_unlock(verto_globals.jsock_mutex);
+	return result;
 }
 
 static void detach_jsock(jsock_t *jsock)
@@ -1482,10 +1495,8 @@ static void process_jrpc_response(jsock_t *jsock, cJSON *json)
 {
 }
 
-static void set_session_id(jsock_t *jsock, const char *uuid)
+static switch_bool_t set_session_id(jsock_t *jsock, const char *uuid)
 {
-	//cJSON *params, *msg = jrpc_new(0);
-
 	if (!zstr(uuid)) {
 		switch_set_string(jsock->uuid_str, uuid);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
@@ -1494,8 +1505,7 @@ static void set_session_id(jsock_t *jsock, const char *uuid)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s new RPC session %s\n", jsock->name, jsock->uuid_str);
 	}
 
-	attach_jsock(jsock);
-
+	return attach_jsock(jsock);
 }
 
 static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
@@ -1513,11 +1523,6 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 
 	if ((params = cJSON_GetObjectItem(json, "params"))) {
 		sessid = cJSON_GetObjectCstr(params, "sessid");
-	}
-
-	if (!switch_test_flag(jsock, JPFLAG_INIT)) {
-		set_session_id(jsock, sessid);
-		switch_set_flag(jsock, JPFLAG_INIT);
 	}
 
 	if (zstr(version) || strcmp(version, "2.0")) {
@@ -1544,6 +1549,17 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 			goto end;
 		}
 		switch_set_flag(jsock, JPFLAG_AUTHED);
+	}
+
+	/* Bind only after the auth gate — attach_jsock()'s eviction
+	 * must not be reachable pre-auth. */
+	if (!switch_test_flag(jsock, JPFLAG_INIT)) {
+		if (!set_session_id(jsock, sessid)) {
+			jrpc_add_error(reply, CODE_AUTH_FAILED, "Session in use", id);
+			jsock->drop = 1;
+			goto end;
+		}
+		switch_set_flag(jsock, JPFLAG_INIT);
 	}
 
 	if (!method || !(func = jrpc_get_func(jsock, method))) {
