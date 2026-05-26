@@ -6658,9 +6658,23 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 				switch_channel_set_variable(channel, "sip_reason", reason_header);
 				switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
 			}
+
+			/* 603+ (ATIS-1000099) detection: clear stale state from serial forking, then check */
+			switch_channel_set_variable(channel, "sip_603plus_reason", NULL);
+			switch_channel_set_variable_partner(channel, "sip_603plus_reason", NULL);
+
+			if (status == 603 && phrase && !strcasecmp(phrase, "Network Blocked")
+				&& sip->sip_reason && sip->sip_reason->re_text
+				&& !strncmp(sip->sip_reason->re_text, "\"v=analytics1;", 14)
+				&& !zstr(reason_header)) {
+
+				switch_channel_set_variable(channel, "sip_603plus_reason", reason_header);
+				switch_channel_set_variable_partner(channel, "sip_603plus_reason", reason_header);
+			}
 		} else {
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", NULL);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", NULL);
+			switch_channel_set_variable_partner(channel, "sip_603plus_reason", NULL);
 		}
 
 		if (status >= 400 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")

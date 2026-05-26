@@ -430,4 +430,11 @@
   <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
   <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>
 
+  <!-- SIP 603+ call blocking passthrough control.
+       true:  Forward "Network Blocked" phrase and Reason header to the caller.
+       false: Strip Reason header, send clean 603 Decline.
+       unset: Default behavior (Reason passes through, phrase reset to "Decline").
+       Works independently of disable_q850_reason for selective 603+ forwarding. -->
+  <!--<Z-PRE-PROCESS cmd="set" data="sip_603plus_passthrough=true"/>-->
+
 </include>
