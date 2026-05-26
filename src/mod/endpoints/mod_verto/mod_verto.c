@@ -1057,7 +1057,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			if (jsock->profile->chop_domain && (domain = strchr(id, '@'))) {
 				*domain++ = '\0';
 			}
-			
+
 		}
 
 		if (jsock->profile->register_domain) {
@@ -1087,27 +1087,10 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			}
 		}
 
-
-		if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
-			cJSON * i;
-			
-			switch_mutex_lock(jsock->flag_mutex);
-			for(i = json_ptr->child; i; i = i->next) {
-				if (i->type == cJSON_True) {
-					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
-				} else if (i->type == cJSON_False) {
-					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
-				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
-					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
-				}
-			}
-			switch_mutex_unlock(jsock->flag_mutex);
-		}
-
 		if (jsock->profile->send_passwd || verto_globals.send_passwd) {
 			switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "user_supplied_pass", passwd);
 		}
-		
+
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
 
 		if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, req_params) != SWITCH_STATUS_SUCCESS && !jsock->profile->blind_reg) {
@@ -1120,20 +1103,8 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
-			
-			jsock->logintime = now;
-			jsock->id = switch_core_strdup(jsock->pool, id);
-			jsock->domain = switch_core_strdup(jsock->pool, domain);
-			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
-			jsock->ready = 1;
-
-			if (!x_user) {
-				switch_event_destroy(&req_params);
-				r = SWITCH_TRUE;
-				goto end;
-			}
-
+			/* Pre-scan <user><params>: extract credentials and verto-context/dialplan
+			 * into locals only. No jsock writes here. */
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
@@ -1155,8 +1126,63 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					} else if (!strcasecmp(var, "verto-dialplan")) {
 						verto_dialplan = val;
 					}
+				}
+			}
 
-					switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM, var, val);
+			/* Password gate. blind_reg with no x_user passes by config. */
+			if (x_user && (zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd))) {
+				*code = CODE_AUTH_FAILED;
+				switch_snprintf(message, mlen, "Authentication Failure");
+				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
+				switch_xml_clear_user_cache("id", id, domain);
+				switch_xml_free(x_user);
+				switch_event_destroy(&req_params);
+				goto end;
+			}
+
+			/* Commit jsock state — reachable only post-gate. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Login successful for user: %s domain: %s\n", id, domain);
+
+			jsock->logintime = now;
+			jsock->id = switch_core_strdup(jsock->pool, id);
+			jsock->domain = switch_core_strdup(jsock->pool, domain);
+			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
+
+			if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
+				cJSON *i;
+
+				switch_mutex_lock(jsock->flag_mutex);
+				for (i = json_ptr->child; i; i = i->next) {
+					if (i->type == cJSON_True) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
+					} else if (i->type == cJSON_False) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
+					} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+					}
+				}
+				switch_mutex_unlock(jsock->flag_mutex);
+			}
+
+			/* blind_reg path: no XML user located — jsock state already committed above;
+			 * skip directory persistence (params/variables/dialplan/context) and return. */
+			if (!x_user) {
+				switch_event_destroy(&req_params);
+				/* ready=1 is the last state write so cross-thread readers that
+				 * gate on `ready && !zstr(uid)` see a fully populated jsock. */
+				jsock->ready = 1;
+				r = SWITCH_TRUE;
+				goto end;
+			}
+
+			/* Second pass over <user><params>: persist every entry into jsock->params.
+			 * Pre-scan above only read credentials/verto-context/dialplan into locals.
+			 * Must run post-gate — these headers feed channel variables on later calls. */
+			if ((x_params = switch_xml_child(x_user, "params"))) {
+				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+					switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM,
+						switch_xml_attr_soft(x_param, "name"),
+						switch_xml_attr_soft(x_param, "value"));
 				}
 			}
 
@@ -1171,7 +1197,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_mutex_unlock(jsock->flag_mutex);
 
 					switch_clear_flag(jsock, JPFLAG_AUTH_EXPIRED);
-					
+
 					if (!strcmp(var, "login-expires")) {
 						uint32_t tmp = atol(val);
 
@@ -1194,21 +1220,12 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				jsock->context = switch_core_strdup(jsock->pool, verto_context);
 			}
 
-
-			if (!use_passwd || zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
-				r = SWITCH_FALSE;
-				*code = CODE_AUTH_FAILED;
-				switch_snprintf(message, mlen, "Authentication Failure");
-				jsock->uid = NULL;
-				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
-				switch_xml_clear_user_cache("id", id, domain);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"auth using %s\n",a1_hash ? "a1-hash" : "username & password");
-				r = SWITCH_TRUE;
-				check_permissions(jsock, x_user, params);
-			}
-
-
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"auth using %s\n",a1_hash ? "a1-hash" : "username & password");
+			check_permissions(jsock, x_user, params);
+			/* ready=1 is the last state write so cross-thread readers that
+			 * gate on `ready && !zstr(uid)` see a fully populated jsock. */
+			jsock->ready = 1;
+			r = SWITCH_TRUE;
 
 			switch_xml_free(x_user);
 		}
