@@ -493,6 +493,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		const char *val = NULL;
 		const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 		const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+		const char *passthrough_603plus = switch_channel_get_variable(channel, "sip_603plus_passthrough");
 		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
 		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
@@ -508,6 +509,23 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					reason = switch_core_session_sprintf(session, "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				} else {
 					reason = switch_core_session_sprintf(session, "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+				}
+			}
+		}
+
+		/* 603+ (ATIS-1000099) Reason header override — applied after standard reason construction.
+		 *
+		 * passthrough=true:  Restore 603+ Reason even if disable_q850_reason suppressed it.
+		 *                    Allows selective forwarding of 603+ while suppressing other Reason headers.
+		 * passthrough=false: Strip Reason header entirely — send clean 603 Decline with no Reason. */
+		if (passthrough_603plus) {
+			const char *reason_603plus = switch_channel_get_variable(channel, "sip_603plus_reason");
+
+			if (!zstr(reason_603plus)) {
+				if (switch_true(passthrough_603plus)) {
+					reason = switch_core_session_sprintf(session, "%s", reason_603plus);
+				} else if (switch_false(passthrough_603plus)) {
+					reason = switch_core_session_sprintf(session, "");
 				}
 			}
 		}
@@ -557,6 +575,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (tech_pvt->respond_phrase) {
 					//phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
 					phrase = tech_pvt->respond_phrase;
+				} else if (sip_cause == 603
+						   && !zstr(reason)
+						   && switch_true(passthrough_603plus)
+						   && !zstr(switch_channel_get_variable(channel, "sip_603plus_reason"))) {
+					phrase = "Network Blocked";
 				} else {
 					phrase = sip_status_phrase(sip_cause);
 				}
