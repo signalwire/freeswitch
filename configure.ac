@@ -308,6 +308,11 @@ SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/incl
 SWITCH_AM_CPPFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_LDFLAGS="-lm"
 
+# Cap cJSON parser recursion depth. Default upstream limit (1000) can overflow
+# small thread stacks; both vendored cJSON copies (src/ and libs/esl/) honor this.
+APR_ADDTO(SWITCH_AM_CFLAGS,   [-DCJSON_NESTING_LIMIT=64])
+APR_ADDTO(SWITCH_AM_CXXFLAGS, [-DCJSON_NESTING_LIMIT=64])
+
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     SOLINK="-Bdynamic -dy -G"
