@@ -83,6 +83,8 @@
 #define SCORE_IIR_SPEAKING_MIN 100
 /* Keep a small input cushion so the mixer is not phase-locked to the input thread. */
 #define CONF_AUDIO_BUFFER_MIN_FRAMES 2
+/* Give a primed input thread a short grace period to deliver the next real frame. */
+#define CONF_AUDIO_BUFFER_RETRY_USEC 1000
 /* the FPS of the conference canvas */
 #define FPS 30
 /* max supported layers in one mcu */

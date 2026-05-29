@@ -219,6 +219,15 @@ static switch_bool_t conference_member_read_audio_frame(conference_member_t *mem
 	if (!member->audio_buffer_primed && inuse >= min_bytes) {
 		member->audio_buffer_primed = SWITCH_TRUE;
 	}
+	if (member->audio_buffer_primed && inuse < bytes) {
+		switch_mutex_unlock(member->audio_in_mutex);
+		switch_yield(CONF_AUDIO_BUFFER_RETRY_USEC);
+		switch_mutex_lock(member->audio_in_mutex);
+		inuse = switch_buffer_inuse(member->audio_buffer);
+		if (!member->audio_buffer_primed && inuse >= min_bytes) {
+			member->audio_buffer_primed = SWITCH_TRUE;
+		}
+	}
 
 	if (member->audio_buffer_primed && inuse >= bytes
 		&& (buf_read = (uint32_t) switch_buffer_read(member->audio_buffer, member->frame, bytes))) {
