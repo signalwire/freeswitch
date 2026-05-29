@@ -205,6 +205,8 @@ void conference_send_notify(conference_obj_t *conference, const char *status, co
 
 static switch_bool_t conference_member_read_audio_frame(conference_member_t *member, uint32_t bytes)
 {
+	switch_size_t inuse = 0;
+	switch_size_t min_bytes = bytes * CONF_AUDIO_BUFFER_MIN_FRAMES;
 	uint32_t buf_read = 0;
 	switch_bool_t have_audio = SWITCH_FALSE;
 
@@ -213,70 +215,28 @@ static switch_bool_t conference_member_read_audio_frame(conference_member_t *mem
 	}
 
 	switch_mutex_lock(member->audio_in_mutex);
-	if (switch_buffer_inuse(member->audio_buffer) >= bytes
+	inuse = switch_buffer_inuse(member->audio_buffer);
+	if (!member->audio_buffer_primed && inuse >= min_bytes) {
+		member->audio_buffer_primed = SWITCH_TRUE;
+	}
+
+	if (member->audio_buffer_primed && inuse >= bytes
 		&& (buf_read = (uint32_t) switch_buffer_read(member->audio_buffer, member->frame, bytes))) {
 		member->read = buf_read;
 
 		if (buf_read < bytes) {
 			memset(member->frame + buf_read, 0, bytes - buf_read);
-		}
-
-		if (member->last_frame && buf_read <= member->frame_size) {
-			memcpy(member->last_frame, member->frame, buf_read);
-			member->last_frame_read = buf_read;
-			member->audio_underflow_count = 0;
+			member->audio_buffer_primed = SWITCH_FALSE;
 		}
 
 		conference_utils_member_set_flag_locked(member, MFLAG_HAS_AUDIO);
 		have_audio = SWITCH_TRUE;
+	} else if (member->audio_buffer_primed && inuse < bytes) {
+		member->audio_buffer_primed = SWITCH_FALSE;
 	}
 	switch_mutex_unlock(member->audio_in_mutex);
 
 	return have_audio;
-}
-
-static switch_bool_t conference_member_should_replay_last_audio(conference_member_t *member, uint32_t bytes)
-{
-	if (!member->last_frame || member->last_frame_read != bytes || member->audio_underflow_count >= CONF_AUDIO_UNDERFLOW_REPLAY_FRAMES) {
-		return SWITCH_FALSE;
-	}
-
-	if (!conference_utils_member_test_flag(member, MFLAG_RUNNING) || !member->session || !member->channel ||
-		!switch_channel_ready(member->channel) || !switch_channel_test_flag(member->channel, CF_AUDIO)) {
-		return SWITCH_FALSE;
-	}
-
-	if (!conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) ||
-		conference_utils_member_test_flag(member, MFLAG_HOLD) ||
-		conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)) {
-		return SWITCH_FALSE;
-	}
-
-	if (!(conference_utils_member_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 ||
-		  conference_utils_test_flag(member->conference, CFLAG_AUDIO_ALWAYS))) {
-		return SWITCH_FALSE;
-	}
-
-	if (!(member->conference->count > 1 ||
-		  (member->conference->record_count && member->conference->count >= member->conference->min_recording_participants))) {
-		return SWITCH_FALSE;
-	}
-
-	return SWITCH_TRUE;
-}
-
-static switch_bool_t conference_member_replay_last_audio_frame(conference_member_t *member, uint32_t bytes)
-{
-	if (!conference_member_should_replay_last_audio(member, bytes)) {
-		return SWITCH_FALSE;
-	}
-
-	memcpy(member->frame, member->last_frame, bytes);
-	member->read = bytes;
-	member->audio_underflow_count++;
-	conference_utils_member_set_flag_locked(member, MFLAG_HAS_AUDIO);
-
-	return SWITCH_TRUE;
 }
 
 /* Main monitor thread (1 per distinct conference room) */
@@ -639,32 +599,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			}
 		}
 		switch_mutex_unlock(conference->file_mutex);
-
-		if (!ready && !has_file_data) {
-			switch_bool_t retry_audio = SWITCH_FALSE;
-
-			for (imember = conference->members; imember; imember = imember->next) {
-				if (conference_member_should_replay_last_audio(imember, bytes)) {
-					retry_audio = SWITCH_TRUE;
-					break;
-				}
-			}
-
-			if (retry_audio) {
-				switch_yield(1000);
-
-				for (imember = conference->members; imember; imember = imember->next) {
-					if (conference_utils_member_test_flag(imember, MFLAG_HAS_AUDIO)) {
-						continue;
-					}
-
-					if (conference_member_read_audio_frame(imember, bytes) ||
-						conference_member_replay_last_audio_frame(imember, bytes)) {
-						ready++;
-					}
-				}
-			}
-		}
 
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */

@@ -1815,7 +1815,6 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 	if (!member->frame_size) {
 		member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		member->frame = switch_core_alloc(member->pool, member->frame_size);
-		member->last_frame = switch_core_alloc(member->pool, member->frame_size);
 		member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
 	}
 
@@ -1863,6 +1862,11 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
+
+	switch_mutex_lock(member->audio_in_mutex);
+	switch_buffer_zero(member->audio_buffer);
+	member->audio_buffer_primed = SWITCH_FALSE;
+	switch_mutex_unlock(member->audio_in_mutex);
 
 	/* Setup an audio buffer for the outgoing audio */
 	if (!member->mux_buffer && switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {

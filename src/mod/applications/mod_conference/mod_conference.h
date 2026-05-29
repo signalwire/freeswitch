@@ -81,8 +81,8 @@
 #define SCORE_IIR_SPEAKING_MAX 300
 /* the threshold below which you cede the floor to someone loud (see above value). */
 #define SCORE_IIR_SPEAKING_MIN 100
-/* Short concealment window for conference input thread scheduling underflows. */
-#define CONF_AUDIO_UNDERFLOW_REPLAY_FRAMES 2
+/* Keep a small input cushion so the mixer is not phase-locked to the input thread. */
+#define CONF_AUDIO_BUFFER_MIN_FRAMES 2
 /* the FPS of the conference canvas */
 #define FPS 30
 /* max supported layers in one mcu */
@@ -805,8 +805,7 @@ struct conference_member {
 	conference_record_t *rec;
 	uint8_t *frame;
 	uint8_t *last_frame;
-	uint32_t last_frame_read;
-	uint32_t audio_underflow_count;
+	switch_bool_t audio_buffer_primed;
 	uint32_t frame_size;
 	uint8_t *mux_frame;
 	uint32_t read;
