@@ -1815,6 +1815,7 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 	if (!member->frame_size) {
 		member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		member->frame = switch_core_alloc(member->pool, member->frame_size);
+		member->last_frame = switch_core_alloc(member->pool, member->frame_size);
 		member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
 	}
 
