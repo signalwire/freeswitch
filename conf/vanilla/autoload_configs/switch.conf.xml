@@ -206,6 +206,9 @@
 
     <!-- <param name="max-audio-channels" value="2"/> -->
 
+    <!-- The system will ignore update application information in channel table, set this to false to avoid this behaviour -->
+    <param name="ignore_application_channel_update" value="true" />
+
   </settings>
 
 </configuration>
