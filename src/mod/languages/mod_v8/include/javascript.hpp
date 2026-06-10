@@ -33,10 +33,160 @@
 
 #include <stdint.h>
 #include <v8.h>
+
+/*
+ * --- V8 API compatibility layer ---
+ *
+ * mod_v8 was originally written against the custom static V8 6.1 package. On
+ * modern systems FreeSWITCH builds it against the V8 engine bundled with
+ * upstream libnode-dev (V8 10.x). The two APIs differ in a handful of
+ * mechanical but pervasive ways (MaybeLocal return values, mandatory Isolate*
+ * / Context arguments, a few removed methods). The helpers below hide those
+ * differences so the bulk of the module is shared between both engines.
+ *
+ * Windows keeps building against the old static V8 6.1, so the legacy (#else)
+ * branches must remain valid. The active API is selected purely from
+ * V8_MAJOR_VERSION, so no build-system define is required.
+ */
+#if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >= 7
+#define V8FS_NEW_API 1
+#else
+#define V8FS_NEW_API 0
+#endif
+
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 #include <libplatform/libplatform.h>
+#if !V8FS_NEW_API
+/* v8-util.h is unused by mod_v8 and is no longer shipped by libnode-dev. */
 #include <v8-util.h>
 #endif
+#endif
+
+/*
+ * The isolate / context currently entered by the running script. mod_v8 only
+ * touches V8 objects while a script is executing (inside an Isolate::Scope and
+ * Context::Scope), where GetCurrent()/GetCurrentContext() are valid.
+ */
+static inline v8::Isolate *js_current_isolate(void)
+{
+	return v8::Isolate::GetCurrent();
+}
+
+static inline v8::Local<v8::Context> js_current_context(void)
+{
+	return v8::Isolate::GetCurrent()->GetCurrentContext();
+}
+
+/*
+ * v8::String::NewFromUtf8() returns a Local on V8 6.1 but a MaybeLocal on
+ * V8 7+. This wrapper always yields a Local<String> and tolerates a NULL str.
+ */
+static inline v8::Local<v8::String> js_new_string(v8::Isolate *isolate, const char *str, int length = -1)
+{
+#if V8FS_NEW_API
+	return v8::String::NewFromUtf8(isolate, str ? str : "", v8::NewStringType::kNormal, length).ToLocalChecked();
+#else
+	return v8::String::NewFromUtf8(isolate, str ? str : "", v8::String::kNormalString, length);
+#endif
+}
+
+/*
+ * v8::String::Utf8Value requires an explicit Isolate* on V8 7+. The single
+ * argument constructor keeps the (very common) call sites unchanged by using
+ * the currently entered isolate.
+ */
+class JsUtf8Value : public v8::String::Utf8Value
+{
+public:
+	explicit JsUtf8Value(v8::Local<v8::Value> obj)
+#if V8FS_NEW_API
+		: v8::String::Utf8Value(v8::Isolate::GetCurrent(), obj) {}
+#else
+		: v8::String::Utf8Value(obj) {}
+#endif
+	JsUtf8Value(v8::Isolate *isolate, v8::Local<v8::Value> obj)
+#if V8FS_NEW_API
+		: v8::String::Utf8Value(isolate, obj) {}
+#else
+		: v8::String::Utf8Value(obj) {}
+#endif
+};
+
+/* v8::Value::BooleanValue lost its no-argument form on V8 7+. */
+static inline bool js_to_bool(v8::Local<v8::Value> val)
+{
+#if V8FS_NEW_API
+	return val->BooleanValue(v8::Isolate::GetCurrent());
+#else
+	return val->BooleanValue();
+#endif
+}
+
+/*
+ * v8::Object::Set() / Get() lost their no-context forms on V8 7+. These run
+ * while the script's context is entered, so the current context is used.
+ */
+static inline void js_obj_set(v8::Local<v8::Object> obj, v8::Local<v8::Value> key, v8::Local<v8::Value> val)
+{
+	obj->Set(js_current_context(), key, val).FromMaybe(false);
+}
+
+static inline v8::Local<v8::Value> js_obj_get(v8::Local<v8::Object> obj, v8::Local<v8::Value> key)
+{
+	return obj->Get(js_current_context(), key).FromMaybe(v8::Local<v8::Value>());
+}
+
+/*
+ * v8::ReturnValue::Set() no longer accepts a Persistent handle on V8 7+;
+ * convert it to a Local first. Local::New(isolate, persistent) is valid on the
+ * old API too, so this helper works for both engines.
+ */
+template <typename T>
+static inline v8::Local<T> js_local(const v8::Persistent<T> &persistent)
+{
+	return v8::Local<T>::New(v8::Isolate::GetCurrent(), persistent);
+}
+
+/* v8::Script::Run() now requires a context and returns a MaybeLocal. */
+static inline v8::Local<v8::Value> js_run_script(v8::Local<v8::Script> script)
+{
+	if (script.IsEmpty()) {
+		return v8::Local<v8::Value>();
+	}
+#if V8FS_NEW_API
+	v8::Local<v8::Value> result;
+	if (!script->Run(js_current_context()).ToLocal(&result)) {
+		return v8::Local<v8::Value>();
+	}
+	return result;
+#else
+	return script->Run();
+#endif
+}
+
+/* v8::Function::Call now requires a context and returns a MaybeLocal. */
+static inline v8::Local<v8::Value> js_call(v8::Local<v8::Function> fn, v8::Local<v8::Value> recv, int argc, v8::Local<v8::Value> *argv)
+{
+#if V8FS_NEW_API
+	v8::Local<v8::Value> result;
+	if (!fn->Call(js_current_context(), recv, argc, argv).ToLocal(&result)) {
+		return v8::Local<v8::Value>();
+	}
+	return result;
+#else
+	return fn->Call(recv, argc, argv);
+#endif
+}
+
+/* v8::StackTrace::GetFrame() requires an Isolate* on V8 7+. */
+static inline v8::Local<v8::StackFrame> js_stack_frame(v8::Local<v8::StackTrace> trace, v8::Isolate *isolate, uint32_t index)
+{
+#if V8FS_NEW_API
+	return trace->GetFrame(isolate, index);
+#else
+	return trace->GetFrame(index);
+#endif
+}
 
 #include <string>
 #include <vector>
@@ -64,7 +214,7 @@
 		} else {\
 			int line;\
 			char *file = JSMain::GetStackInfo(info.GetIsolate(), &line);\
-			v8::String::Utf8Value str(info.Holder());\
+			JsUtf8Value str(info.Holder());\
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "mod_v8", line, NULL, SWITCH_LOG_DEBUG, "No valid internal data available for %s when calling %s\n", *str ? *str : "[unknown]", #class_name "::" #method_name "()");\
 			free(file);\
 			info.GetReturnValue().Set(false);\
@@ -83,10 +233,10 @@
 		} else {\
 			int line;\
 			char *file = JSMain::GetStackInfo(info.GetIsolate(), &line);\
-			v8::String::Utf8Value str(info.Holder());\
+			JsUtf8Value str(info.Holder());\
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "mod_v8", line, NULL, SWITCH_LOG_DEBUG, "No valid internal data available for %s when calling %s\n", *str ? *str : "[unknown]", #class_name "::" #method_name "()");\
 			free(file);\
-			info.GetReturnValue().Set(false);\
+			/* A property setter's ReturnValue is void; V8 7+ rejects Set() on it. */\
 		}\
 	}\
 	void method_name##Impl(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
@@ -102,7 +252,7 @@
 		} else {\
 			int line;\
 			char *file = JSMain::GetStackInfo(info.GetIsolate(), &line);\
-			v8::String::Utf8Value str(info.Holder());\
+			JsUtf8Value str(info.Holder());\
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "mod_v8", line, NULL, SWITCH_LOG_DEBUG, "No valid internal data available for %s when calling %s\n", *str ? *str : "[unknown]", #class_name "::" #method_name "()");\
 			free(file);\
 			info.GetReturnValue().Set(false);\
@@ -226,14 +376,14 @@ private:
 	static void CreateInstance(const v8::FunctionCallbackInfo<v8::Value>& args);
 
 	/* Store a C++ instance to a JS object's private data */
-	static void AddInstance(v8::Isolate *isolate, const v8::Handle<v8::Object>& handle, const v8::Handle<v8::External>& object, bool autoDestroy);
+	static void AddInstance(v8::Isolate *isolate, const v8::Local<v8::Object>& handle, const v8::Local<v8::External>& object, bool autoDestroy);
 public:
 	JSBase(JSMain *owner);
 	JSBase(const v8::FunctionCallbackInfo<v8::Value>& info);
 	virtual ~JSBase(void);
 
 	/* Returns the JS object related to the C++ instance */
-	v8::Handle<v8::Object> GetJavaScriptObject();
+	v8::Local<v8::Object> GetJavaScriptObject();
 
 	/* Register a C++ class inside V8 (must be called within a entered isolate, and context) */
 	static void Register(v8::Isolate *isolate, const js_class_definition_t *desc);
@@ -263,7 +413,7 @@ public:
 	}
 
 	/* Get a JavaScript function from a JavaScript argument (can be either a string or the actual function) */
-	static v8::Handle<v8::Function> GetFunctionFromArg(v8::Isolate *isolate, const v8::Local<v8::Value>& arg);
+	static v8::Local<v8::Function> GetFunctionFromArg(v8::Isolate *isolate, const v8::Local<v8::Value>& arg);
 
 	/* Default JS setter callback, to be used for read only values */
 	static void DefaultSetProperty(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info);

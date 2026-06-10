@@ -51,10 +51,8 @@ avoid_mods=(
   xml_int/mod_xml_ldap
 )
 avoid_mods_armhf=(
-  languages/mod_v8
 )
 avoid_mods_arm64=(
-  languages/mod_v8
 )
 avoid_mods_sid=(
   directories/mod_ldap

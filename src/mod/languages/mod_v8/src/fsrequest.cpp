@@ -63,7 +63,7 @@ JS_REQUEST_FUNCTION_IMPL(Write)
 	HandleScope handle_scope(info.GetIsolate());
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		if (*str) this->_stream->write_function(this->_stream, "%s", *str);
 		info.GetReturnValue().Set(true);
 		return;
@@ -77,8 +77,8 @@ JS_REQUEST_FUNCTION_IMPL(AddHeader)
 	HandleScope handle_scope(info.GetIsolate());
 
 	if (info.Length() > 1) {
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 		const char *hname = js_safe_str(*str1);
 		const char *hval = js_safe_str(*str2);
 		switch_event_add_header_string(this->_stream->param_event, SWITCH_STACK_BOTTOM, hname, hval);
@@ -94,10 +94,10 @@ JS_REQUEST_FUNCTION_IMPL(GetHeader)
 	HandleScope handle_scope(info.GetIsolate());
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *hname = js_safe_str(*str);
 		char *val = switch_event_get_header(this->_stream->param_event, hname);
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(val)));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(val)));
 		return;
 	}
 
@@ -110,7 +110,7 @@ JS_REQUEST_FUNCTION_IMPL(DumpEnv)
 	string how = "text";
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		how = js_safe_str(*str);
 	}
 
@@ -119,7 +119,7 @@ JS_REQUEST_FUNCTION_IMPL(DumpEnv)
 		if ((xml = switch_event_xmlize(this->_stream->param_event, SWITCH_VA_NONE))) {
 			char *xmlstr;
 			if ((xmlstr = switch_xml_toxml(xml, SWITCH_FALSE))) {
-				info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), xmlstr));
+				info.GetReturnValue().Set(js_new_string(info.GetIsolate(), xmlstr));
 				switch_safe_free(xmlstr);
 				switch_xml_free(xml);
 				return;
@@ -130,7 +130,7 @@ JS_REQUEST_FUNCTION_IMPL(DumpEnv)
 	} else if (!strcasecmp(how.c_str(), "json")) {
 		char *buf = NULL;
 		if (switch_event_serialize_json(this->_stream->param_event, &buf) == SWITCH_STATUS_SUCCESS) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(buf)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(buf)));
 			switch_safe_free(buf);
 			return;
 		} else {
@@ -139,7 +139,7 @@ JS_REQUEST_FUNCTION_IMPL(DumpEnv)
 	} else {
 		char *buf = NULL;
 		if (switch_event_serialize(this->_stream->param_event, &buf, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(buf)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(buf)));
 			switch_safe_free(buf);
 			return;
 		} else {
@@ -153,16 +153,16 @@ JS_REQUEST_FUNCTION_IMPL(DumpEnv)
 JS_REQUEST_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 
 	if (!strcmp(js_safe_str(*str), "command")) {
 		if (this->_cmd) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), this->_cmd));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), this->_cmd));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 
