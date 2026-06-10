@@ -1507,21 +1507,60 @@ PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[false])
 ])
 
-PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
-  AM_CONDITIONAL([HAVE_V8FS],[true])],[
-  PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
-    AM_CONDITIONAL([HAVE_V8FS],[true])],[
-    PKG_CHECK_MODULES([V8FS_STATIC], [v8 >= 6.1.298],[
-      AM_CONDITIONAL([HAVE_V8FS],[true])],[
-      if module_enabled mod_v8; then
-        AC_MSG_ERROR([You need to either install libv8-6.1-dev (>= 6.1.298), libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
-      else
-        AC_MSG_RESULT([no])
-        AM_CONDITIONAL([HAVE_V8FS],[false])
-      fi
-    ])
-  ])
-])
+# mod_v8 needs the V8 JavaScript engine, provided by libnode-dev. It ships no
+# pkg-config file, so probe the well known header and library locations.
+AC_ARG_WITH([v8],
+  [AS_HELP_STRING([--with-v8=DIR],
+    [look for the libnode/V8 headers (the directory containing v8.h) in DIR])],
+  [v8_incdir="$withval"], [v8_incdir=""])
+
+have_v8="no"
+
+AC_MSG_CHECKING([for libnode bundled V8 headers])
+V8_INCDIR=""
+for d in "$v8_incdir" /usr/include/nodejs/deps/v8/include /usr/include/node /usr/local/include/node /usr/include/v8 ; do
+  if test -n "$d" && test -f "$d/v8.h" && test -f "$d/libplatform/libplatform.h" ; then
+    V8_INCDIR="$d"; break
+  fi
+done
+if test -n "$V8_INCDIR"; then
+  AC_MSG_RESULT([$V8_INCDIR])
+  AC_LANG_PUSH([C++])
+  v8_save_LIBS="$LIBS"
+  # Prefer the standalone split V8 libraries shipped by libnode-dev; fall
+  # back to the all-in-one libnode if they are not present.
+  AC_MSG_CHECKING([for standalone V8 libraries (-lv8 -lv8_libplatform)])
+  LIBS="-lv8 -lv8_libplatform -lv8_libbase $v8_save_LIBS"
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
+    [AC_MSG_RESULT([yes]); V8_LIBS="-lv8 -lv8_libplatform -lv8_libbase"],
+    [AC_MSG_RESULT([no])
+     AC_MSG_CHECKING([for all-in-one libnode (-lnode)])
+     LIBS="-lnode $v8_save_LIBS"
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
+       [AC_MSG_RESULT([yes]); V8_LIBS="-lnode"],
+       [AC_MSG_RESULT([no])])])
+  LIBS="$v8_save_LIBS"
+  AC_LANG_POP([C++])
+  if test -n "$V8_LIBS"; then
+    V8_CFLAGS="-I$V8_INCDIR"
+    have_v8="yes"
+  fi
+else
+  AC_MSG_RESULT([no])
+fi
+
+AC_SUBST([V8_CFLAGS])
+AC_SUBST([V8_LIBS])
+
+if test "x$have_v8" = "xyes"; then
+  AM_CONDITIONAL([HAVE_V8],[true])
+else
+  if module_enabled mod_v8; then
+    AC_MSG_ERROR([mod_v8 is enabled but libnode was not found. Install libnode-dev (Debian/Ubuntu: apt-get install libnode-dev) or disable mod_v8 in modules.conf])
+  else
+    AM_CONDITIONAL([HAVE_V8],[false])
+  fi
+fi
 
 PKG_CHECK_MODULES([KS], [libks2 >= 2.0.11],[
   AM_CONDITIONAL([HAVE_KS],[true])],[

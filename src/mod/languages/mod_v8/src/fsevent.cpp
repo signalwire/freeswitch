@@ -87,7 +87,7 @@ switch_event_t **FSEvent::GetEvent()
 	return &_event;
 }
 
-Handle<Object> FSEvent::New(switch_event_t *event, const char *name, JSMain *js)
+Local<Object> FSEvent::New(switch_event_t *event, const char *name, JSMain *js)
 {
 	FSEvent *obj;
 
@@ -98,7 +98,7 @@ Handle<Object> FSEvent::New(switch_event_t *event, const char *name, JSMain *js)
 		return obj->GetJavaScriptObject();
 	}
 
-	return Handle<Object>();
+	return Local<Object>();
 }
 
 void *FSEvent::Construct(const v8::FunctionCallbackInfo<Value>& info)
@@ -109,13 +109,13 @@ void *FSEvent::Construct(const v8::FunctionCallbackInfo<Value>& info)
 		switch_event_t *event;
 		FSEvent *obj;
 		switch_event_types_t etype;
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *ename = js_safe_str(*str);
 
 		if ((obj = new FSEvent(info))) {
 			if (switch_name_event(ename, &etype) != SWITCH_STATUS_SUCCESS) {
 				char *err = switch_mprintf("Unknown event %s", ename);
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 				free(err);
 				delete obj;
 				return NULL;
@@ -124,7 +124,7 @@ void *FSEvent::Construct(const v8::FunctionCallbackInfo<Value>& info)
 			if (etype == SWITCH_EVENT_CUSTOM) {
 				string subclass_name;
 				if (info.Length() > 1) {
-					String::Utf8Value str2(info[1]);
+					JsUtf8Value str2(info[1]);
 					if (*str2) {
 						subclass_name = js_safe_str(*str2);
 					}
@@ -133,20 +133,20 @@ void *FSEvent::Construct(const v8::FunctionCallbackInfo<Value>& info)
 				}
 
 				if (switch_event_create_subclass(&event, etype, subclass_name.c_str()) != SWITCH_STATUS_SUCCESS) {
-					info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to create sub class"));
+					info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to create sub class"));
 					delete obj;
 					return NULL;
 				}
 			} else {
 				if (switch_event_create(&event, etype) != SWITCH_STATUS_SUCCESS) {
-					info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to create event"));
+					info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to create event"));
 					delete obj;
 					return NULL;
 				}
 			}
 
 			/* Third argument tells if the headers should be unique */
-			if (event && !info[2].IsEmpty() && info[2]->BooleanValue()) {
+			if (event && !info[2].IsEmpty() && js_to_bool(info[2])) {
 				event->flags |= EF_UNIQ_HEADERS;
 			}
 
@@ -157,7 +157,7 @@ void *FSEvent::Construct(const v8::FunctionCallbackInfo<Value>& info)
 		}
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid Args"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid Args"));
 	return NULL;
 }
 
@@ -171,14 +171,14 @@ JS_EVENT_FUNCTION_IMPL(AddHeader)
 	}
 
 	if (info.Length() > 1) {
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 		const char *hname = js_safe_str(*str1);
 		const char *hval = js_safe_str(*str2);
 		switch_stack_t stack_kind = SWITCH_STACK_BOTTOM;
 
 		/* Check if we should push this value to the end of an array */
-		if (!info[2].IsEmpty() && info[2]->BooleanValue()) {
+		if (!info[2].IsEmpty() && js_to_bool(info[2])) {
 			stack_kind = SWITCH_STACK_PUSH;
 		}
 
@@ -200,14 +200,14 @@ JS_EVENT_FUNCTION_IMPL(GetHeader)
 	}
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *hname = js_safe_str(*str);
 		const char *val = NULL;
 		int idx = -1;
 
 		/* Check if caller expects to get data from an array */
 		if (info.Length() > 1 && !info[1].IsEmpty()) {
-			idx = info[1]->Int32Value();
+			idx = info[1]->Int32Value(js_current_context()).FromMaybe(0);
 
 			if (idx < 0 || !IsArray(hname)) {
 				idx = -1;
@@ -224,7 +224,7 @@ JS_EVENT_FUNCTION_IMPL(GetHeader)
 			/* Return null if we fetched and array value that didn't exist (so we know when to exit a loop) */
 			info.GetReturnValue().Set(Null(info.GetIsolate()));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(val)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(val)));
 		}
 
 		return;
@@ -241,7 +241,7 @@ JS_EVENT_FUNCTION_IMPL(IsArrayHeader)
 	}
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		info.GetReturnValue().Set(IsArray(js_safe_str(*str)));
 	} else {
 		info.GetReturnValue().Set(false);
@@ -258,7 +258,7 @@ JS_EVENT_FUNCTION_IMPL(AddBody)
 	}
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *body = js_safe_str(*str);
 		switch_event_add_body(_event, "%s", body);
 		info.GetReturnValue().Set(true);
@@ -279,9 +279,9 @@ JS_EVENT_FUNCTION_IMPL(GetBody)
 	}
 
 	if ((body = switch_event_get_body(_event))) {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), body));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), body));
 	} else {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 	}
 }
 
@@ -296,7 +296,7 @@ JS_EVENT_FUNCTION_IMPL(GetType)
 	}
 
 	event_name = switch_event_name(_event->event_id);
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(event_name)));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(event_name)));
 }
 
 JS_EVENT_FUNCTION_IMPL(Serialize)
@@ -311,7 +311,7 @@ JS_EVENT_FUNCTION_IMPL(Serialize)
 	}
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *arg = js_safe_str(*str);
 		if (!strcasecmp(arg, "xml")) {
 			isxml++;
@@ -325,7 +325,7 @@ JS_EVENT_FUNCTION_IMPL(Serialize)
 		char *xmlstr;
 		if ((xml = switch_event_xmlize(_event, SWITCH_VA_NONE))) {
 			xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(xmlstr)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(xmlstr)));
 			switch_xml_free(xml);
 			switch_safe_free(xmlstr);
 		} else {
@@ -333,12 +333,12 @@ JS_EVENT_FUNCTION_IMPL(Serialize)
 		}
 	} else if (isjson) {
 		if (switch_event_serialize_json(_event, &buf) == SWITCH_STATUS_SUCCESS) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(buf)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(buf)));
 			switch_safe_free(buf);
 		}
 	} else {
 		if (switch_event_serialize(_event, &buf, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(buf)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(buf)));
 			switch_safe_free(buf);
 		}
 	}
@@ -368,12 +368,12 @@ JS_EVENT_FUNCTION_IMPL(ChatExecute)
 
 	if (_event) {
 		if (info.Length() > 0) {
-			String::Utf8Value str(info[0]);
+			JsUtf8Value str(info[0]);
 			const char *app = js_safe_str(*str);
 			string arg;
 
 			if (info.Length() > 1) {
-				String::Utf8Value str2(info[1]);
+				JsUtf8Value str2(info[1]);
 				if (*str2) {
 					arg = js_safe_str(*str2);
 				}
@@ -408,12 +408,12 @@ JS_EVENT_FUNCTION_IMPL_STATIC(Destroy)
 JS_EVENT_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 
 	if (!strcmp(js_safe_str(*str), "ready")) {
 		info.GetReturnValue().Set(_event ? true : false);
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 

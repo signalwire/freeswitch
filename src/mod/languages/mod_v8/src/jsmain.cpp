@@ -179,25 +179,25 @@ JSMain::~JSMain(void)
 const string JSMain::GetExceptionInfo(Isolate* isolate, TryCatch* try_catch)
 {
 	HandleScope handle_scope(isolate);
-	String::Utf8Value exception(try_catch->Exception());
+	JsUtf8Value exception(try_catch->Exception());
 	const char *exception_string = js_safe_str(*exception);
-	Handle<Message> message = try_catch->Message();
+	Local<Message> message = try_catch->Message();
 	string res;
 
 	if (message.IsEmpty()) {
 		// V8 didn't provide any extra information about this error; just return the exception.
 		res = exception_string;
 	} else {
-		String::Utf8Value filename(message->GetScriptResourceName());
+		JsUtf8Value filename(message->GetScriptResourceName());
 		const char *filename_string = js_safe_str(*filename);
-		int linenum = message->GetLineNumber();
+		int linenum = message->GetLineNumber(js_current_context()).FromMaybe(0);
 
 		ostringstream ss;
 
 		ss << filename_string << ":" << linenum << ": " << exception_string << "\r\n";
 
 		// Print line of source code.
-		String::Utf8Value sourceline(message->GetSourceLine());
+		JsUtf8Value sourceline(message->GetSourceLine(js_current_context()).ToLocalChecked());
 		const char *sourceline_string = js_safe_str(*sourceline);
 
 		ss << sourceline_string << "\r\n";
@@ -225,7 +225,7 @@ void JSMain::Include(const v8::FunctionCallbackInfo<Value>& args)
 {
 	for (int i = 0; i < args.Length(); i++) {
 		HandleScope handle_scope(args.GetIsolate());
-		String::Utf8Value str(args[i]);
+		JsUtf8Value str(args[i]);
 
 		// load_file loads the file with this name into a string
 		string js_file = LoadFileToString(js_safe_str(*str));
@@ -239,12 +239,12 @@ void JSMain::Include(const v8::FunctionCallbackInfo<Value>& args)
 				args.GetReturnValue().Set(false);
 			}
 			else {
-				args.GetReturnValue().Set(script.ToLocalChecked()->Run());
+				args.GetReturnValue().Set(js_run_script(script.ToLocalChecked()));
 			}
 #else
-			Handle<String> source = String::NewFromUtf8(args.GetIsolate(), js_file.c_str());
-			Handle<Script> script = Script::Compile(source, args[i]);
-			args.GetReturnValue().Set(script->Run());
+			Local<String> source = js_new_string(args.GetIsolate(), js_file.c_str());
+			Local<Script> script = Script::Compile(source, args[i]);
+			args.GetReturnValue().Set(js_run_script(script));
 #endif
 
 			return;
@@ -257,7 +257,7 @@ void JSMain::Include(const v8::FunctionCallbackInfo<Value>& args)
 void JSMain::Log(const v8::FunctionCallbackInfo<Value>& args)
 {
 	HandleScope handle_scope(args.GetIsolate());
-	String::Utf8Value str(args[0]);
+	JsUtf8Value str(args[0]);
 
 	printf("%s\r\n", js_safe_str(*str));
 
@@ -287,14 +287,14 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 
 			isolate->SetData(0, this);
 
-			Handle<ObjectTemplate> global = ObjectTemplate::New(isolate);
-			global->Set(String::NewFromUtf8(isolate, "include"), FunctionTemplate::New(isolate, Include));
-			global->Set(String::NewFromUtf8(isolate, "require"), FunctionTemplate::New(isolate, Include));
-			global->Set(String::NewFromUtf8(isolate, "log"), FunctionTemplate::New(isolate, Log));
+			Local<ObjectTemplate> global = ObjectTemplate::New(isolate);
+			global->Set(js_new_string(isolate, "include"), FunctionTemplate::New(isolate, Include));
+			global->Set(js_new_string(isolate, "require"), FunctionTemplate::New(isolate, Include));
+			global->Set(js_new_string(isolate, "log"), FunctionTemplate::New(isolate, Log));
 
 			for (size_t i = 0; i < extenderFunctions->size(); i++) {
 				js_function_t *proc = (*extenderFunctions)[i];
-				global->Set(String::NewFromUtf8(isolate, proc->name), FunctionTemplate::New(isolate, proc->func));
+				global->Set(js_new_string(isolate, proc->name), FunctionTemplate::New(isolate, proc->func));
 			}
 
 			// Create a new context.
@@ -327,8 +327,8 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 			LoadScript(&script, isolate, scriptData.c_str(), fileName.c_str());
 #else
 			// Create a string containing the JavaScript source code.
-			Handle<String> source = String::NewFromUtf8(isolate, scriptData.c_str());
-			Handle<Script> script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, fileName.c_str())));
+			Local<String> source = js_new_string(isolate, scriptData.c_str());
+			Local<Script> script = Script::Compile(source, Local<Value>::New(isolate, js_new_string(isolate, fileName.c_str())));
 #endif
 
 			if (try_catch.HasCaught()) {
@@ -337,14 +337,14 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 			} else {
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 				// Run the script
-				Handle<Value> result;
+				Local<Value> result;
 
 				if (!script.IsEmpty()) {
-				    result = script.ToLocalChecked()->Run();
+				    result = js_run_script(script.ToLocalChecked());
 				}
 #else
 				// Run the script
-				Handle<Value> result = script->Run();
+				Local<Value> result = js_run_script(script);
 #endif
 				if (try_catch.HasCaught()) {
 					res = JSMain::GetExceptionInfo(isolate, &try_catch);
@@ -356,7 +356,7 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 					}
 
 					// return result as string.
-					String::Utf8Value ascii(result);
+					JsUtf8Value ascii(result);
 					if (*ascii) {
 						res = *ascii;
 					}
@@ -444,9 +444,18 @@ Isolate *JSMain::GetIsolate()
 void JSMain::Initialize(v8::Platform **platform)
 {
 	V8::InitializeICUDefaultLocation(SWITCH_GLOBAL_dirs.mod_dir);
+#if !V8FS_NEW_API
+	/* External V8 startup data was removed; modern V8 embeds the snapshot. */
 	V8::InitializeExternalStartupData(SWITCH_GLOBAL_dirs.mod_dir);
+#endif
 
+#if V8FS_NEW_API
+	/* CreateDefaultPlatform() was replaced by NewDefaultPlatform(), which
+	 * returns an owning unique_ptr; release it into our raw pointer. */
+	*platform = v8::platform::NewDefaultPlatform().release();
+#else
 	*platform = v8::platform::CreateDefaultPlatform();
+#endif
 	V8::InitializePlatform(*platform);
 	V8::Initialize();
 }
@@ -464,7 +473,14 @@ void JSMain::Dispose()
 	v8::Isolate::GetCurrent()->LowMemoryNotification();
 	while (!v8::Isolate::GetCurrent()->IdleNotificationDeadline(0.500)) {}
 	V8::Dispose();
+#if V8_MAJOR_VERSION >= 10
+  /* ShutdownPlatform() became a deprecated alias for DisposePlatform() in
+   * V8 10 and was removed in later releases (e.g. the V8 shipped by Debian
+   * trixie's libnode). DisposePlatform() exists from V8 10 onwards. */
+  V8::DisposePlatform();
+#else
 	V8::ShutdownPlatform();
+#endif
 #else
 	V8::LowMemoryNotification();
 	while (!V8::IdleNotification()) {}
@@ -595,13 +611,13 @@ char *JSMain::GetStackInfo(Isolate *isolate, int *lineNumber)
 	Local<StackTrace> stFile = StackTrace::CurrentStackTrace(isolate, 1, StackTrace::kScriptName);
 
 	if (!stFile.IsEmpty()) {
-		Local<StackFrame> sf = stFile->GetFrame(0);
+		Local<StackFrame> sf = js_stack_frame(stFile, isolate, 0);
 
 		if (!sf.IsEmpty()) {
 			Local<String> fn = sf->GetScriptName();
 
 			if (!fn.IsEmpty()) {
-				String::Utf8Value str(fn);
+				JsUtf8Value str(fn);
 
 				if (*str) {
 					js_strdup(ret, *str); // We must dup here
@@ -622,7 +638,7 @@ char *JSMain::GetStackInfo(Isolate *isolate, int *lineNumber)
 		Local<StackTrace> stLine = StackTrace::CurrentStackTrace(isolate, 1, StackTrace::kLineNumber);
 
 		if (!stLine.IsEmpty()) {
-			Local<StackFrame> sf = stLine->GetFrame(0);
+			Local<StackFrame> sf = js_stack_frame(stLine, isolate, 0);
 
 			if (!sf.IsEmpty()) {
 				*lineNumber = sf->GetLineNumber();
