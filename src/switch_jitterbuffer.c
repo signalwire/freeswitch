@@ -1031,27 +1031,6 @@ static inline switch_status_t jb_next_packet_by_seq_with_acceleration(switch_jb_
 			}
 		}
 
-		/* If the jitter buffer size is above the its max size, we force accelerate */
-		if (visible_not_old >= jb->max_frame_len) {
-			if (packet_vad(jb, packet, len) == SWITCH_FALSE) {
-				jb_debug(jb, SWITCH_LOG_WARNING, "JITTER_BUFFER above max size: [%d>%d] inactive fast acceleration\n", visible_not_old, jb->max_frame_len);
-				jb->jitter.drop_gap = 3;
-				jb->jitter.stats.acceleration++;
-				jb->jitter.stats.fast_acceleration++;
-				return jb_next_packet_by_seq(jb, nodep);
-			} else {
-				if (jb->jitter.drop_gap > 0) {
-					jb->jitter.drop_gap--;
-				} else {
-					jb_debug(jb, SWITCH_LOG_WARNING, "JITTER_BUFFER above max size: [%d>%d] forced acceleration\n", visible_not_old, jb->max_frame_len);
-					jb->jitter.drop_gap = 10;
-					jb->jitter.stats.acceleration++;
-					jb->jitter.stats.forced_acceleration++;
-					return jb_next_packet_by_seq(jb, nodep);
-				}
-			}
-		}
-
 		/* We try to accelerate in order to remove delay when the jitter buffer is 3x larger than the estimation. */
 		if (jb->jitter.stats.buffer_size_ms > (3 * jb->jitter.stats.estimate_ms) && jb->jitter.stats.buffer_size_ms > 60) {
 			if (status == SWITCH_STATUS_SUCCESS) {
