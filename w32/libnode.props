@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libnode-version.props" Condition=" '$(LibNodeVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <LibNodeDir>$(BaseDir)libs\libnode-$(LibNodeVersion)</LibNodeDir>
+  </PropertyGroup>
+
+  <!-- 
+       Download Target.
+       Name must be unique. 
+       By design, targets are executed only once per project.
+       
+       Usage:
+       
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file. 
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libnodeBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="https://github.com/freeswitch/libnode-packaging/releases/download/libnode-v$(LibNodeVersion)/libnode-$(LibNodeVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+        expectfileordirectory="$(LibNodeDir)\binaries\$(Platform)\$(Configuration)\libnode.dll"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+  <Target Name="libnodeHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="https://github.com/freeswitch/libnode-packaging/releases/download/libnode-v$(LibNodeVersion)/libnode-$(LibNodeVersion)-headers.zip"
+        expectfileordirectory="$(LibNodeDir)\include\v8.h"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+
+  <Target Name="libnodeCopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libnodeBinariesDownloadTarget">
+    <Message Text="Copying libnode.dll to the freeswitch output folder." Importance="High" />
+    <ItemGroup>
+      <libnodeFiles Include="$(LibNodeDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>
+    </ItemGroup>
+    <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\libnode.dll')"
+          SourceFiles="@(libnodeFiles)"
+          DestinationFiles="@(libnodeFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
+    />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <!-- V8 14.x headers require C++20 (v8config.h hard-errors otherwise). On MSVC,
+           __cplusplus stays 199711L unless /Zc:__cplusplus is passed, so v8config.h's
+           `#if __cplusplus <= 201703L` fires even with /std:c++20. Set both here. -->
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\libnode-$(LibNodeVersion)\include;$(SolutionDir)src\mod\languages\mod_v8;$(SolutionDir)src\mod\languages\mod_v8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>USING_V8_SHARED;USING_V8_PLATFORM_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\libnode-$(LibNodeVersion)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libnode.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

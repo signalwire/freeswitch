@@ -566,8 +566,8 @@ opal
 
 /zeromq-*/
 /jpeg-8d/
-/v8-*/
-/v8-*.zip
+/libnode-*/
+/libnode-*.zip
 
 # build products we should remove
 !/libg722_1/config/depcomp
