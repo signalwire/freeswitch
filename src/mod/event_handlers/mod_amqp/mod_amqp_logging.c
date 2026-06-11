@@ -296,7 +296,8 @@ switch_status_t mod_amqp_logging_send(mod_amqp_logging_profile_t *profile, mod_a
 								amqp_cstring_bytes(msg->pjson));
 
 	if (status < 0) {
-		const char *errstr = amqp_error_string2(-status);
+		const char *errstr = amqp_error_string2(status);
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] failed to send event on connection[%s]: %s\n",
 						  profile->name, profile->conn_active->name, errstr);
 
