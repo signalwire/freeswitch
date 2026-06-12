@@ -72,6 +72,24 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEARDOWN_END()
 
+		FST_TEST_BEGIN(test_is_ip_address)
+		{			
+			const char *test_ips[] = {
+				"192.168.1.1",              // Valid IPv4
+				"2001:db8::ff00:42:8329",   // Valid IPv6
+				"www.google.com",           // Hostname
+				"not.an.ip.address",
+				NULL
+			};
+
+			fst_check_int_equals(switch_is_ip_address(test_ips[0]), 1);
+			fst_check_int_equals(switch_is_ip_address(test_ips[1]), 1);
+			fst_check_int_equals(switch_is_ip_address(test_ips[2]), 0);
+			fst_check_int_equals(switch_is_ip_address(test_ips[3]), 0);
+			fst_check_int_equals(switch_is_ip_address(test_ips[4]), 0);
+		}
+		FST_TEST_END();
+
 		FST_TEST_BEGIN(test_switch_regex)
 		{
 			switch_regex_match_t *match_data = NULL;
