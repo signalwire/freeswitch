@@ -147,7 +147,7 @@ typedef void(*switch_device_state_function_t)(switch_core_session_t *session, sw
 
 #define DTLS_SRTP_FNAME "dtls-srtp"
 #define MAX_FPLEN 64
-#define MAX_FPSTRLEN 192
+#define MAX_FPSTRLEN 193
 
 typedef struct dtls_fp_s {
 	uint32_t len;

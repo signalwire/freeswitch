@@ -76,7 +76,7 @@ void *FSSocket::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	if (ret != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		char *err = switch_mprintf("Failed to create socket, reason: %d", ret);
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 		free(err);
 		return NULL;
 	}
@@ -91,19 +91,19 @@ void *FSSocket::Construct(const v8::FunctionCallbackInfo<Value>& info)
 JS_SOCKET_FUNCTION_IMPL(Connect)
 {
 	if (info.Length() == 2) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *host = js_safe_str(*str);
 		int32_t port;
 		switch_sockaddr_t *addr;
 		switch_status_t ret;
 
-		port = info[1]->Int32Value();
+		port = info[1]->Int32Value(js_current_context()).FromMaybe(0);
 
 		/* Recreate socket if it has been closed */
 		if (!this->_socket) {
 			if ((ret = switch_socket_create(&this->_socket, AF_INET, SOCK_STREAM, SWITCH_PROTO_TCP, this->_pool)) != SWITCH_STATUS_SUCCESS) {
 				char *err = switch_mprintf("Failed to create socket, reason: %d", ret);
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 				free(err);
 				return;
 			}
@@ -113,7 +113,7 @@ JS_SOCKET_FUNCTION_IMPL(Connect)
 
 		if (ret != SWITCH_STATUS_SUCCESS) {
 			char *err = switch_mprintf("switch_sockaddr_info_get failed: %d", ret);
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 			free(err);
 			return;
 		}
@@ -132,13 +132,13 @@ JS_SOCKET_FUNCTION_IMPL(Connect)
 JS_SOCKET_FUNCTION_IMPL(Send)
 {
 	if (!this->_socket) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Socket is not active"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Socket is not active"));
 		return;
 	}
 
 	if (info.Length() == 1) {
 		switch_status_t ret;
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *buffer = js_safe_str(*str);
 		switch_size_t len = str.length(); // binary safe version of strlen()
 		ret = switch_socket_send(this->_socket, buffer, &len);
@@ -156,7 +156,7 @@ JS_SOCKET_FUNCTION_IMPL(Send)
 JS_SOCKET_FUNCTION_IMPL(ReadBytes)
 {
 	if (!this->_socket) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Socket is not active"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Socket is not active"));
 		return;
 	}
 
@@ -165,7 +165,7 @@ JS_SOCKET_FUNCTION_IMPL(ReadBytes)
 		switch_status_t ret;
 		switch_size_t len;
 
-		bytes_to_read = info[0]->Int32Value();
+		bytes_to_read = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 		len = (switch_size_t) bytes_to_read;
 
 		if (this->_buffer_size < len) {
@@ -180,7 +180,7 @@ JS_SOCKET_FUNCTION_IMPL(ReadBytes)
 			return;
 		} else {
 			this->_read_buffer[len] = 0;
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(this->_read_buffer)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(this->_read_buffer)));
 			return;
 		}
 	}
@@ -198,12 +198,12 @@ JS_SOCKET_FUNCTION_IMPL(Read)
 	char tempbuf[2];
 
 	if (!this->_socket) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Socket is not active"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Socket is not active"));
 		return;
 	}
 
 	if (info.Length() == 1) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		delimiter = js_safe_str(*str);
 	}
 
@@ -240,7 +240,7 @@ JS_SOCKET_FUNCTION_IMPL(Read)
 		info.GetReturnValue().Set(false);
 	} else {
 		this->_read_buffer[total_length] = 0;
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(this->_read_buffer)));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(this->_read_buffer)));
 	}
 }
 
@@ -254,10 +254,10 @@ JS_SOCKET_FUNCTION_IMPL(Close)
 JS_SOCKET_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 
 	if (!this->_socket) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Socket is not active"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Socket is not active"));
 		return;
 	}
 
@@ -268,9 +268,9 @@ JS_SOCKET_GET_PROPERTY_IMPL(GetProperty)
 		switch_socket_addr_get(&sa, SWITCH_TRUE, this->_socket);
 
 		if (sa && switch_get_addr(tmp, sizeof(tmp), sa) && !zstr(tmp)) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), tmp));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), tmp));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), "unknown"));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), "unknown"));
 		}
 	} else if (!strcmp(js_safe_str(*str), "port")) {
 		switch_sockaddr_t *sa = NULL;
@@ -289,18 +289,18 @@ JS_SOCKET_GET_PROPERTY_IMPL(GetProperty)
 
 		info.GetReturnValue().Set(Int32::New(info.GetIsolate(), (int32_t)timeout));
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 
 JS_SOCKET_SET_PROPERTY_IMPL(SetPropertyTimeOut)
 {
 	if (!this->_socket) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Socket is not active"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Socket is not active"));
 		return;
 	}
 
-	switch_socket_timeout_set(this->_socket, value->Int32Value());
+	switch_socket_timeout_set(this->_socket, value->Int32Value(js_current_context()).FromMaybe(0));
 }
 
 static const js_function_t socket_methods[] = {

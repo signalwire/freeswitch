@@ -142,7 +142,7 @@ static struct {
 
 const int switch_amr_frame_sizes[] = {12,13,15,17,19,20,26,31,5,0,0,0,0,0,0,1};
 
-#define SWITCH_AMR_OUT_MAX_SIZE 32
+#define SWITCH_AMR_OUT_MAX_SIZE 33
 #define SWITCH_AMR_MODES 9 /* plus SID */
 
 static switch_bool_t switch_amr_unpack_oa(unsigned char *buf, uint8_t *tmp, int encoded_data_len)

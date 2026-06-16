@@ -12,8 +12,8 @@
   <PropertyGroup>
     <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
     <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
-    <PCRELibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">pcred</PCRELibraryFileName>
-    <PCRELibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">pcre</PCRELibraryFileName>
+    <PCRELibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">pcre2-8d</PCRELibraryFileName>
+    <PCRELibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">pcre2-8</PCRELibraryFileName>
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
@@ -52,7 +52,7 @@
   <Target Name="pcreHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
       <DownloadPackageTask
            package="http://files.freeswitch.org/windows/packages/pcre/$(pcreVersion)/pcre-$(pcreVersion)-headers.zip"
-           expectfileordirectory="$(pcreLibDir)\include\pcre.h"
+           expectfileordirectory="$(pcreLibDir)\include\pcre2.h"
            outputfolder=""
            outputfilename=""
            extractto="$(BaseDir)libs\"
@@ -73,12 +73,10 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(BaseDir)libs\pcre-$(pcreVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\pcre-$(pcreVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies Condition=" '$(LibraryConfiguration)' == 'Debug' ">pcred.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition=" '$(LibraryConfiguration)' == 'Release' ">pcre.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(PCRELibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

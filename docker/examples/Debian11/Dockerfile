@@ -15,7 +15,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -yq install \
 # general
     libssl-dev zlib1g-dev libdb-dev unixodbc-dev libncurses5-dev libexpat1-dev libgdbm-dev bison erlang-dev libtpl-dev libtiff5-dev uuid-dev \
 # core
-    libpcre3-dev libedit-dev libsqlite3-dev libcurl4-openssl-dev nasm \
+    libpcre2-dev libedit-dev libsqlite3-dev libcurl4-openssl-dev nasm \
 # core codecs
     libogg-dev libspeex-dev libspeexdsp-dev \
 # mod_enum

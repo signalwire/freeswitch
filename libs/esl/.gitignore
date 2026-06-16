@@ -7,7 +7,7 @@ Makefile.in
 !java/Makefile
 !lua/Makefile
 !managed/Makefile
-!python/Makefile
+!python3/Makefile
 !ruby/Makefile
 !tcl/Makefile
 java/classes/org/

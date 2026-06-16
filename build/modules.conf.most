@@ -29,10 +29,8 @@ applications/mod_lcr
 applications/mod_memcache
 applications/mod_mongo
 applications/mod_nibblebill
-applications/mod_oreka
 #applications/mod_osp
 applications/mod_prefix
-#applications/mod_rad_auth
 applications/mod_redis
 applications/mod_signalwire
 applications/mod_sms
@@ -57,12 +55,10 @@ codecs/mod_codec2
 #codecs/mod_com_g729
 codecs/mod_g723_1
 codecs/mod_g729
-codecs/mod_h26x
 codecs/mod_ilbc
 codecs/mod_opus
 codecs/mod_silk
 codecs/mod_siren
-codecs/mod_theora
 #databases/mod_mariadb
 databases/mod_pgsql
 dialplans/mod_dialplan_asterisk
@@ -71,7 +67,6 @@ dialplans/mod_dialplan_xml
 directories/mod_ldap
 #endpoints/mod_alsa
 #endpoints/mod_h323
-#endpoints/mod_khomp
 endpoints/mod_loopback
 #endpoints/mod_opal
 endpoints/mod_rtc
@@ -81,7 +76,6 @@ endpoints/mod_sofia
 endpoints/mod_verto
 event_handlers/mod_amqp
 event_handlers/mod_cdr_csv
-event_handlers/mod_cdr_mongodb
 #event_handlers/mod_cdr_pg_csv
 event_handlers/mod_cdr_sqlite
 event_handlers/mod_erlang_event
@@ -91,7 +85,6 @@ event_handlers/mod_format_cdr
 event_handlers/mod_json_cdr
 event_handlers/mod_odbc_cdr
 event_handlers/mod_snmp
-#event_handlers/mod_event_zmq
 formats/mod_imagick
 formats/mod_local_stream
 formats/mod_native_file
@@ -108,7 +101,6 @@ languages/mod_managed
 languages/mod_perl
 languages/mod_python3
 #languages/mod_v8
-languages/mod_yaml
 loggers/mod_console
 loggers/mod_graylog2
 loggers/mod_logfile
@@ -136,6 +128,5 @@ timers/mod_timerfd
 xml_int/mod_xml_cdr
 xml_int/mod_xml_curl
 xml_int/mod_xml_ldap
-#xml_int/mod_xml_radius
 xml_int/mod_xml_rpc
 xml_int/mod_xml_scgi

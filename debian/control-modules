@@ -8,6 +8,7 @@ Description: mod_av
  Adds mod_av.
 Build-Depends: libavformat-dev, libswscale-dev, libavresample-dev
 Build-Depends-Bookworm: libavformat-dev, libswscale-dev, libswresample-dev
+Build-Depends-Trixie: libavformat-dev, libswscale-dev, libswresample-dev
 
 Module: applications/mod_avmd
 Description: Advanced voicemail detection
@@ -149,11 +150,6 @@ Description: Nibblebill
  This module allows for real-time accounting of a cash balance and
  using that information for call routing.
 
-Module: applications/mod_oreka
-Description: Media recording with Oreka
- This module provides media recording with the Oreka cross-platfor
- audio stream recording and retrieval system.
-
 Module: applications/mod_osp
 Description: Open Settlement Protocol
  This module adds support for the Open Settlement Protocol (OSP).
@@ -163,10 +159,6 @@ Module: applications/mod_prefix
 Description: Longest prefix match search
  This module provides a data store with fast lookups by the longest
  prefix match (LPM) rule.
-
-Module: applications/mod_rad_auth
-Description: RADIUS AA
- This module implements RADIUS Authentication and Authorization.
 
 Module: applications/mod_random
 Description: Entropy extraction
@@ -240,6 +232,7 @@ Build-Depends: libflite-dev | flite1-dev
 Module: asr_tts/mod_pocketsphinx
 Description: mod_pocketsphinx
  Adds mod_pocketsphinx.
+Build-Depends: libsphinxbase-dev, libpocketsphinx-dev
 
 Module: asr_tts/mod_tts_commandline
 Description: mod_tts_commandline
@@ -282,10 +275,6 @@ Module: codecs/mod_g729
 Description: mod_g729
  Adds mod_g729.
 
-Module: codecs/mod_h26x
-Description: mod_h26x
- Adds mod_h26x.
-
 Module: codecs/mod_ilbc
 Section: non-free/comm
 Description: mod_ilbc
@@ -315,10 +304,6 @@ Build-Depends: libg7221-dev
 Module: codecs/mod_skel_codec
 Description: Adds mod_skel_codec
  Adds mod_skel_codec.
-
-Module: codecs/mod_theora
-Description: mod_theora
- Adds mod_theora.
 
 Module: codecs/mod_yuv
 Description: Adds mod_yuv
@@ -369,10 +354,6 @@ Description: mod_h323
  Adds mod_h323.
 Build-Depends: libopenh323-dev | libh323plus-dev, libpt-dev
 
-Module: endpoints/mod_khomp
-Description: mod_khomp
- Adds mod_khomp.
-
 Module: endpoints/mod_loopback
 Description: mod_loopback
  Adds mod_loopback.
@@ -405,10 +386,7 @@ Description: mod_sofia
 Module: endpoints/mod_verto
 Description: Adds mod_verto.
  Adds mod_verto.
-Build-Depends: libperl-dev
-Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
+Build-Depends: libperl-dev, libgdbm-compat-dev
 
 ## mod/event_handlers
 
@@ -420,10 +398,6 @@ Build-Depends: librabbitmq-dev
 Module: event_handlers/mod_cdr_csv
 Description: mod_cdr_csv
  Adds mod_cdr_csv.
-
-Module: event_handlers/mod_cdr_mongodb
-Description: mod_cdr_mongodb
- Adds mod_cdr_mongodb.
 
 Module: event_handlers/mod_cdr_pg_csv
 Description: mod_cdr_pg_csv
@@ -451,10 +425,6 @@ Description: mod_event_socket
 Module: event_handlers/mod_event_test
 Description: mod_event_test
  Adds mod_event_test.
-
-Module: event_handlers/mod_event_zmq
-Description: mod_event_zmq
- Adds mod_event_zmq.
 
 Module: event_handlers/mod_format_cdr
 Description: mod_format_cdr
@@ -548,6 +518,7 @@ Description: mod_lua
  Adds mod_lua.
 Build-Depends: liblua5.2-dev | liblua5.1-dev
 Build-Depends-Bookworm: liblua5.3-dev | liblua5.2-dev | liblua5.1-dev
+Build-Depends-Trixie: liblua5.3-dev | liblua5.2-dev | liblua5.1-0-dev
 
 Module: languages/mod_managed
 Description: mod_managed
@@ -557,31 +528,19 @@ Build-Depends: libmono-2.0-dev, mono-mcs
 Module: languages/mod_perl
 Description: mod_perl
  Adds mod_perl.
-Build-Depends: libperl-dev
-Build-Depends-Buster: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bullseye: libperl-dev, libgdbm-compat-dev
-Build-Depends-Bookworm: libperl-dev, libgdbm-compat-dev
-
-Module: languages/mod_python
-Description: mod_python
- Adds mod_python.
-Build-Depends: python-dev | python-dev-is-python2
+Build-Depends: libperl-dev, libgdbm-compat-dev
 
 Module: languages/mod_python3
 Description: mod_python3
  Adds mod_python3.
 Build-Depends: python3-dev
 Build-Depends-Bookworm: python3-dev, python3-setuptools
+Build-Depends-Trixie: python3-dev, python3-setuptools
 
 Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
-Build-Depends: git, libv8-6.1-dev
-
-Module: languages/mod_yaml
-Description: mod_yaml
- Adds mod_yaml.
-Build-Depends: libyaml-dev, libglib2.0-dev
+Build-Depends: libnode-dev
 
 ## mod/loggers
 
@@ -705,10 +664,6 @@ Module: xml_int/mod_xml_ldap
 Description: mod_xml_ldap
  Adds mod_xml_ldap.
 Build-Depends: libldap2-dev, libsasl2-dev
-
-Module: xml_int/mod_xml_radius
-Description: mod_xml_radius
- Adds mod_xml_radius
 
 Module: xml_int/mod_xml_rpc
 Description: mod_xml_rpc

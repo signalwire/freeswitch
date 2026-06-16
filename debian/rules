@@ -73,7 +73,7 @@ override_dh_auto_clean:
 	./configure -C --enable-portable-binary --disable-dependency-tracking \
 		--host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr --localstatedir=/var --sysconfdir=/etc \
-		--with-gnu-ld --with-python --with-python3 --with-erlang --with-openssl \
+		--with-gnu-ld --with-python3 --with-erlang --with-openssl \
 		--enable-core-odbc-support
 	touch $@
 
@@ -83,7 +83,6 @@ override_dh_auto_configure: .stamp-configure
 	@$(call show_vars)
 	make -j$(NJOBS) core
 	make -j$(NJOBS)
-	make -C libs/esl pymod
 	make -C libs/esl py3mod
 	make -C libs/esl perlmod
 	touch $@
@@ -98,7 +97,6 @@ override_dh_strip:
 
 override_dh_auto_install:
 	dh_auto_install
-	dh_auto_install -- -C libs/esl pymod-install
 	dh_auto_install -- -C libs/esl py3mod-install
 	dh_auto_install -- -C libs/esl perlmod-install
 	rm -f debian/tmp/usr/share/freeswitch/grammar/model/communicator/COPYING

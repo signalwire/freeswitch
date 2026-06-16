@@ -2410,7 +2410,7 @@ static int sofia_dialog_probe_notify_callback(void *pArg, int argc, char **argv,
 	switch_stream_handle_t stream = { 0 };
 	char *to;
 	const char *pl = NULL;
-	const char *ct = "application/dialog-info+xml";
+	const char *ct;
 
 	if (mod_sofia_globals.debug_presence > 0) {
 		int i;
@@ -2519,7 +2519,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 {
 	char *ret = NULL;
 
-	if (switch_stristr("polycom", user_agent)) {
+	if (switch_stristr("poly", user_agent)) {
 		*ct = "application/xpidf+xml";
 
 		/* If unknown/none prpid is provided, just show the user as online. */
@@ -3677,7 +3677,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	char *orig_proto = "";
 	char *alt_proto = NULL;
 	char *d_user = NULL;
-	char *contact_str = "";
+	char *contact_str;
 	const char *call_id = NULL;
 	char *to_str = NULL;
 	char *full_from = NULL;

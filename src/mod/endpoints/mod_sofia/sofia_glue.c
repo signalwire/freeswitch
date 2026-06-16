@@ -911,8 +911,6 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hi = NULL;
 	const char *exclude_regex = NULL;
-	switch_regex_t *re = NULL;
-	int ovector[30] = {0};
 
 	exclude_regex = switch_channel_get_variable(channel, "exclude_outgoing_extra_header");
 	SWITCH_STANDARD_STREAM(stream);
@@ -926,12 +924,11 @@ char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix
 			}
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				if ( !exclude_regex || !(/*proceed*/ switch_regex_perform(name, exclude_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ( !exclude_regex || !(/*proceed*/ switch_regex(name, exclude_regex))) {
 					const char *hname = name + strlen(prefix);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring Extra Header [%s] , matches exclude_outgoing_extra_header [%s]\n", name, exclude_regex);
-					switch_regex_safe_free(re);
 				}
 			}
 		}
@@ -1041,7 +1038,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 	const char *cid_name, *cid_num;
 	char *e_dest = NULL;
-	const char *holdstr = "";
+	const char *holdstr;
 	char *extra_headers = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint32_t session_timeout = tech_pvt->profile->session_timeout;
@@ -3337,7 +3334,7 @@ char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua
 	const char *contact_host;//, *contact_user;
 	sip_contact_t const *contact;
 	char *port;
-	const char *display = "\"user\"";
+	const char *display;
 	char new_port[25] = "";
 	sofia_nat_parse_t lnp = { { 0 } };
 	const char *ipv6;

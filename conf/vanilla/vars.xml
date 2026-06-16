@@ -205,14 +205,6 @@
        G723             - G723.1 in passthru mode. (mod_g723_1)
        AMR              - AMR in passthru mode. (mod_amr)
 
-       These are the passthru video codecs: (mod_h26x)
-
-       H261             - H.261 Video
-       H263             - H.263 Video
-       H263-1998        - H.263-1998 Video
-       H263-2000        - H.263-2000 Video
-       H264             - H.264 Video
-
        RTP Dynamic Payload Numbers currently used in FreeSWITCH and their purpose.
 
        96  - AMR
@@ -437,5 +429,12 @@
   <!-- Stock Video Avatars -->
   <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
   <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>
+
+  <!-- SIP 603+ call blocking passthrough control.
+       true:  Forward "Network Blocked" phrase and Reason header to the caller.
+       false: Strip Reason header, send clean 603 Decline.
+       unset: Default behavior (Reason passes through, phrase reset to "Decline").
+       Works independently of disable_q850_reason for selective 603+ forwarding. -->
+  <!--<Z-PRE-PROCESS cmd="set" data="sip_603plus_passthrough=true"/>-->
 
 </include>

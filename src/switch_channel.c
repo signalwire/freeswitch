@@ -33,7 +33,8 @@
 
 #include <switch.h>
 #include <switch_channel.h>
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 struct switch_cause_table {
 	const char *name;
@@ -4549,21 +4550,22 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		char *digit_string = dtstr;
 		char *X = NULL;
 		switch_regex_t *re = NULL;
+		switch_regex_match_t *match_data = NULL;
 		char *substituted = NULL;
 
 		if (!zstr(var)) {
 			int proceed = 0;
-			int ovector[30];
 
-			if ((proceed = switch_regex_perform(dtstr, var, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if ((proceed = switch_regex_perform(dtstr, var, &re, &match_data))) {
 				int len = (strlen(dtstr) + strlen(var) + 10) * proceed;
 				int i = 0;
 				const char *replace = NULL;
+				PCRE2_SIZE replace_size;
 
 				X = malloc(len);
 
 				for (i = 0; i < proceed; i++) {
-					if (pcre_get_substring(dtstr, ovector, proceed, i, &replace) >= 0) {
+					if (pcre2_substring_get_bynumber(match_data, i, (PCRE2_UCHAR **)&replace, &replace_size) >= 0) {
 						if (replace) {
 							switch_size_t plen = strlen(replace);
 							memset(X, 'X', plen);
@@ -4572,7 +4574,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 							switch_safe_free(substituted);
 							substituted = switch_string_replace(substituted ? substituted : dtstr, replace, X);
 							
-							pcre_free_substring(replace);
+							pcre2_substring_free((PCRE2_UCHAR *)replace);
 						}
 					}
 				}
@@ -4584,6 +4586,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		}
 
 		switch_channel_set_variable(channel, "digits_dialed", digit_string);
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 		switch_safe_free(substituted);
 		switch_safe_free(X);

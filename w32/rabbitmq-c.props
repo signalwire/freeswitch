@@ -31,7 +31,7 @@
 
   <Target Name="rabbitmq-c-binariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)/rabbitmq-c-$(rabbitmq_cVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="https://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)/rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(rabbitmq_c_libDir)\binaries\$(Platform.ToLower())\$(Configuration.ToLower())\librabbitmq.4.lib" 
            outputfolder=""
            outputfilename="" 
@@ -41,7 +41,7 @@
 
   <Target Name="rabbitmq-c-headersTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)/rabbitmq-c-$(rabbitmq_cVersion)-headers.zip"
+           package="https://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)/rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)-headers.zip"
            expectfileordirectory="$(rabbitmq_c_libDir)\include\amqp.h" 
            outputfolder=""
            outputfilename="" 
@@ -52,6 +52,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(rabbitmq_c_libDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>AMQP_MAJOR_VERSION=$(rabbitmq_cMajorVersion);AMQP_MINOR_VERSION=$(rabbitmq_cMinorVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(rabbitmq_c_libDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

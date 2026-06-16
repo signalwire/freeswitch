@@ -401,14 +401,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\codecs\mod_h26x\mod_h26x.2017.vcxproj">
-      <Name>mod_h26x</Name>
-      <Project>{2c3c2423-234b-4772-8899-d3b137e5ca35}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_ilbc\mod_ilbc.2017.vcxproj">
       <Name>mod_ilbc</Name>
       <Project>{d3ec0aff-76fc-4210-a825-9a17410660a3}</Project>
@@ -548,14 +540,6 @@
     <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_csv\mod_cdr_csv.2017.vcxproj">
       <Name>mod_cdr_csv</Name>
       <Project>{44d7deaf-fda5-495e-8b9d-1439e4f4c21e}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_mongodb\mod_cdr_mongodb.2017.vcxproj">
-      <Name>mod_cdr_mongodb</Name>
-      <Project>{4dff29b4-2976-447d-a8b3-43476451517c}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>

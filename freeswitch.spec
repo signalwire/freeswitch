@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-python freeswitch-v8 freeswitch-signalwire
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-mariadb freeswitch-pgsql freeswitch-perl freeswitch-v8 freeswitch-signalwire
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru
 #		      and others
 #
@@ -110,10 +110,9 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/freeradius-client-1.1.7.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source3:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
-Source4:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+Source1:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
+Source3:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -134,7 +133,7 @@ BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: sofia-sip-devel >= 1.13.17
 BuildRequires: spandsp3-devel >= 3.0
-BuildRequires: pcre-devel 
+BuildRequires: pcre2-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
@@ -148,7 +147,7 @@ BuildRequires: zlib-devel
 BuildRequires: libxml2-devel
 BuildRequires: libsndfile-devel
 Requires: curl >= 7.19
-Requires: pcre
+Requires: pcre2
 Requires: speex
 Requires: sqlite >= 3.6.20
 Requires: libtiff
@@ -451,14 +450,6 @@ Provides FreeSWITCH mod_nibblebill, provides a credit/debit module for
 FreeSWITCH to allow real-time debiting of credit or cash from a database 
 while calls are in progress.
 
-%package application-rad_auth
-Summary:	FreeSWITCH mod_rad_auth
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description application-rad_auth
-Provides FreeSWITCH mod_rad_auth, authentication via RADIUS protocol from FreeSWITCH dialplan
-
 %package application-redis
 Summary:	FreeSWITCH mod_redis
 Group:          System/Libraries
@@ -640,14 +631,6 @@ Conflicts:	codec-com-g729
 %description codec-passthru-g729
 Pass-through g729 Codec support for FreeSWITCH open source telephony platform
 
-%package codec-h26x
-Summary:        H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-h26x
-H.263/H.264 Video Codec support for FreeSWITCH open source telephony platform
-
 %package codec-ilbc
 Summary:        iLCB Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -700,14 +683,6 @@ see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_
 and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html 
 At the time of this packaging, Polycom does not charge for licensing.
 
-%package codec-theora
-Summary:        Theora Video Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-theora
-Theora Video Codec support for FreeSWITCH open source telephony platform.
-
 ######################################################################################################################
 #				FreeSWITCH Database Modules
 ######################################################################################################################
@@ -756,14 +731,6 @@ PostgreSQL native support for FreeSWITCH.
 #%description endpoint-h323
 #H.323 endpoint support for FreeSWITCH open source telephony platform
 
-#%package endpoint-khomp
-#Summary:        khomp endpoint support for FreeSWITCH open source telephony platform
-#Group:          System/Libraries
-#Requires:       %{name} = %{version}-%{release}
-#
-#%description endpoint-khomp
-#Khomp hardware endpoint support for FreeSWITCH open source telephony platform.
-
 %package endpoint-rtmp
 Summary:        RTPM Endpoint support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -801,15 +768,6 @@ Verto protocol support for FreeSWITCH open source telephony platform.
 ######################################################################################################################
 #				FreeSWITCH Event Handler Modules
 ######################################################################################################################
-
-%package event-cdr-mongodb
-Summary:	MongoDB CDR Logger for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:       %{name} = %{version}-%{release}
-BuildRequires:  mongo-c-driver-devel
-
-%description event-cdr-mongodb
-MongoDB CDR Logger for FreeSWITCH
 
 %package event-cdr-pg-csv
 Summary:	PostgreSQL CDR Logger for the FreeSWITCH open source telephony platform
@@ -854,14 +812,6 @@ Requires:	%{name} = %{version}-%{release}
 
 %description event-multicast
 Multicast Event System for FreeSWITCH.
-
-#%package event-zmq
-#Summary:	ZeroMQ Event System for the FreeSWITCH open source telephony platform
-#Group:		System/Libraries
-#Requires:	 %{name} = %{version}-%{release}
-#
-#%description event-zmq
-#ZeroMQ Event System for FreeSWITCH.
 
 %package event-json-cdr
 Summary:	JSON CDR Logger for the FreeSWITCH open source telephony platform
@@ -983,15 +933,6 @@ BuildRequires:	perl-devel
 BuildRequires:	perl-ExtUtils-Embed
 
 %description	perl
-
-%package        python
-Summary:        Python support for the FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:       python
-BuildRequires:  python-devel
-
-%description    python
 
 %if %{build_mod_v8}
 %package v8
@@ -1133,15 +1074,6 @@ Group:		System Environment/Libraries
 %description	-n perl-ESL
 The Perl ESL module allows for native interaction with FreeSWITCH over the event socket interface.
 
-%package	-n python-ESL
-Summary:	The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
-Group:		System Environment/Libraries
-Requires:	python
-BuildRequires:	python-devel
-
-%description	-n python-ESL
-The Python ESL module allows for native interaction with FreeSWITCH over the event socket interface.
-
 ######################################################################################################################
 #				FreeSWITCH basic config module
 ######################################################################################################################
@@ -1186,7 +1118,6 @@ Requires:	freeswitch-codec-passthru-amr
 Requires:	freeswitch-codec-bv
 Requires:	freeswitch-codec-passthru-g723_1
 Requires:	freeswitch-codec-passthru-g729
-Requires:	freeswitch-codec-h26x
 Requires:	freeswitch-codec-ilbc
 Requires:	freeswitch-codec-siren
 Requires:	freeswitch-database-pgsql
@@ -1252,7 +1183,7 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_rad_auth \
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill \
 			applications/mod_redis "
 
 APPLICATION_MODULES_SZ="applications/mod_signalwire applications/mod_sms applications/mod_snapshot \
@@ -1275,8 +1206,8 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 #
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_codec2 codecs/mod_g723_1 \
-		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_theora"
+		codecs/mod_g729 codecs/mod_ilbc codecs/mod_opus codecs/mod_silk \
+		codecs/mod_siren"
 #
 
 ######################################################################################################################
@@ -1309,7 +1240,7 @@ ENDPOINTS_MODULES=" \
 			endpoints/mod_loopback endpoints/mod_rtmp \
 			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_sofia"
 
-## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323 endpoints/mod_khomp 
+## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_h323
  
 ######################################################################################################################
 #
@@ -1317,11 +1248,10 @@ ENDPOINTS_MODULES=" \
 #
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
-			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
+			event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
 
-#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
@@ -1335,7 +1265,7 @@ FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_op
 #						Embedded Languages
 #
 ######################################################################################################################
-LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python "
+LANGUAGES_MODULES="languages/mod_lua languages/mod_perl "
 %if %{build_mod_v8}
 LANGUAGES_MODULES+="languages/mod_v8"
 %endif
@@ -1454,7 +1384,6 @@ unset MODULES
 %{__make}
 
 cd libs/esl
-%{__make} pymod
 %{__make} perlmod
 
 
@@ -1484,17 +1413,7 @@ cd libs/esl
 
 #install the esl stuff
 cd libs/esl
-%{__make} DESTDIR=%{buildroot} pymod-install
 %{__make} DESTDIR=%{buildroot} perlmod-install
-
-%if %{build_py26_esl}
-#install esl for python 26
-%{__make} clean
-sed -i s/python\ /python26\ /g python/Makefile
-%{__make} pymod
-%{__mkdir} -p %{buildroot}/usr/lib/python2.6/site-packages
-%{__make} DESTDIR=%{buildroot} pymod-install
-%endif
 
 cd ../..
 
@@ -1708,7 +1627,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/blacklist.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/callcenter.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_csv.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_mongodb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_sqlite.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cidlookup.conf.xml
@@ -1744,7 +1662,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/msrp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/nibblebill.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opal.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/oreka.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/osp.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/pocketsphinx.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/post_load_modules.conf.xml
@@ -1900,9 +1817,6 @@ fi
 %files application-nibblebill
 %{MODINSTDIR}/mod_nibblebill.so*
 
-%files application-rad_auth
-%{MODINSTDIR}/mod_rad_auth.so*
-
 %files application-redis
 %{MODINSTDIR}/mod_redis.so*
 
@@ -1972,9 +1886,6 @@ fi
 %files codec-passthru-g729
 %{MODINSTDIR}/mod_g729.so*
 
-%files codec-h26x
-%{MODINSTDIR}/mod_h26x.so*
-
 %files codec-ilbc
 %{MODINSTDIR}/mod_ilbc.so*
 
@@ -1987,9 +1898,6 @@ fi
 
 %files codec-siren
 %{MODINSTDIR}/mod_siren.so*
-
-%files codec-theora
-%{MODINSTDIR}/mod_theora.so*
 
 ######################################################################################################################
 #
@@ -2021,9 +1929,6 @@ fi
 #%files endpoint-h323
 #%{MODINSTDIR}/mod_h323.so*
 
-#%files endpoint-khomp
-#%{MODINSTDIR}/mod_khomp.so*
-
 %files endpoint-rtmp
 %{MODINSTDIR}/mod_rtmp.so*
 
@@ -2043,9 +1948,6 @@ fi
 #
 ######################################################################################################################
 
-%files event-cdr-mongodb
-%{MODINSTDIR}/mod_cdr_mongodb.so*
-
 %files event-cdr-pg-csv
 %{MODINSTDIR}/mod_cdr_pg_csv.so*
 
@@ -2060,9 +1962,6 @@ fi
 
 %files event-multicast
 %{MODINSTDIR}/mod_event_multicast.so*
-
-#%files event-zmq
-#%{MODINSTDIR}/mod_xmq.so*
 
 %files event-json-cdr
 %{MODINSTDIR}/mod_json_cdr.so*
@@ -2107,10 +2006,6 @@ fi
 %{MODINSTDIR}/mod_perl*.so*
 %{prefix}/perl/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/perl.conf.xml
-
-%files python
-%{MODINSTDIR}/mod_python*.so*
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
 %if %{build_mod_v8}
 %files v8
@@ -2257,11 +2152,6 @@ fi
 %dir %{perl_archlib}/ESL
 %{perl_archlib}/ESL/Dispatch.pm
 %{perl_archlib}/ESL/IVR.pm
-
-%files	-n python-ESL
-%attr(0644, root, bin) /usr/lib*/python*/site-packages/freeswitch.py*
-%attr(0755, root, bin) /usr/lib*/python*/site-packages/_ESL.so*
-%attr(0755, root, bin) /usr/lib*/python*/site-packages/ESL.py*
 
 ######################################################################################################################
 #

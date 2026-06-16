@@ -28,6 +28,7 @@ typedef struct{
 
 #define SWIGLUA_TABLE_GET(fn) {lua_pushvalue(fn.L,fn.idx);}
 
+typedef int DbhQueryRowsReturn;
 
 namespace LUA {
 	class Session:public CoreSession {
@@ -76,6 +77,7 @@ namespace LUA {
       bool connected();
       bool test_reactive(char *test_sql, char *drop_sql = NULL, char *reactive_sql = NULL);
       bool query(char *sql, SWIGLUA_FN lua_fun);
+      DbhQueryRowsReturn query_rows(lua_State* L, char *sql);
       int affected_rows();
       char *last_error();
       void clear_error();

@@ -40,9 +40,15 @@
 #ifndef MOD_AV_H
 #define MOD_AV_H
 
-#define LIBAVCODEC_V 59
-#define LIBAVFORMAT_V 59
-#define LIBAVUTIL_V 57
+#define LIBAVCODEC_V 59 /* FFmpeg version >= 5.1 */
+#define LIBAVCODEC_6_V 60 /* FFmpeg version >= 6.0 */
+#define LIBAVCODEC_7_V 61 /* FFmpeg version >= 7.0 */
+#define LIBAVCODEC_61_V 31 /* FFmpeg version >= 6.1 */
+#define LIBAVFORMAT_V 59 /* FFmpeg version >= 5.1 */
+#define LIBAVFORMAT_6_V 60 /* FFmpeg version >= 6.0 */
+#define LIBAVFORMAT_7_V 61 /* FFmpeg version >= 7.0 */
+#define LIBAVFORMAT_61_V 16 /* FFmpeg version >= 6.1 */
+#define LIBAVUTIL_V 57 /* FFmpeg version >= 5.1 */
 
 struct mod_av_globals {
 	int debug;

@@ -58,6 +58,12 @@ typedef int zap_socket_t;
 #define SPANDSP_EVENT_TXFAXNEGOCIATERESULT "spandsp::txfaxnegociateresult"
 #define SPANDSP_EVENT_RXFAXNEGOCIATERESULT "spandsp::rxfaxnegociateresult"
 
+#include <spandsp/version.h>
+
+#if SPANDSP_RELEASE_DATE < 20230620
+#define V18_MODE_WEITBRECHT_5BIT_4545 V18_MODE_5BIT_4545
+#define V18_MODE_WEITBRECHT_5BIT_50   V18_MODE_5BIT_50
+#endif
 
 
 /* The global stuff */

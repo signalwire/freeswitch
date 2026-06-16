@@ -1521,7 +1521,7 @@ int main(int argc, char *argv[])
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
-	strncpy(internal_profile.name, hostname, sizeof(internal_profile.name));
+	snprintf(internal_profile.name, sizeof(internal_profile.name), "%s", hostname);	
 	internal_profile.port = 8021;
 	set_fn_keys(&internal_profile);
 	esl_set_string(internal_profile.prompt_color, prompt_color);

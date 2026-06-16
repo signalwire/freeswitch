@@ -103,6 +103,10 @@ void globfree(glob_t *);
 #define SWITCH_XML_WS   "\t\r\n "	/* whitespace */
 #define SWITCH_XML_ERRL 128		/* maximum error string length */
 
+/* Limits for entity expansion to prevent excessive resource consumption */
+#define SWITCH_XML_MAX_ENTITY_EXPANSION_DEPTH 20              /* Maximum recursion depth for entity expansion */
+#define SWITCH_XML_MAX_ENTITY_EXPANSION_COUNT 10000           /* Maximum number of entity expansions */
+
 static void preprocess_exec_set(char *keyval)
 {
 	char *key = keyval;
@@ -760,23 +764,54 @@ static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, cha
 	return NULL;
 }
 
+/* Depth-limited version with resource limits for entity validation */
+static int switch_xml_ent_ok_with_depth(char *name, char *s, char **ent, int depth, unsigned long *check_count)
+{
+	int i;
+
+	/* Prevent excessive recursion during entity validation */
+	if (depth > SWITCH_XML_MAX_ENTITY_EXPANSION_DEPTH) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+			"Entity validation depth limit exceeded (%d > %d) for entity: %s\n",
+			depth, SWITCH_XML_MAX_ENTITY_EXPANSION_DEPTH, name);
+
+		return 0;  /* Treat as invalid - too deep */
+	}
+
+	for (;; s++) {
+		while (*s && *s != '&') {
+			s++;				/* find next entity reference */
+		}
+
+		if (!*s)
+			return 1;
+
+		/* Increment check counter for each entity reference found */
+		if (++(*check_count) > SWITCH_XML_MAX_ENTITY_EXPANSION_COUNT) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"Entity validation count limit exceeded (%lu > %d) for entity: %s\n",
+				*check_count, SWITCH_XML_MAX_ENTITY_EXPANSION_COUNT, name);
+
+			return 0;  /* Treat as invalid - too many entity references */
+		}
+
+		if (!strncmp(s + 1, name, strlen(name)))
+			return 0;			/* circular ref. */
+
+		for (i = 0; ent[i] && strncmp(ent[i], s + 1, strlen(ent[i])); i += 2);
+
+		if (ent[i] && !switch_xml_ent_ok_with_depth(name, ent[i + 1], ent, depth + 1, check_count))
+			return 0;
+	}
+}
+
 /* checks for circular entity references, returns non-zero if no circular
    references are found, zero otherwise */
 static int switch_xml_ent_ok(char *name, char *s, char **ent)
 {
-	int i;
+	unsigned long check_count = 0;
 
-	for (;; s++) {
-		while (*s && *s != '&')
-			s++;				/* find next entity reference */
-		if (!*s)
-			return 1;
-		if (!strncmp(s + 1, name, strlen(name)))
-			return 0;			/* circular ref. */
-		for (i = 0; ent[i] && strncmp(ent[i], s + 1, strlen(ent[i])); i += 2);
-		if (ent[i] && !switch_xml_ent_ok(name, ent[i + 1], ent))
-			return 0;
-	}
+	return switch_xml_ent_ok_with_depth(name, s, ent, 0, &check_count);
 }
 
 /* called when the parser finds a processing instruction */
@@ -838,6 +873,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 	char q, *c, *t, *n = NULL, *v, **ent, **pe;
 	int i, j;
 	char **sstmp;
+	switch_bool_t disable_dtd = switch_true(switch_core_get_variable("xml_disable_dtd"));
 
 	pe = (char **) memcpy(switch_must_malloc(sizeof(SWITCH_XML_NIL)), SWITCH_XML_NIL, sizeof(SWITCH_XML_NIL));
 
@@ -847,7 +883,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 
 		if (!*s)
 			break;
-		else if (!strncmp(s, "<!ENTITY", 8)) {	/* parse entity definitions */
+		else if (!strncmp(s, "<!ENTITY", 8) && !disable_dtd) {	/* parse entity definitions if dtd is not explicitly disabled */
 			int use_pe;
 
 			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	/* skip white space separator */
@@ -881,7 +917,7 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				break;
 			} else
 				ent[i] = n;		/* set entity name */
-		} else if (!strncmp(s, "<!ATTLIST", 9)) {	/* parse default attributes */
+		} else if (!strncmp(s, "<!ATTLIST", 9) && !disable_dtd) {	/* parse default attributes if dtd is not explicitly disabled */
 			t = s + strspn(s + 9, SWITCH_XML_WS) + 9;	/* skip whitespace separator */
 			if (!*t) {
 				switch_xml_err(root, t, "unclosed <!ATTLIST");

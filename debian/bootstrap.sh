@@ -29,14 +29,13 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_debian_distros="wheezy jessie stretch buster bullseye bookworm sid"
+supported_debian_distros="buster bullseye bookworm trixie sid"
 supported_ubuntu_distros="trusty utopic xenial"
 supported_distros="$supported_debian_distros $supported_ubuntu_distros"
 avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
   applications/mod_osp
-  applications/mod_rad_auth
   applications/mod_skel
   applications/mod_cluechoo
   codecs/mod_com_g729
@@ -44,21 +43,16 @@ avoid_mods=(
   codecs/mod_siren
   codecs/mod_skel_codec
   endpoints/mod_h323
-  endpoints/mod_khomp
   endpoints/mod_opal
   endpoints/mod_reference
   event_handlers/mod_smpp
-  event_handlers/mod_event_zmq
   formats/mod_webm
   sdk/autotools
   xml_int/mod_xml_ldap
-  xml_int/mod_xml_radius
 )
 avoid_mods_armhf=(
-  languages/mod_v8
 )
 avoid_mods_arm64=(
-  languages/mod_v8
 )
 avoid_mods_sid=(
   directories/mod_ldap
@@ -67,7 +61,6 @@ avoid_mods_jessie=(
   directories/mod_ldap
 )
 avoid_mods_bookworm=(
-  languages/mod_python
 )
 avoid_mods_wheezy=(
   event_handlers/mod_amqp
@@ -307,7 +300,7 @@ Build-Depends:
 # core build
  dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
- libpcre3-dev,
+ libpcre2-dev,
  libedit-dev (>= 2.11),
  libsqlite3-dev,
  libtiff5-dev,
@@ -318,7 +311,7 @@ Build-Depends:
 # configure options
  libssl1.0-dev | libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-turbo-dev | libjpeg-turbo8-dev | libjpeg62-dev | libjpeg8-dev,
- python-dev | python-dev-is-python2 | python-dev-is-python3, python3-dev, python-all-dev | python3-all-dev, python-support (>= 0.90) | dh-python, erlang-dev, libtpl-dev (>= 1.5),
+ python-dev-is-python3, python3-dev, python3-all-dev, dh-python, erlang-dev, libtpl-dev (>= 1.5),
 # documentation
  doxygen,
 # for APR (not essential for build)
@@ -481,7 +474,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-amr (= \${binary:Version}),
- freeswitch-mod-h26x (= \${binary:Version}),
  freeswitch-mod-sndfile (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
  freeswitch-mod-local-stream (= \${binary:Version}),
@@ -534,7 +526,6 @@ Recommends:
  freeswitch-mod-http-cache (= \${binary:Version}),
  freeswitch-mod-lcr (= \${binary:Version}),
  freeswitch-mod-nibblebill (= \${binary:Version}),
- freeswitch-mod-oreka (= \${binary:Version}),
  freeswitch-mod-pgsql (= \${binary:Version}),
  freeswitch-mod-redis (= \${binary:Version}),
  freeswitch-mod-sms (= \${binary:Version}),
@@ -615,7 +606,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-lcr (= \${binary:Version}),
  freeswitch-mod-memcache (= \${binary:Version}),
  freeswitch-mod-nibblebill (= \${binary:Version}),
- freeswitch-mod-oreka (= \${binary:Version}),
  freeswitch-mod-mariadb (= \${binary:Version}),
  freeswitch-mod-pgsql (= \${binary:Version}),
  freeswitch-mod-png (= \${binary:Version}),
@@ -644,7 +634,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-sofia (= \${binary:Version}),
  freeswitch-mod-verto (= \${binary:Version}),
  freeswitch-mod-cdr-csv (= \${binary:Version}),
- freeswitch-mod-cdr-mongodb (= \${binary:Version}),
  freeswitch-mod-cdr-sqlite (= \${binary:Version}),
  freeswitch-mod-erlang-event (= \${binary:Version}),
  freeswitch-mod-event-multicast (= \${binary:Version}),
@@ -660,7 +649,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-lua (= \${binary:Version}),
  freeswitch-mod-perl (= \${binary:Version}),
  freeswitch-mod-python3 (= \${binary:Version}),
- freeswitch-mod-yaml (= \${binary:Version}),
  freeswitch-mod-console (= \${binary:Version}),
  freeswitch-mod-logfile (= \${binary:Version}),
  freeswitch-mod-syslog (= \${binary:Version}),
@@ -690,11 +678,9 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-codec2 (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
- freeswitch-mod-h26x (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
- freeswitch-mod-theora (= \${binary:Version}),
 Suggests:
  freeswitch-mod-ilbc (= \${binary:Version}),
  freeswitch-mod-siren (= \${binary:Version})
@@ -714,11 +700,9 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-codec2-dbg (= \${binary:Version}),
  freeswitch-mod-g723-1-dbg (= \${binary:Version}),
  freeswitch-mod-g729-dbg (= \${binary:Version}),
- freeswitch-mod-h26x-dbg (= \${binary:Version}),
  freeswitch-mod-opus-dbg (= \${binary:Version}),
  freeswitch-mod-silk-dbg (= \${binary:Version}),
  freeswitch-mod-spandsp-dbg (= \${binary:Version}),
- freeswitch-mod-theora-dbg (= \${binary:Version}),
 Suggests:
  freeswitch-mod-ilbc-dbg (= \${binary:Version}),
  freeswitch-mod-siren-dbg (= \${binary:Version})
@@ -839,7 +823,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-lcr-dbg (= \${binary:Version}),
  freeswitch-mod-memcache-dbg (= \${binary:Version}),
  freeswitch-mod-nibblebill-dbg (= \${binary:Version}),
- freeswitch-mod-oreka-dbg (= \${binary:Version}),
  freeswitch-mod-mariadb-dbg (= \${binary:Version}),
  freeswitch-mod-pgsql-dbg (= \${binary:Version}),
  freeswitch-mod-png-dbg (= \${binary:Version}),
@@ -866,7 +849,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-sofia-dbg (= \${binary:Version}),
  freeswitch-mod-verto-dbg (= \${binary:Version}),
  freeswitch-mod-cdr-csv-dbg (= \${binary:Version}),
- freeswitch-mod-cdr-mongodb-dbg (= \${binary:Version}),
  freeswitch-mod-cdr-sqlite-dbg (= \${binary:Version}),
  freeswitch-mod-erlang-event-dbg (= \${binary:Version}),
  freeswitch-mod-event-multicast-dbg (= \${binary:Version}),
@@ -882,7 +864,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-lua-dbg (= \${binary:Version}),
  freeswitch-mod-perl-dbg (= \${binary:Version}),
  freeswitch-mod-python3-dbg (= \${binary:Version}),
- freeswitch-mod-yaml-dbg (= \${binary:Version}),
  freeswitch-mod-console-dbg (= \${binary:Version}),
  freeswitch-mod-logfile-dbg (= \${binary:Version}),
  freeswitch-mod-syslog-dbg (= \${binary:Version}),

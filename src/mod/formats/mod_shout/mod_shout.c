@@ -619,7 +619,11 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 			}
 		} else {
 			memset(mp3buf, 0, 128);
-			shout_send(context->shout, mp3buf, 128);
+			ret = shout_send(context->shout, mp3buf, 128);
+			if (ret != SHOUTERR_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Send error: %s\n", shout_get_error(context->shout));
+				goto error;
+			}
 		}
 
 		shout_sync(context->shout);
@@ -1285,7 +1289,7 @@ void do_telecast(switch_stream_handle_t *stream)
 	char *path_info = switch_event_get_header(stream->param_event, "http-path-info");
 	char *uuid = strdup(path_info + 4);
 	switch_core_session_t *tsession;
-	char *fname = "stream.mp3";
+	char *fname;
 
 	switch_assert(uuid);
 	if ((fname = strchr(uuid, '/'))) {

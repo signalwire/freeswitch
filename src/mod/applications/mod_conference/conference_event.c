@@ -748,7 +748,9 @@ switch_status_t conference_event_add_data(conference_obj_t *conference, switch_e
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Ghosts", "%u", conference->count_ghosts);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", conference->profile_name);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Unique-ID", conference->uuid_str);
+	switch_mutex_lock(conference->flag_mutex);
 	switch_event_merge(event, conference->variables);
+	switch_mutex_unlock(conference->flag_mutex);
 
 	return status;
 }

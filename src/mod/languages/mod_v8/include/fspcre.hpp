@@ -46,9 +46,9 @@ class FSPCRE : public JSBase
 {
 private:
 	switch_regex_t *_re;
+	switch_regex_match_t *_match_data;
 	char *_str;
 	int _proceed;
-	int _ovector[30];
 	int _freed;
 
 	void Init();

@@ -87,6 +87,7 @@ jobs:
         shell: bash
         working-directory: freeswitch
         run: |
+          DEBIAN_FRONTEND=noninteractive apt-get install -y libpcre2-dev libsphinxbase-dev libpocketsphinx-dev
           ./ci.sh -t unit-test -a configure -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
           ./ci.sh -t unit-test -a build -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
           ./ci.sh -t unit-test -a install -c sofia-sip -p "$GITHUB_WORKSPACE/sofia-sip"
@@ -105,6 +106,13 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           ./run-tests.sh ${{ inputs.total-groups }} ${{ inputs.current-group }} --output-dir logs || exit 1
+
+      - name: Run libesl tests
+        if: ${{ inputs.current-group == 1 }}
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}/../../libs/esl
+        run: |
+          make check
 
       - name: Collect unit test logs
         if: always()
@@ -127,7 +135,7 @@ jobs:
         if: |
           failure() &&
           github.event_name == 'push' &&
-          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10')
+          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10' || github.ref == 'refs/heads/v1.11')
         uses: signalwire/actions-template/.github/actions/slack@main
         with:
           CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}
