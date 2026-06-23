@@ -1,14 +1,70 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="libcodec2-version.props" Condition=" '$(libcodec2_VersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <libcodec2LibDir>$(SolutionDir)libs\libcodec2-$(libcodec2_Version)</libcodec2LibDir>
   </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libcodec2BinariesDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;Build" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="https://github.com/freeswitch/libcodec2-packaging/releases/download/codec2-v$(libcodec2_Version)/libcodec2-$(libcodec2_Version)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+        expectfileordirectory="$(libcodec2LibDir)\binaries\$(Platform)\$(Configuration)\codec2.lib"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+  <Target Name="libcodec2HeadersDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;Build" DependsOnTargets="libcodec2BinariesDownloadTarget">
+    <DownloadPackageTask
+        package="https://github.com/freeswitch/libcodec2-packaging/releases/download/codec2-v$(libcodec2_Version)/libcodec2-$(libcodec2_Version)-headers.zip"
+        expectfileordirectory="$(libcodec2LibDir)\include\codec2\codec2.h"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+
+  <Target Name="libcodec2CopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libcodec2BinariesDownloadTarget">
+    <Message Text="Copying codec2.dll to the freeswitch output folder." Importance="High" />
+    <ItemGroup>
+      <libcodec2Files Include="$(libcodec2LibDir)\binaries\$(Platform)\$(Configuration)\*.dll"/>
+    </ItemGroup>
+    <Copy Condition="!exists('$(BaseDir)\$(Platform)\$(Configuration)\codec2.dll')"
+          SourceFiles="@(libcodec2Files)"
+          DestinationFiles="@(libcodec2Files->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
+    />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(libcodec2LibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(libcodec2LibDir)\include;$(libcodec2LibDir)\include\codec2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(libcodec2LibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>codec2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>
