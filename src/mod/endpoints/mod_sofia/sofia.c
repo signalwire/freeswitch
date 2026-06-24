@@ -625,11 +625,17 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 
 	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
-	if (sip->sip_content_type &&
-		sip->sip_content_type->c_type && sip->sip_payload && sip->sip_payload->pl_data && !strcasecmp(sip->sip_event->o_type, "refer")) {
-		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", sip->sip_content_type->c_type);
-			switch_event_add_body(s_event, "%s", sip->sip_payload->pl_data);
+	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
+		if (sip->sip_content_type &&
+			sip->sip_content_type->c_type && sip->sip_payload && sip->sip_payload->pl_data) {
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", sip->sip_content_type->c_type);
+				switch_event_add_body(s_event, "%s", sip->sip_payload->pl_data);
+			}
+		} else if (sip->sip_subscription_state && sip->sip_subscription_state->ss_substate) {
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", "message/sipfrag;version=2.0");
+			}
 		}
 	}
 
@@ -689,6 +695,13 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 					}
 				} else if (status_val < 200) {
 					switch_channel_set_variable_printf(channel, "sip_refer_target_provisional_status_code", "%d", status_val);
+				}
+			} else if (sip->sip_subscription_state && sip->sip_subscription_state->ss_substate &&
+					   switch_stristr("terminated", sip->sip_subscription_state->ss_substate)) {
+				switch_channel_set_variable(channel, "sip_refer_target_status_code", "503");
+				switch_channel_set_variable(channel, "sip_refer_reply", "SIP/2.0 503 Refer subscription terminated\r\n");
+				if ((int)tech_pvt->want_event == 9999) {
+					tech_pvt->want_event = 0;
 				}
 			}
 		}
