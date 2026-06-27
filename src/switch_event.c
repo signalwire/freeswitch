@@ -1335,6 +1335,7 @@ SWITCH_DECLARE(void) switch_event_merge(switch_event_t *event, switch_event_t *t
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
 	switch_event_header_t *hp;
+	int restore_uniq_headers = 0;
 
 	if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
@@ -1344,6 +1345,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	(*event)->event_user_data = todup->event_user_data;
 	(*event)->bind_user_data = todup->bind_user_data;
 	(*event)->flags = todup->flags;
+
+	/* todup's headers are already unique (uniqueness is enforced on insert for an
+	 * EF_UNIQ_HEADERS event), so the per-add duplicate scan that
+	 * switch_event_base_add_header() performs when EF_UNIQ_HEADERS is set is
+	 * redundant while cloning and makes this loop O(n^2) in the header count.
+	 * Suppress the scan for the copy, then restore the flag. */
+	if (switch_test_flag((*event), EF_UNIQ_HEADERS)) {
+		switch_clear_flag((*event), EF_UNIQ_HEADERS);
+		restore_uniq_headers = 1;
+	}
+
 	for (hp = todup->headers; hp; hp = hp->next) {
 		if (todup->subclass_name && !strcmp(hp->name, "Event-Subclass")) {
 			continue;
@@ -1357,6 +1369,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 		} else {
 			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
 		}
+	}
+
+	if (restore_uniq_headers) {
+		switch_set_flag((*event), EF_UNIQ_HEADERS);
 	}
 
 	if (todup->body) {
