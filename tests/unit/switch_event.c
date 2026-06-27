@@ -177,6 +177,57 @@ FST_TEST_BEGIN(dup_uniq_bench)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(dup_faithful_copy)
+{
+  /* Regression for the switch_event_dup O(n^2)->O(n) change (suppressing the
+   * per-add EF_UNIQ_HEADERS dedup scan while cloning). dup must reproduce the
+   * source faithfully:
+   *   (1) a well-formed EF_UNIQ source stays unique through dup (the real case);
+   *   (2) a malformed source that already holds duplicate names (only possible
+   *       if headers were added before EF_UNIQ_HEADERS was set) is copied
+   *       faithfully -- dup PRESERVES the duplicates rather than silently
+   *       collapsing to the last value. A dup-bearing EF_UNIQ event is already
+   *       a bug upstream of here; a copy must not silently drop data. */
+  switch_event_t *src = NULL, *dup = NULL;
+  switch_event_header_t *hp;
+  switch_status_t status;
+  int n;
+
+  /* (1) well-formed EF_UNIQ source -> unique dup */
+  status = switch_event_create(&src, SWITCH_EVENT_CHANNEL_DATA);
+  fst_xcheck(status == SWITCH_STATUS_SUCCESS, "create CHANNEL_DATA");
+  fst_xcheck(switch_test_flag(src, EF_UNIQ_HEADERS) != 0, "CHANNEL_DATA is EF_UNIQ");
+  switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "k", "v1");
+  switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "k", "v2");
+  n = 0; for (hp = src->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "k")) n++; }
+  fst_xcheck(n == 1, "EF_UNIQ source keeps 'k' unique (collapsed to last)");
+  status = switch_event_dup(&dup, src);
+  fst_xcheck(status == SWITCH_STATUS_SUCCESS, "dup ok (unique)");
+  n = 0; for (hp = dup->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "k")) n++; }
+  fst_xcheck(n == 1, "dup of unique source stays unique");
+  fst_check_string_equals(switch_event_get_header(dup, "k"), "v2");
+  switch_event_destroy(&dup);
+  switch_event_destroy(&src);
+
+  /* (2) malformed source (duplicate names under EF_UNIQ) -> faithful copy */
+  status = switch_event_create(&src, SWITCH_EVENT_GENERAL);
+  fst_xcheck(status == SWITCH_STATUS_SUCCESS, "create GENERAL");
+  fst_xcheck(switch_test_flag(src, EF_UNIQ_HEADERS) == 0, "GENERAL is not EF_UNIQ");
+  switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "dupkey", "first");
+  switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "dupkey", "second");
+  switch_set_flag(src, EF_UNIQ_HEADERS);
+  n = 0; for (hp = src->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "dupkey")) n++; }
+  fst_xcheck(n == 2, "malformed source holds 2 'dupkey' headers");
+  status = switch_event_dup(&dup, src);
+  fst_xcheck(status == SWITCH_STATUS_SUCCESS, "dup ok (malformed)");
+  fst_xcheck(switch_test_flag(dup, EF_UNIQ_HEADERS) != 0, "dup keeps EF_UNIQ flag");
+  n = 0; for (hp = dup->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "dupkey")) n++; }
+  fst_xcheck(n == 2, "dup faithfully preserves both 'dupkey' headers (no silent collapse)");
+  switch_event_destroy(&dup);
+  switch_event_destroy(&src);
+}
+FST_TEST_END()
+
 FST_SUITE_END()
 
 FST_MINCORE_END()
