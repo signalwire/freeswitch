@@ -161,6 +161,7 @@ FST_TEST_BEGIN(expand_headers_offset)
 }
 FST_TEST_END()
 
+#ifdef BENCHMARK
 FST_TEST_BEGIN(dup_uniq_bench)
 {
   switch_event_t *src = NULL, *dup = NULL;
@@ -233,6 +234,7 @@ FST_TEST_BEGIN(dup_uniq_bench)
   }
 }
 FST_TEST_END()
+#endif /* BENCHMARK */
 
 FST_TEST_BEGIN(dup_faithful_copy)
 {
