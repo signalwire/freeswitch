@@ -130,14 +130,18 @@ FST_TEST_BEGIN(dup_uniq_bench)
     switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, name, val);
   }
   S = 0;
-  for (hp = src->headers; hp; hp = hp->next) S++;
+  for (hp = src->headers; hp; hp = hp->next) {
+    S++;
+  }
   fst_xcheck(S >= 191, "source has at least the 191 added headers");
 
   /* correctness: dup preserves header count, the uniq flag, and values */
   status = switch_event_dup(&dup, src);
   fst_xcheck(status == SWITCH_STATUS_SUCCESS, "dup ok");
   count = 0;
-  for (hp = dup->headers; hp; hp = hp->next) count++;
+  for (hp = dup->headers; hp; hp = hp->next) {
+    count++;
+  }
   fst_xcheck(count == S, "dup header count equals source");
   fst_xcheck(switch_test_flag(dup, EF_UNIQ_HEADERS) != 0, "dup keeps EF_UNIQ_HEADERS");
   fst_check_string_equals(switch_event_get_header(dup, "var_0"), "value_0_some_padding_payload");
@@ -149,7 +153,11 @@ FST_TEST_BEGIN(dup_uniq_bench)
   status = switch_event_dup(&dup, src);
   fst_xcheck(status == SWITCH_STATUS_SUCCESS, "dup ok (2)");
   k = 0;
-  for (hp = dup->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "var_0")) k++; }
+  for (hp = dup->headers; hp; hp = hp->next) {
+    if (!strcmp(hp->name, "var_0")) {
+      k++;
+    }
+  }
   fst_xcheck(k == 1, "var_0 present exactly once after re-set + dup");
   fst_check_string_equals(switch_event_get_header(dup, "var_0"), "REPLACED");
   switch_event_destroy(&dup);
@@ -201,11 +209,21 @@ FST_TEST_BEGIN(dup_faithful_copy)
   fst_xcheck(switch_test_flag(src, EF_UNIQ_HEADERS) != 0, "CHANNEL_DATA is EF_UNIQ");
   switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "k", "v1");
   switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "k", "v2");
-  n = 0; for (hp = src->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "k")) n++; }
+  n = 0;
+  for (hp = src->headers; hp; hp = hp->next) {
+    if (!strcmp(hp->name, "k")) {
+      n++;
+    }
+  }
   fst_xcheck(n == 1, "EF_UNIQ source keeps 'k' unique (collapsed to last)");
   status = switch_event_dup(&dup, src);
   fst_xcheck(status == SWITCH_STATUS_SUCCESS, "dup ok (unique)");
-  n = 0; for (hp = dup->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "k")) n++; }
+  n = 0;
+  for (hp = dup->headers; hp; hp = hp->next) {
+    if (!strcmp(hp->name, "k")) {
+      n++;
+    }
+  }
   fst_xcheck(n == 1, "dup of unique source stays unique");
   fst_check_string_equals(switch_event_get_header(dup, "k"), "v2");
   switch_event_destroy(&dup);
@@ -218,12 +236,22 @@ FST_TEST_BEGIN(dup_faithful_copy)
   switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "dupkey", "first");
   switch_event_add_header_string(src, SWITCH_STACK_BOTTOM, "dupkey", "second");
   switch_set_flag(src, EF_UNIQ_HEADERS);
-  n = 0; for (hp = src->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "dupkey")) n++; }
+  n = 0;
+  for (hp = src->headers; hp; hp = hp->next) {
+    if (!strcmp(hp->name, "dupkey")) {
+      n++;
+    }
+  }
   fst_xcheck(n == 2, "malformed source holds 2 'dupkey' headers");
   status = switch_event_dup(&dup, src);
   fst_xcheck(status == SWITCH_STATUS_SUCCESS, "dup ok (malformed)");
   fst_xcheck(switch_test_flag(dup, EF_UNIQ_HEADERS) != 0, "dup keeps EF_UNIQ flag");
-  n = 0; for (hp = dup->headers; hp; hp = hp->next) { if (!strcmp(hp->name, "dupkey")) n++; }
+  n = 0;
+  for (hp = dup->headers; hp; hp = hp->next) {
+    if (!strcmp(hp->name, "dupkey")) {
+      n++;
+    }
+  }
   fst_xcheck(n == 2, "dup faithfully preserves both 'dupkey' headers (no silent collapse)");
   switch_event_destroy(&dup);
   switch_event_destroy(&src);
