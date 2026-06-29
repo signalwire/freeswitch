@@ -1346,11 +1346,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	(*event)->bind_user_data = todup->bind_user_data;
 	(*event)->flags = todup->flags;
 
-	/* todup's headers are already unique (uniqueness is enforced on insert for an
-	 * EF_UNIQ_HEADERS event), so the per-add duplicate scan that
-	 * switch_event_base_add_header() performs when EF_UNIQ_HEADERS is set is
-	 * redundant while cloning and makes this loop O(n^2) in the header count.
-	 * Suppress the scan for the copy, then restore the flag. */
+	/* The destination inherited todup's flags above. When EF_UNIQ_HEADERS is set,
+	 * switch_event_base_add_header() rescans the partial header list on every add
+	 * to keep names unique, making this copy loop O(n^2). A clone should reproduce
+	 * todup's list verbatim rather than run a fresh uniqueness pass, and a
+	 * well-formed EF_UNIQ_HEADERS source is already unique (its names were deduped
+	 * on insert), so that scan only adds cost here. Suppress it for the copy, then
+	 * restore the flag so later adds enforce uniqueness again. */
 	if (switch_test_flag((*event), EF_UNIQ_HEADERS)) {
 		switch_clear_flag((*event), EF_UNIQ_HEADERS);
 		restore_uniq_headers = 1;
