@@ -61,6 +61,7 @@ using Microsoft.Build.Framework;
                 <SoundPrimaryName Required="true" />
                 <SoundQuality Required="true" />
                 <SoundFileName ParameterType="System.String" Output="True"/>   
+                <SoundVersion ParameterType="System.String" Output="True"/>
              </ParameterGroup>  
              <Task>  
                 <Reference Include="Microsoft.Build" />
@@ -80,9 +81,12 @@ using Microsoft.Build.Framework;
         [Output]        
         public string SoundFileName { get; set; }
 
+        [Output]
+        public string SoundVersion { get; set; }
+
         public override bool Execute()
         {
-            string SoundVersion = "";
+            SoundVersion = "";
 
             string SoundVersionFile = "";
             if (SoundPrimaryName == "music") {

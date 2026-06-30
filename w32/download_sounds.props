@@ -15,10 +15,11 @@
           SoundQuality="$(SoundQuality)"
       >         
            <Output PropertyName="SoundFileName" TaskParameter="SoundFileName" /> 
+           <Output PropertyName="SoundVersion" TaskParameter="SoundVersion" />
       </GetSoundFileNameTask>         
       <Message Importance="High" Text="SoundFileName is set to: $(SoundFileName)"/> 
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/releases/sounds/$(SoundFileName)"
+           package="https://github.com/freeswitch/freeswitch-sounds/releases/download/$(SoundPrimaryName)-$(SoundVersion)/$(SoundFileName)"
            expectfileordirectory="$(SoundsDir)\$(ExpectRelative)" 
            outputfolder=""
            outputfilename="" 
