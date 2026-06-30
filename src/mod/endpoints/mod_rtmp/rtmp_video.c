@@ -339,12 +339,18 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 	switch_rtp_hdr_t *raw_rtp = (switch_rtp_hdr_t *)packet;
 	switch_byte_t *payload = frame->data;
 	int datalen = frame->datalen;
-	int nalType = payload[0] & 0x1f;
+	int nalType;
 	uint32_t size = 0;
 	uint16_t rtp_seq = 0;
 	uint32_t rtp_ts = 0;
 	static const uint8_t rtmp_header17[] = {0x17, 1, 0, 0, 0};
 	static const uint8_t rtmp_header27[] = {0x27, 1, 0, 0, 0};
+
+	if (datalen < 1) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	nalType = payload[0] & 0x1f;
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 	// 	"read: %-4u: %02x %02x ts:%u seq:%u %s\n",
@@ -413,11 +419,24 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 	case 28: //FU-A
 		{
 			uint8_t *q = payload;
-			uint8_t h264_start_bit = q[1] & 0x80;
-			uint8_t h264_end_bit   = q[1] & 0x40;
-			uint8_t h264_type      = q[1] & 0x1F;
-			uint8_t h264_nri       = (q[0] & 0x60) >> 5;
-			uint8_t h264_key       = (h264_nri << 5) | h264_type;
+			uint8_t h264_start_bit;
+			uint8_t h264_end_bit;
+			uint8_t h264_type;
+			uint8_t h264_nri;
+			uint8_t h264_key;
+
+			/* FU-A header is 2 bytes (FU indicator + FU header); reject anything shorter,
+			   else datalen - 2 underflows the unsigned switch_buffer_write length below */
+			if (datalen < 2) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "FU-A packet too short (datalen=%d)\n", datalen);
+				break;
+			}
+
+			h264_start_bit = q[1] & 0x80;
+			h264_end_bit   = q[1] & 0x40;
+			h264_type      = q[1] & 0x1F;
+			h264_nri       = (q[0] & 0x60) >> 5;
+			h264_key       = (h264_nri << 5) | h264_type;
 
 			if (h264_start_bit) {
 				/* write NAL unit code */
