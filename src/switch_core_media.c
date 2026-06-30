@@ -3710,11 +3710,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	switch_core_session_set_write_impl(session, a_engine->write_codec.implementation);
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
+		uint32_t samples_per_interval = a_engine->read_impl.samples_per_packet;
+
 		switch_assert(a_engine->read_codec.implementation);
+
+		/* RFC 7587: Opus advances its RTP timestamp at a fixed 48 kHz clock regardless of the
+		   negotiated payload rate, so the interval must come from samples_per_second, not
+		   samples_per_packet. switch_rtp_new() applies this at init; mirror it here so the
+		   post-negotiation change does not reset the Opus clock to the payload rate. */
+		if (!strcasecmp("opus", a_engine->read_impl.iananame)) {
+			samples_per_interval = a_engine->read_impl.samples_per_second *
+				(a_engine->read_impl.microseconds_per_packet / 1000) / 1000;
+		}
 
 		if (switch_rtp_change_interval(a_engine->rtp_session,
 									   a_engine->read_impl.microseconds_per_packet,
-									   a_engine->read_impl.samples_per_packet) != SWITCH_STATUS_SUCCESS) {
+									   samples_per_interval) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
@@ -16212,7 +16223,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->enc_write_frame.codec = session->write_codec;
 				session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
 				session->enc_write_frame.channels = session->write_impl.number_of_channels;
-				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet) {
+				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet ||
+					frame->codec->implementation->samples_per_second != session->write_impl.samples_per_second) {
+					/* RFC 7587: a clock-rate change (e.g. AMR-WB/16000 -> Opus, whose RTP clock is
+					   48 kHz) must regenerate the RTP timestamp at the write codec's clock instead of
+					   passing the source timestamp through. samples_per_packet alone misses this for
+					   a same-rate transcode (AMR-WB 16k and Opus 16k both pack 320 samples/20ms), so
+					   the Opus timestamp would advance at 16 kHz. samples_per_interval carries the
+					   correct 48 kHz Opus clock (see switch_core_media_set_codec). */
 					session->enc_write_frame.timestamp = 0;
 				} else {
 					session->enc_write_frame.timestamp = frame->timestamp;
