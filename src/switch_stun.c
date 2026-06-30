@@ -434,6 +434,14 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_xor_mapped_address(swit
 	if (ip->family == 2) {
 		uint8_t *v6addr;
 
+		if (attribute->length < sizeof(switch_stun_ipv6_t)) {
+			/* attribute value too short to hold an IPv6 address; leave outputs defined */
+			*ipstr = 0;
+			*port = 0;
+
+			return 0;
+		}
+
 		ipv6 = (switch_stun_ipv6_t *)attribute->value;
 		v6addr = (uint8_t *) &ipv6->address;
 		v6_xor(v6addr, (uint8_t *)header->id);
