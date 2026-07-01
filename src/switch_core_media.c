@@ -1961,6 +1961,14 @@ static void set_stats(switch_core_session_t *session, switch_media_type_t type, 
 		add_stat(stats->rtcp.packet_count, "rtcp_packet_count");
 		add_stat(stats->rtcp.octet_count, "rtcp_octet_count");
 
+		/* Inbound sequence-loss counters from the RTCP receiver-report path.
+		 * cum_lost is the running total of packets FS never received (detected
+		 * via sequence-number gaps). Expected = high_ext_seq - base_seq + 1,
+		 * so cum_lost / expected is the true inbound loss ratio. Only populated
+		 * when rtcp-audio-interval-msec is set on the profile. */
+		add_stat(stats->rtcp.cum_lost, "in_cum_lost");
+		add_stat((stats->rtcp.high_ext_seq_recv - stats->rtcp.base_seq + 1), "in_expected_pkt");
+
 	}
 }
 
