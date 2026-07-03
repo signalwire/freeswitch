@@ -172,6 +172,11 @@ BuildLog.htm
 
 !/libs/win32/
 !/libs/speex/win32/
+
+# 7-Zip extraction tool bootstrap (downloaded/extracted by w32/downloadpackage.task)
+/libs/win32/7za/
+/libs/win32/7z*-extra.7z
+
 *.suo
 *.sdf
 x64/
@@ -245,6 +250,8 @@ libs/libcodec2-*/
 libs/libsilk-*/
 libs/rabbitmq-c-*/
 libs/rabbitmq-c-*.zip
+libs/SharpZipLib.*/
+libs/SharpZipLib.*.nupkg
 libs/ffmpeg-*/
 libs/sofia-sip*/
 libs/sofia-sip*
