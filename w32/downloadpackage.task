@@ -15,7 +15,8 @@
                 <extractto />   
                 <moveafter />
                 <archivecontains />
-             </ParameterGroup>  
+                <arctool />
+             </ParameterGroup>
              <Task>  
                 <Reference Include="Microsoft.Build" />
                 <Reference Include="Microsoft.Build.Framework" />
@@ -57,6 +58,7 @@ using System.Diagnostics;
         public string extractto { get; set; }
         public string moveafter { get; set; }
         public string archivecontains { get; set; }
+        public string arctool { get; set; }
 
         internal static bool FileOrDirectoryExists(string name)
         {
@@ -193,26 +195,31 @@ using System.Diagnostics;
 
         private void Extract(string filename, string extracttofolder)
         {
-            string arctool = Path.Combine(new string[] { basedir, "libs", "win32", "7za1701.exe" });
+            // Use the caller-supplied extraction tool when set (the 7za bootstrap
+            // passes 7zr.exe to unpack the full 7za.exe out of the "extra" package);
+            // otherwise fall back to that bootstrapped 7za.exe for every other package.
+            string tool = (arctool != null && arctool.Trim() != "")
+                ? arctool
+                : Path.Combine(new string[] { basedir, "libs", "win32", "7za", "7za.exe" });
             string args = " x \"" + filename + "\" -y -o\"" + extracttofolder + "\"";
 
             Log.LogMessage(MessageImportance.High,
-                  "arctool : " + arctool);
+                  "arctool : " + tool);
             Log.LogMessage(MessageImportance.High,
                   "args : " + args);
             Log.LogMessage(MessageImportance.High,
-                  "WorkingDirectory : " + Path.GetDirectoryName(arctool));                    
+                  "WorkingDirectory : " + Path.GetDirectoryName(tool));
 
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = arctool,
+                    FileName = tool,
                     Arguments = args,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true,
-                    WorkingDirectory = Path.GetDirectoryName(arctool)
+                    WorkingDirectory = Path.GetDirectoryName(tool)
                 }
             };
 
@@ -274,15 +281,33 @@ using System.Diagnostics;
              </Task>  
   </UsingTask>  
 
-  <Target Name="7za" BeforeTargets="Build">  
-      <DownloadPackageTask 
-          package="http://files.freeswitch.org/downloads/win32/7za1701.exe" 
-          expectfileordirectory="$(BaseDir)libs/win32/7za1701.exe" 
-          outputfolder="$(BaseDir)libs/win32/" 
-          outputfilename="7za1701.exe"
+  <PropertyGroup>
+    <SevenZipVersion Condition=" '$(SevenZipVersion)' == '' ">26.02</SevenZipVersion>
+    <SevenZipBaseUrl Condition=" '$(SevenZipBaseUrl)' == '' ">https://github.com/ip7z/7zip/releases/download/$(SevenZipVersion)</SevenZipBaseUrl>
+    <SevenZipExtra Condition=" '$(SevenZipExtra)' == '' ">7z$(SevenZipVersion.Replace('.',''))-extra</SevenZipExtra>
+  </PropertyGroup>
+
+  <Target Name="7za" BeforeTargets="Build">
+      <!-- Step 1: download 7zr.exe. As an .exe it is stored as-is, not extracted. -->
+      <DownloadPackageTask
+          package="$(SevenZipBaseUrl)/7zr.exe"
+          expectfileordirectory="$(BaseDir)libs/win32/7zr.exe"
+          outputfolder="$(BaseDir)libs/win32/"
+          outputfilename="7zr.exe"
           extractto=""
       />
-  </Target> 
+      <!-- Step 2: download the extra package and unpack the full 7za.exe from it
+           with 7zr.exe (the default 7za.exe does not exist yet at this point). -->
+      <DownloadPackageTask
+          package="$(SevenZipBaseUrl)/$(SevenZipExtra).7z"
+          expectfileordirectory="$(BaseDir)libs/win32/7za/7za.exe"
+          outputfolder="$(BaseDir)libs/win32/"
+          outputfilename="$(SevenZipExtra).7z"
+          extractto="$(BaseDir)libs/win32/7za"
+          archivecontains="binary"
+          arctool="$(BaseDir)libs/win32/7zr.exe"
+      />
+  </Target>
 
   <PropertyGroup>
     <downloadpackagetask_Imported>true</downloadpackagetask_Imported>
