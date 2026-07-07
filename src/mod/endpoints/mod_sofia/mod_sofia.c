@@ -1593,6 +1593,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
 				msg->string_reply = switch_core_session_strdup(session, var);
+			} else if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_status_code"))) {
+				int refer_status = atoi(var);
+
+				if (refer_status >= 200 && refer_status != 202) {
+					msg->string_reply = switch_core_session_sprintf(session, "SIP/2.0 %d", refer_status);
+				} else {
+					msg->string_reply = "no reply";
+				}
 			} else {
 				msg->string_reply = "no reply";
 			}

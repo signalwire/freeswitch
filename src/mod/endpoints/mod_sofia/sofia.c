@@ -1456,6 +1456,19 @@ static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_h
 		return;
 	}
 
+	/* Final direct REFER responses (not 202 Accepted) unblock uuid_deflect. NOTIFY
+	 * sipfrag may still arrive for 202; peers that answer REFER with 4xx/5xx directly
+	 * only set sip_refer_status_code unless we synthesize sip_refer_reply here. */
+	if (status != SIP_202_ACCEPTED && (int)tech_pvt->want_event == 9999) {
+		char sipfrag[256];
+		const char *reason = zstr(phrase) ? "" : phrase;
+
+		switch_snprintf(sipfrag, sizeof(sipfrag), "SIP/2.0 %d %s", status, reason);
+		switch_channel_set_variable_printf(channel, "sip_refer_target_status_code", "%d", status);
+		switch_channel_set_variable(channel, "sip_refer_reply", sipfrag);
+		tech_pvt->want_event = 0;
+	}
+
 	if (tech_pvt->proxy_refer_uuid && (other_session = switch_core_session_locate(tech_pvt->proxy_refer_uuid))) {
 		switch_core_session_message_t *msg;
 
