@@ -95,6 +95,7 @@
 #include "fseventhandler.hpp"
 
 #include <set>
+#include <map>
 
 using namespace std;
 using namespace v8;
@@ -421,10 +422,10 @@ static int env_init(JSMain *js)
 static void v8_error(Isolate* isolate, TryCatch* try_catch)
 {
 	HandleScope handle_scope(isolate);
-	String::Utf8Value exception(try_catch->Exception());
+	JsUtf8Value exception(try_catch->Exception());
 	const char *exception_string = js_safe_str(*exception);
-	Handle<Message> message = try_catch->Message();
-	const char *msg = "";
+	Local<Message> message = try_catch->Message();
+	const char *msg;
 	string filename = __FILE__;
 	int line = __LINE__;
 	string text = "";
@@ -437,16 +438,16 @@ static void v8_error(Isolate* isolate, TryCatch* try_catch)
 	}
 
 	if (!message.IsEmpty()) {
-		String::Utf8Value fname(message->GetScriptResourceName());
+		JsUtf8Value fname(message->GetScriptResourceName());
 
 		if (*fname) {
 			filename = *fname;
 		}
 
-		line = message->GetLineNumber();
+		line = message->GetLineNumber(js_current_context()).FromMaybe(0);
 		msg = exception_string;
 
-		String::Utf8Value sourceline(message->GetSourceLine());
+		JsUtf8Value sourceline(message->GetSourceLine(js_current_context()).ToLocalChecked());
 		if (*sourceline) {
 			text = *sourceline;
 		}
@@ -495,7 +496,7 @@ void perf_log(const char *fmt, ...)
 
 	switch_mutex_lock(globals.mutex);
 	if (globals.performance_monitor) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, fmt, ap);
+		switch_log_vprintf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, fmt, ap);
 	}
 	switch_mutex_unlock(globals.mutex);
 
@@ -523,6 +524,7 @@ void LoadScript(MaybeLocal<v8::Script> *v8_script, Isolate *isolate, const char 
 	ScriptCompiler::CachedData *cached_data = 0;
 	v8_compiled_script_cache_t *stored_compiled_script_cache = NULL;
 	ScriptCompiler::CompileOptions options;
+	bool produce_cache = false;
 
 	/*
 		Do not cache if the caching is disabled
@@ -557,30 +559,68 @@ void LoadScript(MaybeLocal<v8::Script> *v8_script, Isolate *isolate, const char 
 
 		}
 		
-		if (!cached_data) options = ScriptCompiler::kProduceCodeCache;
+		if (!cached_data) {
+#if V8FS_NEW_API
+			/* V8 7+ removed kProduceCodeCache; the code cache is created
+			 * explicitly from the compiled script further down. */
+			options = ScriptCompiler::kNoCompileOptions;
+#else
+			options = ScriptCompiler::kProduceCodeCache;
+#endif
+			produce_cache = true;
+		}
 
 	}
 
-	ScriptCompiler::Source source(String::NewFromUtf8(isolate, script_data), cached_data);
+	ScriptCompiler::Source source(js_new_string(isolate, script_data), cached_data);
 	*v8_script = ScriptCompiler::Compile(isolate->GetCurrentContext(), &source, options);	
 
 	if (!v8_script->IsEmpty()) {
 
-		if (options == ScriptCompiler::kProduceCodeCache && !source.GetCachedData()->rejected) {
-			int length = source.GetCachedData()->length;
-			uint8_t* raw_cached_data = new uint8_t[length];
-			v8_compiled_script_cache_t *compiled_script_cache = new v8_compiled_script_cache_t;
-			memcpy(raw_cached_data, source.GetCachedData()->data, static_cast<size_t>(length));
-			compiled_script_cache->data.reset(raw_cached_data, array_deleter<uint8_t>());
-			compiled_script_cache->length = length;
-			compiled_script_cache->compile_time = switch_time_now();
+		if (produce_cache) {
+#if V8FS_NEW_API
+			/* Produce the code cache explicitly from the freshly compiled script. */
+			Local<v8::Script> compiled_script;
+			ScriptCompiler::CachedData *produced = NULL;
 
-			switch_mutex_lock(globals.compiled_script_hash_mutex);
-			switch_core_hash_insert_destructor(globals.compiled_script_hash, script_file, compiled_script_cache, destructor);
-			switch_mutex_unlock(globals.compiled_script_hash_mutex);
-			
-			perf_log("Javascript ['%s'] cache was produced.\n", script_file);
+			if (v8_script->ToLocal(&compiled_script)) {
+				produced = ScriptCompiler::CreateCodeCache(compiled_script->GetUnboundScript());
+			}
 
+			if (produced) {
+				int length = produced->length;
+				uint8_t* raw_cached_data = new uint8_t[length];
+				v8_compiled_script_cache_t *compiled_script_cache = new v8_compiled_script_cache_t;
+				memcpy(raw_cached_data, produced->data, static_cast<size_t>(length));
+				compiled_script_cache->data.reset(raw_cached_data, array_deleter<uint8_t>());
+				compiled_script_cache->length = length;
+				compiled_script_cache->compile_time = switch_time_now();
+
+				switch_mutex_lock(globals.compiled_script_hash_mutex);
+				switch_core_hash_insert_destructor(globals.compiled_script_hash, script_file, compiled_script_cache, destructor);
+				switch_mutex_unlock(globals.compiled_script_hash_mutex);
+
+				perf_log("Javascript ['%s'] cache was produced.\n", script_file);
+
+				delete produced;
+			}
+#else
+			if (!source.GetCachedData()->rejected) {
+				int length = source.GetCachedData()->length;
+				uint8_t* raw_cached_data = new uint8_t[length];
+				v8_compiled_script_cache_t *compiled_script_cache = new v8_compiled_script_cache_t;
+				memcpy(raw_cached_data, source.GetCachedData()->data, static_cast<size_t>(length));
+				compiled_script_cache->data.reset(raw_cached_data, array_deleter<uint8_t>());
+				compiled_script_cache->length = length;
+				compiled_script_cache->compile_time = switch_time_now();
+
+				switch_mutex_lock(globals.compiled_script_hash_mutex);
+				switch_core_hash_insert_destructor(globals.compiled_script_hash, script_file, compiled_script_cache, destructor);
+				switch_mutex_unlock(globals.compiled_script_hash_mutex);
+
+				perf_log("Javascript ['%s'] cache was produced.\n", script_file);
+			}
+#endif
 		} else if (options == ScriptCompiler::kConsumeCodeCache) {
 
 			if (source.GetCachedData()->rejected) {
@@ -665,7 +705,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 			switch_mutex_unlock(globals.task_manager_mutex);
 
 			// New global template
-			Handle<ObjectTemplate> global = ObjectTemplate::New(isolate);
+			Local<ObjectTemplate> global = ObjectTemplate::New(isolate);
 
 			if (global.IsEmpty()) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create JS global object template\n");
@@ -673,7 +713,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 				/* Add all global functions */
 				for (size_t i = 0; i < js->GetExtenderFunctions().size(); i++) {
 					js_function_t *proc = js->GetExtenderFunctions()[i];
-					global->Set(String::NewFromUtf8(isolate, proc->name), FunctionTemplate::New(isolate, proc->func));
+					global->Set(js_new_string(isolate, proc->name), FunctionTemplate::New(isolate, proc->func));
 				}
 
 				// Create a new context.
@@ -721,7 +761,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						obj->RegisterInstance(isolate, "session", true);
 					} else {
 						/* Add a session object as a boolean instead, just to make it safe to check if it exists as expected */
-						context->Global()->Set(String::NewFromUtf8(isolate, "session"), Boolean::New(isolate, false));
+						js_obj_set(context->Global(), js_new_string(isolate, "session"), Boolean::New(isolate, false));
 					}
 
 					if (v8_event) {
@@ -742,14 +782,14 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 					{
 						/* Add xml handler global variables */
 
-						Handle<Array> XML_REQUEST = Array::New(isolate, 4);
+						Local<Array> XML_REQUEST = Array::New(isolate, 4);
 
-						XML_REQUEST->Set(String::NewFromUtf8(isolate, "key_name"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->key_name)));
-						XML_REQUEST->Set(String::NewFromUtf8(isolate, "key_value"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->key_value)));
-						XML_REQUEST->Set(String::NewFromUtf8(isolate, "section"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->section)));
-						XML_REQUEST->Set(String::NewFromUtf8(isolate, "tag_name"), String::NewFromUtf8(isolate, js_safe_str(xml_handler->tag_name)));
+						js_obj_set(XML_REQUEST, js_new_string(isolate, "key_name"), js_new_string(isolate, js_safe_str(xml_handler->key_name)));
+						js_obj_set(XML_REQUEST, js_new_string(isolate, "key_value"), js_new_string(isolate, js_safe_str(xml_handler->key_value)));
+						js_obj_set(XML_REQUEST, js_new_string(isolate, "section"), js_new_string(isolate, js_safe_str(xml_handler->section)));
+						js_obj_set(XML_REQUEST, js_new_string(isolate, "tag_name"), js_new_string(isolate, js_safe_str(xml_handler->tag_name)));
 
-						context->Global()->Set(String::NewFromUtf8(isolate, "XML_REQUEST"), XML_REQUEST);
+						js_obj_set(context->Global(), js_new_string(isolate, "XML_REQUEST"), XML_REQUEST);
 
 						if (xml_handler->params) {
 							FSEvent::New(xml_handler->params, "params", js);
@@ -767,10 +807,10 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						// Add arguments before running script.
 						Local<Array> arguments = Array::New(isolate, argc);
 						for (int y = 0; y < argc; y++) {
-							arguments->Set(Integer::New(isolate, y), String::NewFromUtf8(isolate, argv[y]));
+							js_obj_set(arguments, Integer::New(isolate, y), js_new_string(isolate, argv[y]));
 						}
-						context->Global()->Set(String::NewFromUtf8(isolate, "argv"), arguments);
-						context->Global()->Set(String::NewFromUtf8(isolate, "argc"), Integer::New(isolate, argc));
+						js_obj_set(context->Global(), js_new_string(isolate, "argv"), arguments);
+						js_obj_set(context->Global(), js_new_string(isolate, "argc"), Integer::New(isolate, argc));
 					}
 
 					const char *script_data = NULL;
@@ -806,7 +846,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						/* Store our base directory in variable 'scriptPath' */
 						char *scriptPath = v8_get_script_path(script_file);
 						if (scriptPath) {
-							context->Global()->Set(String::NewFromUtf8(isolate, "scriptPath"), String::NewFromUtf8(isolate, scriptPath));
+							js_obj_set(context->Global(), js_new_string(isolate, "scriptPath"), js_new_string(isolate, scriptPath));
 							switch_safe_free(scriptPath);
 						}
 
@@ -819,8 +859,8 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						LoadScript(&v8_script, isolate, script_data, script_file);
 #else
 						// Create a string containing the JavaScript source code.
-						Handle<String> source = String::NewFromUtf8(isolate, script_data);
-						Handle<Script> v8_script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, script_file)));
+						Local<String> source = js_new_string(isolate, script_data);
+						Local<Script> v8_script = Script::Compile(source, Local<Value>::New(isolate, js_new_string(isolate, script_file)));
 #endif
 
 						if (try_catch.HasCaught()) {
@@ -835,10 +875,10 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 #endif
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-							Handle<Value> script_result;
+							Local<Value> script_result;
 
 							if (!v8_script.IsEmpty()) {
-								script_result = v8_script.ToLocalChecked()->Run();
+								script_result = js_run_script(v8_script.ToLocalChecked());
 							}
 
 							switch_mutex_lock(globals.mutex);
@@ -849,7 +889,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 							}
 							switch_mutex_unlock(globals.mutex);
 #else
-							Handle<Value> result = v8_script->Run();
+							Local<Value> result = js_run_script(v8_script);
 #endif
 							if (try_catch.HasCaught()) {
 								v8_error(isolate, &try_catch);
@@ -861,7 +901,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 
 								if (!script_result.IsEmpty()) {
 									// Return result as string
-									String::Utf8Value ascii(script_result);
+									JsUtf8Value ascii(script_result);
 									if (*ascii) {
 										res = *ascii;
 									}
@@ -869,8 +909,8 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 
 								if (xml_handler)
 								{
-									Local<Value> value = context->Global()->Get(String::NewFromUtf8(isolate, "XML_STRING"));
-									String::Utf8Value str(value);
+									Local<Value> value = js_obj_get(context->Global(), js_new_string(isolate, "XML_STRING"));
+									JsUtf8Value str(value);
 									if (strcmp(js_safe_str(*str), "undefined"))
 									{
 										xml_handler->XML_STRING = strdup(js_safe_str(*str));

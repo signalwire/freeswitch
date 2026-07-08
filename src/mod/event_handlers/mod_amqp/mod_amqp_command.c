@@ -259,7 +259,8 @@ static void mod_amqp_command_response(mod_amqp_command_profile_t *profile, char 
 	switch_safe_free(json_output);
 
 	if (amqp_status != AMQP_STATUS_OK) {
-		const char *errstr = amqp_error_string2(-amqp_status);
+		const char *errstr = amqp_error_string2(amqp_status);
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] failed to send event on connection[%s]: %s\n",
 						  profile->name, profile->conn_active->name, errstr);
 
@@ -498,8 +499,10 @@ void * SWITCH_THREAD_FUNC mod_amqp_command_thread(switch_thread_t *thread, void 
 		amqp_bytes_free(queueName);
 		queueName.bytes = NULL;
 
-		mod_amqp_connection_close(profile->conn_active);
-		profile->conn_active = NULL;
+		if (profile->conn_active) {
+			mod_amqp_connection_close(profile->conn_active);
+			profile->conn_active = NULL;
+		}
 
 		if (profile->running) {
 			/* We'll reconnect, but sleep to avoid hammering resources */

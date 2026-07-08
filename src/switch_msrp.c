@@ -114,7 +114,7 @@ static void msrp_deinit_ssl(void)
 
 static void msrp_init_ssl(void)
 {
-	const char *err = "";
+	const char *err;
 
 	globals.ssl_client_method = SSLv23_client_method();
 	globals.ssl_client_ctx = SSL_CTX_new(globals.ssl_client_method);

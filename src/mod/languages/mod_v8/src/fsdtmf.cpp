@@ -47,7 +47,7 @@ string FSDTMF::GetJSClassName()
 	return js_class_name;
 }
 
-Handle<Object> FSDTMF::New(switch_dtmf_t *dtmf, const char *name, JSMain *js)
+Local<Object> FSDTMF::New(switch_dtmf_t *dtmf, const char *name, JSMain *js)
 {
 	FSDTMF *obj;
 	switch_dtmf_t *ddtmf;
@@ -63,7 +63,7 @@ Handle<Object> FSDTMF::New(switch_dtmf_t *dtmf, const char *name, JSMain *js)
 		}
 	}
 
-	return Handle<Object>();
+	return Local<Object>();
 }
 
 void *FSDTMF::Construct(const v8::FunctionCallbackInfo<Value>& info)
@@ -74,15 +74,15 @@ void *FSDTMF::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	const char *dtmf_char;
 
 	if (info.Length() <= 0) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid Args"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid Args"));
 		return NULL;
 	}
 
-	String::Utf8Value str(info[0]);
+	JsUtf8Value str(info[0]);
 	dtmf_char = *str;
 
 	if (info.Length() > 1) {
-		duration = info[1]->Int32Value();
+		duration = info[1]->Int32Value(js_current_context()).FromMaybe(0);
 		if (duration <= 0) {
 			duration = switch_core_default_dtmf_duration(0);
 		}
@@ -101,7 +101,7 @@ void *FSDTMF::Construct(const v8::FunctionCallbackInfo<Value>& info)
 		return obj;
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Memory error"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Memory error"));
 	return NULL;
 }
 
@@ -115,16 +115,16 @@ JS_DTMF_GET_PROPERTY_IMPL(GetProperty)
 		return;
 	}
 
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 	const char *prop = js_safe_str(*str);
 
 	if (!strcmp(prop, "digit")) {
 		char tmp[2] = { obj->_dtmf->digit, '\0' };
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), tmp));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), tmp));
 	} else if (!strcmp(prop, "duration")) {
 		info.GetReturnValue().Set(Integer::New(info.GetIsolate(), obj->_dtmf->duration));
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 

@@ -51,10 +51,8 @@ avoid_mods=(
   xml_int/mod_xml_ldap
 )
 avoid_mods_armhf=(
-  languages/mod_v8
 )
 avoid_mods_arm64=(
-  languages/mod_v8
 )
 avoid_mods_sid=(
   directories/mod_ldap
@@ -636,7 +634,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-sofia (= \${binary:Version}),
  freeswitch-mod-verto (= \${binary:Version}),
  freeswitch-mod-cdr-csv (= \${binary:Version}),
- freeswitch-mod-cdr-mongodb (= \${binary:Version}),
  freeswitch-mod-cdr-sqlite (= \${binary:Version}),
  freeswitch-mod-erlang-event (= \${binary:Version}),
  freeswitch-mod-event-multicast (= \${binary:Version}),
@@ -852,7 +849,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-sofia-dbg (= \${binary:Version}),
  freeswitch-mod-verto-dbg (= \${binary:Version}),
  freeswitch-mod-cdr-csv-dbg (= \${binary:Version}),
- freeswitch-mod-cdr-mongodb-dbg (= \${binary:Version}),
  freeswitch-mod-cdr-sqlite-dbg (= \${binary:Version}),
  freeswitch-mod-erlang-event-dbg (= \${binary:Version}),
  freeswitch-mod-event-multicast-dbg (= \${binary:Version}),

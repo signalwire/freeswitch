@@ -239,7 +239,13 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		case SWITCH_STUN_ATTR_DESTINATION_ADDRESS:
 		case SWITCH_STUN_ATTR_PRIORITY:
 			{
-				switch_stun_ip_t *ip = (switch_stun_ip_t *) attr->value;
+				switch_stun_ip_t *ip;
+
+				if (bytes_left < sizeof(switch_stun_ip_t)) {
+					return NULL;
+				}
+
+				ip = (switch_stun_ip_t *) attr->value;
 				ip->port = ntohs(ip->port);
 			}
 			break;
@@ -247,6 +253,11 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 			{
 				switch_stun_ip_t *ip;
 				uint32_t addr_length = 0;
+
+				if (bytes_left < sizeof(switch_stun_ip_t)) {
+					return NULL;
+				}
+
 				ip = (switch_stun_ip_t *) attr->value;
 
 				switch (ip->family) {
@@ -277,7 +288,13 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 		case SWITCH_STUN_ATTR_BANDWIDTH:
 		case SWITCH_STUN_ATTR_OPTIONS:
 			{
-				uint32_t *val = (uint32_t *) attr->value;
+				uint32_t *val;
+
+				if (bytes_left < sizeof(uint32_t)) {
+					return NULL;
+				}
+
+				val = (uint32_t *)attr->value;
 
 				if (attr->length != sizeof(uint32_t)) {
 					/* Invalid */
@@ -289,7 +306,13 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 			break;
 		case SWITCH_STUN_ATTR_ERROR_CODE:	/* ErrorCode */
 			{
-				uint32_t *u = (uint32_t *) attr->value;
+				uint32_t *u;
+
+				if (bytes_left < sizeof(uint32_t)) {
+					return NULL;
+				}
+
+				u = (uint32_t *)attr->value;
 				*u = htonl(*u);
 			}
 			break;
@@ -462,31 +485,24 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_st
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family)
 {
 	switch_stun_packet_attribute_t *attribute;
-	switch_stun_ip_t *ip;
 
 	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS);
 
 	if (family == AF_INET6) {
+		switch_stun_ipv6_t *ipv6 = (switch_stun_ipv6_t *) attribute->value;
+
 		attribute->length = htons(20);
+		ipv6->family = 2;
+		ipv6->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
+		inet_pton(AF_INET6, ipstr, ipv6->address);
 	} else {
+		switch_stun_ip_t *ip = (switch_stun_ip_t *) attribute->value;
+
 		attribute->length = htons(8);
-	}
-
-	ip = (switch_stun_ip_t *) attribute->value;
-
-	ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
-
-	if (family == AF_INET6) {
-		ip->family = 2;
-	} else {
 		ip->family = 1;
-	}
-
-	if (family == AF_INET6) {
-		inet_pton(AF_INET6, ipstr, (struct in6_addr *) &ip->address);
-	} else {
-		inet_pton(AF_INET, ipstr, (int *) &ip->address);
+		ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
+		inet_pton(AF_INET, ipstr, &ip->address);
 	}
 
 	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
@@ -496,32 +512,25 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family)
 {
 	switch_stun_packet_attribute_t *attribute;
-	switch_stun_ip_t *ip;
 
 	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS);
 
 	if (family == AF_INET6) {
+		switch_stun_ipv6_t *ipv6 = (switch_stun_ipv6_t *) attribute->value;
+
 		attribute->length = htons(20);
+		ipv6->family = 2;
+		ipv6->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
+		inet_pton(AF_INET6, ipstr, ipv6->address);
+		v6_xor(ipv6->address, (uint8_t *)packet->header.id);
 	} else {
+		switch_stun_ip_t *ip = (switch_stun_ip_t *) attribute->value;
+
 		attribute->length = htons(8);
-	}
-
-	ip = (switch_stun_ip_t *) attribute->value;
-
-	ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
-
-	if (family == AF_INET6) {
-		ip->family = 2;
-	} else {
 		ip->family = 1;
-	}
-
-	if (family == AF_INET6) {
-		inet_pton(AF_INET6, ipstr, (struct in6_addr *) &ip->address);
-		v6_xor((uint8_t *)&ip->address, (uint8_t *)packet->header.id);
-	} else {
-		inet_pton(AF_INET, ipstr, (int *) &ip->address);
+		ip->port = htons(port ^ (STUN_MAGIC_COOKIE >> 16));
+		inet_pton(AF_INET, ipstr, &ip->address);
 		ip->address = htonl(ntohl(ip->address) ^ STUN_MAGIC_COOKIE);
 	}
 

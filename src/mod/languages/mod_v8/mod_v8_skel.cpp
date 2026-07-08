@@ -95,11 +95,11 @@ void *FSSkel::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	/* Parse input variables */
 	if (info.Length() > 0) {
 		if (!info[0].IsEmpty() && info[0]->IsInt32()) {
-			obj->x = info[0]->Int32Value();
+			obj->x = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		if (!info[1].IsEmpty() && info[1]->IsString()) {
-			String::Utf8Value str(info[1]);
+			JsUtf8Value str(info[1]);
 			if (*str) {
 				obj->y = *str;
 			}
@@ -117,19 +117,19 @@ JS_SKEL_GET_PROPERTY_IMPL(GetPropertyX)
 
 JS_SKEL_SET_PROPERTY_IMPL(SetPropertyX)
 {
-	x = value->Int32Value();
+	x = value->Int32Value(js_current_context()).FromMaybe(0);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FSSkel::SetPropertyX to %d\n", x);
 }
 
 JS_SKEL_GET_PROPERTY_IMPL(GetPropertyY)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FSSkel::GetPropertyY (%s)\n", y.c_str());
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), y.c_str()));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), y.c_str()));
 }
 
 JS_SKEL_SET_PROPERTY_IMPL(SetPropertyY)
 {
-	String::Utf8Value str(value);
+	JsUtf8Value str(value);
 
 	y = js_safe_str(*str);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FSSkel::SetPropertyY to '%s'\n", y.c_str());
@@ -138,7 +138,7 @@ JS_SKEL_SET_PROPERTY_IMPL(SetPropertyY)
 JS_SKEL_GET_PROPERTY_IMPL(GetPropertyZ)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FSSkel::GetPropertyZ (z)\n");
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), "z"));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), "z"));
 }
 
 JS_SKEL_FUNCTION_IMPL(MyFunction)
@@ -149,7 +149,7 @@ JS_SKEL_FUNCTION_IMPL(MyFunction)
 JS_SKEL_FUNCTION_IMPL(MyFunction2)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "FSSkel::MyFunction2 - will twrow a JavaScript exception\n");
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Error in MyFunction2()"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Error in MyFunction2()"));
 }
 
 /* Add the JS methods here */

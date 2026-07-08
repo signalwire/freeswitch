@@ -97,7 +97,6 @@ configure_freeswitch()
 				-e '/mod_siren/s/^/#/g' \
 				-e '/mod_avmd/s/^/#/g' \
 				-e '/mod_basic/s/^/#/g' \
-				-e '/mod_cdr_mongodb/s/^/#/g' \
 				-e '/mod_cv/s/^/#/g' \
 				-e '/mod_erlang_event/s/^/#/g' \
 				-e '/mod_perl/s/^/#/g' \

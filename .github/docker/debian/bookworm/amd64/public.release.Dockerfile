@@ -59,8 +59,7 @@ COPY . ${DATA_DIR}
 WORKDIR ${DATA_DIR}
 RUN echo "export VERSION=$(cat ./build/next-release.txt | tr -d '\n')" | tee -a ~/.env
 
-RUN . ~/.env && ./debian/util.sh prep-create-orig -n -V${VERSION}-${BUILD_NUMBER}-${GIT_SHA} -x
-RUN . ~/.env && ./debian/util.sh prep-create-dsc ${CODENAME}
+RUN . ~/.env && ./debian/util.sh prep-create-dsc -a amd64 ${CODENAME}
 
 RUN --mount=type=secret,id=REPO_PASSWORD,required=true \
     printf "machine ${REPO_DOMAIN} "  > /etc/apt/auth.conf && \
@@ -83,21 +82,22 @@ RUN --mount=type=secret,id=REPO_PASSWORD,required=true \
     rm -f /etc/apt/auth.conf
 
 ENV DEB_BUILD_OPTIONS="parallel=1"
-RUN . ~/.env && dch -b -M -v "${VERSION}-${BUILD_NUMBER}-${GIT_SHA}~${CODENAME}" \
-  --force-distribution -D "${CODENAME}" "Nightly build, ${GIT_SHA}"
+RUN . ~/.env && ./debian/util.sh create-orig -n -v${VERSION}-${BUILD_NUMBER}-${GIT_SHA} -x
 
-RUN . ~/.env && ./debian/util.sh create-orig -n -V${VERSION}-${BUILD_NUMBER}-${GIT_SHA} -x
+RUN . ~/.env && ORIGFILE=$(find ../ -name "freeswitch_*.orig.tar.xz" -type f) \
+    && ./debian/util.sh create-dsc -a amd64 -z9 ${CODENAME} "$ORIGFILE"
 
-RUN dpkg-source \
-        --diff-ignore=.* \
-        --compression=xz \
-        --compression-level=9 \
-        --build \
-    . \
-    && debuild -b -us -uc \
-    && mkdir OUT \
-    && mv -v ../*.{deb,dsc,changes,tar.*} OUT/.
+WORKDIR /
+RUN dpkg-source -x freeswitch_*.dsc
+
+RUN cd freeswitch-*/ && debuild -S -sa -d -us -uc
+
+RUN cd freeswitch-*/ && debuild -b -us -uc
+
+RUN mkdir OUT && mv -v *.{deb,dsc,changes,tar.*} OUT/.
+
+RUN ls -lah /OUT
 
 # Artifacts image (mandatory part, the resulting image must have a single filesystem layer)
 FROM scratch
-COPY --from=builder /data/OUT/ /
+COPY --from=builder /OUT/ /

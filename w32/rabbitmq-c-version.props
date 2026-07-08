@@ -8,7 +8,7 @@
     <rabbitmq_cMinorVersion>15</rabbitmq_cMinorVersion>
     <rabbitmq_cRevisionVersion>0</rabbitmq_cRevisionVersion>
     <rabbitmq_cVersion>0.15.0</rabbitmq_cVersion>
-    <rabbitmq_cBuildNumber>0</rabbitmq_cBuildNumber>
+    <rabbitmq_cBuildNumber>1</rabbitmq_cBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <rabbitmq_cVersionImported>true</rabbitmq_cVersionImported>

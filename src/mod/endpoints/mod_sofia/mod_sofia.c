@@ -493,6 +493,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		const char *val = NULL;
 		const char *max_forwards = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 		const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+		const char *passthrough_603plus = switch_channel_get_variable(channel, "sip_603plus_passthrough");
 		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
 		val = switch_channel_get_variable(tech_pvt->channel, "disable_q850_reason");
@@ -508,6 +509,23 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					reason = switch_core_session_sprintf(session, "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 				} else {
 					reason = switch_core_session_sprintf(session, "SIP;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
+				}
+			}
+		}
+
+		/* 603+ (ATIS-1000099) Reason header override — applied after standard reason construction.
+		 *
+		 * passthrough=true:  Restore 603+ Reason even if disable_q850_reason suppressed it.
+		 *                    Allows selective forwarding of 603+ while suppressing other Reason headers.
+		 * passthrough=false: Strip Reason header entirely — send clean 603 Decline with no Reason. */
+		if (passthrough_603plus) {
+			const char *reason_603plus = switch_channel_get_variable(channel, "sip_603plus_reason");
+
+			if (!zstr(reason_603plus)) {
+				if (switch_true(passthrough_603plus)) {
+					reason = switch_core_session_sprintf(session, "%s", reason_603plus);
+				} else if (switch_false(passthrough_603plus)) {
+					reason = switch_core_session_sprintf(session, "");
 				}
 			}
 		}
@@ -557,6 +575,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (tech_pvt->respond_phrase) {
 					//phrase = su_strdup(nua_handle_home(tech_pvt->nh), tech_pvt->respond_phrase);
 					phrase = tech_pvt->respond_phrase;
+				} else if (sip_cause == 603
+						   && !zstr(reason)
+						   && switch_true(passthrough_603plus)
+						   && !zstr(switch_channel_get_variable(channel, "sip_603plus_reason"))) {
+					phrase = "Network Blocked";
 				} else {
 					phrase = sip_status_phrase(sip_cause);
 				}
@@ -1545,7 +1568,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		const char *var;
 		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
-		if (!strcasecmp(msg->string_arg, "sip:")) {
+		if (strncasecmp(msg->string_arg, "sip:", 4)) {
 			const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
 
 			switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);
@@ -4091,7 +4114,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	sofia_profile_t *profile = NULL;
 	const char *exclude_contact = NULL;
 	const char *match_user_agent = NULL;
-	char *reply = "error/facility_not_subscribed";
+	char *reply;
 	switch_stream_handle_t mystream = { 0 };
 
 	if (!cmd) {
@@ -6528,6 +6551,42 @@ char *sofia_stir_shaken_as_create_identity_header(switch_core_session_t *session
 }
 
 
+#ifdef HAVE_NUA_RELOAD_TLS
+static void sofia_cert_reload_handler(switch_event_t *event)
+{
+	switch_hash_index_t *hi;
+	const void *vvar;
+	void *val;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event received, processing\n");
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+
+	for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+		sofia_profile_t *profile;
+
+		switch_core_hash_this(hi, &vvar, NULL, &val);
+		profile = (sofia_profile_t *) val;
+
+		if (!sofia_test_pflag(profile, PFLAG_RUNNING) || !profile->nua || !profile->tls_cert_dir) {
+			continue;
+		}
+
+		if (strcmp(vvar, profile->name)) {
+			continue;
+		}
+
+		nua_reload_tls(profile->nua, profile->tls_cert_dir);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "TLS certificate reload signaled for sofia profile %s\n", profile->name);
+	}
+
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event processed\n");
+}
+#endif
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
 	switch_chat_interface_t *chat_interface;
@@ -6693,6 +6752,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
 	switch_yield(1500000);
+
+#ifdef HAVE_NUA_RELOAD_TLS
+	switch_event_bind(modname, SWITCH_EVENT_CERT_RELOAD, SWITCH_EVENT_SUBCLASS_ANY, sofia_cert_reload_handler, NULL);
+#endif
 
 	if (switch_event_bind(modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -6876,6 +6939,9 @@ void mod_sofia_shutdown_cleanup(void) {
 	}
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
+#ifdef HAVE_NUA_RELOAD_TLS
+	switch_event_unbind_callback(sofia_cert_reload_handler);
+#endif
 	switch_event_unbind_callback(sofia_presence_event_handler);
 
 	switch_event_unbind_callback(general_queue_event_handler);

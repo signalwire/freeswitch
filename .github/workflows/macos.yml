@@ -6,10 +6,12 @@ on:
     branches:
       - master
       - v1.10
+      - v1.11
   pull_request:
     branches:
       - master
       - v1.10
+      - v1.11
 
 jobs:
   build:
@@ -25,16 +27,19 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
+          brew upgrade
+          # Remove pinned cmake version (https://github.com/actions/runner-images/blob/macos-15-arm64/20250825.2246/images/macos/scripts/build/install-common-utils.sh#L19)
+          brew uninstall --ignore-dependencies cmake || true
           # brew install libtiff openssl@3
           brew install \
             autoconf \
             automake \
             curl \
-            ffmpeg@5 \
+            ffmpeg@7 \
             gnu-sed \
             jpeg \
             ldns \
-            libpq@16 \
+            libpq@18 \
             libsndfile \
             libtool \
             lua \
@@ -48,14 +53,15 @@ jobs:
             sqlite \
             yasm \
           && \
-          brew install \
+          brew list --pinned | awk '{system("brew unpin " $1)}' && \
+          brew install --adopt \
             signalwire/homebrew-signalwire/libks2 \
             signalwire/homebrew-signalwire/signalwire-c2 \
             signalwire/homebrew-signalwire/spandsp \
           && \
           brew link --force --overwrite \
-            ffmpeg@5 \
-            libpq@16
+            ffmpeg@7 \
+            libpq@18
 
       - name: Bootstrap FreeSWITCH
         run: ./bootstrap.sh -j

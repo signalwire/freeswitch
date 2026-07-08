@@ -91,6 +91,7 @@ struct http_data_obj {
 	char *http_response;
 	char *cacert;
 	switch_curl_slist_t *headers;
+	switch_CURLcode exit_code;
 };
 typedef struct http_data_obj http_data_t;
 
@@ -312,7 +313,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERDATA, (void *) http_data);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-curl/1.0");
 
-	switch_curl_easy_perform(curl_handle);
+	http_data->exit_code = switch_curl_easy_perform(curl_handle);
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 	switch_curl_easy_cleanup(curl_handle);
 	switch_curl_slist_free_all(headers);
@@ -344,6 +345,8 @@ static char *print_json(switch_memory_pool_t *pool, http_data_t *http_data)
 		goto curl_json_output_end;
 	}
 
+	switch_snprintf(tmp, sizeof(tmp), "%d", http_data->exit_code);
+	cJSON_AddItemToObject(top, "exit_code", cJSON_CreateString(tmp));
 	switch_snprintf(tmp, sizeof(tmp), "%ld", http_data->http_response_code);
 	cJSON_AddItemToObject(top, "status_code", cJSON_CreateString(tmp));
 	if (http_data->http_response) {

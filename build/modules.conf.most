@@ -76,7 +76,6 @@ endpoints/mod_sofia
 endpoints/mod_verto
 event_handlers/mod_amqp
 event_handlers/mod_cdr_csv
-event_handlers/mod_cdr_mongodb
 #event_handlers/mod_cdr_pg_csv
 event_handlers/mod_cdr_sqlite
 event_handlers/mod_erlang_event

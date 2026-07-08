@@ -3,8 +3,10 @@ include $(top_srcdir)/build/modmake.rulesam
 noinst_PROGRAMS = switch_event switch_hash switch_ivr_originate switch_utils switch_core switch_console switch_vpx switch_core_file \
 			   switch_ivr_play_say switch_core_codec switch_rtp switch_xml
 noinst_PROGRAMS += switch_core_video switch_core_db switch_vad switch_packetizer switch_core_session test_sofia switch_ivr_async switch_core_asr switch_log
+noinst_PROGRAMS += switch_stun
 noinst_PROGRAMS += test_tts_format
 noinst_PROGRAMS+= switch_hold switch_sip
+noinst_PROGRAMS += test_mod_verto
 
 if HAVE_PCAP
 noinst_PROGRAMS += switch_rtp_pcap

@@ -5,7 +5,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <libpqVersion>10.23</libpqVersion>
-    <libpqBuildNumber>1</libpqBuildNumber>
+    <libpqBuildNumber>2</libpqBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <libpqVersionImported>true</libpqVersionImported>

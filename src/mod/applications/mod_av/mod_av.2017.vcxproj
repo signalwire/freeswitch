@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug-x264|Win32">
@@ -98,7 +98,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-x264|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>"../../libvpx";$(SolutionDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -114,7 +114,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>"../../libvpx";$(SolutionDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -133,7 +133,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>"../../libvpx";$(SolutionDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -149,7 +149,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-x264|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>"../../libvpx";$(SolutionDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -167,7 +167,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>"../../libvpx";$(SolutionDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -186,7 +186,7 @@
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>"../../libvpx";$(SolutionDir)\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4244;4127;4018;4389;4146;4057;4204;4706;4305;4152;4324;4013;4100;4214;4273;4554;4701;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -205,9 +205,6 @@
     <ClCompile Include="mod_av.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\ffmpeg\ffmpeg.2017.vcxproj">
-      <Project>{bc1fd72e-1cd5-4525-a7f5-17c5740bfded}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

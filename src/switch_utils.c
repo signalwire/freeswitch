@@ -4270,7 +4270,8 @@ switch_status_t clean_uri(char *uri)
 
 	argc = switch_separate_string(uri, '/', argv, sizeof(argv) / sizeof(argv[0]));
 
-	if (argc == sizeof(argv)) { /* too deep */
+	/* Intentionally using == instead of > because this way we would know that the url was fully parsed for sure */
+	if (argc == (sizeof(argv) / sizeof(argv[0]))) { /* too deep */
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -4885,6 +4886,24 @@ SWITCH_DECLARE(int) switch_rand(void)
 #else
 	return rand();
 #endif
+}
+
+SWITCH_DECLARE(int) switch_is_ip_address(const char *hostname)
+{
+	struct sockaddr_in sa;
+	struct sockaddr_in6 sa6;
+
+	if (!hostname) return 0;
+
+	if (inet_pton(AF_INET, hostname, &(sa.sin_addr)) == 1) {
+		return 1; /* It is a valid IPv4 address */
+	}
+
+	if (inet_pton(AF_INET6, hostname, &(sa6.sin6_addr)) == 1) {
+		return 1; /* It is a valid IPv6 address */
+	}
+
+	return 0; /* Not a valid IPv4 or IPv6 address */
 }
 
 /* For Emacs:
