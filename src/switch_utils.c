@@ -1022,32 +1022,30 @@ static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl
 #define B64BUFFLEN 1024
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen)
 {
-	int y = 0, bytes = 0;
-	size_t x = 0;
+	size_t x = 0, bytes = 0;
 	unsigned int b = 0, l = 0;
+
+	if (olen == 0) {	/* no room even for the trailing NUL */
+		return SWITCH_STATUS_FALSE;
+	}
 
 	for (x = 0; x < ilen; x++) {
 		b = (b << 8) + in[x];
 		l += 8;
 
 		while (l >= 6) {
-			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
-			if (bytes >= (int)olen - 1) {
+			if (bytes + 1 >= olen) {	/* reserve the last byte for the NUL */
 				goto end;
 			}
-			if (++y != 72) {
-				continue;
-			}
-			/* out[bytes++] = '\n'; */
-			y = 0;
+			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
 		}
 	}
 
-	if (l > 0) {
+	if (l > 0 && bytes + 1 < olen) {
 		out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
 	}
 	if (l != 0) {
-		while (l < 6 && bytes < (int)olen - 1) {
+		while (l < 6 && bytes + 1 < olen) {
 			out[bytes++] = '=', l += 2;
 		}
 	}

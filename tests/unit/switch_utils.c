@@ -211,6 +211,79 @@ FST_TEST_BEGIN(b64_decode_non_alphabet_bytes)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(b64_encode_output_bounds)
+{
+	/* The 0xAA sentinel across the destination catches any write outside the region
+	   the encode call is allowed to touch. */
+	unsigned char guarded[32];
+	unsigned char encode_in[] = { 'A', 'B', 'C' };
+	unsigned char one_byte[] = { 'A' };
+	switch_status_t status;
+	int i;
+
+	/* Encode with olen == 0: no room even for the trailing NUL, so encode must refuse and
+	   write nothing. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	status = switch_b64_encode(encode_in, sizeof(encode_in), guarded, 0);
+	fst_xcheck(status == SWITCH_STATUS_FALSE, "olen==0 encode must return SWITCH_STATUS_FALSE");
+	for (i = 0; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "olen==0 encode must not write any output byte");
+	}
+
+	/* Encode with olen == 1: room only for the terminating NUL at index 0; no data byte may
+	   be written past it. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	status = switch_b64_encode(encode_in, sizeof(encode_in), guarded, 1);
+	fst_xcheck(status == SWITCH_STATUS_SUCCESS, "olen==1 encode must succeed writing only the NUL");
+	fst_xcheck(guarded[0] == '\0', "olen==1 encode must store the NUL at index 0");
+	for (i = 1; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "olen==1 encode must not write past index 0");
+	}
+
+	/* Encode into a buffer smaller than the full result: output is bounded to olen-1 bytes,
+	   then the trailing NUL at index olen-1, and nothing beyond. "ABC" encodes to "QUJD";
+	   olen 3 keeps "QU". */
+	memset(guarded, 0xAA, sizeof(guarded));
+	status = switch_b64_encode(encode_in, sizeof(encode_in), guarded, 3);
+	fst_xcheck(status == SWITCH_STATUS_SUCCESS, "bounded encode must succeed");
+	fst_check_string_equals((const char *) guarded, "QU");
+	fst_xcheck(guarded[2] == '\0', "trailing NUL must be at index olen-1");
+	for (i = 3; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "bounded encode must not write past index olen-1");
+	}
+
+	/* A 1-byte input has a 2-bit remainder, so it exercises the trailing partial-group byte and
+	   the '=' padding - sites the 3-byte cases above never reach. "A" encodes to "QQ==". */
+
+	/* olen == 2: the main-loop character fills the buffer to olen-1, so the partial-group byte
+	   must be skipped and only the NUL written. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	status = switch_b64_encode(one_byte, sizeof(one_byte), guarded, 2);
+	fst_xcheck(status == SWITCH_STATUS_SUCCESS, "olen==2 encode must succeed");
+	fst_check_string_equals((const char *) guarded, "Q");
+	fst_xcheck(guarded[1] == '\0', "trailing NUL must be at index olen-1");
+	for (i = 2; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "olen==2 encode must not write the partial-group byte past the buffer");
+	}
+
+	/* olen == 3: the partial-group byte fits, but the '=' padding must be skipped for lack of room. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	status = switch_b64_encode(one_byte, sizeof(one_byte), guarded, 3);
+	fst_xcheck(status == SWITCH_STATUS_SUCCESS, "olen==3 encode must succeed");
+	fst_check_string_equals((const char *) guarded, "QQ");
+	fst_xcheck(guarded[2] == '\0', "trailing NUL must be at index olen-1");
+	for (i = 3; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "olen==3 encode must not write padding past the buffer");
+	}
+
+	/* Ample olen: the full result, including partial-group byte and '=' padding, is produced. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	status = switch_b64_encode(one_byte, sizeof(one_byte), guarded, sizeof(guarded));
+	fst_xcheck(status == SWITCH_STATUS_SUCCESS, "encode must succeed");
+	fst_check_string_equals((const char *) guarded, "QQ==");
+}
+FST_TEST_END()
+
 #define test_uri_count 6
 
 /* Currently tests only clear_uri() */
