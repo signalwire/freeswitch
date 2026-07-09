@@ -124,6 +124,93 @@ FST_TEST_BEGIN(b64_pad1)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(b64_roundtrip)
+{
+	/* Encode then decode inputs covering all three padding cases; the base64 output must
+	   match the known value and decode back to the original bytes. Unlike b64_pad1/b64_pad2
+	   (all-zero input), these push non-zero bytes through the padded final group. */
+	struct {
+		const char *plain;
+		const char *encoded;
+	} cases[] = {
+		{ "Man",           "TWFu" },					/* no padding */
+		{ "Ma",            "TWE=" },					/* one pad byte */
+		{ "M",             "TQ==" },					/* two pad bytes */
+		{ "Hello, World!", "SGVsbG8sIFdvcmxkIQ==" }
+	};
+	int i;
+
+	for (i = 0; i < (int) (sizeof(cases) / sizeof(cases[0])); i++) {
+		unsigned char encoded[64];
+		char decoded[64];
+		switch_size_t plain_len = strlen(cases[i].plain);
+		switch_size_t decoded_len;
+		switch_status_t status = switch_b64_encode((unsigned char *) cases[i].plain, plain_len, encoded, sizeof(encoded));
+
+		fst_xcheck(status == SWITCH_STATUS_SUCCESS, "encode must succeed");
+		fst_check_string_equals((const char *) encoded, cases[i].encoded);
+
+		decoded_len = switch_b64_decode((const char *) encoded, decoded, sizeof(decoded));
+		fst_xcheck(decoded_len == plain_len + 1, "decode must return the plaintext length plus the trailing NUL");
+		fst_check_string_equals(decoded, cases[i].plain);
+	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(b64_decode_output_bounds)
+{
+	/* The 0xAA sentinel across the destination catches any write outside the region
+	   the decode call is allowed to touch. */
+	unsigned char guarded[32];
+	switch_size_t size;
+	int i;
+
+	/* Decode with olen == 0: no room even for the trailing NUL, so the decoder must
+	   write nothing and return 0. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	size = switch_b64_decode("QUJDQUJDQUJDQUJDQUJDQUJDQUJDQUJD", (char *) guarded, 0);
+	fst_xcheck(size == 0, "olen==0 decode must return 0");
+	for (i = 0; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "olen==0 decode must not write any output byte");
+	}
+
+	/* Decode with olen == 1: room only for the terminating NUL at index 0; no decoded
+	   data byte may be written. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	size = switch_b64_decode("QUJDQUJDQUJDQUJD", (char *) guarded, 1);
+	fst_xcheck(size == 1, "olen==1 decode must return 1 (NUL only)");
+	fst_xcheck(guarded[0] == '\0', "olen==1 decode must store the NUL at index 0");
+	for (i = 1; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "olen==1 decode must not write past index 0");
+	}
+
+	/* Decode with a small olen: up to olen-1 decoded bytes, then the trailing NUL at
+	   index olen-1, and nothing beyond. "QUJD" decodes to "ABC". */
+	memset(guarded, 0xAA, sizeof(guarded));
+	size = switch_b64_decode("QUJD", (char *) guarded, 2);
+	fst_xcheck(size == 2, "bounded decode must return olen");
+	fst_xcheck(guarded[0] == 'A', "first decoded byte must be written");
+	fst_xcheck(guarded[1] == '\0', "trailing NUL must be at index olen-1");
+	for (i = 2; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == 0xAA, "bounded decode must not write past index olen-1");
+	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(b64_decode_non_alphabet_bytes)
+{
+	/* Bytes outside the base64 alphabet, including those >= 0x80, are skipped and never used
+	   as a lookup-table index. */
+	char decoded[8];
+	switch_size_t size;
+
+	/* "QUJD" ("ABC") with a non-alphabet 0x80 byte spliced in. */
+	size = switch_b64_decode("QU\x80" "JD", decoded, sizeof(decoded));
+	fst_xcheck(size == 4, "non-alphabet byte must be skipped, leaving 3 data bytes plus the NUL");
+	fst_check_string_equals(decoded, "ABC");
+}
+FST_TEST_END()
+
 #define test_uri_count 6
 
 /* Currently tests only clear_uri() */

@@ -1062,22 +1062,27 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switch_size_t olen)
 {
 
-	char l64[256];
-	int b = 0, c, l = 0, i;
+	signed char l64[256];
+	int c, l = 0, i;
+	unsigned int b = 0;
 	const char *ip;
 	char *op = out;
 	size_t ol = 0;
+
+	if (olen == 0) {	/* no room even for the trailing NUL */
+		return 0;
+	}
 
 	for (i = 0; i < 256; i++) {
 		l64[i] = -1;
 	}
 
 	for (i = 0; i < 64; i++) {
-		l64[(int) switch_b64_table[i]] = (char) i;
+		l64[(unsigned char) switch_b64_table[i]] = (signed char) i;
 	}
 
 	for (ip = in; ip && *ip && (*ip != '='); ip++) {
-		c = l64[(int) *ip];
+		c = l64[(unsigned char) *ip];
 		if (c == -1) {
 			continue;
 		}
@@ -1086,10 +1091,10 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 		l += 6;
 
 		while (l >= 8) {
-			op[ol++] = (char) ((b >> (l -= 8)) % 256);
-			if (ol >= olen - 1) {
+			if (ol + 1 >= olen) {	/* reserve the last byte for the NUL */
 				goto end;
 			}
+			op[ol++] = (char) ((b >> (l -= 8)) % 256);
 		}
 	}
 
