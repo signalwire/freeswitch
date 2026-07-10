@@ -171,17 +171,22 @@ static inline int sem_destroy(sem_t *sem) {
 #define sem_wait(sem) (semaphore_wait(*sem))
 #define sem_post(sem) semaphore_signal(*sem)
 #define sem_destroy(sem) semaphore_destroy(mach_task_self(), *sem)
-#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();nanosleep(&ts, NULL);} 
 #else
 #include <unistd.h>
 #include <sched.h>
-#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);}
-#endif
+#endif /* __APPLE__ */
 /* Not Windows. Assume pthreads */
 
+/* thread_sleep implementation: yield unless Linux/Unix. */
+#if defined(__unix__) || defined(__APPLE__)
+#define thread_sleep(nms) { struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();nanosleep(&ts, NULL);} 
+#else
+#define thread_sleep(nms) {struct timespec ts;ts.tv_sec=0; ts.tv_nsec = 1000*nms;sched_yield();clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);}
+#endif /* __unix__ || __APPLE__ */
+
 #endif
 
-#if ARCH_X86 || ARCH_X86_64
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
 #include "vpx_ports/x86.h"
 #else
 #define x86_pause_hint()
@@ -195,7 +200,7 @@ static INLINE void vp8_atomic_spin_wait(
     const int nsync) {
   while (mb_col > (vpx_atomic_load_acquire(last_row_current_mb_col) - nsync)) {
     x86_pause_hint();
-    thread_sleep(1);
+    thread_sleep(1000);
   }
 }
 

@@ -66,12 +66,15 @@ TEST(VP9, TestBitIO) {
         }
 
         vpx_stop_encode(&bw);
+        // vpx_reader_fill() may read into uninitialized data that
+        // isn't used meaningfully, but may trigger an MSan warning.
+        memset(bw_buffer + bw.pos, 0, sizeof(BD_VALUE) - 1);
 
         // First bit should be zero
         GTEST_ASSERT_EQ(bw_buffer[0] & 0x80, 0);
 
         vpx_reader br;
-        vpx_reader_init(&br, bw_buffer, kBufferSize, NULL, NULL);
+        vpx_reader_init(&br, bw_buffer, kBufferSize, nullptr, nullptr);
         bit_rnd.Reset(random_seed);
         for (int i = 0; i < kBitsToTest; ++i) {
           if (bit_method == 2) {

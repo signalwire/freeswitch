@@ -12,6 +12,9 @@
 #define VPX_VP9_ENCODER_VP9_MCOMP_H_
 
 #include "vp9/encoder/vp9_block.h"
+#if CONFIG_NON_GREEDY_MV
+#include "vp9/encoder/vp9_non_greedy_mv.h"
+#endif  // CONFIG_NON_GREEDY_MV
 #include "vpx_dsp/variance.h"
 
 #ifdef __cplusplus
@@ -90,16 +93,6 @@ extern fractional_mv_step_fp vp9_skip_sub_pixel_tree;
 extern fractional_mv_step_fp vp9_return_max_sub_pixel_mv;
 extern fractional_mv_step_fp vp9_return_min_sub_pixel_mv;
 
-typedef int (*vp9_full_search_fn_t)(const MACROBLOCK *x, const MV *ref_mv,
-                                    int sad_per_bit, int distance,
-                                    const vp9_variance_fn_ptr_t *fn_ptr,
-                                    const MV *center_mv, MV *best_mv);
-
-typedef int (*vp9_refining_search_fn_t)(const MACROBLOCK *x, MV *ref_mv,
-                                        int sad_per_bit, int distance,
-                                        const vp9_variance_fn_ptr_t *fn_ptr,
-                                        const MV *center_mv);
-
 typedef int (*vp9_diamond_search_fn_t)(
     const MACROBLOCK *x, const search_site_config *cfg, MV *ref_mv, MV *best_mv,
     int search_param, int sad_per_bit, int *num00,
@@ -126,22 +119,18 @@ void vp9_set_subpel_mv_search_range(MvLimits *subpel_mv_limits,
                                     const MV *ref_mv);
 
 #if CONFIG_NON_GREEDY_MV
-#define NB_MVS_NUM 4
 struct TplDepStats;
-double vp9_refining_search_sad_new(const MACROBLOCK *x, MV *best_full_mv,
-                                   int lambda, int search_range,
-                                   const vp9_variance_fn_ptr_t *fn_ptr,
-                                   const int_mv *nb_full_mvs, int full_mv_num);
+int64_t vp9_refining_search_sad_new(const MACROBLOCK *x, MV *best_full_mv,
+                                    int lambda, int search_range,
+                                    const vp9_variance_fn_ptr_t *fn_ptr,
+                                    const int_mv *nb_full_mvs, int full_mv_num);
 
-double vp9_full_pixel_diamond_new(const struct VP9_COMP *cpi, MACROBLOCK *x,
-                                  MV *mvp_full, int step_param, int lambda,
-                                  int do_refine,
-                                  const vp9_variance_fn_ptr_t *fn_ptr,
-                                  const int_mv *nb_full_mvs, int full_mv_num,
-                                  MV *best_mv);
+int vp9_full_pixel_diamond_new(const struct VP9_COMP *cpi, MACROBLOCK *x,
+                               BLOCK_SIZE bsize, MV *mvp_full, int step_param,
+                               int lambda, int do_refine,
+                               const int_mv *nb_full_mvs, int full_mv_num,
+                               MV *best_mv);
 
-int64_t vp9_nb_mvs_inconsistency(const MV *mv, const int_mv *nb_mvs,
-                                 int mv_num);
 static INLINE MV get_full_mv(const MV *mv) {
   MV out_mv;
   out_mv.row = mv->row >> 3;
@@ -149,9 +138,8 @@ static INLINE MV get_full_mv(const MV *mv) {
   return out_mv;
 }
 struct TplDepFrame;
-void vp9_prepare_nb_full_mvs(const struct TplDepFrame *tpl_frame, int mi_row,
-                             int mi_col, int rf_idx, BLOCK_SIZE bsize,
-                             int_mv *nb_full_mvs);
+int vp9_prepare_nb_full_mvs(const struct MotionField *motion_field, int mi_row,
+                            int mi_col, int_mv *nb_full_mvs);
 
 static INLINE BLOCK_SIZE get_square_block_size(BLOCK_SIZE bsize) {
   BLOCK_SIZE square_bsize;

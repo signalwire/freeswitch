@@ -153,6 +153,31 @@
     <ClCompile Include="..\..\libvpx\vpx_scale\vpx_scale_rtcd.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_ports\emms_mmx.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
+    </CustomBuild>
+
+    <CustomBuild Include="..\..\libvpx\vpx_ports\float_control_word.asm">
+      <Message>Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I".\include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
+      <Outputs>$(IntDir)vpx_ports_float_control_word_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\prob.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -171,24 +196,144 @@
     <ClCompile Include="..\..\libvpx\vpx_dsp\bitreader_buffer.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\intrapred.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\intrapred_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\intrapred_ssse3.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\add_noise.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\deblock.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\add_noise_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\deblock_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\post_proc_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\vpx_convolve.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_4t_intrin_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_bilinear_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_ssse3.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_bilinear_ssse3.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_intrin_avx2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
@@ -196,6 +341,22 @@
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_intrin_ssse3.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_convolve_copy_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\loopfilter.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -212,6 +373,16 @@
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_ssse3_x86_64.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_avx2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
@@ -222,6 +393,22 @@
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\inv_txfm_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\inv_wht_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\inv_txfm_ssse3.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -248,6 +435,16 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\avg_ssse3_x86_64.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\skin_detection.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -271,6 +468,54 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sad4d_avx512.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad4d_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\subtract_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\variance.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -284,6 +529,30 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\ssim_opt_x86_64.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\subpel_variance_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\vpx_dsp_rtcd.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -377,15 +646,186 @@
     <ClCompile Include="..\..\libvpx\vp8\common\postproc.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\dequantize_mmx.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp8\common\x86\idct_blk_mmx.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\idctllm_mmx.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\recon_mmx.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\subpixel_mmx.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp8\common\x86\idct_blk_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\idctllm_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\recon_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp8\common\x86\bilinear_filter_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\subpixel_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\loopfilter_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\iwalsh_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\subpixel_ssse3.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\mfqe_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\common\x86\loopfilter_block_sse2_x86_64.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp8\vp8_cx_iface.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -464,6 +904,66 @@
     <ClCompile Include="..\..\libvpx\vp8\encoder\temporal_filter.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\copy_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    
+    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\copy_sse3.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
+    </CustomBuild>
+    
+    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\dct_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\fwalsh_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\vp8_quantize_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -476,6 +976,37 @@
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\denoising_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\block_error_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
+    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\temporal_filter_apply_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp8\encoder\x86\vp8_enc_stubs_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -498,6 +1029,9 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp8\decoder\threading.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vp9\vp9_iface_common.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\common\vp9_alloccommon.c">
@@ -674,6 +1208,9 @@
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_noise_estimate.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_ext_ratectrl.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_temporal_filter.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -694,6 +1231,44 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
+
+    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_error_sse2.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_ssse3_x86_64.asm">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
+    </CustomBuild>
+
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_intrin_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -731,587 +1306,7 @@
     <ClCompile Condition="'$(Platform)'=='x64'" Include="include_x64\vpx_config.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\intrapred_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_intrapred_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\intrapred_ssse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_intrapred_ssse3_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\add_noise_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\deblock_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_bilinear_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_8t_ssse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_8t_ssse3.asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_subpixel_bilinear_ssse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_subpixel_bilinear_ssse3_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\vpx_convolve_copy_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_vpx_convolve_copy_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\fwd_txfm_ssse3_x86_64.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_fwd_txfm_ssse3_x86_64_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\inv_wht_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_inv_wht_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\avg_ssse3_x86_64.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_avg_ssse3_x86_64_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad_sse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad_sse3_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad_ssse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad_ssse3_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad_sse4.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad_sse4_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad4d_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad4d_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\sad_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_sad_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\subtract_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_subtract_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\ssim_opt_x86_64.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_ssim_opt_x86_64_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\subpel_variance_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_subpel_variance_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\dequantize_mmx.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_dequantize_mmx_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\idctllm_mmx.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_idctllm_mmx_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\recon_mmx.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_recon_mmx_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\subpixel_mmx.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_subpixel_mmx_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\copy_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_copy_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\idctllm_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_idctllm_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\recon_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_recon_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_recon_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\subpixel_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_subpixel_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\loopfilter_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_loopfilter_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\iwalsh_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_iwalsh_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\copy_sse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_copy_sse3_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\subpixel_ssse3.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_subpixel_ssse3_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\mfqe_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_mfqe_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\common\x86\loopfilter_block_sse2_x86_64.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_common_x86_loopfilter_block_sse2_x86_64_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\dct_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_dct_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\fwalsh_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_fwalsh_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\temporal_filter_apply_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_temporal_filter_apply_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp8\encoder\x86\block_error_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp8_encoder_x86_block_error_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_dct_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_error_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_ssse3_x86_64.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
-    </CustomBuild>
-    
-    <CustomBuild Include="..\..\libvpx\vpx_ports\emms_mmx.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -g cv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_emms_mmx_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_ports_emms_mmx_asm.obj</Outputs>
-    </CustomBuild>
-
-    <CustomBuild Include="..\..\libvpx\vpx_ports\float_control_word.asm">
-      <Message>Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">yasm -Xvc -f win32  -I".\include_x86" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">yasm -Xvc -g cv8 -f win64  -I".\include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">yasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_ports_float_control_word_asm.obj</Command>
-      <Outputs>$(IntDir)vpx_ports_float_control_word_asm.obj</Outputs>
-    </CustomBuild>
-
-
+            
     <None Include="vpx.def" />
   </ItemGroup>
   <ItemGroup>
@@ -1321,17 +1316,21 @@
     <ClInclude Include="..\..\libvpx\vpx\vpx_decoder.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_encoder.h" />
     <ClInclude Include="..\..\libvpx\vpx\internal\vpx_codec_internal.h" />
+    <ClInclude Include="..\..\libvpx\vpx\internal\vpx_ratectrl_rtc.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_codec.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_frame_buffer.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_image.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_integer.h" />
+    <ClInclude Include="..\..\libvpx\vpx\vpx_ext_ratectrl.h" />
     <ClInclude Include="..\..\libvpx\vpx_mem\vpx_mem.h" />
     <ClInclude Include="..\..\libvpx\vpx_mem\include\vpx_mem_intrnl.h" />
     <ClInclude Include="..\..\libvpx\vpx_scale\yv12config.h" />
     <ClInclude Include="..\..\libvpx\vpx_scale\vpx_scale.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\bitops.h" />
+    <ClInclude Include="..\..\libvpx\vpx_ports\compiler_attributes.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\mem.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\msvc.h" />
+    <ClInclude Include="..\..\libvpx\vpx_ports\static_assert.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\system_state.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\vpx_timer.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\x86.h" />
@@ -1463,6 +1462,7 @@
     <ClInclude Include="..\..\libvpx\vp9\common\vp9_mvref_common.h" />
     <ClInclude Include="..\..\libvpx\vp9\common\vp9_common_data.h" />
     <ClInclude Include="..\..\libvpx\vp9\common\vp9_scan.h" />
+    <ClInclude Include="..\..\libvpx\vp9\vp9_cx_iface.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_context_tree.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_cost.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_encodeframe.h" />
@@ -1499,6 +1499,7 @@
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_alt_ref_aq.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_skin_detection.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_noise_estimate.h" />
+    <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_ext_ratectrl.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_temporal_filter.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_mbgraph.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\x86\temporal_filter_constants.h" />

@@ -16,8 +16,8 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx_version.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_ports/static_assert.h"
 #include "vpx_ports/system_state.h"
-#include "vpx_ports/vpx_once.h"
 #include "vpx_util/vpx_timestamp.h"
 #include "vp8/encoder/onyx_int.h"
 #include "vpx/vp8cx.h"
@@ -131,22 +131,6 @@ static vpx_codec_err_t update_error_state(
     if (!!((p)->memb) != (p)->memb) ERROR(#memb " expected boolean"); \
   } while (0)
 
-#if defined(_MSC_VER)
-#define COMPILE_TIME_ASSERT(boolexp)              \
-  do {                                            \
-    char compile_time_assert[(boolexp) ? 1 : -1]; \
-    (void)compile_time_assert;                    \
-  } while (0)
-#else /* !_MSC_VER */
-#define COMPILE_TIME_ASSERT(boolexp)                         \
-  do {                                                       \
-    struct {                                                 \
-      unsigned int compile_time_assert : (boolexp) ? 1 : -1; \
-    } compile_time_assert;                                   \
-    (void)compile_time_assert;                               \
-  } while (0)
-#endif /* _MSC_VER */
-
 static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
                                        const vpx_codec_enc_cfg_t *cfg,
                                        const struct vp8_extracfg *vp8_cfg,
@@ -167,8 +151,8 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK_HI(cfg, g_lag_in_frames, 25);
 #endif
   RANGE_CHECK(cfg, rc_end_usage, VPX_VBR, VPX_Q);
-  RANGE_CHECK_HI(cfg, rc_undershoot_pct, 1000);
-  RANGE_CHECK_HI(cfg, rc_overshoot_pct, 1000);
+  RANGE_CHECK_HI(cfg, rc_undershoot_pct, 100);
+  RANGE_CHECK_HI(cfg, rc_overshoot_pct, 100);
   RANGE_CHECK_HI(cfg, rc_2pass_vbr_bias_pct, 100);
   RANGE_CHECK(cfg, kf_mode, VPX_KF_DISABLED, VPX_KF_AUTO);
 
@@ -272,6 +256,23 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
     ERROR("g_threads cannot be bigger than number of token partitions");
 #endif
 
+  // The range below shall be further tuned.
+  RANGE_CHECK(cfg, use_vizier_rc_params, 0, 1);
+  RANGE_CHECK(cfg, active_wq_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, err_per_mb_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, sr_default_decay_limit.den, 1, 1000);
+  RANGE_CHECK(cfg, sr_diff_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, kf_err_per_mb_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, kf_frame_min_boost_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, kf_frame_max_boost_subs_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, kf_max_total_boost_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, gf_max_total_boost_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, gf_frame_max_boost_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, zm_factor.den, 1, 1000);
+  RANGE_CHECK(cfg, rd_mult_inter_qp_fac.den, 1, 1000);
+  RANGE_CHECK(cfg, rd_mult_arf_qp_fac.den, 1, 1000);
+  RANGE_CHECK(cfg, rd_mult_key_qp_fac.den, 1, 1000);
+
   return VPX_CODEC_OK;
 }
 
@@ -280,10 +281,11 @@ static vpx_codec_err_t validate_img(vpx_codec_alg_priv_t *ctx,
   switch (img->fmt) {
     case VPX_IMG_FMT_YV12:
     case VPX_IMG_FMT_I420:
-    case VPX_IMG_FMT_VPXI420:
-    case VPX_IMG_FMT_VPXYV12: break;
+    case VPX_IMG_FMT_NV12: break;
     default:
-      ERROR("Invalid image format. Only YV12 and I420 images are supported");
+      ERROR(
+          "Invalid image format. Only YV12, I420 and NV12 images are "
+          "supported");
   }
 
   if ((img->d_w != ctx->cfg.g_w) || (img->d_h != ctx->cfg.g_h))
@@ -336,7 +338,9 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
     oxcf->end_usage = USAGE_CONSTANT_QUALITY;
   }
 
-  oxcf->target_bandwidth = cfg.rc_target_bitrate;
+  // Cap the target rate to 1000 Mbps to avoid some integer overflows in
+  // target bandwidth calculations.
+  oxcf->target_bandwidth = VPXMIN(cfg.rc_target_bitrate, 1000000);
   oxcf->rc_max_intra_bitrate_pct = vp8_cfg.rc_max_intra_bitrate_pct;
   oxcf->gf_cbr_boost_pct = vp8_cfg.gf_cbr_boost_pct;
 
@@ -392,6 +396,9 @@ static vpx_codec_err_t set_vp8e_config(VP8_CONFIG *oxcf,
 #endif
 
   oxcf->cpu_used = vp8_cfg.cpu_used;
+  if (cfg.g_pass == VPX_RC_FIRST_PASS) {
+    oxcf->cpu_used = VPXMAX(4, oxcf->cpu_used);
+  }
   oxcf->encode_breakout = vp8_cfg.static_thresh;
   oxcf->play_alternate = vp8_cfg.enable_auto_alt_ref;
   oxcf->noise_sensitivity = vp8_cfg.noise_sensitivity;
@@ -466,14 +473,23 @@ static vpx_codec_err_t vp8e_set_config(vpx_codec_alg_priv_t *ctx,
     ERROR("Cannot increase lag_in_frames");
 
   res = validate_config(ctx, cfg, &ctx->vp8_cfg, 0);
+  if (res != VPX_CODEC_OK) return res;
 
-  if (!res) {
-    ctx->cfg = *cfg;
-    set_vp8e_config(&ctx->oxcf, ctx->cfg, ctx->vp8_cfg, NULL);
-    vp8_change_config(ctx->cpi, &ctx->oxcf);
+  if (setjmp(ctx->cpi->common.error.jmp)) {
+    const vpx_codec_err_t codec_err =
+        update_error_state(ctx, &ctx->cpi->common.error);
+    ctx->cpi->common.error.setjmp = 0;
+    vpx_clear_system_state();
+    assert(codec_err != VPX_CODEC_OK);
+    return codec_err;
   }
 
-  return res;
+  ctx->cpi->common.error.setjmp = 1;
+  ctx->cfg = *cfg;
+  set_vp8e_config(&ctx->oxcf, ctx->cfg, ctx->vp8_cfg, NULL);
+  vp8_change_config(ctx->cpi, &ctx->oxcf);
+  ctx->cpi->common.error.setjmp = 0;
+  return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t get_quantizer(vpx_codec_alg_priv_t *ctx, va_list args) {
@@ -599,6 +615,17 @@ static vpx_codec_err_t set_screen_content_mode(vpx_codec_alg_priv_t *ctx,
   return update_extracfg(ctx, &extra_cfg);
 }
 
+static vpx_codec_err_t ctrl_set_rtc_external_ratectrl(vpx_codec_alg_priv_t *ctx,
+                                                      va_list args) {
+  VP8_COMP *cpi = ctx->cpi;
+  const unsigned int data = CAST(VP8E_SET_GF_CBR_BOOST_PCT, args);
+  if (data) {
+    cpi->cyclic_refresh_mode_enabled = 0;
+    cpi->rt_always_update_correction_factor = 1;
+  }
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_err_t vp8e_mr_alloc_mem(const vpx_codec_enc_cfg_t *cfg,
                                          void **mem_loc) {
   vpx_codec_err_t res = VPX_CODEC_OK;
@@ -675,7 +702,7 @@ static vpx_codec_err_t vp8e_init(vpx_codec_ctx_t *ctx,
       ctx->priv->enc.total_encoders = 1;
     }
 
-    once(vp8_initialize_enc);
+    vp8_initialize_enc();
 
     res = validate_config(priv, &priv->cfg, &priv->vp8_cfg, 0);
 
@@ -753,8 +780,8 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
     /* Convert duration parameter from stream timebase to microseconds */
     uint64_t duration_us;
 
-    COMPILE_TIME_ASSERT(TICKS_PER_SEC > 1000000 &&
-                        (TICKS_PER_SEC % 1000000) == 0);
+    VPX_STATIC_ASSERT(TICKS_PER_SEC > 1000000 &&
+                      (TICKS_PER_SEC % 1000000) == 0);
 
     duration_us = duration * (uint64_t)ctx->timestamp_ratio.num /
                   (ctx->timestamp_ratio.den * (TICKS_PER_SEC / 1000000));
@@ -914,8 +941,8 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
 
     dst_time_stamp =
         pts_val * ctx->timestamp_ratio.num / ctx->timestamp_ratio.den;
-    dst_end_time_stamp = (pts_val + duration) * ctx->timestamp_ratio.num /
-                         ctx->timestamp_ratio.den;
+    dst_end_time_stamp = (pts_val + (int64_t)duration) *
+                         ctx->timestamp_ratio.num / ctx->timestamp_ratio.den;
 
     if (img != NULL) {
       res = image2yuvconfig(img, &sd);
@@ -1237,6 +1264,7 @@ static vpx_codec_ctrl_fn_map_t vp8e_ctf_maps[] = {
   { VP8E_SET_MAX_INTRA_BITRATE_PCT, set_rc_max_intra_bitrate_pct },
   { VP8E_SET_SCREEN_CONTENT_MODE, set_screen_content_mode },
   { VP8E_SET_GF_CBR_BOOST_PCT, ctrl_set_rc_gf_cbr_boost_pct },
+  { VP8E_SET_RTC_EXTERNAL_RATECTRL, ctrl_set_rtc_external_ratectrl },
   { -1, NULL },
 };
 
@@ -1270,7 +1298,7 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] = {
         VPX_VBR,     /* rc_end_usage */
         { NULL, 0 }, /* rc_twopass_stats_in */
         { NULL, 0 }, /* rc_firstpass_mb_stats_in */
-        256,         /* rc_target_bandwidth */
+        256,         /* rc_target_bitrate */
         4,           /* rc_min_quantizer */
         63,          /* rc_max_quantizer */
         100,         /* rc_undershoot_pct */
@@ -1292,14 +1320,30 @@ static vpx_codec_enc_cfg_map_t vp8e_usage_cfg_map[] = {
 
         VPX_SS_DEFAULT_LAYERS, /* ss_number_layers */
         { 0 },
-        { 0 }, /* ss_target_bitrate */
-        1,     /* ts_number_layers */
-        { 0 }, /* ts_target_bitrate */
-        { 0 }, /* ts_rate_decimator */
-        0,     /* ts_periodicity */
-        { 0 }, /* ts_layer_id */
-        { 0 }, /* layer_target_bitrate */
-        0      /* temporal_layering_mode */
+        { 0 },    /* ss_target_bitrate */
+        1,        /* ts_number_layers */
+        { 0 },    /* ts_target_bitrate */
+        { 0 },    /* ts_rate_decimator */
+        0,        /* ts_periodicity */
+        { 0 },    /* ts_layer_id */
+        { 0 },    /* layer_target_bitrate */
+        0,        /* temporal_layering_mode */
+        0,        /* use_vizier_rc_params */
+        { 1, 1 }, /* active_wq_factor */
+        { 1, 1 }, /* err_per_mb_factor */
+        { 1, 1 }, /* sr_default_decay_limit */
+        { 1, 1 }, /* sr_diff_factor */
+        { 1, 1 }, /* kf_err_per_mb_factor */
+        { 1, 1 }, /* kf_frame_min_boost_factor */
+        { 1, 1 }, /* kf_frame_max_boost_first_factor */
+        { 1, 1 }, /* kf_frame_max_boost_subs_factor */
+        { 1, 1 }, /* kf_max_total_boost_factor */
+        { 1, 1 }, /* gf_max_total_boost_factor */
+        { 1, 1 }, /* gf_frame_max_boost_factor */
+        { 1, 1 }, /* zm_factor */
+        { 1, 1 }, /* rd_mult_inter_qp_fac */
+        { 1, 1 }, /* rd_mult_arf_qp_fac */
+        { 1, 1 }, /* rd_mult_key_qp_fac */
     } },
 };
 

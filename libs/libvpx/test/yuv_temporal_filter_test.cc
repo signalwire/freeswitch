@@ -674,19 +674,19 @@ TEST_P(YUVTemporalFilterTest, DISABLED_Speed) {
          v_count);                                                            \
   }
 
-WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_c, 10);
-WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_c, 12);
+WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_c, 10)
+WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_c, 12)
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     C, YUVTemporalFilterTest,
     ::testing::Values(
         TemporalFilterWithBd(&wrap_vp9_highbd_apply_temporal_filter_c_10, 10),
         TemporalFilterWithBd(&wrap_vp9_highbd_apply_temporal_filter_c_12, 12)));
 #if HAVE_SSE4_1
-WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_sse4_1, 10);
-WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_sse4_1, 12);
+WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_sse4_1, 10)
+WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_sse4_1, 12)
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE4_1, YUVTemporalFilterTest,
     ::testing::Values(
         TemporalFilterWithBd(&wrap_vp9_highbd_apply_temporal_filter_sse4_1_10,
@@ -695,14 +695,14 @@ INSTANTIATE_TEST_CASE_P(
                              12)));
 #endif  // HAVE_SSE4_1
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     C, YUVTemporalFilterTest,
     ::testing::Values(TemporalFilterWithBd(&vp9_apply_temporal_filter_c, 8)));
 
 #if HAVE_SSE4_1
-INSTANTIATE_TEST_CASE_P(SSE4_1, YUVTemporalFilterTest,
-                        ::testing::Values(TemporalFilterWithBd(
-                            &vp9_apply_temporal_filter_sse4_1, 8)));
+INSTANTIATE_TEST_SUITE_P(SSE4_1, YUVTemporalFilterTest,
+                         ::testing::Values(TemporalFilterWithBd(
+                             &vp9_apply_temporal_filter_sse4_1, 8)));
 #endif  // HAVE_SSE4_1
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }  // namespace

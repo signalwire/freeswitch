@@ -60,8 +60,15 @@ typedef struct {
 #define GOLDEN_FRAME 2
 #define ALTREF_FRAME 3
 #define MAX_REF_FRAMES 4
+#define MAX_INTER_REF_FRAMES 3
 
 typedef int8_t MV_REFERENCE_FRAME;
+
+static INLINE int mv_ref_frame_to_inter_ref_idx(
+    MV_REFERENCE_FRAME mv_ref_frame) {
+  assert(mv_ref_frame >= LAST_FRAME && mv_ref_frame < MAX_REF_FRAMES);
+  return mv_ref_frame - 1;
+}
 
 // This structure now relates to 8x8 block regions.
 typedef struct MODE_INFO {

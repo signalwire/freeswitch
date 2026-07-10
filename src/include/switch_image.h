@@ -12,8 +12,8 @@
  * \brief Describes the vpx image descriptor and associated operations
  *
  */
-#ifndef VPX_VPX_VPX_IMAGE_H_
-#define VPX_VPX_VPX_IMAGE_H_
+#ifndef SWITCH_IMAGE_H
+#define SWITCH_IMAGE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,68 +27,59 @@ extern "C" {
  * types, removing or reassigning enums, adding/removing/rearranging
  * fields to structures
  */
-#define VPX_IMAGE_ABI_VERSION (4) /**<\hideinitializer*/
+#define SWITCH_IMAGE_ABI_VERSION (5) /**<\hideinitializer*/
 
-#define VPX_IMG_FMT_PLANAR 0x100       /**< Image is a planar format. */
-#define VPX_IMG_FMT_UV_FLIP 0x200      /**< V plane precedes U in memory. */
-#define VPX_IMG_FMT_HAS_ALPHA 0x400    /**< Image has an alpha channel. */
-#define VPX_IMG_FMT_HIGHBITDEPTH 0x800 /**< Image uses 16bit framebuffer. */
+#define SWITCH_IMG_FMT_PLANAR 0x100       /**< Image is a planar format. */
+#define SWITCH_IMG_FMT_UV_FLIP 0x200      /**< V plane precedes U in memory. */
+#define SWITCH_IMG_FMT_HAS_ALPHA 0x400    /**< Image has an alpha channel. */
+#define SWITCH_IMG_FMT_HIGHBITDEPTH 0x800 /**< Image uses 16bit framebuffer. */
 
 /*!\brief List of supported image formats */
-typedef enum vpx_img_fmt {
-  VPX_IMG_FMT_NONE,
-  VPX_IMG_FMT_RGB24,     /**< 24 bit per pixel packed RGB */
-  VPX_IMG_FMT_RGB32,     /**< 32 bit per pixel packed 0RGB */
-  VPX_IMG_FMT_RGB565,    /**< 16 bit per pixel, 565 */
-  VPX_IMG_FMT_RGB555,    /**< 16 bit per pixel, 555 */
-  VPX_IMG_FMT_UYVY,      /**< UYVY packed YUV */
-  VPX_IMG_FMT_YUY2,      /**< YUYV packed YUV */
-  VPX_IMG_FMT_YVYU,      /**< YVYU packed YUV */
-  VPX_IMG_FMT_BGR24,     /**< 24 bit per pixel packed BGR */
-  VPX_IMG_FMT_RGB32_LE,  /**< 32 bit packed BGR0 */
-  VPX_IMG_FMT_ARGB,      /**< 32 bit packed ARGB, alpha=255 */
-  VPX_IMG_FMT_ARGB_LE,   /**< 32 bit packed BGRA, alpha=255 */
-  VPX_IMG_FMT_RGB565_LE, /**< 16 bit per pixel, gggbbbbb rrrrrggg */
-  VPX_IMG_FMT_RGB555_LE, /**< 16 bit per pixel, gggbbbbb 0rrrrrgg */
-  VPX_IMG_FMT_YV12 =
-      VPX_IMG_FMT_PLANAR | VPX_IMG_FMT_UV_FLIP | 1, /**< planar YVU */
-  VPX_IMG_FMT_I420 = VPX_IMG_FMT_PLANAR | 2,
-  VPX_IMG_FMT_VPXYV12 = VPX_IMG_FMT_PLANAR | VPX_IMG_FMT_UV_FLIP |
-                        3, /** < planar 4:2:0 format with vpx color space */
-  VPX_IMG_FMT_VPXI420 = VPX_IMG_FMT_PLANAR | 4,
-  VPX_IMG_FMT_I422 = VPX_IMG_FMT_PLANAR | 5,
-  VPX_IMG_FMT_I444 = VPX_IMG_FMT_PLANAR | 6,
-  VPX_IMG_FMT_I440 = VPX_IMG_FMT_PLANAR | 7,
-  VPX_IMG_FMT_444A = VPX_IMG_FMT_PLANAR | VPX_IMG_FMT_HAS_ALPHA | 6,
-  VPX_IMG_FMT_I42016 = VPX_IMG_FMT_I420 | VPX_IMG_FMT_HIGHBITDEPTH,
-  VPX_IMG_FMT_I42216 = VPX_IMG_FMT_I422 | VPX_IMG_FMT_HIGHBITDEPTH,
-  VPX_IMG_FMT_I44416 = VPX_IMG_FMT_I444 | VPX_IMG_FMT_HIGHBITDEPTH,
-  VPX_IMG_FMT_I44016 = VPX_IMG_FMT_I440 | VPX_IMG_FMT_HIGHBITDEPTH
-} vpx_img_fmt_t; /**< alias for enum vpx_img_fmt */
+typedef enum switch_img_fmt {
+  SWITCH_IMG_FMT_NONE,
+  SWITCH_IMG_FMT_GD = SWITCH_IMG_FMT_NONE, /* experimental */
+  SWITCH_IMG_FMT_RGB24,     /**< 24 bit per pixel packed RGB */
+  SWITCH_IMG_FMT_YUY2,      /**< YUYV packed YUV */
+  SWITCH_IMG_FMT_BGR24,     /**< 24 bit per pixel packed BGR */
+  SWITCH_IMG_FMT_ARGB,      /**< 32 bit packed ARGB, alpha=255 */
+  SWITCH_IMG_FMT_ARGB_LE,   /**< 32 bit packed BGRA, alpha=255 */
+  SWITCH_IMG_FMT_YV12 =
+      SWITCH_IMG_FMT_PLANAR | SWITCH_IMG_FMT_UV_FLIP | 1, /**< planar YVU */
+  SWITCH_IMG_FMT_I420 = SWITCH_IMG_FMT_PLANAR | 2,
+  SWITCH_IMG_FMT_I422 = SWITCH_IMG_FMT_PLANAR | 5,
+  SWITCH_IMG_FMT_I444 = SWITCH_IMG_FMT_PLANAR | 6,
+  SWITCH_IMG_FMT_I440 = SWITCH_IMG_FMT_PLANAR | 7,
+  SWITCH_IMG_FMT_NV12 = SWITCH_IMG_FMT_PLANAR | 9,
+  SWITCH_IMG_FMT_444A = SWITCH_IMG_FMT_PLANAR | SWITCH_IMG_FMT_HAS_ALPHA | 6,
+  SWITCH_IMG_FMT_I42016 = SWITCH_IMG_FMT_I420 | SWITCH_IMG_FMT_HIGHBITDEPTH,
+  SWITCH_IMG_FMT_I42216 = SWITCH_IMG_FMT_I422 | SWITCH_IMG_FMT_HIGHBITDEPTH,
+  SWITCH_IMG_FMT_I44416 = SWITCH_IMG_FMT_I444 | SWITCH_IMG_FMT_HIGHBITDEPTH,
+  SWITCH_IMG_FMT_I44016 = SWITCH_IMG_FMT_I440 | SWITCH_IMG_FMT_HIGHBITDEPTH
+} switch_img_fmt_t; /**< alias for enum vpx_img_fmt */
 
 /*!\brief List of supported color spaces */
-typedef enum vpx_color_space {
-  VPX_CS_UNKNOWN = 0,   /**< Unknown */
-  VPX_CS_BT_601 = 1,    /**< BT.601 */
-  VPX_CS_BT_709 = 2,    /**< BT.709 */
-  VPX_CS_SMPTE_170 = 3, /**< SMPTE.170 */
-  VPX_CS_SMPTE_240 = 4, /**< SMPTE.240 */
-  VPX_CS_BT_2020 = 5,   /**< BT.2020 */
-  VPX_CS_RESERVED = 6,  /**< Reserved */
-  VPX_CS_SRGB = 7       /**< sRGB */
-} vpx_color_space_t;    /**< alias for enum vpx_color_space */
+typedef enum switch_color_space {
+  SWITCH_CS_UNKNOWN = 0,   /**< Unknown */
+  SWITCH_CS_BT_601 = 1,    /**< BT.601 */
+  SWITCH_CS_BT_709 = 2,    /**< BT.709 */
+  SWITCH_CS_SMPTE_170 = 3, /**< SMPTE.170 */
+  SWITCH_CS_SMPTE_240 = 4, /**< SMPTE.240 */
+  SWITCH_CS_BT_2020 = 5,   /**< BT.2020 */
+  SWITCH_CS_RESERVED = 6,  /**< Reserved */
+  SWITCH_CS_SRGB = 7       /**< sRGB */
+} switch_color_space_t;    /**< alias for enum vpx_color_space */
 
 /*!\brief List of supported color range */
-typedef enum vpx_color_range {
-  VPX_CR_STUDIO_RANGE = 0, /**< Y [16..235], UV [16..240] */
-  VPX_CR_FULL_RANGE = 1    /**< YUV/RGB [0..255] */
-} vpx_color_range_t;       /**< alias for enum vpx_color_range */
+typedef enum switch_color_range {
+  SWITCH_CR_STUDIO_RANGE = 0, /**< Y [16..235], UV [16..240] */
+  SWITCH_CR_FULL_RANGE = 1    /**< YUV/RGB [0..255] */
+} switch_color_range_t;       /**< alias for enum vpx_color_range */
 
 /**\brief Image Descriptor */
-typedef struct vpx_image {
-  vpx_img_fmt_t fmt;       /**< Image Format */
-  vpx_color_space_t cs;    /**< Color Space */
-  vpx_color_range_t range; /**< Color Range */
+typedef struct switch_image {
+  switch_img_fmt_t fmt;       /**< Image Format */
+  switch_color_space_t cs;    /**< Color Space */
+  switch_color_range_t range; /**< Color Range */
 
   /* Image storage dimensions */
   unsigned int w;         /**< Stored image width */
@@ -108,11 +99,11 @@ typedef struct vpx_image {
   unsigned int y_chroma_shift; /**< subsampling order, Y */
 
 /* Image data pointers. */
-#define VPX_PLANE_PACKED 0  /**< To be used for all packed formats */
-#define VPX_PLANE_Y 0       /**< Y (Luminance) plane */
-#define VPX_PLANE_U 1       /**< U (Chroma) plane */
-#define VPX_PLANE_V 2       /**< V (Chroma) plane */
-#define VPX_PLANE_ALPHA 3   /**< A (Transparency) plane */
+#define SWITCH_PLANE_PACKED 0  /**< To be used for all packed formats */
+#define SWITCH_PLANE_Y 0       /**< Y (Luminance) plane */
+#define SWITCH_PLANE_U 1       /**< U (Chroma) plane */
+#define SWITCH_PLANE_V 2       /**< V (Chroma) plane */
+#define SWITCH_PLANE_ALPHA 3   /**< A (Transparency) plane */
   unsigned char *planes[4]; /**< pointer to the top left pixel for each plane */
   int stride[4];            /**< stride between rows for each plane */
 
@@ -129,15 +120,15 @@ typedef struct vpx_image {
   int self_allocd;         /**< private */
 
   void *fb_priv; /**< Frame buffer data associated with the image. */
-} vpx_image_t;   /**< alias for struct vpx_image */
+} switch_image_t;   /**< alias for struct vpx_image */
 
 /**\brief Representation of a rectangle on a surface */
-typedef struct vpx_image_rect {
+typedef struct switch_image_rect {
   unsigned int x;   /**< leftmost column */
   unsigned int y;   /**< topmost row */
   unsigned int w;   /**< width */
   unsigned int h;   /**< height */
-} vpx_image_rect_t; /**< alias for struct vpx_image_rect */
+} switch_image_rect_t; /**< alias for struct vpx_image_rect */
 
 /*!\brief Open a descriptor, allocating storage for the underlying image
  *
@@ -157,7 +148,7 @@ typedef struct vpx_image_rect {
  *         parameter is non-null, the value of the img parameter will be
  *         returned.
  */
-vpx_image_t *vpx_img_alloc(vpx_image_t *img, vpx_img_fmt_t fmt,
+switch_image_t *switch_img_raw_alloc(switch_image_t *img, switch_img_fmt_t fmt,
                            unsigned int d_w, unsigned int d_h,
                            unsigned int align);
 
@@ -180,7 +171,7 @@ vpx_image_t *vpx_img_alloc(vpx_image_t *img, vpx_img_fmt_t fmt,
  *         parameter is non-null, the value of the img parameter will be
  *         returned.
  */
-vpx_image_t *vpx_img_wrap(vpx_image_t *img, vpx_img_fmt_t fmt, unsigned int d_w,
+switch_image_t *switch_img_raw_wrap(switch_image_t *img,switch_img_fmt_t fmt, unsigned int d_w,
                           unsigned int d_h, unsigned int stride_align,
                           unsigned char *img_data);
 
@@ -197,17 +188,8 @@ vpx_image_t *vpx_img_wrap(vpx_image_t *img, vpx_img_fmt_t fmt, unsigned int d_w,
  *
  * \return 0 if the requested rectangle is valid, nonzero otherwise.
  */
-int vpx_img_set_rect(vpx_image_t *img, unsigned int x, unsigned int y,
+SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t *img, unsigned int x, unsigned int y,
                      unsigned int w, unsigned int h);
-
-/*!\brief Flip the image vertically (top for bottom)
- *
- * Adjusts the image descriptor's pointers and strides to make the image
- * be referenced upside-down.
- *
- * \param[in]    img       Image descriptor
- */
-void vpx_img_flip(vpx_image_t *img);
 
 /*!\brief Close an image descriptor
  *
@@ -215,10 +197,10 @@ void vpx_img_flip(vpx_image_t *img);
  *
  * \param[in]    img       Image descriptor
  */
-void vpx_img_free(vpx_image_t *img);
+void switch_img_raw_free(switch_image_t *img);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VPX_VPX_VPX_IMAGE_H_
+#endif  // SWITCH_IMAGE_H

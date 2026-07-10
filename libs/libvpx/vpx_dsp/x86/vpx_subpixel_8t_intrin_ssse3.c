@@ -31,7 +31,7 @@ static INLINE __m128i shuffle_filter_convolve8_8_ssse3(
 }
 
 // Used by the avx2 implementation.
-#if ARCH_X86_64
+#if VPX_ARCH_X86_64
 // Use the intrinsics below
 filter8_1dfunction vpx_filter_block1d4_h8_intrin_ssse3;
 filter8_1dfunction vpx_filter_block1d8_h8_intrin_ssse3;
@@ -39,14 +39,14 @@ filter8_1dfunction vpx_filter_block1d8_v8_intrin_ssse3;
 #define vpx_filter_block1d4_h8_ssse3 vpx_filter_block1d4_h8_intrin_ssse3
 #define vpx_filter_block1d8_h8_ssse3 vpx_filter_block1d8_h8_intrin_ssse3
 #define vpx_filter_block1d8_v8_ssse3 vpx_filter_block1d8_v8_intrin_ssse3
-#else  // ARCH_X86
+#else  // VPX_ARCH_X86
 // Use the assembly in vpx_dsp/x86/vpx_subpixel_8t_ssse3.asm.
 filter8_1dfunction vpx_filter_block1d4_h8_ssse3;
 filter8_1dfunction vpx_filter_block1d8_h8_ssse3;
 filter8_1dfunction vpx_filter_block1d8_v8_ssse3;
 #endif
 
-#if ARCH_X86_64
+#if VPX_ARCH_X86_64
 void vpx_filter_block1d4_h8_intrin_ssse3(
     const uint8_t *src_ptr, ptrdiff_t src_pitch, uint8_t *output_ptr,
     ptrdiff_t output_pitch, uint32_t output_height, const int16_t *filter) {
@@ -198,7 +198,7 @@ void vpx_filter_block1d8_v8_intrin_ssse3(
     output_ptr += out_pitch;
   }
 }
-#endif  // ARCH_X86_64
+#endif  // VPX_ARCH_X86_64
 
 static void vpx_filter_block1d16_h4_ssse3(const uint8_t *src_ptr,
                                           ptrdiff_t src_stride,
@@ -731,12 +731,12 @@ filter8_1dfunction vpx_filter_block1d4_h2_avg_ssse3;
 //                                   const InterpKernel *filter, int x0_q4,
 //                                   int32_t x_step_q4, int y0_q4,
 //                                   int y_step_q4, int w, int h);
-FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , ssse3, 0);
+FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , ssse3, 0)
 FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - src_stride * (num_taps / 2 - 1), ,
-            ssse3, 0);
-FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, ssse3, 1);
+            ssse3, 0)
+FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, ssse3, 1)
 FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
-            src - src_stride * (num_taps / 2 - 1), avg_, ssse3, 1);
+            src - src_stride * (num_taps / 2 - 1), avg_, ssse3, 1)
 
 static void filter_horiz_w8_ssse3(const uint8_t *const src,
                                   const ptrdiff_t src_stride,
@@ -1083,5 +1083,5 @@ void vpx_scaled_2d_ssse3(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst,
 //                              const InterpKernel *filter, int x0_q4,
 //                              int32_t x_step_q4, int y0_q4, int y_step_q4,
 //                              int w, int h);
-FUN_CONV_2D(, ssse3, 0);
-FUN_CONV_2D(avg_, ssse3, 1);
+FUN_CONV_2D(, ssse3, 0)
+FUN_CONV_2D(avg_, ssse3, 1)

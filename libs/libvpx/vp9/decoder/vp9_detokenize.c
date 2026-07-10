@@ -243,9 +243,9 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #else
     if (read_bool(r, 128, &value, &count, &range)) {
-      dqcoeff[scan[c]] = -v;
+      dqcoeff[scan[c]] = (tran_low_t)-v;
     } else {
-      dqcoeff[scan[c]] = v;
+      dqcoeff[scan[c]] = (tran_low_t)v;
     }
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
     ++c;

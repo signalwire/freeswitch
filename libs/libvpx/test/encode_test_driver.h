@@ -49,7 +49,7 @@ enum TestMode {
 class CxDataIterator {
  public:
   explicit CxDataIterator(vpx_codec_ctx_t *encoder)
-      : encoder_(encoder), iter_(NULL) {}
+      : encoder_(encoder), iter_(nullptr) {}
 
   const vpx_codec_cx_pkt_t *Next() {
     return vpx_codec_get_cx_data(encoder_, &iter_);
@@ -147,6 +147,13 @@ class Encoder {
     const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
+
+#if CONFIG_VP9_ENCODER
+  void Control(int ctrl_id, vpx_rc_funcs_t *arg) {
+    const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+  }
+#endif  // CONFIG_VP9_ENCODER
 
 #if CONFIG_VP8_ENCODER || CONFIG_VP9_ENCODER
   void Control(int ctrl_id, vpx_active_map_t *arg) {

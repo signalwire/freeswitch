@@ -124,14 +124,6 @@ typedef struct {
 	double z;
 } switch_xyz_color_t;
 
-/**\brief Representation of a rectangle on a surface */
-typedef struct switch_image_rect {
-	unsigned int x; /**< leftmost column */
-	unsigned int y; /**< topmost row */
-	unsigned int w; /**< width */
-	unsigned int h; /**< height */
-} switch_image_rect_t;
-
 typedef enum {
 	SWITCH_CONVERT_FMT_YUYV = 0
 } switch_convert_fmt_t;
@@ -201,26 +193,6 @@ SWITCH_DECLARE(switch_image_t *)switch_img_wrap(switch_image_t  *img,
 						unsigned int d_h,
 						unsigned int align,
 						unsigned char *img_data);
-
-
-/*!\brief Set the rectangle identifying the displayed portion of the image
-*
-* Updates the displayed rectangle (aka viewport) on the image surface to
-* match the specified coordinates and size.
-*
-* \param[in]    img       Image descriptor
-* \param[in]    x         leftmost column
-* \param[in]    y         topmost row
-* \param[in]    w         width
-* \param[in]    h         height
-*
-* \return 0 if the requested rectangle is valid, nonzero otherwise.
-*/
-SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
-				   unsigned int  x,
-				   unsigned int  y,
-				   unsigned int  w,
-				   unsigned int  h);
 
 /*!\brief patch a small img to a big IMG at position x,y
 *

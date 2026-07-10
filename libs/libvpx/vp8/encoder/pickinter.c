@@ -1018,7 +1018,7 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 #endif
             bestsme = vp8_hex_search(x, b, d, &mvp_full, &d->bmi.mv, step_param,
                                      sadpb, &cpi->fn_ptr[BLOCK_16X16],
-                                     x->mvsadcost, x->mvcost, &best_ref_mv);
+                                     x->mvsadcost, &best_ref_mv);
             mode_mv[NEWMV].as_int = d->bmi.mv.as_int;
           } else {
             bestsme = cpi->diamond_search_sad(

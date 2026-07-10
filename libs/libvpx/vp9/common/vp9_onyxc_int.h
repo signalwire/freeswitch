@@ -69,7 +69,16 @@ typedef struct {
   int mi_rows;
   int mi_cols;
   uint8_t released;
-  int frame_index;
+
+  // Note that frame_index/frame_coding_index are only set by set_frame_index()
+  // on the encoder side.
+
+  // TODO(angiebird): Set frame_index/frame_coding_index on the decoder side
+  // properly.
+  int frame_index;         // Display order in the video, it's equivalent to the
+                           // show_idx defined in EncodeFrameInfo.
+  int frame_coding_index;  // The coding order (starting from zero) of this
+                           // frame.
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
 } RefCntBuffer;
@@ -226,7 +235,14 @@ typedef struct VP9Common {
   unsigned int frame_context_idx; /* Context to use/update */
   FRAME_COUNTS counts;
 
+  // TODO(angiebird): current_video_frame/current_frame_coding_index into a
+  // structure
   unsigned int current_video_frame;
+  // Each show or no show frame is assigned with a coding index based on its
+  // coding order (starting from zero).
+
+  // Current frame's coding index.
+  int current_frame_coding_index;
   BITSTREAM_PROFILE profile;
 
   // VPX_BITS_8 in profile 0 or 1, VPX_BITS_10 or VPX_BITS_12 in profile 2 or 3.
@@ -244,14 +260,6 @@ typedef struct VP9Common {
   int byte_alignment;
   int skip_loop_filter;
 
-  // Private data associated with the frame buffer callbacks.
-  void *cb_priv;
-  vpx_get_frame_buffer_cb_fn_t get_fb_cb;
-  vpx_release_frame_buffer_cb_fn_t release_fb_cb;
-
-  // Handles memory for the codec.
-  InternalFrameBufferList int_frame_buffers;
-
   // External BufferPool passed from outside.
   BufferPool *buffer_pool;
 
@@ -261,6 +269,48 @@ typedef struct VP9Common {
 
   int lf_row;
 } VP9_COMMON;
+
+static INLINE void init_frame_indexes(VP9_COMMON *cm) {
+  cm->current_video_frame = 0;
+  cm->current_frame_coding_index = 0;
+}
+
+static INLINE void update_frame_indexes(VP9_COMMON *cm, int show_frame) {
+  if (show_frame) {
+    // Don't increment frame counters if this was an altref buffer
+    // update not a real frame
+    ++cm->current_video_frame;
+  }
+  ++cm->current_frame_coding_index;
+}
+
+typedef struct {
+  int frame_width;
+  int frame_height;
+  int render_frame_width;
+  int render_frame_height;
+  int mi_rows;
+  int mi_cols;
+  int mb_rows;
+  int mb_cols;
+  int num_mbs;
+  vpx_bit_depth_t bit_depth;
+} FRAME_INFO;
+
+static INLINE void init_frame_info(FRAME_INFO *frame_info,
+                                   const VP9_COMMON *cm) {
+  frame_info->frame_width = cm->width;
+  frame_info->frame_height = cm->height;
+  frame_info->render_frame_width = cm->render_width;
+  frame_info->render_frame_height = cm->render_height;
+  frame_info->mi_cols = cm->mi_cols;
+  frame_info->mi_rows = cm->mi_rows;
+  frame_info->mb_cols = cm->mb_cols;
+  frame_info->mb_rows = cm->mb_rows;
+  frame_info->num_mbs = cm->MBs;
+  frame_info->bit_depth = cm->bit_depth;
+  // TODO(angiebird): Figure out how to get subsampling_x/y here
+}
 
 static INLINE YV12_BUFFER_CONFIG *get_buf_frame(VP9_COMMON *cm, int index) {
   if (index < 0 || index >= FRAME_BUFFERS) return NULL;
