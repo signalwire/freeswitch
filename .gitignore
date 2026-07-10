@@ -252,6 +252,8 @@ libs/rabbitmq-c-*/
 libs/rabbitmq-c-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
+libs/nasm-*/
+libs/nasm-*.zip
 libs/ffmpeg-*/
 libs/sofia-sip*/
 libs/sofia-sip*
