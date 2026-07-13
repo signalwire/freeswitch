@@ -157,6 +157,14 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_available(const
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_loaded(switch_modulename_callback_func_t callback, void *user_data);
 
 /*!
+  \brief Dump loaded module application/api/json_api/chat-application interfaces in interface-allowlist key format
+  \param stream stream to write the dump to
+  \param by_module if true emit one entry per module, otherwise one fully qualified entry (module.name.type) per interface
+  \param xml if true wrap entries as <allow/> tags inside an <interface-allowlist> element, otherwise emit raw keys
+ */
+SWITCH_DECLARE(void) switch_loadable_module_dump_interface_allowlist(switch_stream_handle_t *stream, switch_bool_t by_module, switch_bool_t xml);
+
+/*!
   \brief build a dynamic module object and register it (for use in double embeded modules)
   \param filename the name of the modules source file
   \param switch_module_load the function to call when the module is loaded
