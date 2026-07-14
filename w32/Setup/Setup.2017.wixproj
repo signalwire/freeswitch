@@ -947,16 +947,6 @@
             TimestampUrl="$(TimestampUrl)"
             SigningTarget="%(ExeFiles.Identity)"
             TargetFrameworkVersion="v4.5" />
-    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
-    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
-            CertificateThumbprint="$(CertificateThumbprint)"
-            SigningTarget="%(Modules.Identity)"
-            TargetFrameworkVersion="v4.5" />
-    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
-            CertificateThumbprint="$(CertificateThumbprint)"
-            TimestampUrl="$(TimestampUrl)"
-            SigningTarget="%(Modules.Identity)"
-            TargetFrameworkVersion="v4.5" />
     <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
@@ -1056,6 +1046,24 @@
         RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHBaseDir">
     </HeatDirectory>
+    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
+  </Target>
+  <!-- One batch per module so each file is logged as it is signed. The Modules items
+       are created in AfterResolveReferences and only visible after it completes. -->
+  <Target Name="SignFreeSWITCHModules"
+          AfterTargets="AfterResolveReferences"
+          Outputs="%(Modules.Identity)"
+          Condition="'@(Modules)' != ''">
+    <Message Importance="High" Text="Signing %(Modules.Identity)" />
+    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
   </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />
