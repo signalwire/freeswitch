@@ -208,7 +208,7 @@ FST_CORE_BEGIN("./conf")
 			config.log_uuid = SWITCH_TRUE;
 			config.log_tags = SWITCH_TRUE;
 			node.userdata = "uuid-123";
-			fst_check_int_equals(switch_event_create_plain(&node.tags, SWITCH_EVENT_CHANNEL_DATA), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_event_create_plain(&node.tags, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS);
 			if (node.tags) {
 				switch_event_add_header_string(node.tags, SWITCH_STACK_BOTTOM, "tenant", long_value);
 			}
@@ -246,9 +246,9 @@ FST_CORE_BEGIN("./conf")
 			mod_logfile_prefix_config_t config;
 
 			mod_logfile_prefix_config_init(&config);
-			fst_check_int_equals(mod_logfile_prefix_add_channel_vars(&config,
-				" shorthand , tenant = account_id , =missing, empty= , duplicate = first "), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(mod_logfile_prefix_add_channel_vars(&config, " duplicate = second "), SWITCH_STATUS_SUCCESS);
+			fst_check(mod_logfile_prefix_add_channel_vars(&config,
+				" shorthand , tenant = account_id , =missing, empty= , duplicate = first ") == SWITCH_STATUS_SUCCESS);
+			fst_check(mod_logfile_prefix_add_channel_vars(&config, " duplicate = second ") == SWITCH_STATUS_SUCCESS);
 			fst_check(config.channel_vars != NULL);
 			if (config.channel_vars) {
 				fst_check_string_equals_safe(switch_event_get_header(config.channel_vars, "shorthand"), "shorthand");
@@ -257,7 +257,7 @@ FST_CORE_BEGIN("./conf")
 				fst_check(switch_event_get_header(config.channel_vars, "empty") == NULL);
 				fst_check_int_equals(event_header_count(config.channel_vars), 3);
 			}
-			fst_check_int_equals(mod_logfile_prefix_add_channel_vars(&config, " =missing, empty= "), SWITCH_STATUS_FALSE);
+			fst_check(mod_logfile_prefix_add_channel_vars(&config, " =missing, empty= ") == SWITCH_STATUS_FALSE);
 
 			mod_logfile_prefix_config_destroy(&config);
 		}
@@ -315,9 +315,9 @@ FST_CORE_BEGIN("./conf")
 			config.log_uuid = SWITCH_TRUE;
 			config.log_tags = SWITCH_TRUE;
 			node.userdata = (char *) switch_core_session_get_uuid(fst_session);
-			fst_check_int_equals(switch_event_create_plain(&node.tags, SWITCH_EVENT_CHANNEL_DATA), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(mod_logfile_prefix_add_channel_vars(&config,
-				" call = sip_call_id , origin = source_var "), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_event_create_plain(&node.tags, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS);
+			fst_check(mod_logfile_prefix_add_channel_vars(&config,
+				" call = sip_call_id , origin = source_var ") == SWITCH_STATUS_SUCCESS);
 			fst_check(channel != NULL);
 			fst_check(node.userdata != NULL);
 			if (node.tags) {
@@ -409,7 +409,7 @@ FST_CORE_BEGIN("./conf")
 			char *prefix;
 
 			mod_logfile_prefix_config_init(&config);
-			fst_check_int_equals(mod_logfile_prefix_add_channel_vars(&config, "callid=sip_call_id"), SWITCH_STATUS_SUCCESS);
+			fst_check(mod_logfile_prefix_add_channel_vars(&config, "callid=sip_call_id") == SWITCH_STATUS_SUCCESS);
 			node.userdata = (char *) switch_core_session_get_uuid(fst_session);
 			fst_check(channel != NULL);
 			fst_check(node.userdata != NULL);
@@ -441,11 +441,11 @@ FST_CORE_BEGIN("./conf")
 
 			mod_logfile_prefix_config_init(&config);
 			config.log_tags = SWITCH_TRUE;
-			fst_check_int_equals(mod_logfile_prefix_add_channel_vars(&config, "live=live_c1"), SWITCH_STATUS_SUCCESS);
+			fst_check(mod_logfile_prefix_add_channel_vars(&config, "live=live_c1") == SWITCH_STATUS_SUCCESS);
 			node.userdata = (char *) switch_core_session_get_uuid(fst_session);
 			fst_check(channel != NULL);
 			fst_check(node.userdata != NULL);
-			fst_check_int_equals(switch_event_create_plain(&node.tags, SWITCH_EVENT_CHANNEL_DATA), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_event_create_plain(&node.tags, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS);
 
 			if (node.tags) {
 				switch_event_add_header_string(node.tags, SWITCH_STACK_BOTTOM, "captured", captured_value);

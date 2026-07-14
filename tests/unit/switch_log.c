@@ -112,16 +112,16 @@ FST_CORE_BEGIN("./conf")
 			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
 			switch_event_t *tags = NULL;
 
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", NULL), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_FALSE);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", NULL) == SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_FALSE);
 			fst_check(tags == NULL);
 			if (tags) {
 				switch_event_destroy(&tags);
 			}
 
 			tags = NULL;
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", ""), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_FALSE);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", "") == SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_FALSE);
 			fst_check(tags == NULL);
 			if (tags) {
 				switch_event_destroy(&tags);
@@ -134,9 +134,9 @@ FST_CORE_BEGIN("./conf")
 			switch_channel_t *channel = switch_core_session_get_channel(fst_session);
 			switch_event_t *tags = NULL;
 
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", "acme"), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", "acme-west"), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", "acme") == SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", "acme-west") == SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check_string_equals(switch_event_get_header(tags, "tenant"), "acme-west");
@@ -144,18 +144,18 @@ FST_CORE_BEGIN("./conf")
 				switch_event_destroy(&tags);
 			}
 
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", NULL), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", NULL) == SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check(switch_event_get_header(tags, "tenant") == NULL);
 				switch_event_destroy(&tags);
 			}
 
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", "acme"), SWITCH_STATUS_SUCCESS);
-			fst_check_int_equals(switch_channel_set_log_tag(channel, "tenant", ""), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", "acme") == SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_set_log_tag(channel, "tenant", "") == SWITCH_STATUS_SUCCESS);
 			tags = NULL;
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check(switch_event_get_header(tags, "tenant") == NULL);
@@ -173,7 +173,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_core_session_execute_application(fst_session, "set_log_tag", "tenant=acme=west");
 			tags = NULL;
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check_string_equals(switch_event_get_header(tags, "tenant"), "acme=west");
@@ -182,7 +182,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_core_session_execute_application(fst_session, "set_log_tag", "tenant=acme-east");
 			tags = NULL;
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check_string_equals(switch_event_get_header(tags, "tenant"), "acme-east");
@@ -191,7 +191,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_core_session_execute_application(fst_session, "set_log_tag", "tenant=");
 			tags = NULL;
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check(switch_event_get_header(tags, "tenant") == NULL);
@@ -201,7 +201,7 @@ FST_CORE_BEGIN("./conf")
 			switch_core_session_execute_application(fst_session, "set_log_tag", "region=us-west");
 			switch_core_session_execute_application(fst_session, "set_log_tag", "region");
 			tags = NULL;
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check(switch_event_get_header(tags, "region") == NULL);
@@ -211,7 +211,7 @@ FST_CORE_BEGIN("./conf")
 			switch_core_session_execute_application(fst_session, "set_log_tag", "stable=keep");
 			switch_core_session_execute_application(fst_session, "set_log_tag", "=invalid");
 			tags = NULL;
-			fst_check_int_equals(switch_channel_get_log_tags(channel, &tags), SWITCH_STATUS_SUCCESS);
+			fst_check(switch_channel_get_log_tags(channel, &tags) == SWITCH_STATUS_SUCCESS);
 			fst_check(tags != NULL);
 			if (tags) {
 				fst_check_string_equals(switch_event_get_header(tags, "stable"), "keep");
