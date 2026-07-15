@@ -5,7 +5,9 @@
   </ImportGroup>
   <PropertyGroup>
     <downloadsqlitePropsImported>true</downloadsqlitePropsImported>
-    <sqliteVersion>3400000</sqliteVersion>
+    <sqliteVersion>3.53.3</sqliteVersion>
+    <!-- sqlite.org amalgamation filename encoding: version 3.X.Y -> 3XXYY00 -->
+    <sqliteVersionNumber>$([System.String]::Format('{0}{1:00}{2:00}00', $([System.Version]::Parse('$(sqliteVersion)').Major), $([System.Version]::Parse('$(sqliteVersion)').Minor), $([System.Version]::Parse('$(sqliteVersion)').Build)))</sqliteVersionNumber>
   </PropertyGroup>
 
   <!--
@@ -30,12 +32,12 @@
 
   <Target Name="sqliteDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/libs/sqlite-amalgamation-$(sqliteVersion).zip"
+           package="https://github.com/freeswitch/sqlite/releases/download/version-$(sqliteVersion)/sqlite-amalgamation-$(sqliteVersionNumber).zip"
            expectfileordirectory="$(BaseDir)libs\sqlite\sqlite3.c"
            outputfolder=""
            outputfilename=""
            extractto="$(BaseDir)libs\"
-           moveafter="sqlite-amalgamation-$(sqliteVersion)|sqlite"
+           moveafter="sqlite-amalgamation-$(sqliteVersionNumber)|sqlite"
       />
   </Target>
 
