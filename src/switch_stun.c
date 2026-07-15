@@ -459,8 +459,16 @@ SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_pac
 {
 	uint16_t cpylen;
 
-	cpylen = attribute->length < len ? attribute->length : len;
-	return memcpy(username, attribute->value, cpylen);
+	if (!len) {
+		return username;
+	}
+
+	/* Reserve one byte for the terminator and always NUL-terminate: callers treat the result as a C string. */
+	cpylen = attribute->length < len ? attribute->length : (uint16_t)(len - 1);
+	memcpy(username, attribute->value, cpylen);
+	username[cpylen] = '\0';
+
+	return username;
 }
 
 SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t *buf)
@@ -836,7 +844,6 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	switch_time_t started = 0;
 	int funny = 0;
 	int size = sizeof(buf);
-	int xlen = sizeof(switch_stun_packet_header_t);
 	switch_status_t res;
 
 	switch_assert(err);
@@ -931,7 +938,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
+	end_buf = buf + ((sizeof(buf) > SWITCH_STUN_PACKET_MIN_LEN + packet->header.length) ? SWITCH_STUN_PACKET_MIN_LEN + packet->header.length : sizeof(buf));
 
 	switch_stun_packet_first_attribute(packet, attr);
 	switch_assert(attr);
@@ -954,13 +961,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 			break;
 		}
 
-		if (!switch_stun_packet_next_attribute(attr, end_buf)) {
-			break;
-		}
-
-		xlen += 4 + switch_stun_attribute_padded_length(attr);
-
-	} while (xlen <= packet->header.length);
+	} while (switch_stun_packet_next_attribute(attr, end_buf));
 
 	if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
 		*ip = switch_core_strdup(pool, rip);
