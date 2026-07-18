@@ -25,6 +25,10 @@
 			<param name="url" value=""/>
 			<!-- optional timeout : second -->
 			<param name="timeout" value="5"/>
+
+			<!-- optional unix-socket-path: path -->
+			<!-- <param name="unix-socket-path" value="/var/run/nginx/fs-backend.sock"/> -->
+
 			<!-- Authentication scheme for the above URL. May be one of basic|digest|NTLM|GSS-NEGOTIATE|any-->
 			<param name="auth-scheme" value="basic"/>
 			<!-- Credentials in the form  username:password  if auth-scheme is used. Leave empty for no authentication. -->
