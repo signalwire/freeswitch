@@ -1954,6 +1954,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	char *from_tag = switch_str_nil(argv[15]);
 	char *orig_proto = switch_str_nil(argv[16]);
 
+	switch_core_session_t *session;
 	const char *event_status = "";
 	char *data = NULL, *tmp;
 	char key[256] = "";
@@ -1968,6 +1969,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	int bInternal = 0;
 	int i;
 	int skip_proto = 0;
+	int skip_dialog = 0;
 
 	if (mod_sofia_globals.debug_presence > 1) {
 		for (i = 0; i < argc; i++) {
@@ -1978,6 +1980,22 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	if (zstr(to_user) || zstr(contact_user)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "sofia_dialog_probe_callback: not enough info to generate a dialog entry\n");
 		return 0;
+	}
+
+	// If the dialog is in the "early" state check the presence_disable_early profile flag and channel variable.
+	// When presence_disable_early is set the dialog should not influence the result of the probe and resulting NOTIFY that is sent.
+	if (!strcasecmp(state, "early") && (session = switch_core_session_locate(uuid))) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
+		if (sofia_test_pflag(h->profile, PFLAG_PRESENCE_DISABLE_EARLY) || 
+			switch_true(switch_channel_get_variable(channel, "presence_disable_early"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sofia_dialog_probe_callback: presence_disable_early is set skipping dialog\n");
+			skip_dialog = 1;
+		}
+
+		switch_core_session_rwunlock(session);
+
+		if (skip_dialog) return 0;
 	}
 
 	// Usually we report the dialogs FROM the probed user.  The exception is when the monitored endpoint is internal,
