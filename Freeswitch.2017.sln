@@ -379,6 +379,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_pt", "src\mod\say\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_sv", "src\mod\say\mod_say_sv\mod_say_sv.2017.vcxproj", "{8CDA2B34-FA44-49CC-9EC2-B8F35856CD15}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_say_tr", "src\mod\say\mod_say_tr\mod_say_tr.2017.vcxproj", "{2B87227A-198A-4087-9418-163186548B7F}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ldns", "libs\win32\ldns\ldns-lib\ldns-lib.2017.vcxproj", "{23B4D303-79FC-49E0-89E2-2280E7E28940}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_callcenter", "src\mod\applications\mod_callcenter\mod_callcenter.2017.vcxproj", "{47886A6C-CCA6-4F9F-A7D4-F97D06FB2B1A}"
