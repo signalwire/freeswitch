@@ -1166,7 +1166,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 		if (file) {
 			if ((ifd = open(file, O_RDONLY | O_BINARY)) < 0) {
 				rval = SWITCH_FALSE;
-				err = "Cannot open tmp file\n";
+				err = "Cannot open file\n";
 				goto end;
 			}
 		}
@@ -1284,6 +1284,10 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 				goto end;
 			}
 		}
+	} else {
+		err = "cannot open tmp file\n";
+		rval = SWITCH_FALSE;
+		goto end;
 	}
 
 	if (fd > -1) {
