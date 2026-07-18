@@ -340,6 +340,8 @@ static switch_status_t load_profile(switch_xml_t xml)
 	switch_xml_t param, settings;
 	char *name = (char *) switch_xml_attr_soft(xml, "name");
 	logfile_profile_t *new_profile;
+	switch_memory_pool_t *pool = NULL;
+	char *filename_to_check = NULL;
 
 	new_profile = switch_core_alloc(module_pool, sizeof(*new_profile));
 	memset(new_profile, 0, sizeof(*new_profile));
@@ -382,6 +384,18 @@ static switch_status_t load_profile(switch_xml_t xml)
 		switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
 		new_profile->logfile = strdup(logfile);
 	}
+
+	switch_core_new_memory_pool(&pool);
+	filename_to_check = switch_core_alloc(pool, strlen(new_profile->logfile) + WARM_FUZZY_OFFSET);
+	for(unsigned int i=1; i<new_profile->max_rot; i++) {
+		sprintf(filename_to_check, "%s.%i", new_profile->logfile, i);
+		if (switch_file_exists(filename_to_check, pool) == SWITCH_STATUS_SUCCESS) {
+			new_profile->suffix = i+1;
+		} else {
+			break;
+		}
+	}
+	switch_core_destroy_memory_pool(&pool);
 
 	if (mod_logfile_openlogfile(new_profile, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
