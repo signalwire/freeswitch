@@ -308,7 +308,7 @@ static switch_status_t ja_say_time(switch_core_session_t *session, char *tosay, 
 		}
 
 		if (seconds) {
-			say_num(hours, SSM_PRONOUNCED);
+			say_num(seconds, SSM_PRONOUNCED);
 			say_file("time/seconds.wav");
 		} else {
 			if (hours || minutes) {
