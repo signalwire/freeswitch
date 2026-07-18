@@ -517,7 +517,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		switch_set_flag((&new_dtmf), DTMF_FLAG_SENSITIVE);
 	}
 
-	if ((status = switch_core_session_recv_dtmf(channel->session, dtmf) != SWITCH_STATUS_SUCCESS)) {
+	if ((status = switch_core_session_recv_dtmf(channel->session, dtmf)) != SWITCH_STATUS_SUCCESS) {
 		goto done;
 	}
 
