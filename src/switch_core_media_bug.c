@@ -952,12 +952,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	}
 
 
+	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	if (bug->callback) {
 		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
 		if (result == SWITCH_FALSE) {
 			switch_core_media_bug_destroy(&bug);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error attaching BUG to %s\n",
 							  switch_channel_get_name(session->channel));
+			switch_thread_rwlock_unlock(session->bug_rwlock);
 			return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -974,7 +976,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
-	switch_thread_rwlock_wrlock(session->bug_rwlock);
 
 	if (!session->bugs) {
 		session->bugs = bug;
