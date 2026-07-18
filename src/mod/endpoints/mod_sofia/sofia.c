@@ -4548,6 +4548,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 			} else if (!strcasecmp(var, "stir-shaken-as-url")) {
 				/* The x5u URL to advertise when sip_identity_attest is set */
 				mod_sofia_globals.stir_shaken_as_url = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-div-as-url")) {
+				/* The x5u URL to advertise when sip_stir_shaken_div is set */
+				mod_sofia_globals.stir_shaken_div_as_url = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-div-reason")) {
+				mod_sofia_globals.stir_shaken_div_reason = switch_core_strdup(mod_sofia_globals.pool, val);
+			} else if (!strcasecmp(var, "stir-shaken-div-hi")) {
+				mod_sofia_globals.stir_shaken_div_hi = switch_core_strdup(mod_sofia_globals.pool, val);
 			} else if (!strcasecmp(var, "stir-shaken-vs-ca-dir")) {
 				/* The dir that contains the trusted CA root certs. */
 				mod_sofia_globals.stir_shaken_vs_ca_dir = switch_core_strdup(mod_sofia_globals.pool, val);
