@@ -1926,12 +1926,65 @@ SWITCH_DECLARE(void) switch_core_media_sync_stats(switch_core_session_t *session
 
 }
 
+static void set_jb_stats(switch_core_session_t *session, switch_media_type_t type)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+	switch_jb_t *jb;
+	const char *type_str = (type == SWITCH_MEDIA_TYPE_AUDIO) ? "audio" :
+	                       (type == SWITCH_MEDIA_TYPE_VIDEO) ? "video" : "text";
+
+	if (!(smh = session->media_handle)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+			"set_jb_stats(%s): no media handle\n", type_str);
+		return;
+	}
+
+	engine = &smh->engines[type];
+	if (!engine->rtp_session) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+			"set_jb_stats(%s): no rtp_session\n", type_str);
+		return;
+	}
+
+	/* Use _for_stats variant which bypasses switch_rtp_ready() check
+	 * since RTP session may not be "ready" during hangup but JB still exists */
+	jb = switch_rtp_get_jitter_buffer_for_stats(engine->rtp_session);
+	if (jb) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+			"set_jb_stats(%s): exporting JB stats\n", type_str);
+		switch_jb_export_stats(jb);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+			"set_jb_stats(%s): no jitter buffer\n", type_str);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_media_export_jb_stats(switch_core_session_t *session)
+{
+	if (!session->media_handle) {
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+		"switch_core_media_export_jb_stats() exporting JB stats before hangup handlers\n");
+
+	/* Export jitter buffer stats so they're available in hangup hooks */
+	set_jb_stats(session, SWITCH_MEDIA_TYPE_AUDIO);
+	set_jb_stats(session, SWITCH_MEDIA_TYPE_VIDEO);
+	set_jb_stats(session, SWITCH_MEDIA_TYPE_TEXT);
+}
+
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session)
 {
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (!session->media_handle) {
 		return;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO,
+		"[%s] switch_core_media_set_stats() called\n", switch_channel_get_name(channel));
 
 	switch_core_media_sync_stats(session);
 
