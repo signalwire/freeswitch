@@ -1713,6 +1713,8 @@ static void our_sofia_event_callback(nua_event_t event,
 
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 					switch_channel_set_variable(channel, "dlg_req_swap_direction", "true");
+				} else {
+					switch_channel_set_variable(channel, "dlg_req_swap_direction", "false");
 				}
 
 				extract_header_vars(profile, sip, session, nh);
@@ -7229,6 +7231,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 				 switch_channel_set_variable(channel, "dlg_req_swap_direction", "true");
+			} else {
+				switch_channel_set_variable(channel, "dlg_req_swap_direction", "false");
 			}
 
 			extract_header_vars(profile, sip, session, nh);
