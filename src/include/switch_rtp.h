@@ -57,6 +57,7 @@ typedef struct {
 	char body[SWITCH_RTP_MAX_BUF_LEN+4+sizeof(char *)];
 	switch_rtp_hdr_ext_t *ext;
 	char *ebody;
+	switch_time_t received_ts;
 } switch_rtp_packet_t;
 
 typedef enum {

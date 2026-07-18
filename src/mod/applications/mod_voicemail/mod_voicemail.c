@@ -2891,6 +2891,8 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 	if (insert_db && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
+		const char *greeting_id = NULL;
+		char null = '\0';
 		switch_event_t *message_event;
 
 		switch_event_create_subclass(&message_event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
@@ -2910,13 +2912,17 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		}
 
 		switch_event_fire(&message_event);
+		if (!(greeting_id = switch_channel_get_variable(channel, "voicemail_alternate_greet_id"))) {
+			greeting_id = &null;
+		}
 
 		usql = switch_mprintf("insert into voicemail_msgs(created_epoch, read_epoch, username, domain, uuid, cid_name, "
-							  "cid_number, in_folder, file_path, message_len, flags, read_flags, forwarded_by) "
-							  "values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q','%q')", (long) switch_epoch_time_now(NULL),
-							  myid, domain_name, use_uuid, caller_id_name, caller_id_number,
+							  "cid_number, greeting_id, in_folder, file_path, message_len, flags, read_flags, forwarded_by) "
+							  "values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%q','%u','','%q','%q')", (long) switch_epoch_time_now(NULL),
+							  myid, domain_name, use_uuid, caller_id_name, caller_id_number, greeting_id,
 							  myfolder, file_path, message_len, read_flags, switch_str_nil(forwarded_by));
 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", usql);
 		vm_execute_sql(profile, usql, profile->mutex);
 		switch_safe_free(usql);
 
