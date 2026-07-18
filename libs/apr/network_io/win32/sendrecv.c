@@ -90,7 +90,10 @@ APR_DECLARE(fspr_status_t) fspr_socket_recv(fspr_socket_t *sock, char *buf,
     }
 
     *len = dwBytes;
-    return dwBytes == 0 ? APR_EOF : APR_SUCCESS;
+    if (rv == 0 && sock->type == SOCK_STREAM)
+        return APR_EOF;
+
+    return APR_SUCCESS;
 }
 
 
