@@ -1,0 +1,18 @@
+<configuration name="opusfile.conf">
+    <settings>
+        <!-- bitrate is in kbps, per channel, so an entry of 96 is 96 kbps -->
+        <!-- Narrowband (8000 Hz) bitrate -->
+        <param name="bitrate-nb" value="12"/>
+        <!-- Wideband (16000 Hz) bitrate -->
+        <param name="bitrate-wb" value="20"/>
+        <!-- Ultrawideband (32000 Hz) bitrate -->
+        <param name="bitrate-uwb" value="36"/>
+        <!-- Fullband (48000 Hz) bitrate -->
+        <param name="bitrate-fb" value="40"/>
+        <param name="complexity" value="5"/>
+        <!-- Channel format, impacts stereo recordings.  Options are ambix, discrete, and default -->
+        <param name="channel-format" value="discrete"/>
+        <!-- The global maximum samplerate for ALL recorded files in kHz.  Options are 8, 16, 32, and 48 -->
+        <param name="maximum-samplerate" value="48"/>
+    </settings>
+</configuration>
