@@ -1731,8 +1731,12 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				}
 				switch_channel_set_variable(session->channel, varname, vval);
 
-				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
-				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), &engine->ssec[engine->crypto_type]);
+				if (!switch_channel_test_flag(session->channel, CF_LATE_OFFER) || !switch_true(switch_channel_get_variable(session->channel, "disable_crypto_rekeying_on_late_offer"))) {
+					switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1, use_alias);
+					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), &engine->ssec[engine->crypto_type]);
+				}
+				switch_channel_clear_flag(session->channel, CF_LATE_OFFER);
+
 			}
 
 			if (a && b && !strncasecmp(a, b, 23)) {
