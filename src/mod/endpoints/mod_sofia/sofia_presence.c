@@ -2112,6 +2112,8 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 
 #define SOFIA_PRESENCE_COLLISION_DELTA 50
 #define SOFIA_PRESENCE_ROLLOVER_YEAR (86400 * 365 * SOFIA_PRESENCE_COLLISION_DELTA)
+#define SOFIA_PRESENCE_NOTIFY_CSEQ_MAX 2147483647
+#define SOFIA_PRESENCE_NOTIFY_CSEQ_HIGH_WATER 2000000000
 static switch_uint31_t check_presence_epoch(void)
 {
 	time_t now = switch_epoch_time_now(NULL);
@@ -2157,6 +2159,61 @@ uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 	return (uint32_t)callsequence.value;
 }
 
+uint32_t sofia_presence_get_subscription_cseq(sofia_profile_t *profile, const char *call_id)
+{
+	char buf[40] = "";
+	char *sql = NULL;
+	uint32_t callsequence = 0;
+
+	if (zstr(call_id)) {
+		return sofia_presence_get_cseq(profile);
+	}
+
+	switch_mutex_lock(profile->dbh_mutex);
+
+	sql = switch_mprintf("select notify_cseq from sip_subscriptions where call_id='%q' and profile_name='%q' and hostname='%q'",
+						 call_id, profile->name, mod_sofia_globals.hostname);
+	sofia_glue_execute_sql2str(profile, NULL, sql, buf, sizeof(buf));
+	switch_safe_free(sql);
+
+	callsequence = (uint32_t) atol(buf);
+
+	if (callsequence >= SOFIA_PRESENCE_NOTIFY_CSEQ_HIGH_WATER) {
+		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q' and profile_name='%q' and hostname='%q'",
+							 call_id, profile->name, mod_sofia_globals.hostname);
+		switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, 0);
+		sql = NULL;
+
+		switch_mutex_unlock(profile->dbh_mutex);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "Retired presence subscription [%s] on profile [%s] before NOTIFY CSeq exhaustion at [%u]\n",
+						  call_id, profile->name, callsequence);
+
+		return 0;
+	}
+
+	sql = switch_mprintf("update sip_subscriptions set notify_cseq=notify_cseq+1 "
+						 "where call_id='%q' and profile_name='%q' and hostname='%q' and notify_cseq < %d",
+						 call_id, profile->name, mod_sofia_globals.hostname, SOFIA_PRESENCE_NOTIFY_CSEQ_MAX);
+	switch_sql_queue_manager_push_confirm(profile->qm, sql, 0, 0);
+	sql = NULL;
+
+	sql = switch_mprintf("select notify_cseq from sip_subscriptions where call_id='%q' and profile_name='%q' and hostname='%q'",
+						 call_id, profile->name, mod_sofia_globals.hostname);
+	sofia_glue_execute_sql2str(profile, NULL, sql, buf, sizeof(buf));
+	switch_safe_free(sql);
+
+	switch_mutex_unlock(profile->dbh_mutex);
+
+	callsequence = (uint32_t) atol(buf);
+
+	if (!callsequence) {
+		callsequence = sofia_presence_get_cseq(profile);
+	}
+
+	return callsequence;
+}
 
 #define send_presence_notify(_a,_b,_c,_d,_e,_f,_g,_h,_i,_j,_k,_l) \
 _send_presence_notify(_a,_b,_c,_d,_e,_f,_g,_h,_i,_j,_k,_l,__FILE__, __SWITCH_FUNC__, __LINE__)
@@ -2325,7 +2382,10 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	}
 
 
-	callsequence = sofia_presence_get_cseq(profile);
+	callsequence = sofia_presence_get_subscription_cseq(profile, call_id);
+	if (!callsequence) {
+		goto done;
+	}
 
 	if (cparams) {
 		send_contact = switch_mprintf("%s;%s", contact_str, cparams);
@@ -2358,6 +2418,7 @@ static void _send_presence_notify(sofia_profile_t *profile,
 			   SIPTAG_CSEQ(cseq),
 			   TAG_END());
 
+ done:
 
 	switch_safe_free(route_uri);
 	switch_safe_free(dcs);
@@ -3891,6 +3952,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (!zstr(buf)) {
 			sub_state = nua_substate_active;
+		} else if (sip->sip_to && sip->sip_to->a_tag) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "Rejecting stale in-dialog SUBSCRIBE for missing subscription [%s] on profile [%s]\n",
+							  call_id, profile->name);
+			nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			goto end;
 		}
 	}
 
@@ -3951,8 +4018,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			sql = switch_mprintf("insert into sip_subscriptions "
 								 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
-								 "full_via,expires,user_agent,accept,profile_name,hostname,network_port,network_ip,version,orig_proto, full_to) "
-								 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%d','%q',-1,'%q','%q;tag=%q')",
+								 "full_via,expires,user_agent,accept,profile_name,hostname,network_port,network_ip,version,notify_cseq,orig_proto, full_to) "
+								 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%d','%q',-1,0,'%q','%q;tag=%q')",
 								 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : "",
 								 event, contact_str, call_id, full_from, full_via,
 								 (long) switch_epoch_time_now(NULL) + exp_delta,
@@ -4106,13 +4173,15 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			if (zstr(full_agent) || (*full_agent != 'z' && *full_agent != 'Z')) {
 				/* supress endless loop bug with zoiper */
-				callsequence = sofia_presence_get_cseq(profile);
-				cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
-				nua_notify(nh,
-						   SIPTAG_EXPIRES_STR("0"),
-						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
-						   SIPTAG_CSEQ(cseq),
-						   TAG_END());
+				callsequence = sofia_presence_get_subscription_cseq(profile, call_id);
+				if (callsequence) {
+					cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
+					nua_notify(nh,
+							   SIPTAG_EXPIRES_STR("0"),
+							   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+							   SIPTAG_CSEQ(cseq),
+							   TAG_END());
+				}
 			}
 
 
@@ -4169,15 +4238,17 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				if ((p = strchr(full_call_info, ';'))) {
 					p++;
 				}
-				callsequence = sofia_presence_get_cseq(profile);
-				cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
-				nua_notify(nh,
-						   SIPTAG_FROM(sip->sip_to),
-						   SIPTAG_TO(sip->sip_from),
-						   SIPTAG_EXPIRES_STR(exp_delta_str),
-						   SIPTAG_CSEQ(cseq),
-						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
-						   SIPTAG_EVENT_STR("line-seize"), TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)), TAG_END());
+				callsequence = sofia_presence_get_subscription_cseq(profile, call_id);
+				if (callsequence) {
+					cseq = sip_cseq_create(nua_handle_get_home(nh), callsequence, SIP_METHOD_NOTIFY);
+					nua_notify(nh,
+							   SIPTAG_FROM(sip->sip_to),
+							   SIPTAG_TO(sip->sip_from),
+							   SIPTAG_EXPIRES_STR(exp_delta_str),
+							   SIPTAG_CSEQ(cseq),
+							   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+							   SIPTAG_EVENT_STR("line-seize"), TAG_IF(full_call_info, SIPTAG_CALL_INFO_STR(full_call_info)), TAG_END());
+				}
 
 
 
