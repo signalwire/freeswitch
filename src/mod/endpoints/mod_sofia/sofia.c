@@ -6590,6 +6590,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 									  tagi_t tags[])
 {
 	char *call_info = NULL;
+	char *reason_header = NULL;
 	if (sip && session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *uuid;
@@ -6675,6 +6676,14 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", NULL);
 			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", NULL);
 			switch_channel_set_variable_partner(channel, "sip_603plus_reason", NULL);
+		}
+
+		if (sip->sip_reason) {
+			reason_header = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_reason);
+			if (!zstr(reason_header)) {
+				switch_channel_set_variable(channel, "sip_reason", reason_header);
+				switch_channel_set_variable_partner(channel, "sip_reason", reason_header);
+			}
 		}
 
 		if (status >= 400 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
@@ -7243,6 +7252,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 	if (call_info) {
 		su_free(nua_handle_home(nh), call_info);
+	}
+	if (reason_header) {
+		su_free(nua_handle_home(nh), reason_header);
 	}
 
 	if (!session && (status == 180 || status == 183 || status == 200)) {
