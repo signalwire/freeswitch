@@ -1685,7 +1685,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 	int fd = -1;
 	struct stat st;
 	switch_ssize_t l;
-	void *m;
+	void *m = NULL;
 	switch_xml_root_t root;
 
 	if ((fd = open(file, O_RDONLY, 0)) > -1) {
@@ -1715,6 +1715,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 	}
 
  error:
+
+	switch_safe_free(m);
+	if (fd > -1) {
+		close(fd);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing File [%s]\n", file);
 
