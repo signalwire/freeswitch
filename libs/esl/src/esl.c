@@ -411,21 +411,33 @@ ESL_DECLARE(size_t) esl_url_encode(const char *url, char *buf, size_t len)
 	return x;
 }
 
+static int hex2byte(unsigned char c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
 ESL_DECLARE(char *)esl_url_decode(char *s)
 {
-	char *o;
-	unsigned int tmp;
+    char *start = s;
+    char *o = s;
+    int h, l;
 
-	for (o = s; *s; s++, o++) {
-		if (*s == '%' && strlen(s) > 2 && sscanf(s + 1, "%2x", &tmp) == 1) {
-			*o = (char) tmp;
-			s += 2;
-		} else {
-			*o = *s;
-		}
-	}
-	*o = '\0';
-	return s;
+    while (*s) {
+        if (*s == '%'
+            && (h = hex2byte(*(s+1))) != -1
+            && (l = hex2byte(*(s+2))) != -1)
+        {
+            *o++ = (char)((h << 4) | l);
+            s += 3;
+        } else {
+            *o++ = *s++;
+        }
+    }
+    *o = '\0';
+    return start;
 }
 
 static int sock_setup(esl_handle_t *handle)
