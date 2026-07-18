@@ -390,8 +390,8 @@
         <param name="sip-ip" value="$${local_ip_v4}"/>
         <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
         <param name="ext-sip-ip" value="$${local_ip_v4}"/>
-        <param name="rtp-timeout-sec" value="300"/>
-        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="media_timeout" value="300000"/>
+        <param name="media_hold_timeout" value="1800000"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
         <param name="tls" value="false"/>
@@ -431,8 +431,8 @@
         <param name="sip-ip" value="$${local_ip_v4}"/>
         <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
         <param name="ext-sip-ip" value="$${local_ip_v4}"/>
-        <param name="rtp-timeout-sec" value="300"/>
-        <param name="rtp-hold-timeout-sec" value="1800"/>
+        <param name="media_timeout" value="300000"/>
+        <param name="media_hold_timeout" value="1800000"/>
         <param name="session-timeout" value="600"/>
         <param name="minimum-session-expires" value="90"/>
         <param name="tls" value="false"/>
@@ -521,8 +521,8 @@
 	<!-- Shouldn't set these on IPv6 -->
     <!--<param name="ext-rtp-ip" value="auto-nat"/>-->
     <!--<param name="ext-sip-ip" value="auto-nat"/>-->
-    <param name="rtp-timeout-sec" value="300"/>
-    <param name="rtp-hold-timeout-sec" value="1800"/>
+    <param name="media_timeout" value="300000"/>
+    <param name="media_hold_timeout" value="1800000"/>
     <!--<param name="enable-3pcc" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
