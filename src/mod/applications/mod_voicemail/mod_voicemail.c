@@ -1623,6 +1623,10 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		args.input_callback = control_playback;
 		TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_MESSAGE_NUMBER_MACRO, input, NULL, &args));
 
+		if (!zstr(cbt->cid_number) && (switch_channel_var_true(channel, "vm_announce_cid_after_msg_number"))) {
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_PHONE_NUMBER_MACRO, cbt->cid_number, NULL, NULL));
+		}
+
 	  play_file:
 
 		if (!*cc.buf && (profile->play_date_announcement == VM_DATE_FIRST)) {
