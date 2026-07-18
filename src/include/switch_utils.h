@@ -1488,6 +1488,7 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_free(switch_frame_buffer_t *fb, switch_frame_t **frameP);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_dup(switch_frame_buffer_t *fb, switch_frame_t *orig, switch_frame_t **clone);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_destroy(switch_frame_buffer_t **fbP);
+SWITCH_DECLARE(switch_status_t) switch_frame_buffer_flush(switch_frame_buffer_t *fb);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_create(switch_frame_buffer_t **fbP, switch_size_t qlen);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_push(switch_frame_buffer_t *fb, void *ptr);
 SWITCH_DECLARE(switch_status_t) switch_frame_buffer_trypush(switch_frame_buffer_t *fb, void *ptr);
