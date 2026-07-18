@@ -202,6 +202,7 @@ SWITCH_STANDARD_API(skel_function)
 				}
 			}
 			printf("\n\n");
+			switch_safe_free(foo);
 		}
 	}
 
