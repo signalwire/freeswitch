@@ -1771,7 +1771,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
 		switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, globals.agent_originate_timeout, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
+		status = switch_ivr_originate(member_session, &agent_session, &cause, dialstr, globals.agent_originate_timeout, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
 
 		/* Search for loopback agent */
 		if (status == SWITCH_STATUS_SUCCESS) {
@@ -1922,6 +1922,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			switch_safe_free(sql);
 
 			if (atoi(res) == 0) {
+				/* Unexpected, it's possible the agent channel wasn't created when the agent that won the race was connected, so hangup the channel */
+				switch_channel_hangup(switch_core_session_get_channel(agent_session), SWITCH_CAUSE_LOSE_RACE);
 				goto done;
 			}
 			switch_core_session_hupall_matching_var("cc_member_pre_answer_uuid", h->member_uuid, SWITCH_CAUSE_LOSE_RACE);
