@@ -1018,6 +1018,14 @@ SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *fla
 		*flag_pole &= ~RTP_BUG_FLUSH_JB_ON_DTMF;
 	}
 
+	if (switch_stristr("DONT_REPORT_FLUSHED_AS_LOST", str)) {
+		*flag_pole |= RTP_BUG_DONT_REPORT_FLUSHED_AS_LOST;
+	}
+
+	if (switch_stristr("~DONT_REPORT_FLUSHED_AS_LOST", str)) {
+		*flag_pole &= ~RTP_BUG_DONT_REPORT_FLUSHED_AS_LOST;
+	}
+
 	if (switch_stristr("ALWAYS_AUTO_ADJUST", str)) {
 		*flag_pole |= (RTP_BUG_ALWAYS_AUTO_ADJUST | RTP_BUG_ACCEPT_ANY_PACKETS);
 	}

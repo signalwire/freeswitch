@@ -1854,6 +1854,14 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	}
 
 	pkt_lost = expected_pkt - stats->period_pkt_count;
+
+	if (rtp_session->rtp_bugs & RTP_BUG_DONT_REPORT_FLUSHED_AS_LOST) {
+		switch_size_t fc = rtp_session->stats.inbound.flush_packet_count;
+		if (fc > stats->last_rpt_flush_count) {
+			pkt_lost -= (int32_t)(fc - stats->last_rpt_flush_count); /* flushed by FS = arrived, not transport loss */
+		}
+	}
+
 	if (pkt_lost < 0) pkt_lost = 0;
 
 	stats->cum_lost=stats->cum_lost+pkt_lost;
@@ -1920,6 +1928,7 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 	stats->bad_seq = (1<<16) + 1; /* Make sure we wont missmatch 2 consecutive packets, so seq == bad_seq is false */
 	stats->cum_lost = 0;
 	stats->period_pkt_count = 0;
+	stats->last_rpt_flush_count = rtp_session->stats.inbound.flush_packet_count;
 	stats->sent_pkt_count = 0;
 	stats->pkt_count = 0;
 	stats->rtcp_rtp_count = 0;
@@ -2468,6 +2477,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			stats->last_rpt_ext_seq = stats->high_ext_seq_recv;
 			stats->last_rpt_ts = rtp_session->write_timer.samplecount;
 			stats->period_pkt_count = 0;
+			stats->last_rpt_flush_count = rtp_session->stats.inbound.flush_packet_count;
 		}
 
 
