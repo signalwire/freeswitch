@@ -549,6 +549,28 @@ AC_ARG_ENABLE(libyuv,
 
 AM_CONDITIONAL([ENABLE_LIBYUV],[test "${enable_libyuv}" = "yes"])
 
+# libyuv's AArch64 SIMD kernels (dot-product, i8mm, SVE, SME) use instructions
+# outside the baseline armv8-a target, so they must be compiled with per-file
+# -march flags (see Makefile.am). These conditionals mirror the logic in
+# libs/libyuv/CMakeLists.txt.
+AM_CONDITIONAL([LIBYUV_AARCH64],
+  [test "x$host_cpu" = "xaarch64" || test "x$host_cpu" = "xarm64"])
+
+libyuv_have_sme=no
+AS_IF([test "x$host_cpu" = "xaarch64" || test "x$host_cpu" = "xarm64"], [
+  AC_LANG_PUSH([C])
+  libyuv_save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -march=armv8.5-a+i8mm+sme"
+  AC_MSG_CHECKING([whether $CC supports AArch64 SME kernels])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[__arm_locally_streaming void func(void) { }
+int main(void) { return 0; }]])],
+    [libyuv_have_sme=yes])
+  AC_MSG_RESULT([$libyuv_have_sme])
+  CFLAGS="$libyuv_save_CFLAGS"
+  AC_LANG_POP([C])
+])
+AM_CONDITIONAL([LIBYUV_AARCH64_SME], [test "x$libyuv_have_sme" = "xyes"])
+
 AC_ARG_ENABLE(libvpx,
 [AC_HELP_STRING([--disable-libvpx],[build without libvpx])],[enable_libvpx="$enableval"],[enable_libvpx="yes"])
 
