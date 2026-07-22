@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_loopback"/>
+        <load module="mod_sndfile"/>
+      </modules>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="loglevel" value="debug"/>
+      </settings>
+    </configuration>
+
+    <configuration name="switch.conf" description="Core Configuration">
+      <!--
+        Active interface allowlist used by the test. Because at least one <allow> entry
+        is present, enforcement is ON: only the interfaces below may register.
+      -->
+      <interface-allowlist>
+        <!-- Autoloaded helper modules permitted wholesale. -->
+        <allow name="mod_console"/>
+        <allow name="mod_loopback"/>
+        <allow name="mod_sndfile"/>
+
+        <!-- Type-qualified: only the API named "status" (the JSON API "status" stays blocked). -->
+        <allow name="mod_commands.status.api"/>
+        <!-- Name only: any type named "version". -->
+        <allow name="mod_commands.version"/>
+        <!-- Needed so the test can invoke the dump API itself. -->
+        <allow name="mod_commands.interface_allowlist_dump"/>
+      </interface-allowlist>
+    </configuration>
+
+    <configuration name="timezones.conf" description="Timezones">
+      <timezones>
+          <zone name="GMT" value="GMT0" />
+      </timezones>
+    </configuration>
+  </section>
+
+</document>

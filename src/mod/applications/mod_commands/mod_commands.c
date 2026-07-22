@@ -6665,6 +6665,26 @@ SWITCH_STANDARD_API(bg_spawn_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define INTERFACE_ALLOWLIST_DUMP_SYNTAX "[modules] [plain]"
+SWITCH_STANDARD_API(interface_allowlist_dump_function)
+{
+	switch_bool_t by_module = SWITCH_FALSE;
+	switch_bool_t xml = SWITCH_TRUE;
+
+	if (!zstr(cmd)) {
+		if (switch_stristr("module", cmd)) {
+			by_module = SWITCH_TRUE;
+		}
+		if (switch_stristr("plain", cmd) || switch_stristr("list", cmd)) {
+			xml = SWITCH_FALSE;
+		}
+	}
+
+	switch_loadable_module_dump_interface_allowlist(stream, by_module, xml);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(strftime_tz_api_function)
 {
 	char *format = NULL;
@@ -7615,6 +7635,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 		SWITCH_ADD_API(commands_api_interface, "spawn", "Execute a spawn command without capturing it's output", spawn_function, SPAWN_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "spawn_stream", "Execute a spawn command and capture it's output", spawn_stream_function, SPAWN_SYNTAX);
 	}
+
+	SWITCH_ADD_API(commands_api_interface, "interface_allowlist_dump", "Dump loaded interfaces in interface-allowlist config format", interface_allowlist_dump_function, INTERFACE_ALLOWLIST_DUMP_SYNTAX);
+	switch_console_set_complete("add interface_allowlist_dump");
+	switch_console_set_complete("add interface_allowlist_dump modules");
+	switch_console_set_complete("add interface_allowlist_dump plain");
 
 	SWITCH_ADD_API(commands_api_interface, "acl", "Compare an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);	SWITCH_ADD_API(commands_api_interface, "coalesce", "Return first nonempty parameter", coalesce_function, COALESCE_SYNTAX);
