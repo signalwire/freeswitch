@@ -319,7 +319,7 @@ Build-Depends:
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
  bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.17),
- libspandsp3-dev,
+ libspandsp4-dev,
 # used to format the private freeswitch apt-repo key properly
  gnupg,
 # module build-depends
