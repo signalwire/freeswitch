@@ -1765,6 +1765,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "loopback_bowout_on_execute", "false");
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "ignore_early_media", "true");
 
+		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "codec_string", "G729,PCMU,PCMA,G722,iLBC@30i");
+		sip_domain = switch_str_nil(switch_channel_get_variable(member_channel, "sip_domain"));
+                if (sip_domain) {
+                        switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "sip_invite_domain", sip_domain);
+		}
 		switch_channel_process_export(member_channel, NULL, ovars, "cc_export_vars");
 
 		t_agent_called = local_epoch_time_now(NULL);
