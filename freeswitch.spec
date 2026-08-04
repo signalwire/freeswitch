@@ -131,7 +131,7 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.17
+BuildRequires: sofia-sip-devel >= 1.13.18
 BuildRequires: spandsp4-devel >= 3.1.1
 BuildRequires: pcre2-devel 
 BuildRequires: speex-devel 

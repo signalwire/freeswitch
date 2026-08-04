@@ -710,7 +710,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.1.1],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp4 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.17],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.18],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
