@@ -16060,8 +16060,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec %s decoder error!\n",
 							  frame->codec->codec_interface->interface_name);
+
+			/* Drop the frame rather than tear the call down: any non-success status here makes
+			   switch_ivr_bridge end the bridge and hang up both legs. The read path in
+			   switch_core_io.c already tolerates this; give up only after 10 in a row. */
+			if (++session->write_decoder_errors < 10) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
 			goto error;
 		}
+
+		session->write_decoder_errors = 0;
 	}
 
 
