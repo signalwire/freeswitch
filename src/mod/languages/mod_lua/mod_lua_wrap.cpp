@@ -10831,6 +10831,9 @@ SWIG_PropagateClientData(void) {
           if (equiv->type && !equiv->type->clientdata)
             SWIG_TypeClientData(equiv->type, swig_module.types[i]->clientdata);
         }
+        if (equiv == equiv->next) {
+            break;
+        }
         equiv = equiv->next;
       }
     }
