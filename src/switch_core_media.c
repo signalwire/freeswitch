@@ -47,7 +47,6 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 static void gen_ice(switch_core_session_t *session, switch_media_type_t type, const char *ip, switch_port_t port);
 //#define GOOGLE_ICE
 #define RTCP_MUX
-#define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : (type == SWITCH_MEDIA_TYPE_AUDIO ? "audio" : "text")
 #define VIDEO_REFRESH_FREQ 1000000
@@ -3041,12 +3040,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				/* check for timing issues */
 				if (smh->media_flags[SCMF_AUTOFIX_TIMING] && type == SWITCH_MEDIA_TYPE_AUDIO && engine->read_impl.samples_per_second) {
 					char is_vbr;
+					int32_t max_check_frames = smh->mparams->max_codec_check_frames;
 					is_vbr = engine->read_impl.encoded_bytes_per_packet?0:1;
 
 					engine->check_frames++;
 					/* CBR */
 					if ((smh->media_flags[SCMF_AUTOFIX_TIMING] && (engine->read_frame.datalen % 10) == 0)
-							&& (engine->check_frames < MAX_CODEC_CHECK_FRAMES) && !is_vbr) {
+							&& (max_check_frames < 0 || engine->check_frames < (uint32_t) max_check_frames) && !is_vbr) {
 						engine->check_frames++;
 
 						if (engine->last_ts && engine->read_frame.datalen != engine->read_impl.encoded_bytes_per_packet) {
@@ -3080,7 +3080,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 														  "[CBR]: Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
 														  "That seems hard to believe so I am going to go on ahead and um ignore that, mmkay?\n",
 														  (int) codec_ms);
-										engine->check_frames = MAX_CODEC_CHECK_FRAMES;
+										/* stop checking for the rest of the call, unless we were asked to check forever */
+										if (max_check_frames >= 0) {
+											engine->check_frames = (uint32_t) max_check_frames;
+										}
 										goto skip;
 									}
 

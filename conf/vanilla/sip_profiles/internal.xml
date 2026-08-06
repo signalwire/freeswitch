@@ -373,6 +373,8 @@
     <!--<param name="outbound-use-uuid-as-callid" value="true"/>-->
     <!-- set to false disable this feature -->
     <!--<param name="rtp-autofix-timing" value="false"/>-->
+    <!-- how many initial frames rtp-autofix-timing inspects before stop, -1 to inspect for the whole call (default 50) -->
+    <!--<param name="rtp-autofix-max-codec-check-frames" value="-1"/>-->
 
     <!-- set this param to false if your gateway for some reason hates X- headers that it is supposed to ignore-->
     <!--<param name="pass-callee-id" value="false"/>-->
