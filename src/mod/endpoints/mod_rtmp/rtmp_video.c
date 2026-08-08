@@ -448,13 +448,15 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 
 		}
 		break;
-	case 24:
-		 {// for aggregated SPS and PPSs
+	case 24: //STAP-A
+		 {/* single-time aggregation packet carrying several NAL units (e.g. SPS and PPS) */
 			uint8_t *q = payload + 1;
 			uint16_t nalu_size = 0;
 			int nt = 0;
 			int nidx = 0;
-			while (nidx < datalen - 1) {
+			/* q spans datalen - 1 bytes; the loop body reads a 2-byte length prefix
+			   (q[nidx] and q[nidx + 1]), so both must be in bounds before entering */
+			while (nidx < datalen - 2) {
 				/* get NALU size */
 				nalu_size = (q[nidx] << 8) | (q[nidx + 1]);
 
@@ -463,6 +465,13 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 				if (nalu_size == 0) {
 					nidx++;
 					continue;
+				}
+
+				/* declared NALU size must fit the remaining aggregation payload */
+				if (nalu_size > (datalen - 1) - nidx) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						"STAP-A NALU size %u exceeds remaining %d bytes\n", nalu_size, (datalen - 1) - nidx);
+					break;
 				}
 
 				/* write NALU data */
@@ -513,44 +522,55 @@ switch_status_t rtmp_rtp2rtmpH264(rtp2rtmp_helper_t *helper, switch_frame_t *fra
 
 		int i = 0;
 		uint16_t size;
+		uint16_t sps_size = amf0_string_get_size(helper->sps);
+		uint16_t pps_size = amf0_string_get_size(helper->pps);
 		uint8_t *sps = amf0_string_get_uint8_ts(helper->sps);
 		unsigned char buf[AMF_MAX_SIZE * 2]; /* make sure the buffer is big enough */
+		/* fixed framing around the payloads: 11 header + 2 sps len + 1 pps count + 2 pps len */
+		const size_t avc_seq_overhead = 11 + 2 + 1 + 2;
 
-		buf[i++] = 0x17;   // i = 0
-		buf[i++] = 0;      // 0 for sps/pps packet
-		buf[i++] = 0;      // timestamp
-		buf[i++] = 0;      // timestamp
-		buf[i++] = 0;      // timestamp
-		buf[i++] = 1;      // AVC Decode Configuration Version
-		buf[i++] = sps[1]; // H264 profile 0x42 = Baseline
-		buf[i++] = sps[2]; // Compatiable Level
-		buf[i++] = sps[3]; // H264 profile 0x1e = profile 30, 0x1f = profile 31
-		buf[i++] = 0xff;   // 111111 11   0B11 = 3 = lengthSizeMinusOne, LengtSize = 4
-		buf[i++] = 0xe1;   // i = 10, number of sps = 1
+		/* header + sps + pps must fit buf; the SPS must also carry the 4 profile
+		   bytes copied into the header below */
+		if (sps_size < 4 || avc_seq_overhead + sps_size + pps_size > sizeof(buf)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"SPS/PPS too large for AVC sequence header (sps=%u pps=%u), skipping\n", sps_size, pps_size);
+		} else {
+			buf[i++] = 0x17;   // i = 0
+			buf[i++] = 0;      // 0 for sps/pps packet
+			buf[i++] = 0;      // timestamp
+			buf[i++] = 0;      // timestamp
+			buf[i++] = 0;      // timestamp
+			buf[i++] = 1;      // AVC Decode Configuration Version
+			buf[i++] = sps[1]; // H264 profile 0x42 = Baseline
+			buf[i++] = sps[2]; // Compatiable Level
+			buf[i++] = sps[3]; // H264 profile 0x1e = profile 30, 0x1f = profile 31
+			buf[i++] = 0xff;   // 111111 11   0B11 = 3 = lengthSizeMinusOne, LengtSize = 4
+			buf[i++] = 0xe1;   // i = 10, number of sps = 1
 
-		// 2 bytes sps size
-		size = htons(amf0_string_get_size(helper->sps));
-		memcpy(buf + i, &size, 2);
-		i += 2;
-		// sps data
-		memcpy(buf + i, sps, amf0_string_get_size(helper->sps));
-		buf[i] = 0x67; // set sps header, eyebeam sends 0x27, we set nri = 3, set it to be most important
-		i += amf0_string_get_size(helper->sps);
+			// 2 bytes sps size
+			size = htons(sps_size);
+			memcpy(buf + i, &size, 2);
+			i += 2;
+			// sps data
+			memcpy(buf + i, sps, sps_size);
+			buf[i] = 0x67; // set sps header, eyebeam sends 0x27, we set nri = 3, set it to be most important
+			i += sps_size;
 
-		buf[i++] = 0x01; // number of pps
+			buf[i++] = 0x01; // number of pps
 
-		// 2 bytes pps size
-		size = htons(amf0_string_get_size(helper->pps));
-		memcpy(buf + i, &size, 2);
-		i += 2;
-		// pps data
-		memcpy(buf + i, amf0_string_get_uint8_ts(helper->pps), amf0_string_get_size(helper->pps));
-		buf[i] = 0x68; // set pps header
-		i += amf0_string_get_size(helper->pps);
+			// 2 bytes pps size
+			size = htons(pps_size);
+			memcpy(buf + i, &size, 2);
+			i += 2;
+			// pps data
+			memcpy(buf + i, amf0_string_get_uint8_ts(helper->pps), pps_size);
+			buf[i] = 0x68; // set pps header
+			i += pps_size;
 
-		amf0_data_free(helper->avc_conf);
-		helper->avc_conf = amf0_string_new(buf, i);
-		helper->send_avc = SWITCH_TRUE;
+			amf0_data_free(helper->avc_conf);
+			helper->avc_conf = amf0_string_new(buf, i);
+			helper->send_avc = SWITCH_TRUE;
+		}
 	}
 
 	if (frame->m) {
