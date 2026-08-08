@@ -430,14 +430,17 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 14)) < need) {
-		while (!wsh->down && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) ;
+		while (!wsh->down && wsh->datalen < need) {
+			issize_t r = ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen);
 
-#if 0
-		if (0 && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
-			 /* too small - protocol err */
-			return ws_close(wsh, WS_PROTO_ERR);
+			if (r < 1) {
+				/* invalid read - protocol err .. */
+				*oc = WSOC_CLOSE;
+				return ws_close(wsh, WS_PROTO_ERR);
+			}
+
+			wsh->datalen += r;
 		}
-#endif
 	}
 
 	*oc = *wsh->buffer & 0xf;
@@ -516,6 +519,12 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			}
 
 			need = (wsh->plen - (wsh->datalen - need));
+
+			if (need < 0) {
+				/* more buffered than the frame declares - protocol err */
+				*oc = WSOC_CLOSE;
+				return ws_close(wsh, WS_PROTO_ERR);
+			}
 
 			/* Reserve 1 byte for the trailing NUL below. */
 			if ((need + wsh->datalen) >= (issize_t)wsh->buflen) {
