@@ -106,6 +106,53 @@ FST_TEARDOWN_END()
 	}
 	FST_TEST_END()
 
+	FST_TEST_BEGIN(test_stun_get_xor_mapped_address_short_ipv6)
+	{
+		/*
+		 * An XOR-MAPPED-ADDRESS attribute whose family byte claims IPv6 (2)
+		 * but whose value is only the 8-byte IPv4 size must be rejected:
+		 * switch_stun_packet_attribute_get_xor_mapped_address must not read
+		 * or XOR a 20-byte IPv6 address out of the 8-byte value. The packet
+		 * is routed through switch_stun_packet_parse first so the attribute
+		 * length is in host byte order, as the live callers see it.
+		 */
+		uint8_t buf[512] = { 0 };
+		switch_stun_packet_t *packet;
+		switch_stun_packet_attribute_t *attr;
+		char out_ip[64];
+		uint16_t out_port = 0xffff;
+		uint8_t ret;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, NULL, buf);
+
+		/* Value layout: wasted(1) + family(1) + port(2) + address(4) = 8 bytes. */
+		attr = (switch_stun_packet_attribute_t *)packet->first_attribute;
+		attr->type = htons(SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS);
+		attr->length = htons(8);
+		attr->value[0] = 0;	/* wasted */
+		attr->value[1] = 2;	/* family byte claims IPv6 */
+		attr->value[2] = 0;
+		attr->value[3] = 0;
+		attr->value[4] = 0x01;
+		attr->value[5] = 0x02;
+		attr->value[6] = 0x03;
+		attr->value[7] = 0x04;
+		packet->header.length = htons(4 + 8);
+
+		packet = switch_stun_packet_parse(buf, 20 + 4 + 8);
+		fst_requires(packet != NULL);
+
+		attr = (switch_stun_packet_attribute_t *)packet->first_attribute;
+		fst_xcheck(attr->length == 8, "parse accepts the 8-byte family-2 XOR-MAPPED-ADDRESS attribute");
+
+		memset(out_ip, 'x', sizeof(out_ip));
+		ret = switch_stun_packet_attribute_get_xor_mapped_address(attr, &packet->header, out_ip, sizeof(out_ip), &out_port);
+		fst_xcheck(ret == 0, "short IPv6 XOR-MAPPED-ADDRESS attribute is rejected");
+		fst_xcheck(out_ip[0] == '\0', "output address string left empty on reject");
+		fst_xcheck(out_port == 0, "output port left defined on reject");
+	}
+	FST_TEST_END()
+
 	FST_TEST_BEGIN(test_stun_add_binded_address_ipv4)
 	{
 		/*
