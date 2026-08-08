@@ -7108,6 +7108,32 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	return status;
 }
 
+/* Number of NACK FCI entries (each a 32-bit word) carried in extp, capped to what fits past the
+   RTPFB header in block_len bytes. block_len is the length of this RTCP block in bytes; the
+   header's own length field is honored only up to that cap. */
+static int rtcp_nack_fci_count(const rtcp_ext_msg_t *extp, switch_size_t block_len)
+{
+	int claimed, fits;
+
+	/* No room for any FCI entry past the fixed RTPFB header (also keeps the unsigned
+	   subtraction below from wrapping on a short block). */
+	if (block_len <= sizeof(switch_rtcp_ext_hdr_t)) {
+		return 0;
+	}
+
+	/* RTCP length is the packet size in 32-bit words minus one; the RTPFB header is three words
+	   (common header plus two SSRCs), leaving (length - 2) words of NACK FCI entries. */
+	claimed = ntohs(extp->header.length) - 2;
+	if (claimed <= 0) {
+		return 0;
+	}
+
+	/* Entries that fit in the validated block length. */
+	fits = (int) ((block_len - sizeof(switch_rtcp_ext_hdr_t)) / sizeof(uint32_t));
+
+	return claimed < fits ? claimed : fits;
+}
+
 static void handle_nack(switch_rtp_t *rtp_session, uint32_t nack)
 {
 	switch_size_t bytes = 0;
@@ -7224,13 +7250,13 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 
 		if (msg->header.type == _RTCP_PT_RTPFB && extp->header.fmt == _RTCP_RTPFB_NACK) {
 			uint32_t *nack = (uint32_t *) extp->body;
-			int i;
+			int i, nack_count = rtcp_nack_fci_count(extp, bytes);
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2, "%s Got NACK count %d\n", 
-							  switch_core_session_get_name(rtp_session->session), ntohs(extp->header.length) - 2);
+							  switch_core_session_get_name(rtp_session->session), nack_count);
 
 
-			for (i = 0; i < ntohs(extp->header.length) - 2; i++) {
+			for (i = 0; i < nack_count; i++) {
 				handle_nack(rtp_session, nack[i]);
 			}
 
