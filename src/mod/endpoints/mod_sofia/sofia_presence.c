@@ -2017,7 +2017,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:queue+%s", to_user);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "queue");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "queue");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2031,7 +2031,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:park+%s", to_user);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "park");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "park");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2045,7 +2045,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:pickup+%s", to_user);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "pickup");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "pickup");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2058,7 +2058,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:conf+%s@%s", to_user, host);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "conference");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "conference");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2073,7 +2073,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 		local_user = from_user;
 		buf_to_free = switch_mprintf("**%s@%s", from_user, local_host);
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, to_user);
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", to_user);
 		remote_user = to_user;
 		remote_host = local_host;
 	}
