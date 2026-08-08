@@ -1013,7 +1013,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	char username[STUN_USERNAME_MAX_SIZE] = { 0 };
 	unsigned char buf[1500] = { 0 };
 	switch_size_t cpylen = len;
-	int xlen = 0;
 	int ok = 1;
 	uint32_t *pri = NULL;
 	int is_rtcp = ice == &rtp_session->rtcp_ice;
@@ -1100,7 +1099,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	calc_elapsed(rtp_session, ice);
 
-	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
+	end_buf = buf + ((sizeof(buf) > SWITCH_STUN_PACKET_MIN_LEN + packet->header.length) ? SWITCH_STUN_PACKET_MIN_LEN + packet->header.length : sizeof(buf));
 
 	switch_stun_packet_first_attribute(packet, attr);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8, "%s STUN PACKET TYPE: %s\n",
@@ -1179,12 +1178,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			break;
 		}
 
-		if (!switch_stun_packet_next_attribute(attr, end_buf)) {
-			break;
-		}
-
-		xlen += 4 + switch_stun_attribute_padded_length(attr);
-	} while (xlen <= packet->header.length);
+	} while (switch_stun_packet_next_attribute(attr, end_buf));
 
 	if ((ice->type & ICE_GOOGLE_JINGLE) && ok) {
 		ok = !strcmp(ice->user_ice, username);

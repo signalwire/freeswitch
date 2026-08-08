@@ -312,6 +312,169 @@ FST_TEARDOWN_END()
 				   "a MESSAGE-INTEGRITY-SHA256 attribute after MESSAGE-INTEGRITY is tolerated");
 	}
 	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_get_username_terminates)
+	{
+		/* get_username must always NUL-terminate within the caller's buffer, even when the
+		   attribute value is as long as or longer than the buffer: callers use the result as a C string. */
+		uint8_t abuf[128] = { 0 };
+		switch_stun_packet_attribute_t *attr = (switch_stun_packet_attribute_t *)abuf;
+		char dst[32];
+		char *ret;
+		int i;
+
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = 64;	/* host order: the accessor reads attribute->length directly, as post-parse callers do */
+		for (i = 0; i < 64; i++) {
+			attr->value[i] = 'A';
+		}
+
+		memset(dst, 'x', sizeof(dst));
+		ret = switch_stun_packet_attribute_get_username(attr, dst, sizeof(dst));
+		fst_xcheck(ret == dst, "get_username returns the destination buffer");
+		fst_xcheck(dst[sizeof(dst) - 1] == '\0', "over-long USERNAME is NUL-terminated at the last byte");
+		fst_xcheck(strlen(dst) == sizeof(dst) - 1, "over-long USERNAME is truncated to len-1");
+
+		attr->length = 5;
+		memcpy(attr->value, "abcde", 5);
+		memset(dst, 'x', sizeof(dst));
+		switch_stun_packet_attribute_get_username(attr, dst, sizeof(dst));
+		fst_xcheck(strlen(dst) == 5, "short USERNAME is copied and terminated at its own length");
+		fst_check_string_equals(dst, "abcde");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_next_attribute_walks_whole_attributes)
+	{
+		/* Positive test: the iterator visits each whole attribute and stops exactly at the end of the
+		   last one, including an attribute whose value ends on the buffer boundary. Guards against a
+		   future change breaking normal iteration; it does not distinguish the header/TLV bounds fix
+		   (a naive iterator passes it too). */
+		uint8_t buf[8] = { 0 };
+		switch_stun_packet_attribute_t *attr;
+		void *end = buf + sizeof(buf);
+
+		attr = (switch_stun_packet_attribute_t *)buf;
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = 0;
+		attr = (switch_stun_packet_attribute_t *)(buf + 4);
+		attr->type = htons(SWITCH_STUN_ATTR_PRIORITY);
+		attr->length = 0;
+
+		attr = (switch_stun_packet_attribute_t *)buf;
+		fst_xcheck(switch_stun_packet_next_attribute(attr, end) != 0, "iterator advances to the second whole attribute");
+		fst_xcheck((uint8_t *)attr == buf + 4, "iterator lands exactly on the second attribute");
+		fst_xcheck(switch_stun_packet_next_attribute(attr, end) == 0, "iterator stops after the last whole attribute");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_next_attribute_truncated_header)
+	{
+		/* After the first attribute only 2 bytes remain before end, so the next attribute's 4-byte
+		   header does not fit. The iterator must confirm the header is fully in-bounds before reading
+		   it and stop; reading attribute->length here would run past the buffer. The trailing bytes are
+		   non-zero so the type sentinel does not stop the walk first, so the out-of-bounds read (if the
+		   header check is missing) is exercised and caught under ASAN. */
+		uint8_t buf[6] = { 0 };
+		switch_stun_packet_attribute_t *attr = (switch_stun_packet_attribute_t *)buf;
+		void *end = buf + sizeof(buf);
+
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = 0;
+		buf[4] = 0xff;	/* non-zero type for the truncated trailing header */
+		buf[5] = 0xff;
+
+		fst_xcheck(switch_stun_packet_next_attribute(attr, end) == 0, "iterator stops at a truncated trailing attribute header without reading past end");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_next_attribute_hbo)
+	{
+		/* Positive test for the _hbo iterator, which reads attribute lengths in network byte order
+		   (ntohs) for callers walking raw on-the-wire packets that have not been through
+		   switch_stun_packet_parse, since parse byte-swaps type and length in place: it must advance by
+		   the network-order length and stop at the end. The plain macro would misread these
+		   network-order lengths; this confirms the _hbo variant walks normal attributes, not a bounds
+		   regression. */
+		uint8_t buf[16] = { 0 };
+		switch_stun_packet_attribute_t *attr;
+		void *end = buf + sizeof(buf);
+
+		attr = (switch_stun_packet_attribute_t *)buf;
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = htons(4);	/* network order: _hbo applies ntohs, the plain macro would misread this */
+		attr = (switch_stun_packet_attribute_t *)(buf + 8);
+		attr->type = htons(SWITCH_STUN_ATTR_PRIORITY);
+		attr->length = htons(4);
+
+		attr = (switch_stun_packet_attribute_t *)buf;
+		fst_xcheck(switch_stun_packet_next_attribute_hbo(attr, end) != 0, "hbo iterator advances to the second attribute");
+		fst_xcheck((uint8_t *)attr == buf + 8, "hbo iterator lands on the second attribute using the network-order length");
+		fst_xcheck(switch_stun_packet_next_attribute_hbo(attr, end) == 0, "hbo iterator stops after the last attribute");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_next_attribute_value_overruns)
+	{
+		/* An attribute whose 4-byte header fits before end but whose declared value extends past end
+		   (more value bytes than remain) must be rejected, so the caller never reads the value out of
+		   bounds. This exercises the value-length bound distinctly from a truncated header. */
+		uint8_t buf[12] = { 0 };
+		switch_stun_packet_attribute_t *attr;
+		void *end = buf + 10;	/* ends inside the second attribute's declared value */
+
+		attr = (switch_stun_packet_attribute_t *)buf;
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = 0;	/* host order: empty leading attribute */
+		attr = (switch_stun_packet_attribute_t *)(buf + 4);
+		attr->type = htons(SWITCH_STUN_ATTR_PRIORITY);
+		attr->length = 4;	/* value would occupy buf[8..11], past end (buf+10) */
+
+		attr = (switch_stun_packet_attribute_t *)buf;
+		fst_xcheck(switch_stun_packet_next_attribute(attr, end) == 0, "attribute whose value overruns end is rejected");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_walk_reaches_trailing_attribute)
+	{
+		/* Positive test: parse + walk over a well-formed multi-attribute packet reaches every attribute,
+		   including a trailing one whose value ends on the last byte of the message. end_buf is computed
+		   here rather than taken from switch_stun_lookup or handle_ice, so how those callers derive it is
+		   not covered. */
+		uint8_t buf[512] = { 0 };
+		switch_stun_packet_t *packet;
+		switch_stun_packet_attribute_t *attr;
+		void *end_buf;
+		int count;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, NULL, buf);
+
+		attr = (switch_stun_packet_attribute_t *)packet->first_attribute;
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = htons(4);
+		memcpy(attr->value, "abcd", 4);
+
+		attr = (switch_stun_packet_attribute_t *)(packet->first_attribute + 8);
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = htons(4);
+		memcpy(attr->value, "efgh", 4);
+
+		packet->header.length = htons(8 + 8);
+
+		packet = switch_stun_packet_parse(buf, SWITCH_STUN_PACKET_MIN_LEN + 8 + 8);
+		fst_requires(packet != NULL);
+
+		/* Same end_buf the iterator's callers use: the 20-byte header plus the attribute section. */
+		end_buf = buf + SWITCH_STUN_PACKET_MIN_LEN + packet->header.length;
+
+		switch_stun_packet_first_attribute(packet, attr);
+		count = 1;
+		while (switch_stun_packet_next_attribute(attr, end_buf)) {
+			count++;
+		}
+		fst_xcheck(count == 2, "iterator reaches the trailing attribute in the last bytes of the message");
+	}
+	FST_TEST_END()
 }
 FST_SUITE_END()
 }
