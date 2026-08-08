@@ -230,6 +230,10 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 			for (i = 0; i < count; i++) {
 				if (decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i]) != 0)
 					return -1;
+				/* Secondary packets are copied into the fixed-size s->rx[].buf, so an overlength
+				   entry cannot be tolerated any more than an overlength primary packet. */
+				if (lengths[total_count + i] > LOCAL_FAX_MAX_DATAGRAM)
+					return -1;
 			}
 			total_count += count;
 		}
@@ -286,7 +290,10 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 		if (ptr + 1 > len)
 			return -1;
 		entries = buf[ptr++];
-		s->rx[x].fec_entries = entries;
+		/* fec[]/fec_len[] hold only LOCAL_FAX_MAX_FEC_PACKETS entries; reject a larger
+		   count before it bounds the decode and reconstruction loops. */
+		if (entries > LOCAL_FAX_MAX_FEC_PACKETS)
+			return -1;
 
 		/* Decode the elements */
 		for (i = 0; i < entries; i++) {
@@ -305,6 +312,9 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\n");
 #endif
 		}
+		/* Commit the count only after all elements validate; an early return above leaves
+		   fec_entries at 0, so reconstruction never reads a partially filled slot. */
+		s->rx[x].fec_entries = entries;
 		/* We should now be exactly at the end of the packet. If not, this is a fault. */
 		if (ptr != len)
 			return -1;
