@@ -126,6 +126,13 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	uint8_t *end = data + len;
 
+	/* both classifier bytes must be present before dereferencing them */
+	if (len < 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (data[0] == 0x17 && data[1] == 0) {
 		switch_byte_t *pdata = data + 2;
 		int cfgVer;
@@ -154,7 +161,7 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 					return SWITCH_STATUS_FALSE;
 				}
 
-				lenSPS = ntohs(*(uint16_t *)pdata);
+				lenSPS = (pdata[0] << 8) | pdata[1];
 				pdata += 2;
 
 				if (lenSPS > end - pdata) {
@@ -183,7 +190,7 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 					return SWITCH_STATUS_FALSE;
 				}
 
-				lenPPS = ntohs(*(uint16_t *)pdata);
+				lenPPS = (pdata[0] << 8) | pdata[1];
 				pdata += 2;
 				if (lenPPS > end - pdata) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
@@ -220,7 +227,7 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 		}
 	} else if ((data[0] == 0x17 || data[0] == 0x27) && data[1] == 1) {
 		if (read_helper->sps && read_helper->pps) {
-			switch_byte_t * pdata = data + 5;
+			switch_byte_t *pdata;
 			uint32_t  pdata_len;
 			uint32_t  lenSize = read_helper->lenSize;
 			switch_byte_t  *nal_buf = NULL;
@@ -232,6 +239,7 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 				return SWITCH_STATUS_FALSE;
 			}
 
+			pdata = data + 5;
 			pdata_len = len - 5;
 
 			while (pdata_len > lenSize) {
@@ -769,7 +777,7 @@ switch_status_t rtmp_read_video_frame(switch_core_session_t *session, switch_fra
 	} else {
 		switch_mutex_lock(tech_pvt->video_readbuf_mutex);
 		switch_buffer_peek(tech_pvt->video_readbuf, &len, 2);
-		if (switch_buffer_inuse(tech_pvt->video_readbuf) >= len) {
+		if (switch_buffer_inuse(tech_pvt->video_readbuf) >= (switch_size_t)len + 6) {
 			if (len == 0) {
 				switch_mutex_unlock(tech_pvt->video_readbuf_mutex);
 				switch_yield(20000);
