@@ -296,6 +296,9 @@ typedef struct switch_dtls_s {
 	char *pem;
 	struct switch_rtp *rtp_session;
 	int mtu;
+	/* How FreeSWITCH, as the DTLS server, verifies the client certificate (from the rtp_dtls_client_cert_verify_mode
+	 * channel variable). Server-only; the client role ignores it. */
+	dtls_client_cert_verify_t client_cert_verify;
 } switch_dtls_t;
 
 typedef int (*dtls_state_handler_t)(switch_rtp_t *, switch_dtls_t *);
@@ -3299,6 +3302,7 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	X509 *cert;
 	switch_secure_settings_t	ssec;	/* Used just to wrap over params in a call to switch_rtp_add_crypto_key. */
 	int r = 0;
+	int peer_cert_present = 0;
 
 	uint8_t raw_key_data[cr_kslen * 2];
 	unsigned char local_key_buf[cr_kslen];
@@ -3309,11 +3313,12 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	memset(&local_key_buf, 0, cr_kslen * sizeof(unsigned char));
 	memset(&remote_key_buf, 0, cr_kslen * sizeof(unsigned char));
 
-	if ((dtls->type & DTLS_TYPE_SERVER)) {
+	if (dtls->client_cert_verify == DTLS_CLIENT_CERT_VERIFY_NONE && (dtls->type & DTLS_TYPE_SERVER)) {
 		r = 1;
 	} else if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
 		dtls_fingerprint_t fp = {0};
 
+		peer_cert_present = 1;
 		fp.type = dtls->remote_fp->type;
 
 		switch_core_cert_extract_fingerprint(cert, &fp);
@@ -3323,7 +3328,11 @@ static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	}
 
 	if (!r) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s Fingerprint Verification Failed!\n", rtp_type(rtp_session));
+		if (peer_cert_present) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s Fingerprint Verification Failed!\n", rtp_type(rtp_session));
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s No peer certificate presented; cannot verify SDP fingerprint\n", rtp_type(rtp_session));
+		}
 		dtls_set_state(dtls, DS_FAIL);
 		return -1;
 	} else {
@@ -3514,37 +3523,33 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	return r;
 }
 
-#if VERIFY
-static int cb_verify_peer(int preverify_ok, X509_STORE_CTX *ctx)
+/* fingerprint mode: accept any client cert at the TLS layer (return 1, ignoring OpenSSL's chain
+ * verdict); the peer is authenticated by the SDP a=fingerprint match in dtls_state_setup(). */
+static int dtls_accept_any_cert(int preverify_ok, X509_STORE_CTX *ctx)
 {
-	SSL *ssl = NULL;
-	switch_dtls_t *dtls;
-	X509 *cert;
-	int r = 0;
-
-	ssl = X509_STORE_CTX_get_app_data(ctx);
-	dtls = (switch_dtls_t *) SSL_get_app_data(ssl);
-
-	if (!(ssl && dtls)) {
-		return 0;
-	}
-
-	if ((cert = SSL_get_peer_certificate(dtls->ssl))) {
-		dtls_fingerprint_t fp = {0};
-
-		fp.type = dtls->remote_fp->type;
-
-		switch_core_cert_extract_fingerprint(cert, &fp);
-		r = (!zstr(fp.str) && !strncasecmp(fp.str, dtls->remote_fp->str, MAX_FPSTRLEN));
-
-		X509_free(cert);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(dtls->rtp_session->session), SWITCH_LOG_ERROR, "%s CERT ERR!\n", rtp_type(dtls->rtp_session));
-	}
-
-	return r;
+	return 1;
 }
-#endif
+
+static dtls_client_cert_verify_t dtls_parse_client_cert_verify(switch_rtp_t *rtp_session, const char *str)
+{
+	if (!strcasecmp(str, "none")) {
+		return DTLS_CLIENT_CERT_VERIFY_NONE;
+	}
+
+	if (!strcasecmp(str, "fingerprint")) {
+		return DTLS_CLIENT_CERT_VERIFY_FINGERPRINT;
+	}
+
+	if (!strcasecmp(str, "full")) {
+		return DTLS_CLIENT_CERT_VERIFY_FULL;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+					  "Unrecognized rtp_dtls_client_cert_verify_mode '%s'; falling back to 'fingerprint'. "
+					  "Valid values: none, fingerprint, full\n", str);
+
+	return DTLS_CLIENT_CERT_VERIFY_FINGERPRINT;
+}
 
 
 ////////////
@@ -4003,9 +4008,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 #endif
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
 
-	//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-	SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_NONE, NULL);
-
 	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDH:!RC4:!SSLv3:RSA_WITH_AES_128_CBC_SHA");
 	//SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ECDHE-RSA-AES256-GCM-SHA384");
 	SSL_CTX_set_cipher_list(dtls->ssl_ctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
@@ -4017,6 +4019,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 #endif
 
 	dtls->type = type;
+
+	dtls->client_cert_verify = DTLS_CLIENT_CERT_VERIFY_DEFAULT;
+	if (rtp_session->session) {
+		const char *verify_str = switch_channel_get_variable(switch_core_session_get_channel(rtp_session->session), "rtp_dtls_client_cert_verify_mode");
+
+		if (!zstr(verify_str)) {
+			dtls->client_cert_verify = dtls_parse_client_cert_verify(rtp_session, verify_str);
+		}
+	}
+
 	dtls->read_bio = BIO_new(BIO_s_mem());
 	switch_assert(dtls->read_bio);
 
@@ -4068,8 +4080,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	SSL_set_read_ahead(dtls->ssl, 1);
 
 
-	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
-
 #ifndef OPENSSL_NO_EC
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
 	ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
@@ -4085,7 +4095,32 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 #endif
 #endif
 
-	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
+	/* Per-connection verify policy on the SSL object (overrides the CTX default SSL_new() copied in).
+	 * Flag: a server sends a CertificateRequest under SSL_VERIFY_PEER, none under SSL_VERIFY_NONE.
+	 * Callback: dtls_accept_any_cert() returns 1 (ignore OpenSSL's chain verdict), NULL runs the default
+	 * verifier (enforce it). client_cert_verify is a server-only knob. The peer is authenticated in
+	 * dtls_state_setup() by matching its certificate to the SDP a=fingerprint; the none case skips it.
+	 *   client role             SSL_VERIFY_NONE + NULL                 (server cert always present, chain ignored)
+	 *   server, fingerprint     SSL_VERIFY_PEER + dtls_accept_any_cert (request cert, ignore chain)
+	 *   server, full            SSL_VERIFY_PEER + NULL                 (request cert, enforce chain)
+	 *   server, none (default)  SSL_VERIFY_NONE + NULL                 (no client cert requested)
+	 */
+	if (!(type & DTLS_TYPE_SERVER)) {
+		SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
+	} else {
+		/* No default case: the default is defined solely by DTLS_CLIENT_CERT_VERIFY_DEFAULT. */
+		switch (dtls->client_cert_verify) {
+		case DTLS_CLIENT_CERT_VERIFY_FINGERPRINT:
+			SSL_set_verify(dtls->ssl, SSL_VERIFY_PEER, dtls_accept_any_cert);
+			break;
+		case DTLS_CLIENT_CERT_VERIFY_FULL:
+			SSL_set_verify(dtls->ssl, SSL_VERIFY_PEER, NULL);
+			break;
+		case DTLS_CLIENT_CERT_VERIFY_NONE:
+			SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
+			break;
+		}
+	}
 	SSL_set_app_data(dtls->ssl, dtls);
 
 	dtls->local_fp = local_fp;
