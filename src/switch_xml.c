@@ -658,7 +658,9 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	/* find entity in entity list */
 
 			if (ent[b++]) {		/* found a match */
-				if ((c = (unsigned long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
+				c = (unsigned long) strlen(ent[b]);
+				e = strchr(s, ';');
+				if (c && c - 1 > (unsigned long)(e - s)) {
 					l = (d = (unsigned long) (s - r)) + c + (unsigned long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {

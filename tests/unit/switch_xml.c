@@ -250,6 +250,37 @@ FST_MINCORE_BEGIN("./conf")
 			switch_xml_free(xml);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_empty_entity_decode)
+		{
+			const char *text =
+				"<xml><!DOCTYPE Response ["
+				"<!ENTITY empty \"\">"
+				"<!ENTITY name \"World\">"
+				"]><Response><Say>Hello&empty;, &name;&empty;!</Say></Response></xml>";
+			switch_xml_t xml = NULL;
+			char *xml_string = NULL;
+
+			xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
+			if (!xml) {
+				fst_fail("failed to parse XML with empty entity");
+				goto test_empty_entity_decode_done;
+			}
+
+			xml_string = switch_xml_toxml_ex(xml, SWITCH_FALSE, SWITCH_FALSE);
+			if (!xml_string) {
+				fst_fail("failed to serialize parsed XML");
+				goto test_empty_entity_decode_done;
+			}
+
+			fst_check_string_equals(xml_string,
+				"<xml>\n  <Response>\n    <Say>Hello, World!</Say>\n  </Response>\n</xml>\n");
+
+test_empty_entity_decode_done:
+			free(xml_string);
+			if (xml) switch_xml_free(xml);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
