@@ -35,6 +35,7 @@
 #include <switch_stun.h>
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
+#include <openssl/crypto.h>
 
 struct value_mapping {
 	const uint32_t value;
@@ -703,6 +704,106 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_password(switch_stun_pa
 	packet->header.length += htons((u_short)(sizeof(switch_stun_packet_attribute_t) + padding)) + attribute->length;
 
 	return 1;
+}
+
+/* True if the attribute at `attr` fits within `end`, writing its padded value length to *padded.
+   Unsigned (not the int16_t macros) so a high-bit length can't go negative and walk backward. */
+static switch_bool_t stun_wire_attr_bounds(const switch_stun_packet_attribute_t *attr, const uint8_t *end, uint32_t *padded)
+{
+	uint32_t plen;
+
+	if ((const uint8_t *) (attr + 1) > end || !attr->type) {
+		return SWITCH_FALSE;
+	}
+
+	plen = ntohs(attr->length);
+	/* STUN pads each attribute value to a 4-byte boundary; round the declared length up to match. */
+	plen = (plen & 0x3) ? (plen & ~0x3u) + 4 : plen;
+
+	if (plen > (uint32_t) (end - (const uint8_t *) attr->value)) {
+		return SWITCH_FALSE;
+	}
+
+	*padded = plen;
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_stun_packet_verify_integrity(const uint8_t *pkt, uint32_t len, const char *pass)
+{
+	uint8_t copy[1500];
+	switch_stun_packet_t *packet;
+	switch_stun_packet_attribute_t *attr;
+	switch_stun_packet_attribute_t *mi = NULL;
+	uint8_t *end;
+	uint32_t declared;
+	uint32_t mi_off;
+	uint32_t padded;
+	uint16_t hashed_length;
+	unsigned char digest[SHA_DIGEST_LENGTH];
+
+	if (!pkt || zstr(pass) || len < SWITCH_STUN_PACKET_MIN_LEN || len > sizeof(copy)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* Work on a private copy so the caller's wire bytes stay untouched and we can safely
+	   rewrite the length field for the HMAC input. Input is network byte order. */
+	memcpy(copy, pkt, len);
+	packet = (switch_stun_packet_t *) copy;
+
+	/* Bound the attribute walk to the declared message length, clamped to what we actually
+	   received, so trailing bytes past the message are never treated as attributes. */
+	declared = SWITCH_STUN_PACKET_MIN_LEN + ntohs(packet->header.length);
+	end = copy + (declared < len ? declared : len);
+
+	/* Walk attributes (network byte order) to locate MESSAGE-INTEGRITY; stun_wire_attr_bounds
+	   bounds-checks each attribute, including the first. */
+	switch_stun_packet_first_attribute(packet, attr);
+	while (stun_wire_attr_bounds(attr, end, &padded)) {
+		if (attr->type == htons(SWITCH_STUN_ATTR_MESSAGE_INTEGRITY)) {
+			mi = attr;
+			break;
+		}
+
+		attr = (switch_stun_packet_attribute_t *) ((uint8_t *) attr->value + padded);
+	}
+
+	if (!mi) {
+		return SWITCH_STATUS_NOTFOUND;
+	}
+
+	/* MESSAGE-INTEGRITY always carries a 20-byte HMAC-SHA1 value. */
+	if (ntohs(mi->length) != SHA_DIGEST_LENGTH) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	mi_off = (uint32_t) ((uint8_t *) mi - copy);
+
+	/* Only MESSAGE-INTEGRITY-SHA256 and FINGERPRINT may follow MESSAGE-INTEGRITY; both sit outside this
+	   HMAC's coverage. Reject any other trailing attribute rather than act on it unauthenticated. */
+	attr = (switch_stun_packet_attribute_t *) (mi->value + SHA_DIGEST_LENGTH);
+	while (stun_wire_attr_bounds(attr, end, &padded)) {
+		if (attr->type != htons(SWITCH_STUN_ATTR_FINGERPRINT) &&
+			attr->type != htons(SWITCH_STUN_ATTR_MESSAGE_INTEGRITY_SHA256)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
+		attr = (switch_stun_packet_attribute_t *) ((uint8_t *) attr->value + padded);
+	}
+
+	/* Reproduce the sender's HMAC input: header.length must read as if the message ended right
+	   after MESSAGE-INTEGRITY (so a trailing FINGERPRINT is excluded), and the HMAC covers the
+	   message prefix up to but not including the MESSAGE-INTEGRITY attribute. */
+	hashed_length = (uint16_t) (mi_off - sizeof(switch_stun_packet_header_t) + sizeof(switch_stun_packet_attribute_t) + SHA_DIGEST_LENGTH);
+	packet->header.length = htons(hashed_length);
+
+	HMAC(EVP_sha1(), (const unsigned char *) pass, (int) strlen(pass), copy, mi_off, digest, NULL);
+
+	if (CRYPTO_memcmp(digest, mi->value, SHA_DIGEST_LENGTH) != 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_pool_t *pool)

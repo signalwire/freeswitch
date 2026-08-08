@@ -263,6 +263,7 @@ typedef struct {
 	char last_sent_id[13];
 	switch_time_t last_ok;
 	uint8_t cand_responsive;
+	uint8_t verify_integrity;
 } switch_rtp_ice_t;
 
 struct switch_rtp;
@@ -1008,6 +1009,36 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld bytes\n", (long)cpylen);
 		goto end;
 
+	}
+
+	if ((ice->type & ICE_VANILLA) && ice->verify_integrity) {
+		/* Verify before any ICE state is touched, over the pristine wire bytes (not the byte-swapped
+		   host-order buf). Key by type: request with our local password, response/error-response with
+		   the remote password. Indications carry no MESSAGE-INTEGRITY and drive no state, so drop them. */
+		const char *ikey = NULL;
+
+		switch (packet->header.type) {
+		case SWITCH_STUN_BINDING_REQUEST:
+			ikey = ice->pass;
+			break;
+		case SWITCH_STUN_BINDING_RESPONSE:
+		case SWITCH_STUN_BINDING_ERROR_RESPONSE:
+			ikey = ice->rpass;
+			break;
+		default:
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG8,
+							  "%s ignoring unauthenticated STUN %s from %s:%d\n", rtp_type(rtp_session),
+							  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type), from_host, from_port);
+			goto end;
+		}
+
+		if (switch_stun_packet_verify_integrity((const uint8_t *)data, (uint32_t)cpylen, ikey) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+							  "%s STUN MESSAGE-INTEGRITY verification failed; dropping %s from %s:%d\n",
+							  rtp_type(rtp_session),
+							  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type), from_host, from_port);
+			goto end;
+		}
 	}
 
 	rtp_session->last_stun = switch_micro_time_now();
@@ -4981,6 +5012,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	ice->ice_params = ice_params;
 	ice->pass = "";
 	ice->rpass = "";
+	ice->verify_integrity = 0;
 	ice->next_run = switch_micro_time_now();
 	ice->initializing = 1;
 
@@ -4990,6 +5022,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 	if (rpassword) {
 		ice->rpass = switch_core_strdup(rtp_session->pool, rpassword);
+	}
+
+	if ((type & ICE_VANILLA) && switch_channel_var_true(switch_core_session_get_channel(rtp_session->session), "ice_verify_message_integrity")) {
+		ice->verify_integrity = 1;
 	}
 
 	if ((ice->type & ICE_VANILLA) && ice->ice_params) {

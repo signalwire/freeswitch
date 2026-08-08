@@ -165,6 +165,153 @@ FST_TEARDOWN_END()
 		fst_check_string_equals(out_ip, ipv4_str);
 	}
 	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_accepts_valid_hmac)
+	{
+		/* A packet signed with add_integrity under a given key must verify against that same key,
+		   including when a leading attribute precedes MESSAGE-INTEGRITY (it is part of the HMAC input). */
+		uint8_t buf[512] = { 0 };
+		char software[] = "sw";
+		switch_stun_packet_t *packet;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_software(packet, software, (uint16_t)strlen(software));
+		switch_stun_packet_attribute_add_integrity(packet, "secret");
+		len = (uint32_t)switch_stun_packet_length(packet);
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_SUCCESS,
+				   "valid MESSAGE-INTEGRITY verifies against the signing key");
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "wrong") == SWITCH_STATUS_FALSE,
+				   "MESSAGE-INTEGRITY does not verify against a different key");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_rejects_zeroed_hmac)
+	{
+		/* An all-zero MESSAGE-INTEGRITY value must not verify: this is the shape a sender produces when
+		   it fills the field with zeros instead of computing the HMAC. MI is the first attribute, so its
+		   20-byte value sits at offset 24 (20-byte header plus 4-byte attribute header). */
+		uint8_t buf[512] = { 0 };
+		switch_stun_packet_t *packet;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_integrity(packet, "secret");
+		len = (uint32_t)switch_stun_packet_length(packet);
+		memset(buf + SWITCH_STUN_PACKET_MIN_LEN + 4, 0, 20);
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_FALSE,
+				   "a zeroed MESSAGE-INTEGRITY value is rejected");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_trailing_fingerprint)
+	{
+		/* MESSAGE-INTEGRITY followed by FINGERPRINT (the layout our own responses use) must still verify:
+		   the HMAC input's length field reads as if the message ended right after MESSAGE-INTEGRITY, so the
+		   trailing FINGERPRINT is excluded from the computation. */
+		uint8_t buf[512] = { 0 };
+		switch_stun_packet_t *packet;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, NULL, buf);
+		switch_stun_packet_attribute_add_integrity(packet, "secret");
+		switch_stun_packet_attribute_add_fingerprint(packet);
+		len = (uint32_t)switch_stun_packet_length(packet);
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_SUCCESS,
+				   "MESSAGE-INTEGRITY verifies with a trailing FINGERPRINT present");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_absent)
+	{
+		/* A packet with no MESSAGE-INTEGRITY attribute reports NOTFOUND, distinct from a mismatch, so the
+		   caller can apply its own present-or-absent policy. */
+		uint8_t buf[512] = { 0 };
+		char software[] = "sw";
+		switch_stun_packet_t *packet;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_software(packet, software, (uint16_t)strlen(software));
+		len = (uint32_t)switch_stun_packet_length(packet);
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_NOTFOUND,
+				   "a packet with no MESSAGE-INTEGRITY reports NOTFOUND");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_rejects_attr_after_mi)
+	{
+		/* Only MESSAGE-INTEGRITY-SHA256 and FINGERPRINT may follow MESSAGE-INTEGRITY. A USE-CANDIDATE
+		   appended after MI leaves the HMAC prefix - and therefore the signature - valid, so it must be
+		   rejected outright rather than verified and then acted on. */
+		uint8_t buf[512] = { 0 };
+		switch_stun_packet_t *packet;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_integrity(packet, "secret");
+		switch_stun_packet_attribute_add_use_candidate(packet);	/* lands after MESSAGE-INTEGRITY */
+		len = (uint32_t)switch_stun_packet_length(packet);
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_FALSE,
+				   "a non-FINGERPRINT attribute after MESSAGE-INTEGRITY is rejected");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_oversized_attr_length)
+	{
+		/* An attribute length with the high bit set must not walk the cursor backward or read out of
+		   bounds: the walk treats the padded length as unsigned and stops once it exceeds the bytes that
+		   remain. With a leading oversized attribute, MESSAGE-INTEGRITY is never reached (NOTFOUND) and no
+		   out-of-bounds access occurs (ASAN would catch a regression here). */
+		uint8_t buf[64] = { 0 };
+		switch_stun_packet_t *packet;
+		switch_stun_packet_attribute_t *attr;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		attr = (switch_stun_packet_attribute_t *)packet->first_attribute;
+		attr->type = htons(SWITCH_STUN_ATTR_USERNAME);
+		attr->length = htons(0x8000);
+		packet->header.length = htons(4);	/* declare just the 4-byte attribute header */
+		len = SWITCH_STUN_PACKET_MIN_LEN + 4;
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_NOTFOUND,
+				   "an attribute length with the high bit set stops the walk without an out-of-bounds read");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_stun_verify_integrity_allows_sha256_after_mi)
+	{
+		/* RFC 8489 permits MESSAGE-INTEGRITY-SHA256 to follow MESSAGE-INTEGRITY. It is inert (carries no
+		   ICE state) and outside the SHA-1 HMAC's coverage, so a dual-hash sender's packet must still
+		   verify on its SHA-1 MESSAGE-INTEGRITY rather than be rejected as a disallowed trailing attribute. */
+		uint8_t buf[512] = { 0 };
+		switch_stun_packet_t *packet;
+		switch_stun_packet_attribute_t *sha256;
+		uint32_t off;
+		uint32_t len;
+
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_integrity(packet, "secret");
+
+		/* Append a MESSAGE-INTEGRITY-SHA256 attribute (32-byte value, left zero: the SHA-1 verifier does
+		   not inspect it) immediately after MESSAGE-INTEGRITY. */
+		off = SWITCH_STUN_PACKET_MIN_LEN + ntohs(packet->header.length);
+		sha256 = (switch_stun_packet_attribute_t *)(buf + off);
+		sha256->type = htons(SWITCH_STUN_ATTR_MESSAGE_INTEGRITY_SHA256);
+		sha256->length = htons(32);
+		packet->header.length = htons((uint16_t)(ntohs(packet->header.length) + 4 + 32));
+		len = (uint32_t)switch_stun_packet_length(packet);
+
+		fst_xcheck(switch_stun_packet_verify_integrity(buf, len, "secret") == SWITCH_STATUS_SUCCESS,
+				   "a MESSAGE-INTEGRITY-SHA256 attribute after MESSAGE-INTEGRITY is tolerated");
+	}
+	FST_TEST_END()
 }
 FST_SUITE_END()
 }
