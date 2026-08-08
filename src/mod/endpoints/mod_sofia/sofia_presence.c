@@ -1896,7 +1896,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	return 0;
 }
 
-char *get_display_name_from_contact(const char *in, char* dst)
+char *get_display_name_from_contact(const char *in, char* dst, size_t dst_size)
 {
 	// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
 	// display-name   =  *(token LWS)/ quoted-string
@@ -1904,8 +1904,13 @@ char *get_display_name_from_contact(const char *in, char* dst)
 	char *p;
 	char *buf;
 
-	strcpy(dst, "");
-	if (strchr(in, '<') && strchr(in, '>')) {
+	if (!dst || !dst_size) {
+		return dst;
+	}
+
+	*dst = '\0';
+
+	if (!zstr(in) && strchr(in, '<') && strchr(in, '>')) {
 		buf = strdup(in);
 		switch_assert(buf);
 		p = strchr(buf, '<');
@@ -1918,11 +1923,11 @@ char *get_display_name_from_contact(const char *in, char* dst)
 						char *q = strdup(p + 1);
 						switch_assert(q);
 						end_of(q) = '\0';
-						strcpy(dst, q);
+						switch_copy_string(dst, q, dst_size);
 						switch_safe_free(q);
 					}
 				} else {
-					strcpy(dst, p);
+					switch_copy_string(dst, p, dst_size);
 				}
 				switch_safe_free(p);
 			}
@@ -2059,7 +2064,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	}
 	else if (bInternal) {
 		local_user = to_user;
-		get_display_name_from_contact(contact, remote_display_buf);
+		get_display_name_from_contact(contact, remote_display_buf, sizeof(remote_display_buf));
 		buf_to_free = sofia_glue_strip_uri(contact);
 		remote_uri = buf_to_free;
 		remote_user = contact_user;
