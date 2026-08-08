@@ -128,7 +128,15 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 
 	if (data[0] == 0x17 && data[1] == 0) {
 		switch_byte_t *pdata = data + 2;
-		int cfgVer = pdata[3];
+		int cfgVer;
+
+		if (len < 11) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
+			return SWITCH_STATUS_FALSE;
+		}
+
+		cfgVer = pdata[3];
 		if (cfgVer == 1) {
 			int i = 0;
 			int numSPS = 0;
@@ -140,6 +148,12 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 			numSPS = pdata[8] & 0x1f;
 			pdata += 9;
 			for (i = 0; i < numSPS; i++) {
+				if (end - pdata < 2) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
+					return SWITCH_STATUS_FALSE;
+				}
+
 				lenSPS = ntohs(*(uint16_t *)pdata);
 				pdata += 2;
 
@@ -154,9 +168,21 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 				pdata += lenSPS;
 			}
 			//pps
+			if (end - pdata < 1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
+				return SWITCH_STATUS_FALSE;
+			}
+
 			numPPS = pdata[0];
 			pdata += 1;
 			for (i = 0; i < numPPS; i++) {
+				if (end - pdata < 2) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
+					return SWITCH_STATUS_FALSE;
+				}
+
 				lenPPS = ntohs(*(uint16_t *)pdata);
 				pdata += 2;
 				if (lenPPS > end - pdata) {
@@ -195,12 +221,20 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 	} else if ((data[0] == 0x17 || data[0] == 0x27) && data[1] == 1) {
 		if (read_helper->sps && read_helper->pps) {
 			switch_byte_t * pdata = data + 5;
-			uint32_t  pdata_len = len - 5;
+			uint32_t  pdata_len;
 			uint32_t  lenSize = read_helper->lenSize;
 			switch_byte_t  *nal_buf = NULL;
 			uint32_t        nal_len = 0;
 
-			while (pdata_len > 0) {
+			if (len < 5) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
+				return SWITCH_STATUS_FALSE;
+			}
+
+			pdata_len = len - 5;
+
+			while (pdata_len > lenSize) {
 				uint32_t nalSize = 0;
 				switch (lenSize) {
 				case 1:
@@ -217,6 +251,13 @@ switch_status_t rtmp_rtmp2rtpH264(rtmp2rtp_helper_t  *read_helper, uint8_t* data
 					break;
 				default:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid length size: %d" , lenSize);
+					return SWITCH_STATUS_FALSE;
+				}
+
+				/* reject a NAL that claims more bytes than remain after its length prefix */
+				if (nalSize > pdata_len - lenSize) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "corrupted data\n");
+
 					return SWITCH_STATUS_FALSE;
 				}
 
