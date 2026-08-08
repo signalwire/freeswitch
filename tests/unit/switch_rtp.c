@@ -205,7 +205,10 @@ static dtls_state_t run_client_cert_verify_case(const char *verify_mode, int pre
 	/* Ensure the DTLS-SRTP certificate exists (idempotent; skips if already generated). */
 	switch_core_gen_certs(DTLS_SRTP_FNAME);
 
-	server_port = port_base++;
+	/* The FreeSWITCH side binds the configured RTP port, which the core port allocator
+	 * manages; passing 0 to switch_rtp_set_start_port() reads it back without setting it.
+	 * The peer socket is bound by this test directly, so it takes a port of its own. */
+	server_port = switch_rtp_set_start_port(0);
 	client_port = port_base++;
 
 	if (switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL) != SWITCH_STATUS_SUCCESS || !session) {
