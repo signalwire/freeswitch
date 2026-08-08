@@ -485,7 +485,8 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			need = (wsh->plen - (wsh->datalen - need));
 
-			if ((need + wsh->datalen) > (issize_t)wsh->buflen) {
+			/* Reserve 1 byte for the trailing NUL below. */
+			if ((need + wsh->datalen) >= (issize_t)wsh->buflen) {
 				/* too big - Ain't nobody got time fo' dat */
 				*oc = WSOC_CLOSE;
 				return ws_close(wsh, WS_DATA_TOO_BIG);
@@ -510,7 +511,8 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			if (mask && maskp) {
 				issize_t i;
 
-				for (i = 0; i < wsh->datalen; i++) {
+				/* Unmask payload only. */
+				for (i = 0; i < wsh->rplen; i++) {
 					wsh->payload[i] ^= maskp[i % 4];
 				}
 			}
