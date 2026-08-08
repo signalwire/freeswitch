@@ -317,6 +317,49 @@ typedef struct ts_normalize_s {
 	int last_external;
 } ts_normalize_t;
 
+typedef struct switch_rtp_inject_auto_adj_source_s switch_rtp_inject_auto_adj_source_t;
+
+struct switch_rtp_inject_auto_adj_source_s {
+	int count;
+	int pppt;
+	switch_time_t ts;
+	uint8_t init;
+	switch_time_t last_seen;
+	switch_rtp_inject_auto_adj_source_t *lru_prev;
+	switch_rtp_inject_auto_adj_source_t *lru_next;
+	char key[50];
+};
+
+typedef struct {
+	const char *name;
+	int count;
+	int pps;
+	switch_time_t ts;
+	switch_sockaddr_t *last_address;
+	switch_time_t last_alert_log;
+	uint8_t init;
+	switch_hash_t *auto_adj_sources;
+	switch_rtp_inject_auto_adj_source_t *lru_head;
+	switch_rtp_inject_auto_adj_source_t *lru_tail;
+	uint32_t auto_adj_sources_count;
+} switch_rtp_inject_dos_packet_t;
+
+typedef struct {
+	switch_rtp_inject_dos_packet_t rtp;
+	switch_rtp_inject_dos_packet_t rtcp;
+	switch_rtp_inject_dos_packet_t dtls;
+	switch_rtp_inject_dos_packet_t stun;
+	switch_rtp_inject_dos_packet_t unknown;
+	uint16_t packet_not_advertised_reject_thr;
+} switch_rtp_inject_dos_t;
+
+#define RTP_PACKET_NOT_ADVERTISED_REJECT_THR_MIN 5
+#define RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MAX_US 5000000
+#define RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MIN_US 500000
+#define RTP_AUTO_ADJ_SOURCE_PRESSURE_LOW 1024
+#define RTP_AUTO_ADJ_SOURCE_PRESSURE_HIGH 16384
+#define RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_PTIME_FACTOR 4
+
 struct switch_rtp {
 	/*
 	 * Two sockets are needed because we might be transcoding protocol families
@@ -350,6 +393,8 @@ struct switch_rtp {
 	uint32_t autoadj_window;
 	uint32_t autoadj_threshold;
 	uint32_t autoadj_tally;
+	uint32_t autoadj_wait_for_advertised_interval;
+	switch_time_t autoadj_last_ts;
 
 	uint32_t rtcp_autoadj_window;
 	uint32_t rtcp_autoadj_threshold;
@@ -405,6 +450,7 @@ struct switch_rtp {
 	char *local_host_str;
 	char *remote_host_str;
 	char *eff_remote_host_str;
+	char from_host_str[50];
 	switch_time_t first_stun;
 	switch_time_t last_stun;
 	uint32_t samples_per_interval;
@@ -487,11 +533,13 @@ struct switch_rtp {
 	uint8_t has_rtp;
 	uint8_t has_rtcp;
 	uint8_t has_ice;
+	uint8_t has_dtls;
 	uint8_t punts;
 	uint8_t clean;
 	uint32_t last_max_vb_frames;
 	int skip_timer;
 	uint32_t prev_nacks_inflight;
+	switch_rtp_inject_dos_t inject_dos;
 };
 
 struct switch_rtcp_report_block {
@@ -4550,6 +4598,18 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	switch_sockaddr_create(&rtp_session->from_addr, pool);
 	switch_sockaddr_create(&rtp_session->rtp_from_addr, pool);
 
+	switch_sockaddr_create(&rtp_session->inject_dos.rtp.last_address, pool);
+	switch_sockaddr_create(&rtp_session->inject_dos.rtcp.last_address, pool);
+	switch_sockaddr_create(&rtp_session->inject_dos.dtls.last_address, pool);
+	switch_sockaddr_create(&rtp_session->inject_dos.stun.last_address, pool);
+	switch_sockaddr_create(&rtp_session->inject_dos.unknown.last_address, pool);
+
+	rtp_session->inject_dos.rtp.name = "RTP";
+	rtp_session->inject_dos.rtcp.name = "RTCP";
+	rtp_session->inject_dos.dtls.name = "DTLS";
+	rtp_session->inject_dos.stun.name = "STUN";
+	rtp_session->inject_dos.unknown.name = "UNKNOWN";
+
 	if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
 		switch_sockaddr_create(&rtp_session->rtcp_from_addr, pool);
 	}
@@ -4652,6 +4712,31 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
+
+	rtp_session->autoadj_wait_for_advertised_interval = 0;
+	rtp_session->inject_dos.packet_not_advertised_reject_thr = 0;
+
+	if (channel) {
+		const char *var = switch_channel_get_variable(channel, "rtp_auto_adjustment_wait_for_advertised_ms");
+
+		if (!zstr(var) && switch_is_number(var)) {
+			rtp_session->autoadj_wait_for_advertised_interval = atoi(var) * 1000;
+		}
+
+		var = switch_channel_get_variable(channel, "rtp_packet_not_advertised_reject_threshold");
+		if (!zstr(var) && switch_is_number(var)) {
+			int tmp = atoi(var);
+
+			if (tmp >= RTP_PACKET_NOT_ADVERTISED_REJECT_THR_MIN && tmp <= UINT16_MAX) {
+				rtp_session->inject_dos.packet_not_advertised_reject_thr = (uint16_t)tmp;
+				switch_core_hash_init(&rtp_session->inject_dos.rtp.auto_adj_sources);
+			} else if (tmp) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+					"Ignoring rtp_packet_not_advertised_reject_threshold. Value [%d] is out of range [%d, %d]; feature not enabled\n",
+					tmp, RTP_PACKET_NOT_ADVERTISED_REJECT_THR_MIN, UINT16_MAX);
+			}
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -5358,6 +5443,13 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	switch_rtp_release_port((*rtp_session)->rx_host, (*rtp_session)->rx_port);
 	switch_mutex_unlock((*rtp_session)->flag_mutex);
 
+	if ((*rtp_session)->inject_dos.rtp.auto_adj_sources) {
+		switch_core_hash_destroy(&(*rtp_session)->inject_dos.rtp.auto_adj_sources);
+		(*rtp_session)->inject_dos.rtp.lru_head = NULL;
+		(*rtp_session)->inject_dos.rtp.lru_tail = NULL;
+		(*rtp_session)->inject_dos.rtp.auto_adj_sources_count = 0;
+	}
+
 	return;
 }
 
@@ -5886,6 +5978,243 @@ static int get_recv_payload(switch_rtp_t *rtp_session)
 	return r;
 }
 
+static void switch_rtp_inject_dos_alert_log(switch_rtp_t *rtp_session, switch_rtp_inject_dos_packet_t *packet)
+{
+	char host[100] = { 0 };
+	switch_time_t now = switch_time_now();
+
+	if (now - packet->last_alert_log >= 1000000) {
+		switch_print_host(packet->last_address, host, sizeof(host));
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+							"Inject DoS of %s packets detected! PPS: [%d] (last packet from: [%s])\n",
+								packet->name, packet->pps, host);
+
+		packet->last_alert_log = now;
+	}
+
+	return;
+}
+
+#define INJECT_DOS_PPS_RTP_ALERT_THRESHOLD 40000 /* accounts with a surplus for high res, high fps VP8 video */
+#define INJECT_DOS_PPS_OTHER_ALERT_THRESHOLD 250
+#define INJECT_DOS_PPS_STUN_REJECT_THRESHOLD 500 /* we don't expect more STUN packets arrving within a second */
+
+static inline void switch_rtp_inject_dos_wipe_recv_msg(switch_rtp_t *rtp_session, switch_size_t *bytes)
+{
+	memset(&rtp_session->recv_msg, 0, sizeof(rtp_session->recv_msg));
+	*bytes = 0;
+
+	return;
+}
+
+static void switch_rtp_inject_dos_check(switch_rtp_t *rtp_session, switch_rtp_inject_dos_packet_t *packet, switch_bool_t check_only)
+{
+	switch_time_t now = switch_time_now();
+
+	if (!packet->ts) {
+		packet->ts = now;
+	}
+
+	if (!packet->pps && !check_only) {
+		packet->init = 1;
+		packet->ts = now;
+	}
+
+	if (!check_only) {
+		packet->count++;
+		switch_cp_addr(packet->last_address, rtp_session->from_addr);
+	}
+
+	if (now - packet->ts >= 1000000) {
+		packet->pps = packet->count;
+		packet->count = 0;
+		packet->init = 0;
+		packet->ts = now;
+	}
+
+	if (packet->init) {
+		packet->pps = packet->count;
+	}
+
+	return;
+}
+
+static inline void switch_rtp_inject_auto_adj_lru_unlink(switch_rtp_inject_dos_packet_t *packet, switch_rtp_inject_auto_adj_source_t *src)
+{
+	if (src->lru_prev) {
+		src->lru_prev->lru_next = src->lru_next;
+	} else {
+		packet->lru_head = src->lru_next;
+	}
+
+	if (src->lru_next) {
+		src->lru_next->lru_prev = src->lru_prev;
+	} else {
+		packet->lru_tail = src->lru_prev;
+	}
+
+	src->lru_prev = NULL;
+	src->lru_next = NULL;
+}
+
+static inline void switch_rtp_inject_auto_adj_lru_append_tail(switch_rtp_inject_dos_packet_t *packet, switch_rtp_inject_auto_adj_source_t *src)
+{
+	src->lru_prev = packet->lru_tail;
+	src->lru_next = NULL;
+
+	if (packet->lru_tail) {
+		packet->lru_tail->lru_next = src;
+	} else {
+		packet->lru_head = src;
+	}
+
+	packet->lru_tail = src;
+}
+
+static int switch_rtp_inject_auto_adj_check(switch_rtp_t *rtp_session, switch_rtp_inject_dos_packet_t *packet, const char *src_host)
+{
+	switch_time_t now;
+	switch_rtp_inject_auto_adj_source_t *src = NULL;
+	int pppt = 0;
+
+	if (!packet->auto_adj_sources) {
+		return 0;
+	}
+
+	now = switch_time_now();
+
+	src = switch_core_hash_find(packet->auto_adj_sources, src_host);
+	if (!src) {
+		switch_zmalloc(src, sizeof(*src));
+		switch_copy_string(src->key, src_host, sizeof(src->key));
+		if (switch_core_hash_insert_destructor(packet->auto_adj_sources, src->key, src, free) != SWITCH_STATUS_SUCCESS) {
+			free(src);
+
+			return 0;
+		}
+		switch_rtp_inject_auto_adj_lru_append_tail(packet, src);
+		packet->auto_adj_sources_count++;
+	} else if (src != packet->lru_tail) {
+		switch_rtp_inject_auto_adj_lru_unlink(packet, src);
+		switch_rtp_inject_auto_adj_lru_append_tail(packet, src);
+	}
+
+	src->last_seen = now;
+
+	if (!src->ts) {
+		src->ts = now;
+	}
+
+	if (!src->pppt) {
+		src->init = 1;
+		src->ts = now;
+	}
+
+	src->count++;
+
+	if (now - src->ts >= rtp_session->ms_per_packet) {
+		src->pppt = src->count;
+		src->count = 0;
+		src->init = 0;
+		src->ts = now;
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG2,
+			"[%d] packets per [%ums] ptime from [%s]. SDP advertised IP: [%s]\n",
+			src->pppt, rtp_session->ms_per_packet / 1000, src_host, rtp_session->remote_host_str);
+	}
+
+	if (src->init) {
+		src->pppt = src->count;
+	}
+
+	pppt = src->pppt;
+
+	return pppt;
+}
+
+static void switch_rtp_inject_auto_adj_cleanup(switch_rtp_inject_dos_packet_t *packet, switch_time_t ptime_us)
+{
+	switch_time_t now;
+	switch_rtp_inject_auto_adj_source_t *src;
+	switch_time_t age_limit;
+	switch_time_t safe_min = 0;
+	uint32_t count;
+
+	if (!packet->auto_adj_sources || packet->auto_adj_sources_count == 0) {
+		return;
+	}
+
+	count = packet->auto_adj_sources_count;
+	if (count <= RTP_AUTO_ADJ_SOURCE_PRESSURE_LOW) {
+		age_limit = RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MAX_US;
+	} else if (count >= RTP_AUTO_ADJ_SOURCE_PRESSURE_HIGH) {
+		age_limit = RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MIN_US;
+	} else {
+		age_limit = (switch_time_t)RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MAX_US -
+			((switch_time_t)(count - RTP_AUTO_ADJ_SOURCE_PRESSURE_LOW) *
+			 ((switch_time_t)RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MAX_US - (switch_time_t)RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_MIN_US)) /
+			(RTP_AUTO_ADJ_SOURCE_PRESSURE_HIGH - RTP_AUTO_ADJ_SOURCE_PRESSURE_LOW);
+	}
+
+	safe_min = ptime_us * RTP_AUTO_ADJ_SOURCE_AGE_LIMIT_PTIME_FACTOR;
+	if (safe_min > age_limit) {
+		age_limit = safe_min;
+	}
+
+	now = switch_time_now();
+
+	while ((src = packet->lru_head) != NULL && now - src->last_seen > age_limit) {
+		packet->lru_head = src->lru_next;
+		if (packet->lru_head) {
+			packet->lru_head->lru_prev = NULL;
+		} else {
+			packet->lru_tail = NULL;
+		}
+
+		switch_core_hash_delete(packet->auto_adj_sources, src->key);
+		packet->auto_adj_sources_count--;
+	}
+}
+
+static inline void switch_rtp_inject_dos_tick(switch_rtp_t *rtp_session)
+{
+	switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.rtp, SWITCH_TRUE);
+	switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.rtcp, SWITCH_TRUE);
+	switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.dtls, SWITCH_TRUE);
+	switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.stun, SWITCH_TRUE);
+	switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.unknown, SWITCH_TRUE);
+
+	if (rtp_session->inject_dos.rtp.pps > INJECT_DOS_PPS_RTP_ALERT_THRESHOLD) {
+		switch_rtp_inject_dos_alert_log(rtp_session, &rtp_session->inject_dos.rtp);
+	}
+
+	if (rtp_session->inject_dos.rtcp.pps > INJECT_DOS_PPS_OTHER_ALERT_THRESHOLD) {
+		switch_rtp_inject_dos_alert_log(rtp_session, &rtp_session->inject_dos.rtcp);
+	}
+
+	if (rtp_session->inject_dos.dtls.pps > INJECT_DOS_PPS_OTHER_ALERT_THRESHOLD) {
+		switch_rtp_inject_dos_alert_log(rtp_session, &rtp_session->inject_dos.dtls);
+	}
+
+	if (rtp_session->inject_dos.stun.pps > INJECT_DOS_PPS_OTHER_ALERT_THRESHOLD) {
+		switch_rtp_inject_dos_alert_log(rtp_session, &rtp_session->inject_dos.stun);
+	}
+
+	if (rtp_session->inject_dos.unknown.pps > INJECT_DOS_PPS_OTHER_ALERT_THRESHOLD) {
+		switch_rtp_inject_dos_alert_log(rtp_session, &rtp_session->inject_dos.unknown);
+	}
+
+	if (rtp_session->inject_dos.packet_not_advertised_reject_thr >= RTP_PACKET_NOT_ADVERTISED_REJECT_THR_MIN) {
+		switch_rtp_inject_auto_adj_cleanup(&rtp_session->inject_dos.rtp, (switch_time_t)rtp_session->ms_per_packet);
+	}
+
+	return;
+}
+
+static switch_bool_t rtp_is_remote_address_advertised_host(switch_rtp_t *rtp_session, const char *tx_host)
+{
+	return (!zstr(rtp_session->remote_host_str) && !strcasecmp(rtp_session->remote_host_str, tx_host));
+}
+
 #define return_cng_frame() do_cng = 1; goto timer_check
 
 static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags,
@@ -5946,6 +6275,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	rtp_session->has_rtp = 0;
 	rtp_session->has_ice = 0;
 	rtp_session->has_rtcp = 0;
+	rtp_session->has_dtls = 0;
 
 	switch_mutex_lock(rtp_session->ice_mutex);
 	if (rtp_session->dtls) {
@@ -5982,6 +6312,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 			switch_mutex_unlock(rtp_session->ice_mutex);
 
+			rtp_session->has_dtls = 1;
 			rtp_session->has_ice = 0;
 			rtp_session->has_rtp = 0;
 			rtp_session->has_rtcp = 0;
@@ -5989,6 +6320,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->has_ice = 1;
 			rtp_session->has_rtp = 0;
 			rtp_session->has_rtcp = 0;
+			rtp_session->has_dtls = 0;
 		} else {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 				switch(rtp_session->recv_msg.header.pt) {
@@ -6004,6 +6336,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 					rtp_session->has_rtcp = 1;
 					rtp_session->has_rtp = 0;
 					rtp_session->has_ice = 0;
+					rtp_session->has_dtls = 0;
 					break;
 				default:
 					if (rtp_session->rtcp_recv_msg_p->header.version == 2 &&
@@ -6011,8 +6344,126 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 						rtp_session->has_rtcp = 1;
 						rtp_session->has_rtp = 0;
 						rtp_session->has_ice = 0;
+						rtp_session->has_dtls = 0;
 					}
 					break;
+				}
+			}
+		}
+
+		if ((!using_ice(rtp_session) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) || using_ice(rtp_session)) {
+
+			if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
+				/* got packet which seems to not belong to us, let's make more checks */
+				switch_rtp_inject_dos_packet_t *packet = NULL;
+
+				if ((rtp_session->has_rtp || rtp_session->has_rtcp) && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ)) {
+					/* it's RTP or RTCP (rtcpmux) packet and we aren't in auto-adjustment window anymore. Ignore it! */
+					packet = rtp_session->has_rtp ? &rtp_session->inject_dos.rtp : &rtp_session->inject_dos.rtcp;
+					switch_rtp_inject_dos_check(rtp_session, packet, SWITCH_FALSE);
+					switch_rtp_inject_dos_wipe_recv_msg(rtp_session, bytes);
+
+					return SWITCH_STATUS_NOOP;
+				}
+
+				if ((rtp_session->has_dtls || rtp_session->has_ice) && using_ice(rtp_session)) {
+						/**
+						* check if this packet is being sourced from any of the ICE candidate,
+						* which currently exists on the ICE cand list.
+						* Accept it if exists.
+						**/
+
+					switch_rtp_ice_t *ice = &rtp_session->ice;
+					int i = 0;
+					char tmp_buf[80] = "";
+					const char *from_host = switch_get_addr(tmp_buf, sizeof(tmp_buf), rtp_session->from_addr);
+					uint16_t from_port = switch_sockaddr_get_port(rtp_session->from_addr);
+					int found = 0;
+
+					switch_mutex_lock(rtp_session->ice_mutex);
+
+					for (i = 0; i < ice->ice_params->cand_idx[ice->proto]; i++) {
+						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, from_host) &&
+							ice->ice_params->cands[i][ice->proto].con_port == from_port) {
+
+							/* this packet is already known legit ICE candidate, accept it! */
+							found++;
+							break;
+						}
+					}
+
+					switch_mutex_unlock(rtp_session->ice_mutex);
+
+					if (found) {
+						goto done_inject_dos_checks;
+					}
+
+					if (rtp_session->has_dtls) {
+							/**
+							* further along the path, we only accept DTLS from ICE candidate, which currently
+							* exists on the ICE candidates list. We couldn't find this one, so it must be either
+							* malicious one or came from prflx candidate. prflx must be added to the ICE
+							* cand list by STUN binding prior we start accepting DTLS from it.
+							* Ignore it!
+							**/
+
+						switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.dtls, SWITCH_FALSE);
+						switch_rtp_inject_dos_wipe_recv_msg(rtp_session, bytes);
+
+						return SWITCH_STATUS_NOOP;
+					}
+
+					if (rtp_session->has_ice) {
+							/**
+							* this can be malicious packet, but it can be also prflx candidate.
+							* Further along the path it's allowed to adjust to prflx candidate,
+							* so we can't simply ignore it here.
+							* Let's check the rate of those packets and decide.
+							**/
+						switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.stun, SWITCH_FALSE);
+
+						if (rtp_session->inject_dos.stun.pps < INJECT_DOS_PPS_STUN_REJECT_THRESHOLD) {
+							goto done_inject_dos_checks;
+						}
+
+						switch_rtp_inject_dos_wipe_recv_msg(rtp_session, bytes);
+
+						return SWITCH_STATUS_NOOP;
+					}
+				} else if (rtp_session->has_dtls || rtp_session->has_ice) {
+					/* we don't expect STUN/DTLS if not using ICE. Ignore it! */
+					packet = rtp_session->has_dtls ? &rtp_session->inject_dos.dtls : &rtp_session->inject_dos.stun;
+					switch_rtp_inject_dos_check(rtp_session, packet, SWITCH_FALSE);
+					switch_rtp_inject_dos_wipe_recv_msg(rtp_session, bytes);
+
+					return SWITCH_STATUS_NOOP;
+				}
+
+				if (!rtp_session->has_rtp && !rtp_session->has_rtcp) {
+					/* we don't want any other non-rtp packet at all. Ignore it! */
+					switch_rtp_inject_dos_check(rtp_session, &rtp_session->inject_dos.unknown, SWITCH_FALSE);
+					switch_rtp_inject_dos_wipe_recv_msg(rtp_session, bytes);
+
+					return SWITCH_STATUS_NOOP;
+				}
+			}
+
+			if (!using_ice(rtp_session) && rtp_session->has_rtp && switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) &&
+					(rtp_session->inject_dos.packet_not_advertised_reject_thr >= RTP_PACKET_NOT_ADVERTISED_REJECT_THR_MIN ||
+					rtp_session->autoadj_wait_for_advertised_interval)) {
+				switch_get_addr(rtp_session->from_host_str, sizeof(rtp_session->from_host_str), rtp_session->from_addr);
+
+				/* being in auto-adjustment window, for packets from a source not advertised in SDP, track per-source packets-per-ptime and discard packets from sources exceeding the threshold */
+				if (rtp_session->inject_dos.packet_not_advertised_reject_thr >= RTP_PACKET_NOT_ADVERTISED_REJECT_THR_MIN &&
+						!rtp_is_remote_address_advertised_host(rtp_session, rtp_session->from_host_str)) {
+					int src_pppt = switch_rtp_inject_auto_adj_check(rtp_session, &rtp_session->inject_dos.rtp, rtp_session->from_host_str);
+
+					if (src_pppt >= rtp_session->inject_dos.packet_not_advertised_reject_thr) {
+						switch_rtp_inject_dos_wipe_recv_msg(rtp_session, bytes);
+						switch_cond_next();
+
+						return SWITCH_STATUS_NOOP;
+					}
 				}
 			}
 		}
@@ -6074,7 +6525,24 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 			}
 		}
+	} else if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr, SWITCH_FALSE) &&
+				!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) &&
+				switch_core_timer_check(&rtp_session->timer, SWITCH_FALSE) == SWITCH_STATUS_FALSE) {
+			/**
+			* nothing has been read from socket. We are not in auto-adjustment window anymore
+			* and previous packet did not belong to us.
+			* Don't process further (esp. don't generate CNG further along the path for RTP).
+			* Come back right away and check for more malicious packets (for no longer than one timer step)
+			* because it can be some villain hitting us!
+			**/
+			switch_cond_next();
+
+		return SWITCH_STATUS_NOOP;
 	}
+
+ done_inject_dos_checks:
+
+	switch_rtp_inject_dos_tick(rtp_session);
 
 	if (!rtp_session->vb && (!rtp_session->jb || rtp_session->pause_jb || !jb_valid(rtp_session))) {
 		if (*bytes > rtp_header_len && (rtp_session->has_rtp && check_recv_payload(rtp_session))) {
@@ -7237,6 +7705,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	int read_loops = 0;
 	int slept = 0;
 	switch_bool_t got_jb = SWITCH_FALSE;
+	switch_bool_t remote_addr_advertised = SWITCH_FALSE;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -7298,6 +7767,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						ret = -1;
 						goto end;
 					}
+
+					if (status == SWITCH_STATUS_NOOP) {
+						continue;
+					}
+
 					if ((*flags & SFF_RTCP)) {
 						*flags &= ~SFF_RTCP;
 						has_rtcp = 1;
@@ -7460,6 +7934,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				if (status == SWITCH_STATUS_GENERR) {
 					ret = -1;
 					goto end;
+				}
+
+				if (status == SWITCH_STATUS_NOOP) {
+					goto recvfrom;
 				}
 
 				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] &&
@@ -7644,6 +8122,102 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
+		/* ignore packets not meant for us unless the auto-adjust window is open (ice mode has its own alternatives to this) */
+		if (!using_ice(rtp_session) && bytes) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ]) {
+				if (rtp_session->last_rtp_hdr.pt == rtp_session->cng_pt || rtp_session->last_rtp_hdr.pt == 13) {
+					goto recvfrom;
+
+				}
+			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
+				goto recvfrom;
+			}
+		}
+
+		remote_addr_advertised = SWITCH_FALSE;
+
+		if (rtp_session->autoadj_wait_for_advertised_interval && switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) &&
+				!using_ice(rtp_session) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
+			remote_addr_advertised = rtp_is_remote_address_advertised_host(rtp_session, rtp_session->from_host_str);
+		}
+
+		if (bytes >= 5 && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
+
+			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
+				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold || (rtp_session->autoadj_wait_for_advertised_interval && remote_addr_advertised)) {
+					const char *err;
+					uint32_t old = rtp_session->eff_remote_port;
+					const char *tx_host;
+					const char *old_host;
+					char bufa[50], bufb[50];
+					char adj_port[6];
+
+					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtp_from_addr);
+					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
+									  "Auto Changing %s port from %s:%u to %s:%u\n", rtp_type(rtp_session), old_host, old, tx_host,
+									  switch_sockaddr_get_port(rtp_session->rtp_from_addr));
+
+					rtp_session->autoadj_last_ts = switch_time_now();
+
+					if (channel) {
+						char varname[80] = "";
+
+						switch_snprintf(varname, sizeof(varname), "remote_%s_ip_reported", rtp_type(rtp_session));
+						switch_channel_set_variable(channel, varname, switch_channel_get_variable(channel, "remote_media_ip"));
+
+						switch_snprintf(varname, sizeof(varname), "remote_%s_ip", rtp_type(rtp_session));
+						switch_channel_set_variable(channel, varname, tx_host);
+
+						switch_snprintf(varname, sizeof(varname), "remote_%s_port_reported", rtp_type(rtp_session));
+						switch_snprintf(adj_port, sizeof(adj_port), "%u", switch_sockaddr_get_port(rtp_session->rtp_from_addr));
+						switch_channel_set_variable(channel, varname, switch_channel_get_variable(channel, "remote_media_port"));
+
+						switch_snprintf(varname, sizeof(varname), "remote_%s_port", rtp_type(rtp_session));
+						switch_channel_set_variable(channel, varname, adj_port);
+
+						switch_snprintf(varname, sizeof(varname), "rtp_auto_adjust_%s", rtp_type(rtp_session));
+						switch_channel_set_variable(channel, varname, "true");
+					}
+
+					rtp_session->auto_adj_used = 1;
+					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr), 0, SWITCH_FALSE, &err);
+					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+					} else if (!rtp_session->autoadj_wait_for_advertised_interval || remote_addr_advertised) {
+						switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+					}
+
+					if (rtp_session->ice.ice_user) {
+						rtp_session->ice.addr = rtp_session->remote_addr;
+					}
+				}
+			} else {
+				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST) || (rtp_session->autoadj_wait_for_advertised_interval && !remote_addr_advertised)) {
+					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct %s ip/port confirmed.\n", rtp_type(rtp_session));
+					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				}
+
+				rtp_session->auto_adj_used = 0;
+			}
+		}
+
+		if (bytes >= 5 && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && !(rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST) && rtp_session->autoadj_window) {
+			if ((!rtp_session->autoadj_wait_for_advertised_interval || remote_addr_advertised) && --rtp_session->autoadj_window == 0) {
+				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			} else if (rtp_session->autoadj_wait_for_advertised_interval && !remote_addr_advertised && rtp_session->autoadj_last_ts &&
+							switch_time_now() - rtp_session->autoadj_last_ts >= rtp_session->autoadj_wait_for_advertised_interval) {
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Closing auto-adjustment window after [%dms]", rtp_session->autoadj_wait_for_advertised_interval / 1000);
+				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+			}
+		}
+
 		check = !bytes;
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_FLUSH]) {
@@ -7682,84 +8256,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			*flags |= SFF_NOT_AUDIO;
 		} else {
 			*flags &= ~SFF_NOT_AUDIO; /* If this flag was already set, make sure to remove it when we get real audio */
-		}
-
-		/* ignore packets not meant for us unless the auto-adjust window is open (ice mode has its own alternatives to this) */
-		if (!using_ice(rtp_session) && bytes) {
-			if (rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ]) {
-				if (rtp_session->last_rtp_hdr.pt == rtp_session->cng_pt || rtp_session->last_rtp_hdr.pt == 13) {
-					goto recvfrom;
-
-				}
-			} else if (!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS) && !switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
-				goto recvfrom;
-			}
-		}
-
-		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->rtp_from_addr)) {
-			if (!switch_cmp_addr(rtp_session->rtp_from_addr, rtp_session->remote_addr, SWITCH_FALSE)) {
-				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
-					const char *err;
-					uint32_t old = rtp_session->eff_remote_port;
-					const char *tx_host;
-					const char *old_host;
-					char bufa[50], bufb[50];
-					char adj_port[6];
-
-					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtp_from_addr);
-					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
-
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
-									  "Auto Changing %s port from %s:%u to %s:%u\n", rtp_type(rtp_session), old_host, old, tx_host,
-									  switch_sockaddr_get_port(rtp_session->rtp_from_addr));
-
-					if (channel) {
-						char varname[80] = "";
-
-						switch_snprintf(varname, sizeof(varname), "remote_%s_ip_reported", rtp_type(rtp_session));
-						switch_channel_set_variable(channel, varname, switch_channel_get_variable(channel, "remote_media_ip"));
-
-						switch_snprintf(varname, sizeof(varname), "remote_%s_ip", rtp_type(rtp_session));
-						switch_channel_set_variable(channel, varname, tx_host);
-
-						switch_snprintf(varname, sizeof(varname), "remote_%s_port_reported", rtp_type(rtp_session));
-						switch_snprintf(adj_port, sizeof(adj_port), "%u", switch_sockaddr_get_port(rtp_session->rtp_from_addr));
-						switch_channel_set_variable(channel, varname, switch_channel_get_variable(channel, "remote_media_port"));
-
-						switch_snprintf(varname, sizeof(varname), "remote_%s_port", rtp_type(rtp_session));
-						switch_channel_set_variable(channel, varname, adj_port);
-
-						switch_snprintf(varname, sizeof(varname), "rtp_auto_adjust_%s", rtp_type(rtp_session));
-						switch_channel_set_variable(channel, varname, "true");
-					}
-					rtp_session->auto_adj_used = 1;
-					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->rtp_from_addr), 0, SWITCH_FALSE, &err);
-					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
-						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
-					} else {
-						switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-					}
-					if (rtp_session->ice.ice_user) {
-						rtp_session->ice.addr = rtp_session->remote_addr;
-					}
-				}
-			} else {
-				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
-					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct %s ip/port confirmed.\n", rtp_type(rtp_session));
-					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-				}
-				rtp_session->auto_adj_used = 0;
-			}
-		}
-
-		if (bytes && !(rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST) && rtp_session->autoadj_window) {
-			if (--rtp_session->autoadj_window == 0) {
-				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-			}
 		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_TEXT]) {
