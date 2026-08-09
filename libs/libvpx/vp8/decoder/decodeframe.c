@@ -211,7 +211,7 @@ static void decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
           vp8_short_inv_walsh4x4(&b->dqcoeff[0], xd->qcoeff);
           memset(b->qcoeff, 0, 16 * sizeof(b->qcoeff[0]));
         } else {
-          b->dqcoeff[0] = b->qcoeff[0] * xd->dequant_y2[0];
+          b->dqcoeff[0] = (short)(b->qcoeff[0] * xd->dequant_y2[0]);
           vp8_short_inv_walsh4x4_1(&b->dqcoeff[0], xd->qcoeff);
           memset(b->qcoeff, 0, 2 * sizeof(b->qcoeff[0]));
         }
@@ -610,8 +610,7 @@ static void decode_mb_rows(VP8D_COMP *pbi) {
                                      lf_dst[2]);
         } else {
           vp8_loop_filter_row_simple(pc, lf_mic, mb_row - 1, recon_y_stride,
-                                     recon_uv_stride, lf_dst[0], lf_dst[1],
-                                     lf_dst[2]);
+                                     lf_dst[0]);
         }
         if (mb_row > 1) {
           yv12_extend_frame_left_right_c(yv12_fb_new, eb_dst[0], eb_dst[1],
@@ -647,8 +646,7 @@ static void decode_mb_rows(VP8D_COMP *pbi) {
                                  lf_dst[2]);
     } else {
       vp8_loop_filter_row_simple(pc, lf_mic, mb_row - 1, recon_y_stride,
-                                 recon_uv_stride, lf_dst[0], lf_dst[1],
-                                 lf_dst[2]);
+                                 lf_dst[0]);
     }
 
     yv12_extend_frame_left_right_c(yv12_fb_new, eb_dst[0], eb_dst[1],
@@ -874,8 +872,8 @@ static void init_frame(VP8D_COMP *pbi) {
   xd->mode_info_stride = pc->mode_info_stride;
   xd->corrupted = 0; /* init without corruption */
 
-  xd->fullpixel_mask = 0xffffffff;
-  if (pc->full_pixel) xd->fullpixel_mask = 0xfffffff8;
+  xd->fullpixel_mask = ~0;
+  if (pc->full_pixel) xd->fullpixel_mask = ~7;
 }
 
 int vp8_decode_frame(VP8D_COMP *pbi) {

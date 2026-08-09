@@ -40,11 +40,11 @@ struct VP9Common;
 int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
                         vp9_ppflags_t *ppflags, int unscaled_width);
 
-void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q,
-                 uint8_t *limits);
+void vp9_denoise(struct VP9Common *cm, const YV12_BUFFER_CONFIG *src,
+                 YV12_BUFFER_CONFIG *dst, int q, uint8_t *limits);
 
-void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q,
-                 uint8_t *limits);
+void vp9_deblock(struct VP9Common *cm, const YV12_BUFFER_CONFIG *src,
+                 YV12_BUFFER_CONFIG *dst, int q, uint8_t *limits);
 
 #ifdef __cplusplus
 }  // extern "C"

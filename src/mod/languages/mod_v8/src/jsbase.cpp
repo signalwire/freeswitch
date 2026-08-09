@@ -69,8 +69,14 @@ JSBase::~JSBase(void)
 	}
 
 	/* If the object is still alive inside V8, set the internal field to NULL. But only if we're actually inside a JS context */
-	if (!persistentHandle->IsNearDeath() && !GetIsolate()->GetCurrentContext().IsEmpty() && (!js || !js->GetForcedTermination())) {
-		Handle<Object> jsObj = GetJavaScriptObject();
+	if (
+#if !V8FS_NEW_API
+		/* IsNearDeath() was removed from V8; on the new API the weak callback
+		 * already guarantees we are not racing the collector here. */
+		!persistentHandle->IsNearDeath() &&
+#endif
+		!GetIsolate()->GetCurrentContext().IsEmpty() && (!js || !js->GetForcedTermination())) {
+		Local<Object> jsObj = GetJavaScriptObject();
 		jsObj->SetInternalField(0, Null(GetIsolate()));
 	}
 
@@ -80,13 +86,13 @@ JSBase::~JSBase(void)
 	delete persistentHandle;
 }
 
-Handle<Object> JSBase::GetJavaScriptObject()
+Local<Object> JSBase::GetJavaScriptObject()
 {
 	/* Returns the javascript object related to this C++ instance */
 	return Local<Object>::New(GetIsolate(), *persistentHandle);
 }
 
-void JSBase::AddInstance(Isolate *isolate, const Handle<Object>& handle, const Handle<External>& object, bool autoDestroy)
+void JSBase::AddInstance(Isolate *isolate, const Local<Object>& handle, const Local<External>& object, bool autoDestroy)
 {
 	// Get the actual C++ class pointer
     JSBase *obj = static_cast<JSBase*>(object->Value());
@@ -107,7 +113,11 @@ void JSBase::AddInstance(Isolate *isolate, const Handle<Object>& handle, const H
 #else
 	obj->persistentHandle->SetWeak<JSBase>(obj, WeakCallback);
 #endif
+#if !V8FS_NEW_API
+	/* MarkIndependent() was removed from V8; independence is now the default
+	 * for weak handles, so this call is no longer needed on the new API. */
 	obj->persistentHandle->MarkIndependent();
+#endif
 }
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
@@ -138,25 +148,25 @@ void JSBase::WeakCallback(const WeakCallbackData<Object, JSBase>& data)
 
 void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 {
-	Handle<External> external;
+	Local<External> external;
 	bool autoDestroy = true;
 	bool constructorFailed = false;
 
 	if (!args.IsConstructCall()) {
-		args.GetIsolate()->ThrowException(String::NewFromUtf8(args.GetIsolate(), "Seems you forgot the 'new' operator."));
+		args.GetIsolate()->ThrowException(js_new_string(args.GetIsolate(), "Seems you forgot the 'new' operator."));
 		return;
 	}
 
 	if (args[0]->IsExternal()) {
 		// The argument is an existing object, just use that.
-		external = Handle<External>::Cast(args[0]);
-		autoDestroy = args[1]->BooleanValue();
+		external = Local<External>::Cast(args[0]);
+		autoDestroy = js_to_bool(args[1]);
 	} else {
 		// Create a new C++ instance
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
-		Handle<External> ex = Handle<External>::Cast(args.Data());
+		Local<External> ex = Local<External>::Cast(args.Data());
 #else
-		Handle<External> ex = Handle<External>::Cast(args.Callee()->GetHiddenValue(String::NewFromUtf8(args.GetIsolate(), "constructor_method")));
+		Local<External> ex = Local<External>::Cast(args.Callee()->GetHiddenValue(js_new_string(args.GetIsolate(), "constructor_method")));
 #endif
 
 		if (ex->Value()) {
@@ -178,7 +188,7 @@ void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 		// Return the newly created object
 		args.GetReturnValue().Set(args.This());
 	} else if (!constructorFailed) {
-		args.GetIsolate()->ThrowException(String::NewFromUtf8(args.GetIsolate(), "This class cannot be created from javascript."));
+		args.GetIsolate()->ThrowException(js_new_string(args.GetIsolate(), "This class cannot be created from javascript."));
 	} else {
 		/* Use whatever was set from the constructor */
 	}
@@ -187,13 +197,13 @@ void JSBase::CreateInstance(const v8::FunctionCallbackInfo<Value>& args)
 void JSBase::Register(Isolate *isolate, const js_class_definition_t *desc)
 {
 	// Get the context's global scope (that's where we'll put the constructor)
-	Handle<Object> global = isolate->GetCurrentContext()->Global();
+	Local<Object> global = isolate->GetCurrentContext()->Global();
 
 	Local<External> data = External::New(isolate, (void *)desc->constructor);
 
 	// Create function template for our constructor it will call the JSBase::createInstance method
-	Handle<FunctionTemplate> function = FunctionTemplate::New(isolate, JSBase::CreateInstance, data);	
-	function->SetClassName(String::NewFromUtf8(isolate, desc->name));
+	Local<FunctionTemplate> function = FunctionTemplate::New(isolate, JSBase::CreateInstance, data);	
+	function->SetClassName(js_new_string(isolate, desc->name));
 
 	// Make room for saving the C++ object reference somewhere
 	function->InstanceTemplate()->SetInternalFieldCount(1);
@@ -201,39 +211,39 @@ void JSBase::Register(Isolate *isolate, const js_class_definition_t *desc)
 	// Add methods to the object
 	for (int i = 0;; i++) {
 		if (!desc->functions[i].func) break;
-		function->InstanceTemplate()->Set(String::NewFromUtf8(isolate, desc->functions[i].name), FunctionTemplate::New(isolate, desc->functions[i].func));
+		function->InstanceTemplate()->Set(js_new_string(isolate, desc->functions[i].name), FunctionTemplate::New(isolate, desc->functions[i].func));
 	}
 
 	// Add properties to the object
 	for (int i = 0;; i++) {
 		if (!desc->properties[i].get) break;
-		function->InstanceTemplate()->SetAccessor(String::NewFromUtf8(isolate, desc->properties[i].name), desc->properties[i].get, desc->properties[i].set);
+		function->InstanceTemplate()->SetAccessor(js_new_string(isolate, desc->properties[i].name), desc->properties[i].get, desc->properties[i].set);
 	}
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 #else
-	function->GetFunction()->SetHiddenValue(String::NewFromUtf8(isolate, "constructor_method"), External::New(isolate, (void *)desc->constructor));
+	function->GetFunction(js_current_context()).ToLocalChecked()->SetHiddenValue(js_new_string(isolate, "constructor_method"), External::New(isolate, (void *)desc->constructor));
 #endif
 
 	// Set the function in the global scope, to make it available
-	global->Set(v8::String::NewFromUtf8(isolate, desc->name), function->GetFunction());
+	js_obj_set(global, js_new_string(isolate, desc->name), function->GetFunction(js_current_context()).ToLocalChecked());
 }
 
 void JSBase::RegisterInstance(Isolate *isolate, string name, bool autoDestroy)
 {
 	// Get the context's global scope (that's where we'll put the constructor)
 	Local<Context> context = isolate->GetCurrentContext();
-	Handle<Object> global = context->Global();
+	Local<Object> global = context->Global();
 
-	Local<Function> func = Local<Function>::Cast(global->Get(v8::String::NewFromUtf8(isolate, this->GetJSClassName().c_str())));
+	Local<Function> func = Local<Function>::Cast(js_obj_get(global, js_new_string(isolate, this->GetJSClassName().c_str())));
 
 	// Add the C++ instance as an argument, so it won't try to create another one.
-	Handle<Value> args[] = { External::New(isolate, this), Boolean::New(isolate, autoDestroy) };
-	Handle<Object> newObj = func->NewInstance(context, 2, args).ToLocalChecked();
+	Local<Value> args[] = { External::New(isolate, this), Boolean::New(isolate, autoDestroy) };
+	Local<Object> newObj = func->NewInstance(context, 2, args).ToLocalChecked();
 
 	// Add the instance to JavaScript.
 	if (name.size() > 0) {
-		global->Set(String::NewFromUtf8(isolate, name.c_str()), newObj);
+		js_obj_set(global, js_new_string(isolate, name.c_str()), newObj);
 	}
 }
 
@@ -252,20 +262,20 @@ bool JSBase::GetAutoDestroy()
 	return autoDestroy;
 }
 
-Handle<Function> JSBase::GetFunctionFromArg(Isolate *isolate, const Local<Value>& arg)
+Local<Function> JSBase::GetFunctionFromArg(Isolate *isolate, const Local<Value>& arg)
 {
-	Handle<Function> func;
+	Local<Function> func;
 
 	if (!arg.IsEmpty() && arg->IsFunction()) {
 		// Cast the argument directly to a function
-		func = Handle<Function>::Cast(arg);
+		func = Local<Function>::Cast(arg);
 	} else if (!arg.IsEmpty() && arg->IsString()) {
-		Handle<String> tmp = Handle<String>::Cast(arg);
+		Local<String> tmp = Local<String>::Cast(arg);
 		if (!tmp.IsEmpty() && *tmp) {
 			// Fetch the actual function pointer from the global context (by function name)
-			Handle<Value> val = isolate->GetCurrentContext()->Global()->Get(tmp);
+			Local<Value> val = js_obj_get(isolate->GetCurrentContext()->Global(), tmp);
 			if (!val.IsEmpty() && val->IsFunction()) {
-				func = Handle<Function>::Cast(val);
+				func = Local<Function>::Cast(val);
 			}
 		}
 	}
@@ -273,13 +283,13 @@ Handle<Function> JSBase::GetFunctionFromArg(Isolate *isolate, const Local<Value>
 	if (!func.IsEmpty() && func->IsFunction()) {
 		return func;
 	} else {
-		return Handle<Function>();
+		return Local<Function>();
 	}
 }
 
 void JSBase::DefaultSetProperty(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
 {
-	info.GetIsolate()->ThrowException(v8::String::NewFromUtf8(info.GetIsolate(), "this property cannot be changed!"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "this property cannot be changed!"));
 }
 
 /* For Emacs:

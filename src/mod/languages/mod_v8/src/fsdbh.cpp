@@ -113,22 +113,22 @@ void *FSDBH::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	char *dsn, *username = NULL, *password = NULL;
 
 	if (info.Length() < 1 || info.Length() > 3) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid parameters"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid parameters"));
 		return NULL;
 	}
 
-	String::Utf8Value str1(info[0]);
+	JsUtf8Value str1(info[0]);
 	dsn = *str1;
 
 	if (info.Length() > 1)
 	{
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str2(info[1]);
 		username = *str2;
 	}
 
 	if (info.Length() > 2)
 	{
-		String::Utf8Value str3(info[2]);
+		JsUtf8Value str3(info[2]);
 		password = *str3;
 	}
 
@@ -145,7 +145,7 @@ void *FSDBH::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	}
 
 	if (!dbh_obj) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to create new DBH instance"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to create new DBH instance"));
 		return NULL;
 	}
 
@@ -164,23 +164,23 @@ int FSDBH::Callback(void *pArg, int argc, char **argv, char **columnNames)
 	HandleScope handle_scope(dbo->GetIsolate());
 
 	if (dbo->_callback.IsEmpty()) {
-		dbo->GetIsolate()->ThrowException(String::NewFromUtf8(dbo->GetIsolate(), "No callback specified"));
+		dbo->GetIsolate()->ThrowException(js_new_string(dbo->GetIsolate(), "No callback specified"));
 		return 0;
 	}
 
-	Handle<Array> arg = Array::New(dbo->GetIsolate(), argc);
+	Local<Array> arg = Array::New(dbo->GetIsolate(), argc);
 
 	for (x = 0; x < argc; x++) {
 		if (columnNames[x] && argv[x]) {
-			arg->Set(String::NewFromUtf8(dbo->GetIsolate(), columnNames[x]), String::NewFromUtf8(dbo->GetIsolate(), argv[x]));
+			js_obj_set(arg, js_new_string(dbo->GetIsolate(), columnNames[x]), js_new_string(dbo->GetIsolate(), argv[x]));
 		}
 	}
 
 	HandleScope scope(dbo->GetIsolate());
-	Handle<Function> func = Local<Function>::New(dbo->GetIsolate(), dbo->_callback);
-	Handle<Value> jsargv[1] = { arg };
+	Local<Function> func = Local<Function>::New(dbo->GetIsolate(), dbo->_callback);
+	Local<Value> jsargv[1] = { arg };
 
-	func->Call(dbo->GetIsolate()->GetCurrentContext()->Global(), 1, jsargv);
+	js_call(func, dbo->GetIsolate()->GetCurrentContext()->Global(), 1, jsargv);
 
 	return 0;
 }
@@ -193,9 +193,9 @@ void FSDBH::clear_error()
 JS_DBH_FUNCTION_IMPL(last_error)
 {
 	if (err)
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), err));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), err));
 	else
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 	return;
 }
 
@@ -208,16 +208,16 @@ JS_DBH_FUNCTION_IMPL(query)
 	clear_error();
 
 	if (info.Length() < 1 || info.Length() > 2) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid parameters"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid parameters"));
 		return info.GetReturnValue().Set(false);
 	}
 
 	if (!dbh) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return info.GetReturnValue().Set(false);
 	}
 
-	String::Utf8Value str(info[0]);
+	JsUtf8Value str(info[0]);
 	const char *sql = js_safe_str(*str);
 
 	if (zstr(sql)) {
@@ -228,7 +228,7 @@ JS_DBH_FUNCTION_IMPL(query)
 	void *arg = NULL;
 	switch_core_db_callback_func_t cb_func = NULL;
 
-	Handle<Function> func = Handle<Function>();
+	Local<Function> func = Local<Function>();
 
 	if (info.Length() > 1)
 	    func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
@@ -282,18 +282,18 @@ JS_DBH_FUNCTION_IMPL(test_reactive)
 	clear_error();
 
 	if (info.Length() < 3) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid parameters"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid parameters"));
 		return info.GetReturnValue().Set(false);
 	}
 
 	if (!dbh) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return info.GetReturnValue().Set(false);
 	}
 
-	String::Utf8Value str0(info[0]);
-	String::Utf8Value str1(info[1]);
-	String::Utf8Value str2(info[2]);
+	JsUtf8Value str0(info[0]);
+	JsUtf8Value str1(info[1]);
+	JsUtf8Value str2(info[2]);
 	const char *test_sql = js_safe_str(*str0);
 	const char *drop_sql = js_safe_str(*str1);
 	const char *reactive_sql = js_safe_str(*str2);
@@ -335,13 +335,13 @@ JS_DBH_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 
 	if (!strcmp(js_safe_str(*str), "dsn")) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), _dsn.c_str()));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), _dsn.c_str()));
 	}
 	else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 

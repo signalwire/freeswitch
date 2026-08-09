@@ -51,10 +51,8 @@ avoid_mods=(
   xml_int/mod_xml_ldap
 )
 avoid_mods_armhf=(
-  languages/mod_v8
 )
 avoid_mods_arm64=(
-  languages/mod_v8
 )
 avoid_mods_sid=(
   directories/mod_ldap
@@ -320,8 +318,8 @@ Build-Depends:
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
  libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
- bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.17),
- libspandsp3-dev,
+ bison, zlib1g-dev, libsofia-sip-ua-dev (>= 1.13.18),
+ libspandsp4-dev,
 # used to format the private freeswitch apt-repo key properly
  gnupg,
 # module build-depends
@@ -359,7 +357,7 @@ Description: Cross-Platform Scalable Multi-Protocol Soft Switch
 
 Package: libfreeswitch1
 Architecture: amd64 armhf arm64
-Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.17)
+Depends: \${shlibs:Depends}, \${misc:Depends}, libsofia-sip-ua0 (>= 1.13.18)
 Recommends:
 Suggests: libfreeswitch1-dbg
 Conflicts: freeswitch-all (<= 1.6.7)

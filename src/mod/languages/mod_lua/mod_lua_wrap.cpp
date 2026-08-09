@@ -6,6 +6,9 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
+#define SWIG_TYPE_TABLE mod_lua
+
+
 
 #define SWIG_VERSION 0x040100
 #define SWIGLUA
@@ -4307,7 +4310,7 @@ static int _wrap_Stream_read(lua_State* L) {
     }
     
     result = (char *)(arg1)->read(arg2);
-    lua_pushstring(L,(const char *)result); SWIG_arg++;
+    lua_pushlstring(L,(const char*)result, (*arg2)); SWIG_arg++;
     lua_pushnumber(L, (lua_Number) *arg2); SWIG_arg++;
     return SWIG_arg;
     
@@ -8401,7 +8404,10 @@ static int _wrap_new_Session__SWIG_0(lua_State* L) {
     
     SWIG_check_num_args("LUA::Session::Session",0,0)
     result = (LUA::Session *)new LUA::Session();
-    SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+    {
+      SWIG_NewPointerObj(L, result, SWIGTYPE_p_LUA__Session, 1); SWIG_arg++;
+      if (result) (result)->setLUA(L);
+    }
     return SWIG_arg;
     
     fail: SWIGUNUSED;
@@ -8428,7 +8434,10 @@ static int _wrap_new_Session__SWIG_1(lua_State* L) {
     }
     
     result = (LUA::Session *)new LUA::Session(arg1,arg2);
-    SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+    {
+      SWIG_NewPointerObj(L, result, SWIGTYPE_p_LUA__Session, 1); SWIG_arg++;
+      if (result) (result)->setLUA(L);
+    }
     return SWIG_arg;
     
     fail: SWIGUNUSED;
@@ -8448,7 +8457,10 @@ static int _wrap_new_Session__SWIG_2(lua_State* L) {
     if(!SWIG_lua_isnilstring(L,1)) SWIG_fail_arg("LUA::Session::Session",1,"char *");
     arg1 = (char *)lua_tostring(L, 1);
     result = (LUA::Session *)new LUA::Session(arg1);
-    SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+    {
+      SWIG_NewPointerObj(L, result, SWIGTYPE_p_LUA__Session, 1); SWIG_arg++;
+      if (result) (result)->setLUA(L);
+    }
     return SWIG_arg;
     
     fail: SWIGUNUSED;
@@ -8472,7 +8484,10 @@ static int _wrap_new_Session__SWIG_3(lua_State* L) {
     }
     
     result = (LUA::Session *)new LUA::Session(arg1);
-    SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
+    {
+      SWIG_NewPointerObj(L, result, SWIGTYPE_p_LUA__Session, 1); SWIG_arg++;
+      if (result) (result)->setLUA(L);
+    }
     return SWIG_arg;
     
     fail: SWIGUNUSED;
@@ -9525,6 +9540,7 @@ static int _wrap_Dbh_release(lua_State* L) {
       SWIG_fail_ptr("Dbh_release",1,SWIGTYPE_p_LUA__Dbh);
     }
     
+    switch_assert(arg1);
     result = (bool)(arg1)->release();
     lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
     return SWIG_arg;
@@ -9549,6 +9565,7 @@ static int _wrap_Dbh_connected(lua_State* L) {
       SWIG_fail_ptr("Dbh_connected",1,SWIGTYPE_p_LUA__Dbh);
     }
     
+    switch_assert(arg1);
     result = (bool)(arg1)->connected();
     lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
     return SWIG_arg;
@@ -9582,6 +9599,7 @@ static int _wrap_Dbh_test_reactive__SWIG_0(lua_State* L) {
     arg2 = (char *)lua_tostring(L, 2);
     arg3 = (char *)lua_tostring(L, 3);
     arg4 = (char *)lua_tostring(L, 4);
+    switch_assert(arg1);
     result = (bool)(arg1)->test_reactive(arg2,arg3,arg4);
     lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
     return SWIG_arg;
@@ -9612,6 +9630,7 @@ static int _wrap_Dbh_test_reactive__SWIG_1(lua_State* L) {
     
     arg2 = (char *)lua_tostring(L, 2);
     arg3 = (char *)lua_tostring(L, 3);
+    switch_assert(arg1);
     result = (bool)(arg1)->test_reactive(arg2,arg3);
     lua_pushboolean(L,(int)(result!=0)); SWIG_arg++;
     return SWIG_arg;

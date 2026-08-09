@@ -55,10 +55,12 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->use_set_ref_frame_config = 0;
   svc->num_encoded_top_layer = 0;
   svc->simulcast_mode = 0;
+  svc->single_layer_svc = 0;
+  svc->resize_set = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
-    svc->fb_idx_spatial_layer_id[i] = -1;
-    svc->fb_idx_temporal_layer_id[i] = -1;
+    svc->fb_idx_spatial_layer_id[i] = 0xff;
+    svc->fb_idx_temporal_layer_id[i] = 0xff;
     svc->fb_idx_base[i] = 0;
   }
   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
@@ -74,6 +76,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
     svc->fb_idx_upd_tl0[sl] = -1;
     svc->drop_count[sl] = 0;
     svc->spatial_layer_sync[sl] = 0;
+    svc->force_drop_constrained_from_above[sl] = 0;
   }
   svc->max_consec_drop = INT_MAX;
 
@@ -192,6 +195,7 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
   const RATE_CONTROL *const rc = &cpi->rc;
   int sl, tl, layer = 0, spatial_layer_target;
   float bitrate_alloc = 1.0;
+  int num_spatial_layers_nonzero_rate = 0;
 
   cpi->svc.temporal_layering_mode = oxcf->temporal_layering_mode;
 
@@ -272,6 +276,17 @@ void vp9_update_layer_context_change_config(VP9_COMP *const cpi,
       lrc->best_quality = rc->best_quality;
     }
   }
+  for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
+    // Check bitrate of spatia layer.
+    layer = LAYER_IDS_TO_IDX(sl, oxcf->ts_number_layers - 1,
+                             oxcf->ts_number_layers);
+    if (oxcf->layer_target_bitrate[layer] > 0)
+      num_spatial_layers_nonzero_rate += 1;
+  }
+  if (num_spatial_layers_nonzero_rate == 1)
+    svc->single_layer_svc = 1;
+  else
+    svc->single_layer_svc = 0;
 }
 
 static LAYER_CONTEXT *get_layer_context(VP9_COMP *const cpi) {
@@ -307,8 +322,8 @@ void vp9_update_temporal_layer_framerate(VP9_COMP *const cpi) {
     const int prev_layer_target_bandwidth =
         oxcf->layer_target_bitrate[st_idx - 1];
     lc->avg_frame_size =
-        (int)((lc->target_bandwidth - prev_layer_target_bandwidth) /
-              (lc->framerate - prev_layer_framerate));
+        (int)round((lc->target_bandwidth - prev_layer_target_bandwidth) /
+                   (lc->framerate - prev_layer_framerate));
   }
 }
 
@@ -342,6 +357,7 @@ void vp9_restore_layer_context(VP9_COMP *const cpi) {
   if (is_one_pass_cbr_svc(cpi) && lc->speed > 0) {
     cpi->oxcf.speed = lc->speed;
   }
+  cpi->loopfilter_ctrl = lc->loopfilter_ctrl;
   // Reset the frames_since_key and frames_to_key counters to their values
   // before the layer restore. Keep these defined for the stream (not layer).
   if (cpi->svc.number_temporal_layers > 1 ||
@@ -446,30 +462,27 @@ static void reset_fb_idx_unused(VP9_COMP *const cpi) {
   // fb_idx for that reference to the first one used/referenced.
   // This is to avoid setting fb_idx for a reference to a slot that is not
   // used/needed (i.e., since that reference is not referenced or refreshed).
-  static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
-                                    VP9_ALT_FLAG };
   MV_REFERENCE_FRAME ref_frame;
   MV_REFERENCE_FRAME first_ref = 0;
   int first_fb_idx = 0;
   int fb_idx[3] = { cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx };
   for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
-    if (cpi->ref_frame_flags & flag_list[ref_frame]) {
+    if (cpi->ref_frame_flags & ref_frame_to_flag(ref_frame)) {
       first_ref = ref_frame;
       first_fb_idx = fb_idx[ref_frame - 1];
       break;
     }
   }
   if (first_ref > 0) {
-    if (first_ref != LAST_FRAME &&
-        !(cpi->ref_frame_flags & flag_list[LAST_FRAME]) &&
+    if (first_ref != LAST_FRAME && !(cpi->ref_frame_flags & VP9_LAST_FLAG) &&
         !cpi->ext_refresh_last_frame)
       cpi->lst_fb_idx = first_fb_idx;
     else if (first_ref != GOLDEN_FRAME &&
-             !(cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]) &&
+             !(cpi->ref_frame_flags & VP9_GOLD_FLAG) &&
              !cpi->ext_refresh_golden_frame)
       cpi->gld_fb_idx = first_fb_idx;
     else if (first_ref != ALTREF_FRAME &&
-             !(cpi->ref_frame_flags & flag_list[ALTREF_FRAME]) &&
+             !(cpi->ref_frame_flags & VP9_ALT_FLAG) &&
              !cpi->ext_refresh_alt_ref_frame)
       cpi->alt_fb_idx = first_fb_idx;
   }
@@ -714,8 +727,6 @@ static void set_flags_and_fb_idx_bypass_via_set_ref_frame_config(
 
 void vp9_copy_flags_ref_update_idx(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
-  static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
-                                    VP9_ALT_FLAG };
   int sl = svc->spatial_layer_id;
   svc->lst_fb_idx[sl] = cpi->lst_fb_idx;
   svc->gld_fb_idx[sl] = cpi->gld_fb_idx;
@@ -738,25 +749,22 @@ void vp9_copy_flags_ref_update_idx(VP9_COMP *const cpi) {
   svc->update_golden[sl] = (uint8_t)cpi->refresh_golden_frame;
   svc->update_altref[sl] = (uint8_t)cpi->refresh_alt_ref_frame;
 
-  svc->reference_last[sl] =
-      (uint8_t)(cpi->ref_frame_flags & flag_list[LAST_FRAME]);
-  svc->reference_golden[sl] =
-      (uint8_t)(cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]);
-  svc->reference_altref[sl] =
-      (uint8_t)(cpi->ref_frame_flags & flag_list[ALTREF_FRAME]);
+  svc->reference_last[sl] = (uint8_t)(cpi->ref_frame_flags & VP9_LAST_FLAG);
+  svc->reference_golden[sl] = (uint8_t)(cpi->ref_frame_flags & VP9_GOLD_FLAG);
+  svc->reference_altref[sl] = (uint8_t)(cpi->ref_frame_flags & VP9_ALT_FLAG);
 }
 
 int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   int width = 0, height = 0;
   SVC *const svc = &cpi->svc;
   LAYER_CONTEXT *lc = NULL;
+  int scaling_factor_num = 1;
+  int scaling_factor_den = 1;
   svc->skip_enhancement_layer = 0;
 
   if (svc->disable_inter_layer_pred == INTER_LAYER_PRED_OFF &&
       svc->number_spatial_layers > 1 && svc->number_spatial_layers <= 3 &&
-      svc->number_temporal_layers <= 3 &&
-      !(svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS &&
-        svc->use_set_ref_frame_config))
+      svc->number_temporal_layers <= 3)
     svc->simulcast_mode = 1;
   else
     svc->simulcast_mode = 0;
@@ -769,6 +777,32 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   svc->mi_stride[svc->spatial_layer_id] = cpi->common.mi_stride;
   svc->mi_rows[svc->spatial_layer_id] = cpi->common.mi_rows;
   svc->mi_cols[svc->spatial_layer_id] = cpi->common.mi_cols;
+
+  // For constrained_from_above drop mode: before encoding superframe (i.e.,
+  // at SL0 frame) check all spatial layers (starting from top) for possible
+  // drop, and if so, set a flag to force drop of that layer and all its lower
+  // layers.
+  if (svc->spatial_layer_to_encode == svc->first_spatial_layer_to_encode) {
+    int sl;
+    for (sl = 0; sl < svc->number_spatial_layers; sl++)
+      svc->force_drop_constrained_from_above[sl] = 0;
+    if (svc->framedrop_mode == CONSTRAINED_FROM_ABOVE_DROP) {
+      for (sl = svc->number_spatial_layers - 1;
+           sl >= svc->first_spatial_layer_to_encode; sl--) {
+        int layer = sl * svc->number_temporal_layers + svc->temporal_layer_id;
+        LAYER_CONTEXT *const lc = &svc->layer_context[layer];
+        cpi->rc = lc->rc;
+        cpi->oxcf.target_bandwidth = lc->target_bandwidth;
+        if (vp9_test_drop(cpi)) {
+          int sl2;
+          // Set flag to force drop in encoding for this mode.
+          for (sl2 = sl; sl2 >= svc->first_spatial_layer_to_encode; sl2--)
+            svc->force_drop_constrained_from_above[sl2] = 1;
+          break;
+        }
+      }
+    }
+  }
 
   if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_0212) {
     set_flags_and_fb_idx_for_temporal_mode3(cpi);
@@ -824,8 +858,9 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     }
   }
 
-  // Reset the drop flags for all spatial layers, on the base layer.
-  if (svc->spatial_layer_id == 0) {
+  // Reset the drop flags for all spatial layers, on the
+  // first_spatial_layer_to_encode.
+  if (svc->spatial_layer_id == svc->first_spatial_layer_to_encode) {
     vp9_zero(svc->drop_spatial_layer);
     // TODO(jianj/marpan): Investigate why setting svc->lst/gld/alt_fb_idx
     // causes an issue with frame dropping and temporal layers, when the frame
@@ -861,18 +896,25 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     lrc->best_quality = vp9_quantizer_to_qindex(lc->min_q);
   }
 
-  get_layer_resolution(cpi->oxcf.width, cpi->oxcf.height,
-                       lc->scaling_factor_num, lc->scaling_factor_den, &width,
-                       &height);
+  if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC && svc->single_layer_svc == 1 &&
+      svc->spatial_layer_id == svc->first_spatial_layer_to_encode &&
+      cpi->resize_state != ORIG) {
+    scaling_factor_num = lc->scaling_factor_num_resize;
+    scaling_factor_den = lc->scaling_factor_den_resize;
+  } else {
+    scaling_factor_num = lc->scaling_factor_num;
+    scaling_factor_den = lc->scaling_factor_den;
+  }
+
+  get_layer_resolution(cpi->oxcf.width, cpi->oxcf.height, scaling_factor_num,
+                       scaling_factor_den, &width, &height);
 
   // Use Eightap_smooth for low resolutions.
   if (width * height <= 320 * 240)
     svc->downsample_filter_type[svc->spatial_layer_id] = EIGHTTAP_SMOOTH;
   // For scale factors > 0.75, set the phase to 0 (aligns decimated pixel
   // to source pixel).
-  lc = &svc->layer_context[svc->spatial_layer_id * svc->number_temporal_layers +
-                           svc->temporal_layer_id];
-  if (lc->scaling_factor_num > (3 * lc->scaling_factor_den) >> 2)
+  if (scaling_factor_num > (3 * scaling_factor_den) >> 2)
     svc->downsample_filter_phase[svc->spatial_layer_id] = 0;
 
   // The usage of use_base_mv or partition_reuse assumes down-scale of 2x2.
@@ -906,7 +948,7 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
   if (cpi->common.frame_type != KEY_FRAME && !cpi->ext_refresh_last_frame &&
       !cpi->ext_refresh_golden_frame && !cpi->ext_refresh_alt_ref_frame)
     svc->non_reference_frame = 1;
-  // For non-flexible mode, where update_buffer_slot is used, need to check if
+  // For flexible mode, where update_buffer_slot is used, need to check if
   // all buffer slots are not refreshed.
   if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
     if (svc->update_buffer_slot[svc->spatial_layer_id] != 0)
@@ -1030,15 +1072,14 @@ void vp9_svc_constrain_inter_layer_pred(VP9_COMP *const cpi) {
       svc->disable_inter_layer_pred == INTER_LAYER_PRED_OFF ||
       svc->drop_spatial_layer[sl - 1]) {
     MV_REFERENCE_FRAME ref_frame;
-    static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
-                                      VP9_ALT_FLAG };
     for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
       const YV12_BUFFER_CONFIG *yv12 = get_ref_frame_buffer(cpi, ref_frame);
-      if (yv12 != NULL && (cpi->ref_frame_flags & flag_list[ref_frame])) {
+      if (yv12 != NULL &&
+          (cpi->ref_frame_flags & ref_frame_to_flag(ref_frame))) {
         const struct scale_factors *const scale_fac =
             &cm->frame_refs[ref_frame - 1].sf;
         if (vp9_is_scaled(scale_fac)) {
-          cpi->ref_frame_flags &= (~flag_list[ref_frame]);
+          cpi->ref_frame_flags &= (~ref_frame_to_flag(ref_frame));
           // Point golden/altref frame buffer index to last.
           if (!svc->simulcast_mode) {
             if (ref_frame == GOLDEN_FRAME)
@@ -1193,6 +1234,7 @@ void vp9_svc_check_spatial_layer_sync(VP9_COMP *const cpi) {
 
 void vp9_svc_update_ref_frame_buffer_idx(VP9_COMP *const cpi) {
   SVC *const svc = &cpi->svc;
+  int i = 0;
   // Update the usage of frame buffer index for base spatial layers.
   if (svc->spatial_layer_id == 0) {
     if ((cpi->ref_frame_flags & VP9_LAST_FLAG) || cpi->refresh_last_frame)
@@ -1201,6 +1243,11 @@ void vp9_svc_update_ref_frame_buffer_idx(VP9_COMP *const cpi) {
       svc->fb_idx_base[cpi->gld_fb_idx] = 1;
     if ((cpi->ref_frame_flags & VP9_ALT_FLAG) || cpi->refresh_alt_ref_frame)
       svc->fb_idx_base[cpi->alt_fb_idx] = 1;
+    // For bypass/flexible mode: check for refresh slots.
+    if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
+      for (i = 0; i < REF_FRAMES; ++i)
+        if (svc->update_buffer_slot[0] & (1 << i)) svc->fb_idx_base[i] = 1;
+    }
   }
 }
 
@@ -1212,7 +1259,7 @@ static void vp9_svc_update_ref_frame_bypass_mode(VP9_COMP *const cpi) {
   BufferPool *const pool = cm->buffer_pool;
   int i;
   for (i = 0; i < REF_FRAMES; i++) {
-    if (cm->frame_type == KEY_FRAME ||
+    if ((cm->frame_type == KEY_FRAME && !svc->simulcast_mode) ||
         svc->update_buffer_slot[svc->spatial_layer_id] & (1 << i)) {
       ref_cnt_fb(pool->frame_bufs, &cm->ref_frame_map[i], cm->new_fb_idx);
       svc->fb_idx_spatial_layer_id[i] = svc->spatial_layer_id;

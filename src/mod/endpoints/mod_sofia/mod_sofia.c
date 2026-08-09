@@ -1568,7 +1568,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		const char *var;
 		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
-		if (!strcasecmp(msg->string_arg, "sip:")) {
+		if (strncasecmp(msg->string_arg, "sip:", 4)) {
 			const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
 
 			switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);

@@ -2456,7 +2456,11 @@ SWITCH_DECLARE(char *) switch_event_expand_headers_check(switch_event_t *event, 
 						}
 
 						if (offset >= 0) {
-							sub_val += offset;
+							if ((size_t) offset > strlen(sub_val)) {
+								*cloned_sub_val = '\0';
+							} else {
+								sub_val += offset;
+							}
 						} else if ((size_t) abs(offset) <= strlen(sub_val)) {
 							sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
 						}

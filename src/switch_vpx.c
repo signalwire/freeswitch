@@ -387,7 +387,7 @@ struct vpx_context {
 
 	vpx_codec_ctx_t	encoder;
 	uint8_t encoder_init;
-	vpx_image_t *pic;
+	switch_image_t *pic;
 	switch_bool_t force_key_frame;
 	int fps;
 	int format;
@@ -1502,7 +1502,7 @@ static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 		}
 
 		if (context->pic) {
-			vpx_img_free(context->pic);
+			vpx_img_free((vpx_image_t*)context->pic);
 			context->pic = NULL;
 		}
 		if (context->vpx_packet_buffer) {

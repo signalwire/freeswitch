@@ -658,7 +658,9 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	/* find entity in entity list */
 
 			if (ent[b++]) {		/* found a match */
-				if ((c = (unsigned long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
+				c = (unsigned long) strlen(ent[b]);
+				e = strchr(s, ';');
+				if (c && c - 1 > (unsigned long)(e - s)) {
 					l = (d = (unsigned long) (s - r)) + c + (unsigned long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {
@@ -2565,7 +2567,10 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 	}
 
 	while (s != e) {
-		while (*dlen + 10 > *max) {
+		/* Reserve room for the widest single-iteration output: "&#x%X;" is up to
+		   10 chars for a 21-bit code point, and sprintf/snprintf also write a
+		   terminating NUL, so the worst case is 11 bytes. */
+		while (*dlen + 11 > *max) {
 			*dst = (char *) switch_must_realloc(*dst, *max += SWITCH_XML_BUFSIZE);
 		}
 
@@ -2605,7 +2610,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 				*dlen += sprintf(*dst + *dlen, "&#xD;");
 				break;
 			default:
-				if (use_utf8_encoding && expecting_x_utf_8_char == 0 && ((*s >> 8) & 0x01)) {
+				if (use_utf8_encoding && expecting_x_utf_8_char == 0 && (*s & 0x80)) {
 					int num = 1;
 					for (;num<4;num++) {
 						if (! ((*s >> (7-num)) & 0x01)) {
@@ -2641,7 +2646,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 					}
 					expecting_x_utf_8_char--;
 					if (expecting_x_utf_8_char == 0) {
-						*dlen += sprintf(*dst + *dlen, "&#x%X;", unicode_char);
+						*dlen += snprintf(*dst + *dlen, *max - *dlen, "&#x%X;", unicode_char);
 					}
 				} else {
 					(*dst)[(*dlen)++] = *s;

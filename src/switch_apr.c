@@ -841,6 +841,10 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, s
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname, int32_t family,
 														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
+	if (!zstr(hostname) && switch_is_ip_address(hostname)) {
+		return switch_sockaddr_new(sa, hostname, port, pool);
+	}
+
 	return fspr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
 }
 

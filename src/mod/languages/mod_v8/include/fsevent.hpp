@@ -67,7 +67,7 @@ public:
 
 	/* Methods available from JavaScript */
 	static void *Construct(const v8::FunctionCallbackInfo<v8::Value>& info);
-	static v8::Handle<v8::Object> New(switch_event_t *event, const char *name, JSMain *js);
+	static v8::Local<v8::Object> New(switch_event_t *event, const char *name, JSMain *js);
 	JS_EVENT_FUNCTION_DEF(AddHeader);
 	JS_EVENT_FUNCTION_DEF(GetHeader);
 	JS_EVENT_FUNCTION_DEF(IsArrayHeader);
