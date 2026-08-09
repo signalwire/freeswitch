@@ -1236,7 +1236,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	if (!switch_channel_media_ready(peer_channel)) {
 		if (switch_channel_up_nosig(peer_channel)) {
-			switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			if (switch_true(switch_channel_get_variable(peer_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) { /*+++RLB*/
+				switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
 		}
 		status = SWITCH_STATUS_FALSE;
 	}
