@@ -387,6 +387,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 			right = dp; /* write stream */
 			right_len = wlen;
 		}
+		// SIMD? interleave
 		for (x = 0; x < blen; x++) {
 			if (x < left_len) {
 				*(tp++) = *(left + x);
@@ -401,6 +402,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		}
 		memcpy(frame->data, bug->tmp, bytes * 2);
 	} else {
+		// SIMD -- at least for normalize
 		for (x = 0; x < blen; x++) {
 			int32_t w = 0, r = 0, z = 0;
 
@@ -414,11 +416,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 			z = w + r;
 
+			// This makes no sense whatsoever
 			if (z > SWITCH_SMAX || z < SWITCH_SMIN) {
 				if (r) z += (r/2);
 				if (w) z += (w/2);
 			}
 
+			// SIMD --- saturate 32 to 16
 			switch_normalize_to_16bit(z);
 
 			*(fp + x) = (int16_t) z;
