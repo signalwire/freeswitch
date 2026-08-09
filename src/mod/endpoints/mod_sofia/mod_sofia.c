@@ -1477,7 +1477,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					if (other_session) {
 						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 						const char *invite_failure_status = switch_channel_get_variable(other_channel, "sip_invite_failure_status");
-						const char *invite_failure_str = switch_channel_get_variable(other_channel, "sip_invite_failure_status");
+						const char *invite_failure_str = switch_channel_get_variable(other_channel, "sip_invite_failure_phrase");
 						if (!zstr(invite_failure_status) && !zstr(invite_failure_str)) {
 							snprintf(payload_str, sizeof(payload_str), "SIP/2.0 %s %s\r\n", invite_failure_status, invite_failure_str);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
