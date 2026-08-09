@@ -31,15 +31,26 @@ setup_common()
 		grep
 }
 
+disable_global_auth()
+{
+	local auth_file="/etc/apt/auth.conf"
+
+	if [ -f "${auth_file}" ]; then
+		sed -i 's/^machine \(freeswitch\.signalwire\.com\|fsa\.freeswitch\.com\)/# machine \1/' "${auth_file}"
+	fi
+}
+
 configure_auth()
 {
 	local domain=$1
 	local username=${2:-signalwire}
 	local token=$3
-	if ! grep -q "machine ${domain}" /etc/apt/auth.conf; then
-		echo "machine ${domain} login ${username} password ${token}" >> /etc/apt/auth.conf
-		chmod 600 /etc/apt/auth.conf
-	fi
+	local auth_file="/etc/apt/auth.conf.d/${domain}.conf"
+
+	mkdir -p /etc/apt/auth.conf.d
+
+	echo "machine ${domain} login ${username} password ${token}" > "${auth_file}"
+	chmod 600 "${auth_file}"
 }
 
 install_freeswitch()
@@ -99,11 +110,12 @@ if [ "${ID,,}" = "debian" ]; then
 		echo "FreeSWITCH Community ($RELEASE)"
 
 		setup_common
+		disable_global_auth
 		configure_auth "${DOMAIN}" "" "${TOKEN}"
 
 		curl \
 			--fail \
-			--netrc-file /etc/apt/auth.conf \
+			--netrc-file "/etc/apt/auth.conf.d/${DOMAIN}.conf" \
 			--output ${GPG_KEY} \
 			https://${DOMAIN}/repo/deb/${RPI}debian-release/signalwire-freeswitch-repo.gpg
 
@@ -132,11 +144,12 @@ if [ "${ID,,}" = "debian" ]; then
 		echo "FreeSWITCH Enterprise ($RELEASE)"
 
 		setup_common
+		disable_global_auth
 		configure_auth "${DOMAIN}" "" "${TOKEN}"
 
 		curl \
 			--fail \
-			--netrc-file /etc/apt/auth.conf \
+			--netrc-file "/etc/apt/auth.conf.d/${DOMAIN}.conf" \
 			--output ${GPG_KEY} \
 			https://${DOMAIN}/repo/deb/fsa${RPI}/keyring.gpg
 
