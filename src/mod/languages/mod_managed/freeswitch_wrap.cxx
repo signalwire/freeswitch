@@ -19674,6 +19674,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_loadable_module_enume
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_loadable_module_dump_interface_allowlist___(void * jarg1, int jarg2, int jarg3) {
+  switch_stream_handle_t *arg1 = (switch_stream_handle_t *) 0 ;
+  switch_bool_t arg2 ;
+  switch_bool_t arg3 ;
+  
+  arg1 = (switch_stream_handle_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  switch_loadable_module_dump_interface_allowlist(arg1,arg2,arg3);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_loadable_module_build_dynamic___(char * jarg1, void * jarg2, void * jarg3, void * jarg4, int jarg5) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -23617,6 +23629,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_rand___() {
   int result;
   
   result = (int)switch_rand();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_is_ip_address___(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_is_ip_address((char const *)arg1);
   jresult = result; 
   return jresult;
 }
