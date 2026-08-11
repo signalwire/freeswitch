@@ -816,10 +816,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 			if (switch_test_flag((read_frame), SFF_PLC)) {
 				read_frame->received_ts = 0;
-				switch_core_session_increment_plc(session_b);
+				switch_core_session_increment_rx_egress_plc(session_b);
 			} else {
 				if (read_frame->packetlen > 0)
-					switch_core_session_increment_read(session_b);
+					switch_core_session_increment_rx_egress(session_b);
 			}
 
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD) && !switch_channel_test_flag(chan_b, CF_LEG_HOLDING)) {

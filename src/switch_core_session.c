@@ -42,19 +42,19 @@
 
 struct switch_session_manager session_manager;
 
-SWITCH_DECLARE(void) switch_core_session_increment_plc(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_increment_rx_ingress(switch_core_session_t *session)
 {
-	session->stats.in_plc++;
+	session->stats.rx_ingress++;
 }
 
-SWITCH_DECLARE(void) switch_core_session_increment_read(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_increment_rx_egress(switch_core_session_t *session)
 {
-	session->stats.in_count++;
+	session->stats.rx_egress++;
 }
 
-SWITCH_DECLARE(void) switch_core_session_increment_rx(switch_core_session_t *session)
+SWITCH_DECLARE(void) switch_core_session_increment_rx_egress_plc(switch_core_session_t *session)
 {
-	session->stats.in_rx++;
+	session->stats.rx_egress_plc++;
 }
 
 SWITCH_DECLARE(void) switch_core_session_set_io_stats(switch_core_session_t *session, packet_stats_io_info_t *packet_stats_io_info)
