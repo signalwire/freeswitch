@@ -278,24 +278,24 @@ struct switch_media_handle_s {
 void packet_stats_init(packet_stats_t *stats, int latency, int count) {
 	stats->max = latency;
 	stats->average = latency;
-	stats->count = count;
+	stats->tx_egress = count;
 }
 #define _VOR1(v) ((v)?(v):1)
 void packet_stats_update(packet_stats_t *stats, int latency)
 {
-	if (stats->count >= UINT32_MAX)
+	if (stats->tx_egress >= UINT32_MAX)
 		return;
-	stats->count++;
+	stats->tx_egress++;
 
-	if (stats->count == 1)
+	if (stats->tx_egress == 1)
 		packet_stats_init(stats, latency, 1);
 	if (stats->max < latency)
 		stats->max = latency;
 
-	if (stats->count > 1) {
+	if (stats->tx_egress > 1) {
 		float delta;
 		delta = latency - stats->average;
-		stats->average += delta/_VOR1(stats->count);
+		stats->average += delta/_VOR1(stats->tx_egress);
 	}
 }
 
@@ -310,27 +310,27 @@ void packet_stats_print(switch_core_session_t *session) {
 
 		switch_channel_set_variable_printf(session->channel, "packet_stats_report",
 			"{"
-			"\"in\" : { \"ssrc\": \"0x%08X\", \"remote_socket\": \"%s:%u\", \"local_socket\": \"%s:%u\""
-			", \"codec\": \"%s\", \"count\": %u, \"plc\": %u, \"rx\": %u}"
+			"\"rx\" : { \"ssrc\": \"0x%08X\", \"remote_socket\": \"%s:%u\", \"local_socket\": \"%s:%u\""
+			", \"codec\": \"%s\", \"ingress\": %u, \"egress\": %u, \"egress_plc\": %u}"
 			","
-			"\"out\" : { \"ssrc\": \"0x%08X\", \"remote_socket\": \"%s:%u\", \"local_socket\": \"%s:%u\""
-			", \"codec\": \"%s\", \"count\": %u, \"max\": %d, \"avg\": %.2f }}",
+			"\"tx\" : { \"ssrc\": \"0x%08X\", \"remote_socket\": \"%s:%u\", \"local_socket\": \"%s:%u\""
+			", \"codec\": \"%s\", \"egress\": %u, \"max\": %d, \"avg\": %.2f }}",
 			session->stats.io_info.in_ssrc,
                switch_get_addr(in_ipbuf, sizeof(in_ipbuf), session->stats.io_info.in_remote_addr),
                session->stats.io_info.in_remote_addr->port,
                switch_get_addr(in_l_ipbuf, sizeof(in_ipbuf), session->stats.io_info.in_local_addr),
                session->stats.io_info.in_local_addr->port,
 			session->stats.io_info.in_codec,
-			session->stats.in_count,
-			session->stats.in_plc,
-			session->stats.in_rx,
+			session->stats.rx_ingress,
+			session->stats.rx_egress,
+			session->stats.rx_egress_plc,
 			session->stats.io_info.out_ssrc,
                switch_get_addr(out_ipbuf, sizeof(out_ipbuf), session->stats.io_info.out_remote_addr),
                session->stats.io_info.out_local_addr->port,
                switch_get_addr(out_l_ipbuf, sizeof(out_ipbuf), session->stats.io_info.out_local_addr),
                session->stats.io_info.out_remote_addr->port,
 			session->stats.io_info.out_codec,
-			session->stats.count,
+			session->stats.tx_egress,
 			session->stats.max,
 			session->stats.average
 		);

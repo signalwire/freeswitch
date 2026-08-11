@@ -6417,7 +6417,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			 * Counts every RTP packet FS got off the wire. Used downstream as
 			 * "what came in" vs out_count "what went out" to expose JB loss. */
 			if (rtp_session->session) {
-				switch_core_session_increment_rx(rtp_session->session);
+				switch_core_session_increment_rx_ingress(rtp_session->session);
 			}
 		}
 	} else {
