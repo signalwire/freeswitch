@@ -1932,7 +1932,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 	} else {
 		switch_set_flag(session, SSF_THREAD_RUNNING);
 		switch_set_flag(session, SSF_THREAD_STARTED);
-		td = switch_core_session_alloc(session, sizeof(*td));
+		switch_zmalloc(td, sizeof(*td));
+		td->alloc = 1;
 		td->obj = session;
 		td->func = switch_core_session_thread;
 		status = switch_queue_push(session_manager.thread_queue, td);

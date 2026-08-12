@@ -178,7 +178,7 @@ void FSEventHandler::DoSubscribe(const v8::FunctionCallbackInfo<v8::Value>& info
 	bool ret = false;
 
 	for (i = 0; i < info.Length(); i++) {
-		String::Utf8Value str(info[i]);
+		JsUtf8Value str(info[i]);
 		switch_event_types_t etype;
 
 		if (custom) {
@@ -226,7 +226,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(UnSubscribe)
 	bool ret = false;
 
 	for (i = 0; i < info.Length(); i++) {
-		String::Utf8Value str(info[i]);
+		JsUtf8Value str(info[i]);
 		switch_event_types_t etype;
 
 		if (custom) {
@@ -263,7 +263,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(DeleteFilter)
 	if (info.Length() < 1) {
 		info.GetReturnValue().Set(false);
 	} else {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *headerName = js_safe_str(*str);
 
 		if (zstr(headerName)) {
@@ -295,8 +295,8 @@ JS_EVENTHANDLER_FUNCTION_IMPL(AddFilter)
 	if (info.Length() < 2) {
 		info.GetReturnValue().Set(false);
 	} else {
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 		const char *headerName = js_safe_str(*str1);
 		const char *headerVal = js_safe_str(*str2);
 
@@ -326,7 +326,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(GetEvent)
 	switch_event_t *pevent = NULL;
 
 	if (info.Length() > 0 && !info[0].IsEmpty()) {
-		timeout = info[0]->Int32Value();
+		timeout = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 	}
 
 	if (timeout > 0) {
@@ -359,7 +359,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(SendEvent)
 		info.GetReturnValue().Set(false);
 	} else {
 		if (!info[0].IsEmpty() && info[0]->IsObject()) {
-			FSEvent *evt = JSBase::GetInstance<FSEvent>(info[0]->ToObject());
+			FSEvent *evt = JSBase::GetInstance<FSEvent>(info[0]->ToObject(js_current_context()).ToLocalChecked());
 			switch_event_t **event;
 
 			if (!evt || !(event = evt->GetEvent())) {
@@ -370,7 +370,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(SendEvent)
 				if (info.Length() > 1) {
 					if (!info[1].IsEmpty() && info[1]->IsObject()) {
 						/* The second argument is a session object */
-						FSSession *sess = JSBase::GetInstance<FSSession>(info[1]->ToObject());
+						FSSession *sess = JSBase::GetInstance<FSSession>(info[1]->ToObject(js_current_context()).ToLocalChecked());
 						switch_core_session_t *tmp;
 
 						if (sess && (tmp = sess->GetSession())) {
@@ -378,7 +378,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(SendEvent)
 						}
 					} else {
 						/* The second argument is a session uuid string */
-						String::Utf8Value str(info[1]);
+						JsUtf8Value str(info[1]);
 						session_uuid = js_safe_str(*str);
 					}
 				}
@@ -410,7 +410,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(SendEvent)
 JS_EVENTHANDLER_FUNCTION_IMPL(ExecuteApi)
 {
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *cmd = js_safe_str(*str);
 		string arg;
 		switch_stream_handle_t stream = { 0 };
@@ -422,17 +422,17 @@ JS_EVENTHANDLER_FUNCTION_IMPL(ExecuteApi)
 		}
 
 		if (info.Length() > 1) {
-			String::Utf8Value str2(info[1]);
+			JsUtf8Value str2(info[1]);
 			arg = js_safe_str(*str2);
 		}
 
 		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute(cmd, arg.c_str(), NULL, &stream);
 
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_str_nil((char *) stream.data)));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_str_nil((char *) stream.data)));
 		switch_safe_free(stream.data);
 	} else {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), "-ERR"));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), "-ERR"));
 	}
 }
 
@@ -509,16 +509,16 @@ JS_EVENTHANDLER_FUNCTION_IMPL(ExecuteBgApi)
 	int sanity = 2000;
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		cmd = js_safe_str(*str);
 
 		if (info.Length() > 1) {
-			String::Utf8Value str2(info[1]);
+			JsUtf8Value str2(info[1]);
 			arg = js_safe_str(*str2);
 		}
 
 		if (info.Length() > 2) {
-			String::Utf8Value str2(info[2]);
+			JsUtf8Value str2(info[2]);
 			jobuuid = js_safe_str(*str2);
 		}
 	} else {
@@ -553,7 +553,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL(ExecuteBgApi)
 		switch_uuid_format(acs->uuid_str, &uuid);
 	}
 
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), acs->uuid_str));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), acs->uuid_str));
 
 	switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
 

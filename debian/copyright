@@ -1304,22 +1304,9 @@ Files: src/mod/applications/mod_cluechoo/sl.h
 Copyright: 1993 Toyoda Masashi
 License: FIXME
 
-Files: src/mod/event_handlers/mod_cdr_mongodb/*
-Copyright: 2009-2012 10gen Inc.
- 2001 Unicode, Inc.
-License: Apache-2.0
-
 Files: src/mod/loggers/mod_syslog/mod_syslog.c
 Copyright: 2005-2010, James Martelletti <james@nerdc0re.com>
 License: MPL-1.1
-
-Files: src/mod/event_handlers/mod_cdr_mongodb/mod_cdr_mongodb.c
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
-License: MPL-1.1
-
-Files: src/mod/event_handlers/mod_cdr_mongodb/driver/src/md5.[ch]
-Copyright: 1999, 2000, 2002 Aladdin Enterprises.
-License: zlib/libpng
 
 Files: src/mod/say/mod_say_??/mod_say_??.c
  scripts/c/socket2me/socket2me.c

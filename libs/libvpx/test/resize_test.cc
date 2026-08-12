@@ -93,7 +93,21 @@ struct FrameInfo {
 
 void ScaleForFrameNumber(unsigned int frame, unsigned int initial_w,
                          unsigned int initial_h, unsigned int *w,
-                         unsigned int *h, int flag_codec) {
+                         unsigned int *h, bool flag_codec,
+                         bool smaller_width_larger_size_) {
+  if (smaller_width_larger_size_) {
+    if (frame < 30) {
+      *w = initial_w;
+      *h = initial_h;
+      return;
+    }
+    if (frame < 100) {
+      *w = initial_w * 7 / 10;
+      *h = initial_h * 16 / 10;
+      return;
+    }
+    return;
+  }
   if (frame < 10) {
     *w = initial_w;
     *h = initial_h;
@@ -248,17 +262,19 @@ class ResizingVideoSource : public ::libvpx_test::DummyVideoSource {
   ResizingVideoSource() {
     SetSize(kInitialWidth, kInitialHeight);
     limit_ = 350;
+    smaller_width_larger_size_ = false;
   }
-  int flag_codec_;
+  bool flag_codec_;
+  bool smaller_width_larger_size_;
   virtual ~ResizingVideoSource() {}
 
  protected:
   virtual void Next() {
     ++frame_;
-    unsigned int width;
-    unsigned int height;
+    unsigned int width = 0;
+    unsigned int height = 0;
     ScaleForFrameNumber(frame_, kInitialWidth, kInitialHeight, &width, &height,
-                        flag_codec_);
+                        flag_codec_, smaller_width_larger_size_);
     SetSize(width, height);
     FillFrame();
   }
@@ -304,7 +320,8 @@ class ResizeTest
 
 TEST_P(ResizeTest, TestExternalResizeWorks) {
   ResizingVideoSource video;
-  video.flag_codec_ = 0;
+  video.flag_codec_ = false;
+  video.smaller_width_larger_size_ = false;
   cfg_.g_lag_in_frames = 0;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
@@ -317,7 +334,8 @@ TEST_P(ResizeTest, TestExternalResizeWorks) {
     ASSERT_EQ(info->w, GetFrameWidth(idx));
     ASSERT_EQ(info->h, GetFrameHeight(idx));
     ScaleForFrameNumber(frame, kInitialWidth, kInitialHeight, &expected_w,
-                        &expected_h, 0);
+                        &expected_h, video.flag_codec_,
+                        video.smaller_width_larger_size_);
     EXPECT_EQ(expected_w, info->w)
         << "Frame " << frame << " had unexpected width";
     EXPECT_EQ(expected_h, info->h)
@@ -332,7 +350,7 @@ class ResizeInternalTest : public ResizeTest {
  protected:
 #if WRITE_COMPRESSED_STREAM
   ResizeInternalTest()
-      : ResizeTest(), frame0_psnr_(0.0), outfile_(NULL), out_frames_(0) {}
+      : ResizeTest(), frame0_psnr_(0.0), outfile_(nullptr), out_frames_(0) {}
 #else
   ResizeInternalTest() : ResizeTest(), frame0_psnr_(0.0) {}
 #endif
@@ -351,7 +369,7 @@ class ResizeInternalTest : public ResizeTest {
       if (!fseek(outfile_, 0, SEEK_SET))
         write_ivf_file_header(&cfg_, out_frames_, outfile_);
       fclose(outfile_);
-      outfile_ = NULL;
+      outfile_ = nullptr;
     }
 #endif
   }
@@ -534,7 +552,8 @@ class ResizeRealtimeTest
 
 TEST_P(ResizeRealtimeTest, TestExternalResizeWorks) {
   ResizingVideoSource video;
-  video.flag_codec_ = 1;
+  video.flag_codec_ = true;
+  video.smaller_width_larger_size_ = false;
   DefaultConfig();
   // Disable internal resize for this test.
   cfg_.rc_resize_allowed = 0;
@@ -549,7 +568,36 @@ TEST_P(ResizeRealtimeTest, TestExternalResizeWorks) {
     unsigned int expected_w;
     unsigned int expected_h;
     ScaleForFrameNumber(frame, kInitialWidth, kInitialHeight, &expected_w,
-                        &expected_h, 1);
+                        &expected_h, video.flag_codec_,
+                        video.smaller_width_larger_size_);
+    EXPECT_EQ(expected_w, info->w)
+        << "Frame " << frame << " had unexpected width";
+    EXPECT_EQ(expected_h, info->h)
+        << "Frame " << frame << " had unexpected height";
+    EXPECT_EQ(static_cast<unsigned int>(0), GetMismatchFrames());
+  }
+}
+
+TEST_P(ResizeRealtimeTest, DISABLED_TestExternalResizeSmallerWidthBiggerSize) {
+  ResizingVideoSource video;
+  video.flag_codec_ = true;
+  video.smaller_width_larger_size_ = true;
+  DefaultConfig();
+  // Disable internal resize for this test.
+  cfg_.rc_resize_allowed = 0;
+  change_bitrate_ = false;
+  mismatch_psnr_ = 0.0;
+  mismatch_nframes_ = 0;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+
+  for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
+       info != frame_info_list_.end(); ++info) {
+    const unsigned int frame = static_cast<unsigned>(info->pts);
+    unsigned int expected_w;
+    unsigned int expected_h;
+    ScaleForFrameNumber(frame, kInitialWidth, kInitialHeight, &expected_w,
+                        &expected_h, video.flag_codec_,
+                        video.smaller_width_larger_size_);
     EXPECT_EQ(expected_w, info->w)
         << "Frame " << frame << " had unexpected width";
     EXPECT_EQ(expected_h, info->h)
@@ -562,11 +610,11 @@ TEST_P(ResizeRealtimeTest, TestExternalResizeWorks) {
 // Run at low bitrate, with resize_allowed = 1, and verify that we get
 // one resize down event.
 TEST_P(ResizeRealtimeTest, TestInternalResizeDown) {
-  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                       30, 1, 0, 299);
+  ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
+                                       0, 299);
   DefaultConfig();
-  cfg_.g_w = 352;
-  cfg_.g_h = 288;
+  cfg_.g_w = 640;
+  cfg_.g_h = 480;
   change_bitrate_ = false;
   mismatch_psnr_ = 0.0;
   mismatch_nframes_ = 0;
@@ -600,11 +648,11 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDown) {
 // Start at low target bitrate, raise the bitrate in the middle of the clip,
 // scaling-up should occur after bitrate changed.
 TEST_P(ResizeRealtimeTest, TestInternalResizeDownUpChangeBitRate) {
-  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
-                                       30, 1, 0, 359);
+  ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
+                                       0, 400);
   DefaultConfig();
-  cfg_.g_w = 352;
-  cfg_.g_h = 288;
+  cfg_.g_w = 640;
+  cfg_.g_h = 480;
   change_bitrate_ = true;
   mismatch_psnr_ = 0.0;
   mismatch_nframes_ = 0;
@@ -624,11 +672,11 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDownUpChangeBitRate) {
     ASSERT_EQ(info->h, GetFrameHeight(idx));
     if (info->w != last_w || info->h != last_h) {
       resize_count++;
-      if (resize_count == 1) {
+      if (resize_count <= 2) {
         // Verify that resize down occurs.
         ASSERT_LT(info->w, last_w);
         ASSERT_LT(info->h, last_h);
-      } else if (resize_count == 2) {
+      } else if (resize_count > 2) {
         // Verify that resize up occurs.
         ASSERT_GT(info->w, last_w);
         ASSERT_GT(info->h, last_h);
@@ -639,8 +687,8 @@ TEST_P(ResizeRealtimeTest, TestInternalResizeDownUpChangeBitRate) {
   }
 
 #if CONFIG_VP9_DECODER
-  // Verify that we get 2 resize events in this test.
-  ASSERT_EQ(resize_count, 2) << "Resizing should occur twice.";
+  // Verify that we get 4 resize events in this test.
+  ASSERT_EQ(resize_count, 4) << "Resizing should occur twice.";
   EXPECT_EQ(static_cast<unsigned int>(0), GetMismatchFrames());
 #else
   printf("Warning: VP9 decoder unavailable, unable to check resize count!\n");
@@ -657,7 +705,7 @@ class ResizeCspTest : public ResizeTest {
  protected:
 #if WRITE_COMPRESSED_STREAM
   ResizeCspTest()
-      : ResizeTest(), frame0_psnr_(0.0), outfile_(NULL), out_frames_(0) {}
+      : ResizeTest(), frame0_psnr_(0.0), outfile_(nullptr), out_frames_(0) {}
 #else
   ResizeCspTest() : ResizeTest(), frame0_psnr_(0.0) {}
 #endif
@@ -676,7 +724,7 @@ class ResizeCspTest : public ResizeTest {
       if (!fseek(outfile_, 0, SEEK_SET))
         write_ivf_file_header(&cfg_, out_frames_, outfile_);
       fclose(outfile_);
-      outfile_ = NULL;
+      outfile_ = nullptr;
     }
 #endif
   }
@@ -745,14 +793,14 @@ TEST_P(ResizeCspTest, TestResizeCspWorks) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
-VP8_INSTANTIATE_TEST_CASE(ResizeTest, ONE_PASS_TEST_MODES);
-VP9_INSTANTIATE_TEST_CASE(ResizeTest,
-                          ::testing::Values(::libvpx_test::kRealTime));
-VP9_INSTANTIATE_TEST_CASE(ResizeInternalTest,
-                          ::testing::Values(::libvpx_test::kOnePassBest));
-VP9_INSTANTIATE_TEST_CASE(ResizeRealtimeTest,
-                          ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 9));
-VP9_INSTANTIATE_TEST_CASE(ResizeCspTest,
-                          ::testing::Values(::libvpx_test::kRealTime));
+VP8_INSTANTIATE_TEST_SUITE(ResizeTest, ONE_PASS_TEST_MODES);
+VP9_INSTANTIATE_TEST_SUITE(ResizeTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
+VP9_INSTANTIATE_TEST_SUITE(ResizeInternalTest,
+                           ::testing::Values(::libvpx_test::kOnePassBest));
+VP9_INSTANTIATE_TEST_SUITE(ResizeRealtimeTest,
+                           ::testing::Values(::libvpx_test::kRealTime),
+                           ::testing::Range(5, 9));
+VP9_INSTANTIATE_TEST_SUITE(ResizeCspTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
 }  // namespace

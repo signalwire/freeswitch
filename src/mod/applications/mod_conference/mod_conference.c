@@ -1911,8 +1911,8 @@ SWITCH_STANDARD_APP(conference_function)
 	member_flag_t mflags[MFLAG_MAX] = { 0 };
 	switch_core_session_message_t msg = { 0 };
 	uint8_t isbr = 0;
-	char *dpin = "";
-	const char *mdpin = "";
+	char *dpin;
+	const char *mdpin;
 	conference_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
 	int locked = 0;

@@ -1,0 +1,98 @@
+name: Release generic source archives
+
+on:
+  push:
+    branches:
+      - 'v1.10'
+      - 'v1.11'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or SHA to build tarball from'
+        required: true
+        type: string
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          path: 'code'
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Checkout reusable actions
+        uses: actions/checkout@v6
+        with:
+          repository: signalwire/actions-template
+          ref: main
+          fetch-depth: 1
+          path: actions
+          sparse-checkout: |
+            .github/actions/teleport/action.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Install dependencies
+        shell: bash
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            devscripts \
+            libtool \
+            libtool-bin \
+            zip \
+            tar \
+            gzip \
+            bzip2 \
+            xz-utils
+
+      - name: Run source tarball script
+        shell: bash
+        working-directory: ./code
+        run: ./scripts/ci/src_tarball.sh
+
+      - name: Generate checksums
+        shell: bash
+        working-directory: ./code/../src_dist
+        run: |
+          find . \( -iname '*.tar.bz2' -o -iname '*.tar.gz' -o -iname '*.tar.xz' -o -iname '*.zip' \) | while read file; do
+            echo $(md5sum $(basename $file)) > $file.md5
+            echo $(sha1sum $(basename $file)) > $file.sha1
+            echo $(sha256sum $(basename $file)) > $file.sha256
+          done
+
+      - name: Pack source archives directory
+        shell: bash
+        run: tar -czvf source_archives.tar.gz -C ./code/../src_dist .
+
+      - name: List contents
+        shell: bash
+        run: |
+          tar -tvzf source_archives.tar.gz
+
+      - name: Upload source tarball to remote host
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./actions/.github/actions/teleport
+        with:
+          EXEC_COMMANDS_PRE: 'mkdir -p /var/www/freeswitch/public/release/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}'
+          FILES: 'source_archives.tar.gz'
+          FILES_FOLDER: '/var/www/freeswitch/public/release/${{ github.ref_name }}/${{ github.run_id }}-${{ github.run_number }}'
+        env:
+          HOSTNAME: ${{ secrets.HOSTNAME }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+          TOKEN: ${{ secrets.TELEPORT_TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+
+      - name: Upload source tarball as artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: source_archives
+          path: source_archives.tar.gz

@@ -40,8 +40,14 @@
 
 void mod_amqp_connection_close(mod_amqp_connection_t *connection)
 {
-	amqp_connection_state_t old_state = connection->state;
+	amqp_connection_state_t old_state;
 	int status = 0;
+
+	if (!connection) {
+		return;
+	}
+
+	old_state = connection->state;
 
 	connection->state = NULL;
 
@@ -50,7 +56,8 @@ void mod_amqp_connection_close(mod_amqp_connection_t *connection)
 		mod_amqp_log_if_amqp_error(amqp_connection_close(old_state, AMQP_REPLY_SUCCESS), "Closing connection");
 
 		if ((status = amqp_destroy_connection(old_state))) {
-			const char *errstr = amqp_error_string2(-status);
+			const char *errstr = amqp_error_string2(status);
+			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error destroying amqp connection: %s\n", errstr);
 		}
 	}

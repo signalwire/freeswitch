@@ -79,6 +79,7 @@ typedef enum {
 	SWITCH_STUN_ATTR_DESTINATION_ADDRESS = 0x0011,	/* Address */
 	SWITCH_STUN_ATTR_SOURCE_ADDRESS2 = 0x0012,	/* Address */
 	SWITCH_STUN_ATTR_DATA = 0x0013,	/* ByteString */
+	SWITCH_STUN_ATTR_MESSAGE_INTEGRITY_SHA256 = 0x001c,	/* ByteString, 16-32 bytes (RFC 8489) */
 	SWITCH_STUN_ATTR_OPTIONS = 0x8001,	/* UInt32 */
 	SWITCH_STUN_ATTR_XOR_MAPPED_ADDRESS = 0x0020,   /* Address */
 
@@ -246,6 +247,19 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_software(switch_stun_pa
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_xor_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port, int family);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_integrity(switch_stun_packet_t *packet, const char *pass);
+
+/*!
+  \brief Verify the MESSAGE-INTEGRITY (HMAC-SHA1) of a received STUN packet
+  \param pkt the raw, unmodified (network byte order) packet bytes as received off the wire
+  \param len the number of valid bytes in pkt
+  \param pass the key (ICE password) the sender is expected to have used
+  \return SWITCH_STATUS_SUCCESS if a MESSAGE-INTEGRITY attribute is present and its HMAC matches,
+          SWITCH_STATUS_NOTFOUND if no MESSAGE-INTEGRITY attribute is present,
+          SWITCH_STATUS_FALSE on a mismatch or a malformed/out-of-bounds packet
+  \note pkt must be the pristine wire bytes; switch_stun_packet_parse() rewrites fields to host
+        byte order in place, so a parsed buffer cannot be verified.
+*/
+SWITCH_DECLARE(switch_status_t) switch_stun_packet_verify_integrity(const uint8_t *pkt, uint32_t len, const char *pass);
 SWITCH_DECLARE(uint32_t) switch_crc32_8bytes(const void* data, size_t length);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_fingerprint(switch_stun_packet_t *packet);
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_use_candidate(switch_stun_packet_t *packet);
@@ -299,9 +313,9 @@ SWITCH_DECLARE(switch_status_t) switch_stun_ip_lookup(char **external_ip, const 
   \return true or false depending on if there are any more attributes
 */
 
-#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->type && (((switch_byte_t *)attribute +  switch_stun_attribute_padded_length(attribute)) < (switch_byte_t *)end))
+#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((switch_byte_t *)(attribute + 1) <= (switch_byte_t *)(end)) && attribute->type && (((switch_byte_t *)attribute->value +  switch_stun_attribute_padded_length(attribute)) <= (switch_byte_t *)end))
 
-#define switch_stun_packet_next_attribute_hbo(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length_hbo(attribute))) && ((void *)attribute < end) && attribute->type && (((switch_byte_t *)attribute +  switch_stun_attribute_padded_length_hbo(attribute)) < (switch_byte_t *)end))
+#define switch_stun_packet_next_attribute_hbo(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length_hbo(attribute))) && ((switch_byte_t *)(attribute + 1) <= (switch_byte_t *)(end)) && attribute->type && (((switch_byte_t *)attribute->value +  switch_stun_attribute_padded_length_hbo(attribute)) <= (switch_byte_t *)end))
 
 /*!
   \brief Obtain the correct length in bytes of a stun packet

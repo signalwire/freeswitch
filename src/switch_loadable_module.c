@@ -98,6 +98,8 @@ struct switch_loadable_module_container {
 	switch_hash_t *limit_hash;
 	switch_hash_t *database_hash;
 	switch_hash_t *secondary_recover_hash;
+	switch_hash_t *interface_allowlist;
+	switch_bool_t interface_allowlist_enabled;
 	switch_mutex_t *mutex;
 	switch_thread_rwlock_t *chat_rwlock;
 	switch_memory_pool_t *pool;
@@ -151,6 +153,57 @@ static void switch_loadable_module_runtime(void)
 		}
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
+}
+
+/*
+   When an interface allowlist is configured in switch.conf.xml, only interfaces that are
+   explicitly permitted are allowed to register. An <allow> entry may be written at three
+   levels of precision (an interface is permitted if it matches ANY configured entry):
+
+     "mod_commands"            - every interface in the module
+     "mod_commands.system"     - any interface named "system" (type omitted matches all)
+     "mod_commands.system.api" - only the given interface TYPE named "system"
+
+   The optional trailing type token is one of: "app" (dialplan application), "api",
+   "json_api", "chat_app" (chat application). This lets you permit, say, the APP named
+   "system" while still blocking an API or JSON API of the same name. With no allowlist
+   configured, everything is permitted (nothing is enforced).
+*/
+static switch_bool_t switch_loadable_module_interface_allowed(const char *modname, const char *name, const char *type)
+{
+	char full[512];
+
+	/* No allowlist configured: enforce nothing. */
+	if (!loadable_modules.interface_allowlist_enabled) {
+		return SWITCH_TRUE;
+	}
+
+	if (zstr(modname)) {
+		return SWITCH_TRUE;
+	}
+
+	/* Whole module permitted, e.g. "mod_commands". */
+	if (switch_core_hash_find(loadable_modules.interface_allowlist, modname)) {
+		return SWITCH_TRUE;
+	}
+
+	if (!zstr(name)) {
+		/* Any type of this name permitted, e.g. "mod_commands.system". */
+		switch_snprintf(full, sizeof(full), "%s.%s", modname, name);
+		if (switch_core_hash_find(loadable_modules.interface_allowlist, full)) {
+			return SWITCH_TRUE;
+		}
+
+		/* Only this specific type of this name permitted, e.g. "mod_commands.system.api". */
+		if (!zstr(type)) {
+			switch_snprintf(full, sizeof(full), "%s.%s.%s", modname, name, type);
+			if (switch_core_hash_find(loadable_modules.interface_allowlist, full)) {
+				return SWITCH_TRUE;
+			}
+		}
+	}
+
+	return SWITCH_FALSE;
 }
 
 static switch_status_t switch_loadable_module_process(char *key, switch_loadable_module_t *new_module, switch_hash_t *event_hash)
@@ -325,6 +378,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		for (ptr = new_module->module_interface->application_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load application interface from %s due to no interface name.\n", key);
+			} else if (!switch_loadable_module_interface_allowed(key, ptr->interface_name, "app")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Skipping Application '%s' from %s: not permitted by interface allowlist\n", ptr->interface_name, key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -355,6 +410,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		for (ptr = new_module->module_interface->chat_application_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load application interface from %s due to no interface name.\n", key);
+			} else if (!switch_loadable_module_interface_allowed(key, ptr->interface_name, "chat_app")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Skipping Chat Application '%s' from %s: not permitted by interface allowlist\n", ptr->interface_name, key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -385,6 +442,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		for (ptr = new_module->module_interface->api_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load api interface from %s due to no interface name.\n", key);
+			} else if (!switch_loadable_module_interface_allowed(key, ptr->interface_name, "api")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Skipping API '%s' from %s: not permitted by interface allowlist\n", ptr->interface_name, key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -415,6 +474,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		for (ptr = new_module->module_interface->json_api_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load JSON api interface from %s due to no interface name.\n", key);
+			} else if (!switch_loadable_module_interface_allowed(key, ptr->interface_name, "json_api")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Skipping JSON API '%s' from %s: not permitted by interface allowlist\n", ptr->interface_name, key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding JSON API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -1984,6 +2045,91 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_loaded(switch_m
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void dump_allowlist_entry(switch_stream_handle_t *stream, switch_bool_t xml, const char *modname, const char *name, const char *type)
+{
+	if (xml) {
+		stream->write_function(stream, "  <allow name=\"%s.%s.%s\"/>\n", modname, name, type);
+	} else {
+		stream->write_function(stream, "%s.%s.%s\n", modname, name, type);
+	}
+}
+
+/*
+   Dump every loaded module's application / api / json_api / chat-application interfaces in the
+   interface-allowlist key format, so the current state can be captured and pruned offline into a
+   switch.conf.xml <interface-allowlist> section. Keys use module->key (the same name enforcement
+   matches on). by_module emits one entry per module ("mod_commands"); otherwise one fully
+   qualified entry per interface ("mod_commands.system.api"). xml wraps entries as <allow/> tags.
+*/
+SWITCH_DECLARE(void) switch_loadable_module_dump_interface_allowlist(switch_stream_handle_t *stream, switch_bool_t by_module, switch_bool_t xml)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_loadable_module_t *module;
+
+	if (xml) {
+		stream->write_function(stream, "<!-- generated by 'interface_allowlist_dump'; prune entries you want to block, then paste into switch.conf.xml -->\n");
+		stream->write_function(stream, "<interface-allowlist>\n");
+	}
+
+	switch_mutex_lock(loadable_modules.mutex);
+	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
+		module = (switch_loadable_module_t *) val;
+
+		if (!module || zstr(module->key)) {
+			continue;
+		}
+
+		if (by_module) {
+			if (xml) {
+				stream->write_function(stream, "  <allow name=\"%s\"/>\n", module->key);
+			} else {
+				stream->write_function(stream, "%s\n", module->key);
+			}
+			continue;
+		}
+
+		if (!module->module_interface) {
+			continue;
+		}
+
+		if (xml) {
+			stream->write_function(stream, "  <!-- %s -->\n", module->key);
+		}
+
+		{
+			const switch_application_interface_t *ptr;
+			for (ptr = module->module_interface->application_interface; ptr; ptr = ptr->next) {
+				if (ptr->interface_name) dump_allowlist_entry(stream, xml, module->key, ptr->interface_name, "app");
+			}
+		}
+		{
+			const switch_api_interface_t *ptr;
+			for (ptr = module->module_interface->api_interface; ptr; ptr = ptr->next) {
+				if (ptr->interface_name) dump_allowlist_entry(stream, xml, module->key, ptr->interface_name, "api");
+			}
+		}
+		{
+			const switch_json_api_interface_t *ptr;
+			for (ptr = module->module_interface->json_api_interface; ptr; ptr = ptr->next) {
+				if (ptr->interface_name) dump_allowlist_entry(stream, xml, module->key, ptr->interface_name, "json_api");
+			}
+		}
+		{
+			const switch_chat_application_interface_t *ptr;
+			for (ptr = module->module_interface->chat_application_interface; ptr; ptr = ptr->next) {
+				if (ptr->interface_name) dump_allowlist_entry(stream, xml, module->key, ptr->interface_name, "chat_app");
+			}
+		}
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	if (xml) {
+		stream->write_function(stream, "</interface-allowlist>\n");
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
@@ -2136,7 +2282,46 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init(&loadable_modules.secondary_recover_hash);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 	switch_thread_rwlock_create(&loadable_modules.chat_rwlock, loadable_modules.pool);
-	
+
+	/*
+	   Build the optional interface allowlist from switch.conf.xml. When at least one <allow>
+	   entry is present, ONLY the permitted modules (e.g. "mod_commands") or specific interfaces
+	   (e.g. "mod_commands.system") may register application/api/json_api/chat-application
+	   interfaces; every other such interface is refused at load time. With no allowlist
+	   configured, nothing is enforced (all interfaces load as before). Built before the
+	   autoload check so runtime module loads are subject to the same policy.
+	*/
+	switch_core_hash_init_nocase(&loadable_modules.interface_allowlist);
+	loadable_modules.interface_allowlist_enabled = SWITCH_FALSE;
+	{
+		switch_xml_t cfg_al = NULL, xml_al = NULL, list = NULL, item = NULL;
+		if ((xml_al = switch_xml_open_cfg("switch.conf", &cfg_al, NULL))) {
+			if ((list = switch_xml_child(cfg_al, "interface-allowlist"))) {
+				for (item = switch_xml_child(list, "allow"); item; item = item->next) {
+					const char *aname = switch_xml_attr_soft(item, "name");
+					if (!zstr(aname)) {
+						char *entry = switch_core_strdup(loadable_modules.pool, aname);
+						switch_core_hash_insert(loadable_modules.interface_allowlist, entry, entry);
+						loadable_modules.interface_allowlist_enabled = SWITCH_TRUE;
+					}
+				}
+				if (!loadable_modules.interface_allowlist_enabled) {
+					/* Section present but nothing usable parsed (e.g. a typo'd tag or missing name= attribute).
+					   Enforcement is boot-only, so a silent miss would leave the box unhardened with no runtime
+					   safety net; make the misconfiguration loud instead of failing open quietly. */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Interface allowlist section <interface-allowlist> is present but no valid <allow name=\"...\"/> "
+									  "entries were found; enforcement is DISABLED. Check for typos (lowercase <allow> with a name= attribute).\n");
+				}
+			}
+			switch_xml_free(xml_al);
+		}
+		if (loadable_modules.interface_allowlist_enabled) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "Interface allowlist ACTIVE: only explicitly permitted application/api/json_api interfaces will load.\n");
+		}
+	}
+
 	if (!autoload) return SWITCH_STATUS_SUCCESS;
 	
 	/*
@@ -2472,6 +2657,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.database_hash);
 	switch_core_hash_destroy(&loadable_modules.dialplan_hash);
 	switch_core_hash_destroy(&loadable_modules.secondary_recover_hash);
+	switch_core_hash_destroy(&loadable_modules.interface_allowlist);
 
 	switch_core_destroy_memory_pool(&loadable_modules.pool);
 }

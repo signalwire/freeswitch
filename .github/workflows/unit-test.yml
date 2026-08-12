@@ -107,6 +107,13 @@ jobs:
         run: |
           ./run-tests.sh ${{ inputs.total-groups }} ${{ inputs.current-group }} --output-dir logs || exit 1
 
+      - name: Run libesl tests
+        if: ${{ inputs.current-group == 1 }}
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}/../../libs/esl
+        run: |
+          make check
+
       - name: Collect unit test logs
         if: always()
         shell: bash
@@ -128,7 +135,7 @@ jobs:
         if: |
           failure() &&
           github.event_name == 'push' &&
-          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10')
+          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/v1.10' || github.ref == 'refs/heads/v1.11')
         uses: signalwire/actions-template/.github/actions/slack@main
         with:
           CHANNEL: ${{ secrets.SLACK_DEVOPS_CI_CHANNEL }}

@@ -56,7 +56,7 @@ Step by step tutorials to build FreeSWITCH with provided dependency packages:
 
   * [Tarballs](https://files.freeswitch.org/releases/freeswitch/)
   * [Windows Installer](http://files.freeswitch.org/windows/installer/x64/)
-  * [Windows Sound Packages](http://files.freeswitch.org/windows/installer/x64/sounds/)
+  * [Windows Sound Packages](https://github.com/freeswitch/freeswitch-sounds/releases)
 
 ## Contributions
 

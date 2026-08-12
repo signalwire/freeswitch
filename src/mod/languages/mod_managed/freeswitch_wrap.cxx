@@ -9328,6 +9328,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_sql_concat___() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_SWITCH_PCRE2_get___() {
+  int jresult ;
+  int result;
+  
+  result = (int)(1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_regex_compile___(char * jarg1, int jarg2, void * jarg3, void * jarg4, void * jarg5) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
@@ -11408,7 +11418,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_MAX_FPSTRLEN_get___() {
   int jresult ;
   int result;
   
-  result = (int)(192);
+  result = (int)(193);
   jresult = result; 
   return jresult;
 }
@@ -11500,8 +11510,8 @@ SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_dtls_fingerprint_t_str_set_
   arg2 = (char *)jarg2; 
   {
     if(arg2) {
-      strncpy((char*)arg1->str, (const char *)arg2, 192-1);
-      arg1->str[192-1] = 0;
+      strncpy((char*)arg1->str, (const char *)arg2, 193-1);
+      arg1->str[193-1] = 0;
     } else {
       arg1->str[0] = 0;
     }
@@ -19664,6 +19674,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_loadable_module_enume
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_loadable_module_dump_interface_allowlist___(void * jarg1, int jarg2, int jarg3) {
+  switch_stream_handle_t *arg1 = (switch_stream_handle_t *) 0 ;
+  switch_bool_t arg2 ;
+  switch_bool_t arg3 ;
+  
+  arg1 = (switch_stream_handle_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  arg3 = (switch_bool_t)jarg3; 
+  switch_loadable_module_dump_interface_allowlist(arg1,arg2,arg3);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_loadable_module_build_dynamic___(char * jarg1, void * jarg2, void * jarg3, void * jarg4, int jarg5) {
   int jresult ;
   char *arg1 = (char *) 0 ;
@@ -23607,6 +23629,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_rand___() {
   int result;
   
   result = (int)switch_rand();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_switch_is_ip_address___(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_is_ip_address((char const *)arg1);
   jresult = result; 
   return jresult;
 }

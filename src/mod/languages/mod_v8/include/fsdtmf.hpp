@@ -56,7 +56,7 @@ public:
 
 	/* Methods available from JavaScript */
 	static void *Construct(const v8::FunctionCallbackInfo<v8::Value>& info);
-	static v8::Handle<v8::Object> New(switch_dtmf_t *dtmf, const char *name, JSMain *js);
+	static v8::Local<v8::Object> New(switch_dtmf_t *dtmf, const char *name, JSMain *js);
 	JS_DTMF_GET_PROPERTY_DEF(GetProperty);
 };
 

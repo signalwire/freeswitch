@@ -140,6 +140,90 @@
           <action application="park" data=""/>
         </condition>
       </extension>
+      <!-- 603+ (ATIS-1000099) detection tests -->
+      <extension name="603plus_detect_valid_sip">
+        <condition field="destination_number" expression="^\+15553336050$">
+          <action application="set" data="sip_reason=SIP;cause=603;text=&quot;v=analytics1;url=https://example.com/redress&quot;;location=TN"/>
+          <action application="respond" data="603 Network Blocked"/>
+        </condition>
+      </extension>
+      <extension name="603plus_detect_valid_q850">
+        <condition field="destination_number" expression="^\+15553336051$">
+          <action application="set" data="sip_reason=Q.850;cause=21;text=&quot;v=analytics1;url=https://example.com/redress&quot;;location=LN"/>
+          <action application="respond" data="603 Network Blocked"/>
+        </condition>
+      </extension>
+      <extension name="603plus_detect_wrong_phrase">
+        <condition field="destination_number" expression="^\+15553336052$">
+          <action application="set" data="sip_reason=SIP;cause=603;text=&quot;v=analytics1;url=https://example.com/redress&quot;;location=TN"/>
+          <action application="respond" data="603 Decline"/>
+        </condition>
+      </extension>
+      <extension name="603plus_detect_no_analytics">
+        <condition field="destination_number" expression="^\+15553336053$">
+          <action application="set" data="sip_reason=Q.850;cause=21;text=&quot;Call Rejected&quot;"/>
+          <action application="respond" data="603 Network Blocked"/>
+        </condition>
+      </extension>
+      <extension name="603plus_detect_no_reason">
+        <condition field="destination_number" expression="^\+15553336054$">
+          <action application="set" data="disable_q850_reason=true"/>
+          <action application="respond" data="603 Network Blocked"/>
+        </condition>
+      </extension>
+      <extension name="603plus_detect_non_603">
+        <condition field="destination_number" expression="^\+15553336055$">
+          <action application="set" data="sip_reason=SIP;cause=603;text=&quot;v=analytics1;url=https://example.com/redress&quot;;location=TN"/>
+          <action application="respond" data="486 Busy Here"/>
+        </condition>
+      </extension>
+      <extension name="603plus_detect_after_180">
+        <condition field="destination_number" expression="^\+15553336056$">
+          <action application="set" data="sip_reason=SIP;cause=603;text=&quot;v=analytics1;url=https://example.com/redress&quot;;location=TN"/>
+          <action application="ring_ready"/>
+          <action application="sleep" data="500"/>
+          <action application="respond" data="603 Network Blocked"/>
+        </condition>
+      </extension>
+      <!-- 603+ passthrough tests: bridge to 603+ target, vary passthrough setting -->
+      <extension name="603plus_passthrough_true">
+        <condition field="destination_number" expression="^\+15553336060$">
+          <action application="set" data="sip_603plus_passthrough=true"/>
+          <action application="bridge" data="sofia/gateway/test/+15553336050"/>
+        </condition>
+      </extension>
+      <extension name="603plus_passthrough_false">
+        <condition field="destination_number" expression="^\+15553336061$">
+          <action application="set" data="sip_603plus_passthrough=false"/>
+          <action application="bridge" data="sofia/gateway/test/+15553336050"/>
+        </condition>
+      </extension>
+      <extension name="603plus_passthrough_default">
+        <condition field="destination_number" expression="^\+15553336062$">
+          <action application="bridge" data="sofia/gateway/test/+15553336050"/>
+        </condition>
+      </extension>
+      <!-- 603+ passthrough + disable_q850_reason combination tests -->
+      <extension name="603plus_disable_reason_passthrough_true">
+        <condition field="destination_number" expression="^\+15553336063$">
+          <action application="set" data="disable_q850_reason=true"/>
+          <action application="set" data="sip_603plus_passthrough=true"/>
+          <action application="bridge" data="sofia/gateway/test/+15553336050"/>
+        </condition>
+      </extension>
+      <extension name="603plus_disable_reason_passthrough_false">
+        <condition field="destination_number" expression="^\+15553336064$">
+          <action application="set" data="disable_q850_reason=true"/>
+          <action application="set" data="sip_603plus_passthrough=false"/>
+          <action application="bridge" data="sofia/gateway/test/+15553336050"/>
+        </condition>
+      </extension>
+      <extension name="603plus_disable_reason_passthrough_default">
+        <condition field="destination_number" expression="^\+15553336065$">
+          <action application="set" data="disable_q850_reason=true"/>
+          <action application="bridge" data="sofia/gateway/test/+15553336050"/>
+        </condition>
+      </extension>
     </context>
   </section>
 </document>

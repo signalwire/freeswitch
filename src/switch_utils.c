@@ -1022,32 +1022,30 @@ static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl
 #define B64BUFFLEN 1024
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen)
 {
-	int y = 0, bytes = 0;
-	size_t x = 0;
+	size_t x = 0, bytes = 0;
 	unsigned int b = 0, l = 0;
+
+	if (olen == 0) {	/* no room even for the trailing NUL */
+		return SWITCH_STATUS_FALSE;
+	}
 
 	for (x = 0; x < ilen; x++) {
 		b = (b << 8) + in[x];
 		l += 8;
 
 		while (l >= 6) {
-			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
-			if (bytes >= (int)olen - 1) {
+			if (bytes + 1 >= olen) {	/* reserve the last byte for the NUL */
 				goto end;
 			}
-			if (++y != 72) {
-				continue;
-			}
-			/* out[bytes++] = '\n'; */
-			y = 0;
+			out[bytes++] = switch_b64_table[(b >> (l -= 6)) % 64];
 		}
 	}
 
-	if (l > 0) {
+	if (l > 0 && bytes + 1 < olen) {
 		out[bytes++] = switch_b64_table[((b % 16) << (6 - l)) % 64];
 	}
 	if (l != 0) {
-		while (l < 6 && bytes < (int)olen - 1) {
+		while (l < 6 && bytes + 1 < olen) {
 			out[bytes++] = '=', l += 2;
 		}
 	}
@@ -1062,22 +1060,27 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switch_size_t olen)
 {
 
-	char l64[256];
-	int b = 0, c, l = 0, i;
+	signed char l64[256];
+	int c, l = 0, i;
+	unsigned int b = 0;
 	const char *ip;
 	char *op = out;
 	size_t ol = 0;
+
+	if (olen == 0) {	/* no room even for the trailing NUL */
+		return 0;
+	}
 
 	for (i = 0; i < 256; i++) {
 		l64[i] = -1;
 	}
 
 	for (i = 0; i < 64; i++) {
-		l64[(int) switch_b64_table[i]] = (char) i;
+		l64[(unsigned char) switch_b64_table[i]] = (signed char) i;
 	}
 
 	for (ip = in; ip && *ip && (*ip != '='); ip++) {
-		c = l64[(int) *ip];
+		c = l64[(unsigned char) *ip];
 		if (c == -1) {
 			continue;
 		}
@@ -1086,10 +1089,10 @@ SWITCH_DECLARE(switch_size_t) switch_b64_decode(const char *in, char *out, switc
 		l += 6;
 
 		while (l >= 8) {
-			op[ol++] = (char) ((b >> (l -= 8)) % 256);
-			if (ol >= olen - 1) {
+			if (ol + 1 >= olen) {	/* reserve the last byte for the NUL */
 				goto end;
 			}
+			op[ol++] = (char) ((b >> (l -= 8)) % 256);
 		}
 	}
 
@@ -4270,7 +4273,8 @@ switch_status_t clean_uri(char *uri)
 
 	argc = switch_separate_string(uri, '/', argv, sizeof(argv) / sizeof(argv[0]));
 
-	if (argc == sizeof(argv)) { /* too deep */
+	/* Intentionally using == instead of > because this way we would know that the url was fully parsed for sure */
+	if (argc == (sizeof(argv) / sizeof(argv[0]))) { /* too deep */
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -4885,6 +4889,24 @@ SWITCH_DECLARE(int) switch_rand(void)
 #else
 	return rand();
 #endif
+}
+
+SWITCH_DECLARE(int) switch_is_ip_address(const char *hostname)
+{
+	struct sockaddr_in sa;
+	struct sockaddr_in6 sa6;
+
+	if (!hostname) return 0;
+
+	if (inet_pton(AF_INET, hostname, &(sa.sin_addr)) == 1) {
+		return 1; /* It is a valid IPv4 address */
+	}
+
+	if (inet_pton(AF_INET6, hostname, &(sa6.sin6_addr)) == 1) {
+		return 1; /* It is a valid IPv6 address */
+	}
+
+	return 0; /* Not a valid IPv4 or IPv6 address */
 }
 
 /* For Emacs:

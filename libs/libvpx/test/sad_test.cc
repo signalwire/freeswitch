@@ -26,6 +26,10 @@
 #include "vpx_ports/msvc.h"
 #include "vpx_ports/vpx_timer.h"
 
+// const[expr] should be sufficient for DECLARE_ALIGNED but early
+// implementations of c++11 appear to have some issues with it.
+#define kDataAlignment 32
+
 template <typename Function>
 struct TestParams {
   TestParams(int w, int h, Function f, int bd = -1)
@@ -47,6 +51,10 @@ typedef void (*SadMxNx4Func)(const uint8_t *src_ptr, int src_stride,
                              const uint8_t *const ref_ptr[], int ref_stride,
                              unsigned int *sad_array);
 typedef TestParams<SadMxNx4Func> SadMxNx4Param;
+
+typedef void (*SadMxNx8Func)(const uint8_t *src_ptr, int src_stride,
+                             const uint8_t *ref_ptr, int ref_stride,
+                             unsigned int *sad_array);
 
 using libvpx_test::ACMRandom;
 
@@ -93,46 +101,57 @@ class SADTestBase : public ::testing::TestWithParam<ParamType> {
 
   virtual void TearDown() {
     vpx_free(source_data8_);
-    source_data8_ = NULL;
+    source_data8_ = nullptr;
     vpx_free(reference_data8_);
-    reference_data8_ = NULL;
+    reference_data8_ = nullptr;
     vpx_free(second_pred8_);
-    second_pred8_ = NULL;
+    second_pred8_ = nullptr;
     vpx_free(source_data16_);
-    source_data16_ = NULL;
+    source_data16_ = nullptr;
     vpx_free(reference_data16_);
-    reference_data16_ = NULL;
+    reference_data16_ = nullptr;
     vpx_free(second_pred16_);
-    second_pred16_ = NULL;
+    second_pred16_ = nullptr;
 
     libvpx_test::ClearSystemState();
   }
 
  protected:
   // Handle blocks up to 4 blocks 64x64 with stride up to 128
-  static const int kDataAlignment = 32;
+  // crbug.com/webm/1660
   static const int kDataBlockSize = 64 * 128;
   static const int kDataBufferSize = 4 * kDataBlockSize;
 
-  uint8_t *GetReference(int block_idx) const {
+  int GetBlockRefOffset(int block_idx) const {
+    return block_idx * kDataBlockSize;
+  }
+
+  uint8_t *GetReferenceFromOffset(int ref_offset) const {
+    assert((params_.height - 1) * reference_stride_ + params_.width - 1 +
+               ref_offset <
+           kDataBufferSize);
 #if CONFIG_VP9_HIGHBITDEPTH
     if (use_high_bit_depth_) {
       return CONVERT_TO_BYTEPTR(CONVERT_TO_SHORTPTR(reference_data_) +
-                                block_idx * kDataBlockSize);
+                                ref_offset);
     }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    return reference_data_ + block_idx * kDataBlockSize;
+    return reference_data_ + ref_offset;
+  }
+
+  uint8_t *GetReference(int block_idx) const {
+    return GetReferenceFromOffset(GetBlockRefOffset(block_idx));
   }
 
   // Sum of Absolute Differences. Given two blocks, calculate the absolute
   // difference between two pixels in the same relative location; accumulate.
-  uint32_t ReferenceSAD(int block_idx) const {
+  uint32_t ReferenceSAD(int ref_offset) const {
     uint32_t sad = 0;
-    const uint8_t *const reference8 = GetReference(block_idx);
+    const uint8_t *const reference8 = GetReferenceFromOffset(ref_offset);
     const uint8_t *const source8 = source_data_;
 #if CONFIG_VP9_HIGHBITDEPTH
     const uint16_t *const reference16 =
-        CONVERT_TO_SHORTPTR(GetReference(block_idx));
+        CONVERT_TO_SHORTPTR(GetReferenceFromOffset(ref_offset));
     const uint16_t *const source16 = CONVERT_TO_SHORTPTR(source_data_);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     for (int h = 0; h < params_.height; ++h) {
@@ -203,22 +222,26 @@ class SADTestBase : public ::testing::TestWithParam<ParamType> {
     }
   }
 
-  void FillRandom(uint8_t *data, int stride) {
+  void FillRandomWH(uint8_t *data, int stride, int w, int h) {
     uint8_t *data8 = data;
 #if CONFIG_VP9_HIGHBITDEPTH
     uint16_t *data16 = CONVERT_TO_SHORTPTR(data);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    for (int h = 0; h < params_.height; ++h) {
-      for (int w = 0; w < params_.width; ++w) {
+    for (int r = 0; r < h; ++r) {
+      for (int c = 0; c < w; ++c) {
         if (!use_high_bit_depth_) {
-          data8[h * stride + w] = rnd_.Rand8();
+          data8[r * stride + c] = rnd_.Rand8();
 #if CONFIG_VP9_HIGHBITDEPTH
         } else {
-          data16[h * stride + w] = rnd_.Rand16() & mask_;
+          data16[r * stride + c] = rnd_.Rand16() & mask_;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
         }
       }
     }
+  }
+
+  void FillRandom(uint8_t *data, int stride) {
+    FillRandomWH(data, stride, params_.width, params_.height);
   }
 
   uint32_t mask_;
@@ -255,11 +278,12 @@ class SADx4Test : public SADTestBase<SadMxNx4Param> {
   }
 
   void CheckSADs() const {
-    uint32_t reference_sad, exp_sad[4];
+    uint32_t reference_sad;
+    DECLARE_ALIGNED(kDataAlignment, uint32_t, exp_sad[4]);
 
     SADs(exp_sad);
     for (int block = 0; block < 4; ++block) {
-      reference_sad = ReferenceSAD(block);
+      reference_sad = ReferenceSAD(GetBlockRefOffset(block));
 
       EXPECT_EQ(reference_sad, exp_sad[block]) << "block " << block;
     }
@@ -281,7 +305,7 @@ class SADTest : public AbstractBench, public SADTestBase<SadMxNParam> {
   }
 
   void CheckSAD() const {
-    const unsigned int reference_sad = ReferenceSAD(0);
+    const unsigned int reference_sad = ReferenceSAD(GetBlockRefOffset(0));
     const unsigned int exp_sad = SAD(0);
 
     ASSERT_EQ(reference_sad, exp_sad);
@@ -490,7 +514,8 @@ TEST_P(SADx4Test, DISABLED_Speed) {
   FillRandom(GetReference(2), reference_stride_);
   FillRandom(GetReference(3), reference_stride_);
   const int kCountSpeedTestBlock = 500000000 / (params_.width * params_.height);
-  uint32_t reference_sad[4], exp_sad[4];
+  uint32_t reference_sad[4];
+  DECLARE_ALIGNED(kDataAlignment, uint32_t, exp_sad[4]);
   vpx_usec_timer timer;
 
   memset(reference_sad, 0, sizeof(reference_sad));
@@ -498,7 +523,7 @@ TEST_P(SADx4Test, DISABLED_Speed) {
   vpx_usec_timer_start(&timer);
   for (int i = 0; i < kCountSpeedTestBlock; ++i) {
     for (int block = 0; block < 4; ++block) {
-      reference_sad[block] = ReferenceSAD(block);
+      reference_sad[block] = ReferenceSAD(GetBlockRefOffset(block));
     }
   }
   vpx_usec_timer_mark(&timer);
@@ -571,7 +596,7 @@ const SadMxNParam c_tests[] = {
   SadMxNParam(4, 4, &vpx_highbd_sad4x4_c, 12),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
-INSTANTIATE_TEST_CASE_P(C, SADTest, ::testing::ValuesIn(c_tests));
+INSTANTIATE_TEST_SUITE_P(C, SADTest, ::testing::ValuesIn(c_tests));
 
 const SadMxNAvgParam avg_c_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_c),
@@ -629,7 +654,7 @@ const SadMxNAvgParam avg_c_tests[] = {
   SadMxNAvgParam(4, 4, &vpx_highbd_sad4x4_avg_c, 12),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
-INSTANTIATE_TEST_CASE_P(C, SADavgTest, ::testing::ValuesIn(avg_c_tests));
+INSTANTIATE_TEST_SUITE_P(C, SADavgTest, ::testing::ValuesIn(avg_c_tests));
 
 const SadMxNx4Param x4d_c_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_c),
@@ -687,7 +712,7 @@ const SadMxNx4Param x4d_c_tests[] = {
   SadMxNx4Param(4, 4, &vpx_highbd_sad4x4x4d_c, 12),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
-INSTANTIATE_TEST_CASE_P(C, SADx4Test, ::testing::ValuesIn(x4d_c_tests));
+INSTANTIATE_TEST_SUITE_P(C, SADx4Test, ::testing::ValuesIn(x4d_c_tests));
 
 //------------------------------------------------------------------------------
 // ARM functions
@@ -705,7 +730,7 @@ const SadMxNParam neon_tests[] = {
   SadMxNParam(4, 8, &vpx_sad4x8_neon),
   SadMxNParam(4, 4, &vpx_sad4x4_neon),
 };
-INSTANTIATE_TEST_CASE_P(NEON, SADTest, ::testing::ValuesIn(neon_tests));
+INSTANTIATE_TEST_SUITE_P(NEON, SADTest, ::testing::ValuesIn(neon_tests));
 
 const SadMxNAvgParam avg_neon_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_neon),
@@ -722,7 +747,7 @@ const SadMxNAvgParam avg_neon_tests[] = {
   SadMxNAvgParam(4, 8, &vpx_sad4x8_avg_neon),
   SadMxNAvgParam(4, 4, &vpx_sad4x4_avg_neon),
 };
-INSTANTIATE_TEST_CASE_P(NEON, SADavgTest, ::testing::ValuesIn(avg_neon_tests));
+INSTANTIATE_TEST_SUITE_P(NEON, SADavgTest, ::testing::ValuesIn(avg_neon_tests));
 
 const SadMxNx4Param x4d_neon_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_neon),
@@ -739,7 +764,7 @@ const SadMxNx4Param x4d_neon_tests[] = {
   SadMxNx4Param(4, 8, &vpx_sad4x8x4d_neon),
   SadMxNx4Param(4, 4, &vpx_sad4x4x4d_neon),
 };
-INSTANTIATE_TEST_CASE_P(NEON, SADx4Test, ::testing::ValuesIn(x4d_neon_tests));
+INSTANTIATE_TEST_SUITE_P(NEON, SADx4Test, ::testing::ValuesIn(x4d_neon_tests));
 #endif  // HAVE_NEON
 
 //------------------------------------------------------------------------------
@@ -795,7 +820,7 @@ const SadMxNParam sse2_tests[] = {
   SadMxNParam(8, 4, &vpx_highbd_sad8x4_sse2, 12),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
-INSTANTIATE_TEST_CASE_P(SSE2, SADTest, ::testing::ValuesIn(sse2_tests));
+INSTANTIATE_TEST_SUITE_P(SSE2, SADTest, ::testing::ValuesIn(sse2_tests));
 
 const SadMxNAvgParam avg_sse2_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_sse2),
@@ -847,7 +872,7 @@ const SadMxNAvgParam avg_sse2_tests[] = {
   SadMxNAvgParam(8, 4, &vpx_highbd_sad8x4_avg_sse2, 12),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
-INSTANTIATE_TEST_CASE_P(SSE2, SADavgTest, ::testing::ValuesIn(avg_sse2_tests));
+INSTANTIATE_TEST_SUITE_P(SSE2, SADavgTest, ::testing::ValuesIn(avg_sse2_tests));
 
 const SadMxNx4Param x4d_sse2_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_sse2),
@@ -905,7 +930,7 @@ const SadMxNx4Param x4d_sse2_tests[] = {
   SadMxNx4Param(4, 4, &vpx_highbd_sad4x4x4d_sse2, 12),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
-INSTANTIATE_TEST_CASE_P(SSE2, SADx4Test, ::testing::ValuesIn(x4d_sse2_tests));
+INSTANTIATE_TEST_SUITE_P(SSE2, SADx4Test, ::testing::ValuesIn(x4d_sse2_tests));
 #endif  // HAVE_SSE2
 
 #if HAVE_SSE3
@@ -916,10 +941,6 @@ INSTANTIATE_TEST_CASE_P(SSE2, SADx4Test, ::testing::ValuesIn(x4d_sse2_tests));
 // Only functions are x3, which do not have tests.
 #endif  // HAVE_SSSE3
 
-#if HAVE_SSE4_1
-// Only functions are x8, which do not have tests.
-#endif  // HAVE_SSE4_1
-
 #if HAVE_AVX2
 const SadMxNParam avx2_tests[] = {
   SadMxNParam(64, 64, &vpx_sad64x64_avx2),
@@ -928,7 +949,7 @@ const SadMxNParam avx2_tests[] = {
   SadMxNParam(32, 32, &vpx_sad32x32_avx2),
   SadMxNParam(32, 16, &vpx_sad32x16_avx2),
 };
-INSTANTIATE_TEST_CASE_P(AVX2, SADTest, ::testing::ValuesIn(avx2_tests));
+INSTANTIATE_TEST_SUITE_P(AVX2, SADTest, ::testing::ValuesIn(avx2_tests));
 
 const SadMxNAvgParam avg_avx2_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_avx2),
@@ -937,21 +958,22 @@ const SadMxNAvgParam avg_avx2_tests[] = {
   SadMxNAvgParam(32, 32, &vpx_sad32x32_avg_avx2),
   SadMxNAvgParam(32, 16, &vpx_sad32x16_avg_avx2),
 };
-INSTANTIATE_TEST_CASE_P(AVX2, SADavgTest, ::testing::ValuesIn(avg_avx2_tests));
+INSTANTIATE_TEST_SUITE_P(AVX2, SADavgTest, ::testing::ValuesIn(avg_avx2_tests));
 
 const SadMxNx4Param x4d_avx2_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_avx2),
   SadMxNx4Param(32, 32, &vpx_sad32x32x4d_avx2),
 };
-INSTANTIATE_TEST_CASE_P(AVX2, SADx4Test, ::testing::ValuesIn(x4d_avx2_tests));
+INSTANTIATE_TEST_SUITE_P(AVX2, SADx4Test, ::testing::ValuesIn(x4d_avx2_tests));
+
 #endif  // HAVE_AVX2
 
 #if HAVE_AVX512
 const SadMxNx4Param x4d_avx512_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_avx512),
 };
-INSTANTIATE_TEST_CASE_P(AVX512, SADx4Test,
-                        ::testing::ValuesIn(x4d_avx512_tests));
+INSTANTIATE_TEST_SUITE_P(AVX512, SADx4Test,
+                         ::testing::ValuesIn(x4d_avx512_tests));
 #endif  // HAVE_AVX512
 
 //------------------------------------------------------------------------------
@@ -972,7 +994,7 @@ const SadMxNParam msa_tests[] = {
   SadMxNParam(4, 8, &vpx_sad4x8_msa),
   SadMxNParam(4, 4, &vpx_sad4x4_msa),
 };
-INSTANTIATE_TEST_CASE_P(MSA, SADTest, ::testing::ValuesIn(msa_tests));
+INSTANTIATE_TEST_SUITE_P(MSA, SADTest, ::testing::ValuesIn(msa_tests));
 
 const SadMxNAvgParam avg_msa_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_msa),
@@ -989,7 +1011,7 @@ const SadMxNAvgParam avg_msa_tests[] = {
   SadMxNAvgParam(4, 8, &vpx_sad4x8_avg_msa),
   SadMxNAvgParam(4, 4, &vpx_sad4x4_avg_msa),
 };
-INSTANTIATE_TEST_CASE_P(MSA, SADavgTest, ::testing::ValuesIn(avg_msa_tests));
+INSTANTIATE_TEST_SUITE_P(MSA, SADavgTest, ::testing::ValuesIn(avg_msa_tests));
 
 const SadMxNx4Param x4d_msa_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_msa),
@@ -1006,7 +1028,7 @@ const SadMxNx4Param x4d_msa_tests[] = {
   SadMxNx4Param(4, 8, &vpx_sad4x8x4d_msa),
   SadMxNx4Param(4, 4, &vpx_sad4x4x4d_msa),
 };
-INSTANTIATE_TEST_CASE_P(MSA, SADx4Test, ::testing::ValuesIn(x4d_msa_tests));
+INSTANTIATE_TEST_SUITE_P(MSA, SADx4Test, ::testing::ValuesIn(x4d_msa_tests));
 #endif  // HAVE_MSA
 
 //------------------------------------------------------------------------------
@@ -1025,7 +1047,7 @@ const SadMxNParam vsx_tests[] = {
   SadMxNParam(8, 8, &vpx_sad8x8_vsx),
   SadMxNParam(8, 4, &vpx_sad8x4_vsx),
 };
-INSTANTIATE_TEST_CASE_P(VSX, SADTest, ::testing::ValuesIn(vsx_tests));
+INSTANTIATE_TEST_SUITE_P(VSX, SADTest, ::testing::ValuesIn(vsx_tests));
 
 const SadMxNAvgParam avg_vsx_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_vsx),
@@ -1037,7 +1059,7 @@ const SadMxNAvgParam avg_vsx_tests[] = {
   SadMxNAvgParam(16, 16, &vpx_sad16x16_avg_vsx),
   SadMxNAvgParam(16, 8, &vpx_sad16x8_avg_vsx),
 };
-INSTANTIATE_TEST_CASE_P(VSX, SADavgTest, ::testing::ValuesIn(avg_vsx_tests));
+INSTANTIATE_TEST_SUITE_P(VSX, SADavgTest, ::testing::ValuesIn(avg_vsx_tests));
 
 const SadMxNx4Param x4d_vsx_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_vsx),
@@ -1049,7 +1071,7 @@ const SadMxNx4Param x4d_vsx_tests[] = {
   SadMxNx4Param(16, 16, &vpx_sad16x16x4d_vsx),
   SadMxNx4Param(16, 8, &vpx_sad16x8x4d_vsx),
 };
-INSTANTIATE_TEST_CASE_P(VSX, SADx4Test, ::testing::ValuesIn(x4d_vsx_tests));
+INSTANTIATE_TEST_SUITE_P(VSX, SADx4Test, ::testing::ValuesIn(x4d_vsx_tests));
 #endif  // HAVE_VSX
 
 //------------------------------------------------------------------------------
@@ -1070,7 +1092,7 @@ const SadMxNParam mmi_tests[] = {
   SadMxNParam(4, 8, &vpx_sad4x8_mmi),
   SadMxNParam(4, 4, &vpx_sad4x4_mmi),
 };
-INSTANTIATE_TEST_CASE_P(MMI, SADTest, ::testing::ValuesIn(mmi_tests));
+INSTANTIATE_TEST_SUITE_P(MMI, SADTest, ::testing::ValuesIn(mmi_tests));
 
 const SadMxNAvgParam avg_mmi_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_mmi),
@@ -1087,7 +1109,7 @@ const SadMxNAvgParam avg_mmi_tests[] = {
   SadMxNAvgParam(4, 8, &vpx_sad4x8_avg_mmi),
   SadMxNAvgParam(4, 4, &vpx_sad4x4_avg_mmi),
 };
-INSTANTIATE_TEST_CASE_P(MMI, SADavgTest, ::testing::ValuesIn(avg_mmi_tests));
+INSTANTIATE_TEST_SUITE_P(MMI, SADavgTest, ::testing::ValuesIn(avg_mmi_tests));
 
 const SadMxNx4Param x4d_mmi_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_mmi),
@@ -1104,6 +1126,35 @@ const SadMxNx4Param x4d_mmi_tests[] = {
   SadMxNx4Param(4, 8, &vpx_sad4x8x4d_mmi),
   SadMxNx4Param(4, 4, &vpx_sad4x4x4d_mmi),
 };
-INSTANTIATE_TEST_CASE_P(MMI, SADx4Test, ::testing::ValuesIn(x4d_mmi_tests));
+INSTANTIATE_TEST_SUITE_P(MMI, SADx4Test, ::testing::ValuesIn(x4d_mmi_tests));
 #endif  // HAVE_MMI
+
+//------------------------------------------------------------------------------
+// loongarch functions
+#if HAVE_LSX
+const SadMxNParam lsx_tests[] = {
+  SadMxNParam(64, 64, &vpx_sad64x64_lsx),
+  SadMxNParam(32, 32, &vpx_sad32x32_lsx),
+  SadMxNParam(16, 16, &vpx_sad16x16_lsx),
+  SadMxNParam(8, 8, &vpx_sad8x8_lsx),
+};
+INSTANTIATE_TEST_SUITE_P(LSX, SADTest, ::testing::ValuesIn(lsx_tests));
+
+const SadMxNAvgParam avg_lsx_tests[] = {
+  SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_lsx),
+  SadMxNAvgParam(32, 32, &vpx_sad32x32_avg_lsx),
+};
+INSTANTIATE_TEST_SUITE_P(LSX, SADavgTest, ::testing::ValuesIn(avg_lsx_tests));
+
+const SadMxNx4Param x4d_lsx_tests[] = {
+  SadMxNx4Param(64, 64, &vpx_sad64x64x4d_lsx),
+  SadMxNx4Param(64, 32, &vpx_sad64x32x4d_lsx),
+  SadMxNx4Param(32, 64, &vpx_sad32x64x4d_lsx),
+  SadMxNx4Param(32, 32, &vpx_sad32x32x4d_lsx),
+  SadMxNx4Param(16, 16, &vpx_sad16x16x4d_lsx),
+  SadMxNx4Param(8, 8, &vpx_sad8x8x4d_lsx),
+};
+INSTANTIATE_TEST_SUITE_P(LSX, SADx4Test, ::testing::ValuesIn(x4d_lsx_tests));
+#endif  // HAVE_LSX
+
 }  // namespace

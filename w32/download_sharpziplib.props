@@ -7,6 +7,12 @@
     <downloadSharpZipLibPropsImported>true</downloadSharpZipLibPropsImported>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <SharpZipLibVersion Condition=" '$(SharpZipLibVersion)' == '' ">1.1.0</SharpZipLibVersion>
+    <SharpZipLibDir>$(BaseDir)libs\SharpZipLib.$(SharpZipLibVersion)</SharpZipLibDir>
+    <SharpZipLibCADir>$(BaseDir)w32\Setup\CustomActions\Setup.CA.DownloadOpenH264</SharpZipLibCADir>
+  </PropertyGroup>
+
   <!--
        Download Target.
        Name must be unique.
@@ -32,12 +38,17 @@
 
   <Target Name="SharpZipLibDownloadTarget" BeforeTargets="Build" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/libs/ICSharpCode.SharpZipLib.dll.bz2"
-           expectfileordirectory="$(BaseDir)w32\Setup\CustomActions\Setup.CA.DownloadOpenH264\ICSharpCode.SharpZipLib.dll"
-           outputfolder=""
-           outputfilename=""
-           extractto="$(BaseDir)w32\Setup\CustomActions\Setup.CA.DownloadOpenH264\"
+           package="https://github.com/icsharpcode/SharpZipLib/releases/download/v$(SharpZipLibVersion)/SharpZipLib.$(SharpZipLibVersion).nupkg"
+           expectfileordirectory="$(SharpZipLibCADir)\ICSharpCode.SharpZipLib.dll"
+           outputfolder="$(BaseDir)libs\"
+           outputfilename="SharpZipLib.$(SharpZipLibVersion).nupkg"
+           extractto="$(SharpZipLibDir)"
            archivecontains="binary"
+      />
+      <!-- Place the net45 build where the custom action's <HintPath> expects it. -->
+      <Copy Condition="!Exists('$(SharpZipLibCADir)\ICSharpCode.SharpZipLib.dll')"
+          SourceFiles="$(SharpZipLibDir)\lib\net45\ICSharpCode.SharpZipLib.dll"
+          DestinationFiles="$(SharpZipLibCADir)\ICSharpCode.SharpZipLib.dll"
       />
   </Target>
 

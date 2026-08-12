@@ -208,4 +208,39 @@
 
   </settings>
 
+  <!--
+      Interface allowlist (optional security hardening).
+
+      When this section contains at least one <allow> entry, ONLY the interfaces listed here
+      are permitted to register; every other application / api / json_api / chat-application
+      from ANY module is refused at load time (the module still loads, it just does not expose
+      the blocked interface). With this section absent or empty, nothing is enforced and all
+      interfaces load normally.
+
+      An interface is permitted if it matches ANY entry. Entries may be written at three
+      levels of precision:
+
+        <allow name="mod_commands"/>            - permit every interface in mod_commands
+        <allow name="mod_commands.status"/>     - permit any interface named "status" (all types)
+        <allow name="mod_commands.status.api"/> - permit ONLY the api named "status"
+
+      The optional trailing type token is one of: app, api, json_api, chat_app. This is how
+      you permit, e.g., the APP named "system" while still blocking an API/JSON-API of the
+      same name.
+
+      WARNING: this is an aggressive, system-wide allowlist. Once enabled you must list every
+      module (or interface) whose apps/APIs you rely on, including management commands from
+      mod_commands (load, unload, reload, status, ...) and your dialplan apps; otherwise the
+      system will not function. It only affects app/api/json_api/chat-app registration; codecs,
+      endpoints, timers, formats, etc. are never gated.
+  -->
+  <!--
+  <interface-allowlist>
+    <allow name="mod_commands"/>
+    <allow name="mod_dptools"/>
+    <allow name="mod_dialplan_xml"/>
+    <allow name="mod_sofia"/>
+  </interface-allowlist>
+  -->
+
 </configuration>
