@@ -27,6 +27,63 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+/* Negotiate a one-line SRTP audio offer carrying a=crypto:<crypto> on a fresh null/ session that prefers
+   <suites> (colon-separated, in order), and return a strdup of the suite that check_incoming_crypto()
+   picked (rtp_secure_media_negotiated), or NULL if none was. The caller frees the result. */
+static char *negotiate_crypto_offer(const char *suites, const char *crypto)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel;
+	switch_call_cause_t cause;
+	switch_media_handle_t *media_handle;
+	switch_core_media_params_t *mparams;
+	uint8_t p = 0;
+	const char *negotiated;
+	char *r_sdp, *result = NULL;
+
+	switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	if (!session) {
+		return NULL;
+	}
+	channel = switch_core_session_get_channel(session);
+
+	mparams = switch_core_session_alloc(session, sizeof(switch_core_media_params_t));
+	mparams->num_codecs = 1;
+	mparams->inbound_codec_string = switch_core_session_strdup(session, "PCMU");
+	mparams->outbound_codec_string = switch_core_session_strdup(session, "PCMU");
+	mparams->rtpip = switch_core_session_strdup(session, "127.0.0.1");
+
+	if (switch_media_handle_create(&media_handle, session, mparams) == SWITCH_STATUS_SUCCESS) {
+		/* a null/ originate is outbound, so the plain rtp_secure_media variable applies */
+		switch_channel_set_variable(channel, "rtp_secure_media", "optional");
+		switch_channel_set_variable(channel, "rtp_secure_media_suites", suites);
+		switch_channel_set_variable(channel, "absolute_codec_string", "PCMU");
+
+		r_sdp = switch_core_session_sprintf(session,
+			"v=0\n"
+			"o=- 1 1 IN IP4 127.0.0.1\n"
+			"s=-\n"
+			"c=IN IP4 127.0.0.1\n"
+			"t=0 0\n"
+			"m=audio 11114 RTP/SAVP 0\n"
+			"a=rtpmap:0 PCMU/8000\n"
+			"a=crypto:%s\n", crypto);
+
+		switch_core_media_prepare_codecs(session, SWITCH_FALSE);
+		/* The suite is chosen before the key is parsed, so the overall match result is not what's under test */
+		switch_core_media_negotiate_sdp(session, r_sdp, &p, SDP_OFFER);
+
+		if ((negotiated = switch_channel_get_variable(channel, "rtp_secure_media_negotiated"))) {
+			result = strdup(negotiated);
+		}
+	}
+
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_core_session_rwunlock(session);
+
+	return result;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_core_media)
@@ -136,6 +193,88 @@ FST_CORE_BEGIN("./conf")
 				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_core_session_rwunlock(session);
 			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_exact_names)
+		{
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM"), AEAD_AES_256_GCM);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM_8"), AEAD_AES_256_GCM_8);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_128_GCM"), AEAD_AES_128_GCM);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_128_GCM_8"), AEAD_AES_128_GCM_8);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_does_not_confuse_prefix_suites)
+		{
+			/* Regression test: "AEAD_AES_256_GCM" is a string-prefix of "AEAD_AES_256_GCM_8".
+			   A GCM_8 suite name must never be misidentified as the shorter GCM suite
+			   (or vice versa), no matter what order the two appear in SUITES[]. */
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM_8"), AEAD_AES_256_GCM_8);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_128_GCM_8"), AEAD_AES_128_GCM_8);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_with_trailing_key_material)
+		{
+			/* real callers pass the suite name followed by key material, eg the tail
+			   of an SDP "a=crypto:" line, not an isolated token */
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM_8 inline:AbCdEf=="), AEAD_AES_256_GCM_8);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM inline:AbCdEf=="), AEAD_AES_256_GCM);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_invalid)
+		{
+			fst_check_int_equals(switch_core_media_crypto_str2type("BOGUS_SUITE"), CRYPTO_INVALID);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(incoming_crypto_does_not_confuse_prefix_suites)
+		{
+			/* Regression test: with the shorter "AEAD_AES_256_GCM" preferred ahead of "AEAD_AES_256_GCM_8",
+			   a substring search of the a=crypto line finds the shorter name inside a GCM_8 offer and
+			   negotiates the wrong suite. Key is 44 zero bytes, the AEAD_AES_256 key+salt length. */
+			char *negotiated = negotiate_crypto_offer("AEAD_AES_256_GCM:AEAD_AES_256_GCM_8",
+				"1 AEAD_AES_256_GCM_8 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+
+			fst_check_string_equals(negotiated, "AEAD_AES_256_GCM_8");
+			switch_safe_free(negotiated);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(incoming_crypto_does_not_confuse_prefix_suites_reversed)
+		{
+			/* The opposite preference order: a plain GCM offer must not be claimed by GCM_8 */
+			char *negotiated = negotiate_crypto_offer("AEAD_AES_256_GCM_8:AEAD_AES_256_GCM",
+				"1 AEAD_AES_256_GCM inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+
+			fst_check_string_equals(negotiated, "AEAD_AES_256_GCM");
+			switch_safe_free(negotiated);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(incoming_crypto_alias)
+		{
+			/* An offer using a suite's alias (here the AES_CM_256 spelling of AES_256_CM_HMAC_SHA1_80)
+			   negotiates under that alias. Key is 46 zero bytes, the AES_256 key+salt length. */
+			char *negotiated = negotiate_crypto_offer("AES_256_CM_HMAC_SHA1_80",
+				"1 AES_CM_256_HMAC_SHA1_80 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==");
+
+			fst_check_string_equals(negotiated, "AES_CM_256_HMAC_SHA1_80");
+			switch_safe_free(negotiated);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(incoming_crypto_case_insensitive)
+		{
+			/* RFC 4568 suite names are ABNF quoted strings, which are case-insensitive. A lowercase offer
+			   still negotiates, and the canonical name is what gets recorded. */
+			char *negotiated = negotiate_crypto_offer("AEAD_AES_256_GCM:AEAD_AES_256_GCM_8",
+				"1 aead_aes_256_gcm_8 inline:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+
+			fst_check_string_equals(negotiated, "AEAD_AES_256_GCM_8");
+			switch_safe_free(negotiated);
 		}
 		FST_TEST_END()
 	}
