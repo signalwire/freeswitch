@@ -530,7 +530,7 @@ static void init_profile(avcodec_profile_t *aprofile, const char *name)
 	aprofile->decoder_thread_count = avcodec_globals.dec_threads;
 
 	if (!strcasecmp(name, "H264")) {
-		aprofile->ctx.profile = FF_PROFILE_H264_BASELINE;
+		aprofile->ctx.profile = AV_PROFILE_H264_BASELINE;
 		aprofile->ctx.level = 31;
 #ifdef AV_CODEC_FLAG_PSNR
 		aprofile->ctx.flags |= AV_CODEC_FLAG_PSNR;
@@ -2071,7 +2071,7 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 	ctx = &aprofile->ctx;
 
-	ctx->profile = FF_PROFILE_H264_BASELINE;
+	ctx->profile = AV_PROFILE_H264_BASELINE;
 	ctx->level = 31;
 
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
@@ -2094,11 +2094,11 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 			if (ctx->profile == 0 && !strcasecmp(aprofile->name, "H264")) {
 				if (!strcasecmp(value, "baseline")) {
-					ctx->profile = FF_PROFILE_H264_BASELINE;
+					ctx->profile = AV_PROFILE_H264_BASELINE;
 				} else if (!strcasecmp(value, "main")) {
-					ctx->profile = FF_PROFILE_H264_MAIN;
+					ctx->profile = AV_PROFILE_H264_MAIN;
 				} else if (!strcasecmp(value, "high")) {
-					ctx->profile = FF_PROFILE_H264_HIGH;
+					ctx->profile = AV_PROFILE_H264_HIGH;
 				}
 			}
 		} else if (!strcmp(name, "level")) {
