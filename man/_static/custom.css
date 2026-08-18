@@ -1,0 +1,218 @@
+/* Custom CSS for Project Knowledge Base documentation */
+
+/* Code blocks */
+.highlight {
+    border-radius: 4px;
+}
+
+/* Admonitions */
+.admonition {
+    border-radius: 4px;
+    margin: 1em 0;
+}
+
+/* Tables */
+table.docutils {
+    border-collapse: collapse;
+    border: none;
+}
+
+table.docutils td,
+table.docutils th {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+}
+
+table.docutils th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+/* Navigation */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Custom classes for PKB */
+.PKB-capability {
+    display: inline-block;
+    padding: 4px 12px;
+    margin: 4px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.PKB-capability.locate {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.PKB-capability.understand {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.PKB-capability.execute {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+.PKB-capability.verify {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+/* Code references with line numbers */
+.code-ref {
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.status-badge.proposed {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.accepted {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.deprecated {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Language switcher — yellow highlight so it's easy to spot */
+.language-switcher {
+    margin-top: 10px;
+    padding: 6px 10px;
+    border-top: 1px solid #ccc;
+    background-color: #fff8e1;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.language-switcher .lang-label {
+    font-size: 0.85em;
+    color: #7a6200;
+    font-weight: bold;
+}
+
+.language-switcher .lang-current {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #f57f17;
+    margin-left: 4px;
+}
+
+.language-switcher .lang-link {
+    font-size: 0.85em;
+    margin-left: 4px;
+    color: #e65100;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.language-switcher .lang-link:hover {
+    color: #bf360c;
+}
+
+/* PKB metadata footer — visible version info at page bottom */
+.pkb-metadata-footer {
+    margin-top: 2em;
+    padding: 12px 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.88em;
+}
+
+.pkb-metadata-footer > p {
+    margin: 0 0 8px 0;
+    font-size: 1.05em;
+    color: #495057;
+}
+
+table.pkb-metadata-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+table.pkb-metadata-table td {
+    padding: 4px 10px;
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+table.pkb-metadata-table tr:last-child td {
+    border-bottom: none;
+}
+
+.pkb-status-pending {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    background-color: #fff3cd;
+    color: #856404;
+    font-weight: bold;
+    font-size: 0.92em;
+}
+
+.pkb-status-approved {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    background-color: #d4edda;
+    color: #155724;
+    font-weight: bold;
+    font-size: 0.92em;
+}
+
+/* Confidentiality level badges (L1 Public .. L5 Top Secret) */
+.pkb-level {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-size: 0.92em;
+}
+
+.pkb-level-l1 {
+    background-color: #e8f5e9;
+    color: #1b5e20;
+}
+
+.pkb-level-l2 {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+}
+
+.pkb-level-l3 {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.pkb-level-l4 {
+    background-color: #ffe0b2;
+    color: #bf360c;
+}
+
+.pkb-level-l5 {
+    background-color: #f8d7da;
+    color: #721c24;
+}

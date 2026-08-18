@@ -1,0 +1,145 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../changes/index.md:1 cdc90ee2a9fa45ccb1094df6bf2766ee
+msgid "Change Proposals"
+msgstr "变更提案"
+
+#: ../../changes/index.md:3 40f7f4ad598c48e59821d034cb9e6a8a
+msgid ""
+"This directory contains change proposals following the OpenSpec workflow."
+msgstr "本目录存放遵循 OpenSpec 工作流的变更提案。"
+
+#: ../../changes/index.md:5 f1164844414a406d8821ba426cdef15c
+msgid "What is a Change Proposal?"
+msgstr "什么是变更提案？"
+
+#: ../../changes/index.md:7 20fdc9c6397048c6ad5005f078dc6321
+msgid "A change proposal documents a planned change to the system, including:"
+msgstr "变更提案记录对系统的计划变更，包括："
+
+#: ../../changes/index.md:9 25d65459d72e44e2b6794f1590e9b913
+msgid "**Why**: Problem statement and motivation"
+msgstr "**为什么**：问题陈述与动机"
+
+#: ../../changes/index.md:10 52b4305437154295a4a693317036df18
+msgid "**What**: Summary of changes"
+msgstr "**做什么**：变更摘要"
+
+#: ../../changes/index.md:11 9c6eca8fbbce42fbbd8c1483bafd5418
+msgid "**Impact**: Affected components and stakeholders"
+msgstr "**影响**：受影响的组件与干系人"
+
+#: ../../changes/index.md:12 e3d0847ec312410380605b03e3461283
+msgid "**How**: Design and implementation plan"
+msgstr "**怎么做**：设计与实施计划"
+
+#: ../../changes/index.md:14 5646905e02084984a61aac01f4280e65
+msgid "Change Proposal Structure"
+msgstr "变更提案结构"
+
+#: ../../changes/index.md:16 07ca075742154f0592ea5f4e89ad13d1
+msgid "Each change is in its own directory with:"
+msgstr "每项变更位于独立目录中，包含："
+
+#: ../../changes/index.md:27 eb73c8fe7b7b405186ab96ca63229c56
+msgid "How to Create a Change Proposal"
+msgstr "如何创建变更提案"
+
+#: ../../changes/index.md:29 48d213a7dd3a4df09817a859a8480982
+msgid "Use the `/PKB-change` command:"
+msgstr "使用 `/PKB-change` 命令："
+
+#: ../../changes/index.md:35 4b4a63256f3340ffaac4a26dcd896ac8
+msgid "Active Changes"
+msgstr "进行中的变更"
+
+#: ../../changes/index.md:37 18894f7687e34b5899b4ed46536a6ead
+msgid ""
+"(Each change is a subdirectory with `proposal.md`, `design.md`, `tasks.md`. "
+"Copy `_template/` to create a new change.)"
+msgstr ""
+"（每项变更是一个子目录，内含 `proposal.md`、`design.md`、`tasks.md`。复制 `_template/` "
+"即可创建新变更。）"
+
+#: ../../changes/index.md:48 b26753af8f6047f59c7bd853a0332027
+msgid "Change Status"
+msgstr "变更状态"
+
+#: ../../changes/index.md:50 c4fc716b8ae14842af9cae9f26ed39a5
+msgid "Proposed"
+msgstr "已提议"
+
+#: ../../changes/index.md:54 732f87d51d454666856807dd9e0a57a4
+msgid "In Review"
+msgstr "评审中"
+
+#: ../../changes/index.md:58 c6a105c511a34669b32575c86d052b7f
+msgid "Approved"
+msgstr "已批准"
+
+#: ../../changes/index.md:62 a3e2cd34c3af4fcfb26a31aa33e1e215
+msgid "Implementing"
+msgstr "实施中"
+
+#: ../../changes/index.md:66 060ab65f4e454cfc974d51db156f6a92
+msgid "Completed"
+msgstr "已完成"
+
+#: ../../changes/index.md:70 d6920fa919d64d76acd77a39a39687d2
+msgid "Process"
+msgstr "流程"
+
+#: ../../changes/index.md:72 68f3b24c649c4aa4ad5c821a09d3bf08
+msgid "**Propose**: Create a change proposal with `/PKB-change`"
+msgstr "**提议**：使用 `/PKB-change` 创建变更提案"
+
+#: ../../changes/index.md:73 894b91f4d9eb4f67a1db2b906704fc41
+msgid "**Design**: Fill in design details"
+msgstr "**设计**：填写设计细节"
+
+#: ../../changes/index.md:74 b51339a2131349999ac6e958505ee8d9
+msgid "**Review**: Get feedback from stakeholders"
+msgstr "**评审**：收集干系人反馈"
+
+#: ../../changes/index.md:75 3b09faa566204c98939619615b8e4ee6
+msgid "**Approve**: Get approval from decision makers"
+msgstr "**批准**：获得决策者批准"
+
+#: ../../changes/index.md:76 96862962ee6347f99b46a1d930d18136
+msgid "**Implement**: Execute the tasks"
+msgstr "**实施**：执行任务"
+
+#: ../../changes/index.md:77 6c429568993545568b34df6654c51d93
+msgid "**Close**: Mark as completed"
+msgstr "**关闭**：标记为已完成"
+
+#: ../../changes/index.md:79 67cb9db921ad496ebfac8ecdfa9320d8
+msgid "References"
+msgstr "参考资料"
+
+#: ../../changes/index.md:81 54d9b05a7abb44de9d874203f2336d85
+msgid "[OpenSpec](https://github.com/jpoehnelt/openspec)"
+msgstr "[OpenSpec](https://github.com/jpoehnelt/openspec)"
+
+#: ../../changes/index.md:82 32a93584dfd34e1f92c51af518667174
+msgid "Change management best practices"
+msgstr "变更管理最佳实践"
