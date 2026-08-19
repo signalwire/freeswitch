@@ -60,8 +60,7 @@ static void vp8_de_mblock(YV12_BUFFER_CONFIG *post, int q) {
 }
 
 void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
-                 YV12_BUFFER_CONFIG *post, int q, int low_var_thresh,
-                 int flag) {
+                 YV12_BUFFER_CONFIG *post, int q) {
   double level = 6.0e-05 * q * q * q - .0067 * q * q + .306 * q + .0065;
   int ppl = (int)(level + .5);
 
@@ -72,8 +71,6 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
    * is a skipped block.  */
   unsigned char *ylimits = cm->pp_limits_buffer;
   unsigned char *uvlimits = cm->pp_limits_buffer + 16 * cm->mb_cols;
-  (void)low_var_thresh;
-  (void)flag;
 
   if (ppl > 0) {
     for (mbr = 0; mbr < cm->mb_rows; ++mbr) {
@@ -116,8 +113,7 @@ void vp8_deblock(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
   }
 }
 
-void vp8_de_noise(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
-                  YV12_BUFFER_CONFIG *post, int q, int low_var_thresh, int flag,
+void vp8_de_noise(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source, int q,
                   int uvfilter) {
   int mbr;
   double level = 6.0e-05 * q * q * q - .0067 * q * q + .306 * q + .0065;
@@ -125,9 +121,6 @@ void vp8_de_noise(VP8_COMMON *cm, YV12_BUFFER_CONFIG *source,
   int mb_rows = cm->mb_rows;
   int mb_cols = cm->mb_cols;
   unsigned char *limits = cm->pp_limits_buffer;
-  (void)post;
-  (void)low_var_thresh;
-  (void)flag;
 
   memset(limits, (unsigned char)ppl, 16 * mb_cols);
 
@@ -216,11 +209,10 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest,
       vp8_yv12_copy_frame(&oci->post_proc_buffer, &oci->post_proc_buffer_int);
       if (flags & VP8D_DEMACROBLOCK) {
         vp8_deblock(oci, &oci->post_proc_buffer_int, &oci->post_proc_buffer,
-                    q + (deblock_level - 5) * 10, 1, 0);
+                    q + (deblock_level - 5) * 10);
         vp8_de_mblock(&oci->post_proc_buffer, q + (deblock_level - 5) * 10);
       } else if (flags & VP8D_DEBLOCK) {
-        vp8_deblock(oci, &oci->post_proc_buffer_int, &oci->post_proc_buffer, q,
-                    1, 0);
+        vp8_deblock(oci, &oci->post_proc_buffer_int, &oci->post_proc_buffer, q);
       }
     }
     /* Move partially towards the base q of the previous frame */
@@ -228,12 +220,12 @@ int vp8_post_proc_frame(VP8_COMMON *oci, YV12_BUFFER_CONFIG *dest,
         (3 * oci->postproc_state.last_base_qindex + oci->base_qindex) >> 2;
   } else if (flags & VP8D_DEMACROBLOCK) {
     vp8_deblock(oci, oci->frame_to_show, &oci->post_proc_buffer,
-                q + (deblock_level - 5) * 10, 1, 0);
+                q + (deblock_level - 5) * 10);
     vp8_de_mblock(&oci->post_proc_buffer, q + (deblock_level - 5) * 10);
 
     oci->postproc_state.last_base_qindex = oci->base_qindex;
   } else if (flags & VP8D_DEBLOCK) {
-    vp8_deblock(oci, oci->frame_to_show, &oci->post_proc_buffer, q, 1, 0);
+    vp8_deblock(oci, oci->frame_to_show, &oci->post_proc_buffer, q);
     oci->postproc_state.last_base_qindex = oci->base_qindex;
   } else {
     vp8_yv12_copy_frame(oci->frame_to_show, &oci->post_proc_buffer);

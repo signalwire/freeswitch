@@ -12,6 +12,7 @@
 #define VPX_VPX_DSP_PSNR_H_
 
 #include "vpx_scale/yv12config.h"
+#include "vpx/vpx_encoder.h"
 
 #define MAX_PSNR 100.0
 
@@ -19,11 +20,7 @@
 extern "C" {
 #endif
 
-typedef struct {
-  double psnr[4];       // total/y/u/v
-  uint64_t sse[4];      // total/y/u/v
-  uint32_t samples[4];  // total/y/u/v
-} PSNR_STATS;
+typedef struct vpx_psnr_pkt PSNR_STATS;
 
 // TODO(dkovalev) change vpx_sse_to_psnr signature: double -> int64_t
 

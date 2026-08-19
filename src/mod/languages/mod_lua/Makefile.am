@@ -13,11 +13,11 @@ libluamod_la_CFLAGS = $(AM_CPPFLAGS) $(LUA_CFLAGS) $(CPPFLAGS)
 mod_LTLIBRARIES = mod_lua.la
 mod_lua_la_SOURCES = mod_lua.cpp freeswitch_lua.cpp mod_lua_wrap.cpp
 
-mod_lua_la_CXXFLAGS = $(AM_CPPFLAGS) $(LUA_CFLAGS) $(CPPFLAGS)
-mod_lua_la_CFLAGS   = $(AM_CPPFLAGS) $(LUA_CFLAGS) $(CPPFLAGS)
+mod_lua_la_CXXFLAGS = $(AM_CPPFLAGS) $(LUA_CFLAGS) $(CPPFLAGS) $(CURL_CFLAGS)
+mod_lua_la_CFLAGS   = $(AM_CPPFLAGS) $(LUA_CFLAGS) $(CPPFLAGS) $(CURL_CFLAGS)
 
 mod_lua_la_LIBADD = $(switch_builddir)/libfreeswitch.la
-mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(AM_LDFLAGS) $(SOLINK) $(LUA_LIBS)
+mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(AM_LDFLAGS) $(SOLINK) $(LUA_LIBS) $(CURL_LIBS)
 
 reswig: swigclean mod_lua_wrap.cpp
 
@@ -33,7 +33,7 @@ noinst_PROGRAMS = test/test_mod_lua
 test_test_mod_lua_SOURCES = test/test_mod_lua.c
 test_test_mod_lua_CFLAGS = $(AM_CFLAGS) -I. -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\"
 test_test_mod_lua_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
-test_test_mod_lua_LDADD = libluamod.la $(LUA_LIBS)
+test_test_mod_lua_LDADD = libluamod.la $(LUA_LIBS) $(CURL_LIBS)
 
 TESTS = $(noinst_PROGRAMS)
 
