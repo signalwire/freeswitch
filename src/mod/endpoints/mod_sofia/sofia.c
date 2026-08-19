@@ -4661,6 +4661,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 					profile->dtmf_duration = 100;
 					profile->rtp_digit_delay = 40;
+					profile->refer_notify_timeout = SOFIA_DEFAULT_REFER_NOTIFY_TIMEOUT;
 					profile->sip_force_expires = 0;
 					profile->sip_force_expires_min = 0;
 					profile->sip_force_expires_max = 0;
@@ -5326,6 +5327,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
 							profile->session_timeout = v_session_timeout;
+						}
+					} else if (!strcasecmp(var, "refer-notify-timeout") && !zstr(val)) {
+						int v_refer_notify_timeout = atoi(val);
+						if (v_refer_notify_timeout >= 1) {
+							profile->refer_notify_timeout = (uint32_t)v_refer_notify_timeout;
 						}
 					} else if (!strcasecmp(var, "max-proceeding") && !zstr(val)) {
 						int v_max_proceeding = atoi(val);
