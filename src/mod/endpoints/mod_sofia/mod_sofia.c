@@ -1978,14 +1978,28 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						to_host = switch_channel_get_variable(rchannel, "sip_to_host");
 						from_user = switch_channel_get_variable(channel, "sip_from_user");
 						from_host = switch_channel_get_variable(channel, "sip_from_host");
+						to_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
+						from_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					} else {
 						to_host = switch_channel_get_variable(channel, "sip_to_host");
 						from_user = switch_channel_get_variable(rchannel, "sip_from_user");
 						from_host = switch_channel_get_variable(rchannel, "sip_from_host");
+						from_tag = switch_channel_get_variable(rchannel, "sip_to_tag");
+						to_tag = switch_channel_get_variable(rchannel, "sip_from_tag");
 					}
 
-					to_tag = nta_leg_get_rtag(nua_get_dialog_state_leg(rtech_pvt->nh));
-					from_tag = nta_leg_get_tag(nua_get_dialog_state_leg(rtech_pvt->nh));
+					if (switch_channel_var_true(channel, "SKFIX_SIMPLIFY_REFER_TAGS")) {
+						switch_log_printf(channel, SWITCH_LOG_INFO, "USING SKFIX SIMPLIFY REFER TAGS\n");
+						to_tag = nta_leg_get_rtag(nua_get_dialog_state_leg(rtech_pvt->nh));
+						from_tag = nta_leg_get_tag(nua_get_dialog_state_leg(rtech_pvt->nh));
+					} else {
+						const char *v = switch_channel_get_variable(channel, "SKFIX_SIMPLIFY_REFER_TAGS");
+						if (!strcasecmp(v, "reverse")) {
+							switch_log_printf(channel, SWITCH_LOG_INFO, "USING SKFIX SIMPLIFY REFER TAGS (reverse)\n");
+							from_tag = nta_leg_get_rtag(nua_get_dialog_state_leg(rtech_pvt->nh));
+							to_tag = nta_leg_get_tag(nua_get_dialog_state_leg(rtech_pvt->nh));
+						}
+					}
 					
 					switch_core_session_rwunlock(rsession);
 				}
