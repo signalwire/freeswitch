@@ -124,6 +124,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 	int proceed = 0;
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL;
+	switch_regex_match_t *match_data = NULL;
 	const char *to = switch_event_get_header(event, "to");
 	const char *tzoff = NULL, *tzname_ = NULL;
 	int offset = 0;
@@ -143,7 +144,6 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 		char *do_break_a = NULL;
 		char *expression = NULL;
 		const char *field_data = NULL;
-		int ovector[30];
 		switch_bool_t anti_action = SWITCH_TRUE;
 		break_t do_break_i = BREAK_ON_FALSE;
 		int time_match;
@@ -214,7 +214,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 				field_data = "";
 			}
 
-			if ((proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if ((proceed = switch_regex_perform(field_data, expression, &re, &match_data))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG,
 								  "Chatplan: %s Regex (PASS) [%s] %s(%s) =~ /%s/ break=%s\n",
 								  to, exten_name, field, field_data, expression, do_break_a ? do_break_a : "on-false");
@@ -271,7 +271,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 		} else {
 			if (field && strchr(expression, '(')) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DP_MATCH", NULL);
-				switch_capture_regex(re, proceed, field_data, ovector, "DP_MATCH", switch_regex_set_event_header_callback, event);
+				switch_capture_regex(match_data, proceed, "DP_MATCH", switch_regex_set_event_header_callback, event);
 			}
 
 			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
@@ -297,7 +297,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 						abort();
 					}
 					memset(substituted, 0, len);
-					switch_perform_substitution(re, proceed, data, field_data, substituted, len, ovector);
+					switch_perform_substitution(match_data, data, substituted, len);
 					app_data = substituted;
 				} else {
 					app_data = data;
@@ -326,6 +326,8 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 				switch_safe_free(substituted);
 			}
 		}
+
+		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 
 		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
@@ -335,6 +337,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 	}
 
   done:
+	switch_regex_match_safe_free(match_data);
 	switch_regex_safe_free(re);
 	switch_safe_free(field_expanded);
 	switch_safe_free(expression_expanded);

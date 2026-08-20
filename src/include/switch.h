@@ -172,7 +172,7 @@
  *		- APR (http://apr.apache.org)
  *		- APR-Util (http://apr.apache.org)
  *		- SQLite (http://www.sqlite.org)
- *		- Pcre (http://www.pcre.org/)
+ *		- Pcre2 (http://www.pcre.org/)
  *		- SRTP (http://srtp.sourceforge.net/srtp.html)
  *
  *	Additionally, the various external modules make use of several external modules:

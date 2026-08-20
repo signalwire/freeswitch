@@ -147,7 +147,7 @@ typedef void(*switch_device_state_function_t)(switch_core_session_t *session, sw
 
 #define DTLS_SRTP_FNAME "dtls-srtp"
 #define MAX_FPLEN 64
-#define MAX_FPSTRLEN 192
+#define MAX_FPSTRLEN 193
 
 typedef struct dtls_fp_s {
 	uint32_t len;
@@ -162,6 +162,19 @@ typedef enum {
 	DTLS_TYPE_RTP = (1 << 2),
 	DTLS_TYPE_RTCP = (1 << 3)
 } dtls_type_t;
+
+typedef enum {
+	/* FreeSWITCH as DTLS server does not request the client certificate; its fingerprint is not checked. */
+	DTLS_CLIENT_CERT_VERIFY_NONE,
+	/* FreeSWITCH as DTLS server requests the client certificate and binds it to the SDP a=fingerprint; the PKI chain is not enforced. */
+	DTLS_CLIENT_CERT_VERIFY_FINGERPRINT,
+	/* Like DTLS_CLIENT_CERT_VERIFY_FINGERPRINT, and additionally OpenSSL enforces the PKI chain verdict. */
+	DTLS_CLIENT_CERT_VERIFY_FULL
+} dtls_client_cert_verify_t;
+
+/* Default policy for verifying the client certificate when FreeSWITCH is the DTLS server,
+ * applied when rtp_dtls_client_cert_verify_mode is unset. */
+#define DTLS_CLIENT_CERT_VERIFY_DEFAULT DTLS_CLIENT_CERT_VERIFY_NONE
 
 typedef enum {
 	DS_OFF,

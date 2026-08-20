@@ -31,9 +31,12 @@
  *
  */
 #include <switch.h>
+
 #define CMD_BUFLEN 1024 * 1000
 #define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
+#define MAX_CONTENT_LENGTH (16 * 1024 * 1024)
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
@@ -349,10 +352,7 @@ static void event_handler(switch_event_t *event)
 						}
 
 						if (*hp->value == '/') {
-							switch_regex_t *re = NULL;
-							int ovector[30];
-							cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-							switch_regex_safe_free(re);
+							cmp = !!switch_regex(hval, comp_to);
 						} else {
 							cmp = !strcasecmp(hval, comp_to);
 						}
@@ -1120,7 +1120,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		}
 
 		if (listener->format == EVENT_FORMAT_JSON) {
-			char *p = "{}";
+			char *p;
 			cJSON_AddItemToObject(cj, "events", cjevents);
 			p = cJSON_Print(cj);
 			if (cj && p) stream->write_function(stream, p);
@@ -1314,6 +1314,13 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								if (!strcasecmp(var, "content-length")) {
 									clen = atoi(val);
 
+									if (clen < 0 || clen > MAX_CONTENT_LENGTH) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+														  "Rejecting Content-Length '%s' (out of range)\n", val);
+										switch_event_destroy(event);
+										switch_goto_status(SWITCH_STATUS_FALSE, end);
+									}
+
 									if (clen > 0) {
 										char *body;
 										char *p;
@@ -1328,6 +1335,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 												free(body);
+												switch_event_destroy(event);
 												switch_goto_status(SWITCH_STATUS_FALSE, end);
 											}
 

@@ -553,14 +553,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 				if (ap->re) {
 					switch_regex_t *re = NULL;
-					int ovector[30];
+					switch_regex_match_t *match_data = NULL;
 
-					if ((ok = switch_regex_perform(menu->buf, ap->bind, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-						switch_perform_substitution(re, ok, ap->arg, menu->buf, substituted, sizeof(substituted), ovector);
+					if ((ok = switch_regex_perform(menu->buf, ap->bind, &re, &match_data))) {
+						switch_perform_substitution(match_data, ap->arg, substituted, sizeof(substituted));
 						use_arg = substituted;
 					}
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "action regex [%s] [%s] [%d]\n", menu->buf, ap->bind, ok);
 
+					switch_regex_match_safe_free(match_data);
 					switch_regex_safe_free(re);
 				} else {
 					ok = !strcmp(menu->buf, ap->bind);

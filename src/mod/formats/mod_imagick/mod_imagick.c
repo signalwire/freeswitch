@@ -488,9 +488,16 @@ static void myErrorHandler(const ExceptionType t, const char *reason, const char
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s: %s\n", reason, description);
 }
 
-static void myFatalErrorHandler(const ExceptionType t, const char *reason, const char *description)
+static
+#if defined(_MSC_VER) && defined(_WIN32)
+#else
+ __attribute__((noreturn)) 
+#endif
+void myFatalErrorHandler(const ExceptionType t, const char *reason, const char *description)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s: %s\n", reason, description);
+	/* Make sure the function never returns */
+	abort();
 }
 
 static void myWarningHandler(const ExceptionType t, const char *reason, const char *description)

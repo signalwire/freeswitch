@@ -203,7 +203,12 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	}
 	switch_mutex_unlock(ps->flag_mutex);
 
+#if POCKETSPHINX_MAJOR_VERSION < 1
 	ps_start_utt(ps->ps, NULL);
+#else
+	ps_start_utt(ps->ps);
+#endif
+
 	ps->silence_time = switch_micro_time_now();
 	switch_clear_flag(ps, PSFLAG_START_OF_SPEECH);
 	switch_clear_flag(ps, PSFLAG_NOINPUT_TIMEOUT);
@@ -338,22 +343,38 @@ static switch_status_t pocketsphinx_asr_feed(switch_asr_handle_t *ah, void *data
 			char const *hyp;
 
 			switch_mutex_lock(ps->flag_mutex);
+#if POCKETSPHINX_MAJOR_VERSION < 1
 			if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
+#else
+			if ((hyp = ps_get_hyp(ps->ps, &ps->score))) {
+#endif
 				if (!zstr(hyp)) {
 					ps_end_utt(ps->ps);
 					switch_clear_flag(ps, PSFLAG_READY);
+#if POCKETSPHINX_MAJOR_VERSION < 1
 					if ((hyp = ps_get_hyp(ps->ps, &ps->score, &ps->uttid))) {
+#else
+					if ((hyp = ps_get_hyp(ps->ps, &ps->score))) {
+#endif
 						if (zstr(hyp)) {
 							if (!switch_test_flag(ps, PSFLAG_SPEECH_TIMEOUT)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost the text, never mind....\n");
+#if POCKETSPHINX_MAJOR_VERSION < 1
 								ps_start_utt(ps->ps, NULL);
+#else
+								ps_start_utt(ps->ps);
+#endif
 								switch_set_flag(ps, PSFLAG_READY);
 							}
 						} else {
 							/* get match and confidence */
 							int32_t conf;
 
+#if POCKETSPHINX_MAJOR_VERSION < 1
 							conf = ps_get_prob(ps->ps, &ps->uttid);
+#else
+							conf = ps_get_prob(ps->ps);
+#endif
 
 							ps->confidence = (conf + 20000) / 200;
 
@@ -427,7 +448,11 @@ static switch_status_t pocketsphinx_asr_resume(switch_asr_handle_t *ah)
 	if (!switch_test_flag(ps, PSFLAG_READY)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Manually Resuming\n");
 
+#if POCKETSPHINX_MAJOR_VERSION < 1
 		if (ps_start_utt(ps->ps, NULL)) {
+#else
+		if (ps_start_utt(ps->ps)) {
+#endif
 			status = SWITCH_STATUS_GENERR;
 		} else {
 			switch_set_flag(ps, PSFLAG_READY);
@@ -474,7 +499,11 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto Resuming\n");
 			switch_set_flag(ps, PSFLAG_READY);
 
+#if POCKETSPHINX_MAJOR_VERSION < 1
 			ps_start_utt(ps->ps, NULL);
+#else 
+			ps_start_utt(ps->ps);
+#endif
 		}
 
 		status = SWITCH_STATUS_SUCCESS;

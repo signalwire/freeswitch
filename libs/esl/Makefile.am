@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign subdir-objects
-SUBDIRS = . perl
+SUBDIRS = . perl tests
 MYLIB=./.libs/libesl.a
 LIBS=-lncurses -lpthread -lm
 LDFLAGS=-L. $(SYSTEM_LDFLAGS)

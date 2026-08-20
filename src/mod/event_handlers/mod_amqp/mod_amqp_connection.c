@@ -40,8 +40,14 @@
 
 void mod_amqp_connection_close(mod_amqp_connection_t *connection)
 {
-	amqp_connection_state_t old_state = connection->state;
+	amqp_connection_state_t old_state;
 	int status = 0;
+
+	if (!connection) {
+		return;
+	}
+
+	old_state = connection->state;
 
 	connection->state = NULL;
 
@@ -50,7 +56,8 @@ void mod_amqp_connection_close(mod_amqp_connection_t *connection)
 		mod_amqp_log_if_amqp_error(amqp_connection_close(old_state, AMQP_REPLY_SUCCESS), "Closing connection");
 
 		if ((status = amqp_destroy_connection(old_state))) {
-			const char *errstr = amqp_error_string2(-status);
+			const char *errstr = amqp_error_string2(status);
+			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error destroying amqp connection: %s\n", errstr);
 		}
 	}
@@ -117,7 +124,9 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 
 	while (connection_attempt && amqp_status){
 		if (connection_attempt->ssl_on == 1) {
+#if AMQP_VERSION_INT(AMQP_MAJOR_VERSION, AMQP_MINOR_VERSION) < AMQP_VERSION_INT(0, 13)
 			amqp_set_initialize_ssl_library(connection_attempt->ssl_on);
+#endif
 			if (!(socket = amqp_ssl_socket_new(newConnection))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not create SSL socket\n");
 				goto err;

@@ -13,7 +13,7 @@ DOWNLOAD=http://files.freeswitch.org/downloads/libs
 JPEG=v8d
 OPENSSL=1.0.1l
 SQLITE=autoconf-3080403
-PCRE=8.35
+PCRE2=10.42
 CURL=7.40.0
 SPEEX=1.2rc1
 LIBEDIT=20140618-3.1
@@ -45,7 +45,7 @@ has-git:
 	@git --version || (echo "please install git by running 'make install-git'" && false)
 
 clean:
-	@rm -rf openssl* ldns* jpeg* pcre* perl* pkg-config* speex* sqlite* libedit* curl* *~
+	@rm -rf openssl* ldns* jpeg* pcre2* perl* pkg-config* speex* sqlite* libedit* curl* *~
 	(cd freeswitch.git && git clean -fdx && git reset --hard HEAD && git pull)
 
 libjpeg: jpeg-8d/.done
@@ -66,9 +66,9 @@ sqlite-$(SQLITE):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done_sqlite && touch .done)
 
-pcre: pcre-$(PCRE)/.done
-pcre-$(PCRE)/.done: pcre-$(PCRE)
-pcre-$(PCRE):
+pcre2: pcre2-$(PCRE2)/.done
+pcre2-$(PCRE2)/.done: pcre2-$(PCRE2)
+pcre2-$(PCRE2):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
@@ -96,4 +96,4 @@ ldns-$(LDNS):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --with-ssl=$(PREFIX) --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
-deps: libjpeg openssl sqlite pcre curl speex libedit ldns
+deps: libjpeg openssl sqlite pcre2 curl speex libedit ldns

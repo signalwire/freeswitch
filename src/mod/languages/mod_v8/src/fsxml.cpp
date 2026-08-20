@@ -90,7 +90,7 @@ void FSXML::InitRootObject()
 
 void *FSXML::Construct(const v8::FunctionCallbackInfo<Value>& info)
 {
-	String::Utf8Value data(info[0]);
+	JsUtf8Value data(info[0]);
 	switch_xml_t xml;
 
 	if (*data && (xml = switch_xml_parse_str_dynamic(*data, SWITCH_TRUE))) {
@@ -100,7 +100,7 @@ void *FSXML::Construct(const v8::FunctionCallbackInfo<Value>& info)
 		return obj;
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad arguments!"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad arguments!"));
 	return NULL;
 	/*
 	var xml = new XML(XML_FS_CONF, fs_config_name_string);
@@ -109,7 +109,7 @@ void *FSXML::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	*/
 }
 
-Handle<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::FunctionCallbackInfo<Value>& info)
+Local<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::FunctionCallbackInfo<Value>& info)
 {
 	FSXML *newObj, *rootObj = NULL;
 
@@ -121,7 +121,7 @@ Handle<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::Functi
 
 	if (!rootObj) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not find XML root node\n");
-		return Handle<Value>();
+		return Local<Value>();
 	}
 
 	/* Try to find an existing object in the hash */
@@ -146,7 +146,7 @@ Handle<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::Functi
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new object - memory error?\n");
-	return Handle<Value>();
+	return Local<Value>();
 }
 
 void FSXML::StoreObjectInHash(switch_xml_t xml, FSXML *obj)
@@ -218,17 +218,17 @@ void FSXML::DestroyHash()
 JS_XML_FUNCTION_IMPL(GetChild)
 {
 	if (info.Length() > 0) {
-		String::Utf8Value name(info[0]);
+		JsUtf8Value name(info[0]);
 		string attr_name, attr_value;
 		switch_xml_t xml = NULL;
 
 		/* Check if attribute name/value was provided as well */
 		if (info.Length() > 1) {
-			String::Utf8Value str(info[1]);
+			JsUtf8Value str(info[1]);
 			attr_name = js_safe_str(*str);
 
 			if (info.Length() > 2) {
-				String::Utf8Value str2(info[2]);
+				JsUtf8Value str2(info[2]);
 				attr_value = js_safe_str(*str2);
 			}
 		}
@@ -242,10 +242,10 @@ JS_XML_FUNCTION_IMPL(GetChild)
 
 		/* Return the JS object */
 		if (xml) {
-			Handle<Value> jsObj = GetJSObjFromXMLObj(xml, info);
+			Local<Value> jsObj = GetJSObjFromXMLObj(xml, info);
 
 			if (jsObj.IsEmpty()) {
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed!"));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed!"));
 			} else {
 				info.GetReturnValue().Set(jsObj);
 			}
@@ -253,19 +253,19 @@ JS_XML_FUNCTION_IMPL(GetChild)
 			info.GetReturnValue().Set(Null(info.GetIsolate()));
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
 JS_XML_FUNCTION_IMPL(AddChild)
 {
 	if (info.Length() > 0) {
-		String::Utf8Value name(info[0]);
+		JsUtf8Value name(info[0]);
 		switch_xml_t xml;
 		int offset = 0;
 
 		if (info.Length() > 1) {
-			offset = info[1]->Int32Value();
+			offset = info[1]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		/* Add new child */
@@ -273,18 +273,18 @@ JS_XML_FUNCTION_IMPL(AddChild)
 
 		/* Return the JS object */
 		if (xml) {
-			Handle<Value> jsObj = GetJSObjFromXMLObj(xml, info);
+			Local<Value> jsObj = GetJSObjFromXMLObj(xml, info);
 
 			if (jsObj.IsEmpty()) {
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed!"));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed!"));
 			} else {
 				info.GetReturnValue().Set(jsObj);
 			}
 		} else {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "XML error"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "XML error"));
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
@@ -297,10 +297,10 @@ JS_XML_FUNCTION_IMPL(Next)
 
 	/* Return the JS object */
 	if (xml) {
-		Handle<Value> jsObj = GetJSObjFromXMLObj(xml, info);
+		Local<Value> jsObj = GetJSObjFromXMLObj(xml, info);
 
 		if (jsObj.IsEmpty()) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed!"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed!"));
 		} else {
 			info.GetReturnValue().Set(jsObj);
 		}
@@ -312,21 +312,21 @@ JS_XML_FUNCTION_IMPL(Next)
 JS_XML_FUNCTION_IMPL(GetAttribute)
 {
 	if (info.Length() > 0) {
-		String::Utf8Value name(info[0]);
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_xml_attr_soft(_xml, js_safe_str(*name))));
+		JsUtf8Value name(info[0]);
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_xml_attr_soft(_xml, js_safe_str(*name))));
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
 JS_XML_FUNCTION_IMPL(SetAttribute)
 {
 	if (info.Length() > 0) {
-		String::Utf8Value name(info[0]);
+		JsUtf8Value name(info[0]);
 		string val;
 
 		if (info.Length() > 1) {
-			String::Utf8Value str(info[1]);
+			JsUtf8Value str(info[1]);
 			val = js_safe_str(*str);
 		}
 
@@ -336,7 +336,7 @@ JS_XML_FUNCTION_IMPL(SetAttribute)
 			info.GetReturnValue().Set(false);
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
@@ -354,7 +354,7 @@ JS_XML_IMPL_STATIC(Remove)
 		}
 		delete obj;
 	} else {
-		String::Utf8Value str(info.Holder());
+		JsUtf8Value str(info.Holder());
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No valid internal data available for %s when calling FSXML::Remove()\n", *str ? *str : "[unknown]");
 	}
 }
@@ -373,39 +373,39 @@ JS_XML_FUNCTION_IMPL(Copy)
 		obj->RegisterInstance(info.GetIsolate(), "", true);
 		info.GetReturnValue().Set(obj->GetJavaScriptObject());
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "XML error"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "XML error"));
 	}
 }
 
 JS_XML_FUNCTION_IMPL(Serialize)
 {
 	char *data = switch_xml_toxml(_xml, SWITCH_FALSE);
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(data)));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(data)));
 	switch_safe_free(data);
 }
 
 JS_XML_GET_PROPERTY_IMPL(GetNameProperty)
 {
 	const char *data = switch_xml_name(_xml);
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(data)));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(data)));
 }
 
 JS_XML_GET_PROPERTY_IMPL(GetDataProperty)
 {
 	const char *data = switch_xml_txt(_xml);
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(data)));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(data)));
 }
 
 JS_XML_SET_PROPERTY_IMPL(SetDataProperty)
 {
-	String::Utf8Value str(value);
+	JsUtf8Value str(value);
 	switch_xml_set_txt_d(_xml, js_safe_str(*str));
 }
 
 JS_XML_GET_PROPERTY_IMPL(GetErrorProperty)
 {
 	const char *data = switch_xml_error(_xml);
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(data)));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(data)));
 }
 
 static const js_function_t xml_methods[] = {

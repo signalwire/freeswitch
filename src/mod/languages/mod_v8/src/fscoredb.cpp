@@ -75,14 +75,14 @@ void *FSCoreDB::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	switch_core_db_t *db;
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *dbname = js_safe_str(*str);
 
 		switch_core_new_memory_pool(&pool);
 
 		if (!(db = switch_core_db_open_file(dbname))) {
 			switch_core_destroy_memory_pool(&pool);
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot Open DB!"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Cannot Open DB!"));
 			return NULL;
 		}
 
@@ -94,7 +94,7 @@ void *FSCoreDB::Construct(const v8::FunctionCallbackInfo<Value>& info)
 		return dbo;
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	return NULL;
 }
 
@@ -110,23 +110,23 @@ int FSCoreDB::Callback(void *pArg, int argc, char **argv, char **columnNames)
 	HandleScope handle_scope(dbo->GetIsolate());
 
 	if (dbo->_callback.IsEmpty()) {
-		dbo->GetIsolate()->ThrowException(String::NewFromUtf8(dbo->GetIsolate(), "No callback specified"));
+		dbo->GetIsolate()->ThrowException(js_new_string(dbo->GetIsolate(), "No callback specified"));
 		return 0;
 	}
 
-	Handle<Array> arg = Array::New(dbo->GetIsolate(), argc);
+	Local<Array> arg = Array::New(dbo->GetIsolate(), argc);
 
 	for (x = 0; x < argc; x++) {
 		if (columnNames[x] && argv[x]) {
-			arg->Set(String::NewFromUtf8(dbo->GetIsolate(), columnNames[x]), String::NewFromUtf8(dbo->GetIsolate(), argv[x]));
+			js_obj_set(arg, js_new_string(dbo->GetIsolate(), columnNames[x]), js_new_string(dbo->GetIsolate(), argv[x]));
 		}
 	}
 
 	HandleScope scope(dbo->GetIsolate());
-	Handle<Function> func =  Local<Function>::New(dbo->GetIsolate(), dbo->_callback);
-	Handle<Value> jsargv[1] = { arg };
+	Local<Function> func =  Local<Function>::New(dbo->GetIsolate(), dbo->_callback);
+	Local<Value> jsargv[1] = { arg };
 
-	func->Call(dbo->GetIsolate()->GetCurrentContext()->Global(), 1, jsargv);
+	js_call(func, dbo->GetIsolate()->GetCurrentContext()->Global(), 1, jsargv);
 
 	return 0;
 }
@@ -143,19 +143,19 @@ JS_COREDB_FUNCTION_IMPL(Exec)
 	info.GetReturnValue().Set(0);
 
 	if (!_db) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return;
 	}
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *sql = js_safe_str(*str);
 		char *err = NULL;
 		void *arg = NULL;
 		switch_core_db_callback_func_t cb_func = NULL;
 
 		if (info.Length() > 1) {
-			Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
+			Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
 			if (!func.IsEmpty()) {
 				_callback.Reset(info.GetIsolate(), func);
 				cb_func = FSCoreDB::Callback;
@@ -189,7 +189,7 @@ void FSCoreDB::StepEx(const v8::FunctionCallbackInfo<Value>& info, int stepSucce
 	info.GetReturnValue().Set(false);
 
 	if (!_db) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return;
 	}
 
@@ -247,24 +247,24 @@ JS_COREDB_FUNCTION_IMPL(Fetch)
 	int x;
 
 	if (!_db) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return;
 	}
 
 	if (!_stmt) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "No query is active"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "No query is active"));
 		return;
 	}
 
 	colcount = switch_core_db_column_count(_stmt);
-	Handle<Array> arg = Array::New(info.GetIsolate(), colcount);
+	Local<Array> arg = Array::New(info.GetIsolate(), colcount);
 
 	for (x = 0; x < colcount; x++) {
 		const char *var = (char *) switch_core_db_column_name(_stmt, x);
 		const char *val = (char *) switch_core_db_column_text(_stmt, x);
 
 		if (var && val) {
-			arg->Set(String::NewFromUtf8(info.GetIsolate(), var), String::NewFromUtf8(info.GetIsolate(), val));
+			js_obj_set(arg, js_new_string(info.GetIsolate(), var), js_new_string(info.GetIsolate(), val));
 		}
 	}
 
@@ -278,7 +278,7 @@ JS_COREDB_FUNCTION_IMPL(Prepare)
 	info.GetReturnValue().Set(false);
 
 	if (!_db) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return;
 	}
 
@@ -288,7 +288,7 @@ JS_COREDB_FUNCTION_IMPL(Prepare)
 	}
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *sql = js_safe_str(*str);
 		if (switch_core_db_prepare(_db, sql, -1, &_stmt, 0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(_db));
@@ -307,34 +307,34 @@ JS_COREDB_FUNCTION_IMPL(BindText)
 	info.GetReturnValue().Set(false);
 
 	if (!_db) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return;
 	}
 
 	/* db_prepare() must be called first */
 	if (!_stmt) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "prepare() must be called first"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "prepare() must be called first"));
 		return;
 	}
 
 	if (info.Length() < 2) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
 	/* convert args */
-	param_index = info[0]->Int32Value();
-	String::Utf8Value str(info[1]);
+	param_index = info[0]->Int32Value(js_current_context()).FromMaybe(0);
+	JsUtf8Value str(info[1]);
 	param_value = js_safe_str(*str);
 	if ((param_index < 1) || (param_value.length() == 0)) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
 	/* bind param */
 	if (switch_core_db_bind_text(_stmt, param_index, param_value.c_str(), -1, SWITCH_CORE_DB_TRANSIENT)) {
 		char *err = switch_mprintf("Database error %s", switch_core_db_errmsg(_db));
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 		free(err);
 		return;
 	} else {
@@ -351,34 +351,34 @@ JS_COREDB_FUNCTION_IMPL(BindInt)
 	info.GetReturnValue().Set(false);
 
 	if (!_db) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Database is not connected"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Database is not connected"));
 		return;
 	}
 
 	/* db_prepare() must be called first */
 	if (!_stmt) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "prepare() must be called first"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "prepare() must be called first"));
 		return;
 	}
 
 	if (info.Length() < 2) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
 	/* convert args */
-	param_index = info[0]->Int32Value();
-	param_value = info[1]->Int32Value();
+	param_index = info[0]->Int32Value(js_current_context()).FromMaybe(0);
+	param_value = info[1]->Int32Value(js_current_context()).FromMaybe(0);
 
 	if (param_index < 1) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
 	/* bind param */
 	if (switch_core_db_bind_int(_stmt, param_index, param_value)) {
 		char *err = switch_mprintf("Database error %s", switch_core_db_errmsg(_db));
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 		free(err);
 		return;
 	} else {
@@ -390,16 +390,16 @@ JS_COREDB_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 
 	if (!strcmp(js_safe_str(*str), "path")) {
 		if (_dbname) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), _dbname));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), _dbname));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 

@@ -58,7 +58,7 @@ typedef struct {
 extern const unsigned char vp8_block2left[25];
 extern const unsigned char vp8_block2above[25];
 
-#define VP8_COMBINEENTROPYCONTEXTS(Dest, A, B) Dest = (A) + (B);
+#define VP8_COMBINEENTROPYCONTEXTS(Dest, A, B) Dest = (A) + (B)
 
 typedef enum { KEY_FRAME = 0, INTER_FRAME = 1 } FRAME_TYPE;
 
@@ -292,7 +292,7 @@ typedef struct macroblockd {
 
   struct vpx_internal_error_info error_info;
 
-#if ARCH_X86 || ARCH_X86_64
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
   /* This is an intermediate buffer currently used in sub-pixel motion search
    * to keep a copy of the reference area. This buffer can be used for other
    * purpose.

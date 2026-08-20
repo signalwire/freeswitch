@@ -40,10 +40,18 @@
 #define MOD_AMQP_H
 
 #include <switch.h>
+#define AMQP_VERSION_INT(a, b) ((a)<<8 | (b))
+#if AMQP_VERSION_INT(AMQP_MAJOR_VERSION, AMQP_MINOR_VERSION) >= AMQP_VERSION_INT(0, 12)
+#include <rabbitmq-c/amqp.h>
+#include <rabbitmq-c/framing.h>
+#include <rabbitmq-c/tcp_socket.h>
+#include <rabbitmq-c/ssl_socket.h>
+#else
 #include <amqp.h>
 #include <amqp_framing.h>
 #include <amqp_tcp_socket.h>
 #include <amqp_ssl_socket.h>
+#endif
 
 #ifndef _MSC_VER
 #include <strings.h>

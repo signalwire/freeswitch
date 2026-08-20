@@ -545,14 +545,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_mongodb\mod_cdr_mongodb.2017.vcxproj">
-      <Name>mod_cdr_mongodb</Name>
-      <Project>{4dff29b4-2976-447d-a8b3-43476451517c}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_pg_csv\mod_cdr_pg_csv.2017.vcxproj">
       <Name>mod_cdr_pg_csv</Name>
       <Project>{411f6d43-9f09-47d0-8b04-e1eb6b67c5bf}</Project>
@@ -955,16 +947,6 @@
             TimestampUrl="$(TimestampUrl)"
             SigningTarget="%(ExeFiles.Identity)"
             TargetFrameworkVersion="v4.5" />
-    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
-    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
-            CertificateThumbprint="$(CertificateThumbprint)"
-            SigningTarget="%(Modules.Identity)"
-            TargetFrameworkVersion="v4.5" />
-    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
-            CertificateThumbprint="$(CertificateThumbprint)"
-            TimestampUrl="$(TimestampUrl)"
-            SigningTarget="%(Modules.Identity)"
-            TargetFrameworkVersion="v4.5" />
     <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
@@ -1064,6 +1046,24 @@
         RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHBaseDir">
     </HeatDirectory>
+    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
+  </Target>
+  <!-- One batch per module so each file is logged as it is signed. The Modules items
+       are created in AfterResolveReferences and only visible after it completes. -->
+  <Target Name="SignFreeSWITCHModules"
+          AfterTargets="AfterResolveReferences"
+          Outputs="%(Modules.Identity)"
+          Condition="'@(Modules)' != ''">
+    <Message Importance="High" Text="Signing %(Modules.Identity)" />
+    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
   </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />

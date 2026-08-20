@@ -100,7 +100,7 @@ size_t FSGlobal::HashCallback(void *ptr, size_t size, size_t nmemb, void *data)
 					*p = '\0';
 
 				// Add data to hash
-				args->Set(String::NewFromUtf8(config_data->isolate, line), String::NewFromUtf8(config_data->isolate, js_safe_str(val)));
+				js_obj_set(args, js_new_string(config_data->isolate, line), js_new_string(config_data->isolate, js_safe_str(val)));
 			}
 
 			line = nextline;
@@ -149,14 +149,14 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 	int saveDepth = 0;
 
 	if (info.Length() > 0) {
-		String::Utf8Value url(info[0]);
+		JsUtf8Value url(info[0]);
 
 		if (info.Length() > 1 && info[1]->IsString()) {
 			/* Cast to string */
 			Local<String> str = Local<String>::Cast(info[1]);
 
 			/* Try to get existing variable */
-			Local<Value> obj = info.GetIsolate()->GetCurrentContext()->Global()->Get(str);
+			Local<Value> obj = js_obj_get(info.GetIsolate()->GetCurrentContext()->Global(), str);
 
 			if (!obj.IsEmpty() && obj->IsArray()) {
 				/* The existing var is an array, use it */
@@ -164,11 +164,11 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 			} else if (obj.IsEmpty() || obj->IsUndefined()) {
 				/* No existing var (or an existing that is undefined), create a new one */
 				Local<Array> arguments = Array::New(info.GetIsolate());
-				info.GetIsolate()->GetCurrentContext()->Global()->Set(str, arguments);
+				js_obj_set(info.GetIsolate()->GetCurrentContext()->Global(), str, arguments);
 				config_data.hashObject.Reset(info.GetIsolate(), arguments);
 			} else {
 				/* The var exists, but is wrong type - exit with error */
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Second argument is the name of an existing var of the wrong type"));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Second argument is the name of an existing var of the wrong type"));
 
 				return;
 			}
@@ -177,7 +177,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 			config_data.hashObject.Reset(info.GetIsolate(), Local<Array>::Cast(info[1]));
 		} else if (info.Length() > 1) {
 			/* The var exists, but is wrong type - exit with error */
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Second argument is of the wrong type"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Second argument is of the wrong type"));
 
 			return;
 		} else {
@@ -188,7 +188,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 
 		curl_handle = switch_curl_easy_init();
 		if (!curl_handle) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to initiate curl easy session."));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to initiate curl easy session."));
 
 			return;
 		}
@@ -213,9 +213,9 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLHash)
 		switch_curl_easy_cleanup(curl_handle);
 
 		/* Return the hash */
-		info.GetReturnValue().Set(config_data.hashObject);
+		info.GetReturnValue().Set(js_local(config_data.hashObject));
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
@@ -229,15 +229,15 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLFile)
 
 	if (info.Length() > 1) {
 		const char *url = NULL, *filename = NULL;
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 
 		url = js_safe_str(*str1);
 		filename = js_safe_str(*str2);
 
 		curl_handle = switch_curl_easy_init();
 		if (!curl_handle) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to initiate curl easy session."));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to initiate curl easy session."));
 
 			return;
 		}
@@ -269,7 +269,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLFile)
 
 		switch_curl_easy_cleanup(curl_handle);
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
@@ -285,16 +285,16 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 
 	if (info.Length() >= 1) {
 		const char *url;
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 
 		url = js_safe_str(*str);
 		if (info.Length() > 1) {
-			buffer_size = info[1]->Int32Value();
+			buffer_size = info[1]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		curl_handle = switch_curl_easy_init();
 		if (!curl_handle) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to initiate curl easy session."));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to initiate curl easy session."));
 
 			return;
 		}
@@ -310,7 +310,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 		config_data.bufferDataLength = 0;
 
 		if (config_data.buffer == NULL) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to allocate data buffer."));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to allocate data buffer."));
 			switch_curl_easy_cleanup(curl_handle);
 
 			return;
@@ -330,7 +330,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 
 		if (code == CURLE_OK) {
 			config_data.buffer[config_data.bufferDataLength] = 0;
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(config_data.buffer)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(config_data.buffer)));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Curl returned error %u\n", (unsigned) code);
 			info.GetReturnValue().Set(false);
@@ -338,7 +338,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 
 		free(config_data.buffer);
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
@@ -348,7 +348,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Exit)
 
 	if (info.Length() > 0) {
 		HandleScope handle_scope(info.GetIsolate());
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 
 		if (*str) {
 			JSMain::ExitScript(info.GetIsolate(), *str);
@@ -374,7 +374,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Log)
 	}
 
 	if (info.Length() > 1) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 
 		if ((level_str = *str)) {
 			level = switch_log_str2level(level_str);
@@ -383,7 +383,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Log)
 			}
 		}
 
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str2(info[1]);
 		if ((msg = *str2) && *msg != '\0') {
 			const char lastchar = msg[strlen(msg)-1];
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, NULL, level, "%s%s", msg, lastchar != '\n' ? "\n" : "");
@@ -391,7 +391,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Log)
 			return;
 		}
 	} else if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		if ((msg = *str) && *msg != '\0') {
 			const char lastchar = msg[strlen(msg)-1];
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, NULL, level, "%s%s", msg, lastchar != '\n' ? "\n" : "");
@@ -411,8 +411,8 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(GlobalSet)
 	bool tf = true;
 
 	if (info.Length() > 1) {
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 		var_name = js_safe_str(*str1);
 		val = js_safe_str(*str2);
 		if (info.Length() == 2) {
@@ -420,7 +420,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(GlobalSet)
 			info.GetReturnValue().Set(true);
 			return;
 		} else {
-			String::Utf8Value str3(info[2]);
+			JsUtf8Value str3(info[2]);
 			val2 = js_safe_str(*str3);
 			if (switch_core_set_var_conditional(var_name, val, val2) != SWITCH_TRUE) {
 				tf = false;
@@ -430,7 +430,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(GlobalSet)
 		}
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "var name not supplied!"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "var name not supplied!"));
 }
 
 JS_GLOBAL_FUNCTION_IMPL_STATIC(GlobalGet)
@@ -441,15 +441,15 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(GlobalGet)
 	char *val = NULL;
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		var_name = js_safe_str(*str);
 		val = switch_core_get_variable_dup(var_name);
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(val)));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(val)));
 		switch_safe_free(val);
 		return;
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "var name not supplied!"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "var name not supplied!"));
 }
 
 JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
@@ -457,13 +457,13 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 	JS_CHECK_SCRIPT_STATE();
 	if (info.Length() < 1) {
 		/* Bad arguments, return exception */
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	} else {
 		/* Try to get the current script path */
 		string scriptPath = "";
-		Handle<Value> val = info.GetIsolate()->GetCurrentContext()->Global()->Get(String::NewFromUtf8(info.GetIsolate(), "scriptPath"));
+		Local<Value> val = js_obj_get(info.GetIsolate()->GetCurrentContext()->Global(), js_new_string(info.GetIsolate(), "scriptPath"));
 		if (!val.IsEmpty() && val->IsString()) {
-			String::Utf8Value tmp(val);
+			JsUtf8Value tmp(val);
 			if (*tmp) {
 				scriptPath = *tmp;
 			}
@@ -472,7 +472,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 		/* Loop all arguments until we find a valid file */
 		for (int i = 0; i < info.Length(); i++) {
 			HandleScope handle_scope(info.GetIsolate());
-			String::Utf8Value str(info[i]);
+			JsUtf8Value str(info[i]);
 			char *path = NULL;
 			const char *script_name = NULL;
 
@@ -508,12 +508,12 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 					if (script.IsEmpty()) {
 						info.GetReturnValue().Set(false);
 					} else {
-						info.GetReturnValue().Set(script.ToLocalChecked()->Run());
+						info.GetReturnValue().Set(js_run_script(script.ToLocalChecked()));
 					}
 #else
-					Handle<String> source = String::NewFromUtf8(info.GetIsolate(), js_file.c_str());
-					Handle<Script> script = Script::Compile(source, info[i]);
-					info.GetReturnValue().Set(script->Run());
+					Local<String> source = js_new_string(info.GetIsolate(), js_file.c_str());
+					Local<Script> script = Script::Compile(source, info[i]);
+					info.GetReturnValue().Set(js_run_script(script));
 #endif
 					switch_safe_free(path);
 					return;
@@ -522,7 +522,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Include)
 			switch_safe_free(path);
 		}
 
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to include javascript file"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to include javascript file"));
 	}
 }
 
@@ -533,13 +533,13 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Sleep)
 	int32_t msec = 0;
 
 	if (info.Length() > 0) {
-		msec = info[0]->Int32Value();
+		msec = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 	}
 
 	if (msec) {
 		switch_yield(msec * 1000);
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "No time specified"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "No time specified"));
 	}
 }
 
@@ -549,7 +549,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Use)
 	HandleScope handle_scope(info.GetIsolate());
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		char *mod_name = *str;
 
 		if (mod_name) {
@@ -560,12 +560,12 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Use)
 				mp->v8_mod_load(info);
 			} else {
 				char *err = switch_mprintf("Error loading %s", mod_name);
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 				free(err);
 			}
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 	}
 }
 
@@ -575,7 +575,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(ApiExecute)
 	HandleScope handle_scope(info.GetIsolate());
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *cmd = js_safe_str(*str);
 		string arg;
 		switch_core_session_t *session = NULL;
@@ -588,13 +588,13 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(ApiExecute)
 		}
 
 		if (info.Length() > 1) {
-			String::Utf8Value str2(info[1]);
+			JsUtf8Value str2(info[1]);
 			arg = js_safe_str(*str2);
 		}
 
 		if (info.Length() > 2) {
 			if (!info[2].IsEmpty() && info[2]->IsObject()) {
-				Handle<Object> session_obj = Handle<Object>::Cast(info[2]);
+				Local<Object> session_obj = Local<Object>::Cast(info[2]);
 				FSSession *obj = JSBase::GetInstance<FSSession>(session_obj);
 				if (obj) {
 					session = obj->GetSession();
@@ -605,10 +605,10 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(ApiExecute)
 		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute(cmd, arg.c_str(), session, &stream);
 
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_str_nil((char *) stream.data)));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_str_nil((char *) stream.data)));
 		switch_safe_free(stream.data);
 	} else {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 	}
 }
 
@@ -619,37 +619,37 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Email)
 	string to, from, headers, body, file, convert_cmd, convert_ext;
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		to = js_safe_str(*str);
 	}
 
 	if (info.Length() > 1) {
-		String::Utf8Value str(info[1]);
+		JsUtf8Value str(info[1]);
 		from = js_safe_str(*str);
 	}
 
 	if (info.Length() > 2) {
-		String::Utf8Value str(info[2]);
+		JsUtf8Value str(info[2]);
 		headers = js_safe_str(*str);
 	}
 
 	if (info.Length() > 3) {
-		String::Utf8Value str(info[3]);
+		JsUtf8Value str(info[3]);
 		body = js_safe_str(*str);
 	}
 
 	if (info.Length() > 4) {
-		String::Utf8Value str(info[4]);
+		JsUtf8Value str(info[4]);
 		file = js_safe_str(*str);
 	}
 
 	if (info.Length() > 5) {
-		String::Utf8Value str(info[5]);
+		JsUtf8Value str(info[5]);
 		convert_cmd = js_safe_str(*str);
 	}
 
 	if (info.Length() > 6) {
-		String::Utf8Value str(info[6]);
+		JsUtf8Value str(info[6]);
 		convert_ext = js_safe_str(*str);
 	}
 
@@ -666,8 +666,8 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Bridge)
 	JS_CHECK_SCRIPT_STATE();
 	HandleScope handle_scope(info.GetIsolate());
 	FSSession *jss_a = NULL, *jss_b = NULL;
-	Handle<Object> obj_a;
-	Handle<Object> obj_b;
+	Local<Object> obj_a;
+	Local<Object> obj_b;
 	void *bp = NULL;
 	switch_input_callback_function_t dtmf_func = NULL;
 	FSInputCallbackState cb_state;
@@ -676,34 +676,34 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(Bridge)
 
 	if (info.Length() > 1) {
 		if (info[0]->IsObject()) {
-			obj_a = Handle<Object>::Cast(info[0]);
+			obj_a = Local<Object>::Cast(info[0]);
 
 			if (!(jss_a = JSBase::GetInstance<FSSession>(obj_a))) {
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot find session A"));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Cannot find session A"));
 				return;
 			}
 		}
 		if (info[1]->IsObject()) {
-			obj_b = Handle<Object>::Cast(info[1]);
+			obj_b = Local<Object>::Cast(info[1]);
 			if (!(jss_b = JSBase::GetInstance<FSSession>(obj_b))) {
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot find session B"));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Cannot find session B"));
 				return;
 			}
 		}
 	}
 
 	if (!(jss_a && jss_a->GetSession())) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "session A is not ready!"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "session A is not ready!"));
 		return;
 	}
 
 	if (!(jss_b && jss_b->GetSession())) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "session B is not ready!"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "session B is not ready!"));
 		return;
 	}
 
 	if (info.Length() > 2) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[2]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[2]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);
@@ -738,7 +738,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(System)
 	info.GetReturnValue().Set(false);
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		cmd = *str;
 		if (cmd) {
 			result = switch_system(cmd, SWITCH_TRUE);
@@ -747,7 +747,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(System)
 		}
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 }
 
 JS_GLOBAL_FUNCTION_IMPL_STATIC(FileDelete)
@@ -759,7 +759,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FileDelete)
 	info.GetReturnValue().Set(false);
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		path = *str;
 		if (path) {
 			if ((switch_file_remove(path, NULL)) == SWITCH_STATUS_SUCCESS) {
@@ -769,20 +769,20 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FileDelete)
 		}
 	}
 
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 }
 
 /* Internal Version function accessable from JS - used to get the current V8 version */
 JS_GLOBAL_FUNCTION_IMPL_STATIC(Version)
 {
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), V8::GetVersion()));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), V8::GetVersion()));
 }
 
 /* TaskId assigned to the script - used to manage the task */
 JS_GLOBAL_FUNCTION_IMPL_STATIC(Id)
 {
 	js_isolate_private_data_t *private_data = (js_isolate_private_data_t*)info.GetIsolate()->GetData(ISOLATE_DATA_PRIVATE);
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), private_data->str_task_id.c_str()));
+	info.GetReturnValue().Set(js_new_string(info.GetIsolate(), private_data->str_task_id.c_str()));
 }
 
 static const js_function_t fs_proc[] = {

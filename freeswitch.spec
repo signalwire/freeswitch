@@ -131,9 +131,9 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.17
-BuildRequires: spandsp3-devel >= 3.0
-BuildRequires: pcre-devel 
+BuildRequires: sofia-sip-devel >= 1.13.18
+BuildRequires: spandsp4-devel >= 3.1.1
+BuildRequires: pcre2-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
@@ -147,7 +147,7 @@ BuildRequires: zlib-devel
 BuildRequires: libxml2-devel
 BuildRequires: libsndfile-devel
 Requires: curl >= 7.19
-Requires: pcre
+Requires: pcre2
 Requires: speex
 Requires: sqlite >= 3.6.20
 Requires: libtiff
@@ -769,15 +769,6 @@ Verto protocol support for FreeSWITCH open source telephony platform.
 #				FreeSWITCH Event Handler Modules
 ######################################################################################################################
 
-%package event-cdr-mongodb
-Summary:	MongoDB CDR Logger for the FreeSWITCH open source telephony platform
-Group:		System/Libraries
-Requires:       %{name} = %{version}-%{release}
-BuildRequires:  mongo-c-driver-devel
-
-%description event-cdr-mongodb
-MongoDB CDR Logger for FreeSWITCH
-
 %package event-cdr-pg-csv
 Summary:	PostgreSQL CDR Logger for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1257,7 +1248,7 @@ ENDPOINTS_MODULES=" \
 #
 ######################################################################################################################
 EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
-			event_handlers/mod_cdr_mongodb event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
+			event_handlers/mod_format_cdr event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
 
@@ -1636,7 +1627,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/blacklist.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/callcenter.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_csv.conf.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_mongodb.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_pg_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cdr_sqlite.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/cidlookup.conf.xml
@@ -1957,9 +1947,6 @@ fi
 #					Event Modules
 #
 ######################################################################################################################
-
-%files event-cdr-mongodb
-%{MODINSTDIR}/mod_cdr_mongodb.so*
 
 %files event-cdr-pg-csv
 %{MODINSTDIR}/mod_cdr_pg_csv.so*

@@ -1349,12 +1349,22 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	if ((cl = esl_event_get_header(revent, "content-length"))) {
 		char *body;
 		esl_ssize_t sofar = 0;
-		
+
 		len = atol(cl);
-		body = malloc(len+1);
-		esl_assert(body);
-		*(body + len) = '\0';
-		
+
+		if (len < 0 || len > ESL_MAX_CONTENT_LENGTH) {
+			esl_event_destroy(&revent);
+			goto fail;
+		}
+
+		body = malloc(len + 1);
+		if (!body) {
+			esl_event_destroy(&revent);
+			goto fail;
+		}
+
+		body[len] = '\0';
+
 		do {
 			esl_ssize_t r,s = esl_buffer_inuse(handle->packet_buf);
 
@@ -1367,6 +1377,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 					if (!(strerror_r(handle->errnum, handle->err, sizeof(handle->err))))
 						*(handle->err)=0;
 					free(body);
+					esl_event_destroy(&revent);
 					goto fail;
 				} else if (r == 0) {
 					continue;

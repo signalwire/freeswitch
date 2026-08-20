@@ -102,19 +102,19 @@ void *FSODBC::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	int32_t blen = 1024;
 
 	if (info.Length() < 3) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid parameters"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid parameters"));
 		return NULL;
 	}
 
-	String::Utf8Value str1(info[0]);
-	String::Utf8Value str2(info[1]);
-	String::Utf8Value str3(info[2]);
+	JsUtf8Value str1(info[0]);
+	JsUtf8Value str2(info[1]);
+	JsUtf8Value str3(info[2]);
 	dsn = *str1;
 	username = *str2;
 	password = *str3;
 
 	if (info.Length() > 3) {
-		int32_t len = info[3]->Int32Value();
+		int32_t len = info[3]->Int32Value(js_current_context()).FromMaybe(0);
 
 		if (len > 0) {
 			blen = len;
@@ -134,13 +134,13 @@ void *FSODBC::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	}
 
 	if (!odbc_obj) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Failed to create new ODBC instance"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Failed to create new ODBC instance"));
 		return NULL;
 	}
 
 	if (!(odbc_obj->_colbuf = (SQLCHAR *) malloc(blen))) {
 		delete odbc_obj;
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Memory error"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Memory error"));
 		return NULL;
 	}
 
@@ -169,7 +169,7 @@ JS_ODBC_FUNCTION_IMPL(Execute)
 	const char *sql;
 	bool tf = false;
 	SQLHSTMT local_stmt;
-	String::Utf8Value str(info[0]);
+	JsUtf8Value str(info[0]);
 
 	if (info.Length() < 1) {
 		goto done;
@@ -201,7 +201,7 @@ JS_ODBC_FUNCTION_IMPL(Exec)
 	HandleScope handle_scope(info.GetIsolate());
 	const char *sql;
 	bool tf = false;
-	String::Utf8Value str(info[0]);
+	JsUtf8Value str(info[0]);
 
 	if (info.Length() < 1) {
 		goto done;
@@ -307,7 +307,7 @@ JS_ODBC_FUNCTION_IMPL(GetData)
 			goto done;
 		}
 
-		Handle<Array> arg = Array::New(GetIsolate(), nColumns);
+		Local<Array> arg = Array::New(GetIsolate(), nColumns);
 
 		for (x = 1; x <= nColumns; x++) {
 			SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
@@ -321,9 +321,9 @@ JS_ODBC_FUNCTION_IMPL(GetData)
 
 			if (name) {
 				if (SQL_NULL_DATA == pcbValue) {
-					arg->Set(String::NewFromUtf8(GetIsolate(), (const char *)name), Null(info.GetIsolate()));
+					js_obj_set(arg, js_new_string(GetIsolate(), (const char *)name), Null(info.GetIsolate()));
 				} else {
-	                arg->Set(String::NewFromUtf8(GetIsolate(), (const char *)name), String::NewFromUtf8(GetIsolate(), data ? (const char *)data : ""));
+	                js_obj_set(arg, js_new_string(GetIsolate(), (const char *)name), js_new_string(GetIsolate(), data ? (const char *)data : ""));
 				}
 			}
 		}
@@ -369,12 +369,12 @@ JS_ODBC_GET_PROPERTY_IMPL(GetProperty)
 {
 	HandleScope handle_scope(info.GetIsolate());
 
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 
 	if (!strcmp(js_safe_str(*str), "name")) {
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), _dsn.length() > 0 ? _dsn.c_str() : ""));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), _dsn.length() > 0 ? _dsn.c_str() : ""));
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 

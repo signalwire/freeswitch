@@ -1,4 +1,10 @@
 %module freeswitch
+
+/* Isolate this module's type table from other swig-lua modules (e.g. ESL). */
+%begin %{
+#define SWIG_TYPE_TABLE mod_lua
+%}
+
 %include ../../../../swig_common.i
 //%include "cstring.i"
 %include std_string.i
@@ -66,6 +72,13 @@
 }
 
 
+/* Stream::read returns binary data; preserve length and embedded NULs. */
+%typemap(out) const char *Stream::read %{ lua_pushlstring(L,(const char*)$1, (*arg2)); SWIG_arg++;%}
+
+/* Guard the self pointer in every Dbh/JSON method wrapper. */
+%typemap(check) LUA::Dbh *  %{ switch_assert($1);%}
+%typemap(check) LUA::JSON * %{ switch_assert($1);%}
+
 /**
  * tell swig to grok everything defined in these header files and
  * build all sorts of c wrappers and lua shadows of the c wrappers.
@@ -74,6 +87,13 @@
 
 
 namespace LUA {
+
+/* Bind Lua state into returned Session (needed by hangup/input callbacks). */
+%typemap(out) LUA::Session * {
+  SWIG_NewPointerObj(L, $1, $1_descriptor, $owner); SWIG_arg++;
+  if ($1) ($1)->setLUA(L);
+}
+
 class Session : public CoreSession {
  private:
 	virtual void do_hangup_hook();
