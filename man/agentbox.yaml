@@ -1,0 +1,4 @@
+functions:
+  - name: freeswitch-doc
+    slug: freeswitch-doc
+    main: functions/freeswitch-doc/index.ts
