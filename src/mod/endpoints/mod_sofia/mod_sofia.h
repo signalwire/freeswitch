@@ -81,6 +81,7 @@ typedef struct private_object private_object_t;
 #define NUA_HMAGIC_T sofia_private_t
 
 #define SOFIA_SESSION_TIMEOUT "sofia_session_timeout"
+#define SOFIA_DEFAULT_REFER_NOTIFY_TIMEOUT 10
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_PRE_REGISTER "sofia::pre_register"
 #define MY_EVENT_REGISTER_ATTEMPT "sofia::register_attempt"
@@ -720,6 +721,7 @@ struct sofia_profile {
 	uint32_t inuse;
 	time_t started;
 	uint32_t session_timeout;
+	uint32_t refer_notify_timeout;
 	uint32_t minimum_session_expires;
 	uint32_t max_proceeding;
 	uint32_t max_recv_requests_per_second;
