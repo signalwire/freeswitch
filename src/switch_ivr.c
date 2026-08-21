@@ -1555,11 +1555,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session, 
 		}
 	}
 
+	switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_HOLD_VARIABLE);
+	switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_HOLD_VARIABLE);
+
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HOLD) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1634,6 +1636,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 		switch_core_session_rwunlock(b_session);
 	}
 
+	switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_UNHOLD_VARIABLE);
+	switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_UNHOLD_VARIABLE);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNHOLD) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
