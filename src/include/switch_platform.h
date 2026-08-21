@@ -245,10 +245,6 @@ typedef intptr_t switch_ssize_t;
 #define SWITCH_INT64_T_FMT          "lld"
 #define SWITCH_UINT64_T_FMT         "llu"
 
-#ifndef TIME_T_FMT
-#define TIME_T_FMT SWITCH_INT64_T_FMT
-#endif
-
 #else
 #ifndef SWITCH_SSIZE_T_FMT
 #define SWITCH_SSIZE_T_FMT          (sizeof (switch_ssize_t) == sizeof (long) ? "ld" : sizeof (switch_ssize_t) == sizeof (int) ? "d" : "lld")
@@ -266,24 +262,14 @@ typedef intptr_t switch_ssize_t;
 #define SWITCH_UINT64_T_FMT         (sizeof (long) == 8 ? "lu" : "llu")
 #endif
 
-#ifndef TIME_T_FMT
-#if defined(__FreeBSD__) && SIZEOF_VOIDP == 4
-#define TIME_T_FMT "d"
-#else
-#if __USE_TIME_BITS64
-#define TIME_T_FMT SWITCH_INT64_T_FMT
-#else
-#define TIME_T_FMT "ld"
-#endif
-#endif
-#endif
-
-
 #if UINTPTR_MAX == 0xffffffffffffffff
 #define FS_64BIT 1
 #endif
 
 #endif
+
+#define TIME_T_FMT "lld"
+#define TIME_T_CAST(x) ((long long)(x))
 
 #if defined(__sun__) && (defined(__x86_64) || defined(__arch64__))
 #define SWITCH_TIME_T_FMT SWITCH_SIZE_T_FMT
