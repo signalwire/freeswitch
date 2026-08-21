@@ -742,7 +742,7 @@ static void do_normal_probe(switch_event_t *event)
 
 								 "left join sip_dialogs on "
 								 "sip_dialogs.hostname = sip_registrations.hostname and sip_dialogs.profile_name = sip_registrations.profile_name and ("
-								 "sip_dialogs.presence_id = sip_registrations.sip_user %q '@' %q sip_registrations.sub_host "
+								 "sip_dialogs.presence_id = concat(sip_registrations.sip_user, '@', sip_registrations.sub_host) "
 								 "or (sip_dialogs.sip_from_user = sip_registrations.sip_user "
 								 "and sip_dialogs.sip_from_host = sip_registrations.sip_host)) "
 
@@ -751,11 +751,10 @@ static void do_normal_probe(switch_event_t *event)
 								 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.orig_server_host=sip_presence.sip_host and "
 								 "sip_registrations.profile_name=sip_presence.profile_name) "
 								 "where sip_registrations.hostname='%q' and sip_registrations.profile_name='%q' and sip_dialogs.call_info_state != 'seized' "
-								 "and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+								 "and (sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 								 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
-								 "))",
+								 ")))",
 								 dh.status, dh.rpid, switch_str_nil(sub_call_id),
-								 switch_sql_concat(), switch_sql_concat(),
 								 mod_sofia_globals.hostname, profile->name, probe_euser, probe_host,  probe_euser, probe_host, probe_host);
 
 
@@ -881,9 +880,9 @@ static void do_dialog_probe(switch_event_t *event)
 							 "(sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
 							 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 							 "where sip_dialogs.hostname='%q' and sip_dialogs.profile_name='%q' and "
-							 "sip_dialogs.call_info_state != 'seized' and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
+							 "sip_dialogs.call_info_state != 'seized' and (sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 							 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
-							 "or sip_registrations.presence_hosts like '%%%q%%'))",
+							 "or sip_registrations.presence_hosts like '%%%q%%')))",
 							 probe_euser, probe_host,
 							 sub_call_id, probe_host,
 							 mod_sofia_globals.hostname, profile->name,
@@ -1189,7 +1188,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 												 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and "
 												 "sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 												 "sip_subscriptions.profile_name=sip_presence.profile_name and "
-												 "sip_presence.profile_name=sip_subscriptions.profile_name) "
+												 "sip_subscriptions.hostname = sip_presence.hostname) "
 												 "where sip_subscriptions.hostname='%q' and sip_subscriptions.profile_name='%q' and "
 												 "sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'",
 												 switch_str_nil(status), switch_str_nil(rpid), mod_sofia_globals.hostname, profile->name, from);
