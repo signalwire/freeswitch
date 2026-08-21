@@ -321,6 +321,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		status = SWITCH_STATUS_SUCCESS;
 
 		if ((p = strstr(dup_dest, ";fs_"))) {
+			*p++ = '>';
 			*p = '\0';
 		}
 
