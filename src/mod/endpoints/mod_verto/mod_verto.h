@@ -345,6 +345,9 @@ typedef switch_bool_t (*jrpc_func_t)(const char *method, cJSON *params, jsock_t 
 
 void set_log_path(const char *path);
 
+static void kill_profiles(void);
+static void run_profiles(void);
+static int init(void);
 
 /** @} */
 #endif
