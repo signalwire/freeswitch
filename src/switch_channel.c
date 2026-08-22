@@ -1454,20 +1454,29 @@ SWITCH_DECLARE(void) switch_channel_set_presence_data_vals(switch_channel_t *cha
 SWITCH_DECLARE(switch_status_t) switch_channel_set_log_tag(switch_channel_t *channel, const char *tagname, const char *tagvalue)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	switch_assert(channel != NULL);
+
+	if (zstr(tagname)) {
+		return status;
+	}
+
 	switch_mutex_lock(channel->profile_mutex);
-	if (!zstr(tagname)) {
-		if (!channel->log_tags) {
-			switch_event_create_plain(&channel->log_tags, SWITCH_EVENT_CHANNEL_DATA);
-		}
-		if (zstr(tagvalue)) {
-			switch_event_del_header(channel->log_tags, tagname);
-		} else {
+
+	if (!channel->log_tags && !zstr(tagvalue)) {
+		switch_event_create_plain(&channel->log_tags, SWITCH_EVENT_CHANNEL_DATA);
+	}
+
+	if (channel->log_tags) {
+		switch_event_del_header(channel->log_tags, tagname);
+		if (!zstr(tagvalue)) {
 			switch_event_add_header_string(channel->log_tags, SWITCH_STACK_BOTTOM, tagname, tagvalue);
 		}
-		status = SWITCH_STATUS_SUCCESS;
 	}
+
+	status = SWITCH_STATUS_SUCCESS;
 	switch_mutex_unlock(channel->profile_mutex);
+
 	return status;
 }
 
