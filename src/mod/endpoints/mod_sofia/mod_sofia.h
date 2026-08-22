@@ -1259,6 +1259,7 @@ void sofia_glue_global_siptrace(switch_bool_t on);
 void sofia_glue_global_capture(switch_bool_t on);
 void sofia_glue_global_watchdog(switch_bool_t on);
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile);
+uint32_t sofia_presence_get_subscription_cseq(sofia_profile_t *profile, const char *call_id);
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 char *sofia_glue_get_encoded_fs_path(nua_handle_t *nh, sip_route_t *rt, switch_bool_t add_fs_path_prefix);
