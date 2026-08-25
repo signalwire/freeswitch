@@ -61,6 +61,9 @@ class MotionField {
       PVector mv = motion_field.get(i);
       if (mv.z > 0) {
         motion_field.set(i, new PVector(mv.x / mv.z, mv.y / mv.z, 0));
+      } else  // there is nothing in the block, use -1 to mark it.
+      {
+        motion_field.set(i, new PVector(0.0, 0.0, -1));
       }
     }
   }
@@ -85,7 +88,12 @@ class MotionField {
       mvs[i] = "";
       for (int j = 0; j < c_num; j++) {
         PVector mv = motion_field.get(i * c_num + j);
-        mvs[i] += str(mv.x) + "," + str(mv.y);
+        if (mv.z != -1) {
+          mvs[i] += str(mv.x) + "," + str(mv.y);
+        } else  // there is nothing
+        {
+          mvs[i] += "-,-";
+        }
         if (j != c_num - 1) mvs[i] += ";";
       }
     }

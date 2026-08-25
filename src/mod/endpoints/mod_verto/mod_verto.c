@@ -41,7 +41,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_verto_runtime);
 SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_verto_runtime);
 
 #define HTTP_CHUNK_SIZE 1024 * 32
+#define HTTP_POST_MAX_BODY (10 * 1024 * 1024)   /* max accepted Content-Length for form-urlencoded POST */
 #define EP_NAME "verto.rtc"
+#define VERTO_SPEED_TEST_MAX_SIZE (10 * 1024 * 1024)
 //#define WSS_STANDALONE 1
 #include "libks/ks.h"
 
@@ -150,6 +152,114 @@ static void verto_deinit_ssl(verto_profile_t *profile)
 	}
 }
 
+static SSL_CTX *verto_create_ssl_ctx(verto_profile_t *profile, const char **errp)
+{
+	SSL_CTX *ctx = SSL_CTX_new(profile->ssl_method);
+
+	if (!ctx) {
+		*errp = "Failed to create SSL context";
+
+		return NULL;
+	}
+
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_COMPRESSION);
+
+	if (!zstr(profile->chain)) {
+		if (switch_file_exists(profile->chain, NULL) != SWITCH_STATUS_SUCCESS) {
+			*errp = "SUPPLIED CHAIN FILE NOT FOUND";
+			goto fail;
+		}
+
+		if (!SSL_CTX_use_certificate_chain_file(ctx, profile->chain)) {
+			*errp = "CERT CHAIN FILE ERROR";
+			goto fail;
+		}
+	}
+
+	if (switch_file_exists(profile->cert, NULL) != SWITCH_STATUS_SUCCESS) {
+		*errp = "SUPPLIED CERT FILE NOT FOUND";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_certificate_file(ctx, profile->cert, SSL_FILETYPE_PEM)) {
+		*errp = "CERT FILE ERROR";
+		goto fail;
+	}
+
+	if (switch_file_exists(profile->key, NULL) != SWITCH_STATUS_SUCCESS) {
+		*errp = "SUPPLIED KEY FILE NOT FOUND";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_PrivateKey_file(ctx, profile->key, SSL_FILETYPE_PEM)) {
+		*errp = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
+	if (!SSL_CTX_check_private_key(ctx)) {
+		*errp = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
+	SSL_CTX_set_cipher_list(ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+
+	return ctx;
+
+ fail:
+	SSL_CTX_free(ctx);
+
+	return NULL;
+}
+
+static int verto_reload_ssl(verto_profile_t *profile)
+{
+	const char *err = NULL;
+	SSL_CTX *new_ctx = verto_create_ssl_ctx(profile, &err);
+
+	if (!new_ctx) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL reload failed for profile %s: %s\n", profile->name, err);
+
+		return 0;
+	}
+
+	SSL_CTX_free(profile->ssl_ctx);
+
+	profile->ssl_ctx = new_ctx;
+	profile->ssl_ready = 1;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SSL certificates reloaded for profile %s\n", profile->name);
+
+	return 1;
+}
+
+static void cert_reload_handler(switch_event_t *event)
+{
+	verto_profile_t *p;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event received, processing\n");
+
+	switch_mutex_lock(verto_globals.mutex);
+
+	for (p = verto_globals.profile_head; p; p = p->next) {
+		if (p->running) {
+			switch_thread_rwlock_wrlock(p->rwlock);
+			verto_reload_ssl(p);
+			switch_thread_rwlock_unlock(p->rwlock);
+		}
+	}
+
+	switch_mutex_unlock(verto_globals.mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Certificate reload event processed\n");
+}
+
 static void close_file(ks_socket_t *sock)
 {
 	if (*sock != KS_SOCK_INVALID) {
@@ -174,84 +284,30 @@ void verto_broadcast(const char *event_channel, cJSON *json, const char *key, sw
 
 static int verto_init_ssl(verto_profile_t *profile)
 {
-	const char *err = "";
+	const char *err = NULL;
 	int i = 0;
 
-	profile->ssl_method = SSLv23_server_method();   /* create server instance */
-	profile->ssl_ctx = SSL_CTX_new(profile->ssl_method);         /* create context */
+	profile->ssl_method = SSLv23_server_method();
+	profile->ssl_ctx = verto_create_ssl_ctx(profile, &err);
+
+	if (!profile->ssl_ctx) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
+
+		profile->ssl_ready = 0;
+
+		for (i = 0; i < profile->i; i++) {
+			if (profile->ip[i].secure) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SSL NOT READY FOR LISTENER %s:%d. USE reloadcert AFTER FIXING CERTIFICATES\n",
+								  profile->ip[i].local_ip, profile->ip[i].local_port);
+			}
+		}
+
+		return 0;
+	}
+
 	profile->ssl_ready = 1;
-	assert(profile->ssl_ctx);
-
-	/* Disable SSLv2 */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_SSLv2);
-	/* Disable SSLv3 */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_SSLv3);
-	/* Disable TLSv1 */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_TLSv1);
-	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
-	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_COMPRESSION);
-
-	/* set the local certificate from CertFile */
-	if (!zstr(profile->chain)) {
-		if (switch_file_exists(profile->chain, NULL) != SWITCH_STATUS_SUCCESS) {
-			err = "SUPPLIED CHAIN FILE NOT FOUND\n";
-			goto fail;
-		}
-
-		if (!SSL_CTX_use_certificate_chain_file(profile->ssl_ctx, profile->chain)) {
-			err = "CERT CHAIN FILE ERROR";
-			goto fail;
-		}
-	}
-
-	if (switch_file_exists(profile->cert, NULL) != SWITCH_STATUS_SUCCESS) {
-		err = "SUPPLIED CERT FILE NOT FOUND\n";
-		goto fail;
-	}
-
-	if (!SSL_CTX_use_certificate_file(profile->ssl_ctx, profile->cert, SSL_FILETYPE_PEM)) {
-		err = "CERT FILE ERROR";
-		goto fail;
-	}
-
-	/* set the private key from KeyFile */
-
-	if (switch_file_exists(profile->key, NULL) != SWITCH_STATUS_SUCCESS) {
-		err = "SUPPLIED KEY FILE NOT FOUND\n";
-		goto fail;
-	}
-
-	if (!SSL_CTX_use_PrivateKey_file(profile->ssl_ctx, profile->key, SSL_FILETYPE_PEM)) {
-		err = "PRIVATE KEY FILE ERROR";
-		goto fail;
-	}
-
-	/* verify private key */
-	if ( !SSL_CTX_check_private_key(profile->ssl_ctx) ) {
-		err = "PRIVATE KEY FILE ERROR";
-		goto fail;
-	}
-
-	SSL_CTX_set_cipher_list(profile->ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
 
 	return 1;
-
- fail:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
-
-	profile->ssl_ready = 0;
-	verto_deinit_ssl(profile);
-
-	for (i = 0; i < profile->i; i++) {
-		if (profile->ip[i].secure) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL NOT ENABLED FOR LISTENER %s:%d. REVERTING TO WS\n",
-							  profile->ip[i].local_ip, profile->ip[i].local_port);
-			profile->ip[i].secure = 0;
-		}
-	}
-
-	return 0;
-
 }
 
 
@@ -1001,7 +1057,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			if (jsock->profile->chop_domain && (domain = strchr(id, '@'))) {
 				*domain++ = '\0';
 			}
-			
+
 		}
 
 		if (jsock->profile->register_domain) {
@@ -1031,27 +1087,10 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			}
 		}
 
-
-		if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
-			cJSON * i;
-			
-			switch_mutex_lock(jsock->flag_mutex);
-			for(i = json_ptr->child; i; i = i->next) {
-				if (i->type == cJSON_True) {
-					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
-				} else if (i->type == cJSON_False) {
-					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
-				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
-					switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
-				}
-			}
-			switch_mutex_unlock(jsock->flag_mutex);
-		}
-
 		if (jsock->profile->send_passwd || verto_globals.send_passwd) {
 			switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "user_supplied_pass", passwd);
 		}
-		
+
 		switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, "action", "jsonrpc-authenticate");
 
 		if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, req_params) != SWITCH_STATUS_SUCCESS && !jsock->profile->blind_reg) {
@@ -1064,20 +1103,8 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
 			time_t now = switch_epoch_time_now(NULL);
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Login sucessful for user: %s domain: %s\n", id, domain);
-			
-			jsock->logintime = now;
-			jsock->id = switch_core_strdup(jsock->pool, id);
-			jsock->domain = switch_core_strdup(jsock->pool, domain);
-			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
-			jsock->ready = 1;
-
-			if (!x_user) {
-				switch_event_destroy(&req_params);
-				r = SWITCH_TRUE;
-				goto end;
-			}
-
+			/* Pre-scan <user><params>: extract credentials and verto-context/dialplan
+			 * into locals only. No jsock writes here. */
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
@@ -1099,8 +1126,63 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					} else if (!strcasecmp(var, "verto-dialplan")) {
 						verto_dialplan = val;
 					}
+				}
+			}
 
-					switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM, var, val);
+			/* Password gate. blind_reg with no x_user passes by config. */
+			if (x_user && (zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd))) {
+				*code = CODE_AUTH_FAILED;
+				switch_snprintf(message, mlen, "Authentication Failure");
+				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
+				switch_xml_clear_user_cache("id", id, domain);
+				switch_xml_free(x_user);
+				switch_event_destroy(&req_params);
+				goto end;
+			}
+
+			/* Commit jsock state — reachable only post-gate. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Login successful for user: %s domain: %s\n", id, domain);
+
+			jsock->logintime = now;
+			jsock->id = switch_core_strdup(jsock->pool, id);
+			jsock->domain = switch_core_strdup(jsock->pool, domain);
+			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
+
+			if ((json_ptr = cJSON_GetObjectItem(params, "userVariables"))) {
+				cJSON *i;
+
+				switch_mutex_lock(jsock->flag_mutex);
+				for (i = json_ptr->child; i; i = i->next) {
+					if (i->type == cJSON_True) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
+					} else if (i->type == cJSON_False) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
+					} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+					}
+				}
+				switch_mutex_unlock(jsock->flag_mutex);
+			}
+
+			/* blind_reg path: no XML user located — jsock state already committed above;
+			 * skip directory persistence (params/variables/dialplan/context) and return. */
+			if (!x_user) {
+				switch_event_destroy(&req_params);
+				/* ready=1 is the last state write so cross-thread readers that
+				 * gate on `ready && !zstr(uid)` see a fully populated jsock. */
+				jsock->ready = 1;
+				r = SWITCH_TRUE;
+				goto end;
+			}
+
+			/* Second pass over <user><params>: persist every entry into jsock->params.
+			 * Pre-scan above only read credentials/verto-context/dialplan into locals.
+			 * Must run post-gate — these headers feed channel variables on later calls. */
+			if ((x_params = switch_xml_child(x_user, "params"))) {
+				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+					switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM,
+						switch_xml_attr_soft(x_param, "name"),
+						switch_xml_attr_soft(x_param, "value"));
 				}
 			}
 
@@ -1115,7 +1197,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					switch_mutex_unlock(jsock->flag_mutex);
 
 					switch_clear_flag(jsock, JPFLAG_AUTH_EXPIRED);
-					
+
 					if (!strcmp(var, "login-expires")) {
 						uint32_t tmp = atol(val);
 
@@ -1138,21 +1220,12 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				jsock->context = switch_core_strdup(jsock->pool, verto_context);
 			}
 
-
-			if (!use_passwd || zstr(use_passwd) || strcmp(a1_hash ? a1_hash : passwd, use_passwd)) {
-				r = SWITCH_FALSE;
-				*code = CODE_AUTH_FAILED;
-				switch_snprintf(message, mlen, "Authentication Failure");
-				jsock->uid = NULL;
-				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
-				switch_xml_clear_user_cache("id", id, domain);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"auth using %s\n",a1_hash ? "a1-hash" : "username & password");
-				r = SWITCH_TRUE;
-				check_permissions(jsock, x_user, params);
-			}
-
-
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"auth using %s\n",a1_hash ? "a1-hash" : "username & password");
+			check_permissions(jsock, x_user, params);
+			/* ready=1 is the last state write so cross-thread readers that
+			 * gate on `ready && !zstr(uid)` see a fully populated jsock. */
+			jsock->ready = 1;
+			r = SWITCH_TRUE;
 
 			switch_xml_free(x_user);
 		}
@@ -1216,10 +1289,11 @@ static jsock_t *get_jsock(const char *uuid)
 
 static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock);
 
-static void attach_jsock(jsock_t *jsock)
+static switch_bool_t attach_jsock(jsock_t *jsock)
 {
 	jsock_t *jp;
 	int proceed = 1;
+	switch_bool_t result = SWITCH_TRUE;
 
 	switch_mutex_lock(verto_globals.jsock_mutex);
 
@@ -1228,6 +1302,17 @@ static void attach_jsock(jsock_t *jsock)
 	if ((jp = switch_core_hash_find(verto_globals.jsock_hash, jsock->uuid_str))) {
 		if (jp == jsock) {
 			proceed = 0;
+		} else if (!zstr(jp->uid) && !zstr(jsock->uid) && strcmp(jp->uid, jsock->uid)) {
+			/* Refuse cross-identity takeover when both jsocks are authenticated under different uids.
+			 * Clear uuid_str and set nodelete to prevent any uuid_str-keyed teardown
+			 * (detach_jsock, del_jsock, detach_calls) from touching jp. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"User %s blocked from taking over session %s owned by %s\n",
+				jsock->uid, jsock->uuid_str, jp->uid);
+			jsock->nodelete = 1;
+			jsock->uuid_str[0] = '\0';
+			proceed = 0;
+			result = SWITCH_FALSE;
 		} else {
 			cJSON *params = NULL;
 			cJSON *msg = NULL;
@@ -1248,6 +1333,7 @@ static void attach_jsock(jsock_t *jsock)
 	}
 
 	switch_mutex_unlock(verto_globals.jsock_mutex);
+	return result;
 }
 
 static void detach_jsock(jsock_t *jsock)
@@ -1426,10 +1512,8 @@ static void process_jrpc_response(jsock_t *jsock, cJSON *json)
 {
 }
 
-static void set_session_id(jsock_t *jsock, const char *uuid)
+static switch_bool_t set_session_id(jsock_t *jsock, const char *uuid)
 {
-	//cJSON *params, *msg = jrpc_new(0);
-
 	if (!zstr(uuid)) {
 		switch_set_string(jsock->uuid_str, uuid);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s re-connecting session %s\n", jsock->name, jsock->uuid_str);
@@ -1438,8 +1522,7 @@ static void set_session_id(jsock_t *jsock, const char *uuid)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s new RPC session %s\n", jsock->name, jsock->uuid_str);
 	}
 
-	attach_jsock(jsock);
-
+	return attach_jsock(jsock);
 }
 
 static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
@@ -1457,11 +1540,6 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 
 	if ((params = cJSON_GetObjectItem(json, "params"))) {
 		sessid = cJSON_GetObjectCstr(params, "sessid");
-	}
-
-	if (!switch_test_flag(jsock, JPFLAG_INIT)) {
-		set_session_id(jsock, sessid);
-		switch_set_flag(jsock, JPFLAG_INIT);
 	}
 
 	if (zstr(version) || strcmp(version, "2.0")) {
@@ -1488,6 +1566,17 @@ static cJSON *process_jrpc(jsock_t *jsock, cJSON *json)
 			goto end;
 		}
 		switch_set_flag(jsock, JPFLAG_AUTHED);
+	}
+
+	/* Bind only after the auth gate — attach_jsock()'s eviction
+	 * must not be reachable pre-auth. */
+	if (!switch_test_flag(jsock, JPFLAG_INIT)) {
+		if (!set_session_id(jsock, sessid)) {
+			jrpc_add_error(reply, CODE_AUTH_FAILED, "Session in use", id);
+			jsock->drop = 1;
+			goto end;
+		}
+		switch_set_flag(jsock, JPFLAG_INIT);
 	}
 
 	if (!method || !(func = jrpc_get_func(jsock, method))) {
@@ -1770,7 +1859,7 @@ new_req:
 		char *buffer = NULL;
 		switch_ssize_t len = 0, bytes = 0;
 
-		if (request->content_length && request->content_length > 10 * 1024 * 1024 - 1) {
+		if (request->content_length && request->content_length >= HTTP_POST_MAX_BODY) {
 			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
 				"Content-Length: 0\r\n\r\n";
 			kws_raw_write(jsock->ws, data, strlen(data));
@@ -1778,16 +1867,16 @@ new_req:
 			goto done;
 		}
 
-		if (!(buffer = malloc(2 * 1024 * 1024))) {
+		if (!(buffer = malloc(request->content_length + 1))) {
 			goto request_err;
 		}
 
 		while(bytes < (switch_ssize_t)request->content_length) {
 			len = request->content_length - bytes;
 
-#define WS_BLOCK 1
+#define WS_BLOCK 10000   /* ms; matches libks's internal default */
 
-			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) < 0) {
+			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
 				goto done;
 			}
@@ -1972,6 +2061,7 @@ static void client_run(jsock_t *jsock)
 
 	ks_pool_open(&jsock->kpool);
 
+	switch_thread_rwlock_rdlock(jsock->profile->rwlock);
 #if defined(KS_VERSION_NUM) && KS_VERSION_NUM >= 20000
 	params = ks_json_create_object();
 	ks_json_add_number_to_object(params, "payload_size_max", 1000000);
@@ -1979,8 +2069,10 @@ static void client_run(jsock_t *jsock)
 #else
 	if (kws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, flags, jsock->kpool) != KS_STATUS_SUCCESS) {
 #endif
+		switch_thread_rwlock_unlock(jsock->profile->rwlock);
 		log_and_exit(SWITCH_LOG_NOTICE, "%s WS SETUP FAILED\n", jsock->name);
 	}
+	switch_thread_rwlock_unlock(jsock->profile->rwlock);
 
 	if (kws_test_flag(jsock->ws, KWS_HTTP)) {
 		http_run(jsock);
@@ -2054,16 +2146,26 @@ static void client_run(jsock_t *jsock)
 					char repl[2048] = "";
 					switch_time_t a, b;
 
+					if (!switch_test_flag(jsock, JPFLAG_AUTHED)) {
+						die("%s Speed-test request before authentication\n", jsock->name);
+					}
+
+					if (bytes < 4) {
+						continue;
+					}
+
 					if (s[1] == 'S' && s[2] == 'P') {
 
 						if (s[3] == 'U') {
-							int i, size = 0;
+							int i;
+							long size;
 							char *p = s+4;
 							int loops = 0;
 							int rem = 0;
 							int dur = 0, j = 0;
 
-							if ((size = atoi(p)) <= 0) {
+							size = strtol(p, NULL, 10);
+							if (size <= 0 || size > VERTO_SPEED_TEST_MAX_SIZE) {
 								continue;
 							}
 
@@ -2071,7 +2173,7 @@ static void client_run(jsock_t *jsock)
 							do {
 								bytes = kws_read_frame(jsock->ws, &oc, &data);
 								s = (char *) data;
-							} while (bytes && data && s[0] == '#' && s[3] == 'B');
+							} while (bytes >= 4 && data && s[0] == '#' && s[3] == 'B');
 							b = switch_time_now();
 
 							if (!bytes || !data) continue;
@@ -4690,7 +4792,7 @@ static int start_jsock(verto_profile_t *profile, ks_socket_t sock, int family)
 
 	for (i = 0; i < profile->i; i++) {
 		if ( profile->server_socket[i] == sock ) {
-			if (profile->ip[i].secure) {
+			if (profile->ip[i].secure && profile->ssl_ready) {
 				ptype = PTYPE_CLIENT_SSL;
 			}
 			break;
@@ -6887,6 +6989,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	switch_core_register_secondary_recover_callback(modname, verto_recover_callback);
 
+	switch_event_bind(modname, SWITCH_EVENT_CERT_RELOAD, SWITCH_EVENT_SUBCLASS_ANY, cert_reload_handler, NULL);
+
 	if (verto_globals.enable_presence) {
 		switch_event_bind(modname, SWITCH_EVENT_CHANNEL_CALLSTATE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
 	}
@@ -6922,6 +7026,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 	switch_core_hash_destroy(&json_GLOBALS.store_hash);
 
 	switch_event_channel_unbind(NULL, verto_broadcast, NULL);
+	switch_event_unbind_callback(cert_reload_handler);
 	switch_event_unbind_callback(presence_event_handler);
 	switch_event_unbind_callback(event_handler);
 

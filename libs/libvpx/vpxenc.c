@@ -58,8 +58,8 @@ static size_t wrap_fwrite(const void *ptr, size_t size, size_t nmemb,
 
 static const char *exec_name;
 
-static void warn_or_exit_on_errorv(vpx_codec_ctx_t *ctx, int fatal,
-                                   const char *s, va_list ap) {
+static VPX_TOOLS_FORMAT_PRINTF(3, 0) void warn_or_exit_on_errorv(
+    vpx_codec_ctx_t *ctx, int fatal, const char *s, va_list ap) {
   if (ctx->err) {
     const char *detail = vpx_codec_error_detail(ctx);
 
@@ -72,7 +72,9 @@ static void warn_or_exit_on_errorv(vpx_codec_ctx_t *ctx, int fatal,
   }
 }
 
-static void ctx_exit_on_error(vpx_codec_ctx_t *ctx, const char *s, ...) {
+static VPX_TOOLS_FORMAT_PRINTF(2,
+                               3) void ctx_exit_on_error(vpx_codec_ctx_t *ctx,
+                                                         const char *s, ...) {
   va_list ap;
 
   va_start(ap, s);
@@ -80,8 +82,8 @@ static void ctx_exit_on_error(vpx_codec_ctx_t *ctx, const char *s, ...) {
   va_end(ap);
 }
 
-static void warn_or_exit_on_error(vpx_codec_ctx_t *ctx, int fatal,
-                                  const char *s, ...) {
+static VPX_TOOLS_FORMAT_PRINTF(3, 4) void warn_or_exit_on_error(
+    vpx_codec_ctx_t *ctx, int fatal, const char *s, ...) {
   va_list ap;
 
   va_start(ap, s);
@@ -95,6 +97,8 @@ static const arg_def_t debugmode =
     ARG_DEF("D", "debug", 0, "Debug mode (makes output deterministic)");
 static const arg_def_t outputfile =
     ARG_DEF("o", "output", 1, "Output filename");
+static const arg_def_t use_nv12 =
+    ARG_DEF(NULL, "nv12", 0, "Input file is NV12 ");
 static const arg_def_t use_yv12 =
     ARG_DEF(NULL, "yv12", 0, "Input file is YV12 ");
 static const arg_def_t use_i420 =
@@ -112,10 +116,6 @@ static const arg_def_t pass_arg =
     ARG_DEF(NULL, "pass", 1, "Pass to execute (1/2)");
 static const arg_def_t fpf_name =
     ARG_DEF(NULL, "fpf", 1, "First pass statistics file name");
-#if CONFIG_FP_MB_STATS
-static const arg_def_t fpmbf_name =
-    ARG_DEF(NULL, "fpmbf", 1, "First pass block statistics file name");
-#endif
 static const arg_def_t limit =
     ARG_DEF(NULL, "limit", 1, "Stop encoding after n input frames");
 static const arg_def_t skip =
@@ -220,7 +220,8 @@ static const arg_def_t error_resilient =
 static const arg_def_t lag_in_frames =
     ARG_DEF(NULL, "lag-in-frames", 1, "Max number of frames to lag");
 
-static const arg_def_t *global_args[] = { &use_yv12,
+static const arg_def_t *global_args[] = { &use_nv12,
+                                          &use_yv12,
                                           &use_i420,
                                           &use_i422,
                                           &use_i444,
@@ -283,6 +284,64 @@ static const arg_def_t *rc_args[] = {
   &min_quantizer,    &max_quantizer,      &undershoot_pct, &overshoot_pct,
   &buf_sz,           &buf_initial_sz,     &buf_optimal_sz, NULL
 };
+
+#if CONFIG_VP9_ENCODER
+static const arg_def_t use_vizier_rc_params =
+    ARG_DEF(NULL, "use-vizier-rc-params", 1, "Use vizier rc params");
+static const arg_def_t active_wq_factor =
+    ARG_DEF(NULL, "active-wq-factor", 1, "Active worst quality factor");
+static const arg_def_t err_per_mb_factor =
+    ARG_DEF(NULL, "err-per-mb-factor", 1, "Error per macroblock factor");
+static const arg_def_t sr_default_decay_limit = ARG_DEF(
+    NULL, "sr-default-decay-limit", 1, "Second reference default decay limit");
+static const arg_def_t sr_diff_factor =
+    ARG_DEF(NULL, "sr-diff-factor", 1, "Second reference diff factor");
+static const arg_def_t kf_err_per_mb_factor = ARG_DEF(
+    NULL, "kf-err-per-mb-factor", 1, "Keyframe error per macroblock factor");
+static const arg_def_t kf_frame_min_boost_factor =
+    ARG_DEF(NULL, "kf-frame-min-boost-factor", 1, "Keyframe min boost");
+static const arg_def_t kf_frame_max_boost_first_factor =
+    ARG_DEF(NULL, "kf-frame-max-boost-first-factor", 1,
+            "Max keyframe boost adjustment factor for first frame");
+static const arg_def_t kf_frame_max_boost_subs_factor =
+    ARG_DEF(NULL, "kf-frame-max-boost-subs-factor", 1,
+            "Max boost adjustment factor for subsequent KFs");
+static const arg_def_t kf_max_total_boost_factor = ARG_DEF(
+    NULL, "kf-max-total-boost-factor", 1, "Keyframe max total boost factor");
+static const arg_def_t gf_max_total_boost_factor =
+    ARG_DEF(NULL, "gf-max-total-boost-factor", 1,
+            "Golden frame max total boost factor");
+static const arg_def_t gf_frame_max_boost_factor =
+    ARG_DEF(NULL, "gf-frame-max-boost-factor", 1,
+            "Golden frame max per frame boost factor");
+static const arg_def_t zm_factor =
+    ARG_DEF(NULL, "zm-factor", 1, "Zero motion power factor");
+static const arg_def_t rd_mult_inter_qp_fac =
+    ARG_DEF(NULL, "rd-mult-inter-qp-fac", 1,
+            "RD multiplier adjustment for inter frames");
+static const arg_def_t rd_mult_arf_qp_fac =
+    ARG_DEF(NULL, "rd-mult-arf-qp-fac", 1,
+            "RD multiplier adjustment for alt-ref frames");
+static const arg_def_t rd_mult_key_qp_fac = ARG_DEF(
+    NULL, "rd-mult-key-qp-fac", 1, "RD multiplier adjustment for key frames");
+static const arg_def_t *vizier_rc_args[] = { &use_vizier_rc_params,
+                                             &active_wq_factor,
+                                             &err_per_mb_factor,
+                                             &sr_default_decay_limit,
+                                             &sr_diff_factor,
+                                             &kf_err_per_mb_factor,
+                                             &kf_frame_min_boost_factor,
+                                             &kf_frame_max_boost_first_factor,
+                                             &kf_frame_max_boost_subs_factor,
+                                             &kf_max_total_boost_factor,
+                                             &gf_max_total_boost_factor,
+                                             &gf_frame_max_boost_factor,
+                                             &zm_factor,
+                                             &rd_mult_inter_qp_fac,
+                                             &rd_mult_arf_qp_fac,
+                                             &rd_mult_key_qp_fac,
+                                             NULL };
+#endif
 
 static const arg_def_t bias_pct =
     ARG_DEF(NULL, "bias-pct", 1, "CBR/VBR bias (0=CBR, 100=VBR)");
@@ -462,6 +521,13 @@ static const arg_def_t target_level = ARG_DEF(
 static const arg_def_t row_mt =
     ARG_DEF(NULL, "row-mt", 1,
             "Enable row based non-deterministic multi-threading in VP9");
+
+static const arg_def_t disable_loopfilter =
+    ARG_DEF(NULL, "disable-loopfilter", 1,
+            "Control Loopfilter in VP9\n"
+            "0: Loopfilter on for all frames (default)\n"
+            "1: Loopfilter off for non reference frames\n"
+            "2: Loopfilter off for all frames");
 #endif
 
 #if CONFIG_VP9_ENCODER
@@ -492,6 +558,10 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &max_gf_interval,
                                        &target_level,
                                        &row_mt,
+                                       &disable_loopfilter,
+// NOTE: The entries above have a corresponding entry in vp9_arg_ctrl_map. The
+// entries below do not have a corresponding entry in vp9_arg_ctrl_map. They
+// must be listed at the end of vp9_args.
 #if CONFIG_VP9_HIGHBITDEPTH
                                        &bitdeptharg,
                                        &inbitdeptharg,
@@ -524,6 +594,7 @@ static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP9E_SET_MAX_GF_INTERVAL,
                                         VP9E_SET_TARGET_LEVEL,
                                         VP9E_SET_ROW_MT,
+                                        VP9E_SET_DISABLE_LOOPFILTER,
                                         0 };
 #endif
 
@@ -558,6 +629,8 @@ static void show_help(FILE *fout, int shorthelp) {
 #if CONFIG_VP9_ENCODER
   fprintf(fout, "\nVP9 Specific Options:\n");
   arg_show_usage(fout, vp9_args);
+  fprintf(fout, "\nVizier Rate Control Options:\n");
+  arg_show_usage(fout, vizier_rc_args);
 #endif
   fprintf(fout,
           "\nStream timebase (--timebase):\n"
@@ -599,9 +672,6 @@ struct stream_config {
   struct vpx_codec_enc_cfg cfg;
   const char *out_fn;
   const char *stats_fn;
-#if CONFIG_FP_MB_STATS
-  const char *fpmb_stats_fn;
-#endif
   stereo_format_t stereo_fmt;
   int arg_ctrls[ARG_CTRL_CNT_MAX][2];
   int arg_ctrl_cnt;
@@ -629,9 +699,6 @@ struct stream_state {
   uint64_t cx_time;
   size_t nbytes;
   stats_io_t stats;
-#if CONFIG_FP_MB_STATS
-  stats_io_t fpmb_stats;
-#endif
   struct vpx_image *img;
   vpx_codec_ctx_t decoder;
   int mismatch_seen;
@@ -696,6 +763,8 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
       global->deadline = VPX_DL_REALTIME;
     else if (arg_match(&arg, &use_yv12, argi))
       global->color_type = YV12;
+    else if (arg_match(&arg, &use_nv12, argi))
+      global->color_type = NV12;
     else if (arg_match(&arg, &use_i420, argi))
       global->color_type = I420;
     else if (arg_match(&arg, &use_i422, argi))
@@ -866,10 +935,6 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       config->out_fn = arg.val;
     } else if (arg_match(&arg, &fpf_name, argi)) {
       config->stats_fn = arg.val;
-#if CONFIG_FP_MB_STATS
-    } else if (arg_match(&arg, &fpmbf_name, argi)) {
-      config->fpmb_stats_fn = arg.val;
-#endif
     } else if (arg_match(&arg, &use_webm, argi)) {
 #if CONFIG_WEBM_IO
       config->write_webm = 1;
@@ -966,6 +1031,40 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
       config->cfg.kf_max_dist = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &kf_disabled, argi)) {
       config->cfg.kf_mode = VPX_KF_DISABLED;
+#if CONFIG_VP9_ENCODER
+    } else if (arg_match(&arg, &use_vizier_rc_params, argi)) {
+      config->cfg.use_vizier_rc_params = arg_parse_int(&arg);
+    } else if (arg_match(&arg, &active_wq_factor, argi)) {
+      config->cfg.active_wq_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &err_per_mb_factor, argi)) {
+      config->cfg.err_per_mb_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &sr_default_decay_limit, argi)) {
+      config->cfg.sr_default_decay_limit = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &sr_diff_factor, argi)) {
+      config->cfg.sr_diff_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &kf_err_per_mb_factor, argi)) {
+      config->cfg.kf_err_per_mb_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &kf_frame_min_boost_factor, argi)) {
+      config->cfg.kf_frame_min_boost_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &kf_frame_max_boost_first_factor, argi)) {
+      config->cfg.kf_frame_max_boost_first_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &kf_frame_max_boost_subs_factor, argi)) {
+      config->cfg.kf_frame_max_boost_subs_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &kf_max_total_boost_factor, argi)) {
+      config->cfg.kf_max_total_boost_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &gf_max_total_boost_factor, argi)) {
+      config->cfg.gf_max_total_boost_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &gf_frame_max_boost_factor, argi)) {
+      config->cfg.gf_frame_max_boost_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &zm_factor, argi)) {
+      config->cfg.zm_factor = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &rd_mult_inter_qp_fac, argi)) {
+      config->cfg.rd_mult_inter_qp_fac = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &rd_mult_arf_qp_fac, argi)) {
+      config->cfg.rd_mult_arf_qp_fac = arg_parse_rational(&arg);
+    } else if (arg_match(&arg, &rd_mult_key_qp_fac, argi)) {
+      config->cfg.rd_mult_key_qp_fac = arg_parse_rational(&arg);
+#endif
 #if CONFIG_VP9_HIGHBITDEPTH
     } else if (arg_match(&arg, &test16bitinternalarg, argi)) {
       if (strcmp(global->codec->name, "vp9") == 0) {
@@ -1058,17 +1157,6 @@ static void validate_stream_config(const struct stream_state *stream,
         fatal("Stream %d: duplicate stats file (from stream %d)",
               streami->index, stream->index);
     }
-
-#if CONFIG_FP_MB_STATS
-    /* Check for two streams sharing a mb stats file. */
-    if (streami != stream) {
-      const char *a = stream->config.fpmb_stats_fn;
-      const char *b = streami->config.fpmb_stats_fn;
-      if (a && b && !strcmp(a, b))
-        fatal("Stream %d: duplicate mb stats file (from stream %d)",
-              streami->index, stream->index);
-    }
-#endif
   }
 }
 
@@ -1160,6 +1248,10 @@ static void show_stream_config(struct stream_state *stream,
   SHOW(kf_mode);
   SHOW(kf_min_dist);
   SHOW(kf_max_dist);
+  // Temporary use for debug
+  SHOW(use_vizier_rc_params);
+  SHOW(active_wq_factor.num);
+  SHOW(active_wq_factor.den);
 }
 
 static void open_output_file(struct stream_state *stream,
@@ -1223,26 +1315,11 @@ static void setup_pass(struct stream_state *stream,
       fatal("Failed to open statistics store");
   }
 
-#if CONFIG_FP_MB_STATS
-  if (stream->config.fpmb_stats_fn) {
-    if (!stats_open_file(&stream->fpmb_stats, stream->config.fpmb_stats_fn,
-                         pass))
-      fatal("Failed to open mb statistics store");
-  } else {
-    if (!stats_open_mem(&stream->fpmb_stats, pass))
-      fatal("Failed to open mb statistics store");
-  }
-#endif
-
   stream->config.cfg.g_pass = global->passes == 2
                                   ? pass ? VPX_RC_LAST_PASS : VPX_RC_FIRST_PASS
                                   : VPX_RC_ONE_PASS;
   if (pass) {
     stream->config.cfg.rc_twopass_stats_in = stats_get(&stream->stats);
-#if CONFIG_FP_MB_STATS
-    stream->config.cfg.rc_firstpass_mb_stats_in =
-        stats_get(&stream->fpmb_stats);
-#endif
   }
 
   stream->cx_time = 0;
@@ -1454,13 +1531,6 @@ static void get_cx_data(struct stream_state *stream,
                     pkt->data.twopass_stats.sz);
         stream->nbytes += pkt->data.raw.sz;
         break;
-#if CONFIG_FP_MB_STATS
-      case VPX_CODEC_FPMB_STATS_PKT:
-        stats_write(&stream->fpmb_stats, pkt->data.firstpass_mb_stats.buf,
-                    pkt->data.firstpass_mb_stats.sz);
-        stream->nbytes += pkt->data.raw.sz;
-        break;
-#endif
       case VPX_CODEC_PSNR_PKT:
 
         if (global->show_psnr) {
@@ -1619,6 +1689,7 @@ int main(int argc, const char **argv_) {
   int res = 0;
 
   memset(&input, 0, sizeof(input));
+  memset(&raw, 0, sizeof(raw));
   exec_name = argv_[0];
 
   /* Setup default input stream settings */
@@ -1632,6 +1703,10 @@ int main(int argc, const char **argv_) {
    * codec.
    */
   argv = argv_dup(argc - 1, argv_ + 1);
+  if (!argv) {
+    fprintf(stderr, "Error allocating argument list\n");
+    return EXIT_FAILURE;
+  }
   parse_global_config(&global, argv);
 
   if (argc < 3) usage_exit();
@@ -1642,6 +1717,7 @@ int main(int argc, const char **argv_) {
     case I444: input.fmt = VPX_IMG_FMT_I444; break;
     case I440: input.fmt = VPX_IMG_FMT_I440; break;
     case YV12: input.fmt = VPX_IMG_FMT_YV12; break;
+    case NV12: input.fmt = VPX_IMG_FMT_NV12; break;
   }
 
   {
@@ -1763,14 +1839,10 @@ int main(int argc, const char **argv_) {
       FOREACH_STREAM(show_stream_config(stream, &global, &input));
 
     if (pass == (global.pass ? global.pass - 1 : 0)) {
-      if (input.file_type == FILE_TYPE_Y4M)
-        /*The Y4M reader does its own allocation.
-          Just initialize this here to avoid problems if we never read any
-           frames.*/
-        memset(&raw, 0, sizeof(raw));
-      else
+      // The Y4M reader does its own allocation.
+      if (input.file_type != FILE_TYPE_Y4M) {
         vpx_img_alloc(&raw, input.fmt, input.width, input.height, 32);
-
+      }
       FOREACH_STREAM(stream->rate_hist = init_rate_histogram(
                          &stream->config.cfg, &global.framerate));
     }
@@ -1955,10 +2027,6 @@ int main(int argc, const char **argv_) {
     FOREACH_STREAM(close_output_file(stream, global.codec->fourcc));
 
     FOREACH_STREAM(stats_close(&stream->stats, global.passes - 1));
-
-#if CONFIG_FP_MB_STATS
-    FOREACH_STREAM(stats_close(&stream->fpmb_stats, global.passes - 1));
-#endif
 
     if (global.pass) break;
   }

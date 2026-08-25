@@ -33,6 +33,11 @@ void vp9_free_postproc_buffers(struct VP9Common *cm);
 int vp9_alloc_state_buffers(struct VP9Common *cm, int width, int height);
 void vp9_free_state_buffers(struct VP9Common *cm);
 
+void vp9_set_mi_size(int *mi_rows, int *mi_cols, int *mi_stride, int width,
+                     int height);
+void vp9_set_mb_size(int *mb_rows, int *mb_cols, int *mb_num, int mi_rows,
+                     int mi_cols);
+
 void vp9_set_mb_mi(struct VP9Common *cm, int width, int height);
 
 void vp9_swap_current_and_last_seg_map(struct VP9Common *cm);

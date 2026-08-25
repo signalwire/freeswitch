@@ -562,7 +562,7 @@ static void phase_e_handler(void *user_data, int result)
 	switch_event_t *event;
 	const char *var;
 	char *expanded;
-	const char *fax_result_str = "";
+	const char *fax_result_str;
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);

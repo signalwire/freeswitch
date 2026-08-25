@@ -16,6 +16,7 @@ VP9_CX_SRCS_REMOVE-yes += $(VP9_COMMON_SRCS_REMOVE-yes)
 VP9_CX_SRCS_REMOVE-no  += $(VP9_COMMON_SRCS_REMOVE-no)
 
 VP9_CX_SRCS-yes += vp9_cx_iface.c
+VP9_CX_SRCS-yes += vp9_cx_iface.h
 
 VP9_CX_SRCS-yes += encoder/vp9_bitstream.c
 VP9_CX_SRCS-yes += encoder/vp9_context_tree.c
@@ -76,6 +77,8 @@ VP9_CX_SRCS-yes += encoder/vp9_resize.c
 VP9_CX_SRCS-yes += encoder/vp9_resize.h
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += encoder/vp9_blockiness.c
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += encoder/vp9_blockiness.h
+VP9_CX_SRCS-$(CONFIG_NON_GREEDY_MV) += encoder/vp9_non_greedy_mv.c
+VP9_CX_SRCS-$(CONFIG_NON_GREEDY_MV) += encoder/vp9_non_greedy_mv.h
 
 VP9_CX_SRCS-yes += encoder/vp9_tokenize.c
 VP9_CX_SRCS-yes += encoder/vp9_treewriter.c
@@ -93,6 +96,8 @@ VP9_CX_SRCS-yes += encoder/vp9_skin_detection.c
 VP9_CX_SRCS-yes += encoder/vp9_skin_detection.h
 VP9_CX_SRCS-yes += encoder/vp9_noise_estimate.c
 VP9_CX_SRCS-yes += encoder/vp9_noise_estimate.h
+VP9_CX_SRCS-yes += encoder/vp9_ext_ratectrl.c
+VP9_CX_SRCS-yes += encoder/vp9_ext_ratectrl.h
 ifeq ($(CONFIG_VP9_POSTPROC),yes)
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += common/vp9_postproc.h
 VP9_CX_SRCS-$(CONFIG_INTERNAL_STATS) += common/vp9_postproc.c
@@ -116,12 +121,13 @@ endif
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_sse2.asm
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_error_sse2.asm
 
-ifeq ($(ARCH_X86_64),yes)
+ifeq ($(VPX_ARCH_X86_64),yes)
 VP9_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/vp9_quantize_ssse3_x86_64.asm
 endif
 
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_dct_intrin_sse2.c
 VP9_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/vp9_frame_scale_ssse3.c
+VP9_CX_SRCS-$(HAVE_NEON) += encoder/arm/neon/vp9_dct_neon.c
 
 ifeq ($(CONFIG_VP9_TEMPORAL_DENOISING),yes)
 VP9_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp9_denoiser_sse2.c

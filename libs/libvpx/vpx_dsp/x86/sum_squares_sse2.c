@@ -92,7 +92,7 @@ uint64_t vpx_sum_squares_2d_i16_sse2(const int16_t *src, int stride, int size) {
 
     v_acc_q = _mm_add_epi64(v_acc_q, _mm_srli_si128(v_acc_q, 8));
 
-#if ARCH_X86_64
+#if VPX_ARCH_X86_64
     return (uint64_t)_mm_cvtsi128_si64(v_acc_q);
 #else
     {

@@ -40,7 +40,7 @@ typedef struct VP9LfSyncData {
   int num_active_workers;  // number of scheduled workers.
 
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t lf_mutex;
+  pthread_mutex_t *lf_mutex;
   pthread_mutex_t *recon_done_mutex;
   pthread_cond_t *recon_done_cond;
 #endif

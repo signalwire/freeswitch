@@ -104,6 +104,63 @@ FST_TEST_BEGIN(benchmark)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(expand_headers_offset)
+{
+  /* Covers the ${var:offset[:length]} slicing branches in
+   * switch_event_expand_headers_check(). */
+  static const struct {
+    const char *expr;
+    const char *expected;
+    const char *note;
+  } cases[] = {
+    /* offset == 0: no clone (outer offset||ooffset guard is false). */
+    { "${foo:0}",     "ABC", "offset=0 identity, no clone" },
+    { "${empty:0}",   "",    "offset=0 on empty value" },
+    /* ooffset alone forces the clone, front offset is a no-op. */
+    { "${foo:0:2}",   "AB",  "offset=0 with ooffset" },
+    /* Positive offset within range. */
+    { "${foo:1}",     "BC",  "positive in-range" },
+    { "${foo:3}",     "",    "offset == strlen boundary" },
+    { "${foo:99}",    "",    "offset > strlen yields empty" },
+    { "${empty:5}",   "",    "offset > strlen on empty value" },
+    /* Combined offset:length form. */
+    { "${foo:1:1}",   "B",   "offset:length in range" },
+    { "${foo:0:3}",   "ABC", "ooffset == strlen, strict < gate skips trim" },
+    { "${foo:99:2}",  "",    "offset > strlen with ooffset, gate no-ops" },
+    /* Negative offsets. */
+    { "${foo:-1}",    "C",   "negative offset in range" },
+    { "${foo:-3}",    "ABC", "abs(offset) == strlen, <= gate boundary" },
+    { "${foo:-99}",   "ABC", "abs(offset) > strlen, gate falls through" },
+  };
+  switch_event_t *event = NULL;
+  switch_status_t status;
+  size_t i;
+
+  status = switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+  fst_xcheck(status == SWITCH_STATUS_SUCCESS, "Failed to create event");
+
+  switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "foo", "ABC");
+  switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "empty", "");
+
+  for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+    char msg[160];
+    char *out = switch_event_expand_headers(event, cases[i].expr);
+
+    switch_snprintf(msg, sizeof(msg), "%s: %s -> expected '%s', got '%s'",
+                    cases[i].note, cases[i].expr, cases[i].expected,
+                    out ? out : "(null)");
+
+    fst_xcheck(out && !strcmp(out, cases[i].expected), msg);
+
+    if (out != cases[i].expr) {
+      switch_safe_free(out);
+    }
+  }
+
+  switch_event_destroy(&event);
+}
+FST_TEST_END()
+
 FST_SUITE_END()
 
 FST_MINCORE_END()

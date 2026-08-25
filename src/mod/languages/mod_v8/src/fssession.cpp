@@ -40,19 +40,19 @@ using namespace v8;
 static const char js_class_name[] = "Session";
 
 #define METHOD_SANITY_CHECK() if (!this->_session) {\
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "No session is active, you must have an active session before calling this method"));\
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "No session is active, you must have an active session before calling this method"));\
 		return;\
 	} else CheckHangupHook(this, NULL)
 
 #define CHANNEL_SANITY_CHECK() do {\
 		if (!switch_channel_ready(channel)) {\
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Session is not active!"));\
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Session is not active!"));\
 			return;\
 		}\
 		if (!((switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA)))) {\
 			switch_channel_pre_answer(channel);\
 			if (!((switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA)))) {\
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Session is not answered!"));\
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Session is not answered!"));\
 				return;\
 			}\
 		}\
@@ -60,14 +60,14 @@ static const char js_class_name[] = "Session";
 
 #define CHANNEL_SANITY_CHECK_ANSWER() do {\
 		if (!switch_channel_ready(channel)) {\
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Session is not active!"));\
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Session is not active!"));\
 			return;\
 		}\
 	} while (foo == 1)
 
 #define CHANNEL_MEDIA_SANITY_CHECK() do {\
 		if (!switch_channel_media_ready(channel)) {\
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Session is not in media mode!"));\
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Session is not in media mode!"));\
 			return;\
 		}\
 	} while (foo == 1)
@@ -192,15 +192,15 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 	FSInputCallbackState *cb_state = (FSInputCallbackState *)buf;
 	switch_event_t *event = NULL;
 	int argc = 0;
-	Handle<Value> argv[4];
-	Handle<Object> Event;
+	Local<Value> argv[4];
+	Local<Object> Event;
 	bool ret = true;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	/* Session sanity check first */
 	if (!cb_state->session_state || !cb_state->session_state->_session) {
 		if (cb_state->session_state && cb_state->session_state->GetIsolate()) {
-			cb_state->session_state->GetIsolate()->ThrowException(String::NewFromUtf8(cb_state->session_state->GetIsolate(), "No session is active, you must have an active session before calling this method"));
+			cb_state->session_state->GetIsolate()->ThrowException(js_new_string(cb_state->session_state->GetIsolate(), "No session is active, you must have an active session before calling this method"));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No session is active, you must have an active session before calling this method\n");
 		}
@@ -235,7 +235,7 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 		if ((event = (switch_event_t *) input)) {
 			Event = FSEvent::New(event, "", cb_state->session_state->GetOwner());
 			if (!Event.IsEmpty()) {
-				argv[argc++] = String::NewFromUtf8(isolate, "event");
+				argv[argc++] = js_new_string(isolate, "event");
 				argv[argc++] = Local<Object>::New(isolate, Event);
 			}
 		}
@@ -250,7 +250,7 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 			if (dtmf) {
 				Event = FSDTMF::New(dtmf, "", cb_state->session_state->GetOwner());
 				if (!Event.IsEmpty()) {
-					argv[argc++] = String::NewFromUtf8(isolate, "dtmf");
+					argv[argc++] = js_new_string(isolate, "dtmf");
 					argv[argc++] = Local<Object>::New(isolate, Event);
 				} else {
 					goto done;
@@ -268,10 +268,10 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 
 	if (ret) {
 		if (!cb_state->function.IsEmpty()) {
-			Handle<Function> func = Local<Function>::New(isolate, cb_state->function);
+			Local<Function> func = Local<Function>::New(isolate, cb_state->function);
 
 			if (func->IsFunction()) {
-				Handle<Value> res = func->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+				Local<Value> res = js_call(func, isolate->GetCurrentContext()->Global(), argc, argv);
 
 				if (!res.IsEmpty()) {
 					cb_state->ret.Reset(isolate, res);
@@ -309,8 +309,8 @@ switch_status_t FSSession::StreamInputCallback(switch_core_session_t *session, v
 	}
 
 	if (!cb_state->ret.IsEmpty()) {
-		Handle<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
-		String::Utf8Value str(tmp);
+		Local<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
+		JsUtf8Value str(tmp);
 		const char *ret = js_safe_str(*str);
 
 		if (!strncasecmp(ret, "speed", 5)) {
@@ -420,8 +420,8 @@ switch_status_t FSSession::RecordInputCallback(switch_core_session_t *session, v
 	}
 
 	if (!cb_state->ret.IsEmpty()) {
-		Handle<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
-		String::Utf8Value str(tmp);
+		Local<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
+		JsUtf8Value str(tmp);
 		const char *ret = js_safe_str(*str);
 
 		if (!strcasecmp(ret, "pause")) {
@@ -461,8 +461,8 @@ switch_status_t FSSession::CollectInputCallback(switch_core_session_t *session, 
 	}
 
 	if (!cb_state->ret.IsEmpty()) {
-		Handle<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
-		String::Utf8Value str(tmp);
+		Local<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
+		JsUtf8Value str(tmp);
 		ret = js_safe_str(*str);
 
 		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
@@ -525,7 +525,7 @@ JS_SESSION_FUNCTION_IMPL(RecordFile)
 	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		file_name = js_safe_str(*str);
 		if (zstr(file_name.c_str())) {
 			info.GetReturnValue().Set(false);
@@ -534,7 +534,7 @@ JS_SESSION_FUNCTION_IMPL(RecordFile)
 	}
 
 	if (info.Length() > 1) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
 
 		if (!func.IsEmpty()) {
 			cb_state.session_state = this;
@@ -550,15 +550,15 @@ JS_SESSION_FUNCTION_IMPL(RecordFile)
 		}
 
 		if (info.Length() > 3) {
-			limit = info[3]->Int32Value();
+			limit = info[3]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		if (info.Length() > 4) {
-			fh.thresh = info[4]->Int32Value();
+			fh.thresh = info[4]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		if (info.Length() > 5) {
-			fh.silence_hits = info[5]->Int32Value();
+			fh.silence_hits = info[5]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 	}
 
@@ -569,7 +569,7 @@ JS_SESSION_FUNCTION_IMPL(RecordFile)
 	args.buflen = len;
 
 	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_record_file(this->_session, &fh, file_name.c_str(), &args, limit));
-	info.GetReturnValue().Set(cb_state.ret);
+	info.GetReturnValue().Set(js_local(cb_state.ret));
 
 	CheckHangupHook(this, &ret);
 	if (!ret) JSMain::ExitScript(info.GetIsolate(), NULL);
@@ -594,7 +594,7 @@ JS_SESSION_FUNCTION_IMPL(CollectInput)
 	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (info.Length() > 0) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[0]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[0]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);
@@ -612,10 +612,10 @@ JS_SESSION_FUNCTION_IMPL(CollectInput)
 	}
 
 	if (info.Length() == 3) {
-		abs_timeout = info[2]->Int32Value();
+		abs_timeout = info[2]->Int32Value(js_current_context()).FromMaybe(0);
 	} else if (info.Length() > 3) {
-		digit_timeout = info[2]->Int32Value();
-		abs_timeout = info[3]->Int32Value();
+		digit_timeout = info[2]->Int32Value(js_current_context()).FromMaybe(0);
+		abs_timeout = info[3]->Int32Value(js_current_context()).FromMaybe(0);
 	}
 
 	cb_state.ret.Reset(info.GetIsolate(), Boolean::New(info.GetIsolate(), false));
@@ -624,7 +624,7 @@ JS_SESSION_FUNCTION_IMPL(CollectInput)
 	args.buflen = len;
 
 	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_collect_digits_callback(this->_session, &args, digit_timeout, abs_timeout));
-	info.GetReturnValue().Set(cb_state.ret);
+	info.GetReturnValue().Set(js_local(cb_state.ret));
 
 	CheckHangupHook(this, &ret);
 	if (!ret) JSMain::ExitScript(info.GetIsolate(), NULL);
@@ -651,24 +651,24 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		phrase_name = js_safe_str(*str);
 		if (zstr(phrase_name.c_str())) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid phrase name"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid phrase name"));
 			return;
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
 	if (info.Length() > 1) {
-		String::Utf8Value str(info[1]);
+		JsUtf8Value str(info[1]);
 		phrase_data = js_safe_str(*str);
 	}
 
 	if (info.Length() > 2) {
-		String::Utf8Value str(info[2]);
+		JsUtf8Value str(info[2]);
 		tmp = js_safe_str(*str);
 		if (!zstr(tmp.c_str())) {
 			phrase_lang = std::move(tmp);
@@ -676,7 +676,7 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 	}
 
 	if (info.Length() > 3) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[3]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[3]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);
@@ -699,7 +699,7 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 	args.buflen = len;
 
 	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_phrase_macro(this->_session, phrase_name.c_str(), phrase_data.c_str(), phrase_lang.c_str(), &args));
-	info.GetReturnValue().Set(cb_state.ret);
+	info.GetReturnValue().Set(js_local(cb_state.ret));
 
 	CheckHangupHook(this, &ret);
 	if (!ret) JSMain::ExitScript(info.GetIsolate(), NULL);
@@ -713,7 +713,7 @@ bool FSSession::CheckHangupHook(FSSession *obj, bool *ret)
 
 	Isolate *isolate = obj->GetIsolate();
 	HandleScope handle_scope(isolate);
-	Handle<Value> argv[2];
+	Local<Value> argv[2];
 	int argc = 0;
 	bool res = true;
 	string resp;
@@ -723,19 +723,19 @@ bool FSSession::CheckHangupHook(FSSession *obj, bool *ret)
 		argv[argc++] = Local<Object>::New(obj->GetOwner()->GetIsolate(), obj->GetJavaScriptObject());
 
 		if (obj->_hook_state == CS_HANGUP) {
-			argv[argc++] = String::NewFromUtf8(isolate, "hangup");
+			argv[argc++] = js_new_string(isolate, "hangup");
 		} else {
-			argv[argc++] = String::NewFromUtf8(isolate, "transfer");
+			argv[argc++] = js_new_string(isolate, "transfer");
 		}
 
 		// Run the hangup hook
-		Handle<Function> func = Local<Function>::New(isolate, obj->_on_hangup);
+		Local<Function> func = Local<Function>::New(isolate, obj->_on_hangup);
 
 		if (!func.IsEmpty() && func->IsFunction()) {
-			Handle<Value> res = func->Call(isolate->GetCurrentContext()->Global(), argc, argv);
+			Local<Value> res = js_call(func, isolate->GetCurrentContext()->Global(), argc, argv);
 
 			if (!res.IsEmpty()) {
-				String::Utf8Value str(res);
+				JsUtf8Value str(res);
 				resp = js_safe_str(*str);
 			}
 		}
@@ -785,7 +785,7 @@ JS_SESSION_FUNCTION_IMPL(SetHangupHook)
 		}
 
 		if (info.Length() > 0) {
-			Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[0]);
+			Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[0]);
 
 			if (!func.IsEmpty()) {
 				this->_on_hangup.Reset(info.GetIsolate(), func);
@@ -819,16 +819,16 @@ JS_SESSION_FUNCTION_IMPL(StreamFile)
 	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		file_name = js_safe_str(*str);
 		if (zstr(file_name.c_str())) {
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid filename"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid filename"));
 			return;
 		}
 	}
 
 	if (info.Length() > 1) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);
@@ -846,7 +846,7 @@ JS_SESSION_FUNCTION_IMPL(StreamFile)
 	}
 
 	if (info.Length() > 3) {
-		fh.samples = info[3]->Int32Value();
+		fh.samples = info[3]->Int32Value(js_current_context()).FromMaybe(0);
 	}
 
 	if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
@@ -862,7 +862,7 @@ JS_SESSION_FUNCTION_IMPL(StreamFile)
 	args.buf = bp;
 	args.buflen = len;
 	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_play_file(this->_session, &fh, file_name.c_str(), &args));
-	info.GetReturnValue().Set(cb_state.ret);
+	info.GetReturnValue().Set(js_local(cb_state.ret));
 
 	switch_snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
 	switch_channel_set_variable(channel, "last_file_position", posbuf);
@@ -890,7 +890,7 @@ JS_SESSION_FUNCTION_IMPL(Sleep)
 	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (info.Length() > 0) {
-		ms = info[0]->Int32Value();
+		ms = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 	}
 
 	if (ms <= 0) {
@@ -898,7 +898,7 @@ JS_SESSION_FUNCTION_IMPL(Sleep)
 	}
 
 	if (info.Length() > 1) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);
@@ -916,7 +916,7 @@ JS_SESSION_FUNCTION_IMPL(Sleep)
 	}
 
 	if (info.Length() > 2) {
-		sync = info[2]->Int32Value();
+		sync = info[2]->Int32Value(js_current_context()).FromMaybe(0);
 	}
 
 	cb_state.ret.Reset(info.GetIsolate(), Boolean::New(info.GetIsolate(), false));
@@ -924,7 +924,7 @@ JS_SESSION_FUNCTION_IMPL(Sleep)
 	args.buf = bp;
 	args.buflen = len;
 	JS_EXECUTE_LONG_RUNNING_C_CALL_WITH_UNLOCKER(switch_ivr_sleep(this->_session, ms, (switch_bool_t)sync, &args));
-	info.GetReturnValue().Set(cb_state.ret);
+	info.GetReturnValue().Set(js_local(cb_state.ret));
 
 	CheckHangupHook(this, &ret);
 	if (!ret) JSMain::ExitScript(info.GetIsolate(), NULL);
@@ -940,8 +940,8 @@ JS_SESSION_FUNCTION_IMPL(SetVariable)
 
 	if (info.Length() > 1) {
 		const char *var, *val;
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 
 		var = js_safe_str(*str1);
 		val = *str2;
@@ -962,12 +962,12 @@ JS_SESSION_FUNCTION_IMPL(GetVariable)
 
 	if (info.Length() > 0) {
 		const char *var, *val;
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 
 		var = js_safe_str(*str);
 		val = switch_channel_get_variable(channel, var);
 
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(val)));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), js_safe_str(val)));
 	} else {
 		info.GetReturnValue().Set(false);
 	}
@@ -1029,29 +1029,29 @@ JS_SESSION_FUNCTION_IMPL(Speak)
 	CHANNEL_MEDIA_SANITY_CHECK();
 
 	if (info.Length() < 3) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
-	String::Utf8Value str1(info[0]);
-	String::Utf8Value str2(info[1]);
-	String::Utf8Value str3(info[2]);
+	JsUtf8Value str1(info[0]);
+	JsUtf8Value str2(info[1]);
+	JsUtf8Value str3(info[2]);
 	tts_name = js_safe_str(*str1);
 	voice_name = js_safe_str(*str2);
 	text = js_safe_str(*str3);
 
 	if (zstr(tts_name)) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid TTS Name"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid TTS Name"));
 		return;
 	}
 
 	if (zstr(text)) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid Text"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid Text"));
 		return;
 	}
 
 	if (this->_speech && this->_speech->speaking) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Recursive call not allowed"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Recursive call not allowed"));
 		return;
 	}
 
@@ -1068,13 +1068,13 @@ JS_SESSION_FUNCTION_IMPL(Speak)
 		switch_assert(this->_speech != NULL);
 		if (InitSpeechEngine(tts_name, voice_name) != SWITCH_STATUS_SUCCESS) {
 			this->_speech = NULL;
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot allocate speech engine!"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Cannot allocate speech engine!"));
 			return;
 		}
 	}
 
 	if (info.Length() > 3) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[3]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[3]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);
@@ -1103,7 +1103,7 @@ JS_SESSION_FUNCTION_IMPL(Speak)
 		this->_speech->speaking = 0;
 	}
 
-	info.GetReturnValue().Set(cb_state.ret);
+	info.GetReturnValue().Set(js_local(cb_state.ret));
 
 	CheckHangupHook(this, &ret);
 	if (!ret) JSMain::ExitScript(info.GetIsolate(), NULL);
@@ -1123,34 +1123,34 @@ JS_SESSION_FUNCTION_IMPL(GetDigits)
 
 	if (info.Length() > 0) {
 		char term;
-		digits = info[0]->Int32Value();
+		digits = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 
 		if (digits > sizeof(buf) - 1) {
 			char *err = switch_mprintf("Exceeded max digits of %" SWITCH_SIZE_T_FMT, sizeof(buf) - 1);
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), err));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), err));
 			free(err);
 			return;
 		}
 
 		if (info.Length() > 1) {
-			String::Utf8Value str(info[1]);
+			JsUtf8Value str(info[1]);
 			terminators = js_safe_str(*str);
 		}
 
 		if (info.Length() > 2) {
-			timeout = info[2]->Int32Value();
+			timeout = info[2]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		if (info.Length() > 3) {
-			digit_timeout = info[3]->Int32Value();
+			digit_timeout = info[3]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		if (info.Length() > 4) {
-			abs_timeout = info[4]->Int32Value();
+			abs_timeout = info[4]->Int32Value(js_current_context()).FromMaybe(0);
 		}
 
 		switch_ivr_collect_digits_count(this->_session, buf, sizeof(buf), digits, terminators.c_str(), &term, timeout, digit_timeout, abs_timeout);
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), buf));
+		info.GetReturnValue().Set(js_new_string(info.GetIsolate(), buf));
 	}
 }
 
@@ -1162,7 +1162,7 @@ JS_SESSION_FUNCTION_IMPL(SetAutoHangup)
 	METHOD_SANITY_CHECK();
 
 	if (info.Length() > 0) {
-		bool tf = info[0]->BooleanValue();
+		bool tf = js_to_bool(info[0]);
 		if (tf) {
 			switch_set_flag(this, S_HUP);
 		} else {
@@ -1210,7 +1210,7 @@ JS_SESSION_FUNCTION_IMPL(GenerateXmlCdr)
 	if (switch_ivr_generate_xml_cdr(this->_session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		char *xml_text;
 		if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), xml_text));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), xml_text));
 		}
 		switch_safe_free(xml_text);
 		switch_xml_free(cdr);
@@ -1260,7 +1260,7 @@ JS_SESSION_FUNCTION_IMPL(WaitForMedia)
 	started = switch_micro_time_now();
 
 	if (info.Length() > 0) {
-		timeout = info[0]->Int32Value();
+		timeout = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 		if (timeout < 1000) {
 			timeout = 1000;
 		}
@@ -1305,7 +1305,7 @@ JS_SESSION_FUNCTION_IMPL(WaitForAnswer)
 	started = switch_micro_time_now();
 
 	if (info.Length() > 0) {
-		timeout = info[0]->Int32Value();
+		timeout = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 		if (timeout < 1000) {
 			timeout = 1000;
 		}
@@ -1350,10 +1350,10 @@ JS_SESSION_FUNCTION_IMPL(Detach)
 		if (info.Length() > 0) {
 			if (info[0]->IsInt32()) {
 				int32_t i = 0;
-				i = info[0]->Int32Value();
+				i = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 				cause = (switch_call_cause_t)i;
 			} else {
-				String::Utf8Value str(info[0]);
+				JsUtf8Value str(info[0]);
 				const char *cause_name = js_safe_str(*str);
 				cause = switch_channel_str2cause(cause_name);
 			}
@@ -1383,14 +1383,14 @@ JS_SESSION_FUNCTION_IMPL(Execute)
 
 	if (info.Length() > 0) {
 		switch_application_interface_t *application_interface;
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *app_name = js_safe_str(*str);
 		string app_arg;
 
 		METHOD_SANITY_CHECK();
 
 		if (info.Length() > 1) {
-			String::Utf8Value str2(info[1]);
+			JsUtf8Value str2(info[1]);
 			app_arg = js_safe_str(*str2);
 		}
 
@@ -1422,7 +1422,7 @@ JS_SESSION_FUNCTION_IMPL(GetEvent)
 	METHOD_SANITY_CHECK();
 
 	if (switch_core_session_dequeue_event(this->_session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-		Handle<Object> Event;
+		Local<Object> Event;
 		FSEvent *evt;
 
 		if ((evt = new FSEvent(info))) {
@@ -1443,13 +1443,13 @@ JS_SESSION_FUNCTION_IMPL(GetEvent)
 JS_SESSION_FUNCTION_IMPL(SendEvent)
 {
 	HandleScope handle_scope(info.GetIsolate());
-	Handle<Object> Event;
+	Local<Object> Event;
 	FSEvent *eo;
 
 	METHOD_SANITY_CHECK();
 
 	if (info.Length() > 0 && info[0]->IsObject()) {
-		Handle<Object> jso = Handle<Object>::Cast(info[0]);
+		Local<Object> jso = Local<Object>::Cast(info[0]);
 
 		if (!jso.IsEmpty()) {
 			switch_event_t **evt;
@@ -1480,10 +1480,10 @@ JS_SESSION_FUNCTION_IMPL(Hangup)
 	if (switch_channel_up(channel)) {
 		if (info.Length() > 0) {
 			if (info[0]->IsInt32()) {
-				int32_t i = info[0]->Int32Value();
+				int32_t i = info[0]->Int32Value(js_current_context()).FromMaybe(0);
 				cause = (switch_call_cause_t)i;
 			} else {
-				String::Utf8Value str(info[0]);
+				JsUtf8Value str(info[0]);
 				const char *cause_name = js_safe_str(*str);
 				cause = switch_channel_str2cause(cause_name);
 			}
@@ -1512,14 +1512,14 @@ JS_SESSION_GET_PROPERTY_IMPL(GetProperty)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 
-	String::Utf8Value str(property);
+	JsUtf8Value str(property);
 	const char *prop = js_safe_str(*str);
 
 	if (!strcmp(prop, "cause")) {
 		if (channel) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_cause2str(switch_channel_get_cause(channel))));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_channel_cause2str(switch_channel_get_cause(channel))));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_cause2str(this->_cause)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_channel_cause2str(this->_cause)));
 		}
 	} else if (!strcmp(prop, "causecode")) {
 		if (channel) {
@@ -1529,66 +1529,66 @@ JS_SESSION_GET_PROPERTY_IMPL(GetProperty)
 		}
 	} else if (!strcmp(prop, "name")) {
 		if (channel) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_name(channel)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_channel_get_name(channel)));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "uuid")) {
 		if (channel) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_uuid(channel)));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_channel_get_uuid(channel)));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "state")) {
 		if (channel) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_state_name(switch_channel_get_state(channel))));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), switch_channel_state_name(switch_channel_get_state(channel))));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "dialplan")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->dialplan));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->dialplan));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "caller_id_name")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->caller_id_name));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->caller_id_name));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "caller_id_num") || !strcmp(prop, "caller_id_number")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->caller_id_number));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->caller_id_number));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "network_addr") || !strcasecmp(prop, "network_address")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->network_addr));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->network_addr));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "ani")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->ani));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->ani));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "aniii")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->aniii));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->aniii));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else if (!strcmp(prop, "destination")) {
 		if (caller_profile) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), caller_profile->destination_number));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), caller_profile->destination_number));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(js_new_string(info.GetIsolate(), ""));
 		}
 	} else {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Bad property"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Bad property"));
 	}
 }
 
@@ -1600,7 +1600,7 @@ void *FSSession::Construct(const v8::FunctionCallbackInfo<Value>& info)
 	switch_assert(session_obj);
 
 	if (info.Length() > 0) {
-		String::Utf8Value str(info[0]);
+		JsUtf8Value str(info[0]);
 		const char *uuid = js_safe_str(*str);
 
 		if (!strchr(uuid, '/')) {
@@ -1610,7 +1610,7 @@ void *FSSession::Construct(const v8::FunctionCallbackInfo<Value>& info)
 			FSSession *old_obj = NULL;
 
 			if (info.Length() > 1 && info[1]->IsObject()) {
-				old_obj = JSBase::GetInstance<FSSession>(Handle<Object>::Cast(info[1]));
+				old_obj = JSBase::GetInstance<FSSession>(Local<Object>::Cast(info[1]));
 			}
 			if (switch_ivr_originate(old_obj ? old_obj->_session : NULL,
 									 &session_obj->_session, &session_obj->_cause, uuid, 60,
@@ -1619,7 +1619,7 @@ void *FSSession::Construct(const v8::FunctionCallbackInfo<Value>& info)
 			} else {
 				/* This will return the Session object, but with no C++ instance related to it */
 				/* After each call to [new Session("/chan/test")] you should check the property originateCause, which will hold a value if origination failed */
-				info.This()->Set(String::NewFromUtf8(info.GetIsolate(), "originateCause"), String::NewFromUtf8(info.GetIsolate(), switch_channel_cause2str(session_obj->_cause)));
+				js_obj_set(info.This(), js_new_string(info.GetIsolate(), "originateCause"), js_new_string(info.GetIsolate(), switch_channel_cause2str(session_obj->_cause)));
 				delete session_obj;
 				return NULL;
 			}
@@ -1637,8 +1637,8 @@ JS_SESSION_FUNCTION_IMPL(SetCallerdata)
 	if (info.Length() > 1) {
 		const char *var, *val;
 		char **toset = NULL;
-		String::Utf8Value str1(info[0]);
-		String::Utf8Value str2(info[1]);
+		JsUtf8Value str1(info[0]);
+		JsUtf8Value str2(info[1]);
 		var = js_safe_str(*str1);
 		val = js_safe_str(*str2);
 
@@ -1682,12 +1682,12 @@ JS_SESSION_FUNCTION_IMPL(Originate)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This method is deprecated, please use new Session(\"<dial string>\", a_leg) \n");
 
 	if (this->_session) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "cannot call this method on an initialized session"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "cannot call this method on an initialized session"));
 		return;
 	}
 
 	if (info.Length() > 1) {
-		Handle<Object> session_obj;
+		Local<Object> session_obj;
 		switch_core_session_t *session = NULL, *peer_session = NULL;
 		switch_caller_profile_t *caller_profile = NULL, *orig_caller_profile = NULL;
 		string dest;
@@ -1707,17 +1707,17 @@ JS_SESSION_FUNCTION_IMPL(Originate)
 		info.GetReturnValue().Set(false);
 
 		if (info[0]->IsObject()) {
-			session_obj = Handle<Object>::Cast(info[0]);
+			session_obj = Local<Object>::Cast(info[0]);
 			FSSession *old_obj = NULL;
 			if (!session_obj.IsEmpty() && (old_obj = JSBase::GetInstance<FSSession>(session_obj))) {
 
 				if (old_obj == this) {
-					info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Supplied a_leg session is the same as our session"));
+					info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Supplied a_leg session is the same as our session"));
 					return;
 				}
 
 				if (!old_obj->_session) {
-					info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Supplied a_leg session is not initilaized!"));
+					info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Supplied a_leg session is not initilaized!"));
 					return;
 				}
 
@@ -1751,7 +1751,7 @@ JS_SESSION_FUNCTION_IMPL(Originate)
 		if (!zstr(this->_username) && zstr(username))
 			username = this->_username;
 
-		String::Utf8Value str(info[1]);
+		JsUtf8Value str(info[1]);
 		dest = js_safe_str(*str);
 
 		if (!dest.c_str() || !strchr(dest.c_str(), '/')) {
@@ -1760,7 +1760,7 @@ JS_SESSION_FUNCTION_IMPL(Originate)
 		}
 
 		if (info.Length() > 2) {
-			String::Utf8Value strTmp(info[2]);
+			JsUtf8Value strTmp(info[2]);
 			tmp = *strTmp;
 			if (!zstr(tmp)) {
 				to = tmp;
@@ -1769,7 +1769,7 @@ JS_SESSION_FUNCTION_IMPL(Originate)
 
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-			info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Could not create new pool"));
+			info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Could not create new pool"));
 			return;
 		}
 
@@ -1796,7 +1796,7 @@ JS_SESSION_FUNCTION_IMPL(Bridge)
 {
 	HandleScope handle_scope(info.GetIsolate());
 	FSSession *jss_b = NULL;
-	Handle<Object> obj_b;
+	Local<Object> obj_b;
 	void *bp = NULL;
 	switch_input_callback_function_t dtmf_func = NULL;
 	FSInputCallbackState cb_state;
@@ -1805,27 +1805,27 @@ JS_SESSION_FUNCTION_IMPL(Bridge)
 
 	if (info.Length() > 0) {
 		if (info[0]->IsObject()) {
-			obj_b = Handle<Object>::Cast(info[0]);
+			obj_b = Local<Object>::Cast(info[0]);
 
 			if (!(jss_b = JSBase::GetInstance<FSSession>(obj_b))) {
-				info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Cannot find session B"));
+				info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Cannot find session B"));
 				return;
 			}
 		}
 	}
 
 	if (!_session) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "session A is not ready!"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "session A is not ready!"));
 		return;
 	}
 
 	if (!(jss_b && jss_b->_session)) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "session B is not ready!"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "session B is not ready!"));
 		return;
 	}
 
 	if (info.Length() > 1) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[1]);
 
 		if (!func.IsEmpty()) {
 			cb_state.function.Reset(info.GetIsolate(), func);

@@ -1240,6 +1240,7 @@ static const char* switch_core_media_crypto_find_key_material_candidate_end(cons
 SWITCH_DECLARE(switch_status_t) switch_core_media_add_crypto(switch_core_session_t *session, switch_secure_settings_t *ssec, switch_rtp_crypto_direction_t direction)
 {
 	unsigned char key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	char keysalt_b64[SWITCH_RTP_MAX_CRYPTO_LEN + 1];	/* NUL-terminated copy of one key's base64, isolated from following key material */
 	switch_rtp_crypto_key_type_t type;
 
 	const char *p, *delimit;
@@ -1247,6 +1248,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_add_crypto(switch_core_session
 	const char *key_material_end = NULL; /* begin and end of the current key material candidate */
 	int method_len;
 	int keysalt_len;
+	switch_size_t decoded_len;
 
 	const char		*opts;
 	uint32_t	opt_field;		/* LIFETIME or MKI */
@@ -1341,11 +1343,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_add_crypto(switch_core_session
 			keysalt_len = key_material_end - p;
 		}
 
-		if (keysalt_len > sizeof(key)) {
+		if (keysalt_len <= 0 || (size_t) keysalt_len >= sizeof(keysalt_b64)) {
 			goto bad_keysalt_len;
 		}
 
-		switch_b64_decode(p, (char *) key, keysalt_len);
+		/* switch_b64_decode consumes its input up to the NUL terminator and ignores
+		   non-base64 bytes, so isolate this key's base64 in a terminated buffer to keep
+		   the decode from spilling into the following key material. */
+		memcpy(keysalt_b64, p, keysalt_len);
+		keysalt_b64[keysalt_len] = '\0';
+
+		decoded_len = switch_b64_decode(keysalt_b64, (char *) key, sizeof(key));
+
+		/* switch_b64_decode returns the decoded byte count plus the trailing NUL it appends.
+		   Require at least the suite's key+salt length so the copy below cannot read past the
+		   decoded bytes into uninitialized stack. */
+		if (decoded_len <= (switch_size_t) SUITES[type].keysalt_len) {
+			goto bad_keysalt_len;
+		}
 
 		if (!multiple_keys) { /* First key becomes default (used in case no MKI is found). */
 			if (direction == SWITCH_RTP_CRYPTO_SEND) {
@@ -4549,7 +4564,7 @@ static void restore_pmaps(switch_rtp_engine_t *engine)
 
 static const char *media_flow_varname(switch_media_type_t type)
 {
-	const char *varname = "invalid";
+	const char *varname;
 
 	switch(type) {
 	case SWITCH_MEDIA_TYPE_AUDIO:
@@ -4561,6 +4576,9 @@ static const char *media_flow_varname(switch_media_type_t type)
 	case SWITCH_MEDIA_TYPE_TEXT:
 		varname = "text_media_flow";
 		break;
+	default:
+		varname = "invalid";
+		break;
 	}
 
 	return varname;
@@ -4568,7 +4586,7 @@ static const char *media_flow_varname(switch_media_type_t type)
 
 static const char *remote_media_flow_varname(switch_media_type_t type)
 {
-	const char *varname = "invalid";
+	const char *varname;
 
 	switch(type) {
 	case SWITCH_MEDIA_TYPE_AUDIO:
@@ -4580,6 +4598,9 @@ static const char *remote_media_flow_varname(switch_media_type_t type)
 	case SWITCH_MEDIA_TYPE_TEXT:
 		varname = "remote_text_media_flow";
 		break;
+	default:
+		varname = "invalid";
+		break;
 	}
 
 	return varname;
@@ -4587,7 +4608,7 @@ static const char *remote_media_flow_varname(switch_media_type_t type)
 
 static void media_flow_get_mode(switch_media_flow_t smode, const char **mode_str, switch_media_flow_t *opp_mode)
 {
-	const char *smode_str = "";
+	const char *smode_str;
 	switch_media_flow_t opp_smode = smode;
 
 	switch(smode) {
@@ -4607,6 +4628,9 @@ static void media_flow_get_mode(switch_media_flow_t smode, const char **mode_str
 		break;
 	case SWITCH_MEDIA_FLOW_SENDRECV:
 		smode_str = "sendrecv";
+		break;
+	default:
+		smode_str = "";
 		break;
 	}
 
@@ -11775,7 +11799,7 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 	char max_data[128] = "";
 	const char *ip;
 	uint32_t port;
-	const char *family = "IP4";
+	const char *family;
 	const char *username;
 	const char *bit_removal_on = "a=T38FaxFillBitRemoval\r\n";
 	const char *bit_removal_off = "";
@@ -12033,7 +12057,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			switch_size_t len;
 
 			if (oe) {
-				const char *family = "IP4";
+				const char *family;
 				char o_line[1024] = "";
 
 				if (oe >= pe) {

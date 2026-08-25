@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
-    <Import Project="ffmpeg-version.props" Condition=" '$(ffmpegVersionImported)' == ''"/>
+    <Import Project="ffmpeg-version.props" Condition=" '$(ffmpegVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <Import Project="solution_configuration.props" Condition=" '$(SolutionConfigurationPropsImported)' == '' " />
+    <Import Project="download_openh264.props"
+            Condition=" $(Configuration.EndsWith('openh264')) AND '$(downloadOpenh264PropsImported)' == '' " />
   </ImportGroup>
 
   <PropertyGroup>
@@ -9,20 +13,59 @@
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
+    <!-- Derive "Release"/"Debug" and "openh264"/"x264" from e.g. Release-openh264. -->
+    <ffmpegConfigName>$([System.Text.RegularExpressions.Regex]::Replace('$(Configuration)', '-.*$', ''))</ffmpegConfigName>
+    <ffmpegVariant>$([System.Text.RegularExpressions.Regex]::Replace('$(Configuration)', '^.*-', ''))</ffmpegVariant>
+
     <ffmpegDir>$(BaseDir)libs\ffmpeg-$(ffmpegVersion)</ffmpegDir>
+    <ffmpegBinDir>$(ffmpegDir)\binaries\$(ffmpegVariant)\$(Platform)\$(ffmpegConfigName)</ffmpegBinDir>
+    <ffmpegPkgBase>https://github.com/freeswitch/ffmpeg-packaging/releases/download/ffmpeg-v$(ffmpegVersion)</ffmpegPkgBase>
   </PropertyGroup>
+
+  <!-- Download + extract the headers (config-independent). -->
+  <Target Name="ffmpegHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="$(ffmpegPkgBase)/ffmpeg-$(ffmpegVersion)-headers.zip"
+        expectfileordirectory="$(ffmpegDir)\include\libavcodec\avcodec.h"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+
+  <!-- Download + extract the per-variant, per-config binaries (DLLs + import libs). -->
+  <Target Name="ffmpegBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="$(ffmpegPkgBase)/ffmpeg-$(ffmpegVersion)-$(ffmpegVariant)-binaries-$(Platform.ToLower())-$(ffmpegConfigName.ToLower()).zip"
+        expectfileordirectory="$(ffmpegBinDir)\avcodec.lib"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+
+  <!-- Copy the av* DLLs (and libx264-*.dll for the GPL variant) next to the
+       FreeSWITCH binary. SkipUnchangedFiles refreshes them when the source
+       differs, so switching openh264<->x264 updates the output DLLs. -->
+  <Target Name="ffmpegCopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="ffmpegBinariesDownloadTarget">
+    <Message Text="Copying FFmpeg DLLs ($(ffmpegVariant)/$(ffmpegConfigName)) to the FreeSWITCH output folder." Importance="High" />
+    <ItemGroup>
+      <ffmpegDlls Include="$(ffmpegBinDir)\*.dll"/>
+    </ItemGroup>
+    <Copy SkipUnchangedFiles="true"
+          SourceFiles="@(ffmpegDlls)"
+          DestinationFiles="@(ffmpegDlls->'$(BaseDir)\$(Platform)\$(SolutionConfiguration)\%(Filename)%(Extension)')"
+    />
+  </Target>
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ffmpegDir);$(ffmpegDir)\compat\atomics\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="('$(Configuration)'=='Debug-x264' OR '$(Configuration)'=='Release-x264') AND '$(Platform)'=='x64'">$(ffmpegDir)\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="('$(Configuration)'=='Debug-openh264' OR '$(Configuration)'=='Release-openh264') AND '$(Platform)'=='x64'">$(ffmpegDir)\include_openh264_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>HAVE_FFMPEG;FFMPEG_STATICLIB;HAVE_AV_CONFIG_H;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_WIN32_WINNT=0x0502;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ffmpegDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_FFMPEG;av_restrict=__restrict;_ISOC99_SOURCE;_FILE_OFFSET_BITS=64;_LARGEFILE_SOURCE;_USE_MATH_DEFINES;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ffmpegDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Bcrypt.lib;Secur32.lib;Mfuuid.lib;strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Configuration)'=='Debug-openh264' OR '$(Configuration)'=='Release-openh264'">openh264.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ffmpegBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>avcodec.lib;avformat.lib;avutil.lib;avfilter.lib;avdevice.lib;swscale.lib;swresample.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

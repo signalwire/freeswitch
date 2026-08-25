@@ -105,6 +105,10 @@ SWITCH_DECLARE(void) switch_ssl_destroy_ssl_locks(void)
 
 static const EVP_MD *get_evp_by_name(const char *name)
 {
+	if (zstr(name)) {
+		return NULL;
+	}
+
 	if (!strcasecmp(name, "md5")) return EVP_md5();
 	if (!strcasecmp(name, "sha1")) return EVP_sha1();
 	if (!strcasecmp(name, "sha-1")) return EVP_sha1();
@@ -181,6 +185,11 @@ SWITCH_DECLARE(int) switch_core_cert_extract_fingerprint(X509* x509, dtls_finger
 	unsigned int i, j;
 
 	evp = get_evp_by_name(fp->type);
+
+	if (!evp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing or unsupported fingerprint hash type\n");
+		return -1;
+	}
 
 	if (X509_digest(x509, evp, fp->data, &fp->len) != 1 ||  fp->len <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FP DIGEST ERR!\n");

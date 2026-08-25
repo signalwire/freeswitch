@@ -384,6 +384,32 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 	return reason * -1;
 }
 
+/* Read a big-endian (network byte order) 64-bit integer from a byte buffer. */
+static uint64_t ws_get_be64(const uint8_t *p)
+{
+	return ((uint64_t)p[0] << 56) |
+		((uint64_t)p[1] << 48) |
+		((uint64_t)p[2] << 40) |
+		((uint64_t)p[3] << 32) |
+		((uint64_t)p[4] << 24) |
+		((uint64_t)p[5] << 16) |
+		((uint64_t)p[6] << 8) |
+		((uint64_t)p[7]);
+}
+
+/* Write a big-endian (network byte order) 64-bit integer to a byte buffer. */
+static void ws_put_be64(uint8_t *p, uint64_t v)
+{
+	p[0] = (uint8_t)(v >> 56);
+	p[1] = (uint8_t)(v >> 48);
+	p[2] = (uint8_t)(v >> 40);
+	p[3] = (uint8_t)(v >> 32);
+	p[4] = (uint8_t)(v >> 24);
+	p[5] = (uint8_t)(v >> 16);
+	p[6] = (uint8_t)(v >> 8);
+	p[7] = (uint8_t)(v);
+}
+
 issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 {
 
@@ -404,14 +430,17 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 14)) < need) {
-		while (!wsh->down && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) ;
+		while (!wsh->down && wsh->datalen < need) {
+			issize_t r = ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen);
 
-#if 0
-		if (0 && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
-			 /* too small - protocol err */
-			return ws_close(wsh, WS_PROTO_ERR);
+			if (r < 1) {
+				/* invalid read - protocol err .. */
+				*oc = WSOC_CLOSE;
+				return ws_close(wsh, WS_PROTO_ERR);
+			}
+
+			wsh->datalen += r;
 		}
-#endif
 	}
 
 	*oc = *wsh->buffer & 0xf;
@@ -447,7 +476,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			wsh->payload = &wsh->buffer[2];
 
 			if (wsh->plen == 127) {
-				uint64_t *u64;
+				uint64_t plen64;
 
 				need += 8;
 
@@ -457,10 +486,16 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 					return ws_close(wsh, WS_PROTO_ERR);
 				}
 
-				u64 = (uint64_t *) wsh->payload;
+				plen64 = ws_get_be64((const uint8_t *)wsh->payload);
 				wsh->payload += 8;
 
-				wsh->plen = ntohl((u_long)*u64);
+				/* Bound-check unsigned, before narrowing to the signed issize_t plen. */
+				if (plen64 >= wsh->buflen) {
+					*oc = WSOC_CLOSE;
+					return ws_close(wsh, WS_DATA_TOO_BIG);
+				}
+
+				wsh->plen = (issize_t)plen64;
 
 			} else if (wsh->plen == 126) {
 				uint16_t *u16;
@@ -485,7 +520,14 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			need = (wsh->plen - (wsh->datalen - need));
 
-			if ((need + wsh->datalen) > (issize_t)wsh->buflen) {
+			if (need < 0) {
+				/* more buffered than the frame declares - protocol err */
+				*oc = WSOC_CLOSE;
+				return ws_close(wsh, WS_PROTO_ERR);
+			}
+
+			/* Reserve 1 byte for the trailing NUL below. */
+			if ((need + wsh->datalen) >= (issize_t)wsh->buflen) {
 				/* too big - Ain't nobody got time fo' dat */
 				*oc = WSOC_CLOSE;
 				return ws_close(wsh, WS_DATA_TOO_BIG);
@@ -510,7 +552,8 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			if (mask && maskp) {
 				issize_t i;
 
-				for (i = 0; i < wsh->datalen; i++) {
+				/* Unmask payload only. */
+				for (i = 0; i < wsh->rplen; i++) {
 					wsh->payload[i] ^= maskp[i % 4];
 				}
 			}
@@ -596,13 +639,10 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		*u16 = htons((uint16_t) bytes);
 
 	} else {
-		uint64_t *u64;
-
 		hdr[1] = 127;
 		hlen += 8;
 
-		u64 = (uint64_t *) &hdr[2];
-		*u64 = htonl((unsigned long)bytes);
+		ws_put_be64(&hdr[2], (uint64_t)bytes);
 	}
 
 	if (ws_raw_write(wsh, (void *) &hdr[0], hlen) != (issize_t)hlen) {

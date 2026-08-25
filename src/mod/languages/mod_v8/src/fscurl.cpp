@@ -62,14 +62,14 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 	FSCURL *obj = static_cast<FSCURL *>(data);
 	unsigned int realsize = (unsigned int) (size * nmemb);
 	uint32_t argc = 0;
-	Handle<Value> argv[4];
+	Local<Value> argv[4];
 
 	if (!obj) {
 		return 0;
 	}
 
 	HandleScope handle_scope(obj->GetIsolate());
-	Handle<Function> func;
+	Local<Function> func;
 
 	if (!obj->_function.IsEmpty()) {
 		func = Local<Function>::New(obj->GetIsolate(), obj->_function);
@@ -78,15 +78,15 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 	if (!func.IsEmpty()) {
 		char *ret;
 		if (ptr) {
-			argv[argc++] = String::NewFromUtf8(obj->GetIsolate(), (char *)ptr);
+			argv[argc++] = js_new_string(obj->GetIsolate(), (char *)ptr);
 		} else {
-			argv[argc++] = String::NewFromUtf8(obj->GetIsolate(), "");
+			argv[argc++] = js_new_string(obj->GetIsolate(), "");
 		}
 		if (!obj->_user_data.IsEmpty()) {
 			argv[argc++] = Local<Value>::New(obj->GetIsolate(), Persistent<Value>::Cast(obj->_user_data));
 		}
 
-		Handle<Value> res = func->Call(obj->GetIsolate()->GetCurrentContext()->Global(), argc, argv);
+		Local<Value> res = js_call(func, obj->GetIsolate()->GetCurrentContext()->Global(), argc, argv);
 
 		if (!res.IsEmpty()){
 			obj->_ret.Reset(obj->GetIsolate(), res);
@@ -94,7 +94,7 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 			obj->_ret.Reset();
 		}
 
-		String::Utf8Value str(Local<Value>::New(obj->GetIsolate(), res));
+		JsUtf8Value str(Local<Value>::New(obj->GetIsolate(), res));
 
 		if ((ret = *str)) {
 			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
@@ -129,12 +129,12 @@ JS_CURL_FUNCTION_IMPL(Run)
 	char ct[80] = "Content-Type: application/x-www-form-urlencoded";
 
 	if (info.Length() < 2) {
-		info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Invalid arguments"));
+		info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Invalid arguments"));
 		return;
 	}
 
-	String::Utf8Value str1(info[0]);
-	String::Utf8Value str2(info[1]);
+	JsUtf8Value str1(info[0]);
+	JsUtf8Value str2(info[1]);
 
 	method = js_safe_str(*str1);
 	url = js_safe_str(*str2);
@@ -146,23 +146,23 @@ JS_CURL_FUNCTION_IMPL(Run)
 	}
 
 	if (info.Length() > 2) {
-		String::Utf8Value str3(info[2]);
+		JsUtf8Value str3(info[2]);
 		data = js_safe_str(*str3);
 	}
 
 	if (info.Length() > 3) {
-		Handle<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[3]);
+		Local<Function> func = JSBase::GetFunctionFromArg(info.GetIsolate(), info[3]);
 		if (!func.IsEmpty() && func->IsFunction()) {
 			_function.Reset(info.GetIsolate(), func);
 		}
 	}
 
 	if (info.Length() > 4) {
-		_user_data.Reset(info.GetIsolate(), Handle<Object>::Cast(info[4]));
+		_user_data.Reset(info.GetIsolate(), Local<Object>::Cast(info[4]));
 	}
 
 	if (info.Length() > 5) {
-		String::Utf8Value str4(info[5]);
+		JsUtf8Value str4(info[5]);
 		cred = js_safe_str(*str4);
 		if (cred.length() > 0) {
 			switch_curl_easy_setopt(_curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
@@ -171,14 +171,14 @@ JS_CURL_FUNCTION_IMPL(Run)
 	}
 
 	if (info.Length() > 6) {
-		timeout = info[6]->Int32Value();
+		timeout = info[6]->Int32Value(js_current_context()).FromMaybe(0);
 		if (timeout > 0) {
 			switch_curl_easy_setopt(_curl_handle, CURLOPT_TIMEOUT, timeout);
 		}
 	}
 
 	if (info.Length() > 7) {
-		String::Utf8Value str5(info[7]);
+		JsUtf8Value str5(info[7]);
 		const char *content_type = js_safe_str(*str5);
 		switch_snprintf(ct, sizeof(ct), "Content-Type: %s", content_type);
 	}
@@ -221,7 +221,7 @@ JS_CURL_FUNCTION_IMPL(Run)
 	switch_safe_free(durl);
 
 	if (!_ret.IsEmpty()) {
-		info.GetReturnValue().Set(_ret);
+		info.GetReturnValue().Set(js_local(_ret));
 		_ret.Reset();
 	}
 }

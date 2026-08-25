@@ -37,7 +37,7 @@
 #if CONFIG_ERROR_CONCEALMENT
 #include "error_concealment.h"
 #endif
-#if ARCH_ARM
+#if VPX_ARCH_ARM
 #include "vpx_ports/arm.h"
 #endif
 
@@ -302,12 +302,9 @@ static int check_fragments_for_errors(VP8D_COMP *pbi) {
   return 1;
 }
 
-int vp8dx_receive_compressed_data(VP8D_COMP *pbi, size_t size,
-                                  const uint8_t *source, int64_t time_stamp) {
+int vp8dx_receive_compressed_data(VP8D_COMP *pbi, int64_t time_stamp) {
   VP8_COMMON *cm = &pbi->common;
   int retcode = -1;
-  (void)size;
-  (void)source;
 
   pbi->common.error.error_code = VPX_CODEC_OK;
 

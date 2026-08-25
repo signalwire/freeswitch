@@ -114,7 +114,7 @@ static void msrp_deinit_ssl(void)
 
 static void msrp_init_ssl(void)
 {
-	const char *err = "";
+	const char *err;
 
 	globals.ssl_client_method = SSLv23_client_method();
 	globals.ssl_client_ctx = SSL_CTX_new(globals.ssl_client_method);
@@ -918,6 +918,14 @@ static switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_
 			switch_assert(msrp_msg->delimiter);
 			dlen = strlen(msrp_msg->delimiter);
 
+			/* Need room for the trailing delimiter framing; a shorter
+			   segment is incomplete, so keep waiting for more bytes. */
+			if (len < dlen + 5) {
+				msrp_msg->last_p = buf;
+
+				return msrp_msg;
+			}
+
 			if (!strncmp(buf + len - dlen - 3, msrp_msg->delimiter, dlen)) { /*bingo*/
 				payload_bytes = len - dlen - 5;
 				switch_msrp_msg_set_payload(msrp_msg, buf, payload_bytes);
@@ -932,7 +940,14 @@ static switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_
 				if (globals.debug) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "=======================================delimiter: %s\n", delim_pos);
 				}
-				switch_assert(delim_pos - buf >= 2);
+				/* The delimiter must be preceded by the CRLF that closes the body;
+				   any earlier position leaves no body to take, so keep waiting. */
+				if (delim_pos - buf < 2) {
+					msrp_msg->last_p = buf;
+
+					return msrp_msg;
+				}
+
 				payload_bytes = delim_pos - buf - 2;
 				switch_msrp_msg_set_payload(msrp_msg, buf, payload_bytes);
 				msrp_msg->byte_end = msrp_msg->byte_start + msrp_msg->payload_bytes - 1;

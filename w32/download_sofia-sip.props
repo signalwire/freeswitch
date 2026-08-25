@@ -29,7 +29,7 @@
 
   <Target Name="SofiaSipDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="https://github.com/freeswitch/sofia-sip/archive/master.zip"
+           package="https://github.com/freeswitch/sofia-sip/archive/$(SofiaSipVersion).zip"
            expectfileordirectory="$(BaseDir)libs\sofia-sip\configure.ac"
            outputfolder=""
            outputfilename="sofia-sip-$(SofiaSipVersion).zip"
