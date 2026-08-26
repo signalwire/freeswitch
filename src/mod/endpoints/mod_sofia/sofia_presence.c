@@ -4871,7 +4871,10 @@ void sofia_presence_handle_sip_i_message(int status,
 
 			full_from = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_from);
 
-			if ((p = strchr(to_user, '+')) && p != to_user) {
+			/* Only split a user that fits in proto: the copy below truncates, so a '+' past the
+			   buffer would leave nothing to split on, and a selector or address cut in half must
+			   not be parsed either. An over-long user is treated as a plain address. */
+			if ((p = strchr(to_user, '+')) && p != to_user && strlen(to_user) < sizeof(proto)) {
 				switch_copy_string(proto, to_user, sizeof(proto));
 				p = strchr(proto, '+');
 				*p++ = '\0';
