@@ -4879,6 +4879,24 @@ void sofia_presence_handle_sip_i_message(int status,
 				p = strchr(proto, '+');
 				*p++ = '\0';
 
+				if (!strcasecmp(proto, "api") && !sofia_test_pflag(profile, PFLAG_ENABLE_CHAT_API_PROTO)) {
+					/* p is the rest of the To user, still percent-encoded and bounded by the proto buffer. */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "Profile [%s] rejected a MESSAGE from %s@%s (%s:%d) addressed to the 'api' chat proto [%s]. "
+									  "Set enable-chat-api-proto=true on the profile to permit it.\n",
+									  profile->name, switch_str_nil(from_user), switch_str_nil(from_host), network_ip, network_port, p);
+
+					nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+
+					if (full_from) {
+						su_free(nua_handle_get_home(nh), full_from);
+					}
+
+					/* Return rather than goto end: the end label answers 200/202, which would be a
+					   second response on this transaction. */
+					return;
+				}
+
 				if ((to_addr = strdup(p))) {
 					if ((p = strchr(to_addr, '+'))) {
 						*p = '@';

@@ -56,6 +56,8 @@
     <param name="inbound-codec-negotiation" value="generous"/>
     <param name="nonce-ttl" value="60"/>
     <param name="auth-calls" value="false"/>
+    <!-- lets an inbound MESSAGE to api+<command> run FreeSWITCH API commands, so enable only for trusted peers -->
+    <!-- <param name="enable-chat-api-proto" value="true"/> -->
     <param name="inbound-late-negotiation" value="true"/>
     <!--
         DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
