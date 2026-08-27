@@ -4944,6 +4944,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_ENABLE_CHAT);
 						}
+					} else if (!strcasecmp(var, "enable-chat-api-proto")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_CHAT_API_PROTO);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_CHAT_API_PROTO);
+						}
 					} else if (!strcasecmp(var, "fire-bye-response-events")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_FIRE_BYE_RESPONSE_EVENTS);
