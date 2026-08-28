@@ -9,6 +9,7 @@ noinst_PROGRAMS+= switch_hold switch_sip
 noinst_PROGRAMS += switch_core_media
 noinst_PROGRAMS += test_mod_verto
 noinst_PROGRAMS += test_mod_event_socket
+noinst_PROGRAMS += switch_timer
 
 if HAVE_PCAP
 noinst_PROGRAMS += switch_rtp_pcap
