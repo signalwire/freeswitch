@@ -11930,6 +11930,46 @@ SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t
 
 
 
+/* Proxy Media relays raw SRTP ciphertext between the two bridge legs (see SWITCH_RTP_FLAG_PROXY_MEDIA
+   in switch_rtp.c) rather than decrypting/re-encrypting it. That means both legs are architecturally
+   required to end up on the identical crypto suite and key -- if each leg's own independent SDES
+   negotiation lets it settle on a different suite (e.g. one leg accepts AES_CM_128_HMAC_SHA1_80 while
+   the other accepts AES_CM_128_NULL_AUTH), media between them will never decrypt, silently and
+   permanently, for the rest of the call. This was previously very difficult to diagnose (it required
+   pulling per-leg keys and doing an offline SRTP decrypt to notice at all), so make it loud instead. */
+static void switch_core_media_check_proxy_crypto_mismatch(switch_core_session_t *session, switch_media_handle_t *smh)
+{
+	switch_core_session_t *other_session;
+	switch_media_type_t types[3] = { SWITCH_MEDIA_TYPE_AUDIO, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_MEDIA_TYPE_TEXT };
+	int i;
+
+	if (!switch_channel_test_flag(session->channel, CF_SECURE)) {
+		return;
+	}
+
+	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+		if (other_session->media_handle && switch_channel_test_flag(other_session->channel, CF_SECURE)) {
+			for (i = 0; i < 3; i++) {
+				switch_rtp_engine_t *engine = &smh->engines[types[i]];
+				switch_rtp_engine_t *other_engine = &other_session->media_handle->engines[types[i]];
+
+				if (engine->ssec[engine->crypto_type].local_crypto_key &&
+					other_engine->ssec[other_engine->crypto_type].local_crypto_key &&
+					engine->crypto_type != other_engine->crypto_type) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+									  "PROXY MEDIA CRYPTO SUITE MISMATCH on %s: this leg negotiated [%s] but bridge partner %s "
+									  "negotiated [%s] for the same media -- SRTP relayed between these legs will never decrypt.\n",
+									  type2str(types[i]),
+									  switch_core_media_crypto_type2str(engine->crypto_type),
+									  switch_core_session_get_uuid(other_session),
+									  switch_core_media_crypto_type2str(other_engine->crypto_type));
+				}
+			}
+		}
+		switch_core_session_rwunlock(other_session);
+	}
+}
+
 //?
 SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 {
@@ -11955,6 +11995,10 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 	t_engine = &smh->engines[SWITCH_MEDIA_TYPE_TEXT];
 
+	if (switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
+		switch_core_media_check_proxy_crypto_mismatch(session, smh);
+	}
+
 	if (zstr(smh->mparams->local_sdp_str)) {
 		return;
 	}
@@ -11963,6 +12007,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 
 	if (!(smh->mparams->ndlb & SM_NDLB_NEVER_PATCH_REINVITE)) {
 		if (switch_channel_test_flag(session->channel, CF_ANSWERED) &&
+			!switch_channel_test_flag(session->channel, CF_PROXY_MEDIA) &&
 			(switch_stristr("sendonly", smh->mparams->local_sdp_str) || switch_stristr("inactive", smh->mparams->local_sdp_str) || switch_stristr("0.0.0.0", smh->mparams->local_sdp_str))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
 			return;
