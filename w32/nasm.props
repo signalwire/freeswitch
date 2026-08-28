@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup>
+    <NasmPropsImported>true</NasmPropsImported>
+    <NasmVersion Condition=" '$(NasmVersion)' == '' ">2.16.03</NasmVersion>
+    <NasmDir>$(BaseDir)libs\nasm-$(NasmVersion)</NasmDir>
+  </PropertyGroup>
+
+  <Target Name="NasmDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://www.nasm.us/pub/nasm/releasebuilds/$(NasmVersion)/win64/nasm-$(NasmVersion)-win64.zip"
+           expectfileordirectory="$(ProjectDir)\nasm.exe"
+           outputfolder="$(BaseDir)libs\"
+           outputfilename="nasm-$(NasmVersion)-win64.zip"
+           extractto="$(BaseDir)libs"
+           archivecontains="binary"
+      />
+      <Copy Condition="!Exists('$(ProjectDir)\nasm.exe')"
+          SourceFiles="$(NasmDir)\nasm.exe"
+          DestinationFiles="$(ProjectDir)\nasm.exe"
+      />
+  </Target>
+
+</Project>

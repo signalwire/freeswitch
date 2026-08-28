@@ -4917,6 +4917,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_ENABLE_CHAT);
 						}
+					} else if (!strcasecmp(var, "enable-chat-api-proto")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_CHAT_API_PROTO);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_CHAT_API_PROTO);
+						}
 					} else if (!strcasecmp(var, "fire-bye-response-events")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_FIRE_BYE_RESPONSE_EVENTS);
@@ -8779,7 +8785,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 typedef struct {
 	char *exten;
-	char *exten_with_params;
 	char *event;
 	char *reply_uuid;
 	char *bridge_to_uuid;
@@ -8806,7 +8811,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			switch_channel_t *channel_a = switch_core_session_get_channel(session);
 			const char *session_id_header = sofia_glue_session_id_header(session, nhelper->profile);
 
-			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten_with_params, timeout, NULL, NULL, NULL,
+			if ((status = switch_ivr_originate(NULL, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL,
 											   switch_channel_get_caller_profile(channel_a), nhelper->vars, SOF_NONE, NULL, NULL)) == SWITCH_STATUS_SUCCESS) {
 				if (switch_channel_up(channel_a)) {
 
@@ -9512,22 +9517,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
 						nightmare_xfer_helper->exten = switch_core_strdup(npool, exten);
 
-						if (refer_to->r_url->url_params || refer_to->r_url->url_headers) {
-							if (refer_to->r_url->url_headers) {
-								nightmare_xfer_helper->exten_with_params = switch_core_sprintf(npool,
-																							   "{sip_invite_params=%s?%s}%s",
-																							   refer_to->r_url->url_params ? refer_to->r_url->
-																							   url_params : "", refer_to->r_url->url_headers, exten);
-							} else {
-								nightmare_xfer_helper->exten_with_params = switch_core_sprintf(npool,
-																							   "{sip_invite_params=%s}%s", refer_to->r_url->url_params,
-																							   exten);
-							}
-						} else {
-							nightmare_xfer_helper->exten_with_params = nightmare_xfer_helper->exten;
-						}
-
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Nightmare transfer to '%s'\n", nightmare_xfer_helper->exten_with_params);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Nightmare transfer to '%s'\n", nightmare_xfer_helper->exten);
 
 						nightmare_xfer_helper->event = switch_core_strdup(npool, etmp);
 						nightmare_xfer_helper->reply_uuid = switch_core_strdup(npool, switch_core_session_get_uuid(session));
@@ -9563,6 +9553,22 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 
 						switch_event_create(&nightmare_xfer_helper->vars, SWITCH_EVENT_CHANNEL_DATA);
+
+						/* Pass the remote-supplied Refer-To params/headers as a verbatim ovars
+						   value so they are not parsed. */
+						if (refer_to->r_url->url_params || refer_to->r_url->url_headers) {
+							const char *invite_params;
+
+							if (refer_to->r_url->url_headers) {
+								invite_params = switch_core_sprintf(npool, "%s?%s",
+																	refer_to->r_url->url_params ? refer_to->r_url->url_params : "",
+																	refer_to->r_url->url_headers);
+							} else {
+								invite_params = refer_to->r_url->url_params;
+							}
+
+							switch_event_add_header_string(nightmare_xfer_helper->vars, SWITCH_STACK_BOTTOM, "sip_invite_params", invite_params);
+						}
 
 						rep_h = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 						if (rep_h) {

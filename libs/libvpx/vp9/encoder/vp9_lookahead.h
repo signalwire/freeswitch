@@ -25,6 +25,7 @@ struct lookahead_entry {
   YV12_BUFFER_CONFIG img;
   int64_t ts_start;
   int64_t ts_end;
+  int show_idx; /*The show_idx of this frame*/
   vpx_enc_frame_flags_t flags;
 };
 
@@ -32,10 +33,12 @@ struct lookahead_entry {
 #define MAX_PRE_FRAMES 1
 
 struct lookahead_ctx {
-  int max_sz;                  /* Absolute size of the queue */
-  int sz;                      /* Number of buffers currently in the queue */
-  int read_idx;                /* Read index */
-  int write_idx;               /* Write index */
+  int max_sz;        /* Absolute size of the queue */
+  int sz;            /* Number of buffers currently in the queue */
+  int read_idx;      /* Read index */
+  int write_idx;     /* Write index */
+  int next_show_idx; /* The show_idx that will be assigned to the next frame
+                        being pushed in the queue*/
   struct lookahead_entry *buf; /* Buffer list */
 };
 
@@ -57,26 +60,36 @@ struct lookahead_ctx *vp9_lookahead_init(unsigned int width,
  */
 void vp9_lookahead_destroy(struct lookahead_ctx *ctx);
 
+/**\brief Check if lookahead is full
+ *
+ * \param[in] ctx         Pointer to the lookahead context
+ *
+ * Return 1 if lookahead is full, otherwise return 0.
+ */
+int vp9_lookahead_full(const struct lookahead_ctx *ctx);
+
+/**\brief Return the next_show_idx
+ *
+ * \param[in] ctx         Pointer to the lookahead context
+ *
+ * Return the show_idx that will be assigned to the next
+ * frame pushed by vp9_lookahead_push()
+ */
+int vp9_lookahead_next_show_idx(const struct lookahead_ctx *ctx);
+
 /**\brief Enqueue a source buffer
  *
  * This function will copy the source image into a new framebuffer with
  * the expected stride/border.
- *
- * If active_map is non-NULL and there is only one frame in the queue, then copy
- * only active macroblocks.
  *
  * \param[in] ctx         Pointer to the lookahead context
  * \param[in] src         Pointer to the image to enqueue
  * \param[in] ts_start    Timestamp for the start of this frame
  * \param[in] ts_end      Timestamp for the end of this frame
  * \param[in] flags       Flags set on this frame
- * \param[in] active_map  Map that specifies which macroblock is active
  */
 int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
-                       int64_t ts_start, int64_t ts_end,
-#if CONFIG_VP9_HIGHBITDEPTH
-                       int use_highbitdepth,
-#endif
+                       int64_t ts_start, int64_t ts_end, int use_highbitdepth,
                        vpx_enc_frame_flags_t flags);
 
 /**\brief Get the next source buffer to encode

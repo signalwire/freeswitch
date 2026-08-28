@@ -15,9 +15,19 @@ if [ "x${DOWNLOAD_CMD}" = "x" -a -x "$CURL" ] ; then
   DOWNLOAD_CMD="$CURL -L -O"
 fi
 
-base=http://files.freeswitch.org/
+base=https://github.com/freeswitch/freeswitch-sounds/releases/download
 tarfile=$1
 install=$2
+
+# Build the GitHub release URL from the tarball name:
+#   freeswitch-sounds-<voice>-<rate>-<version>.tar.gz  ->  tag <voice>-<version>
+fname=`basename "$tarfile"`
+stem=${fname#freeswitch-sounds-}
+stem=${stem%.tar.gz}
+sver=${stem##*-}
+srest=${stem%-*}
+svoice=${srest%-*}
+url=$base/$svoice-$sver/$fname
 
 echo -n "#"
 pwd
@@ -29,7 +39,7 @@ if [ -n "$FS_SOUNDS_DIR" ]; then
 fi
 
 if [ ! -f $DIR/$tarfile ]; then
-  (cd $DIR && $DOWNLOAD_CMD $base$tarfile)
+  (cd $DIR && $DOWNLOAD_CMD $url)
   if [ ! -f $DIR/$tarfile ]; then
     echo "cannot find $tarfile"
     exit 1

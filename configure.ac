@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.11.2-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.11.3-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [11])
-AC_SUBST(SWITCH_VERSION_MICRO, [2-dev])
+AC_SUBST(SWITCH_VERSION_MICRO, [3-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -705,12 +705,12 @@ PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   ])
 ])
 
-PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.0],[
+PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.1.1],[
   AM_CONDITIONAL([HAVE_SPANDSP],[true])],[
-    AC_MSG_ERROR([no usable spandsp; please install spandsp3 devel package or equivalent])
+    AC_MSG_ERROR([no usable spandsp; please install spandsp4 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.17],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.18],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])

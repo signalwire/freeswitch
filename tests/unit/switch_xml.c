@@ -250,6 +250,122 @@ FST_MINCORE_BEGIN("./conf")
 			switch_xml_free(xml);
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_empty_entity_decode)
+		{
+			const char *text =
+				"<xml><!DOCTYPE Response ["
+				"<!ENTITY empty \"\">"
+				"<!ENTITY name \"World\">"
+				"]><Response><Say>Hello&empty;, &name;&empty;!</Say></Response></xml>";
+			switch_xml_t xml = NULL;
+			char *xml_string = NULL;
+
+			xml = switch_xml_parse_str_dynamic((char *)text, SWITCH_TRUE);
+			if (!xml) {
+				fst_fail("failed to parse XML with empty entity");
+				goto test_empty_entity_decode_done;
+			}
+
+			xml_string = switch_xml_toxml_ex(xml, SWITCH_FALSE, SWITCH_FALSE);
+			if (!xml_string) {
+				fst_fail("failed to serialize parsed XML");
+				goto test_empty_entity_decode_done;
+			}
+
+			fst_check_string_equals(xml_string,
+				"<xml>\n  <Response>\n    <Say>Hello, World!</Say>\n  </Response>\n</xml>\n");
+
+test_empty_entity_decode_done:
+			free(xml_string);
+			if (xml) switch_xml_free(xml);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_utf_8_wide_codepoint)
+		{
+			/* U+10FFFF is the largest Unicode code point; its UTF-8 form
+			   F4 8F BF BF serializes to "&#x10FFFF;", the widest &#x...;
+			   escape (10 chars) the encoder emits. It must serialize intact
+			   and must not overrun the destination buffer. */
+			const char *single = "<xml>\xF4\x8F\xBF\xBF" "</xml>";
+			switch_xml_t xml = NULL;
+			char *xml_string = NULL;
+			int prefix;
+
+			xml = switch_xml_parse_str_dynamic((char *)single, SWITCH_TRUE);
+			if (!xml) {
+				fst_fail("failed to parse maximum code point document");
+				goto test_utf_8_wide_done;
+			}
+
+			xml_string = switch_xml_toxml(xml, SWITCH_FALSE);
+			if (!xml_string) {
+				fst_fail("failed to serialize maximum code point");
+				goto test_utf_8_wide_done;
+			}
+
+			fst_check_string_equals(xml_string, "<xml>&#x10FFFF;</xml>\n");
+			free(xml_string);
+			xml_string = NULL;
+			switch_xml_free(xml);
+			xml = NULL;
+
+			/* Serialize long runs of the widest escape so the destination
+			   buffer reallocates many times. Sweeping the ASCII prefix length
+			   shifts the write offset so that, across iterations, an escape is
+			   emitted at every alignment relative to the reserved headroom,
+			   including the tightest one. Each run must serialize intact: the
+			   full escaped length, with no truncation or dropped escape. */
+			for (prefix = 0; prefix < 10; prefix++) {
+				switch_size_t runs = 1100;
+				switch_size_t cap = 5 + prefix + runs * 4 + 6 + 1;
+				char *doc = switch_must_malloc(cap);
+				char *w = doc;
+				switch_size_t i;
+				switch_size_t expected_len = 5 + (switch_size_t) prefix + runs * 10 + 7;
+
+				memcpy(w, "<xml>", 5);
+				w += 5;
+				for (i = 0; i < (switch_size_t) prefix; i++) {
+					*w++ = 'a';
+				}
+				for (i = 0; i < runs; i++) {
+					*w++ = (char) 0xF4;
+					*w++ = (char) 0x8F;
+					*w++ = (char) 0xBF;
+					*w++ = (char) 0xBF;
+				}
+				memcpy(w, "</xml>", 6);
+				w += 6;
+				*w = '\0';
+
+				xml = switch_xml_parse_str_dynamic(doc, SWITCH_TRUE);
+				free(doc);
+				if (!xml) {
+					fst_fail("failed to parse long wide-escape run");
+					goto test_utf_8_wide_done;
+				}
+
+				xml_string = switch_xml_toxml(xml, SWITCH_FALSE);
+				if (!xml_string) {
+					fst_fail("failed to serialize long wide-escape run");
+					goto test_utf_8_wide_done;
+				}
+
+				fst_check_string_has(xml_string, "&#x10FFFF;");
+				fst_xcheck(strlen(xml_string) == expected_len, "serialized wide-escape run has wrong length");
+				free(xml_string);
+				xml_string = NULL;
+				switch_xml_free(xml);
+				xml = NULL;
+			}
+
+test_utf_8_wide_done:
+			free(xml_string);
+			switch_xml_free(xml);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }

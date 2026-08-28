@@ -38,26 +38,24 @@ namespace {
 const int number_of_iterations = 100;
 
 typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
-                             int skip_block, const int16_t *zbin,
-                             const int16_t *round, const int16_t *quant,
-                             const int16_t *quant_shift, tran_low_t *qcoeff,
-                             tran_low_t *dqcoeff, const int16_t *dequant,
-                             uint16_t *eob, const int16_t *scan,
-                             const int16_t *iscan);
+                             const int16_t *zbin, const int16_t *round,
+                             const int16_t *quant, const int16_t *quant_shift,
+                             tran_low_t *qcoeff, tran_low_t *dqcoeff,
+                             const int16_t *dequant, uint16_t *eob,
+                             const int16_t *scan, const int16_t *iscan);
 typedef std::tuple<QuantizeFunc, QuantizeFunc, vpx_bit_depth_t,
                    int /*max_size*/, bool /*is_fp*/>
     QuantizeParam;
 
 // Wrapper for FP version which does not use zbin or quant_shift.
 typedef void (*QuantizeFPFunc)(const tran_low_t *coeff, intptr_t count,
-                               int skip_block, const int16_t *round,
-                               const int16_t *quant, tran_low_t *qcoeff,
-                               tran_low_t *dqcoeff, const int16_t *dequant,
-                               uint16_t *eob, const int16_t *scan,
-                               const int16_t *iscan);
+                               const int16_t *round, const int16_t *quant,
+                               tran_low_t *qcoeff, tran_low_t *dqcoeff,
+                               const int16_t *dequant, uint16_t *eob,
+                               const int16_t *scan, const int16_t *iscan);
 
 template <QuantizeFPFunc fn>
-void QuantFPWrapper(const tran_low_t *coeff, intptr_t count, int skip_block,
+void QuantFPWrapper(const tran_low_t *coeff, intptr_t count,
                     const int16_t *zbin, const int16_t *round,
                     const int16_t *quant, const int16_t *quant_shift,
                     tran_low_t *qcoeff, tran_low_t *dqcoeff,
@@ -66,8 +64,7 @@ void QuantFPWrapper(const tran_low_t *coeff, intptr_t count, int skip_block,
   (void)zbin;
   (void)quant_shift;
 
-  fn(coeff, count, skip_block, round, quant, qcoeff, dqcoeff, dequant, eob,
-     scan, iscan);
+  fn(coeff, count, round, quant, qcoeff, dqcoeff, dequant, eob, scan, iscan);
 }
 
 class VP9QuantizeBase : public AbstractBench {
@@ -77,7 +74,12 @@ class VP9QuantizeBase : public AbstractBench {
         coeff_(Buffer<tran_low_t>(max_size_, max_size_, 0, 16)),
         qcoeff_(Buffer<tran_low_t>(max_size_, max_size_, 0, 32)),
         dqcoeff_(Buffer<tran_low_t>(max_size_, max_size_, 0, 32)) {
+    // TODO(jianj): SSSE3 and AVX2 tests fail on extreme values.
+#if HAVE_NEON
+    max_value_ = (1 << (7 + bit_depth_)) - 1;
+#else
     max_value_ = (1 << bit_depth_) - 1;
+#endif
     zbin_ptr_ =
         reinterpret_cast<int16_t *>(vpx_memalign(16, 8 * sizeof(*zbin_ptr_)));
     round_fp_ptr_ = reinterpret_cast<int16_t *>(
@@ -105,13 +107,13 @@ class VP9QuantizeBase : public AbstractBench {
     vpx_free(quant_ptr_);
     vpx_free(quant_shift_ptr_);
     vpx_free(dequant_ptr_);
-    zbin_ptr_ = NULL;
-    round_fp_ptr_ = NULL;
-    quant_fp_ptr_ = NULL;
-    round_ptr_ = NULL;
-    quant_ptr_ = NULL;
-    quant_shift_ptr_ = NULL;
-    dequant_ptr_ = NULL;
+    zbin_ptr_ = nullptr;
+    round_fp_ptr_ = nullptr;
+    quant_fp_ptr_ = nullptr;
+    round_ptr_ = nullptr;
+    quant_ptr_ = nullptr;
+    quant_shift_ptr_ = nullptr;
+    dequant_ptr_ = nullptr;
     libvpx_test::ClearSystemState();
   }
 
@@ -133,7 +135,6 @@ class VP9QuantizeBase : public AbstractBench {
   int16_t *r_ptr_;
   int16_t *q_ptr_;
   int count_;
-  int skip_block_;
   const scan_order *scan_;
   uint16_t eob_;
 };
@@ -152,8 +153,8 @@ class VP9QuantizeTest : public VP9QuantizeBase,
 };
 
 void VP9QuantizeTest::Run() {
-  quantize_op_(coeff_.TopLeftPixel(), count_, skip_block_, zbin_ptr_, r_ptr_,
-               q_ptr_, quant_shift_ptr_, qcoeff_.TopLeftPixel(),
+  quantize_op_(coeff_.TopLeftPixel(), count_, zbin_ptr_, r_ptr_, q_ptr_,
+               quant_shift_ptr_, qcoeff_.TopLeftPixel(),
                dqcoeff_.TopLeftPixel(), dequant_ptr_, &eob_, scan_->scan,
                scan_->iscan);
 }
@@ -162,16 +163,14 @@ void VP9QuantizeTest::Run() {
 // determine if further multiplication operations are needed.
 // Based on vp9_quantize_fp_sse2().
 inline void quant_fp_nz(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                        int skip_block, const int16_t *round_ptr,
-                        const int16_t *quant_ptr, tran_low_t *qcoeff_ptr,
-                        tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
-                        uint16_t *eob_ptr, const int16_t *scan,
-                        const int16_t *iscan, int is_32x32) {
+                        const int16_t *round_ptr, const int16_t *quant_ptr,
+                        tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                        const int16_t *dequant_ptr, uint16_t *eob_ptr,
+                        const int16_t *scan, const int16_t *iscan,
+                        int is_32x32) {
   int i, eob = -1;
   const int thr = dequant_ptr[1] >> (1 + is_32x32);
   (void)iscan;
-  (void)skip_block;
-  assert(!skip_block);
 
   // Quantization pass: All coefficients with index >= zero_flag are
   // skippable. Note: zero_flag can be zero.
@@ -209,12 +208,15 @@ inline void quant_fp_nz(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
         tmp = clamp(abs_coeff[y] + _round, INT16_MIN, INT16_MAX);
         tmp = (tmp * quant_ptr[rc != 0]) >> (16 - is_32x32);
         qcoeff_ptr[rc] = (tmp ^ coeff_sign[y]) - coeff_sign[y];
-        dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
+        dqcoeff_ptr[rc] =
+            static_cast<tran_low_t>(qcoeff_ptr[rc] * dequant_ptr[rc != 0]);
 
         if (is_32x32) {
-          dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
+          dqcoeff_ptr[rc] = static_cast<tran_low_t>(qcoeff_ptr[rc] *
+                                                    dequant_ptr[rc != 0] / 2);
         } else {
-          dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0];
+          dqcoeff_ptr[rc] =
+              static_cast<tran_low_t>(qcoeff_ptr[rc] * dequant_ptr[rc != 0]);
         }
       } else {
         qcoeff_ptr[rc] = 0;
@@ -235,22 +237,20 @@ inline void quant_fp_nz(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
 }
 
 void quantize_fp_nz_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                      int skip_block, const int16_t *round_ptr,
-                      const int16_t *quant_ptr, tran_low_t *qcoeff_ptr,
-                      tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
-                      uint16_t *eob_ptr, const int16_t *scan,
-                      const int16_t *iscan) {
-  quant_fp_nz(coeff_ptr, n_coeffs, skip_block, round_ptr, quant_ptr, qcoeff_ptr,
+                      const int16_t *round_ptr, const int16_t *quant_ptr,
+                      tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                      const int16_t *dequant_ptr, uint16_t *eob_ptr,
+                      const int16_t *scan, const int16_t *iscan) {
+  quant_fp_nz(coeff_ptr, n_coeffs, round_ptr, quant_ptr, qcoeff_ptr,
               dqcoeff_ptr, dequant_ptr, eob_ptr, scan, iscan, 0);
 }
 
 void quantize_fp_32x32_nz_c(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                            int skip_block, const int16_t *round_ptr,
-                            const int16_t *quant_ptr, tran_low_t *qcoeff_ptr,
-                            tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
-                            uint16_t *eob_ptr, const int16_t *scan,
-                            const int16_t *iscan) {
-  quant_fp_nz(coeff_ptr, n_coeffs, skip_block, round_ptr, quant_ptr, qcoeff_ptr,
+                            const int16_t *round_ptr, const int16_t *quant_ptr,
+                            tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                            const int16_t *dequant_ptr, uint16_t *eob_ptr,
+                            const int16_t *scan, const int16_t *iscan) {
+  quant_fp_nz(coeff_ptr, n_coeffs, round_ptr, quant_ptr, qcoeff_ptr,
               dqcoeff_ptr, dequant_ptr, eob_ptr, scan, iscan, 1);
 }
 
@@ -308,9 +308,6 @@ TEST_P(VP9QuantizeTest, OperationCheck) {
   eob_ = 0;
 
   for (int i = 0; i < number_of_iterations; ++i) {
-    // Test skip block for the first three iterations to catch all the different
-    // sizes.
-    const int skip_block = 0;
     TX_SIZE sz;
     if (max_size_ == 16) {
       sz = static_cast<TX_SIZE>(i % 3);  // TX_4X4, TX_8X8 TX_16X16
@@ -324,13 +321,13 @@ TEST_P(VP9QuantizeTest, OperationCheck) {
     GenerateHelperArrays(&rnd, zbin_ptr_, round_ptr_, quant_ptr_,
                          quant_shift_ptr_, dequant_ptr_, round_fp_ptr_,
                          quant_fp_ptr_);
-    ref_quantize_op_(coeff_.TopLeftPixel(), count_, skip_block, zbin_ptr_,
-                     r_ptr_, q_ptr_, quant_shift_ptr_,
-                     ref_qcoeff.TopLeftPixel(), ref_dqcoeff.TopLeftPixel(),
-                     dequant_ptr_, &ref_eob, scan_->scan, scan_->iscan);
+    ref_quantize_op_(coeff_.TopLeftPixel(), count_, zbin_ptr_, r_ptr_, q_ptr_,
+                     quant_shift_ptr_, ref_qcoeff.TopLeftPixel(),
+                     ref_dqcoeff.TopLeftPixel(), dequant_ptr_, &ref_eob,
+                     scan_->scan, scan_->iscan);
 
     ASM_REGISTER_STATE_CHECK(quantize_op_(
-        coeff_.TopLeftPixel(), count_, skip_block, zbin_ptr_, r_ptr_, q_ptr_,
+        coeff_.TopLeftPixel(), count_, zbin_ptr_, r_ptr_, q_ptr_,
         quant_shift_ptr_, qcoeff_.TopLeftPixel(), dqcoeff_.TopLeftPixel(),
         dequant_ptr_, &eob_, scan_->scan, scan_->iscan));
 
@@ -364,7 +361,6 @@ TEST_P(VP9QuantizeTest, EOBCheck) {
   const uint32_t max_index = max_size_ * max_size_ - 1;
 
   for (int i = 0; i < number_of_iterations; ++i) {
-    skip_block_ = 0;
     TX_SIZE sz;
     if (max_size_ == 16) {
       sz = static_cast<TX_SIZE>(i % 3);  // TX_4X4, TX_8X8 TX_16X16
@@ -383,13 +379,13 @@ TEST_P(VP9QuantizeTest, EOBCheck) {
     GenerateHelperArrays(&rnd, zbin_ptr_, round_ptr_, quant_ptr_,
                          quant_shift_ptr_, dequant_ptr_, round_fp_ptr_,
                          quant_fp_ptr_);
-    ref_quantize_op_(coeff_.TopLeftPixel(), count_, skip_block_, zbin_ptr_,
-                     r_ptr_, q_ptr_, quant_shift_ptr_,
-                     ref_qcoeff.TopLeftPixel(), ref_dqcoeff.TopLeftPixel(),
-                     dequant_ptr_, &ref_eob, scan_->scan, scan_->iscan);
+    ref_quantize_op_(coeff_.TopLeftPixel(), count_, zbin_ptr_, r_ptr_, q_ptr_,
+                     quant_shift_ptr_, ref_qcoeff.TopLeftPixel(),
+                     ref_dqcoeff.TopLeftPixel(), dequant_ptr_, &ref_eob,
+                     scan_->scan, scan_->iscan);
 
     ASM_REGISTER_STATE_CHECK(quantize_op_(
-        coeff_.TopLeftPixel(), count_, skip_block_, zbin_ptr_, r_ptr_, q_ptr_,
+        coeff_.TopLeftPixel(), count_, zbin_ptr_, r_ptr_, q_ptr_,
         quant_shift_ptr_, qcoeff_.TopLeftPixel(), dqcoeff_.TopLeftPixel(),
         dequant_ptr_, &eob_, scan_->scan, scan_->iscan));
 
@@ -425,7 +421,6 @@ TEST_P(VP9QuantizeTest, DISABLED_Speed) {
   for (TX_SIZE sz = starting_sz; sz <= ending_sz; ++sz) {
     // zbin > coeff, zbin < coeff.
     for (int i = 0; i < 2; ++i) {
-      skip_block_ = 0;
       // TX_TYPE defines the scan order. That is not relevant to the speed test.
       // Pick the first one.
       const TX_TYPE tx_type = DCT_DCT;
@@ -467,7 +462,7 @@ using std::make_tuple;
 
 #if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, VP9QuantizeTest,
     ::testing::Values(
         make_tuple(&vpx_quantize_b_sse2, &vpx_quantize_b_c, VPX_BITS_8, 16,
@@ -486,7 +481,7 @@ INSTANTIATE_TEST_CASE_P(
                    &vpx_highbd_quantize_b_32x32_c, VPX_BITS_12, 32, false)));
 
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_sse2, &vpx_quantize_b_c,
                                  VPX_BITS_8, 16, false),
@@ -497,8 +492,8 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_SSE2
 
 #if HAVE_SSSE3
-#if ARCH_X86_64
-INSTANTIATE_TEST_CASE_P(
+#if VPX_ARCH_X86_64
+INSTANTIATE_TEST_SUITE_P(
     SSSE3, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_ssse3, &vpx_quantize_b_c,
                                  VPX_BITS_8, 16, false),
@@ -512,7 +507,7 @@ INSTANTIATE_TEST_CASE_P(
                                  &QuantFPWrapper<quantize_fp_32x32_nz_c>,
                                  VPX_BITS_8, 32, true)));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSSE3, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_ssse3, &vpx_quantize_b_c,
                                  VPX_BITS_8, 16, false),
@@ -520,21 +515,21 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_quantize_b_32x32_c, VPX_BITS_8, 32,
                                  false)));
 
-#endif  // ARCH_X86_64
+#endif  // VPX_ARCH_X86_64
 #endif  // HAVE_SSSE3
 
 #if HAVE_AVX
-INSTANTIATE_TEST_CASE_P(AVX, VP9QuantizeTest,
-                        ::testing::Values(make_tuple(&vpx_quantize_b_avx,
-                                                     &vpx_quantize_b_c,
-                                                     VPX_BITS_8, 16, false),
-                                          make_tuple(&vpx_quantize_b_32x32_avx,
-                                                     &vpx_quantize_b_32x32_c,
-                                                     VPX_BITS_8, 32, false)));
+INSTANTIATE_TEST_SUITE_P(AVX, VP9QuantizeTest,
+                         ::testing::Values(make_tuple(&vpx_quantize_b_avx,
+                                                      &vpx_quantize_b_c,
+                                                      VPX_BITS_8, 16, false),
+                                           make_tuple(&vpx_quantize_b_32x32_avx,
+                                                      &vpx_quantize_b_32x32_c,
+                                                      VPX_BITS_8, 32, false)));
 #endif  // HAVE_AVX
 
-#if ARCH_X86_64 && HAVE_AVX2
-INSTANTIATE_TEST_CASE_P(
+#if VPX_ARCH_X86_64 && HAVE_AVX2
+INSTANTIATE_TEST_SUITE_P(
     AVX2, VP9QuantizeTest,
     ::testing::Values(make_tuple(&QuantFPWrapper<vp9_quantize_fp_avx2>,
                                  &QuantFPWrapper<quantize_fp_nz_c>, VPX_BITS_8,
@@ -542,7 +537,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_AVX2
 
 #if HAVE_NEON
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_neon, &vpx_quantize_b_c,
                                  VPX_BITS_8, 16, false),
@@ -558,7 +553,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_NEON
 
 #if HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     VSX, VP9QuantizeTest,
     ::testing::Values(make_tuple(&vpx_quantize_b_vsx, &vpx_quantize_b_c,
                                  VPX_BITS_8, 16, false),
@@ -573,8 +568,18 @@ INSTANTIATE_TEST_CASE_P(
                                  VPX_BITS_8, 32, true)));
 #endif  // HAVE_VSX && !CONFIG_VP9_HIGHBITDEPTH
 
+#if HAVE_LSX && !CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_SUITE_P(LSX, VP9QuantizeTest,
+                         ::testing::Values(make_tuple(&vpx_quantize_b_lsx,
+                                                      &vpx_quantize_b_c,
+                                                      VPX_BITS_8, 16, false),
+                                           make_tuple(&vpx_quantize_b_32x32_lsx,
+                                                      &vpx_quantize_b_32x32_c,
+                                                      VPX_BITS_8, 32, false)));
+#endif  // HAVE_LSX && !CONFIG_VP9_HIGHBITDEPTH
+
 // Only useful to compare "Speed" test results.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     DISABLED_C, VP9QuantizeTest,
     ::testing::Values(
         make_tuple(&vpx_quantize_b_c, &vpx_quantize_b_c, VPX_BITS_8, 16, false),

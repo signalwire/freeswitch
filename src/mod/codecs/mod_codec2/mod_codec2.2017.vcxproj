@@ -125,9 +125,6 @@
     <ClCompile Include="mod_codec2.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\libcodec2\libcodec2.2017.vcxproj">
-      <Project>{19e934d6-1484-41c8-9305-78dc42fd61f2}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

@@ -41,7 +41,7 @@
 
 #include <switch.h>
 #include <switch_json.h>
-#include <switch_vpx.h>
+#include <switch_image.h>
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"

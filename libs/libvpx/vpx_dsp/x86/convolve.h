@@ -14,7 +14,7 @@
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
-#include "vpx_ports/mem.h"
+#include "vpx_ports/compiler_attributes.h"
 
 // TODO(chiyotsai@google.com): Refactor the code here. Currently this is pretty
 // hacky and awful to read. Note that there is a filter_x[3] == 128 check in
@@ -107,7 +107,7 @@ typedef void filter8_1dfunction(const uint8_t *src_ptr, ptrdiff_t src_pitch,
     assert(x_step_q4 == 16);                                                   \
     assert(y_step_q4 == 16);                                                   \
     if (filter_x[0] | filter_x[1] | filter_x[6] | filter_x[7]) {               \
-      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 71]);                           \
+      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 71] VPX_UNINITIALIZED);         \
       vpx_convolve8_horiz_##opt(src - 3 * src_stride, src_stride, fdata2, 64,  \
                                 filter, x0_q4, x_step_q4, y0_q4, y_step_q4, w, \
                                 h + 7);                                        \
@@ -116,7 +116,7 @@ typedef void filter8_1dfunction(const uint8_t *src_ptr, ptrdiff_t src_pitch,
                                       y_step_q4, w, h);                        \
     } else if (filter_x[2] | filter_x[5]) {                                    \
       const int num_taps = is_avg ? 8 : 4;                                     \
-      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 71]);                           \
+      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 71] VPX_UNINITIALIZED);         \
       vpx_convolve8_horiz_##opt(                                               \
           src - (num_taps / 2 - 1) * src_stride, src_stride, fdata2, 64,       \
           filter, x0_q4, x_step_q4, y0_q4, y_step_q4, w, h + num_taps - 1);    \
@@ -124,7 +124,7 @@ typedef void filter8_1dfunction(const uint8_t *src_ptr, ptrdiff_t src_pitch,
                                       dst, dst_stride, filter, x0_q4,          \
                                       x_step_q4, y0_q4, y_step_q4, w, h);      \
     } else {                                                                   \
-      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 65]);                           \
+      DECLARE_ALIGNED(16, uint8_t, fdata2[64 * 65] VPX_UNINITIALIZED);         \
       vpx_convolve8_horiz_##opt(src, src_stride, fdata2, 64, filter, x0_q4,    \
                                 x_step_q4, y0_q4, y_step_q4, w, h + 1);        \
       vpx_convolve8_##avg##vert_##opt(fdata2, 64, dst, dst_stride, filter,     \
@@ -242,7 +242,7 @@ typedef void highbd_filter8_1dfunction(const uint16_t *src_ptr,
     if (x_step_q4 == 16 && y_step_q4 == 16) {                                  \
       if ((filter_x[0] | filter_x[1] | filter_x[6] | filter_x[7]) ||           \
           filter_x[3] == 128) {                                                \
-        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 71]);                        \
+        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 71] VPX_UNINITIALIZED);      \
         vpx_highbd_convolve8_horiz_##opt(src - 3 * src_stride, src_stride,     \
                                          fdata2, 64, filter, x0_q4, x_step_q4, \
                                          y0_q4, y_step_q4, w, h + 7, bd);      \
@@ -251,7 +251,7 @@ typedef void highbd_filter8_1dfunction(const uint16_t *src_ptr,
             y0_q4, y_step_q4, w, h, bd);                                       \
       } else if (filter_x[2] | filter_x[5]) {                                  \
         const int num_taps = is_avg ? 8 : 4;                                   \
-        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 71]);                        \
+        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 71] VPX_UNINITIALIZED);      \
         vpx_highbd_convolve8_horiz_##opt(                                      \
             src - (num_taps / 2 - 1) * src_stride, src_stride, fdata2, 64,     \
             filter, x0_q4, x_step_q4, y0_q4, y_step_q4, w, h + num_taps - 1,   \
@@ -260,7 +260,7 @@ typedef void highbd_filter8_1dfunction(const uint16_t *src_ptr,
             fdata2 + 64 * (num_taps / 2 - 1), 64, dst, dst_stride, filter,     \
             x0_q4, x_step_q4, y0_q4, y_step_q4, w, h, bd);                     \
       } else {                                                                 \
-        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 65]);                        \
+        DECLARE_ALIGNED(16, uint16_t, fdata2[64 * 65] VPX_UNINITIALIZED);      \
         vpx_highbd_convolve8_horiz_##opt(src, src_stride, fdata2, 64, filter,  \
                                          x0_q4, x_step_q4, y0_q4, y_step_q4,   \
                                          w, h + 1, bd);                        \
