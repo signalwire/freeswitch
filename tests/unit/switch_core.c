@@ -173,6 +173,14 @@ FST_CORE_BEGIN("./conf")
 			fst_check_int_equals(mask.v6.s6_addr[1], 0xc0);
 			fst_check_int_equals(mask.v6.s6_addr[2], 0);
 
+			/* Unique Local Addresses (ULA) — RFC 4193 / fc00::/7 */
+			fst_check(!switch_parse_cidr("fc00::/7", &ip, &mask, &bits));
+			fst_check_int_equals(bits, 7);
+			fst_check_int_equals(ip.v6.s6_addr[0], 0xfc);
+			fst_check_int_equals(ip.v6.s6_addr[1], 0);
+			fst_check_int_equals(mask.v6.s6_addr[0], 0xfe);
+			fst_check_int_equals(mask.v6.s6_addr[1], 0);
+
 			fst_check(!switch_parse_cidr("::/0", &ip, &mask, &bits));
 			fst_check_int_equals(bits, 0);
 			fst_check_int_equals(ip.v6.s6_addr[0], 0);
@@ -216,6 +224,25 @@ FST_CORE_BEGIN("./conf")
 			fst_check_int_equals(mask.v6.s6_addr[13], 0xff);
 			fst_check_int_equals(mask.v6.s6_addr[14], 0xff);
 			fst_check_int_equals(mask.v6.s6_addr[15], 0xff);
+		}
+		FST_TEST_END()
+
+		/* Issue #2703: ULA fc00::/7 must be treated as private / non-WAN */
+		FST_TEST_BEGIN(test_ula_fc00_in_builtin_acls)
+		{
+			/* rfc1918.auto is default-deny; private ranges are allow-listed */
+			fst_check(switch_check_network_list_ip("fc00::1", "rfc1918.auto"));
+			fst_check(switch_check_network_list_ip("fd12:3456:789a::1", "rfc1918.auto"));
+			fst_check(!switch_check_network_list_ip("2001:db8::1", "rfc1918.auto"));
+
+			/* wan.auto / wan_v6.auto are default-allow; private ranges are deny-listed */
+			fst_check(!switch_check_network_list_ip("fc00::1", "wan.auto"));
+			fst_check(!switch_check_network_list_ip("fd12:3456:789a::1", "wan.auto"));
+			fst_check(switch_check_network_list_ip("2001:db8::1", "wan.auto"));
+
+			fst_check(!switch_check_network_list_ip("fc00::1", "wan_v6.auto"));
+			fst_check(!switch_check_network_list_ip("fd12:3456:789a::1", "wan_v6.auto"));
+			fst_check(switch_check_network_list_ip("2001:db8::1", "wan_v6.auto"));
 		}
 		FST_TEST_END()
 
