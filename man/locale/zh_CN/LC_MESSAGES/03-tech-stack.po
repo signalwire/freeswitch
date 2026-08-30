@@ -1,0 +1,748 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../03-tech-stack.md:1 33afd9b676434b809090eed370794378
+msgid "03. Tech Stack"
+msgstr "03. 技术栈"
+
+#: ../../03-tech-stack.md:5 1ed06b765c6644d4a54de015463d16f6
+msgid ""
+"FreeSWITCH is a **C Autotools** softswitch. There is no `package.json` / "
+"`go.mod` / `Cargo.toml` for the product. `scripts/gen_tech_stack.py` only "
+"found the **PKB Sphinx** manifests under `man/` (see `_generated/03-tech-"
+"stack.generated.md`). Product versions below come from `configure.ac` "
+"`PKG_CHECK_MODULES` / `AC_CHECK_LIB` floors and from bundled `libs/` "
+"headers."
+msgstr ""
+"FreeSWITCH 是 **C Autotools** 软交换。产品没有 `package.json` / `go.mod` / "
+"`Cargo.toml`。`scripts/gen_tech_stack.py` 只在 `man/` 下找到了 **PKB Sphinx** 清单（见 "
+"`_generated/03-tech-stack.generated.md`）。下文产品版本来自 `configure.ac` 的 "
+"`PKG_CHECK_MODULES` / `AC_CHECK_LIB` 下限，以及捆绑的 `libs/` 头文件。"
+
+#: ../../03-tech-stack.md:7 4e1ef768c4c34dba98b014e9b4beced3
+msgid "This tree is **1.11.3-dev** (`AC_INIT` in `configure.ac`)."
+msgstr "本源码树为 **1.11.3-dev**（`configure.ac` 中的 `AC_INIT`）。"
+
+#: ../../03-tech-stack.md:9 7435bffe109345e5a3fe408f4dbfa131
+msgid "Purpose"
+msgstr "目的"
+
+#: ../../03-tech-stack.md:11 f291e14666a349d7a793b078df39df3d
+msgid ""
+"A threaded C core (`libfreeswitch`) plus loadable DSOs implement SIP/WebRTC "
+"switching, RTP, dialplan, and ESL. System libraries (Sofia-SIP, SpanDSP, "
+"OpenSSL, libks) and a few vendored trees (`libs/apr`, `libs/srtp`, "
+"`libs/libvpx`, …) provide portability, crypto, and codecs."
+msgstr ""
+"带线程的 C 核心（`libfreeswitch`）加上可加载 DSO，实现 SIP/WebRTC 交换、RTP、拨号计划和 "
+"ESL。系统库（Sofia-"
+"SIP、SpanDSP、OpenSSL、libks）以及若干内嵌树（`libs/apr`、`libs/srtp`、`libs/libvpx`、…）提供可移植性、加密和编解码器。"
+
+#: ../../03-tech-stack.md:13 c51f7b4da097479cae885b774c13aa6a
+msgid "System View"
+msgstr "系统视图"
+
+#: ../../03-tech-stack.md:28 fc190f67fc094582b716986061b7a92c
+msgid "Stack Summary"
+msgstr "技术栈摘要"
+
+#: ../../03-tech-stack.md:15 bfd590db92fa4bff812434eb8f72993a
+msgid "Layer"
+msgstr "层级"
+
+#: ../../03-tech-stack.md:15 f5ec1bc1ea8e44b28cf1087a252033b3
+msgid "Main technology"
+msgstr "主要技术"
+
+#: ../../03-tech-stack.md:15 9bb6e93e7fde4e7f929f0b440d69ba2e
+msgid "Why it exists in this repo"
+msgstr "在本仓库中的作用"
+
+#: ../../03-tech-stack.md:15 3648a975ba664a19bd50665af991b795
+msgid "Signaling"
+msgstr "信令"
+
+#: ../../03-tech-stack.md:15 4672c055ee554d49b904f52463b1fcf5
+msgid "Sofia-SIP (`sofia-sip-ua >= 1.13.18`), Verto + libks"
+msgstr "Sofia-SIP（`sofia-sip-ua >= 1.13.18`），Verto + libks"
+
+#: ../../03-tech-stack.md:15 aff1cfea72d043cdb6e5466a957eec24
+msgid "SIP and HTML5/WebRTC endpoints (`mod_sofia`, `mod_verto`)"
+msgstr "SIP 与 HTML5/WebRTC 端点（`mod_sofia`、`mod_verto`）"
+
+#: ../../03-tech-stack.md:15 c2abb30908454717bc39d7cc42ec6ab5
+msgid "Runtime"
+msgstr "运行时"
+
+#: ../../03-tech-stack.md:15 a4d0a5de9c79417394e6ba852e16a40a
+msgid "C11-era C + pthreads; some C++ modules"
+msgstr "C11 时代的 C + pthreads；部分 C++ 模块"
+
+#: ../../03-tech-stack.md:15 93e4454057d3404fbe9ede9d0f2131d2
+msgid "Core, modules, Windows service"
+msgstr "核心、模块、Windows 服务"
+
+#: ../../03-tech-stack.md:15 7401572a40014b2cb9a0b0dd8dbf130c
+msgid "Media"
+msgstr "媒体"
+
+#: ../../03-tech-stack.md:15 6224b047aabd44288d56f7e09d5068aa
+msgid ""
+"RTP (`src/switch_rtp.c`), Cisco libSRTP 2.4.0, Opus, SpeexDSP, SpanDSP, "
+"libvpx 1.12.0"
+msgstr ""
+"RTP（`src/switch_rtp.c`）、Cisco libSRTP 2.4.0、Opus、SpeexDSP、SpanDSP、libvpx "
+"1.12.0"
+
+#: ../../03-tech-stack.md:15 9b952f90538646e7a3a412935b745f87
+msgid "Real-time audio/video, SRTP, fax/modem, VP8/VP9"
+msgstr "实时音视频、SRTP、传真/调制解调器、VP8/VP9"
+
+#: ../../03-tech-stack.md:15 d85d216745d642f3aa7485b08ad2d584
+msgid "Control plane"
+msgstr "控制面"
+
+#: ../../03-tech-stack.md:15 9eaa90acc30848d89c6ba6b733773bee
+msgid "ESL (`libs/esl`) + `mod_event_socket`"
+msgstr "ESL（`libs/esl`）+ `mod_event_socket`"
+
+#: ../../03-tech-stack.md:15 36c4cb0f5d59440bb89f4203e0138654
+msgid "Out-of-process API; `fs_cli`"
+msgstr "进程外 API；`fs_cli`"
+
+#: ../../03-tech-stack.md:15 8e55bf595de3473090e42d0ec1561548
+msgid "Config"
+msgstr "配置"
+
+#: ../../03-tech-stack.md:15 cf26e4dd66e24380a6cfedeaa5e0e051
+msgid "XML + preprocessor"
+msgstr "XML + 预处理器"
+
+#: ../../03-tech-stack.md:15 9d20402ea31741ee8caca6d18b8044dd
+msgid "Dialplan, directory, profiles — not compiled constants"
+msgstr "拨号计划、号码簿、配置文件——不是编译期常量"
+
+#: ../../03-tech-stack.md:15 b02ffcca94dd4a3ebc399d387461b847
+msgid "Storage"
+msgstr "存储"
+
+#: ../../03-tech-stack.md:15 830661caf81d4f87bc8582117c02899e
+msgid "SQLite `>= 3.6.20` (core); optional PostgreSQL / MariaDB `>= 3.0.9`"
+msgstr "SQLite `>= 3.6.20`（核心）；可选 PostgreSQL / MariaDB `>= 3.0.9`"
+
+#: ../../03-tech-stack.md:15 48383d581d4c46f7a82c88386356a920
+msgid "Scoreboard, voicemail/CDR backends"
+msgstr "记分板、语音信箱/CDR 后端"
+
+#: ../../03-tech-stack.md:15 70bcc1b083844855b56eb03fad14ac23
+msgid "Build"
+msgstr "构建"
+
+#: ../../03-tech-stack.md:15 2ce366ae121f4fc4a922dc866a338dda
+msgid "Autotools (autoconf `>= 2.59`, automake `>= 1.7`, libtool `>= 1.5.14`)"
+msgstr "Autotools（autoconf `>= 2.59`、automake `>= 1.7`、libtool `>= 1.5.14`）"
+
+#: ../../03-tech-stack.md:15 557b7c35967344b1a3234807c3e186f8
+msgid "Unix; Windows via `Freeswitch.2017.sln`"
+msgstr "Unix；Windows 通过 `Freeswitch.2017.sln`"
+
+#: ../../03-tech-stack.md:15 42a1681c572149c59d3cdc9bed88d94c
+msgid "Testing"
+msgstr "测试"
+
+#: ../../03-tech-stack.md:15 aededeea526e4b64ace2bb9e66367f80
+msgid "FCTX macros in `src/include/test/switch_fct.h` via `switch_test.h`"
+msgstr "`src/include/test/switch_fct.h` 中的 FCTX 宏，经由 `switch_test.h`"
+
+#: ../../03-tech-stack.md:15 320ca08650b941a8a06c3c3e3fce0014
+msgid "`tests/unit/` Autotools programs"
+msgstr "`tests/unit/` 下的 Autotools 程序"
+
+#: ../../03-tech-stack.md:15 0aafb69db1ab474c848ac14c2aee50be
+msgid "Docs PKB"
+msgstr "文档 PKB"
+
+#: ../../03-tech-stack.md:15 8bdd01305e854216b1b86d0e059c18f5
+msgid "Sphinx + MyST + sphinx-intl (`man/pyproject.toml`, Python `^3.10`)"
+msgstr "Sphinx + MyST + sphinx-intl（`man/pyproject.toml`，Python `^3.10`）"
+
+#: ../../03-tech-stack.md:15 328d5182a05747b0971dccb428158f75
+msgid "This knowledge base only — not linked into `freeswitch`"
+msgstr "仅用于本知识库——不链接进 `freeswitch`"
+
+#: ../../03-tech-stack.md:42 71ac0609e71e4665802fe544def9329f
+msgid "Main Languages and Frameworks"
+msgstr "主要语言与框架"
+
+#: ../../03-tech-stack.md:44 5b30d180003944c78d9f3340122f4211
+msgid ""
+"**Primary language**: C (core `src/switch_*.c`, most modules). Public API is"
+" `src/include/switch.h`."
+msgstr "**主语言**：C（核心 `src/switch_*.c`、大多数模块）。公开 API 为 `src/include/switch.h`。"
+
+#: ../../03-tech-stack.md:45 b31b5ba8c85c4b3cb720ab9dcc96e3a3
+msgid ""
+"**Secondary languages**: C++ (`src/switch_cpp.cpp`, `mod_v8`, `mod_opal`, "
+"`mod_cv`, `mod_mariadb` headers); Lua (`mod_lua`, tries luajit then lua "
+"5.3/5.2/5.1); Python 3 (`mod_python3`); JavaScript via V8 (`mod_v8`); Perl, "
+"Java, C# (`mod_managed`)."
+msgstr ""
+"**次要语言**：C++（`src/switch_cpp.cpp`、`mod_v8`、`mod_opal`、`mod_cv`、`mod_mariadb`"
+" 头文件）；Lua（`mod_lua`，先试 luajit 再试 lua 5.3/5.2/5.1）；Python 3（`mod_python3`）；经由"
+" V8 的 JavaScript（`mod_v8`）；Perl、Java、C#（`mod_managed`）。"
+
+#: ../../03-tech-stack.md:46 74822e1d61d941ceb0ee48e424314dae
+msgid ""
+"**Primary “framework”**: FreeSWITCH module ABI (`SWITCH_MODULE_DEFINITION`, "
+"`switch_loadable_module_interface`) — not a web framework."
+msgstr ""
+"**主要“框架”**：FreeSWITCH 模块 "
+"ABI（`SWITCH_MODULE_DEFINITION`、`switch_loadable_module_interface`）——不是 Web "
+"框架。"
+
+#: ../../03-tech-stack.md:47 cdecf063bec24769bd983e9fc760041d
+msgid ""
+"**Build tool**: GNU Autotools (`bootstrap.sh` → `configure` → `make`). "
+"Historical `src/CMakeLists.txt` (CMake 2.6 comment) is not the CI path. "
+"macOS CI uses Homebrew; Linux CI uses Debian **bookworm** / **trixie** "
+"images (`.github/workflows/`)."
+msgstr ""
+"**构建工具**：GNU Autotools（`bootstrap.sh` → `configure` → `make`）。历史遗留的 "
+"`src/CMakeLists.txt`（CMake 2.6 注释）不是 CI 路径。macOS CI 使用 Homebrew；Linux CI 使用 "
+"Debian **bookworm** / **trixie** 镜像（`.github/workflows/`）。"
+
+#: ../../03-tech-stack.md:49 032f1112a3024265a5dd13101451dc40
+msgid "Key Dependencies"
+msgstr "关键依赖"
+
+#: ../../03-tech-stack.md:51 86dcac5defbf41a39dd12dac4b388a3a
+msgid ""
+"Minimum versions are **configure floors**. Distro packages may be newer. "
+"Out-of-tree deps are **not** in this git tree."
+msgstr "最低版本是 **configure 下限**。发行版软件包可能更新。树外依赖**不**在本 git 树中。"
+
+#: ../../03-tech-stack.md:15 d19f4ebd5af54d8ba94ce71c976ee1d4
+msgid "Package"
+msgstr "软件包"
+
+#: ../../03-tech-stack.md:15 fabf07229f074913b4ec693793be391f
+msgid "Area"
+msgstr "领域"
+
+#: ../../03-tech-stack.md:15 fc642b58476b45968c5b0532866f4a26
+msgid "Why it matters"
+msgstr "为何重要"
+
+#: ../../03-tech-stack.md:15 783b748ee0694485bb712017c1e4a990
+msgid "Evidence"
+msgstr "依据"
+
+#: ../../03-tech-stack.md:15 71feec087ebb4b34bb37b40b8ae053e7
+msgid "Sofia-SIP `sofia-sip-ua >= 1.13.18`"
+msgstr "Sofia-SIP `sofia-sip-ua >= 1.13.18`"
+
+#: ../../03-tech-stack.md:15 d6bd796fed8e4900ab37de57cee61c74
+msgid "SIP"
+msgstr "SIP"
+
+#: ../../03-tech-stack.md:15 7ea5ce19a1584412aeba09258ae90c98
+msgid "`mod_sofia`; CI clones `freeswitch/sofia-sip`"
+msgstr "`mod_sofia`；CI 克隆 `freeswitch/sofia-sip`"
+
+#: ../../03-tech-stack.md:15 081baa8a3e5540a29c47fd07c2050c7e
+#: 278c524f1d9b4e73894483c9864acd5a 3413668d30b3403897d3d4d35fa556e2
+#: 69185925e54b4d0daf26a7144f5d3ae7 729e5846ba5e4ab48a184d0891902d66
+#: 819418f5d6934f1f9be36e2c847d27cf 8eff18d300ba4f13be39716f4dea35a9
+#: 936a9363bb054811b36c38507e229507 97d230753c9b4c2194edcdc82c19d74e
+#: a5c7f5adaeb744ee858473a70bce1bc3 b54079fce3be4eb1b65d85642b8dfdd2
+#: b72496b0c8a14c4d91104f2d1b564d6d c3144bc168f34896b83a8f40bbd1e7e7
+#: c602ef01a3654c8ba9d4f9c6b022b1af c795d49fada04de1912851a623671389
+#: e7d6b51aa4f5491bbbcc79843be9195f
+msgid "`configure.ac`"
+msgstr "`configure.ac`"
+
+#: ../../03-tech-stack.md:15 91ba4a66f0414ee89cb42fed05dbbed3
+msgid "SpanDSP `>= 3.1.1`"
+msgstr "SpanDSP `>= 3.1.1`"
+
+#: ../../03-tech-stack.md:15 9ed5776c641343d1bace4f0d796e297d
+msgid "DSP / fax / some codecs"
+msgstr "DSP / 传真 / 部分编解码器"
+
+#: ../../03-tech-stack.md:15 e3d562de7cb944488abe1b202ecb9750
+msgid "`mod_spandsp`; hard error if missing"
+msgstr "`mod_spandsp`；缺失则硬错误"
+
+#: ../../03-tech-stack.md:15 2074355226e24139818448e5ecd6f326
+msgid "libks2 `>= 2.0.11` or libks `>= 1.8.2`"
+msgstr "libks2 `>= 2.0.11` or libks `>= 1.8.2`"
+
+#: ../../03-tech-stack.md:15 b0df0c61355e4c2a9777a87175eca52d
+msgid "KS runtime"
+msgstr "KS 运行时"
+
+#: ../../03-tech-stack.md:15 2d4563a422cd4df18632d629178ce70c
+msgid "Required if `mod_verto` or `mod_signalwire` enabled"
+msgstr "启用 `mod_verto` 或 `mod_signalwire` 时必需"
+
+#: ../../03-tech-stack.md:15 983df65c21f24ffd8c63184bb38d35fe
+msgid "signalwire_client2 `>= 2.0.0` or signalwire_client `>= 1.0.0`"
+msgstr "signalwire_client2 `>= 2.0.0` or signalwire_client `>= 1.0.0`"
+
+#: ../../03-tech-stack.md:15 0d56a5656b504ec78337add0ad0d0d51
+msgid "Cloud pairing"
+msgstr "云端配对"
+
+#: ../../03-tech-stack.md:15 a058ffc093304334b8ddc420a7214cf6
+msgid "`mod_signalwire`"
+msgstr "`mod_signalwire`"
+
+#: ../../03-tech-stack.md:15 109da63f604d40f59b44d1fc3d408374
+msgid "OpenSSL `>= 1.0.1e`"
+msgstr "OpenSSL `>= 1.0.1e`"
+
+#: ../../03-tech-stack.md:15 a7d30fe37b1049979d94cbdd7d529c93
+msgid "TLS / DTLS-SRTP"
+msgstr "TLS / DTLS-SRTP"
+
+#: ../../03-tech-stack.md:15 6a96c869b50b46bfa0f843d740c96f74
+msgid "`SAC_OPENSSL`; `SSL_CTX_set_tlsext_use_srtp`, `DTLSv1_method`"
+msgstr "`SAC_OPENSSL`; `SSL_CTX_set_tlsext_use_srtp`, `DTLSv1_method`"
+
+#: ../../03-tech-stack.md:15 7f22adbaf28449d4811063fa771fecfd
+msgid "SQLite `>= 3.6.20`"
+msgstr "SQLite `>= 3.6.20`"
+
+#: ../../03-tech-stack.md:15 5fa7aa615f2d4a0c961909da52e34c92
+msgid "Core DB"
+msgstr "核心数据库"
+
+#: ../../03-tech-stack.md:15 a2304c4311584bba89acf4eb7e8ad196
+msgid "`sqlite3_initialize()` in `switch_core_init`"
+msgstr "`sqlite3_initialize()` in `switch_core_init`"
+
+#: ../../03-tech-stack.md:15 bdd71b3ca05f420cab4deb37b9a3f5a4
+msgid "`configure.ac`, `src/switch_core.c`"
+msgstr "`configure.ac`, `src/switch_core.c`"
+
+#: ../../03-tech-stack.md:15 449c9e1c20bf411fa798afb217b8a4a8
+msgid "PCRE2 `libpcre2-8 >= 10.00`"
+msgstr "PCRE2 `libpcre2-8 >= 10.00`"
+
+#: ../../03-tech-stack.md:15 bc0cc908fcf14acda056172aa114847b
+msgid "Regex"
+msgstr "正则表达式"
+
+#: ../../03-tech-stack.md:15 bd50c6901ae44be2b4cbdefac52ffdc9
+msgid "Dialplan / XML matching"
+msgstr "拨号计划 / XML 匹配"
+
+#: ../../03-tech-stack.md:15 8c173b37385649fea4e3cd987092a2d3
+msgid "libcurl `>= 7.19`"
+msgstr "libcurl `>= 7.19`"
+
+#: ../../03-tech-stack.md:15 b75108151a2145bd8900fd8adedceb79
+msgid "HTTP"
+msgstr "HTTP"
+
+#: ../../03-tech-stack.md:15 62f447c045f243e7be210fcb60891966
+msgid "`mod_xml_curl`, `mod_http_cache`, core CURL"
+msgstr "`mod_xml_curl`, `mod_http_cache`, core CURL"
+
+#: ../../03-tech-stack.md:15 ecdc9249d0ec4215b4b2892f10f16fb9
+msgid "libedit `>= 2.11`"
+msgstr "libedit `>= 2.11`"
+
+#: ../../03-tech-stack.md:15 8a7e53bc42dd463d93edf9dcf381d0da
+msgid "Console"
+msgstr "控制台"
+
+#: ../../03-tech-stack.md:15 d19abf1f4489480d90559f355bf21f48
+msgid "CLI line editing; `--disable-core-libedit-support` to skip"
+msgstr "CLI 行编辑；`--disable-core-libedit-support` 可跳过"
+
+#: ../../03-tech-stack.md:15 2aa9cd46293240b98e7c9294ca469978
+msgid "zlib"
+msgstr "zlib"
+
+#: ../../03-tech-stack.md:15 90b86cb96c7748fcb1120529b9adaa7d
+msgid "Compression"
+msgstr "压缩"
+
+#: ../../03-tech-stack.md:15 655d965bd55c452faee24718b3b377d6
+#: 9914bb5c390a4abdaaa3cb7efc69091f
+msgid "Hard error if missing"
+msgstr "缺失则硬错误"
+
+#: ../../03-tech-stack.md:15 56b863cb466b453ea945491bb9045bd1
+msgid "libjpeg"
+msgstr "libjpeg"
+
+#: ../../03-tech-stack.md:15 d18544ecc6d6420db4ce76de2bd5bb15
+msgid "Images"
+msgstr "图像"
+
+#: ../../03-tech-stack.md:15 56d6bb042f40487a8da703b726bc55fd
+msgid "Speex / SpeexDSP `>= 1.2rc1`"
+msgstr "Speex / SpeexDSP `>= 1.2rc1`"
+
+#: ../../03-tech-stack.md:15 18eb8709f4574001b0b7f4c82ca64c8d
+#: 91f44d252cea4df9904ff8505b20709b
+msgid "Audio"
+msgstr "音频"
+
+#: ../../03-tech-stack.md:15 d63d9cabce984bfcaed1e358c40c3868
+msgid "Core codecs / AGC"
+msgstr "核心编解码器 / AGC"
+
+#: ../../03-tech-stack.md:15 20c0684674d64dfd8e10006ced47b3f5
+msgid "Opus `>= 1.1`"
+msgstr "Opus `>= 1.1`"
+
+#: ../../03-tech-stack.md:15 ceee23e9549b4cbe8ea755099f744a4f
+msgid "`mod_opus`"
+msgstr "`mod_opus`"
+
+#: ../../03-tech-stack.md:15 a00d9f880cd04cffbfb8e2fd2fcd11c0
+msgid "libsndfile `>= 1.0.20`"
+msgstr "libsndfile `>= 1.0.20`"
+
+#: ../../03-tech-stack.md:15 a605802e25294114a7cc0ef6192c25c8
+msgid "Files"
+msgstr "文件"
+
+#: ../../03-tech-stack.md:15 fe605f4a073842b2aaab1c22dedf9276
+msgid "`mod_sndfile`"
+msgstr "`mod_sndfile`"
+
+#: ../../03-tech-stack.md:15 cc53015f6075445b949565c030d6a387
+msgid "APR 1.2.8 (forked as `fspr`)"
+msgstr "APR 1.2.8（分叉为 `fspr`）"
+
+#: ../../03-tech-stack.md:15 e73ba4bf08a74b56906ea4ad78a18481
+msgid "Portability"
+msgstr "可移植性"
+
+#: ../../03-tech-stack.md:15 23af56762e9742dfac101df1116a4fb9
+msgid "Bundled `libs/apr` (`fspr_version.h`) unless `SYSTEM_APR`"
+msgstr "捆绑 `libs/apr`（`fspr_version.h`），除非定义 `SYSTEM_APR`"
+
+#: ../../03-tech-stack.md:15 172da5003272457faf76eb8cb06da7a4
+msgid "`libs/apr/include/fspr_version.h`"
+msgstr "`libs/apr/include/fspr_version.h`"
+
+#: ../../03-tech-stack.md:15 6b9cbceca38c4d70b532e2765aa4e35b
+msgid "libSRTP **2.4.0**"
+msgstr "libSRTP **2.4.0**"
+
+#: ../../03-tech-stack.md:15 dc87e7cfa2ce47d99ea3695116314765
+msgid "SRTP"
+msgstr "SRTP"
+
+#: ../../03-tech-stack.md:15 19661e75033a4c9c8e79b1b92088d955
+msgid "Bundled `libs/srtp`"
+msgstr "捆绑 `libs/srtp`"
+
+#: ../../03-tech-stack.md:15 ada24811d8a14ea196880a825aa96ea8
+msgid "`libs/srtp/configure.ac` `AC_INIT`"
+msgstr "`libs/srtp/configure.ac` `AC_INIT`"
+
+#: ../../03-tech-stack.md:15 c8f3b75c57fa44c59a0aeac87548deda
+msgid "libvpx **1.12.0** (“Torrent Duck”)"
+msgstr "libvpx **1.12.0**（“Torrent Duck”）"
+
+#: ../../03-tech-stack.md:15 4848a6f5a2c94289a9cbd07c92065ab1
+msgid "VP8/VP9"
+msgstr "VP8/VP9"
+
+#: ../../03-tech-stack.md:15 6d45e942b1ab4c8da8d8a419fb60bd14
+msgid "Bundled `libs/libvpx`"
+msgstr "捆绑 `libs/libvpx`"
+
+#: ../../03-tech-stack.md:15 eb6a2c096f774441b08970f7b5642383
+msgid "`libs/libvpx/README`"
+msgstr "`libs/libvpx/README`"
+
+#: ../../03-tech-stack.md:15 4eb7248e8ed6424fae41531b805e811e
+msgid "libyuv"
+msgstr "libyuv"
+
+#: ../../03-tech-stack.md:15 484261ec292a4262acfacfb7bce9ddf9
+msgid "Video scale/convert"
+msgstr "视频缩放/转换"
+
+#: ../../03-tech-stack.md:15 4165dd027fa74f72ac9b5275bce8791e
+msgid "Bundled `libs/libyuv`"
+msgstr "捆绑 `libs/libyuv`"
+
+#: ../../03-tech-stack.md:15 62b50cbe7ae84bf79587c2896d67c322
+msgid "`libs/libyuv/README.md`"
+msgstr "`libs/libyuv/README.md`"
+
+#: ../../03-tech-stack.md:15 ddc20e8734a6419f9730c203ad2f7be2
+msgid "PostgreSQL libpq"
+msgstr "PostgreSQL libpq"
+
+#: ../../03-tech-stack.md:15 38dcda92f0b04f2a916bd2a4b69244ef
+#: 65d2d935fac543df85f8dd57bf253446
+msgid "Optional DB"
+msgstr "可选数据库"
+
+#: ../../03-tech-stack.md:15 28c0f76e46f94f9dbed98953ebf11759
+msgid "`mod_pgsql`; `AC_CHECK_LIB([pq])`"
+msgstr "`mod_pgsql`; `AC_CHECK_LIB([pq])`"
+
+#: ../../03-tech-stack.md:15 cf3563fa8c4c402899fb91e0208670f1
+msgid "MariaDB `>= 3.0.9`"
+msgstr "MariaDB `>= 3.0.9`"
+
+#: ../../03-tech-stack.md:15 c8066be5575247f1aafa8e3ad2f8e378
+msgid "`mod_mariadb`"
+msgstr "`mod_mariadb`"
+
+#: ../../03-tech-stack.md:15 014efb3154564d44a3149f5c324acf82
+msgid "FFmpeg libs (avcodec `>= 53.35.0`, avformat, swscale, …)"
+msgstr "FFmpeg 库（avcodec `>= 53.35.0`、avformat、swscale、…）"
+
+#: ../../03-tech-stack.md:15 84de3ec0a5b7429ba73c32a5112e763c
+msgid "Optional A/V"
+msgstr "可选音视频"
+
+#: ../../03-tech-stack.md:15 d6c9dcb9852b481f8ed3aac89db3fc6d
+msgid "`mod_av`"
+msgstr "`mod_av`"
+
+#: ../../03-tech-stack.md:15 2dc6c54fb35c43998c8b26975c4ce254
+msgid "`configure.ac`, `debian/control-modules`"
+msgstr "`configure.ac`, `debian/control-modules`"
+
+#: ../../03-tech-stack.md:15 bc40f9a9f3244b6cba715e4935a4403b
+msgid "Python 3"
+msgstr "Python 3"
+
+#: ../../03-tech-stack.md:15 d467caa5ca284b7dbcde2515db2e2566
+msgid "Embedded scripts"
+msgstr "嵌入式脚本"
+
+#: ../../03-tech-stack.md:15 aef72f20f2564a5c82506a9992795f73
+msgid "`mod_python3`; version taken from `python3 -V` at configure"
+msgstr "`mod_python3`；版本在 configure 时取自 `python3 -V`"
+
+#: ../../03-tech-stack.md:78 2e39cb6e97b2409b813ae4f3a57b049b
+msgid ""
+"Optional/module-only floors also exist for mpg123, shout, AMR, codec2, "
+"flite, mongoc, memcached, AMQP `librabbitmq >= 0.5.2`, pocketsphinx `>= 5`, "
+"OpenCV, VLC, ImageMagick, and others in `configure.ac` — enable the matching"
+" `modules.conf` line or the check is skipped."
+msgstr ""
+"mpg123、shout、AMR、codec2、flite、mongoc、memcached、AMQP `librabbitmq >= "
+"0.5.2`、pocketsphinx `>= 5`、OpenCV、VLC、ImageMagick 以及 `configure.ac` "
+"中的其他库也有可选/仅模块下限——启用对应的 `modules.conf` 行，否则检查会被跳过。"
+
+#: ../../03-tech-stack.md:80 b38c1ac036fc4fecab7f1a713a1251f8
+msgid "Runtime Interaction Model"
+msgstr "运行时交互模型"
+
+#: ../../03-tech-stack.md:82 752578a701cb43c787896bd43977c270
+msgid ""
+"**Signaling** (Sofia/Verto) accepts a call and asks the core for a "
+"`switch_core_session_t`."
+msgstr "**信令**（Sofia/Verto）接受呼叫并向核心请求 `switch_core_session_t`。"
+
+#: ../../03-tech-stack.md:83 5ed8b678f7314674a0777a45cae0090a
+msgid ""
+"**Core** runs the channel state machine; **XML dialplan** "
+"(`mod_dialplan_xml`) picks applications."
+msgstr "**核心**运行通道状态机；**XML 拨号计划**（`mod_dialplan_xml`）选择应用。"
+
+#: ../../03-tech-stack.md:84 ae5047ca06b84e0b999e4f15d2c546b7
+msgid ""
+"**Applications** (dptools, conference, …) bridge or play media; **codecs** "
+"and **libSRTP/OpenSSL** handle RTP."
+msgstr ""
+"**应用**（dptools、conference、…）桥接或播放媒体；**编解码器**和 **libSRTP/OpenSSL** 处理 RTP。"
+
+#: ../../03-tech-stack.md:85 2b9961d85d774430ba0c7e1e01d99283
+msgid ""
+"**Events** go to the in-process bus; **ESL** clients and CDR modules consume"
+" them. **SQLite** holds core scoreboard unless `-nosql`."
+msgstr "**事件**进入进程内总线；**ESL** 客户端和 CDR 模块消费它们。除非 `-nosql`，**SQLite** 保存核心记分板。"
+
+#: ../../03-tech-stack.md:87 fbac4f912ac44ad6aac3d37bfde0970e
+msgid ""
+"Layers do **not** talk over HTTP internally. The process is the unit of "
+"composition; DSOs register interface tables."
+msgstr "各层内部**不**通过 HTTP 通信。进程是组合单元；DSO 注册接口表。"
+
+#: ../../03-tech-stack.md:89 9b776b97d89b44b8a7207d87010e0483
+msgid "Build and Packaging Notes"
+msgstr "构建与打包说明"
+
+#: ../../03-tech-stack.md:91 6de7a5dc25594c25bd6a614406a790cd
+msgid ""
+"**Local development**: `./bootstrap.sh -j && ./configure --prefix=... && "
+"make && make install` ([Quick Start](01-quick-start.md)). Debug: `./devel-"
+"bootstrap.sh`."
+msgstr ""
+"**本地开发**：`./bootstrap.sh -j && ./configure --prefix=... && make && make "
+"install`（[快速入门](01-quick-start.md)）。调试：`./devel-bootstrap.sh`。"
+
+#: ../../03-tech-stack.md:92 542f70c7a03042c988048f14afc39706
+#, python-brace-format
+msgid ""
+"**CI**: `.github/workflows/ci.yml` (Debian bookworm-amd64 base "
+"`signalwire/freeswitch-public-ci-base`), `macos.yml` (Homebrew + "
+"`signalwire/homebrew-signalwire/{libks2,signalwire-c2,spandsp}`), "
+"`windows.yml`, `scan-build.yml` (clang-14)."
+msgstr ""
+"**CI**：`.github/workflows/ci.yml`（Debian bookworm-amd64 基础镜像 "
+"`signalwire/freeswitch-public-ci-base`）、`macos.yml`（Homebrew + "
+"`signalwire/homebrew-"
+"signalwire/{libks2,signalwire-c2,spandsp}`）、`windows.yml`、`scan-"
+"build.yml`（clang-14）。"
+
+#: ../../03-tech-stack.md:93 b085f22b68f54df4ab95f91a48055355
+msgid ""
+"**Production / distro**: Debian packages via FSGET/FSDEB "
+"(`scripts/packaging/`); module `Build-Depends` in `debian/control-modules` "
+"(Bookworm vs Trixie ffmpeg package names differ). Docker packaged images "
+"need a SignalWire token (`docker/master/Dockerfile`); source image recipe is"
+" `docker/examples/Debian11/Dockerfile`."
+msgstr ""
+"**生产 / 发行版**：通过 FSGET/FSDEB 打 Debian 包（`scripts/packaging/`）；模块 `Build-"
+"Depends` 在 `debian/control-modules`（Bookworm 与 Trixie 的 ffmpeg 包名不同）。Docker "
+"打包镜像需要 SignalWire token（`docker/master/Dockerfile`）；源码镜像配方为 "
+"`docker/examples/Debian11/Dockerfile`。"
+
+#: ../../03-tech-stack.md:94 05b5b19d8847418e83ab60741f74050a
+msgid ""
+"**Windows**: Visual Studio 2017 solution `Freeswitch.2017.sln`, projects "
+"under `w32/`."
+msgstr ""
+"**Windows**：Visual Studio 2017 解决方案 `Freeswitch.2017.sln`，工程在 `w32/` 下。"
+
+#: ../../03-tech-stack.md:96 143c420b487743a3a078dbc38f896053
+msgid "Docs tooling (not in the switch binary)"
+msgstr "文档工具（不在交换机二进制中）"
+
+#: ../../03-tech-stack.md:98 7737aeef97134699b9ef10e1b6e6daab
+msgid ""
+"`man/pyproject.toml` / `man/requirements.txt`: Python `^3.10`, Sphinx `>=7`,"
+" myst-parser, sphinx-rtd-theme, sphinx-intl, sphinxcontrib-mermaid. Used "
+"only to build this PKB."
+msgstr ""
+"`man/pyproject.toml` / `man/requirements.txt`：Python `^3.10`、Sphinx "
+"`>=7`、myst-parser、sphinx-rtd-theme、sphinx-intl、sphinxcontrib-mermaid。仅用于构建本 "
+"PKB。"
+
+#: ../../03-tech-stack.md:100 02d55d2c488b45ae99c11ed0bdead492
+msgid "Common Misconceptions"
+msgstr "常见误解"
+
+#: ../../03-tech-stack.md:15 3f5de44a2ead4ccf9412b5fcefa355e4
+msgid "Misconception"
+msgstr "误解"
+
+#: ../../03-tech-stack.md:15 8d1547f37bfd49f98a0064bff04ce0e5
+msgid "Reality in this repo"
+msgstr "本仓库中的实际情况"
+
+#: ../../03-tech-stack.md:15 8387425945034dd9987dcc1c14696cbb
+msgid "FreeSWITCH is a Node/Java/Go service"
+msgstr "FreeSWITCH 是 Node/Java/Go 服务"
+
+#: ../../03-tech-stack.md:15 c738528204d44d7b8bd98cd972cbfbb1
+msgid "It is a C process with optional language modules"
+msgstr "它是带可选语言模块的 C 进程"
+
+#: ../../03-tech-stack.md:15 c0bdbbc96f8d4ce6b8352c1d214a7df4
+msgid "Sofia-SIP / SpanDSP / libks live in `libs/`"
+msgstr "Sofia-SIP / SpanDSP / libks 位于 `libs/`"
+
+#: ../../03-tech-stack.md:15 c7d7dec99d1d4a99a6531ed84d384379
+msgid "They are **external**; CI and Docker clone and install them first"
+msgstr "它们是**外部**依赖；CI 和 Docker 会先克隆并安装"
+
+#: ../../03-tech-stack.md:15 c14c27ee200e401da0cb430accf3fc81
+msgid "`src/CMakeLists.txt` is how you build"
+msgstr "`src/CMakeLists.txt` 就是构建方式"
+
+#: ../../03-tech-stack.md:15 366720a144a147508e7a8223b2a0c715
+msgid "Autotools is the supported Unix path; CMake file is historical"
+msgstr "Autotools 才是受支持的 Unix 路径；CMake 文件是历史遗留"
+
+#: ../../03-tech-stack.md:15 62458314bc5a4988a13d79857c6c46de
+msgid "`man/pyproject.toml` is a product dependency"
+msgstr "`man/pyproject.toml` 是产品依赖"
+
+#: ../../03-tech-stack.md:15 8a6130b804b741cd817b55ff51cc9307
+msgid "It is Sphinx for documentation only"
+msgstr "它只是用于文档的 Sphinx"
+
+#: ../../03-tech-stack.md:15 273f217b8d2d43fe9af55026a7cbed79
+msgid "`build/` is a CMake output directory"
+msgstr "`build/` 是 CMake 输出目录"
+
+#: ../../03-tech-stack.md:15 9851657054e8421d91dd1a14eb0b3bee
+msgid "It is Autotools helper sources (`modules.conf.in`, config macros)"
+msgstr "它是 Autotools 辅助源（`modules.conf.in`、配置宏）"
+
+#: ../../03-tech-stack.md:15 c8c85bc5e289485f9ab82aa1d8f588df
+msgid "SQLite is optional for a default core"
+msgstr "默认核心中 SQLite 是可选的"
+
+#: ../../03-tech-stack.md:15 0ea3ef999c854c568f1b5f8f4284b6f2
+msgid ""
+"Core calls `sqlite3_initialize()` at init; `-nosql` only disables the "
+"internal SQL scoreboard"
+msgstr "核心在初始化时调用 `sqlite3_initialize()`；`-nosql` 只禁用内部 SQL 记分板"
+
+#: ../../03-tech-stack.md:15 88cd32775b24477da9a4880615d74a93
+msgid "One `modules.conf`"
+msgstr "只有一份 `modules.conf`"
+
+#: ../../03-tech-stack.md:15 d2984ea895264f4c9b45e82d65ac67d8
+msgid ""
+"Build-time `modules.conf` vs runtime `autoload_configs/modules.conf.xml` "
+"([Architecture](02-architecture.md))"
+msgstr ""
+"构建时 `modules.conf` vs 运行时 "
+"`autoload_configs/modules.conf.xml`（[架构](02-architecture.md)）"
+
+#: ../../03-tech-stack.md:112 d8a91d8382c84ca0b673428b5264891c
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../03-tech-stack.md:114 97ecfa0e76494161ac7c9c623caa362d
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../03-tech-stack.md:115 889014f905014f78a64a58b2cfce7a7a
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../03-tech-stack.md:116 1c7047f3146d42078fee38d1d000feaa
+msgid "[Quick Start](01-quick-start.md)"
+msgstr "[快速入门](01-quick-start.md)"
+
+#: ../../03-tech-stack.md:117 2c90fd374b8c4834ba5037fbbae298bf
+msgid "[Build](08-build.md)"
+msgstr "[构建](08-build.md)"
