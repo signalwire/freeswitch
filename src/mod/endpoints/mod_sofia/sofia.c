@@ -1630,6 +1630,8 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_r_info:
 		break;
 	case nua_r_unregister:
+		sofia_reg_handle_sip_r_unregister(status, phrase, nua, profile, nh, sofia_private, sip, de, tags);
+		break;
 	case nua_r_unsubscribe:
 	case nua_i_terminated:
 	case nua_r_publish:

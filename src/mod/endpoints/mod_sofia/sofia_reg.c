@@ -140,6 +140,16 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 	if (gateway_ptr->state == REG_STATE_REGED || gateway_ptr->state == REG_STATE_UNREGISTER) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
+
+		/*
+		 * nua_unregister() is asynchronous. Keep the handle and its private
+		 * data bound while an explicit gateway unregister is in progress so a
+		 * 401/407 challenge can be answered by nua_authenticate(). The final
+		 * nua_r_unregister callback owns their cleanup.
+		 */
+		if (gateway_ptr->state == REG_STATE_UNREGISTER) {
+			return;
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Destroying registration handle for %s\n", gateway_ptr->name);
 	}
@@ -441,8 +451,13 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_UNREGISTER:
 			sofia_reg_kill_reg(gateway_ptr);
-			gateway_ptr->state = REG_STATE_DOWN;
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
+			if (gateway_ptr->nh) {
+				gateway_ptr->reg_timeout = now + gateway_ptr->reg_timeout_seconds;
+				gateway_ptr->state = REG_STATE_TRYING;
+			} else {
+				gateway_ptr->state = REG_STATE_DOWN;
+			}
 			break;
 		case REG_STATE_UNREGED:
 			gateway_ptr->retry = 0;
@@ -2673,6 +2688,43 @@ void sofia_reg_handle_sip_r_register(int status,
 		sofia_reg_release_gateway(gateway);
 	}
 
+}
+
+void sofia_reg_handle_sip_r_unregister(int status,
+									   char const *phrase,
+									   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								   sofia_dispatch_event_t *de,
+									   tagi_t tags[])
+{
+	sofia_gateway_t *gateway = NULL;
+
+	if (status < 200) {
+		return;
+	}
+
+	if (sofia_private && !zstr(sofia_private->gateway_name)) {
+		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
+	}
+
+	if (gateway && gateway->nh == nh) {
+		gateway->nh = NULL;
+		gateway->sofia_private = NULL;
+		gateway->reg_timeout = 0;
+		gateway->state = REG_STATE_DOWN;
+		gateway->status = SOFIA_GATEWAY_DOWN;
+		sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
+	}
+
+	if (gateway) {
+		sofia_reg_release_gateway(gateway);
+	}
+
+	/* The callback owns the NUA handle, but defer destruction to the common
+	 * callback cleanup below so it cannot use a freed nh or sofia_private. */
+	if (sofia_private) {
+		sofia_private->destroy_nh = 1;
+		sofia_private->destroy_me = 1;
+	}
 }
 
 void sofia_reg_handle_sip_r_challenge(int status,

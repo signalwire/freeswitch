@@ -1055,6 +1055,11 @@ void sofia_reg_handle_sip_r_register(int status,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de,
 									 tagi_t tags[]);
+void sofia_reg_handle_sip_r_unregister(int status,
+									   char const *phrase,
+									   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
+								   sofia_dispatch_event_t *de,
+									   tagi_t tags[]);
 void sofia_handle_sip_i_options(int status, char const *phrase, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
 								sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
