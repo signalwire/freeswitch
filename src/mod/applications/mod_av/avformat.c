@@ -627,10 +627,10 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 		c->width    = mst->width;
 		c->height   = mst->height;
 		c->bit_rate = mm->vb * 1024;
-		mst->st->time_base.den = 90000;
+		mst->st->time_base.den = (codec_id == AV_CODEC_ID_MPEG4 ? 48000 : 90000);
 		mst->st->time_base.num = 1;
-		c->time_base.den = 90000;
-		c->time_base.num = 1;
+		c->time_base.den = mst->st->time_base.den;
+		c->time_base.num = mst->st->time_base.num;
 		c->gop_size      = fps * 10; /* emit one intra frame every 10 frames at most */
 		c->pix_fmt       = AV_PIX_FMT_YUV420P;
 		//c->thread_count  = threads;
