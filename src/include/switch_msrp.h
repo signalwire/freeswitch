@@ -31,6 +31,7 @@
 
 #ifndef _MSRP_H
 #define _MSRP_H
+#define MY_EVENT_MSRP_RECV_MESSAGE "MSRP::RECV_MESSAGE"
 
 #include <switch.h>
 
@@ -64,7 +65,6 @@ typedef enum {
 
 	MSRP_H_UNKNOWN
 } switch_msrp_header_type_t;
-
 typedef struct switch_msrp_session_s switch_msrp_session_t;
 typedef struct msrp_client_socket_s switch_msrp_client_socket_t;
 typedef struct msrp_socket_s switch_msrp_socket_t;
@@ -135,6 +135,7 @@ SWITCH_DECLARE(void) switch_msrp_load_apis_and_applications(switch_loadable_modu
 SWITCH_DECLARE(const char*) switch_msrp_msg_get_header(switch_msrp_msg_t *msrp_msg, switch_msrp_header_type_t htype);
 SWITCH_DECLARE(switch_status_t) switch_msrp_msg_add_header(switch_msrp_msg_t *msrp_msg, switch_msrp_header_type_t htype, char *fmt, ...);
 SWITCH_DECLARE(void) switch_msrp_msg_set_payload(switch_msrp_msg_t *msrp_msg, const char *buf, switch_size_t payload_bytes);
+SWITCH_DECLARE(void) switch_msrp_msg_generate_event(switch_msrp_msg_t *msrp_msg);
 SWITCH_DECLARE(char*) switch_msrp_header_name(switch_msrp_header_type_t htype);
 SWITCH_DECLARE(switch_msrp_msg_t *) switch_msrp_msg_dup(switch_msrp_msg_t *msg);
 
