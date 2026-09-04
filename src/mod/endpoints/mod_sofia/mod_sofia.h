@@ -415,6 +415,7 @@ struct mod_sofia_globals {
 	const char *stir_shaken_vs_ca_dir;
 	int stir_shaken_vs_cert_path_check;
 	int stir_shaken_vs_require_date;
+	int global_db_lock;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
