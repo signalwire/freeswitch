@@ -1585,14 +1585,35 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (msg->string_array_arg[0]) {
 			tech_pvt->proxy_refer_uuid = (char *)msg->string_array_arg[0];
 		} else if (!switch_channel_var_true(tech_pvt->channel, "sip_refer_continue_after_reply")) {
+			uint32_t refer_notify_timeout = tech_pvt->profile->refer_notify_timeout;
+			const char *timeout_var;
+
+			if (refer_notify_timeout < 1) {
+				refer_notify_timeout = SOFIA_DEFAULT_REFER_NOTIFY_TIMEOUT;
+			}
+			if ((timeout_var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_notify_timeout")) && !zstr(timeout_var)) {
+				int v = atoi(timeout_var);
+				if (v >= 1) {
+					refer_notify_timeout = (uint32_t)v;
+				}
+			}
+
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
 			switch_core_session_unlock_codec_write(session);
-			sofia_wait_for_reply(tech_pvt, 9999, 10);
+			sofia_wait_for_reply(tech_pvt, 9999, refer_notify_timeout);
 			switch_core_session_lock_codec_write(session);
 			switch_mutex_lock(tech_pvt->sofia_mutex);
 
 			if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
 				msg->string_reply = switch_core_session_strdup(session, var);
+			} else if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_status_code"))) {
+				int refer_status = atoi(var);
+
+				if (refer_status >= 200 && refer_status != 202) {
+					msg->string_reply = switch_core_session_sprintf(session, "SIP/2.0 %d", refer_status);
+				} else {
+					msg->string_reply = "no reply";
+				}
 			} else {
 				msg->string_reply = "no reply";
 			}
@@ -3093,6 +3114,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					}
 					stream->write_function(stream, "CNG              \t%d\n", profile->cng_pt);
 					stream->write_function(stream, "SESSION-TO       \t%d\n", profile->session_timeout);
+					stream->write_function(stream, "REFER-NOTIFY-TO  \t%d\n", profile->refer_notify_timeout);
 					stream->write_function(stream, "MAX-DIALOG       \t%d\n", profile->max_proceeding);
 					stream->write_function(stream, "MAX-RECV-RPS     \t%d\n", profile->max_recv_requests_per_second);
 					stream->write_function(stream, "NOMEDIA          \t%s\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
@@ -3393,6 +3415,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					}
 					stream->write_function(stream, "    <cng>%d</cng>\n", profile->cng_pt);
 					stream->write_function(stream, "    <session-to>%d</session-to>\n", profile->session_timeout);
+					stream->write_function(stream, "    <refer-notify-to>%d</refer-notify-to>\n", profile->refer_notify_timeout);
 					stream->write_function(stream, "    <max-dialog>%d</max-dialog>\n", profile->max_proceeding);
 					stream->write_function(stream, "    <max-recv-rps>%d</max-recv-rps>\n", profile->max_recv_requests_per_second);
 					stream->write_function(stream, "    <nomedia>%s</nomedia>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
