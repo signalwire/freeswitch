@@ -28,6 +28,7 @@
  * Bret McDanel <bret AT 0xdecafbad dot com>
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Christopher M. Rienzo <chris@rienzo.com>
+ * Stephane Alnet <stephane@shimaore.net>
  *
  * switch_ivr_async.c -- IVR Library (async operations)
  *
@@ -37,6 +38,7 @@
 #include "private/switch_core_pvt.h"
 #include <speex/speex_preprocess.h>
 #include <speex/speex_echo.h>
+#include <switch_simd.h>
 
 struct switch_ivr_dmachine_binding {
 	char *digits;
@@ -832,17 +834,21 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			len = rframe->samples;
 
 			if (dh->mux) {
-				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+				SWITCH_ALIGN int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				int16_t *fp = rframe->data;
 				uint32_t x;
 
 				st = switch_core_file_read(&dh->fh, buf, &len);
 
+#ifdef SIMD
+				SIMD_mux_sln(fp, buf, (uint32_t) len * dh->fh.channels);
+#else
 				for (x = 0; x < (uint32_t) len * dh->fh.channels; x++) {
 					int32_t mixed = fp[x] + buf[x];
 					switch_normalize_to_16bit(mixed);
 					fp[x] = (int16_t) mixed;
 				}
+#endif
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				if (len < rframe->samples) {
@@ -933,17 +939,21 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			len = rframe->samples;
 
 			if (dh->mux) {
-				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+				SWITCH_ALIGN int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				int16_t *fp = rframe->data;
 				uint32_t x;
 
 				st = switch_core_file_read(&dh->fh, buf, &len);
 
+#ifdef SIMD
+				SIMD_mux_sln(fp, buf, (uint32_t) len * dh->fh.channels);
+#else
 				for (x = 0; x < (uint32_t) len * dh->fh.channels; x++) {
 					int32_t mixed = fp[x] + buf[x];
 					switch_normalize_to_16bit(mixed);
 					fp[x] = (int16_t) mixed;
 				}
+#endif
 
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
@@ -2298,7 +2308,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_channel_t *tchannel = switch_core_session_get_channel(tsession);
 		switch_frame_t *read_frame, write_frame = { 0 };
 		switch_codec_t codec = { 0 };
-		int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
+		SWITCH_ALIGN int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
 		uint32_t tlen;
 		const char *macro_name = "eavesdrop_announce";
 		const char *id_name = NULL;

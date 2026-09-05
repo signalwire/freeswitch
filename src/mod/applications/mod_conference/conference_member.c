@@ -35,11 +35,13 @@
  * Seven Du <dujinfang@gmail.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  * William King <william.king@quentustech.com>
+ * Stephane Alnet <stephane@shimaore.net>
  *
  * mod_conference.c -- Software Conference Bridge
  *
  */
 #include <mod_conference.h>
+#include <switch_simd.h>
 
 int conference_member_noise_gate_check(conference_member_t *member)
 {
@@ -550,7 +552,7 @@ void conference_member_check_channels(switch_frame_t *frame, conference_member_t
 void conference_member_add_file_data(conference_member_t *member, int16_t *data, switch_size_t file_data_len)
 {
 	switch_size_t file_sample_len;
-	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+	SWITCH_ALIGN int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 
 	switch_mutex_lock(member->fnode_mutex);
@@ -618,14 +620,18 @@ void conference_member_add_file_data(conference_member_t *member, int16_t *data,
 					conference_al_process(member->fnode->al, file_frame, file_sample_len * 2, member->conference->rate);
 				}
 
-				for (i = 0; i < (int)file_sample_len * member->conference->channels; i++) {
-					if (member->fnode->mux) {
+				if (member->fnode->mux) {
+#ifdef SIMD
+					SIMD_mux_sln(data, file_frame, (int)file_sample_len * member->conference->channels);
+#else
+					for (i = 0; i < (int)file_sample_len * member->conference->channels; i++) {
 						sample = data[i] + file_frame[i];
 						switch_normalize_to_16bit(sample);
 						data[i] = (int16_t)sample;
-					} else {
-						data[i] = file_frame[i];
 					}
+#endif
+				} else {
+					memcpy(data, file_frame, (int)file_sample_len * member->conference->channels * sizeof(int16_t));
 				}
 
 			}
