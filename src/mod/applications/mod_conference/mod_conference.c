@@ -433,7 +433,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 		}
 
 		/* Start auto recording if there's the minimum number of required participants. */
-		if (conference->auto_record && !conference->auto_recording && (conference->count >= conference->min_recording_participants)) {
+		if (conference->auto_record && !conference->auto_recording && (conference->count >= conference->min_recording_participants) && !conference_utils_test_flag(conference, CFLAG_RECORD_WAIT_MOD)) {
 			conference->auto_recording++;
 			conference->record_count++;
 			imember = conference->members;
@@ -1173,6 +1173,10 @@ void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, i
 
 	if (conference_utils_test_flag(conference, CFLAG_WAIT_MOD)) {
 		switch_xml_set_attr_d(x_conference, "wait_mod", "true");
+	}
+
+	if (conference_utils_test_flag(conference, CFLAG_RECORD_WAIT_MOD)) {
+		switch_xml_set_attr_d(x_conference, "record_wait_mod", "true");
 	}
 
 	if (conference_utils_test_flag(conference, CFLAG_AUDIO_ALWAYS)) {
