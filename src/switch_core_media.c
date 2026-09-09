@@ -5126,7 +5126,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					restore_pmaps(a_engine);
 					fmatch = 0;
 
-					goto t38_done;
+					goto done;
 				} else {
 					switch_t38_options_t *t38_options = switch_core_media_process_udptl(session, sdp, m);
 					const char *var = switch_channel_get_variable(channel, "t38_passthru");
@@ -6418,8 +6418,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	} else {
 		switch_channel_clear_flag(channel, CF_IMAGE_SDP);
 	}
-
- t38_done:
 
 	if (parser) {
 		sdp_parser_free(parser);
