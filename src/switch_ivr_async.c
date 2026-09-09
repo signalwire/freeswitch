@@ -1629,7 +1629,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-					len = (switch_size_t) frame.datalen / 2;
+					len = (switch_size_t) frame.datalen / 2 / frame.channels;
 
 					if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
