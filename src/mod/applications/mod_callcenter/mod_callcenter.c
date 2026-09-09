@@ -200,11 +200,18 @@ static char members_sql[] =
 "   skill_score      INTEGER NOT NULL DEFAULT 0,\n"
 "   serving_agent    VARCHAR(255),\n"
 "   serving_system   VARCHAR(255),\n"
-"   state	     VARCHAR(255)\n" ");\n";
+"   state	     VARCHAR(255),\n"
 /* Member State
    Waiting
    Answered
  */
+"   KEY uuid (uuid),\n"
+"   KEY joined_epoch (joined_epoch),\n"
+"   KEY base_score (base_score),\n"
+"   KEY skill_score (skill_score),\n"
+"   KEY serving_system (serving_system),\n"
+"   KEY state_serving_agent (state,serving_agent)\n"
+");\n";
 
 static char agents_sql[] =
 "CREATE TABLE agents (\n"
@@ -239,7 +246,11 @@ static char agents_sql[] =
 "   calls_answered  INTEGER NOT NULL DEFAULT 0,\n"
 "   talk_time  INTEGER NOT NULL DEFAULT 0,\n"
 "   ready_time INTEGER NOT NULL DEFAULT 0,\n"
-"   external_calls_count INTEGER NOT NULL DEFAULT 0\n"
+"   external_calls_count INTEGER NOT NULL DEFAULT 0,\n"
+"   KEY name (name),\n"
+"   KEY status (status),\n"
+"   KEY state (state),\n"
+"   KEY instance_id (instance_id)\n"
 ");\n";
 
 static char tiers_sql[] =
@@ -257,7 +268,12 @@ static char tiers_sql[] =
    Offering
  */
 "   level    INTEGER NOT NULL DEFAULT 1,\n"
-"   position INTEGER NOT NULL DEFAULT 1\n" ");\n";
+"   position INTEGER NOT NULL DEFAULT 1,\n"
+"   KEY level (level),\n"
+"   KEY position (position),\n"
+"   KEY agent (agent),\n"
+"   KEY queue (queue)\n"
+");\n";
 
 static switch_xml_config_int_options_t config_int_0_86400 = { SWITCH_TRUE, 0, SWITCH_TRUE, 86400 };
 
