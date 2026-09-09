@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <libsndfileVersion>1.0.28.1.fda9c8d</libsndfileVersion>
+    <libsndfileVersion>1.2.2</libsndfileVersion>
   </PropertyGroup>
   <PropertyGroup>
     <libsndfileVersionImported>true</libsndfileVersionImported>
