@@ -2161,6 +2161,8 @@ static void our_sofia_event_callback(nua_event_t event,
 
 			if (tech_pvt && (tech_pvt->nh == nh)) {
 				tech_pvt->nh = NULL;
+				/* Sofia private is allocated from nh's pool.  If it will be destroyed, we need to clear it */
+				tech_pvt->sofia_private = NULL;
 			}
 
 			nua_handle_destroy(nh);
