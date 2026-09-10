@@ -62,6 +62,147 @@ FST_TEST_BEGIN(benchmark)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(url_encode_double_encode)
+{
+	static const struct {
+		const char *in;
+		const char *plain;
+		const char *doubled;
+		const char *rule;
+	} cases[] = {
+		{ "ABCD",     "ABCD",        "ABCD",        "nothing unsafe is copied through unchanged" },
+		{ "50% off",  "50%25%20off", "50%25%20off", "a '%' without two hex digits after it is encoded either way" },
+		{ "50%20off", "50%20off",    "50%2520off",  "a '%' with two hex digits after it is the case the modes differ on" },
+		{ "x%22y",    "x%22y",       "x%2522y",     "an encoded quote is either passed through or protected" },
+		{ "abc%2",    "abc%252",     "abc%252",     "too few characters follow the '%' for it to be an escape" },
+		{ "%2a",      "%252a",       "%252a",       "only uppercase hex counts as an existing escape" }
+	};
+	char plain[64];
+	char doubled[64];
+	char msg[192];
+
+	for (int i = 0; i < (int) (sizeof(cases) / sizeof(cases[0])); i++) {
+		switch_url_encode_opt(cases[i].in, plain, sizeof(plain), SWITCH_FALSE);
+		switch_url_encode_opt(cases[i].in, doubled, sizeof(doubled), SWITCH_TRUE);
+
+		switch_snprintf(msg, sizeof(msg), "[%s] without double_encode: %s", cases[i].in, cases[i].rule);
+		fst_xcheck(!strcmp(plain, cases[i].plain), msg);
+
+		switch_snprintf(msg, sizeof(msg), "[%s] with double_encode: %s", cases[i].in, cases[i].rule);
+		fst_xcheck(!strcmp(doubled, cases[i].doubled), msg);
+	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(url_encode_opt_output_bounds)
+{
+	/* The 0xAA sentinel across the destination catches any write outside the region the
+	   encode call is allowed to touch. */
+	char guarded[32];
+	const char *all_unsafe = "\"\"\"";
+
+	/* Every input character encodes to three bytes, so a buffer of strlen * 3 + 1 is the
+	   smallest that holds the result and its terminator. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	switch_url_encode_opt(all_unsafe, guarded, strlen(all_unsafe) * 3 + 1, SWITCH_FALSE);
+	fst_check_string_equals(guarded, "%22%22%22");
+	fst_xcheck(guarded[9] == '\0', "the terminator must land right after the last encoded byte");
+	for (int i = 10; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == (char) 0xAA, "encode must not write past the terminator");
+	}
+
+	/* One byte short of that, the last group does not fit and the output stops early
+	   rather than overrunning. */
+	memset(guarded, 0xAA, sizeof(guarded));
+	switch_url_encode_opt(all_unsafe, guarded, strlen(all_unsafe) * 3, SWITCH_FALSE);
+	fst_check_string_equals(guarded, "%22%22");
+	for (int i = 7; i < (int) sizeof(guarded); i++) {
+		fst_xcheck(guarded[i] == (char) 0xAA, "a bounded encode must not write past the terminator");
+	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(url_encoded_json_body_round_trip)
+{
+	/* Mirrors how a CDR body is assembled: each value may be URL encoded, the document is
+	   serialized, the whole body is URL encoded, and the receiver decodes it once. The two
+	   cases differ only in where the %XX inside the value comes from. */
+	static const struct {
+		const char *value;
+		switch_bool_t encode_value;
+		const char *rule;
+	} cases[] = {
+		{ "\"6140\" <sip:6140@203.0.113.10>;tag=x", SWITCH_TRUE,  "value encoded by the value layer" },
+		{ "x%22y",                                  SWITCH_FALSE, "value holding percent-hex text of its own" }
+	};
+	char stored[512];
+	char body[4096];
+	char decoded[4096];
+	char msg[192];
+	cJSON *json = NULL;
+	cJSON *parsed = NULL;
+	char *json_text = NULL;
+
+	for (int i = 0; i < (int) (sizeof(cases) / sizeof(cases[0])); i++) {
+		if (cases[i].encode_value) {
+			switch_url_encode(cases[i].value, stored, sizeof(stored));
+		} else {
+			switch_set_string(stored, cases[i].value);
+		}
+
+		json = cJSON_CreateObject();
+		cJSON_AddItemToObject(json, "v", cJSON_CreateString(stored));
+		json_text = cJSON_PrintUnformatted(json);
+		if (!json_text) {
+			switch_snprintf(msg, sizeof(msg), "failed to serialize the document for a %s", cases[i].rule);
+			fst_fail(msg);
+			goto url_encoded_json_body_round_trip_done;
+		}
+
+		/* double_encode protects the escapes in the value, so one decode returns the document
+		   unchanged and the value keeps its own text. */
+		switch_url_encode_opt(json_text, body, sizeof(body), SWITCH_TRUE);
+		switch_set_string(decoded, body);
+		switch_url_decode(decoded);
+		switch_snprintf(msg, sizeof(msg), "a double encoded body must decode back to the document: %s", cases[i].rule);
+		fst_xcheck(!strcmp(decoded, json_text), msg);
+
+		parsed = cJSON_Parse(decoded);
+		switch_snprintf(msg, sizeof(msg), "a double encoded body must parse after one decode: %s", cases[i].rule);
+		fst_xcheck(parsed != NULL, msg);
+		if (parsed) {
+			switch_snprintf(msg, sizeof(msg), "the value must survive unchanged: %s", cases[i].rule);
+			fst_xcheck(!strcmp(cJSON_GetObjectCstr(parsed, "v"), stored), msg);
+			cJSON_Delete(parsed);
+			parsed = NULL;
+		}
+
+		/* Without it the single decode reaches into the value as well, and the document no
+		   longer parses. */
+		switch_url_encode_opt(json_text, body, sizeof(body), SWITCH_FALSE);
+		switch_set_string(decoded, body);
+		switch_url_decode(decoded);
+		switch_snprintf(msg, sizeof(msg), "a singly encoded body must not decode back to the document: %s", cases[i].rule);
+		fst_xcheck(strcmp(decoded, json_text), msg);
+
+		parsed = cJSON_Parse(decoded);
+		switch_snprintf(msg, sizeof(msg), "a singly encoded body must not survive one decode: %s", cases[i].rule);
+		fst_xcheck(parsed == NULL, msg);
+		cJSON_Delete(parsed);
+		parsed = NULL;
+
+		cJSON_Delete(json);
+		json = NULL;
+		switch_safe_free(json_text);
+	}
+
+url_encoded_json_body_round_trip_done:
+	cJSON_Delete(parsed);
+	cJSON_Delete(json);
+	switch_safe_free(json_text);
+}
+FST_TEST_END()
+
 FST_TEST_BEGIN(b64)
 {
     switch_size_t size;
