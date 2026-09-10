@@ -59,7 +59,6 @@
 
 #define ROUTE_MAX_HEADERS 20
 #define ROUTE_ENCODED_HEADER_MAX_CHARS (1024 * 3)
-#define MAX_CODEC_CHECK_FRAMES 50
 #define MAX_MISMATCH_FRAMES 5
 #define MODNAME "mod_sofia"
 #define SOFIA_DEFAULT_CONTACT_USER MODNAME
@@ -698,6 +697,7 @@ struct sofia_profile {
 	unsigned int mflags;
 	unsigned int ndlb;
 	unsigned int mndlb;
+	int32_t max_codec_check_frames;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	uint32_t max_auth_validity;
