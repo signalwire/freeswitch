@@ -625,11 +625,17 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 
 	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
-	if (sip->sip_content_type &&
-		sip->sip_content_type->c_type && sip->sip_payload && sip->sip_payload->pl_data && !strcasecmp(sip->sip_event->o_type, "refer")) {
-		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", sip->sip_content_type->c_type);
-			switch_event_add_body(s_event, "%s", sip->sip_payload->pl_data);
+	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
+		if (sip->sip_content_type &&
+			sip->sip_content_type->c_type && sip->sip_payload && sip->sip_payload->pl_data) {
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", sip->sip_content_type->c_type);
+				switch_event_add_body(s_event, "%s", sip->sip_payload->pl_data);
+			}
+		} else if (sip->sip_subscription_state && sip->sip_subscription_state->ss_substate) {
+			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", "message/sipfrag;version=2.0");
+			}
 		}
 	}
 
@@ -689,6 +695,13 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 					}
 				} else if (status_val < 200) {
 					switch_channel_set_variable_printf(channel, "sip_refer_target_provisional_status_code", "%d", status_val);
+				}
+			} else if (sip->sip_subscription_state && sip->sip_subscription_state->ss_substate &&
+					   switch_stristr("terminated", sip->sip_subscription_state->ss_substate)) {
+				switch_channel_set_variable(channel, "sip_refer_target_status_code", "503");
+				switch_channel_set_variable(channel, "sip_refer_reply", "SIP/2.0 503 Refer subscription terminated\r\n");
+				if ((int)tech_pvt->want_event == 9999) {
+					tech_pvt->want_event = 0;
 				}
 			}
 		}
@@ -1441,6 +1454,19 @@ static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_h
 
 	if (status < 200) {
 		return;
+	}
+
+	/* Final direct REFER responses (not 202 Accepted) unblock uuid_deflect. NOTIFY
+	 * sipfrag may still arrive for 202; peers that answer REFER with 4xx/5xx directly
+	 * only set sip_refer_status_code unless we synthesize sip_refer_reply here. */
+	if (status != SIP_202_ACCEPTED && (int)tech_pvt->want_event == 9999) {
+		char sipfrag[256];
+		const char *reason = zstr(phrase) ? "" : phrase;
+
+		switch_snprintf(sipfrag, sizeof(sipfrag), "SIP/2.0 %d %s", status, reason);
+		switch_channel_set_variable_printf(channel, "sip_refer_target_status_code", "%d", status);
+		switch_channel_set_variable(channel, "sip_refer_reply", sipfrag);
+		tech_pvt->want_event = 0;
 	}
 
 	if (tech_pvt->proxy_refer_uuid && (other_session = switch_core_session_locate(tech_pvt->proxy_refer_uuid))) {
@@ -4635,6 +4661,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 					profile->dtmf_duration = 100;
 					profile->rtp_digit_delay = 40;
+					profile->refer_notify_timeout = SOFIA_DEFAULT_REFER_NOTIFY_TIMEOUT;
 					profile->sip_force_expires = 0;
 					profile->sip_force_expires_min = 0;
 					profile->sip_force_expires_max = 0;
@@ -5306,6 +5333,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
 							profile->session_timeout = v_session_timeout;
+						}
+					} else if (!strcasecmp(var, "refer-notify-timeout") && !zstr(val)) {
+						int v_refer_notify_timeout = atoi(val);
+						if (v_refer_notify_timeout >= 1) {
+							profile->refer_notify_timeout = (uint32_t)v_refer_notify_timeout;
 						}
 					} else if (!strcasecmp(var, "max-proceeding") && !zstr(val)) {
 						int v_max_proceeding = atoi(val);
