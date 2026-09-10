@@ -285,6 +285,14 @@ void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, v
 			switch_event_fire(&event);
 		}
 
+		if (rec->autorec) {
+			/* The conference loop starts auto recording again as soon as auto_recording drops back to
+			 * 0, so leaving auto_record set here would spin the thread up again on every pass. Disable
+			 * it the same way conference_record_stop() does when auto recording is stopped by hand. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Auto Recording Disabled, could not open [%s]\n", rec->path);
+			conference->auto_record = 0;
+		}
+
 		goto end;
 	}
 
