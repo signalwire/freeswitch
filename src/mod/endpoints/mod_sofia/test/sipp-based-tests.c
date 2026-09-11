@@ -128,7 +128,7 @@ static void unregister_gw(void)
 
 static int start_sipp_uac(const char *ip, int remote_port, const char *dialed_number, const char *scenario_uac, const char *extra)
 {
-	char *cmd = switch_mprintf("sipp %s:%d -nr -p 5062 -m 1 -s %s -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, remote_port, dialed_number, scenario_uac, extra);
+	char *cmd = switch_mprintf("sipp %s:%d -nr -p 5062 -m 1 -s %s -recv_timeout 30000 -timeout 30s -sf %s -bg %s", ip, remote_port, dialed_number, scenario_uac, extra);
 	int sys_ret = switch_system(cmd, SWITCH_TRUE);
 
 	printf("%s\n", cmd);
@@ -140,7 +140,7 @@ static int start_sipp_uac(const char *ip, int remote_port, const char *dialed_nu
 
 static int start_sipp_uas(const char *ip, int listen_port, const char *scenario_uas, const char *extra)
 {
-	char *cmd = switch_mprintf("sipp %s -p %d -nr -m 1 -s 1001 -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, listen_port, scenario_uas, extra);
+	char *cmd = switch_mprintf("sipp %s -p %d -nr -m 1 -s 1001 -recv_timeout 30000 -timeout 30s -sf %s -bg %s", ip, listen_port, scenario_uas, extra);
 	int sys_ret = switch_system(cmd, SWITCH_TRUE);
 
 	printf("%s\n", cmd);
@@ -151,7 +151,7 @@ static int start_sipp_uas(const char *ip, int listen_port, const char *scenario_
 }
 static int run_sipp(const char *ip, int remote_port, int listen_port, const char *dialed_number, const char *scenario_uac, const char *auth_password, const char *extra)
 {
-	char *cmd = switch_mprintf("sipp %s:%d -nr -p %d -m 1 -s %s -recv_timeout 10000 -timeout 10s -sf %s -au %s -ap %s -bg %s", ip, remote_port, listen_port, dialed_number, scenario_uac, dialed_number, auth_password, extra);
+	char *cmd = switch_mprintf("sipp %s:%d -nr -p %d -m 1 -s %s -recv_timeout 30000 -timeout 30s -sf %s -au %s -ap %s -bg %s", ip, remote_port, listen_port, dialed_number, scenario_uac, dialed_number, auth_password, extra);
 	int sys_ret = switch_system(cmd, SWITCH_TRUE);
 
 	printf("%s\n", cmd);
@@ -216,6 +216,8 @@ static void event_handler_reg_fail(switch_event_t *event)
 	show_event(event);
 }
 
+switch_interval_time_t delay_start_ms = 5000;
+
 FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 {
 	FST_MODULE_BEGIN(mod_sofia, uac-uas)
@@ -224,6 +226,13 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 		{
 			switch_stream_handle_t stream = { 0 };
 			SWITCH_STANDARD_STREAM(stream);
+
+			/* Give mod_sofia time to spinup profile threads */
+			if (delay_start_ms) {
+				switch_sleep(delay_start_ms * 1000);
+				delay_start_ms = 0;
+			}
+
 			switch_api_execute("sofia", "global siptrace on", NULL, &stream);
 			if (test_sofia_debug) {
 				switch_api_execute("sofia", "loglevel all 9", NULL, &stream);
@@ -366,10 +375,10 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 
 		FST_TEST_BEGIN(uac_digest_leak_udp)
 		{
-			switch_core_session_t *session;
+			switch_core_session_t *session = NULL;
 			switch_call_cause_t cause;
 			switch_status_t status;
-			switch_channel_t *channel;
+			switch_channel_t *channel = NULL;
 			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
 			int sipp_ret;
 
@@ -397,30 +406,25 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 						}
 					}
 
-					switch_sleep(5000 * 1000);
-
-					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-
-					switch_core_session_rwunlock(session);
-					switch_sleep(1000 * 1000);
-
-					switch_event_unbind_callback(event_handler);
 					/* sipp should timeout, attempt kill, just in case.*/
 					kill_sipp();
 					fst_check(test_success);
 				}
 			}
 
+			if (channel) switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (session) switch_core_session_rwunlock(session);
+			switch_event_unbind_callback(event_handler);
 			test_success = 0;
 		}
 		FST_TEST_END()
 
 		FST_TEST_BEGIN(uac_digest_leak_tcp)
 		{
-			switch_core_session_t *session;
+			switch_core_session_t *session = NULL;
 			switch_call_cause_t cause;
 			switch_status_t status;
-			switch_channel_t *channel;
+			switch_channel_t *channel = NULL;
 			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
 			int sipp_ret;
 
@@ -448,29 +452,24 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 					}
 				}
 
-				switch_sleep(5000 * 1000);
-
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-
-				switch_core_session_rwunlock(session);
-				switch_sleep(1000 * 1000);
-
-				switch_event_unbind_callback(event_handler);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				fst_check(test_success);
 			}
 
+			if (channel) switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (session) switch_core_session_rwunlock(session);
+			switch_event_unbind_callback(event_handler);
 			test_success = 0;
 		}
 		FST_TEST_END()
 
 		FST_TEST_BEGIN(uac_digest_leak_udp_ipv6)
 		{
-			switch_core_session_t *session;
+			switch_core_session_t *session = NULL;
 			switch_call_cause_t cause;
 			switch_status_t status;
-			switch_channel_t *channel;
+			switch_channel_t *channel = NULL;
 			const char *local_ip_v6 = switch_core_get_variable("local_ip_v6");
 			int sipp_ret;
 			char *ipv6 = NULL;
@@ -511,20 +510,15 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 					}
 				}
 
-				switch_sleep(5000 * 1000);
-
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-
-				switch_core_session_rwunlock(session);
-				switch_sleep(1000 * 1000);
-
-				switch_event_unbind_callback(event_handler);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				switch_safe_free(ipv6);
 				fst_check(test_success);
 			}
 skiptest:
+			if (channel) switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (session) switch_core_session_rwunlock(session);
+			switch_event_unbind_callback(event_handler);
 			test_success = 0;
 		}
 		FST_TEST_END()
@@ -546,12 +540,12 @@ skiptest:
 
 				switch_sleep(5000 * 1000);
 
-				switch_event_unbind_callback(event_handler_reg_ok);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				fst_check(test_success);
 			}
 
+			switch_event_unbind_callback(event_handler_reg_ok);
 			test_success = 0;
 		}
 		FST_TEST_END()
@@ -571,14 +565,13 @@ skiptest:
 
 				register_gw();
 
-				switch_sleep(5000 * 1000);
+				switch_sleep(10000 * 1000);
 
-				switch_event_unbind_callback(event_handler_reg_fail);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				fst_check(test_success);
 			}
-
+			switch_event_unbind_callback(event_handler_reg_fail);
 			test_success = 0;
 		}
 		FST_TEST_END()
@@ -651,13 +644,12 @@ skiptest:
 
 				switch_sleep(1000 * 1000);
 
-				switch_event_unbind_callback(event_handler_reg_ok);
-
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				fst_check(test_success);
 			}
 
+			switch_event_unbind_callback(event_handler_reg_ok);
 			test_success = 0;
 		}
 		FST_TEST_END()
