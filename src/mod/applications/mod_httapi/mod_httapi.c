@@ -1149,7 +1149,7 @@ static switch_status_t parse_xml(client_t *client)
 		switch_xml_t xml, tag, category;
 
 		if (globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Debugging Return Data:\n%s\n", (char *)bdata);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Debugging Return Data:\n%s\n", (char *)bdata);
 		}
 
 		if ((xml = switch_xml_parse_str((char *)bdata, len))) {
