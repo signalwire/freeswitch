@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "freeswitch-gcs",
+  "private_key_id": "667265657377697463682D676373",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCXiVOV3h61llym\nnpHamUHsuVjrdDiEQnNX1KA4k/kcfP+gqRjL9m3YAxXfUA9GFCIC2OYvdciW3Ggm\nt4CSYmSltljKjbN2JHs7iNQw4CcFfiAXhxL0TYNhNE9wBDOZRsC1Uusv38RPwqwd\n922pAGzF+PqNE2j+zSxlNOnlJfyJDMKrqCGV8CclS+j/u41MaT6cpOlHP6KgaS01\nJJVyaqLpnMLWAx9/5G6Y/YWah+obEyn7yoDva/1Yhlnq20CMHlh3ifDfYYrS9rtp\nhdutz4fESKFPKymlG9aGfFuCME3GP8Rn8ZdPbsAWZ2cf388CLjlxEid1EU8klr2X\n+G1+3di/AgMBAAECggEAHL6UZ9+/5IMWpRZ8JUKgAjbwWo1rsQ7n0TfIgqLzBIfj\nd4bL6NigYnLHYdpOY2UrRG3/T+5gM9mwOfPiBCJ85AAwXI+/hIAMDjF4yqKiVETl\n8oCRRF01uCkTjnSFkyQcJukJKsYf918+hdqq5v1pJK6DXGJbrsWdj78XRPvNKPPD\naEEvSNwdet12Jz9wkmj2g7zg8KMX18v3IUyf7HKjb/cjomB0WuIDfJchDRYlxrfJ\n4DShcIfMi+04C/FFN+vbP77tXQM7O3Z81uqDQAO3k3NoXTTNBZGLP+SOyDUSRZQS\nCNb3J6cwTC737e0M6K+zVP1f03ynuU2u+dHiVVMTtQKBgQDNw/19HSxoJ/5nGHbD\nLW1g33Jm4Nr05lYnetEPS0wkruzEbTy3B6prl34KUslreuUTAuhtFxCLsEgT/sMO\nrxX/OM7RaNUILrpLrzen/eVNeiquM1wLEI52VNkRU5GlTZEJohGE+a3YP+kQTLe5\n8xmzKfJUllyfpXGxDNkryjaeSwKBgQC8iBqDJs6h9tkdxC/XC8+qSJ+WBk5tr3PM\nyx/x1NGKO5TpgdhRr98GYYUhoph+TIp0/8/+d2lVDzO4SAOzms3xnANPEzJcLi7c\nCa8ECOW3S4HhWE61QsbVY5xA83hGAO2WQN22vu9KwhyFU145aSQH0tJrQoevkdBl\ndpqtP15W3QKBgQCsL8gePJ1+g4k2SJiJd6hCGnoncR6JNX7/Bp2PiNktEVx8e1UF\nbNrFsj388Y4v7OVo5VQOhfCIlHmckeI0lXt42dboEivC7ydiUjvmzmZmUUcKA1yQ\nvcgZaaNEBoSoqaInR4IVnsJFZiXoR+qvJqlo7j8lXbYgulfLaw8Iv+y4xQKBgGK6\no6eq2urWajy8UJE9DjMOdQQLqWanSu0kMkZiPJk3OnROGwosH48n4qAKlfEOBDPh\nAvsvbWmt3FfU3ptfphmwqcrvMqAzTzbLm2txfVrPn+RyakViAt4cm+cnmQSP19un\nfHQG6SktHeJ0FhPai5PNQ4QIAyZeJdP8mGPBm5XBAoGBAJWnXiapFMcHi3DgsVb4\n+ni8Qvs293OvsdjHlo2eent/Kwbrdytw/V8uhq9awJb1npdgVd54RrbZ+Jq4x19K\nt06Jz9/EAoLLfL+tqzpEiKvSLjdKpedPm1Cgfj0KTM+MqoSU0bv4gMssnM428luJ\nv5ptWjeaHoYpJzvGfGBouVCI\n-----END PRIVATE KEY-----\n",
+  "client_email": "gcs@freeswitch.com",
+  "client_id": "105862293685176461395",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gcs%40freeswitch.com"
+}
