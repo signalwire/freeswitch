@@ -298,6 +298,10 @@ sofia_transport_t sofia_glue_str2transport(const char *str)
 		return SOFIA_TRANSPORT_SCTP;
 	} else if (!strncasecmp(str, "tls", 3)) {
 		return SOFIA_TRANSPORT_TCP_TLS;
+	} else if (!strncasecmp(str, "wss", 3)) {
+		return SOFIA_TRANSPORT_WSS;
+	} else if (!strncasecmp(str, "ws", 2)) {
+		return SOFIA_TRANSPORT_WS;
 	}
 
 	return SOFIA_TRANSPORT_UNKNOWN;
