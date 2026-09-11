@@ -1977,7 +1977,7 @@ switch_status_t conference_api_sub_write_png(conference_obj_t *conference, switc
 
 	if (conference->canvas_count > 1) {
 		/* pick super canvas */
-		canvas = conference->canvases[conference->canvas_count];
+		canvas = conference->canvases[conference->canvas_count-1];
 	} else {
 		canvas = conference->canvases[0];
 	}
