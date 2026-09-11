@@ -165,11 +165,6 @@ Description: Entropy extraction
  This module extracts entropy from FreeSWITCH and feeds it into
  /dev/random.
 
-Module: applications/mod_redis
-Description: Redis limit backend
- This module provides a mechanism to use Redis as a backend data
- store.
-
 Module: applications/mod_skel
 Description: Adds mod_skel
  Adds mod_skel.
