@@ -581,9 +581,15 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		switch_regex_match_safe_free(match_data);
 		switch_regex_safe_free(re);
 
-		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
-			 (anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE)) || do_break_i == BREAK_ALWAYS) {
-			break;
+		if (switch_xml_child(xcond, "condition") && switch_xml_attr(xexten, "break-from-nested") && switch_false(switch_xml_attr(xexten, "break-from-nested"))) {
+			if ((anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE)) {
+				break;
+			}
+		} else {
+			if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
+				(anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE)) || do_break_i == BREAK_ALWAYS) {
+				break;
+			}
 		}
 
 		if (proceed) {
@@ -595,6 +601,12 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					goto done;
 				}
 			}
+		}
+
+		/* need to recheck this if we didn't break ealier because of break-from-nested */
+		if (((anti_action == SWITCH_FALSE && do_break_i == BREAK_ON_TRUE) ||
+			(anti_action == SWITCH_TRUE && do_break_i == BREAK_ON_FALSE)) || do_break_i == BREAK_ALWAYS) {
+			break;
 		}
 	}
 
