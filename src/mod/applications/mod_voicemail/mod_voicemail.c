@@ -206,6 +206,20 @@ const char * mwi_reason2str(mwi_reason_t state)
 	return str;
 }
 
+switch_status_t vm_file_exists(const char *filename, switch_memory_pool_t *pool)
+{
+	//If filename is a URL, assume it exists
+	if(filename && strstr(filename, "://")) return SWITCH_STATUS_SUCCESS;
+	return switch_file_exists(filename, pool);
+}
+
+switch_status_t vm_dir_make_recursive(const char *path, switch_fileperms_t perm, switch_memory_pool_t *pool)
+{
+	//If path is a url e.g. mod_http_cache, assume success
+	if(path && strstr(path, "://")) return SWITCH_STATUS_SUCCESS;
+	return switch_dir_make_recursive(path, perm, pool);
+}
+
 switch_cache_db_handle_t *vm_get_db_handle(vm_profile_t *profile)
 {
 
@@ -1231,7 +1245,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
 
-		if (switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		if (vm_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			got_file = 1;
 		}
 
@@ -1635,7 +1649,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			memset(&fh, 0, sizeof(fh));
 			cc.fh = &fh;
 			cc.playback_controls_active = 1;
-			if (switch_file_exists(cbt->file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			if (vm_file_exists(cbt->file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
 			}
 			cc.playback_controls_active = 0;
@@ -2644,7 +2658,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 																   profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
 						}
 
-						if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+						if (vm_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
 							goto end;
 						}
@@ -2853,7 +2867,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 								  SWITCH_PATH_SEPARATOR, profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
 	}
 
-	if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool) != SWITCH_STATUS_SUCCESS) {
+	if (vm_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
 		ret = SWITCH_STATUS_FALSE;
 		goto failed;
@@ -2889,7 +2903,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		}
 	}
 
-	if (insert_db && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+	if (insert_db && vm_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
 		switch_event_t *message_event;
 
@@ -2923,7 +2937,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		update_mwi(profile, myid, domain_name, myfolder, MWI_REASON_NEW);
 	}
 
-	if (send_mail && (!zstr(vm_email) || !zstr(vm_notify_email)) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+	if (send_mail && (!zstr(vm_email) || !zstr(vm_notify_email)) && vm_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 		char *from;
 		char *body;
@@ -3141,7 +3155,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
   failed:
 
-	if (!insert_db && file_path && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+	if (!insert_db && file_path && vm_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		if (unlink(file_path) != 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 		}
@@ -3490,7 +3504,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 											   SWITCH_PATH_SEPARATOR, profile->name, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
 	}
 
-	if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (vm_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
 		goto end;
 	}
@@ -3528,11 +3542,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 		switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
 
-		if (switch_file_exists(greet_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		if (vm_file_exists(greet_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			memset(buf, 0, sizeof(buf));
 			TRY_CODE(switch_ivr_play_file(session, NULL, greet_path, &args));
 		} else {
-			if (switch_file_exists(cbt.name_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			if (vm_file_exists(cbt.name_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				memset(buf, 0, sizeof(buf));
 				TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
 			}
@@ -5123,10 +5137,10 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
 		char *final_file_path = switch_core_sprintf(pool, "%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, slot, profile->file_ext);
 
-		switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
+		vm_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
 
 		if (file_path) {
-			if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
+			if (vm_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 				stream->write_function(stream, "-ERR Filename doesn't exist\n");
 				profile_rwunlock(profile);
 				goto done;
@@ -5135,7 +5149,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_greeting_set_function)
 			switch_file_rename(file_path, final_file_path, pool);
 		}
 
-		if (switch_file_exists(final_file_path, pool) == SWITCH_STATUS_SUCCESS) {
+		if (vm_file_exists(final_file_path, pool) == SWITCH_STATUS_SUCCESS) {
 
 			sql = switch_mprintf("SELECT count(*) FROM voicemail_prefs WHERE username = '%q' AND domain = '%q'", id, domain);
 			vm_execute_sql2str(profile, profile->mutex, sql, res, sizeof(res));
@@ -5278,7 +5292,7 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 		goto done;
 	}
 
-	if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
+	if (vm_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "-ERR Filename doesn't exist\n");
 		profile_rwunlock(profile);
 		goto done;
@@ -5295,9 +5309,9 @@ SWITCH_STANDARD_API(vm_fsdb_pref_recname_set_function)
 				profile->name, SWITCH_PATH_SEPARATOR, domain, SWITCH_PATH_SEPARATOR, id);
 		char *final_file_path = switch_core_sprintf(pool, "%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
 
-		switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
+		vm_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, pool);
 
-		if (switch_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
+		if (vm_file_exists(file_path, pool) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "-ERR Filename doesn't exist\n");
 			profile_rwunlock(profile);
 			goto done;
@@ -5827,12 +5841,12 @@ SWITCH_STANDARD_API(vm_fsdb_msg_forward_function)
 		vm_execute_sql_callback(profile, profile->mutex, sql, message_get_callback, &cbt);
 		switch_safe_free(sql);
 		file_path = switch_event_get_header(cbt.my_params, "VM-Message-File-Path");
-		if (file_path && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+		if (file_path && vm_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 			const char *new_file_path = file_path;
 			const char *command = NULL;
 
 
-			if (prepend_file_path && switch_file_exists(prepend_file_path, pool) == SWITCH_STATUS_SUCCESS) {
+			if (prepend_file_path && vm_file_exists(prepend_file_path, pool) == SWITCH_STATUS_SUCCESS) {
 				switch_uuid_t tmp_uuid;
 				char tmp_uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 				const char *test[3] = { NULL };
