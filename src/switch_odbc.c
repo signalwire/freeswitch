@@ -243,7 +243,7 @@ static int db_is_up(switch_odbc_handle_t *handle)
 
 	SQLSetStmtAttr(stmt, SQL_ATTR_QUERY_TIMEOUT, (SQLPOINTER)30, 0);
 
-	if (SQLPrepare(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
+	if (SQLExecDirect(stmt, sql, SQL_NTS) != SQL_SUCCESS) {
 		code = __LINE__;
 		goto error;
 	}
@@ -473,8 +473,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 		goto error;
 	}
 
-	if (SQLPrepare(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
-		err2 = "SQLPrepare failed.";
+	if (SQLExecDirect(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
+		err2 = "SQLExecDirect failed.";
 		goto error;
 	}
 
@@ -572,7 +572,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		goto error;
 	}
 
-	if (SQLPrepare(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
+	if (SQLExecDirect(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
 		x_err = "Unable to prepare SQL statement!";
 		goto error;
 	}
