@@ -3689,6 +3689,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	char *p;
 	uint32_t callsequence;
     sip_cseq_t * cseq;
+	int acl_authenticated = 0;
 
 	if (!sip) {
 		return;
@@ -3731,6 +3732,26 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 
 	event = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_event);
+
+	if (profile->subscribe_acl_count) {
+		char network_ip[80];
+		int network_port;
+		int acl_port;
+		uint32_t x;
+
+		sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+		acl_port = sofia_test_pflag(profile, PFLAG_USE_PORT_FOR_ACL_CHECK) ? network_port : 0;
+
+		for (x = 0; x < profile->subscribe_acl_count; x++) {
+			if (switch_check_network_list_ip_port_token(network_ip, acl_port, profile->subscribe_acl[x], NULL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+								  "SUBSCRIBE from %s:%d approved by subscribe ACL \"%s\". Access Granted.\n",
+								  network_ip, network_port, profile->subscribe_acl[x]);
+				acl_authenticated = 1;
+				break;
+			}
+		}
+	}
 
 	if (to) {
 		to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);
@@ -3775,7 +3796,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 
-	if (!strcmp("as-feature-event", event)) {
+	if (!acl_authenticated && !strcmp("as-feature-event", event)) {
 		sip_authorization_t const *authorization = NULL;
 		auth_res_t auth_res = AUTH_FORBIDDEN;
 		char key[128] = "";
@@ -3805,7 +3826,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
 			goto end;
 		}
-	} else if (sofia_test_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS)) {
+	} else if (!acl_authenticated && sofia_test_pflag(profile, PFLAG_AUTH_SUBSCRIPTIONS)) {
 		sip_authorization_t const *authorization = NULL;
 		auth_res_t auth_res = AUTH_FORBIDDEN;
 		char keybuf[128] = "";

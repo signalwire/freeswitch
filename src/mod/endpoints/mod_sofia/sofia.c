@@ -4693,6 +4693,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					/* you could change profile->foo here if it was a minor change like context or dialplan ... */
 					profile->acl_count = 0;
+					profile->subscribe_acl_count = 0;
 					profile->nat_acl_count = 0;
 					profile->reg_acl_count = 0;
 					profile->proxy_acl_count = 0;
@@ -5748,6 +5749,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SOFIA_MAX_ACL);
+						}
+					} else if (!strcasecmp(var, "apply-subscribe-acl") && !zstr(val)) {
+						if (!strcasecmp(val, "none")) {
+							profile->subscribe_acl_count = 0;
+						} else if (profile->subscribe_acl_count < SOFIA_MAX_ACL) {
+							profile->subscribe_acl[profile->subscribe_acl_count++] = switch_core_strdup(profile->pool, val);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max subscribe acl records of %d reached\n", SOFIA_MAX_ACL);
 						}
 					} else if (!strcasecmp(var, "apply-proxy-acl") && !zstr(val)) {
 						if (!strcasecmp(val,"none")) {
