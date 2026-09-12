@@ -42,6 +42,7 @@ SWITCH_MODULE_DEFINITION(mod_xml_curl, mod_xml_curl_load, mod_xml_curl_shutdown,
 struct xml_binding {
 	char *method;
 	char *url;
+	char *unix_socket_path;
 	char *bindings;
 	char *cred;
 	char *bind_local;
@@ -220,6 +221,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_handle = switch_curl_easy_init();
 		headers = switch_curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 
+		if (binding->unix_socket_path) {
+			curl_easy_setopt(curl_handle, CURLOPT_UNIX_SOCKET_PATH, binding->unix_socket_path);
+		}
+
 		if (!strncasecmp(binding->url, "https", 5)) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
@@ -367,6 +372,7 @@ static switch_status_t do_config(void)
 	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag; binding_tag = binding_tag->next) {
 		char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
 		char *url = NULL;
+		char *bind_unix_socket_path = NULL;
 		char *bind_local = NULL;
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
@@ -397,6 +403,8 @@ static switch_status_t do_config(void)
 				if (val) {
 					url = val;
 				}
+			} else if (!strcasecmp(var, "gateway-unix-socket-path")) {
+				bind_unix_socket_path = val;
 			} else if (!strcasecmp(var, "gateway-credentials")) {
 				bind_cred = val;
 			} else if (!strcasecmp(var, "auth-scheme")) {
@@ -490,6 +498,10 @@ static switch_status_t do_config(void)
 		binding->timeout = timeout;
 		binding->url = switch_core_strdup(globals.pool, url);
 		switch_assert(binding->url);
+
+		if (bind_unix_socket_path) {
+			binding->unix_socket_path = switch_core_strdup(globals.pool, bind_unix_socket_path);
+		}
 
 		if (bind_local != NULL) {
 			binding->bind_local = switch_core_strdup(globals.pool, bind_local);
