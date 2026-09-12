@@ -2528,6 +2528,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   network_port    VARCHAR(6),\n"
 		"   network_ip      VARCHAR(255),\n"
 		"   version         INTEGER DEFAULT 0 NOT NULL,\n"
+		"   notify_cseq     INTEGER DEFAULT 0 NOT NULL,\n"
 		"   orig_proto      VARCHAR(255),\n"
 		"   full_to         VARCHAR(255)\n"
 		");\n";
@@ -2692,6 +2693,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and full_to='XXX'", mod_sofia_globals.hostname);
 
 	switch_cache_db_test_reactive(dbh, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
+	switch_cache_db_test_reactive(dbh, "select notify_cseq from sip_subscriptions", NULL, "alter table sip_subscriptions add column notify_cseq INTEGER default 0");
 
 	free(test_sql);
 	test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and (expires <> -9999 or rpid='' or sip_from_tag='' or rcd > 0)",
