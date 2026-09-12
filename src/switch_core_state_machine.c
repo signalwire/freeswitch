@@ -843,6 +843,9 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	switch_channel_set_timestamps(session->channel);
 	switch_channel_set_callstate(session->channel, CCS_HANGUP);
 
+	/* Export JB stats before hangup handlers run, while JB still exists */
+	switch_core_media_export_jb_stats(session);
+
 	STATE_MACRO(hangup, "HANGUP");
 
 	switch_core_media_set_stats(session);
