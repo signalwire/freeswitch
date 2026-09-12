@@ -1862,6 +1862,11 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
+	if (!member->audio_in_cond && switch_thread_cond_create(&member->audio_in_cond, member->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Input Condition!\n");
+		goto codec_done1;
+	}
+	member->last_audio_in = 0;
 
 	/* Setup an audio buffer for the outgoing audio */
 	if (!member->mux_buffer && switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
