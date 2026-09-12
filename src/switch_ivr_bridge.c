@@ -1201,17 +1201,22 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		}
 
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
+
 			if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_continue_on_cancel"))) {
 				switch_channel_set_state(channel, CS_EXECUTE);
 			} else if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_park_on_cancel"))) {
 				switch_ivr_park_session(session);
-			} else if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			} else if (switch_true(switch_channel_get_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) { /*++RLB  */
+				if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+				}
+			} else {																					/*++RLB hangup_after_bridge false */
+				switch_channel_set_state(channel, CS_EXECUTE);											/*++RLB  */
 			}
 			goto done;
 		}
+
 
 		ready_a = switch_channel_ready(channel);
 		ready_b = switch_channel_ready(other_channel);
@@ -1267,7 +1272,11 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		}
 		
 		if (hup) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			if (switch_true(switch_channel_get_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {	/*++RLB  */
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			} else {																						/*++RLB  */
+				switch_channel_set_state(channel, CS_EXECUTE);												/*++RLB  */
+			}																								/*++RLB  */
 		}
 	}
 
@@ -2167,7 +2176,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 			switch_channel_set_flag(originator_channel, CF_TRANSFER);
 			switch_channel_set_flag(originatee_channel, CF_TRANSFER);
-
 
 			switch_channel_clear_flag(originator_channel, CF_ORIGINATING);
 			switch_channel_clear_flag(originatee_channel, CF_ORIGINATING);
