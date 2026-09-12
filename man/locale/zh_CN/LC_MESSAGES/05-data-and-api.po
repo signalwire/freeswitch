@@ -1,0 +1,1236 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../05-data-and-api.md:1 4d845cf3a7734d5d9425f3965395902a
+msgid "05. Data and API"
+msgstr "05. 数据与 API"
+
+#: ../../05-data-and-api.md:5 344755909e6a4f71b0603c5cf388b814
+msgid ""
+"Contracts in this tree are **not** OpenAPI/REST. Call control is ESL + "
+"console/API strings; config is XML; signaling is SIP or Verto JSON-RPC; the "
+"core scoreboard is SQL. `scripts/extract_api_signatures.py` found no "
+"Tauri/HTTP routes (`man/_generated/05-data-and-api.signatures.generated.md`)"
+" — expected for a C softswitch."
+msgstr ""
+"本树中的契约**不是** OpenAPI/REST。呼叫控制是 ESL + 控制台/API 字符串；配置是 XML；信令是 SIP 或 Verto "
+"JSON-RPC；核心记分板是 SQL。`scripts/extract_api_signatures.py` 未发现 Tauri/HTTP "
+"路由（`man/_generated/05-data-and-api.signatures.generated.md`）——对 C "
+"软交换而言这是预期结果。"
+
+#: ../../05-data-and-api.md:7 9a5df710af1143a48352e4984a6d8fca
+msgid ""
+"Live command list at runtime: `fs_cli -x help` (every `SWITCH_ADD_API` "
+"registration). Dialplan apps: `show applications`. Event names: "
+"`src/include/switch_types.h`."
+msgstr ""
+"运行时实时命令列表：`fs_cli -x help`（每个 `SWITCH_ADD_API` 注册）。拨号计划应用：`show "
+"applications`。事件名：`src/include/switch_types.h`。"
+
+#: ../../05-data-and-api.md:9 53be4e2dde8a4e848b83adeb0700f97e
+msgid "Data Model Overview"
+msgstr "数据模型概览"
+
+#: ../../05-data-and-api.md 8a3a29cf0bc54bf984107e7d9faddcbd
+msgid "Entity"
+msgstr "实体"
+
+#: ../../05-data-and-api.md 9a3d376633e44b35abe1b23e0b5b84b7
+msgid "Purpose"
+msgstr "用途"
+
+#: ../../05-data-and-api.md 9b18415c0d5248529b207099bcdaab45
+msgid "Primary owner"
+msgstr "主要所有者"
+
+#: ../../05-data-and-api.md 0695e559c7bd43f78b9cf30c214d362f
+#: a6cdf2a51eeb48adb427a31cf96e88d0
+msgid "Notes"
+msgstr "备注"
+
+#: ../../05-data-and-api.md d3b6da760429431c954cf3e4ce0cf49d
+msgid "Channel / session"
+msgstr "通道 / 会话"
+
+#: ../../05-data-and-api.md 367eb986bb8943f1a160375a1c4466cd
+msgid "One call leg"
+msgstr "一条呼叫腿"
+
+#: ../../05-data-and-api.md fda31d7379b343ff92f3e8abf6096ebf
+msgid "Core (`switch_core_session_t`, `switch_channel_t`)"
+msgstr "核心（`switch_core_session_t`、`switch_channel_t`）"
+
+#: ../../05-data-and-api.md 2ea41611bc5b4a93a24bf620c0c73e08
+msgid "UUID is the stable id; state `CS_*`, callstate `CCS_*`"
+msgstr "UUID 是稳定标识；状态为 `CS_*`，呼叫状态为 `CCS_*`"
+
+#: ../../05-data-and-api.md 9ea2e788d578470bac310611a010d27a
+msgid "Call"
+msgstr "呼叫"
+
+#: ../../05-data-and-api.md dbeb2321910a4fb6a4dcf6361d28ecc2
+msgid "Pair of legs"
+msgstr "一对呼叫腿"
+
+#: ../../05-data-and-api.md b75689e848344d7a8fd1760969ccbbfb
+msgid "Core SQL `calls`"
+msgstr "核心 SQL `calls`"
+
+#: ../../05-data-and-api.md b343d1b8f0c044bdab5aac4baa640d57
+msgid "`call_uuid`, `caller_uuid`, `callee_uuid`"
+msgstr "`call_uuid`, `caller_uuid`, `callee_uuid`"
+
+#: ../../05-data-and-api.md d7e71627418a4b6e9afb5640fa63b6ca
+msgid "XML user"
+msgstr "XML 用户"
+
+#: ../../05-data-and-api.md 80dee2b72b0e4dc19b60194e8627b4f2
+msgid "SIP/VM credentials + channel vars"
+msgstr "SIP/语音信箱凭据 + 通道变量"
+
+#: ../../05-data-and-api.md 7c34aa77fa5546b6905dbe4433e00db4
+msgid "Directory section"
+msgstr "Directory 段"
+
+#: ../../05-data-and-api.md b49bf06487f34b5c9ba343d4ba3a15da
+msgid ""
+"Vanilla `conf/vanilla/directory/default/1000.xml` (`id`, `password`, `vm-"
+"password`, `user_context`)"
+msgstr ""
+"Vanilla `conf/vanilla/directory/default/1000.xml`（`id`、`password`、`vm-"
+"password`、`user_context`）"
+
+#: ../../05-data-and-api.md 0f20d3c980bf4727b2f47709dd07cdcd
+msgid "XML extension"
+msgstr "XML 分机"
+
+#: ../../05-data-and-api.md 390852a6e39b4986bbe2d084a827f1af
+msgid "Dialplan match + apps"
+msgstr "拨号计划匹配 + 应用"
+
+#: ../../05-data-and-api.md 5008c785311248c182fb8ad1a6883960
+msgid "Dialplan section"
+msgstr "Dialplan 段"
+
+#: ../../05-data-and-api.md f92c747741054e3e8a10bfb309441297
+msgid ""
+"`<context>` / `<extension>` / `<condition>` / `<action application=\"...\">`"
+msgstr ""
+"`<context>` / `<extension>` / `<condition>` / `<action application=\"...\">`"
+
+#: ../../05-data-and-api.md 0df0ecd2570a4907afaf7e6ae8c81b20
+msgid "SIP profile"
+msgstr "SIP 配置文件"
+
+#: ../../05-data-and-api.md cb44742982bb43f38371519288d9dee8
+msgid "Bind, codecs, auth, ACL"
+msgstr "绑定、编解码器、认证、ACL"
+
+#: ../../05-data-and-api.md 5c55e50d1ac04199b827cd684ac46c18
+msgid "`mod_sofia` + `conf/vanilla/sip_profiles/`"
+msgstr "`mod_sofia` + `conf/vanilla/sip_profiles/`"
+
+#: ../../05-data-and-api.md 4b8ad227ec5345039ab6b3456f478042
+msgid "Internal vs external (`auth-calls`)"
+msgstr "内部 vs 外部（`auth-calls`）"
+
+#: ../../05-data-and-api.md 8ae031909bfe406283f78404d23eafd4
+msgid "SIP registration"
+msgstr "SIP 注册"
+
+#: ../../05-data-and-api.md de35cb7dfc4b44fdbe6b3a0d81a47113
+msgid "REGISTER state"
+msgstr "REGISTER 状态"
+
+#: ../../05-data-and-api.md 7421c39f45784febbcdc4daf3ca1f1f9
+msgid "`mod_sofia` table `sip_registrations`"
+msgstr "`mod_sofia` 表 `sip_registrations`"
+
+#: ../../05-data-and-api.md 6477cae9d75f44d0b6b729c4ead866bd
+msgid "Also core `registrations`"
+msgstr "还有核心 `registrations`"
+
+#: ../../05-data-and-api.md 7daa8590154348bd8657bc64d090de38
+msgid "Voicemail message"
+msgstr "语音信箱消息"
+
+#: ../../05-data-and-api.md 57998af21af24748b2ee10123544c0d4
+msgid "Stored VM"
+msgstr "已存储的语音信箱"
+
+#: ../../05-data-and-api.md 5750e93bc6d342cea289c643a0950e46
+msgid "`mod_voicemail` `voicemail_msgs` / `voicemail_prefs`"
+msgstr "`mod_voicemail` `voicemail_msgs` / `voicemail_prefs`"
+
+#: ../../05-data-and-api.md 29e7893c7ba04ae2a1df562abaf9ae51
+msgid "ACD member/agent/tier"
+msgstr "ACD 成员/座席/层级"
+
+#: ../../05-data-and-api.md b6b517d8d2ca4493892b6b9a03ee0b8b
+msgid "Call center"
+msgstr "呼叫中心"
+
+#: ../../05-data-and-api.md 82b584fc91944770a99543d6dbd48edb
+msgid "`mod_callcenter`"
+msgstr "`mod_callcenter`"
+
+#: ../../05-data-and-api.md 0bedec1bc5e74065aa5147e47bcf38ca
+msgid "Limit / db / group rows"
+msgstr "Limit / db / group 行"
+
+#: ../../05-data-and-api.md 7661acee28cf41119a439de2ccd94224
+msgid "Shared counters"
+msgstr "共享计数器"
+
+#: ../../05-data-and-api.md 2a587a3d3ac442bdbff3bd807b1a0229
+msgid "`mod_db`"
+msgstr "`mod_db`"
+
+#: ../../05-data-and-api.md 123c33435802414a9e159630db9bce79
+msgid "Event"
+msgstr "事件"
+
+#: ../../05-data-and-api.md d8b6f7946607419ab98f3d6e9ad22b08
+msgid "In-process notification"
+msgstr "进程内通知"
+
+#: ../../05-data-and-api.md 563103b942ee4da8b33a44e2bae5310e
+msgid "Core event engine"
+msgstr "核心事件引擎"
+
+#: ../../05-data-and-api.md 9a33fe99182644eebbb4ede9e1691394
+msgid "Header bag; `Event-Name` plus channel vars when verbose"
+msgstr "头字段集合；`Event-Name`，在 verbose 时加上通道变量"
+
+#: ../../05-data-and-api.md:24 e158379d2ddc4ca2b2a93275367ddd2d
+msgid "Runtime XML sections (vanilla root `conf/vanilla/freeswitch.xml`):"
+msgstr "运行时 XML 段（vanilla 根配置 `conf/vanilla/freeswitch.xml`）："
+
+#: ../../05-data-and-api.md 35d97e40fa1740f0b8b3a592c98bd672
+msgid "Section"
+msgstr "段"
+
+#: ../../05-data-and-api.md 949276d2af6f434c8ba899bf9d86ce07
+#: 9c89973ae8f44b418f78c74e466e2412
+msgid "Role"
+msgstr "角色"
+
+#: ../../05-data-and-api.md bf226a922f764ccfa5c27ca3e94f710a
+msgid "`configuration`"
+msgstr "`configuration`"
+
+#: ../../05-data-and-api.md 80ed30e462884927a6d610d7f299c2e4
+msgid "`autoload_configs/*.xml` (modules, sofia, ACL, ESL, …)"
+msgstr "`autoload_configs/*.xml`（模块、sofia、ACL、ESL、…）"
+
+#: ../../05-data-and-api.md e9ee90428a5d4513a159157d7a2cb14c
+msgid "`dialplan`"
+msgstr "`dialplan`"
+
+#: ../../05-data-and-api.md 5f31e2631f1a46b993f62107635ee9e3
+msgid "Routing"
+msgstr "路由"
+
+#: ../../05-data-and-api.md 29805b4e3a4a4782986ef6cefeb5d5ee
+msgid "`directory`"
+msgstr "`directory`"
+
+#: ../../05-data-and-api.md 5052e82e6ea04a238447a82577e38753
+msgid "Users / domains (Sofia auth)"
+msgstr "用户 / 域（Sofia 认证）"
+
+#: ../../05-data-and-api.md 3ab5708b8b1a4b9093ee5bf15688adc4
+msgid "`chatplan`"
+msgstr "`chatplan`"
+
+#: ../../05-data-and-api.md 7aea51427e0f48f1a338cfffc73f8fa0
+msgid "IM routing"
+msgstr "IM 路由"
+
+#: ../../05-data-and-api.md df53281cd70f463ab920fd6e46290b75
+msgid "`languages`"
+msgstr "`languages`"
+
+#: ../../05-data-and-api.md fc8435c5aec04a0fa8b0761ffc2a572d
+msgid "Phrase / say XML"
+msgstr "Phrase / say XML"
+
+#: ../../05-data-and-api.md:34 ec0653c1e3f543e2b0bd8325c6535d2b
+#, python-brace-format
+msgid ""
+"Preprocessor: `#include` / `#set` / `X-PRE-PROCESS`. **`$${name}`** expands "
+"during assembly (global, `vars.xml`); **`${name}`** expands at call time on "
+"a channel ([Chapter "
+"3](https://developer.signalwire.com/freeswitch/configuration/xml)). "
+"Flattened file: `$log_dir/freeswitch.xml.fsxml` (typically `$prefix/log/`; "
+"comment in `conf/vanilla/freeswitch.xml`). Do not edit it while running."
+msgstr ""
+"预处理器：`#include` / `#set` / `X-PRE-PROCESS`。**`$${name}`** "
+"在组装时展开（全局，`vars.xml`）；**`${name}`** 在呼叫时对通道展开（[第 3 "
+"章](https://developer.signalwire.com/freeswitch/configuration/xml)）。展平文件：`$log_dir/freeswitch.xml.fsxml`（通常在"
+" `$prefix/log/`；见 `conf/vanilla/freeswitch.xml` 注释）。运行中不要编辑。"
+
+#: ../../05-data-and-api.md:36 2c1114af1a2a4412a7f2f60b64c6aa77
+msgid ""
+"Directory / dialplan / SIP-profile parameter tables: [Users Manual Ch "
+"6](https://developer.signalwire.com/freeswitch/users-and-endpoints/user-"
+"directory), [Ch "
+"12](https://developer.signalwire.com/freeswitch/dialplan/xml), [Ch "
+"7](https://developer.signalwire.com/freeswitch/users-and-endpoints/sip-"
+"profiles). This page lists the **contracts as implemented in this tree**, "
+"not every XML attribute."
+msgstr ""
+"号码簿 / 拨号计划 / SIP profile 参数表：[用户手册第 6 "
+"章](https://developer.signalwire.com/freeswitch/users-and-endpoints/user-"
+"directory)、[第 12 "
+"章](https://developer.signalwire.com/freeswitch/dialplan/xml)、[第 7 "
+"章](https://developer.signalwire.com/freeswitch/users-and-endpoints/sip-"
+"profiles)。本页列出的是**本仓库已实现的契约**，不是每一个 XML 属性。"
+
+#: ../../05-data-and-api.md:38 154559af6fed4a2cb69d098f7c4f845d
+msgid "Storage and Persistence Rules"
+msgstr "存储与持久化规则"
+
+#: ../../05-data-and-api.md:40 e57ce75b4aab4377a1172213bbdac75c
+msgid ""
+"**Primary storage**: SQLite core DB under prefix `db/` (initialized in "
+"`switch_core_init`). Optional ODBC / `mod_pgsql` / `mod_mariadb`. Disable "
+"scoreboard with `freeswitch -nosql`."
+msgstr ""
+"**主存储**：前缀 `db/` 下的 SQLite 核心数据库（在 `switch_core_init` 中初始化）。可选 ODBC / "
+"`mod_pgsql` / `mod_mariadb`。用 `freeswitch -nosql` 禁用记分板。"
+
+#: ../../05-data-and-api.md:41 81e653f1cd004d9fba4674f77c70815d
+msgid ""
+"**Schema source**: SQL strings in C, not migrations. Core: "
+"`src/switch_core_sqldb.c` (`create_channels_sql`, `create_calls_sql`, "
+"`create_interfaces_sql`, `create_tasks_sql`, `create_nat_sql`, "
+"`create_registrations_sql`, `recovery_sql`, aliases/complete). Sofia: "
+"`src/mod/endpoints/mod_sofia/sofia_glue.c` (`sip_registrations`, "
+"`sip_presence`, `sip_dialogs`, `sip_subscriptions`, `sip_authentication`, "
+"shared-appearance tables)."
+msgstr ""
+"**模式来源**：C 中的 SQL "
+"字符串，而非迁移。核心：`src/switch_core_sqldb.c`（`create_channels_sql`、`create_calls_sql`、`create_interfaces_sql`、`create_tasks_sql`、`create_nat_sql`、`create_registrations_sql`、`recovery_sql`、aliases/complete）。Sofia：`src/mod/endpoints/mod_sofia/sofia_glue.c`（`sip_registrations`、`sip_presence`、`sip_dialogs`、`sip_subscriptions`、`sip_authentication`、shared-"
+"appearance 表）。"
+
+#: ../../05-data-and-api.md:42 79300a1e589d455a8fbc87d547f96158
+msgid ""
+"**Core `channels` columns** (scoreboard): `uuid`, `direction`, `created` / "
+"`created_epoch`, `name`, `state`, `cid_name` / `cid_num`, `ip_addr`, `dest`,"
+" `application` / `application_data`, `dialplan`, `context`, codecs/rates, "
+"`secure`, `hostname`, presence, `accountcode`, `callstate`, callee fields, "
+"`call_uuid`, initial-* copies."
+msgstr ""
+"**核心 `channels` 列**（记分板）：`uuid`、`direction`、`created` / "
+"`created_epoch`、`name`、`state`、`cid_name` / "
+"`cid_num`、`ip_addr`、`dest`、`application` / "
+"`application_data`、`dialplan`、`context`、编解码器/采样率、`secure`、`hostname`、presence、`accountcode`、`callstate`、被叫字段、`call_uuid`、initial-*"
+" 副本。"
+
+#: ../../05-data-and-api.md:43 4a472b77a51e41fcb15c35d2b1cb94d5
+msgid ""
+"**Consistency**: one session thread owns a channel. SQL is a **projection** "
+"for `show channels` / recovery, not the source of truth. `hostname` / "
+"`switchname` isolate rows in multi-host configs."
+msgstr ""
+"**一致性**：一条会话线程拥有一个通道。SQL 是用于 `show channels` / 恢复的**投影**，不是事实来源。`hostname` /"
+" `switchname` 在多主机配置中隔离行。"
+
+#: ../../05-data-and-api.md:44 69d37d391c25414f94fc9a45014ef9d8
+msgid ""
+"**CDR**: not in core SQL. Vanilla loads `mod_cdr_csv` (Asterisk-style CSV). "
+"Optional `mod_json_cdr`, `mod_xml_cdr`, `mod_cdr_sqlite`, `mod_odbc_cdr`, "
+"`mod_cdr_pg_csv`."
+msgstr ""
+"**CDR**：不在核心 SQL 中。Vanilla 加载 `mod_cdr_csv`（Asterisk 风格 CSV）。可选 "
+"`mod_json_cdr`、`mod_xml_cdr`、`mod_cdr_sqlite`、`mod_odbc_cdr`、`mod_cdr_pg_csv`。"
+
+#: ../../05-data-and-api.md:45 56728ede5a564f46a1bc7233b7f7b997
+msgid ""
+"**Retention**: operator-owned log/CDR rotation. `[NEEDS INPUT: site "
+"retention policy]`."
+msgstr "**保留策略**：由运维负责日志/CDR 轮转。`[NEEDS INPUT: site retention policy]`。"
+
+#: ../../05-data-and-api.md:47 d92ea9ec8153476f835c8723a9fa1de1
+msgid "External Interfaces"
+msgstr "外部接口"
+
+#: ../../05-data-and-api.md 1c233c6c5eb143b0b6057586e072acb1
+msgid "Interface"
+msgstr "接口"
+
+#: ../../05-data-and-api.md 499cb3f26d5b424b9a4d131988999d39
+msgid "Path or endpoint"
+msgstr "路径或端点"
+
+#: ../../05-data-and-api.md d33ac2ba85864166b10ed53ff3091119
+msgid "Input"
+msgstr "输入"
+
+#: ../../05-data-and-api.md f600df61cb254c74a5160901a5a83ee6
+msgid "Output"
+msgstr "输出"
+
+#: ../../05-data-and-api.md 791b6ca6eda64a0096ad43127d981972
+msgid "ESL (Event Socket)"
+msgstr "ESL（Event Socket）"
+
+#: ../../05-data-and-api.md 0b20a4267fb341a399f74bf62c9cf159
+msgid "TCP `127.0.0.1:8021`"
+msgstr "TCP `127.0.0.1:8021`"
+
+#: ../../05-data-and-api.md 025353d1167e41e389ad0a83a4eb938d
+msgid "Line-oriented commands after `auth`"
+msgstr "`auth` 之后的面向行命令"
+
+#: ../../05-data-and-api.md d9929e536fe74f4cac185016f1a9d1f9
+msgid "`+OK` / `-ERR`, then events"
+msgstr "`+OK` / `-ERR`，然后是事件"
+
+#: ../../05-data-and-api.md 677cfb867f2b46398195f87ae1993910
+msgid "Default password `ClueCon`. `mod_event_socket.c` `parse_command()`"
+msgstr "默认密码 `ClueCon`。`mod_event_socket.c` 的 `parse_command()`"
+
+#: ../../05-data-and-api.md 15726561c4bf484fb6b00b13cdf83c34
+msgid "Console / `fs_cli`"
+msgstr "控制台 / `fs_cli`"
+
+#: ../../05-data-and-api.md a4b93c91fd3a40f8a73af5772a2de78c
+msgid "Same ESL, or local console"
+msgstr "同一 ESL，或本地控制台"
+
+#: ../../05-data-and-api.md 56deab360a5b47d39a38853a5597c285
+msgid "API string (`status`, `sofia status`, `uuid_kill …`)"
+msgstr "API 字符串（`status`、`sofia status`、`uuid_kill …`）"
+
+#: ../../05-data-and-api.md ae7b5158c9c344d6862d0b520d7e7b22
+msgid "Text"
+msgstr "文本"
+
+#: ../../05-data-and-api.md cf9cde20a00747babaf17fe821d619c5
+msgid "`fs_cli -x '<api>'`; Docker health: `status` matches `^UP`"
+msgstr "`fs_cli -x '<api>'`；Docker 健康检查：`status` 匹配 `^UP`"
+
+#: ../../05-data-and-api.md e82ef364125d4f1186c6cc31a1732ddb
+msgid "SIP"
+msgstr "SIP"
+
+#: ../../05-data-and-api.md ff62c556b83c45eca6f8544f39bd77bd
+msgid "UDP/TCP 5060/5080 (TLS 5061/5081)"
+msgstr "UDP/TCP 5060/5080（TLS 5061/5081）"
+
+#: ../../05-data-and-api.md 33731db56c8d4419a6c20cd821c57d06
+msgid "RFC 3261 + SDP"
+msgstr "RFC 3261 + SDP"
+
+#: ../../05-data-and-api.md 80f04ffc671a4b4f8e05c8d5dc55c619
+msgid "SIP + RTP"
+msgstr "SIP + RTP"
+
+#: ../../05-data-and-api.md 650eefdbf7804ab1b4d4f0b0b3f73339
+msgid "`mod_sofia`; not re-specified here"
+msgstr "`mod_sofia`；此处不再复述"
+
+#: ../../05-data-and-api.md bbf11dc44a46450e862f70943a0b122e
+msgid "Verto JSON-RPC 2.0"
+msgstr "Verto JSON-RPC 2.0"
+
+#: ../../05-data-and-api.md e3fc257611df44c8b1c5ef33ed272d9e
+msgid "WS/WSS (vanilla 8081/8082, 5066/7443 in Docker docs)"
+msgstr "WS/WSS（vanilla 8081/8082，Docker 文档中为 5066/7443）"
+
+#: ../../05-data-and-api.md e21b5326ad944bb190bcd2abfe478bed
+#, python-brace-format
+msgid "`{\"jsonrpc\":\"2.0\",\"method\":\"…\",\"params\":{}}`"
+msgstr "`{\"jsonrpc\":\"2.0\",\"method\":\"…\",\"params\":{}}`"
+
+#: ../../05-data-and-api.md f82ffa39c6ae4a579aa41b85c664bb45
+msgid "JSON-RPC result/error"
+msgstr "JSON-RPC 结果/错误"
+
+#: ../../05-data-and-api.md a922c4fe4d17464f8f6b97961887361c
+msgid "Methods registered in `mod_verto.c`"
+msgstr "方法注册于 `mod_verto.c`"
+
+#: ../../05-data-and-api.md 26be7dec141341679c0b6102db4de6c6
+msgid "XML-RPC / HTTP"
+msgstr "XML-RPC / HTTP"
+
+#: ../../05-data-and-api.md 17dc17fb3704484fa3dd15eb82ba461a
+msgid "Default port **8080**"
+msgstr "默认端口 **8080**"
+
+#: ../../05-data-and-api.md b5136b234bdc48c0b27ce0829b62b2d6
+msgid "HTTP basic auth"
+msgstr "HTTP 基本认证"
+
+#: ../../05-data-and-api.md b7e992a769c74490bd8566b0537fd673
+msgid "XML-RPC"
+msgstr "XML-RPC"
+
+#: ../../05-data-and-api.md b5f73726cdaf4f53becc9f8d2c521a74
+msgid ""
+"`mod_xml_rpc` **not** in vanilla autoload. Demo auth `freeswitch` / `works` "
+"in `xml_rpc.conf.xml`"
+msgstr ""
+"`mod_xml_rpc` **不**在 vanilla 自动加载中。演示认证 `freeswitch` / `works` 见 "
+"`xml_rpc.conf.xml`"
+
+#: ../../05-data-and-api.md 51e1accd09564f31ab75a8516053e063
+msgid "Dynamic XML"
+msgstr "动态 XML"
+
+#: ../../05-data-and-api.md c3a2113030a345fc9c02979423ea7f25
+msgid "HTTP(S) from `mod_xml_curl`"
+msgstr "来自 `mod_xml_curl` 的 HTTP(S)"
+
+#: ../../05-data-and-api.md 4413eea2cdfe41a1b6889534374035cd
+msgid "Request params (`action`, section, …)"
+msgstr "请求参数（`action`、section、…）"
+
+#: ../../05-data-and-api.md 9d28b9cb931c45cd85ee2001701e2ed6
+msgid "XML fragments"
+msgstr "XML 片段"
+
+#: ../../05-data-and-api.md e977e45a4f744dda933777ee325250f4
+msgid "Replaces file sections when enabled"
+msgstr "启用时替换文件中的段"
+
+#: ../../05-data-and-api.md 1064ed1c49c549de99df07354a7f1354
+msgid "HTTAPI"
+msgstr "HTTAPI"
+
+#: ../../05-data-and-api.md 6ec9ba61036a4f55a2dfdfa99f7d3aac
+msgid "`mod_httapi`"
+msgstr "`mod_httapi`"
+
+#: ../../05-data-and-api.md 564ae36de1b14c9d918fa2190116a6d4
+msgid "HTTP to app server"
+msgstr "发往应用服务器的 HTTP"
+
+#: ../../05-data-and-api.md 6ec7e732dcbc48e888442e14d25367a6
+msgid "XML instructions"
+msgstr "XML 指令"
+
+#: ../../05-data-and-api.md ca37acb90a71451a90018af3cd9a6af3
+msgid "Dialplan-driven HTTP IVR"
+msgstr "拨号计划驱动的 HTTP IVR"
+
+#: ../../05-data-and-api.md:59 7b4266304ac249b8b53e03a01b993002
+msgid "ESL command surface"
+msgstr "ESL 命令面"
+
+#: ../../05-data-and-api.md:61 e6eef9e2f1c642e6af6d62e121034516
+msgid ""
+"Unauthenticated: `auth <password>` or `userauth user@domain:pass` (directory"
+" `esl-password` / `esl-allowed-api` / `esl-allowed-events`). Then "
+"(`parse_command` in `mod_event_socket.c`):"
+msgstr ""
+"未认证：`auth <password>` 或 `userauth user@domain:pass`（directory 的 `esl-"
+"password` / `esl-allowed-api` / `esl-allowed-"
+"events`）。然后（`mod_event_socket.c` 中的 `parse_command`）："
+
+#: ../../05-data-and-api.md 6e6e8041488f4820a183b57e13f29c3b
+msgid "Command"
+msgstr "命令"
+
+#: ../../05-data-and-api.md 55e2c940a7704e41b16e240dc75defb8
+msgid "`api <cmd> [<args>]`"
+msgstr "`api <cmd> [<args>]`"
+
+#: ../../05-data-and-api.md a9070c774ea3471088b980ec0b33eda7
+msgid "Run a console API synchronously"
+msgstr "同步运行控制台 API"
+
+#: ../../05-data-and-api.md e475daff9af343f7a6691cf364c90f06
+msgid "`bgapi <cmd> [<args>]`"
+msgstr "`bgapi <cmd> [<args>]`"
+
+#: ../../05-data-and-api.md f6e663590f784499a0de0b75a8c110a3
+msgid "Same, async; `Job-UUID` + `BACKGROUND_JOB` event"
+msgstr "同上，异步；`Job-UUID` + `BACKGROUND_JOB` 事件"
+
+#: ../../05-data-and-api.md a70cf944f57d45ccafe2b74327abdce3
+msgid "`event <plain|json|xml> <types|ALL>`"
+msgstr "`event <plain|json|xml> <types|ALL>`"
+
+#: ../../05-data-and-api.md 021f3c97ed25463394a51a138b631578
+msgid "Subscribe"
+msgstr "订阅"
+
+#: ../../05-data-and-api.md fccd62d13ee94b95b432e6103820a87c
+msgid "`nixevent` / `noevents`"
+msgstr "`nixevent` / `noevents`"
+
+#: ../../05-data-and-api.md e8eae594080d43b3962fa2d64dd2654f
+msgid "Unsubscribe"
+msgstr "取消订阅"
+
+#: ../../05-data-and-api.md f504fce2925248e581a195fc2a6a2634
+msgid "`myevents`"
+msgstr "`myevents`"
+
+#: ../../05-data-and-api.md 7a6576e6b5a64b679a09c396b4872dbd
+msgid "Events for one UUID"
+msgstr "单个 UUID 的事件"
+
+#: ../../05-data-and-api.md 93724f04175e4b6a8bfea75a3467ff2e
+msgid "`sendmsg <uuid>` + headers"
+msgstr "`sendmsg <uuid>` + 头字段"
+
+#: ../../05-data-and-api.md 77d7310a22094c99a6e51e2d0ad6719c
+msgid "Execute app / hangup on a channel (`call-command`)"
+msgstr "在通道上执行应用 / 挂断（`call-command`）"
+
+#: ../../05-data-and-api.md c1b4e92f269548cc894c810c98b2d5be
+msgid "`sendevent <EVENT>`"
+msgstr "`sendevent <EVENT>`"
+
+#: ../../05-data-and-api.md b413d87633f74c25b505c223af523d24
+msgid "Inject a core event"
+msgstr "注入核心事件"
+
+#: ../../05-data-and-api.md 007a752bb9e746e9941846ded659960f
+msgid "`getvar`"
+msgstr "`getvar`"
+
+#: ../../05-data-and-api.md e8827f34e8e840e680460e8e275b3edd
+msgid "Channel variable"
+msgstr "通道变量"
+
+#: ../../05-data-and-api.md 03676c3d59e442a09c22e4fda422696c
+msgid "`log` / `nolog`"
+msgstr "`log` / `nolog`"
+
+#: ../../05-data-and-api.md c0e0bbef9df7401d964af4f1bcd44c19
+msgid "Log stream"
+msgstr "日志流"
+
+#: ../../05-data-and-api.md 4e6ee093cba14a728ccbd0e177b8c5bd
+msgid "`linger` / `nolinger`"
+msgstr "`linger` / `nolinger`"
+
+#: ../../05-data-and-api.md 9ca3bf1275c3448ea654eb8451f4e273
+msgid "Keep socket after hangup"
+msgstr "挂断后保持套接字"
+
+#: ../../05-data-and-api.md 95d431bd2daa4864a9962b8c469da406
+msgid "`exit`"
+msgstr "`exit`"
+
+#: ../../05-data-and-api.md 5552e551990b4eb6a4cc694e3d55f4c9
+msgid "Close (`+OK bye`)"
+msgstr "关闭（`+OK bye`）"
+
+#: ../../05-data-and-api.md:77 f6c56cf05cb54feb9daf578d29db7ef4
+msgid ""
+"Replies start with `+OK` or `-ERR`. Events serialize via "
+"`switch_event_serialize()` (plain headers) or "
+"`switch_event_serialize_json()`."
+msgstr ""
+"回复以 `+OK` 或 `-ERR` 开头。事件通过 `switch_event_serialize()`（纯文本头）或 "
+"`switch_event_serialize_json()` 序列化。"
+
+#: ../../05-data-and-api.md:79 23f8f4bd9e1c4bc8ac9b69ade4fd6aaf
+msgid "Verto methods"
+msgstr "Verto 方法"
+
+#: ../../05-data-and-api.md:81 a5b2ec107a794e1895888d3c76704989
+msgid ""
+"Registered in `mod_verto.c`: `login`, `echo`, `jsapi`, `fsapi`, "
+"`verto.invite`, `verto.answer`, `verto.bye`, `verto.attach`, `verto.modify`,"
+" `verto.info`, `verto.ping`, `verto.subscribe`, `verto.unsubscribe`, "
+"`verto.broadcast`. Unauthenticated sockets may only `login` until "
+"`JPFLAG_AUTHED`."
+msgstr ""
+"注册于 "
+"`mod_verto.c`：`login`、`echo`、`jsapi`、`fsapi`、`verto.invite`、`verto.answer`、`verto.bye`、`verto.attach`、`verto.modify`、`verto.info`、`verto.ping`、`verto.subscribe`、`verto.unsubscribe`、`verto.broadcast`。未认证套接字在"
+" `JPFLAG_AUTHED` 之前只能 `login`。"
+
+#: ../../05-data-and-api.md:83 2a7d37064d404bd78f51da8856c428f4
+msgid "Console API (subset)"
+msgstr "控制台 API（子集）"
+
+#: ../../05-data-and-api.md:85 9f0f0c20fab6409190b31e4c56ca58ba
+msgid ""
+"Registered with `SWITCH_ADD_API` in "
+"`src/mod/applications/mod_commands/mod_commands.c` (not exhaustive):"
+msgstr ""
+"在 `src/mod/applications/mod_commands/mod_commands.c` 中用 `SWITCH_ADD_API` "
+"注册（并非穷尽）："
+
+#: ../../05-data-and-api.md 4fcb4b03f68d419e881bd5d39e99c5b3
+msgid "API"
+msgstr "API"
+
+#: ../../05-data-and-api.md 8879121f37784803bb5710b639e1031e
+msgid "Syntax (from registration)"
+msgstr "语法（来自注册）"
+
+#: ../../05-data-and-api.md dcd2592ae2654633b8d06b6358f1912c
+msgid "`status`"
+msgstr "`status`"
+
+#: ../../05-data-and-api.md 76951f41dafe4a00850008e2aa1f5a0b
+msgid "Process health"
+msgstr "进程健康"
+
+#: ../../05-data-and-api.md 221ade7930ee4da892c0b8f15d58687e
+msgid "`version`"
+msgstr "`version`"
+
+#: ../../05-data-and-api.md e3306098083c4742b0d5efa0d9cefaa1
+msgid "`[short]`"
+msgstr "`[short]`"
+
+#: ../../05-data-and-api.md 88da3b7b3c5f4d1489b3d6fc5cc8a394
+msgid "Build version"
+msgstr "构建版本"
+
+#: ../../05-data-and-api.md ba041a8e596b4e78b812ba991da88cd5
+msgid "`sofia`"
+msgstr "`sofia`"
+
+#: ../../05-data-and-api.md 658005279cf442a5b316ed26d4915630
+msgid "(sofia module)"
+msgstr "（sofia 模块）"
+
+#: ../../05-data-and-api.md 9df0d1b577fd438f9b72d726677695bc
+msgid "SIP profiles / registrations"
+msgstr "SIP 配置文件 / 注册"
+
+#: ../../05-data-and-api.md 6b337e7c788a4b6b9433e572c232526e
+msgid "`originate`"
+msgstr "`originate`"
+
+#: ../../05-data-and-api.md 3603ca193f224d40bc4dd30627b8fc3d
+msgid "(dptools/commands)"
+msgstr "（dptools/commands）"
+
+#: ../../05-data-and-api.md 90d8265b04054480890d524d3c703596
+msgid "Outbound call"
+msgstr "呼出呼叫"
+
+#: ../../05-data-and-api.md 075a2fc3abd347cab106685629c3e560
+msgid "`uuid_kill` / `uuid_bridge` / `uuid_transfer`"
+msgstr "`uuid_kill` / `uuid_bridge` / `uuid_transfer`"
+
+#: ../../05-data-and-api.md 6d493d2197124bf896321255b1994523
+msgid "UUID + args"
+msgstr "UUID + 参数"
+
+#: ../../05-data-and-api.md bfddd48ce810412898678a6e0ec21ca8
+msgid "Leg control"
+msgstr "呼叫腿控制"
+
+#: ../../05-data-and-api.md d342a687567444d9950403ccd05188d2
+msgid "`show`"
+msgstr "`show`"
+
+#: ../../05-data-and-api.md ffc309400bec40dd8801112c0cdf3eac
+msgid "`channels`, `calls`, …"
+msgstr "`channels`, `calls`, …"
+
+#: ../../05-data-and-api.md 9de3170bf55f4a50bf97919c78065bfa
+msgid "SQL scoreboard"
+msgstr "SQL 记分板"
+
+#: ../../05-data-and-api.md 55a85c425b434fd5baaf173fdf6ae9f7
+msgid "`reloadxml`"
+msgstr "`reloadxml`"
+
+#: ../../05-data-and-api.md 4c7a5c6ba9724716bd68ab3a10a26236
+msgid "Re-parse XML"
+msgstr "重新解析 XML"
+
+#: ../../05-data-and-api.md 063319b2f64a462eb3f19eec613f0ef1
+msgid "`load` / `unload` / `reload`"
+msgstr "`load` / `unload` / `reload`"
+
+#: ../../05-data-and-api.md 8cc0e7ed0d964203850b3c059976f5b4
+msgid "module name"
+msgstr "模块名"
+
+#: ../../05-data-and-api.md 65492cef88324cdeb2eedd5dcf395c4a
+msgid "DSOs"
+msgstr "DSO"
+
+#: ../../05-data-and-api.md dcdcc49507e34653b2fe0291bc380252
+msgid "`fsctl`"
+msgstr "`fsctl`"
+
+#: ../../05-data-and-api.md f6eba0340b084c0380f1cf78e5d9f73f
+msgid "Pause, loglevel, and other core controls (`CTL_SYNTAX`)"
+msgstr "暂停、日志级别及其他核心控制（`CTL_SYNTAX`）"
+
+#: ../../05-data-and-api.md 65f7a7c27c1541e19c7e37d23596048d
+msgid "`global_getvar` / `global_setvar`"
+msgstr "`global_getvar` / `global_setvar`"
+
+#: ../../05-data-and-api.md 4c49798bcb014b9b8cc1532fa2e0a4da
+msgid "`$$` / global vars"
+msgstr "`$$` / 全局变量"
+
+#: ../../05-data-and-api.md 63c55181a01446bb8dc47fa3bf2e0893
+msgid "`acl`"
+msgstr "`acl`"
+
+#: ../../05-data-and-api.md db353138030a493b98cd7284c9714b86
+msgid "`<ip> <list_name>`"
+msgstr "`<ip> <list_name>`"
+
+#: ../../05-data-and-api.md 91fb48c2981d4003a22f5a45b2e51d8e
+msgid "ACL test"
+msgstr "ACL 测试"
+
+#: ../../05-data-and-api.md e11eb91b2dca46ad855f3bbb6cba6f70
+msgid "`help`"
+msgstr "`help`"
+
+#: ../../05-data-and-api.md 7fa4298be8f54800a9cc68a932978bbc
+msgid "Full API list"
+msgstr "完整 API 列表"
+
+#: ../../05-data-and-api.md:102 025d1f0eb9964105bc20ef5df2b8c083
+msgid "Dialplan applications (subset)"
+msgstr "拨号计划应用（子集）"
+
+#: ../../05-data-and-api.md:104 b1daba1c73964558b89af7a787871c36
+msgid ""
+"`SWITCH_ADD_APP` in `src/mod/applications/mod_dptools/mod_dptools.c`: "
+"`answer`, `pre_answer`, `bridge` (`<channel_url>`), `transfer`, `sleep`, "
+"`playback`/`phrase`, `hold`/`unhold`, `park`, `set`/`export`, `hangup`, "
+"`eavesdrop`, … Other modules add `conference`, `voicemail`, `fifo`, "
+"`httapi`, etc."
+msgstr ""
+"`src/mod/applications/mod_dptools/mod_dptools.c` 中的 "
+"`SWITCH_ADD_APP`：`answer`、`pre_answer`、`bridge`（`<channel_url>`）、`transfer`、`sleep`、`playback`/`phrase`、`hold`/`unhold`、`park`、`set`/`export`、`hangup`、`eavesdrop`、…"
+" 其他模块还会加入 `conference`、`voicemail`、`fifo`、`httapi` 等。"
+
+#: ../../05-data-and-api.md:106 04e4d9f4352e4f89b35f6acdab3e2fa2
+msgid ""
+"Vanilla default context: `conf/vanilla/dialplan/default.xml` (authenticated "
+"internal users via `user_context=default`); public context for "
+"unauthenticated/external (`conf/vanilla/dialplan/public.xml`). Demo "
+"destinations (echo `9196`, voicemail `4000`/`*98`, …) are listed in [Quick "
+"Start](01-quick-start.md)."
+msgstr ""
+"Vanilla 默认上下文：`conf/vanilla/dialplan/default.xml`（经 `user_context=default` "
+"的已认证内部用户）；未认证/外部走 public 上下文（`conf/vanilla/dialplan/public.xml`）。演示号码（回声 "
+"`9196`、语音信箱 `4000`/`*98` 等）见 [快速开始](01-quick-start.md)。"
+
+#: ../../05-data-and-api.md:108 d13bfe6d119d400295fc14ee82a0cf9f
+msgid "Internal Commands and Events"
+msgstr "内部命令与事件"
+
+#: ../../05-data-and-api.md:110 625435686ff94a71aa76e26934693eab
+msgid ""
+"Event ids are `switch_event_types_t` in `src/include/switch_types.h`. The "
+"engine is `src/switch_event.c` (APR FIFO + dispatch thread). Bind with "
+"`switch_event_bind`. Custom subclasses use `SWITCH_EVENT_CUSTOM`."
+msgstr ""
+"事件 id 是 `src/include/switch_types.h` 中的 `switch_event_types_t`。引擎是 "
+"`src/switch_event.c`（APR FIFO + 分发线程）。用 `switch_event_bind` 绑定。自定义子类使用 "
+"`SWITCH_EVENT_CUSTOM`。"
+
+#: ../../05-data-and-api.md:112 1c4f7991baff43cb908937c7e39d9ada
+msgid ""
+"Core always sets header `Event-Name` (`switch_event.c`). Channel events "
+"typically include `Unique-ID`, `Channel-State`, `Caller-*`, `variable_*` "
+"when verbose (`verbose_events` app)."
+msgstr ""
+"核心始终设置头 `Event-Name`（`switch_event.c`）。通道事件通常包含 `Unique-ID`、`Channel-"
+"State`、`Caller-*`，在 verbose 时还有 `variable_*`（`verbose_events` 应用）。"
+
+#: ../../05-data-and-api.md b2f5f28dfd4d4d4ca9735276af8a223c
+msgid "Name"
+msgstr "名称"
+
+#: ../../05-data-and-api.md f6940714615e4c40a111281370d075a9
+msgid "Trigger"
+msgstr "触发"
+
+#: ../../05-data-and-api.md b90ca10c76f74510a3ce5793ab730be8
+msgid "Consumer"
+msgstr "消费者"
+
+#: ../../05-data-and-api.md 9ff25177f5de4ace9b0778465996495c
+msgid "`SWITCH_EVENT_STARTUP`"
+msgstr "`SWITCH_EVENT_STARTUP`"
+
+#: ../../05-data-and-api.md 5081f7e06b264c1290bfb9707f2fa9d2
+msgid "`switch_core_init_and_modload`"
+msgstr "`switch_core_init_and_modload`"
+
+#: ../../05-data-and-api.md e47ccae748794449bfb67471990d4c4d
+msgid "ESL, scripts"
+msgstr "ESL、脚本"
+
+#: ../../05-data-and-api.md 39bc06ad2fce4aaea984f0b3f8290a22
+msgid "System ready"
+msgstr "系统就绪"
+
+#: ../../05-data-and-api.md 2a6f45aaaf764f27a7fd9814adbd784a
+msgid "`SWITCH_EVENT_CHANNEL_CREATE`"
+msgstr "`SWITCH_EVENT_CHANNEL_CREATE`"
+
+#: ../../05-data-and-api.md 7f463ac35c564e8d8aac6fb26ba08d92
+msgid "Session allocated"
+msgstr "会话已分配"
+
+#: ../../05-data-and-api.md e8d9d1c74c6046368b64aaf969db7d0b
+msgid "ESL, CDR prelude"
+msgstr "ESL、CDR 前奏"
+
+#: ../../05-data-and-api.md 6feffc5e707945c38b89b958fd4782d9
+msgid "New leg"
+msgstr "新呼叫腿"
+
+#: ../../05-data-and-api.md 311a5031cd164545b978c5d2a1277b6a
+msgid "`SWITCH_EVENT_CHANNEL_STATE`"
+msgstr "`SWITCH_EVENT_CHANNEL_STATE`"
+
+#: ../../05-data-and-api.md f98939089fef48339fcb99ce352b25e4
+msgid "`CS_*` change"
+msgstr "`CS_*` 变化"
+
+#: ../../05-data-and-api.md 39e063260e464d58a90e80cdad7e0421
+msgid "`SWITCH_EVENT_CHANNEL_ANSWER` / `_PROGRESS` / `_PROGRESS_MEDIA`"
+msgstr "`SWITCH_EVENT_CHANNEL_ANSWER` / `_PROGRESS` / `_PROGRESS_MEDIA`"
+
+#: ../../05-data-and-api.md abab41412e6a41c5be3ee0454cafcd34
+msgid "Signaling"
+msgstr "信令"
+
+#: ../../05-data-and-api.md 18b14e830f7645ffa6db78f1b8b5a6b6
+msgid "`SWITCH_EVENT_CHANNEL_EXECUTE` / `_COMPLETE`"
+msgstr "`SWITCH_EVENT_CHANNEL_EXECUTE` / `_COMPLETE`"
+
+#: ../../05-data-and-api.md aaccdec0fa774c1998a750ad30acc53e
+msgid "Dialplan app"
+msgstr "拨号计划应用"
+
+#: ../../05-data-and-api.md 021c5c757bd341da964de7d50630640a
+msgid "`Application` header"
+msgstr "`Application` 头"
+
+#: ../../05-data-and-api.md 98fc6b57545741e980f4a234312e6888
+msgid "`SWITCH_EVENT_CHANNEL_BRIDGE` / `_UNBRIDGE`"
+msgstr "`SWITCH_EVENT_CHANNEL_BRIDGE` / `_UNBRIDGE`"
+
+#: ../../05-data-and-api.md a25239829c1d4575a6a9d059d79d0aa2
+msgid "Bridge"
+msgstr "桥接"
+
+#: ../../05-data-and-api.md 3b7c44834e5f48c69bb789da8246b296
+msgid "`SWITCH_EVENT_CHANNEL_HANGUP` / `_HANGUP_COMPLETE`"
+msgstr "`SWITCH_EVENT_CHANNEL_HANGUP` / `_HANGUP_COMPLETE`"
+
+#: ../../05-data-and-api.md f77efee5fea9473497bffb84f43db6ea
+msgid "Hangup"
+msgstr "挂断"
+
+#: ../../05-data-and-api.md 6a790d0680134759b408793f32918bf1
+msgid "CDR modules"
+msgstr "CDR 模块"
+
+#: ../../05-data-and-api.md 9f4125bef1d04bc59f625854ec870910
+msgid "Cause on channel"
+msgstr "通道上的挂断原因"
+
+#: ../../05-data-and-api.md 198a53e6891742bb9c223b10199793cf
+msgid "`SWITCH_EVENT_CHANNEL_ORIGINATE`"
+msgstr "`SWITCH_EVENT_CHANNEL_ORIGINATE`"
+
+#: ../../05-data-and-api.md 9432024cdda842a68d1979ce1864d82d
+msgid "Outbound"
+msgstr "呼出"
+
+#: ../../05-data-and-api.md 6706b102653646dea363e8df7a8c5a2b
+msgid "`SWITCH_EVENT_DTMF`"
+msgstr "`SWITCH_EVENT_DTMF`"
+
+#: ../../05-data-and-api.md dc66bd261fa547d7969a8e1348601f92
+msgid "DTMF"
+msgstr "DTMF"
+
+#: ../../05-data-and-api.md ed66d9c79a3c4eb68b0647cb1bfe0bad
+msgid "IVR"
+msgstr "IVR"
+
+#: ../../05-data-and-api.md 26f1713204bf47aeb1833e1a9596b0a3
+msgid "`SWITCH_EVENT_CODEC`"
+msgstr "`SWITCH_EVENT_CODEC`"
+
+#: ../../05-data-and-api.md d0e62adfa07a40aeaf50e77a6ffd2475
+msgid "Codec change"
+msgstr "编解码器变更"
+
+#: ../../05-data-and-api.md fedc3736d3924b1d8f4b3c12aa331add
+msgid "`SWITCH_EVENT_BACKGROUND_JOB`"
+msgstr "`SWITCH_EVENT_BACKGROUND_JOB`"
+
+#: ../../05-data-and-api.md 15bc33a69fbd45329406804800e68afb
+msgid "`bgapi` done"
+msgstr "`bgapi` 完成"
+
+#: ../../05-data-and-api.md df3bd20db1ab40dfb42958d0e09b1ef5
+msgid "ESL"
+msgstr "ESL"
+
+#: ../../05-data-and-api.md acaae34da2f24774af9cc82c20cc5897
+msgid "`SWITCH_EVENT_HEARTBEAT`"
+msgstr "`SWITCH_EVENT_HEARTBEAT`"
+
+#: ../../05-data-and-api.md e157b78f48594b2ab07d4f5ecc57cdb5
+msgid "Core timer"
+msgstr "核心定时器"
+
+#: ../../05-data-and-api.md 8fe69861d8664b59b4db6a519230b061
+msgid "Monitoring"
+msgstr "监控"
+
+#: ../../05-data-and-api.md 04174c8a15ec44a0a40a11b4e45fef97
+msgid ""
+"Interval `runtime.event_heartbeat_interval` (default 20s in "
+"`switch_core_init`)"
+msgstr "间隔 `runtime.event_heartbeat_interval`（`switch_core_init` 中默认 20 秒）"
+
+#: ../../05-data-and-api.md d48e4420d9204a39803825a0336066f4
+msgid "`SWITCH_EVENT_RELOADXML`"
+msgstr "`SWITCH_EVENT_RELOADXML`"
+
+#: ../../05-data-and-api.md 28723050b0af4b23995992bb521aab2a
+msgid "`SWITCH_EVENT_MODULE_LOAD` / `_UNLOAD`"
+msgstr "`SWITCH_EVENT_MODULE_LOAD` / `_UNLOAD`"
+
+#: ../../05-data-and-api.md f47e8c1b0b8a4eab97e9c0b1d4205af7
+msgid "DSO"
+msgstr "DSO"
+
+#: ../../05-data-and-api.md 38ac33890cdb4f309e76e5159b37f42d
+msgid "`SWITCH_EVENT_API`"
+msgstr "`SWITCH_EVENT_API`"
+
+#: ../../05-data-and-api.md 44c6e4d0f5ef49eba3cbba4426c04792
+msgid "API invocation"
+msgstr "API 调用"
+
+#: ../../05-data-and-api.md afe71d8cf2d0468f9d3ed758a3139552
+msgid "`SWITCH_EVENT_RECORD_START` / `_STOP`"
+msgstr "`SWITCH_EVENT_RECORD_START` / `_STOP`"
+
+#: ../../05-data-and-api.md 3b0777c8f8c44405bb2982049cf75ce4
+msgid "Record"
+msgstr "录音"
+
+#: ../../05-data-and-api.md 1a33b507f4dd497a982e669a48bdecf5
+msgid "`SWITCH_EVENT_PLAYBACK_START` / `_STOP`"
+msgstr "`SWITCH_EVENT_PLAYBACK_START` / `_STOP`"
+
+#: ../../05-data-and-api.md 72585fa1602c4419b3c5039ee048761c
+msgid "Playback"
+msgstr "放音"
+
+#: ../../05-data-and-api.md c1a58626753c4440bbd49bbaaa68b3f5
+msgid "`SWITCH_EVENT_CUSTOM`"
+msgstr "`SWITCH_EVENT_CUSTOM`"
+
+#: ../../05-data-and-api.md 7ae70a8e0efa46bca2432ce5cfee5122
+msgid "Modules (Verto login, conference, …)"
+msgstr "模块（Verto 登录、会议、…）"
+
+#: ../../05-data-and-api.md afa4b46c7e7541b9a9476e69cfbdff2e
+msgid "Subclass name required"
+msgstr "必须提供子类名"
+
+#: ../../05-data-and-api.md e31c172f33a842f6bbe1cd8ce5ef14a9
+msgid "`SWITCH_EVENT_SHUTDOWN`"
+msgstr "`SWITCH_EVENT_SHUTDOWN`"
+
+#: ../../05-data-and-api.md c58d9b29e5274c7595b2de8951e8937b
+msgid "Process exit"
+msgstr "进程退出"
+
+#: ../../05-data-and-api.md:136 650c92e24d7b44a891cf492532b16f1b
+msgid ""
+"Do not block the event thread (`switch_event.h`): long work must queue to "
+"another thread."
+msgstr "不要阻塞事件线程（`switch_event.h`）：耗时工作必须排队到其他线程。"
+
+#: ../../05-data-and-api.md:138 289548fd4b3d40c2a246c8c72c9c2c6f
+msgid ""
+"Session-to-session messages (not the event bus): "
+"`switch_core_session_message_types_t` (`SWITCH_MESSAGE_INDICATE_ANSWER`, "
+"`HOLD`, `BRIDGE`, …) in `switch_types.h`."
+msgstr ""
+"会话到会话的消息（不是事件总线）：`switch_types.h` 中的 "
+"`switch_core_session_message_types_t`（`SWITCH_MESSAGE_INDICATE_ANSWER`、`HOLD`、`BRIDGE`、…）。"
+
+#: ../../05-data-and-api.md:140 a9ca5aa17d2947e081d40b349cd7df81
+msgid "Validation and Compatibility"
+msgstr "校验与兼容性"
+
+#: ../../05-data-and-api.md:142 ab553f05e89f46ea897c7c9d74a2bd5d
+msgid ""
+"**XML**: well-formed document after preprocessor; bad root fails startup "
+"(`switch_xml_open_root`). Dialplan conditions are regex on channel "
+"fields/vars (`mod_dialplan_xml`)."
+msgstr ""
+"**XML**：预处理器之后必须是格式良好的文档；根节点错误会导致启动失败（`switch_xml_open_root`）。拨号计划条件是对通道字段/变量的正则（`mod_dialplan_xml`）。"
+
+#: ../../05-data-and-api.md:143 32f8144c7e6d4e71a6570c41e0a5ffe5
+msgid ""
+"**SIP auth**: directory digest + profile `auth-calls` + ACL (`apply-inbound-"
+"acl` → `domains` list in `acl.conf.xml`)."
+msgstr ""
+"**SIP 认证**：directory digest + 配置文件 `auth-calls` + ACL（`apply-inbound-acl` → "
+"`acl.conf.xml` 中的 `domains` 列表）。"
+
+#: ../../05-data-and-api.md:144 fc3c694f6d82443198021414be70019d
+msgid ""
+"**ESL**: must `auth` before other commands; wrong password closes the socket"
+" (`-ERR invalid`)."
+msgstr "**ESL**：其他命令之前必须 `auth`；密码错误会关闭套接字（`-ERR invalid`）。"
+
+#: ../../05-data-and-api.md:145 c9a43dc5e2c94f3daca27e86b5e21548
+msgid ""
+"**API/apps**: stringly typed; `help` / app syntax strings are the contract. "
+"Unknown API → error text, not HTTP codes."
+msgstr "**API/应用**：字符串类型；`help` / 应用语法字符串即契约。未知 API 返回错误文本，而不是 HTTP 状态码。"
+
+#: ../../05-data-and-api.md:146 ecb06c0630624fef885ff13e89ec6a42
+msgid ""
+"**Backward compatibility**: event **names** and common headers are the long-"
+"lived contract (1.x line). Adding headers is common; removing `Event-Name` /"
+" `Unique-ID` is not. XML schema is conventional, not XSD-enforced (DTD "
+"folder `dtd/` exists for some docs). Version is `1.11.3-dev` in "
+"`configure.ac`."
+msgstr ""
+"**向后兼容**：事件**名称**与常见头是长期契约（1.x 系列）。增加头很常见；删除 `Event-Name` / `Unique-ID` "
+"则不是。XML schema 是约定俗成的，并非 XSD 强制（`dtd/` 目录存在于部分文档）。版本为 `configure.ac` 中的 "
+"`1.11.3-dev`。"
+
+#: ../../05-data-and-api.md:147 3a3826f5b3244c5ea4e570e86f9f0a3e
+msgid ""
+"**Secrets in contracts**: vanilla directory passwords and ESL `ClueCon` are "
+"demo values — not a stable security model."
+msgstr "**契约中的密钥**：vanilla directory 密码和 ESL `ClueCon` 是演示值——不是稳定的安全模型。"
+
+#: ../../05-data-and-api.md:149 c8ceda6d69334fd3b709dda8f21b5ed1
+msgid "Key Code References"
+msgstr "关键代码引用"
+
+#: ../../05-data-and-api.md:151 465b1584887a487f9ff7e31b6d0260b0
+msgid ""
+"`src/include/switch_types.h` — `switch_event_types_t`, "
+"`switch_channel_state_t`"
+msgstr ""
+"`src/include/switch_types.h` — "
+"`switch_event_types_t`、`switch_channel_state_t`"
+
+#: ../../05-data-and-api.md:152 10ec34a2c54740a0acd78af46f512c4c
+msgid ""
+"`src/include/switch_event.h` / `src/switch_event.c` — bus, serialize, "
+"`Event-Name`"
+msgstr ""
+"`src/include/switch_event.h` / `src/switch_event.c` — 总线、序列化、`Event-Name`"
+
+#: ../../05-data-and-api.md:153 e39c316511864089a934f7ddda796d5a
+msgid ""
+"`src/include/switch_module_interfaces.h` — `switch_api_interface_t`, "
+"`switch_application_interface_t`"
+msgstr ""
+"`src/include/switch_module_interfaces.h` — "
+"`switch_api_interface_t`、`switch_application_interface_t`"
+
+#: ../../05-data-and-api.md:154 3ce020a95ad64b2b9ba6348c965140ec
+msgid "`src/switch_core_sqldb.c` — core tables"
+msgstr "`src/switch_core_sqldb.c` — 核心表"
+
+#: ../../05-data-and-api.md:155 1ae82c84e2124de8b15520e6146210c9
+msgid "`src/mod/event_handlers/mod_event_socket/mod_event_socket.c` — ESL"
+msgstr "`src/mod/event_handlers/mod_event_socket/mod_event_socket.c` — ESL"
+
+#: ../../05-data-and-api.md:156 c5e483a78f17461989050fac26b5cd04
+msgid "`src/mod/applications/mod_commands/mod_commands.c` — `SWITCH_ADD_API`"
+msgstr "`src/mod/applications/mod_commands/mod_commands.c` — `SWITCH_ADD_API`"
+
+#: ../../05-data-and-api.md:157 7bd58c6b00a8473bbc7a90db73243d3a
+msgid "`src/mod/applications/mod_dptools/mod_dptools.c` — `SWITCH_ADD_APP`"
+msgstr "`src/mod/applications/mod_dptools/mod_dptools.c` — `SWITCH_ADD_APP`"
+
+#: ../../05-data-and-api.md:158 6154e83f1c744c188dba19d9c95b19e8
+msgid "`src/mod/endpoints/mod_sofia/sofia_glue.c` — SIP SQL"
+msgstr "`src/mod/endpoints/mod_sofia/sofia_glue.c` — SIP SQL"
+
+#: ../../05-data-and-api.md:159 6523a7ae98ac42eca502563f071e6bd6
+msgid "`src/mod/endpoints/mod_verto/mod_verto.c` — JSON-RPC methods"
+msgstr "`src/mod/endpoints/mod_verto/mod_verto.c` — JSON-RPC 方法"
+
+#: ../../05-data-and-api.md:160 a3ab80af852c45f3834712f8fd1bfe60
+msgid "`conf/vanilla/freeswitch.xml` — XML sections"
+msgstr "`conf/vanilla/freeswitch.xml` — XML 段"
+
+#: ../../05-data-and-api.md:161 59c48c02372e44fea7f8b5da9e40fb7b
+msgid "`libs/esl/` — client library (`fs_cli`)"
+msgstr "`libs/esl/` — 客户端库（`fs_cli`）"
+
+#: ../../05-data-and-api.md:163 c12fb84720bc433389c8f206c2bc9253
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../05-data-and-api.md:165 7d0c9ad80e344512b8cdf09bf517dd88
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../05-data-and-api.md:166 ceb9241c74e54d8596fff3c0ea860853
+msgid "[Workflows](06-workflows.md)"
+msgstr "[工作流](06-workflows.md)"
+
+#: ../../05-data-and-api.md:167 2726ef0de3ed484b98ee2681021574db
+msgid "[Testing](09-testing.md)"
+msgstr "[测试](09-testing.md)"
+
+#: ../../05-data-and-api.md:168 2c29c5f56a1542b591396431b9267d7f
+msgid ""
+"[Users Manual Ch 46 Inbound "
+"ESL](https://developer.signalwire.com/freeswitch/programming/esl-inbound) — "
+"client bindings in `libs/esl/`"
+msgstr ""
+"[用户手册第 46 章入站 "
+"ESL](https://developer.signalwire.com/freeswitch/programming/esl-inbound) — "
+"客户端绑定在 `libs/esl/`"
+
+#~ msgid ""
+#~ "Preprocessor: `#include` / `#set` / `X-PRE-PROCESS`. Flattened file: "
+#~ "`freeswitch.xml.fsxml` (do not edit while running)."
+#~ msgstr ""
+#~ "预处理器：`#include` / `#set` / `X-PRE-"
+#~ "PROCESS`。展平文件：`freeswitch.xml.fsxml`（运行时请勿编辑）。"
+
+#~ msgid ""
+#~ "Vanilla default context: `conf/vanilla/dialplan/default.xml` (authenticated "
+#~ "5060); public context for 5080 inbound."
+#~ msgstr ""
+#~ "Vanilla 默认 context：`conf/vanilla/dialplan/default.xml`（已认证 5060）；5080 入向使用 "
+#~ "public context。"

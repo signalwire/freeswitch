@@ -1,0 +1,961 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../12-document.md:1 d3cd43fa4575443d8c52e13e2f1a2197
+msgid "12. Documentation Process"
+msgstr "12. 文档流程"
+
+#: ../../12-document.md:5 b7eb54e860c949b1bc9fa267f7cb79d7
+msgid ""
+"How this Project Knowledge Base is authored, refreshed, translated, and "
+"published. Operator configuration stays in the [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/) — this PKB does not "
+"replace it. Historical wiki: [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) and [Confluence](https://freeswitch.org/confluence/). Pipeline "
+"commands for Autotools/CI live in [Build](08-build.md); this page is the PKB"
+" maintenance contract."
+msgstr ""
+"本项目知识库如何撰写、刷新、翻译与发布。运维配置以 [FreeSWITCH "
+"用户手册](https://developer.signalwire.com/freeswitch/) 为准 — 本 PKB 并不取代它。历史 "
+"wiki：[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) 与 [Confluence](https://freeswitch.org/confluence/)。Autotools/CI "
+"的流水线命令见 [构建](08-build.md)；本页是 PKB 维护契约。"
+
+#: ../../12-document.md:7 e8cb7a846a6b48cf89a8107933f955f2
+msgid "Purpose"
+msgstr "目的"
+
+#: ../../12-document.md:9 1dc77970ffac4c45bbbdc55431286cfc
+msgid ""
+"Keep a bilingual, AI-readable map of **this git tree** so humans and "
+"assistants can locate code, understand architecture, and verify changes. "
+"English MyST under `man/` is the working source. Deterministic scripts "
+"refresh facts into `man/_generated/`. Humans (with targeted AI) merge those "
+"facts into numbered pages `00`–`12`. Sphinx HTML and AgentBox are derived "
+"outputs."
+msgstr ""
+"为 **本 git 树** 保留一份双语、可供 AI 阅读的地图，方便人和助手定位代码、理解架构并核对变更。`man/` 下的英文 MyST "
+"是工作源。确定性脚本把事实刷新到 `man/_generated/`。人类（配合定向 AI）把这些事实合并进编号页面 `00`–`12`。Sphinx "
+"HTML 和 AgentBox 是派生输出。"
+
+#: ../../12-document.md:11 8d4a3800d5d947c4ab09893386743a56
+msgid ""
+"`PKB_ROOT` is **`man/` at the repo root**. `docs/man/` is Unix man-page "
+"source (`freeswitch.1.ronn`), not the PKB."
+msgstr ""
+"`PKB_ROOT` 是 **仓库根目录下的 `man/`**。`docs/man/` 是 Unix man page "
+"源（`freeswitch.1.ronn`），不是 PKB。"
+
+#: ../../12-document.md:13 4bac8a3b0fc34ddeb54a5f5cd773a79e
+msgid "Source of Truth"
+msgstr "事实来源"
+
+#: ../../12-document.md 4de0770af0a74ad7a42de377581e2601
+msgid "Layer"
+msgstr "层级"
+
+#: ../../12-document.md 165cb91e555848c186d3ab00596b7ebb
+msgid "Path"
+msgstr "路径"
+
+#: ../../12-document.md c3aba9efecf940388c2caad246cb4d40
+msgid "Status"
+msgstr "状态"
+
+#: ../../12-document.md 924bddccc4954f13a91b44c9a5d87bd1
+msgid "**English source (canonical)**"
+msgstr "**英文源（权威）**"
+
+#: ../../12-document.md 0f610fbcf61743e7a4ce798b97edddf5
+msgid "`man/*.md`, `man/adr/`, `man/changes/`"
+msgstr "`man/*.md`, `man/adr/`, `man/changes/`"
+
+#: ../../12-document.md ae0b605d03bd42c8ab2f302e62dafe70
+msgid "Implemented. Edit these pages."
+msgstr "已落地。编辑这些页面。"
+
+#: ../../12-document.md 414fd5ea6087422fa2c61bc2c33da96b
+msgid "**Navigation / toctree**"
+msgstr "**导航 / toctree**"
+
+#: ../../12-document.md c9916605105c4685b027b80d28fae5a4
+msgid "`man/index.md`"
+msgstr "`man/index.md`"
+
+#: ../../12-document.md ad798a56a6174c798eb611381eb059b0
+msgid "Implemented. Sphinx `master_doc`."
+msgstr "已落地。Sphinx `master_doc`。"
+
+#: ../../12-document.md c91f9734a9474bd8b04e8bdd516cd80c
+msgid "**Sphinx config / theme**"
+msgstr "**Sphinx 配置 / 主题**"
+
+#: ../../12-document.md 4d18a82722b84318bf89d22b6d74981b
+msgid "`man/conf.py`, `man/_templates/layout.html`, `man/_static/custom.css`"
+msgstr "`man/conf.py`, `man/_templates/layout.html`, `man/_static/custom.css`"
+
+#: ../../12-document.md f24a3918009842cc995798d5c2b0d6e5
+msgid "Implemented. Language switcher + PKB metadata footer injection."
+msgstr "已落地。语言切换器 + PKB 元数据页脚注入。"
+
+#: ../../12-document.md 1e1a714c5fbb4ee2ad2549aa6e22f629
+msgid "**PKB Python deps**"
+msgstr "**PKB Python 依赖**"
+
+#: ../../12-document.md 2206ecd0636d45fcbd52f0922be1b51f
+msgid "`man/pyproject.toml`, `man/requirements.txt`"
+msgstr "`man/pyproject.toml`, `man/requirements.txt`"
+
+#: ../../12-document.md 774465ac96d3490b8a397b2bce136c0d
+msgid ""
+"Implemented. **Sphinx/MyST/sphinx-intl only** — not FreeSWITCH runtime deps "
+"(`configure.ac`)."
+msgstr ""
+"已落地。**仅 Sphinx/MyST/sphinx-intl** — 不是 FreeSWITCH 运行时依赖（`configure.ac`）。"
+
+#: ../../12-document.md 36da2844c10a47cd81f1b892aab768b7
+msgid "**zh_CN gettext catalogs**"
+msgstr "**zh_CN gettext 目录**"
+
+#: ../../12-document.md 7e482e55a0ad4e7f84bd0585b544de48
+msgid "`man/locale/zh_CN/LC_MESSAGES/`"
+msgstr "`man/locale/zh_CN/LC_MESSAGES/`"
+
+#: ../../12-document.md e51ef3cc5f3f43f7b069dc1e59130584
+msgid ""
+"**Implemented.** One `.po` per source file (`gettext_compact = False`). "
+"Refresh with `make gettext && make intl-update`, then fill empty `msgstr` "
+"via polib (`scripts/i18n_apply_json.py`). Compiled `.mo` files are "
+"gitignored."
+msgstr ""
+"**已落地。** 每个源文件一份 `.po`（`gettext_compact = False`）。用 `make gettext && make "
+"intl-update` 刷新，再用 polib（`scripts/i18n_apply_json.py`）填空 `msgstr`。编译出的 `.mo`"
+" 已加入 gitignore。"
+
+#: ../../12-document.md 5eec40f6515c432fb7dbaee169e008d8
+msgid "**Sidecar artifacts**"
+msgstr "**附属产物**"
+
+#: ../../12-document.md d5d2e9e563ac45e7a755958aec92573f
+msgid "`man/_generated/`"
+msgstr "`man/_generated/`"
+
+#: ../../12-document.md afd79d23a1a842a1b30f71b1b5acb7a9
+msgid ""
+"Implemented. Scripts write here. `conf.py` `exclude_patterns` includes "
+"`_generated`. Do **not** treat these as published pages."
+msgstr ""
+"已落地。脚本写到这里。`conf.py` 的 `exclude_patterns` 包含 `_generated`。**不要**把它们当成已发布页面。"
+
+#: ../../12-document.md d7a410234d614f16b9232bdcc85664c5
+msgid "**Built HTML**"
+msgstr "**构建出的 HTML**"
+
+#: ../../12-document.md dcf923e9c4584797a2aec486de1da289
+#, python-brace-format
+msgid "`man/_build/site/{en,zh}/` plus landing `index.html`"
+msgstr "`man/_build/site/{en,zh}/` 以及落地页 `index.html`"
+
+#: ../../12-document.md b2edca3af3544484a1d7f2137b93645c
+msgid ""
+"Derived. Not yet built in this tree (`_build/` is gitignored and absent). "
+"Never edit HTML by hand."
+msgstr "派生。本仓库里尚未构建（`_build/` 被 gitignore 且当前不存在）。切勿手工改 HTML。"
+
+#: ../../12-document.md a5b6e379e0a948a090cc067b273f8594
+msgid "**AgentBox function**"
+msgstr "**AgentBox 函数**"
+
+#: ../../12-document.md ef1eb655ceda4bbb994db3a8f4592e9c
+msgid ""
+"`man/agentbox.yaml` slug `freeswitch-doc`; handler "
+"`man/functions/freeswitch-doc/index.ts`"
+msgstr ""
+"`man/agentbox.yaml` 的 slug 为 `freeswitch-doc`；处理程序 "
+"`man/functions/freeswitch-doc/index.ts`"
+
+#: ../../12-document.md 711b3a5719f746b382f705c2222e8931
+msgid ""
+"Handler **implemented**. `files.ts` is **not** present until `make agentbox-"
+"gen`. Publish is a Makefile target, not a completed deploy."
+msgstr ""
+"处理程序 **已实现**。`files.ts` 在 `make agentbox-gen` 之前 **不存在**。发布是 Makefile "
+"目标，不是已完成的部署。"
+
+#: ../../12-document.md a055926afe344a45915f6fb042d4de10
+msgid "**Review / confidentiality**"
+msgstr "**评审 / 密级**"
+
+#: ../../12-document.md 01e9a08bf2c94b31846ffd50f7915417
+msgid "`<!-- PKB-metadata -->` footer on each page"
+msgstr "每页的 `<!-- PKB-metadata -->` 页脚"
+
+#: ../../12-document.md 1f9fc1444f514bfd8c360e0f22af877f
+msgid ""
+"Implemented in source. `review_status` is **`pending` on every page**. AI "
+"never sets `approved`. `confidentiality: L1` on current pages."
+msgstr ""
+"已在源文件落地。每页的 `review_status` 都是 **`pending`**。AI 从不设 `approved`。当前页面 "
+"`confidentiality: L1`。"
+
+#: ../../12-document.md d3f0b590953242d49ac1f1a5e5e13832
+msgid "**Product / operator docs**"
+msgstr "**产品 / 运维文档**"
+
+#: ../../12-document.md 2ed5fd998798435c87bb4aeb2b86d165
+msgid ""
+"[Users Manual](https://developer.signalwire.com/freeswitch/), Explained, "
+"Confluence, `docs/man/`"
+msgstr ""
+"[用户手册](https://developer.signalwire.com/freeswitch/)、Explained、Confluence、`docs/man/`"
+
+#: ../../12-document.md 2c874881af3447d0b3ab2b656ff10a15
+msgid ""
+"Out of band. PKB links to the Users Manual; it is not a second copy of "
+"parameter tables."
+msgstr "带外资料。PKB 链接到用户手册，而不是再抄一份参数表。"
+
+#: ../../12-document.md:28 b930fe1f497147ac8a377331bae554a1
+msgid ""
+"**Rule:** change English Markdown first. Catalogs follow English. HTML "
+"follows catalogs + English. AgentBox follows stripped HTML."
+msgstr "**规则：** 先改英文 Markdown。目录跟随英文。HTML 跟随目录 + 英文。AgentBox 跟随剥离后的 HTML。"
+
+#: ../../12-document.md:30 5e47a129ff8748e5a417fa7d602db8ad
+msgid "Advisory Update Loop"
+msgstr "建议更新循环"
+
+#: ../../12-document.md:32 7df13302a5ce4e96b0d1ec3e5fccb2bd
+msgid "Code, Autotools, CI, or XML-config changes land in the repo."
+msgstr "代码、Autotools、CI 或 XML 配置变更合入仓库。"
+
+#: ../../12-document.md:33 4c291d7c880b45b0bed9f2c218c5ce17
+msgid ""
+"Run `cd man && make pkb-check` (`scripts/check_pkb_staleness.py`). "
+"Optionally `make pkb-check-i18n` once `.po` files exist."
+msgstr ""
+"运行 `cd man && make pkb-check`（`scripts/check_pkb_staleness.py`）。一旦存在 `.po` "
+"文件，可再跑 `make pkb-check-i18n`。"
+
+#: ../../12-document.md:34 7982240df09b4d1fb0a6f376dcd2a44f
+msgid ""
+"A human decides which English PKB pages need a refresh this PR / sprint (do "
+"not regenerate everything)."
+msgstr "由人决定本 PR / 迭代需要刷新哪些英文 PKB 页面（不要整套重生成）。"
+
+#: ../../12-document.md:35 930bfd5b065b46549b01e338f47386f9
+msgid ""
+"Run Level 1 scripts first (`make pkb-level1`). Merge facts from "
+"`_generated/` into the affected human pages. Use a targeted LLM pass only "
+"for Level 2 synthesis (diff + those pages + the sidecar artifacts — not the "
+"whole tree)."
+msgstr ""
+"先跑 Level 1 脚本（`make pkb-level1`）。把 `_generated/` 里的事实合并进受影响的人工页面。Level 2 "
+"综合只用定向 LLM（diff + 那些页面 + 附属产物 — 不是整棵树）。"
+
+#: ../../12-document.md:36 f1e8ae89fb8644aca3fde7763663e3d5
+msgid ""
+"Stamp the metadata footer (`last_updated`, `commit`, `updated_by`). Leave "
+"`review_status: pending` unless a human is approving."
+msgstr ""
+"盖上元数据页脚（`last_updated`、`commit`、`updated_by`）。除非人类正在批准，否则保持 `review_status: "
+"pending`。"
+
+#: ../../12-document.md:37 f839edbbd1f24aa3898a042103cd1931
+msgid ""
+"After English wording changes: generate/update gettext catalogs (planned "
+"until the first `intl-update` run), then rebuild HTML."
+msgstr "英文措辞变更后：生成/更新 gettext 目录（在第一次 `intl-update` 之前仍属计划），然后重建 HTML。"
+
+#: ../../12-document.md:38 c2b9c66f24894ef6a9e26932f8c31f90
+msgid ""
+"A human reviews (`make pkb-review-status`) before any AgentBox publish."
+msgstr "任何 AgentBox 发布前，由人评审（`make pkb-review-status`）。"
+
+#: ../../12-document.md:40 7908dcffe73e49ef8040f691a04d6fab
+msgid "Cost-Aware Update Strategy"
+msgstr "成本敏感的更新策略"
+
+#: ../../12-document.md bfe8b26b5498490389f0c99ea4b012c8
+msgid "Strategy"
+msgstr "策略"
+
+#: ../../12-document.md bcf667e8c7394e00a1f55026998103da
+msgid "Guidance"
+msgstr "指引"
+
+#: ../../12-document.md 193a3167ddac4fd08fd0693e936210b7
+msgid "Rule first, LLM second"
+msgstr "规则优先，LLM 其次"
+
+#: ../../12-document.md 91724b624a344e57a143077e9ee89e1f
+msgid ""
+"`make pkb-check` before any `/PKB-*` rewrite. Spend zero tokens until the "
+"report flags likely stale pages."
+msgstr "任何 `/PKB-*` 重写之前先 `make pkb-check`。报告标出可能过时的页面之前，不消耗 token。"
+
+#: ../../12-document.md a10d0ac496d7471b9b6e56f22c0f168a
+msgid "Minimal context"
+msgstr "最小上下文"
+
+#: ../../12-document.md 727d5f858fef40d49ab5577d4ac1ca46
+msgid ""
+"Feed the model only the git diff, the affected `man/*.md` page(s), and the "
+"matching `_generated/` artifact. Do not dump `src/` or `src/mod/`."
+msgstr ""
+"只把 git diff、受影响的 `man/*.md` 页面，以及对应的 `_generated/` 产物喂给模型。不要倾倒 `src/` 或 "
+"`src/mod/`。"
+
+#: ../../12-document.md 93cce8555a3946d880c38444c92f2e84
+msgid "Tiered updates"
+msgstr "分层更新"
+
+#: ../../12-document.md 650ae2c6b0ad44cca010d65db06dbc79
+msgid ""
+"Level 1 = scripts. Level 2 = bounded LLM merge. Level 3 = human rationale "
+"(ADR, product intent)."
+msgstr "Level 1 = 脚本。Level 2 = 有边界的 LLM 合并。Level 3 = 人类理由（ADR、产品意图）。"
+
+#: ../../12-document.md 7856b8c7e6034208b899cd327da7e288
+msgid "Batch instead of thrash"
+msgstr "批量更新，避免反复折腾"
+
+#: ../../12-document.md 1c0bbd08618e496883fe2402e65a5698
+msgid ""
+"Refresh per PR, sprint, or release — not after every FreeSWITCH commit. This"
+" history is large."
+msgstr "按 PR、迭代或发版刷新 — 不要每个 FreeSWITCH 提交都刷。这段历史很长。"
+
+#: ../../12-document.md:49 b79808817544417f8a8810df887ee576
+msgid "Deterministic Script Toolbox"
+msgstr "确定性脚本工具箱"
+
+#: ../../12-document.md:51 94a0242077a944f8be5c8b33e4627d22
+msgid ""
+"All paths below exist under `man/scripts/`. There is **no** in-tree "
+"`init_pkb.sh` (that helper lives in the PKB skill and already ran at "
+"scaffold time)."
+msgstr ""
+"下列路径都在 `man/scripts/` 下。仓库内 **没有** `init_pkb.sh`（该助手在 PKB skill 里，脚手架时已经跑过）。"
+
+#: ../../12-document.md:53 be82eadfc0424f1ab63ae22f5d6348d2
+msgid ""
+"Scripts write sidecar files under `man/_generated/` with an `<!-- Auto-"
+"generated by … -->` header. They **must not** overwrite human-maintained "
+"pages (`00-overview.md` … `12-document.md`, `index.md`, appendices). "
+"Inferred meaning stays as `[NEEDS INPUT: …]`."
+msgstr ""
+"脚本把附属文件写到 `man/_generated/`，带 `<!-- Auto-generated by … -->` 头。它们 **不得** "
+"覆盖人工维护的页面（`00-overview.md` … `12-document.md`、`index.md`、附录）。推断出的含义保持 "
+"`[NEEDS INPUT: …]`。"
+
+#: ../../12-document.md 776f8adbda7a4750bda7082d3da0b753
+msgid "Script"
+msgstr "脚本"
+
+#: ../../12-document.md ab3f6ece6a8e4e4eacac416c19ccf83c
+msgid "Role"
+msgstr "职责"
+
+#: ../../12-document.md a6ce7ea63fe44a4fbb397177773059ec
+msgid "Level"
+msgstr "级别"
+
+#: ../../12-document.md 72357710999440268dd41f5080b96c89
+msgid "Notes on this repo"
+msgstr "本仓库说明"
+
+#: ../../12-document.md fb2e8481f770446b9e045722076033c8
+msgid "`check_pkb_staleness.py`"
+msgstr "`check_pkb_staleness.py`"
+
+#: ../../12-document.md 414018e7ff2b4afb9329e038938e5933
+msgid "Freshness report (`info` / `warning` / `critical`)"
+msgstr "新鲜度报告（`info` / `warning` / `critical`）"
+
+#: ../../12-document.md 341e9a6e84844f1fa8dad31574703068
+#: 37dc09757ecb40ba8735a4d4f39fe234 3ffe1f8b41d74643840aa42368d45bc7
+#: 6371bfa253ea43959cac462dc5c697c0 76f12135fcda4717b30a668ef4f12519
+#: 7f4c3441b1f34d8d86752fc4d14dfbfb 984552adb8044510acdf99faf03a75fd
+#: a20a515065c5423380885c8d8838b826 b75e53f78fd84123863271bb0147a484
+#: cffce4a611f6483e89680290e5087d8e d6c6a8f6e44e407e99d903211b3c3db9
+#: db9b570e5fb4470b8c6dc07c7b080422 dbc2991f9fef4f72a7ba2b3f8246342b
+#: ee281dacca0e401b8c9098206934484e f766916faf10423eb020bd23ca144289
+msgid "1"
+msgstr "1"
+
+#: ../../12-document.md 689838e393454057ab3553ed1956a7ab
+msgid ""
+"`make pkb-check`. Default source→doc map is generic (JS/Go/Python). No "
+"`man/pkb-source-doc-map.json` yet, so C/`src/mod/`/`conf/` drift is under-"
+"signaled."
+msgstr ""
+"`make pkb-check`。默认的源→文档映射是通用的（JS/Go/Python）。尚无 `man/pkb-source-doc-"
+"map.json`，因此 C/`src/mod/`/`conf/` 的漂移信号偏弱。"
+
+#: ../../12-document.md 18c6e0442c31420bb370e04821ac2c08
+msgid "`update_doc_level1.sh`"
+msgstr "`update_doc_level1.sh`"
+
+#: ../../12-document.md 390e17ef7a0b4b5b9f200bbf453406fb
+msgid ""
+"Orchestrates repo-map, tech-stack, index candidate, staleness, optional i18n"
+msgstr "编排仓库地图、技术栈、index 候选、过期检查、可选 i18n"
+
+#: ../../12-document.md 027fa1c0b2fa44d7ab9e5dc9494dda84
+msgid "`make pkb-level1`. Writes `level1-refresh-summary.generated.md`."
+msgstr "`make pkb-level1`。写出 `level1-refresh-summary.generated.md`。"
+
+#: ../../12-document.md 4e39970663814cdab1e72e27d8228c34
+msgid "`gen_repo_map.sh`"
+msgstr "`gen_repo_map.sh`"
+
+#: ../../12-document.md 6c803430d15c461e8bddaaaffe701278
+msgid "Directory tree snapshot"
+msgstr "目录树快照"
+
+#: ../../12-document.md 7da07b7823df4f8c861b4835f824aeb7
+msgid "Input for [Repository Map](04-repo-map.md)."
+msgstr "供 [仓库地图](04-repo-map.md) 使用。"
+
+#: ../../12-document.md 82c8b7c6dfe440a7aeaf39f656073ca9
+msgid "`gen_tech_stack.py`"
+msgstr "`gen_tech_stack.py`"
+
+#: ../../12-document.md c06255c95d4b4412acf79340267e8e76
+msgid "Manifest version inventory"
+msgstr "清单版本盘点"
+
+#: ../../12-document.md 5e872a7e75be4690b4f4a197f37db2c4
+msgid ""
+"Sees `man/pyproject.toml` (Sphinx). Does **not** parse `configure.ac`. Human"
+" page still owns Autotools floors."
+msgstr ""
+"能看到 `man/pyproject.toml`（Sphinx）。**不会** 解析 `configure.ac`。Autotools "
+"下限仍由人工页面负责。"
+
+#: ../../12-document.md 36ef1cd0dffd458e9c1bc148373322c1
+msgid "`gen_index.py`"
+msgstr "`gen_index.py`"
+
+#: ../../12-document.md 8d709294541e43128602503b72a35eef
+msgid "`index.md` **candidate**"
+msgstr "`index.md` **候选稿**"
+
+#: ../../12-document.md 3d0572d275da48debe3cfbb415541880
+msgid "Compare to human `man/index.md`; do not replace the toctree blindly."
+msgstr "与人工维护的 `man/index.md` 对照；不要盲目替换 toctree。"
+
+#: ../../12-document.md ba10cb15e4ae415eb07bcaf7d11b3d14
+msgid "`extract_api_signatures.py`"
+msgstr "`extract_api_signatures.py`"
+
+#: ../../12-document.md 3e156a6217be4ef08a53a2d3ee27926f
+msgid "Tauri/REST heuristic extract"
+msgstr "Tauri/REST 启发式抽取"
+
+#: ../../12-document.md 9b44e8376d9d48f5b5aa0da0d16f8279
+#: d81e4abfda124caf96154db64d2c6b80
+msgid "1 input"
+msgstr "1 输入"
+
+#: ../../12-document.md acee767f343444e785cf6c4066e86eb9
+msgid ""
+"Already ran: `_generated/05-data-and-api.signatures.generated.md` is empty "
+"of REST/Tauri. ESL/Verto/XML stay human-authored in [Data and API](05-data-"
+"and-api.md)."
+msgstr ""
+"已跑过：`_generated/05-data-and-api.signatures.generated.md` 里没有 "
+"REST/Tauri。ESL/Verto/XML 仍由人工写在 [数据与 API](05-data-and-api.md)。"
+
+#: ../../12-document.md b565a97d75894e9fbd7552a3fc7bcaca
+msgid "`gen_dep_graph.py`"
+msgstr "`gen_dep_graph.py`"
+
+#: ../../12-document.md cc4b246cf820466ab370f74561914d5b
+msgid "Import graph (JS/TS/Py/Go/Rust)"
+msgstr "导入图（JS/TS/Py/Go/Rust）"
+
+#: ../../12-document.md 5879cbe8b8674ba3bb7fcc49e248c3d5
+msgid "Weak signal for this C tree. Optional."
+msgstr "对本 C 代码树信号弱。可选。"
+
+#: ../../12-document.md 167a18d2e9d8447fb41cc29a307bfc7f
+msgid "`gen_changelog.sh`"
+msgstr "`gen_changelog.sh`"
+
+#: ../../12-document.md 3adeedebd3344402a6e48c8e6c7d672c
+msgid "`git log` draft → `_generated/08-build.changelog.generated.md`"
+msgstr "`git log` 草稿 → `_generated/08-build.changelog.generated.md`"
+
+#: ../../12-document.md cd765458487f4158a2e4e9201bafa959
+msgid ""
+"`make changelog-draft`. **Slow on this history.** Pass `--range` (e.g. "
+"`HEAD~20..HEAD` or `v1.10.12..HEAD`). Makefile target does not forward "
+"`--range`; invoke the script directly."
+msgstr ""
+"`make changelog-draft`。**在这段历史上很慢。** 传入 `--range`（例如 `HEAD~20..HEAD` 或 "
+"`v1.10.12..HEAD`）。Makefile 目标不会转发 `--range`；请直接调用脚本。"
+
+#: ../../12-document.md 4009bdd4c14b40449e29f32433a91acb
+msgid "`check_translation_sync.py`"
+msgstr "`check_translation_sync.py`"
+
+#: ../../12-document.md e709ec1eb51f48848b3e70144bdaa245
+msgid "zh_CN catalog drift"
+msgstr "zh_CN 目录漂移"
+
+#: ../../12-document.md ec4ec69907114a64b05e5e9586b921ed
+msgid ""
+"`make pkb-check-i18n`. Flags empty/fuzzy/stale `.po` after English edits."
+msgstr "`make pkb-check-i18n`。在英文源更新后标记空译文、fuzzy 或过期的 `.po`。"
+
+#: ../../12-document.md 9336ac92e13f4aff8091fba1e8bb9462
+msgid "`pkb_review_status.py`"
+msgstr "`pkb_review_status.py`"
+
+#: ../../12-document.md 072e5c1d9df747329f7a35179b9180fc
+msgid "Review/confidentiality dashboard"
+msgstr "评审/密级仪表盘"
+
+#: ../../12-document.md 253a25538b184194b05dea8e52378530
+msgid ""
+"`make pkb-review-status`. Currently all `pending`, score `0`. `--strict` "
+"fails while any page is pending."
+msgstr ""
+"`make pkb-review-status`。当前全部 `pending`，分数 `0`。只要有页面仍是 pending，`--strict` "
+"就会失败。"
+
+#: ../../12-document.md 7b4269fd87364148900959330dd561f7
+msgid "`strip_confidential.py`"
+msgstr "`strip_confidential.py`"
+
+#: ../../12-document.md a5d64e5c852746b8803300c414df388d
+msgid "Drop `L3+` pages from `_build/site/`"
+msgstr "从 `_build/site/` 去掉 `L3+` 页面"
+
+#: ../../12-document.md aed3dc68e3804a5bb393dcf667fa4072
+msgid ""
+"`make strip-confidential` (default `CONF_MIN_LEVEL=L3`). Runs between HTML "
+"build and AgentBox packaging."
+msgstr ""
+"`make strip-confidential`（默认 `CONF_MIN_LEVEL=L3`）。在 HTML 构建与 AgentBox "
+"打包之间运行。"
+
+#: ../../12-document.md b1b651e9358e4e63998a2aa56cdc36cc
+msgid "`gen_agentbox_files.py`"
+msgstr "`gen_agentbox_files.py`"
+
+#: ../../12-document.md 55dfe4b2d2ec490985da60c3d7d8429f
+msgid "Encode site → `functions/freeswitch-doc/files.ts`"
+msgstr "把站点编码进 `functions/freeswitch-doc/files.ts`"
+
+#: ../../12-document.md 992a2ec60f8248a4b2f94b963b159b41
+msgid "Used by `make agentbox-gen` / `make publish`."
+msgstr "供 `make agentbox-gen` / `make publish` 使用。"
+
+#: ../../12-document.md dd9f95bf3442481ea96c45c64d8b48d4
+msgid "`render_landing.py`"
+msgstr "`render_landing.py`"
+
+#: ../../12-document.md e997c1a86df049e5a3062937f6c359f8
+msgid "Bilingual `_build/site/index.html`"
+msgstr "双语 `_build/site/index.html`"
+
+#: ../../12-document.md bbb6f699fe9a4a8fa48df38c4ec665d3
+msgid "`make build-landing` (also part of `html-all`)."
+msgstr "`make build-landing`（也是 `html-all` 的一部分）。"
+
+#: ../../12-document.md 96b2192ce7dc44c8af7156bd7b1cbfc2
+msgid "`translate_po.py`"
+msgstr "`translate_po.py`"
+
+#: ../../12-document.md 386ae2bb1ff3458cba3016a3382ff53a
+msgid "Optional dictionary fill of `.po` `msgstr`"
+msgstr "可选：用词典批量填写 `.po` 的 `msgstr`"
+
+#: ../../12-document.md d0e5054c952742deba8e7418bb86c0ac
+msgid ""
+"`make translate-zh`. This tree used `scripts/i18n_apply_json.py` (polib) for"
+" the first full pass."
+msgstr ""
+"`make translate-zh`。本仓库第一次全量翻译走的是 `scripts/i18n_apply_json.py`（polib）。"
+
+#: ../../12-document.md 900ecb4c607844b1ac7986e4e413d1e4
+msgid "`i18n_apply_json.py`"
+msgstr "`i18n_apply_json.py`"
+
+#: ../../12-document.md 72a060cf895b4f28bb7804680140645f
+msgid "Apply `msgid`→`msgstr` JSON onto a `.po` via polib"
+msgstr "用 polib 把 `msgid`→`msgstr` 的 JSON 写进 `.po`"
+
+#: ../../12-document.md dd5fa62b845240669b644441fccc84cb
+msgid "Preferred over editing `.po` by hand or `sed`."
+msgstr "优先于手改 `.po` 或用 `sed`。"
+
+#: ../../12-document.md 0488141f2c414dc0b1a34202cd5edda0
+msgid "`i18n_identity_and_dump.py`"
+msgstr "`i18n_identity_and_dump.py`"
+
+#: ../../12-document.md c562c18f673f41208916d7c2d176265e
+msgid "Copy code/URL msgids; dump remaining English as JSON"
+msgstr "原样拷贝代码/URL 的 msgid；将其余英文导出为 JSON"
+
+#: ../../12-document.md 71b5ca83ff8a49ee959d5f4d18d31154
+msgid "Input for a translation pass."
+msgstr "供一轮翻译使用的输入。"
+
+#: ../../12-document.md 900ecb4c607844b1ac7986e4e413d1e4
+msgid "`validate_template_links.py`"
+msgstr "`validate_template_links.py`"
+
+#: ../../12-document.md 5a3dc48312f040889441d7cb56a681b0
+msgid "Stale numbering / broken relative links"
+msgstr "过时编号 / 损坏的相对链接"
+
+#: ../../12-document.md 0ecaa2006f234d28b57777790ffcf9b0
+msgid "Skill-side checker copied in-tree."
+msgstr "技能侧检查器已拷入本仓库。"
+
+#: ../../12-document.md:75 0e8599635528421e8d5d79c25ba53865
+msgid ""
+"Shared helpers (not standalone Make targets): `generated_output.py`, "
+"`generated_output.sh`."
+msgstr "共享助手（不是独立 Make 目标）：`generated_output.py`、`generated_output.sh`。"
+
+#: ../../12-document.md:77 647a44276bf44e76b85823d04525fa6c
+msgid "Three-Level Update Policy"
+msgstr "三级更新策略"
+
+#: ../../12-document.md:79 261fa5ebac7e4edcbaa3fbd006df3b47
+msgid ""
+"**Level 1 — Automatic (zero token):** tree snapshots, Sphinx-dep inventory, "
+"index candidate, staleness/i18n reports, changelog draft, confidential "
+"strip, AgentBox `files.ts`. Run `make pkb-level1` (and the specific script "
+"if you only need one artifact). Stop if the sidecar is enough for a "
+"mechanical merge (path rename, version bump)."
+msgstr ""
+"**Level 1 — 自动（零 token）：** 树快照、Sphinx 依赖盘点、index 候选、过期/i18n 报告、changelog "
+"草稿、密级剥离、AgentBox `files.ts`。跑 `make pkb-"
+"level1`（若只要一件产物则跑对应脚本）。若附属产物已足够做机械合并（路径改名、版本号），就停。"
+
+#: ../../12-document.md:80 80bae3db44084337800fb1d8cc33b074
+msgid ""
+"**Level 2 — LLM-assisted:** new/removed modules, ESL/event contract wording,"
+" build/CI narrative, workflow traces. Handoff package: git diff + the "
+"published page(s) + only the relevant `_generated/` files (for example "
+"`04-repo-map.generated.md` into [Repository Map](04-repo-map.md), `03-tech-"
+"stack.generated.md` into [Tech Stack](03-tech-stack.md), changelog draft "
+"into [CHANGELOG](CHANGELOG.md) / [Build](08-build.md)). Set `review_status: "
+"pending` after a substantive rewrite."
+msgstr ""
+"**Level 2 — LLM 辅助：** 新增/删除模块、ESL/事件契约措辞、构建/CI 叙述、工作流追踪。交接包：git diff + 已发布页面"
+" + 仅相关 `_generated/` 文件（例如把 `04-repo-map.generated.md` 合进 [仓库地图](04-repo-"
+"map.md)，把 `03-tech-stack.generated.md` 合进 [技术栈](03-tech-stack.md)，把 "
+"changelog 草稿合进 [CHANGELOG](CHANGELOG.md) / [构建](08-build.md)）。实质性改写后设 "
+"`review_status: pending`。"
+
+#: ../../12-document.md:81 21da43a43dbd4ff1a47deded05681363
+msgid ""
+"**Level 3 — Human-led:** ADRs (`man/adr/`; none recorded yet beyond the "
+"template), change proposals (`man/changes/`), product direction, “why we "
+"load this module.” AI formats and cross-links; it does not invent rationale."
+msgstr ""
+"**Level 3 — 人类主导：** "
+"ADR（`man/adr/`；除模板外尚未记录）、变更提案（`man/changes/`）、产品方向、“我们为什么加载这个模块”。AI "
+"负责排版和交叉链接；不编造理由。"
+
+#: ../../12-document.md:83 579fed646f9d441ca3f30fcec8e0062c
+msgid "Translation and Build"
+msgstr "翻译与构建"
+
+#: ../../12-document.md:85 2e4689502fb144c1ae625e930300755c
+msgid ""
+"English HTML and zh_CN `.po` catalogs are implemented. Rebuild Chinese HTML "
+"after catalog edits."
+msgstr "英文 HTML 与 zh_CN `.po` 目录均已落地。改完目录后请重建中文 HTML。"
+
+#: ../../12-document.md:104 5f331adccdec46808903562e6b4cb6fe
+msgid "AgentBox (optional, **wired, not yet published**):"
+msgstr "AgentBox（可选，**已接线，尚未发布**）："
+
+#: ../../12-document.md:111 2672504b4e3447e8bcac96331e8ae3cd
+msgid ""
+"Slug is `freeswitch-doc` (`man/agentbox.yaml`). Bypass strip only by running"
+" `agentbox-gen` pieces by hand; that is not the intended path."
+msgstr ""
+"slug 是 `freeswitch-doc`（`man/agentbox.yaml`）。只有手工跑 `agentbox-gen` "
+"各步才会绕过剥离；那不是预定路径。"
+
+#: ../../12-document.md:113 03af2056c92d408797e0cff5458a2bb8
+msgid "Suggested Checklist"
+msgstr "建议检查清单"
+
+#: ../../12-document.md:115 a3dcf95dd3094d6bb285af6a4bce8ccb
+msgid "Update the English source page under `man/` first."
+msgstr "先更新 `man/` 下的英文源页面。"
+
+#: ../../12-document.md:116 0852f104696546f5bd4e655456a755a7
+msgid ""
+"Run the matching Level 1 script(s) so `_generated/` is current (`make pkb-"
+"level1` for the default set)."
+msgstr "跑对应的 Level 1 脚本，让 `_generated/` 保持最新（默认集合用 `make pkb-level1`）。"
+
+#: ../../12-document.md:117 20c4c866b0eb48d0948e7a70e70cd94d
+msgid ""
+"Merge facts into the human page. Keep `[NEEDS INPUT: …]` rather than "
+"inventing rationale. Do not paste the whole sidecar over the narrative."
+msgstr "把事实合并进人工页面。保留 `[NEEDS INPUT: …]`，不要编造理由。不要把整份附属产物贴进叙述。"
+
+#: ../../12-document.md:118 2ad54ab5c11b4744be7b220741739fe0
+msgid ""
+"Refresh the `<!-- PKB-metadata -->` footer: `last_updated`, `commit` (`git "
+"rev-parse --short HEAD`), `updated_by`. Leave `review_status: pending` and "
+"`review_score: 0` unless a human is approving. Never lower "
+"`confidentiality`."
+msgstr ""
+"刷新 `<!-- PKB-metadata -->` 页脚：`last_updated`、`commit`（`git rev-parse --short"
+" HEAD`）、`updated_by`。除非人类正在批准，否则保持 `review_status: pending` 和 `review_score:"
+" 0`。永远不要降低 `confidentiality`。"
+
+#: ../../12-document.md:119 7c4d55da7aa24915b490c4e7d22ce634
+msgid ""
+"After English wording changes, refresh zh_CN catalogs (once they exist) and "
+"re-check `make pkb-check-i18n`."
+msgstr "英文措辞变更后，刷新 zh_CN 目录（一旦它们存在）并再跑 `make pkb-check-i18n`。"
+
+#: ../../12-document.md:120 ce645bed751e43f0ab627e2983c69aee
+msgid "Rebuild: `make html-en` or `make html-all`."
+msgstr "重建：`make html-en` 或 `make html-all`。"
+
+#: ../../12-document.md:121 30d5dff5a3dd4ed1a8042919bea12f07
+msgid ""
+"Verify toctree links, Mermaid, and the language switcher. For a public drop:"
+" `make strip-confidential` then AgentBox gen/deploy."
+msgstr ""
+"核对 toctree 链接、Mermaid 和语言切换器。对外发布：`make strip-confidential`，再做 AgentBox "
+"生成/部署。"
+
+#: ../../12-document.md:123 fee1df2df1ae4b8f94bb4aad591d53db
+msgid "Common Mistakes"
+msgstr "常见错误"
+
+#: ../../12-document.md c425635b917847f383f76a8b2864e97f
+msgid "Mistake"
+msgstr "错误做法"
+
+#: ../../12-document.md e79187d0967d4b25af9b9e01607a927f
+msgid "Result"
+msgstr "后果"
+
+#: ../../12-document.md 5470aac5b240403a946d27da8f634be5
+msgid "Fix"
+msgstr "纠正"
+
+#: ../../12-document.md c2fe3d12beb048219e87d79af4117276
+msgid "Edit `docs/man/` thinking it is the PKB"
+msgstr "把 `docs/man/` 当成 PKB 来改"
+
+#: ../../12-document.md e0483f5aa78642c9810a853b8ab2252a
+msgid "Wrong tree (Unix man page)"
+msgstr "改错了树（Unix man page）"
+
+#: ../../12-document.md e3c053795348468c8b3185a55174c6fe
+msgid "PKB is `man/` at repo root"
+msgstr "PKB 是仓库根目录的 `man/`"
+
+#: ../../12-document.md d360e7ee8f4f41f5a7c5c38fb3c4fef8
+msgid "Treat `_generated/` or `_build/site/` as source"
+msgstr "把 `_generated/` 或 `_build/site/` 当源"
+
+#: ../../12-document.md b63b5c7ba3a3444c8990dcd325878bf3
+msgid "Overwrites vanish; HTML is regenerated"
+msgstr "覆盖会消失；HTML 会重新生成"
+
+#: ../../12-document.md 8dbf243bebf8425aac22e0e7e6a34ba9
+msgid "Edit `man/*.md` only"
+msgstr "只编辑 `man/*.md`"
+
+#: ../../12-document.md cd0185abbca145d79ab3f38aff5a1a26
+msgid "Let Level 1 scripts rewrite `04-repo-map.md` / `index.md`"
+msgstr "让 Level 1 脚本重写 `04-repo-map.md` / `index.md`"
+
+#: ../../12-document.md 6295f204f8274747ab4c5c6ecfe6f8d5
+msgid "Human narrative and toctree lost"
+msgstr "人工叙述和 toctree 丢失"
+
+#: ../../12-document.md a41c19fd9adc496d8e461d884bb5e769
+msgid "Scripts write sidecars; merge by hand"
+msgstr "脚本只写附属产物；人工合并"
+
+#: ../../12-document.md ffee4b3b1d734e348b36685e2d8be415
+msgid "Assume `man/pyproject.toml` is the product stack"
+msgstr "把 `man/pyproject.toml` 当成产品技术栈"
+
+#: ../../12-document.md 5da66df5fe2d439f8a9c91587b1dfbcd
+msgid "Sphinx versions mistaken for FreeSWITCH deps"
+msgstr "把 Sphinx 版本误当成 FreeSWITCH 依赖"
+
+#: ../../12-document.md 52bd6316884f41a795fdec88a727dbf2
+msgid "Product floors are in `configure.ac` / [Tech Stack](03-tech-stack.md)"
+msgstr "产品下限在 `configure.ac` / [技术栈](03-tech-stack.md)"
+
+#: ../../12-document.md ae6e4e8f01ae4c7fbef6df7feacadad0
+msgid "Run `make changelog-draft` with no `--range`"
+msgstr "不带 `--range` 跑 `make changelog-draft`"
+
+#: ../../12-document.md 9db16a3bbe6849dcacf8ead3e3baadd6
+msgid "`gen_changelog.sh` walks a huge git log"
+msgstr "`gen_changelog.sh` 会扫超长 git log"
+
+#: ../../12-document.md 61bfc684d218496c8a84530f4785223f
+msgid ""
+"`bash scripts/gen_changelog.sh --repo-root .. --doc-dir . --range "
+"HEAD~20..HEAD`"
+msgstr ""
+"`bash scripts/gen_changelog.sh --repo-root .. --doc-dir . --range "
+"HEAD~20..HEAD`"
+
+#: ../../12-document.md 1b0fde111e54454daf48d4b5fd848c14
+msgid "AI sets `review_status: approved`"
+msgstr "AI 把 `review_status: approved` 设上"
+
+#: ../../12-document.md a142f43ffe51409dad8de31495e1995a
+msgid "False sign-off"
+msgstr "虚假签核"
+
+#: ../../12-document.md 1556deffb51e432abb39905295ac0df4
+msgid "Only a human may approve; AI keeps `pending`"
+msgstr "只有人可以批准；AI 保持 `pending`"
+
+#: ../../12-document.md 62f3f1eee1284231925f7ad9bfc3e79d
+msgid "Publish without `strip-confidential`"
+msgstr "不跑 `strip-confidential` 就发布"
+
+#: ../../12-document.md a97a5ac9ff624c07a4f0b4cf670a7fb5
+msgid "`L3+` pages could ship (none today; still the gate)"
+msgstr "`L3+` 页面可能被发出去（今天没有；但仍是门禁）"
+
+#: ../../12-document.md 95b4d6ff05364a4696a7fcf64920631f
+msgid "Use `make publish`, not a raw `abx` after `html-all`"
+msgstr "用 `make publish`，不要在 `html-all` 之后直接跑裸 `abx`"
+
+#: ../../12-document.md 7c02c7c6aef34003a0aeaaaca011d39e
+msgid "Skip `intl-update` after English edits"
+msgstr "改完英文后跳过 `intl-update`"
+
+#: ../../12-document.md ddd6d7c484da4fd69883b8294ebe53da
+msgid "Chinese pages show stale or English body text"
+msgstr "中文页面正文过期或仍显示英文"
+
+#: ../../12-document.md 7c02c7c6aef34003a0aeaaaca011d39e
+msgid ""
+"`make gettext && make intl-update`, fill empty `msgstr`, then `html-zh`"
+msgstr "`make gettext && make intl-update`，填空 `msgstr`，再 `html-zh`"
+
+#: ../../12-document.md a8f4660a98ac42b59cd4e624b4523114
+msgid "Feed the whole FreeSWITCH tree to an LLM to “refresh docs”"
+msgstr "把整棵 FreeSWITCH 树喂给 LLM 来“刷新文档”"
+
+#: ../../12-document.md 2a2adb9ccd4e43ecbd1c40288baae293
+msgid "Token burn, shallow pages"
+msgstr "烧 token，页面浅"
+
+#: ../../12-document.md 065e3c5b51fd4c2caf4a36751202102e
+msgid "Staleness report → one page + diff + one artifact"
+msgstr "过期报告 → 一页 + diff + 一份产物"
+
+#: ../../12-document.md:137 c5acf67b71c44fd8b00c9505baf01c15
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../12-document.md:139 778218b4c96045e390b53c0d3ec1cf86
+msgid ""
+"[Build, Release, and Publish](08-build.md) — Autotools/CI plus the short PKB"
+" HTML command block"
+msgstr "[构建、发布与上线](08-build.md) — Autotools/CI 以及简短的 PKB HTML 命令块"
+
+#: ../../12-document.md:140 b4c74eb44a174e6e8a3fe23a9c6e2276
+msgid "[Tech Stack](03-tech-stack.md) — product vs PKB Sphinx deps"
+msgstr "[技术栈](03-tech-stack.md) — 产品依赖 vs PKB Sphinx 依赖"
+
+#: ../../12-document.md:141 235ea01f5c004b7e9261a19efd12f96f
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../12-document.md:142 8cfd7782e05242aaa6ed8c91b429104c
+msgid "[Testing](09-testing.md)"
+msgstr "[测试](09-testing.md)"
+
+#: ../../12-document.md:143 ca9b97a65e004e998cdc815d2a0e96dd
+msgid "[AI Guide](ai-guide.md)"
+msgstr "[AI 指南](ai-guide.md)"
+
+#: ../../12-document.md:144 2599484fcba84629a25acbd0813a25aa
+msgid "[Documentation Changelog](CHANGELOG.md)"
+msgstr "[文档变更日志](CHANGELOG.md)"
+
+#: ../../12-document.md:145 bea0328f6ee4419dbf8153e0c66d57db
+msgid "[ADR index](adr/index.md)"
+msgstr "[ADR 索引](adr/index.md)"
+
+#: ../../12-document.md:146 eac1212cc9a54e389adb053d891e1113
+msgid "[Change proposals](changes/index.md)"
+msgstr "[变更提案](changes/index.md)"
+
+#: ../../12-document.md:147 2ed5fd998798435c87bb4aeb2b86d165
+msgid ""
+"[FreeSWITCH Users Manual](https://developer.signalwire.com/freeswitch/)"
+msgstr "[FreeSWITCH 用户手册](https://developer.signalwire.com/freeswitch/)"
+
+#~ msgid ""
+#~ "**Scaffold only.** Directory currently holds `.gitkeep`. No `.pot` / `.po` /"
+#~ " `.mo` catalogs yet. Planned: `make gettext` then `make intl-update`, then "
+#~ "human (or dictionary) fill of `msgstr`."
+#~ msgstr ""
+#~ "**目前只是脚手架。** 目录里现在只有 `.gitkeep`。尚无 `.pot` / `.po` / `.mo` 目录。计划：先 `make "
+#~ "gettext` 再 `make intl-update`，然后由人（或词典）填写 `msgstr`。"
+
+#~ msgid ""
+#~ "`make pkb-check-i18n`. Will report missing `.po` files until catalogs are "
+#~ "generated."
+#~ msgstr "`make pkb-check-i18n`。在目录生成之前会报告缺少 `.po` 文件。"
+
+#~ msgid ""
+#~ "`make translate-zh`. `TRANSLATIONS` dict is empty (examples only) until "
+#~ "catalogs exist."
+#~ msgstr "`make translate-zh`。在目录存在之前，`TRANSLATIONS` 字典是空的（只有示例）。"
+
+#~ msgid ""
+#~ "English HTML is implemented. Chinese catalogs and a first `html-zh` build "
+#~ "are **planned** (locale dir exists; catalogs do not)."
+#~ msgstr "英文 HTML 已落地。中文目录和第一次 `html-zh` 构建仍是 **计划中**（locale 目录在，目录文件还不在）。"
+
+#~ msgid "Expect zh_CN HTML before catalogs exist"
+#~ msgstr "目录还不存在就指望 zh_CN HTML"
+
+#~ msgid "Empty/untranslated Chinese build"
+#~ msgstr "空的/未翻译的中文构建"
+
+#~ msgid "FreeSWITCH Explained, Confluence, `docs/man/`"
+#~ msgstr "FreeSWITCH Explained、Confluence、`docs/man/`"

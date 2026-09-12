@@ -1,0 +1,128 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:26+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../adr/index.md:31
+msgid "ADR documents"
+msgstr "ADR 文档"
+
+#: ../../adr/index.md:1 96f0c43ecd2b45118a1abe8566a63faf
+msgid "Architecture Decision Records (ADR)"
+msgstr "架构决策记录 (ADR)"
+
+#: ../../adr/index.md:3 40f4f405c8234fcc999da6b3d9b4afa2
+msgid ""
+"This directory contains Architecture Decision Records (ADRs) documenting "
+"significant architectural decisions made in this project."
+msgstr "本目录存放架构决策记录 (ADR)，记录本项目中做出的重要架构决策。"
+
+#: ../../adr/index.md:5 a5c3459a81bc4b93b98d1ea7233321b0
+msgid "What is an ADR?"
+msgstr "什么是 ADR？"
+
+#: ../../adr/index.md:7 5b75648e69204b70826628616a957b2f
+msgid ""
+"An Architecture Decision Record (ADR) is a document that captures an "
+"important architectural decision made along with its context and "
+"consequences."
+msgstr "架构决策记录 (ADR) 是一份文档，用于记录一项重要架构决策及其背景与后果。"
+
+#: ../../adr/index.md:9 cef119d81b2249df9525e5b4c63f4223
+msgid "ADR Format"
+msgstr "ADR 格式"
+
+#: ../../adr/index.md:11 45179b625b4248cf89b5d34dde59c1b1
+msgid "Each ADR follows this structure:"
+msgstr "每份 ADR 采用如下结构："
+
+#: ../../adr/index.md:13 25273f9646804ffca59da698532d70d4
+msgid "**Status**: Proposed, Accepted, Deprecated, or Superseded"
+msgstr "**状态**：已提议、已接受、已废弃或已被取代"
+
+#: ../../adr/index.md:14 1f0de17d2b75424f85f6b9d98ad13a60
+msgid "**Context**: The circumstances and constraints"
+msgstr "**背景**：当时的情形与约束"
+
+#: ../../adr/index.md:15 26fbd0e579c64eb496888ad240648e03
+msgid "**Decision**: What was decided"
+msgstr "**决策**：最终决定了什么"
+
+#: ../../adr/index.md:16 0f7c8393a4ed496eae4431727dd86094
+msgid "**Alternatives**: Other options considered"
+msgstr "**备选方案**：曾考虑过的其他选项"
+
+#: ../../adr/index.md:17 5a8598a658334e78a714bda6b3e2f549
+msgid ""
+"**Consequences**: The results of the decision (positive, negative, neutral)"
+msgstr "**后果**：该决策带来的结果（正面、负面、中性）"
+
+#: ../../adr/index.md:19 6b4978bf8a344a669f4fa385181052bd
+msgid "How to Create an ADR"
+msgstr "如何创建 ADR"
+
+#: ../../adr/index.md:21 b4565b462c804d17898c9669c619f719
+msgid "Use the `/PKB-adr` command:"
+msgstr "使用 `/PKB-adr` 命令："
+
+#: ../../adr/index.md:27 489379fa19ab42fdb0c49c2542f7bfbe
+msgid "ADR List"
+msgstr "ADR 列表"
+
+#: ../../adr/index.md:29 111291a2cc784491a7ec9fba708c4c98
+msgid ""
+"There are no numbered records yet (`adr/0001-*.md`). Create one with `/PKB-"
+"adr \"title\"`, then add the new file to the toctree below (or restore a "
+"`:glob:` entry `0*`)."
+msgstr ""
+"目前还没有编号记录（`adr/0001-*.md`）。用 `/PKB-adr \"title\"` 创建后，把新文件加入下面的 toctree（或恢复 "
+"`:glob:` 条目 `0*`）。"
+
+#: ../../adr/index.md:38 9b16accc10744fa9a86132eb0a703d21
+msgid "Index by Status"
+msgstr "按状态索引"
+
+#: ../../adr/index.md:40 459f069c5e384efc8960766cc5fecb7c
+msgid "Accepted"
+msgstr "已接受"
+
+#: ../../adr/index.md:44 a318781bb59041a39ed45d68d496245f
+msgid "Proposed"
+msgstr "已提议"
+
+#: ../../adr/index.md:48 9ccdb0381f904a6c9cae0547038ea80a
+msgid "Deprecated"
+msgstr "已废弃"
+
+#: ../../adr/index.md:52 ce143aa0db66461b973aea29429c8a1b
+msgid "References"
+msgstr "参考资料"
+
+#: ../../adr/index.md:54 f1b8712a633e4b51839943a34a86b50a
+msgid "[ADR GitHub Organization](https://adr.github.io/)"
+msgstr "[ADR GitHub 组织](https://adr.github.io/)"
+
+#: ../../adr/index.md:55 bd67e6c270e34925be385d2835c9bb6a
+msgid ""
+"[Documenting Architecture "
+"Decisions](https://cognitect.com/blog/2011/11/15/documenting-architecture-"
+"decisions)"
+msgstr ""
+"[记录架构决策](https://cognitect.com/blog/2011/11/15/documenting-architecture-"
+"decisions)"

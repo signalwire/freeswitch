@@ -1,0 +1,416 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../appendix-01-faq.md:1 f824a1359afb4512b1a967a4be7a13e0
+msgid "Appendix-01: FAQ"
+msgstr "附录-01: 常见问题"
+
+#: ../../appendix-01-faq.md:5 9d502fec9cd54eeab5df649ba5213462
+msgid ""
+"Answers below come from [Quick Start](01-quick-start.md), "
+"[Architecture](02-architecture.md), [Build](08-build.md), [Data and "
+"API](05-data-and-api.md), the [Users "
+"Manual](https://developer.signalwire.com/freeswitch/), and `README.md`. "
+"Vanilla XML is a demo PBX, not a production baseline."
+msgstr ""
+"下列答案来自 [快速开始](01-quick-"
+"start.md)、[架构](02-architecture.md)、[构建](08-build.md)、[数据与 API](05-data-and-"
+"api.md)、[用户手册](https://developer.signalwire.com/freeswitch/) 和 "
+"`README.md`。vanilla XML 是演示用 PBX，不是生产基线。"
+
+#: ../../appendix-01-faq.md:7 4cecf21ed0a4479383fdc87bae5e492d
+msgid "Frequently Asked Questions"
+msgstr "常见问题"
+
+#: ../../appendix-01-faq.md:9 4de744745681414db51fa67c7b238437
+msgid "Should I install from source or from packages?"
+msgstr "应该从源码安装还是从软件包安装？"
+
+#: ../../appendix-01-faq.md:11 890b7d344fcd4802b65463ca7e090486
+msgid ""
+"`README.md` recommends **packages** for operators. That path is FSGET plus "
+"`freeswitch-meta-all` (`scripts/packaging/README.md`). FSGET needs a "
+"SignalWire Personal Access Token; without it, `apt` / `docker/master` "
+"returns **401**."
+msgstr ""
+"`README.md` 建议运维人员用 **软件包**。那条路径是 FSGET 加上 `freeswitch-meta-"
+"all`（`scripts/packaging/README.md`）。FSGET 需要 SignalWire Personal Access "
+"Token；没有它，`apt` / `docker/master` 会返回 **401**。"
+
+#: ../../appendix-01-faq.md:13 d815bc59190c4649a0f7df4d0bcbfccc
+msgid ""
+"This clone is the **source** path: install Sofia-SIP / libks / SpanDSP / "
+"signalwire-c first, then `./bootstrap.sh -j && ./configure "
+"--prefix=\"$HOME/fs\" && make && make install`. `release` tracks packaged "
+"releases; `prerelease` tracks `master`."
+msgstr ""
+"本克隆走的是 **源码** 路径：先安装 Sofia-SIP / libks / SpanDSP / signalwire-c，再 "
+"`./bootstrap.sh -j && ./configure --prefix=\"$HOME/fs\" && make && make "
+"install`。`release` 跟踪已打包发行版；`prerelease` 跟踪 `master`。"
+
+#: ../../appendix-01-faq.md:15 17e54546e9f543219c5de5370c52b7db
+msgid "Why are Sofia-SIP, SpanDSP, and libks missing from this git tree?"
+msgstr "为什么本 git 树里没有 Sofia-SIP、SpanDSP 和 libks？"
+
+#: ../../appendix-01-faq.md:17 d097095eedd640e9bb20686fe5342668
+#, python-brace-format
+msgid ""
+"They are **out-of-tree**. CI clones [sofia-"
+"sip](https://github.com/freeswitch/sofia-sip); "
+"`docker/examples/Debian11/Dockerfile` also builds libks, SpanDSP, and "
+"signalwire-c. macOS CI uses Homebrew `signalwire/homebrew-"
+"signalwire/{libks2,signalwire-c2,spandsp}`. `configure` / link fails until "
+"those libraries are installed. They are not under `libs/` (APR, SRTP, ESL, "
+"VPX *are*)."
+msgstr ""
+"它们是 **树外** 依赖。CI 会克隆 [sofia-sip](https://github.com/freeswitch/sofia-"
+"sip)；`docker/examples/Debian11/Dockerfile` 也会构建 libks、SpanDSP 和 "
+"signalwire-c。macOS CI 使用 Homebrew `signalwire/homebrew-"
+"signalwire/{libks2,signalwire-c2,spandsp}`。这些库没装好时，`configure` / 链接会失败。它们不在 "
+"`libs/` 下（APR、SRTP、ESL、VPX *在*）。"
+
+#: ../../appendix-01-faq.md:19 09301623bbf3443c923a58680ee00129
+msgid "Why are there two files named `modules.conf`?"
+msgstr "为什么有两个叫 `modules.conf` 的文件？"
+
+#: ../../appendix-01-faq.md a2b7556da46d4499806ea5509b5c8df6
+msgid "File"
+msgstr "文件"
+
+#: ../../appendix-01-faq.md 3d1cf3c06a9045848c92c14dee863a02
+msgid "When"
+msgstr "时机"
+
+#: ../../appendix-01-faq.md c96d735f7de04eb39146943849b4a440
+msgid "Role"
+msgstr "职责"
+
+#: ../../appendix-01-faq.md 76ee3a2759784af3925fda37dbf4dccc
+msgid "`build/modules.conf.in` → `modules.conf`"
+msgstr "`build/modules.conf.in` → `modules.conf`"
+
+#: ../../appendix-01-faq.md 1331d4d279b44aaa9226a826e770333e
+msgid "Build"
+msgstr "构建"
+
+#: ../../appendix-01-faq.md 0145fea520654127983d721c399bbab5
+msgid "Which `src/mod/...` trees `bootstrap.sh` / Autotools compile"
+msgstr "`bootstrap.sh` / Autotools 会编译哪些 `src/mod/...` 树"
+
+#: ../../appendix-01-faq.md 065d25860fd94affbeaea4b9eda8b81a
+msgid "`conf/vanilla/autoload_configs/modules.conf.xml`"
+msgstr "`conf/vanilla/autoload_configs/modules.conf.xml`"
+
+#: ../../appendix-01-faq.md ab749ef5324144b3b4fb89578bb87d5d
+msgid "Runtime"
+msgstr "运行时"
+
+#: ../../appendix-01-faq.md 12dca0aec8e94294a1209554caeae1e6
+msgid "Which compiled DSOs `switch_loadable_module_init()` loads"
+msgstr "`switch_loadable_module_init()` 会加载哪些已编译的 DSO"
+
+#: ../../appendix-01-faq.md:26 835628a14b77445ca031a1517e5f46d6
+msgid ""
+"`bootstrap.sh` copies `modules.conf.in` → `modules.conf` if missing. "
+"Uncomment a `src/mod/...` line **after** bootstrap and **before** "
+"`./configure` / `make`. A module can be compiled and still stay unloaded if "
+"it is absent from the XML list."
+msgstr ""
+"若缺失，`bootstrap.sh` 会把 `modules.conf.in` 复制为 `modules.conf`。在 bootstrap "
+"**之后**、`./configure` / `make` **之前** 取消注释某一行 `src/mod/...`。模块可以已编译，但若 XML "
+"列表里没有它，仍不会加载。"
+
+#: ../../appendix-01-faq.md:28 24735fb3369941239875309913de84d5
+msgid "What is the default prefix, and how do I start FreeSWITCH?"
+msgstr "默认 prefix 是什么，怎样启动 FreeSWITCH？"
+
+#: ../../appendix-01-faq.md:30 4d0fc43fcbbc42f981b915985f19e4d7
+msgid ""
+"Default prefix without `--prefix` is `/usr/local/freeswitch` "
+"(`configure.ac`). A home prefix (`--prefix=\"$HOME/fs\"`) avoids root and "
+"matches macOS CI."
+msgstr ""
+"不带 `--prefix` 时默认是 "
+"`/usr/local/freeswitch`（`configure.ac`）。家目录前缀（`--prefix=\"$HOME/fs\"`）可避免 "
+"root，并与 macOS CI 一致。"
+
+#: ../../appendix-01-faq.md:36 940a1e76607042729cea7004d550848b
+msgid ""
+"`-ncwait`: background, no console, wait until the core is ready "
+"(`src/switch.c`). `-nonat`: skip UPnP/NAT-PMP pinholes — required unless you"
+" *want* auto-NAT (`conf/vanilla/README_IMPORTANT.txt`). Foreground: "
+"`freeswitch -c -nonat`. Stop: `freeswitch -stop`. Debian systemd uses "
+"`/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait -nonat`."
+msgstr ""
+"`-ncwait`：后台、无控制台，等到核心就绪（`src/switch.c`）。`-nonat`：跳过 UPnP/NAT-PMP 打洞 — 除非你 "
+"*想要* 自动 NAT，否则必须加（`conf/vanilla/README_IMPORTANT.txt`）。前台：`freeswitch -c "
+"-nonat`。停止：`freeswitch -stop`。Debian systemd 使用 `/usr/bin/freeswitch -u "
+"freeswitch -g freeswitch -ncwait -nonat`。"
+
+#: ../../appendix-01-faq.md:38 0561df3857ad4e51b4528d924e89bb38
+msgid "How do I prove FreeSWITCH is up?"
+msgstr "怎样证明 FreeSWITCH 已经起来？"
+
+#: ../../appendix-01-faq.md:44 97acab6ba4eb4b94af712b031bbd0746
+msgid ""
+"Working output starts with `UP` (same check as "
+"`docker/base_image/healthcheck.sh`, regex `^UP`). Then `fs_cli -x sofia "
+"status` for SIP profiles. If `fs_cli` cannot connect, the switch is not up "
+"or ESL is not on loopback 8021 (`mod_event_socket` not loaded)."
+msgstr ""
+"正常输出以 `UP` 开头（与 `docker/base_image/healthcheck.sh` 相同，正则 `^UP`）。再用 `fs_cli "
+"-x sofia status` 看 SIP profile。若 `fs_cli` 连不上，说明交换机没起来，或 ESL 不在回环 8021 "
+"上（`mod_event_socket` 未加载）。"
+
+#: ../../appendix-01-faq.md:46 433856e3dfb5439183594ea5da4db58e
+msgid ""
+"First call without a second phone: register as `1000` / password `1234` on "
+"port 5060, then dial **`9196`** (echo). See [Quick Start](01-quick-start.md)"
+" and [Users Manual Chapter "
+"2](https://developer.signalwire.com/freeswitch/foundations/getting-started)."
+msgstr ""
+"没有第二部话机时的首呼：以 `1000` / 密码 `1234` 在 5060 端口注册，然后拨 **`9196`**（回声）。见 "
+"[快速开始](01-quick-start.md) 与 [用户手册第 2 "
+"章](https://developer.signalwire.com/freeswitch/foundations/getting-started)。"
+
+#: ../../appendix-01-faq.md:48 102f90f5afed4978bc78efc9102d36f9
+msgid "Is vanilla XML a production config?"
+msgstr "vanilla XML 是生产配置吗？"
+
+#: ../../appendix-01-faq.md:50 23386ece364b486997feff06dfd33b22
+msgid ""
+"No. `conf/vanilla` is a **demo PBX** so you can test immediately "
+"(`conf/vanilla/README_IMPORTANT.txt`). Directory users `1000`–`1019` share "
+"**`default_password=1234`** (`conf/vanilla/vars.xml`). Do not publish "
+"5060/8021 without ACLs. Before any public bind: change `default_password` "
+"(or `scripts/perl/randomize-passwords.pl`), change the ESL password, and "
+"start with `-nonat` unless NAT helpers are intentional."
+msgstr ""
+"不是。`conf/vanilla` 是 **演示 "
+"PBX**，方便立刻测试（`conf/vanilla/README_IMPORTANT.txt`）。目录用户 `1000`–`1019` 共享 "
+"**`default_password=1234`**（`conf/vanilla/vars.xml`）。没有 ACL 就不要对外发布 "
+"5060/8021。任何公网绑定之前：改 `default_password`（或 `scripts/perl/randomize-"
+"passwords.pl`），改 ESL 密码，并加上 `-nonat`，除非你有意使用 NAT 助手。"
+
+#: ../../appendix-01-faq.md:52 afd8dd3ebd0c4b1fac06844ab7b0a3fd
+msgid "What is the default Event Socket port and password?"
+msgstr "默认的 Event Socket 端口和密码是什么？"
+
+#: ../../appendix-01-faq.md:54 6600bf8467b743b29c26cf85161de5ee
+msgid "Password **`ClueCon`**, port **8021**. Distinguish three files:"
+msgstr "密码 **`ClueCon`**，端口 **8021**。请区分三个文件："
+
+#: ../../appendix-01-faq.md:56 502457e546f043cea24176e5f688f047
+msgid ""
+"Vanilla runtime (`conf/vanilla/autoload_configs/event_socket.conf.xml`) "
+"listens on **`::`** (all interfaces) with inbound ACL commented out."
+msgstr ""
+"vanilla 运行时（`conf/vanilla/autoload_configs/event_socket.conf.xml`）监听 "
+"**`::`**（所有接口），入站 ACL 被注释掉。"
+
+#: ../../appendix-01-faq.md:57 c4e40c5075a440f88cdf4b6c5815a105
+msgid ""
+"Module sample "
+"(`src/mod/event_handlers/mod_event_socket/conf/autoload_configs/event_socket.conf.xml`)"
+" binds **`127.0.0.1`**."
+msgstr ""
+"模块样例（`src/mod/event_handlers/mod_event_socket/conf/autoload_configs/event_socket.conf.xml`）绑定"
+" **`127.0.0.1`**。"
+
+#: ../../appendix-01-faq.md:58 069c8ac8fdde4a4da47bbb44d7c97df7
+msgid ""
+"`fs_cli` client default is **`127.0.0.1:8021`** (`libs/esl/fs_cli.c`, "
+"`libs/esl/fs_cli.conf`)."
+msgstr ""
+"`fs_cli` 客户端默认是 "
+"**`127.0.0.1:8021`**（`libs/esl/fs_cli.c`、`libs/esl/fs_cli.conf`）。"
+
+#: ../../appendix-01-faq.md:60 8720bad906884ba6a0d261db3c995a5a
+msgid ""
+"Change the password and bind/ACL before any non-loopback exposure. Wrong "
+"password closes the socket (`-ERR invalid`)."
+msgstr "在任何非回环暴露之前，先改密码和绑定/ACL。密码错误会关闭套接字（`-ERR invalid`）。"
+
+#: ../../appendix-01-faq.md:62 b811a680040940d5ac27e4f3d5a34afc
+msgid "Why does Docker SIP or RTP fail unless I use host networking?"
+msgstr "为什么不用 host 网络时 Docker 的 SIP 或 RTP 会失败？"
+
+#: ../../appendix-01-faq.md:64 b63f43d93ba94ba689843c17e780c552
+msgid ""
+"Runtime containers expect **`--network host`** (`docker/README.md`). Typical"
+" ports: SIP 5060/5080, TLS 5061/5081, WebSocket 5066/7443, ESL **8021**, RTP"
+" UDP 16384–32768 and 64535–65535. Publishing those UDP ranges through a "
+"user-defined bridge is the usual failure mode. Packaged images "
+"(`docker/master/Dockerfile`) still need a SignalWire `TOKEN` build-arg; a "
+"token-free source image is `docker/examples/Debian11/Dockerfile`."
+msgstr ""
+"运行时容器期望 **`--network host`**（`docker/README.md`）。常见端口：SIP 5060/5080，TLS "
+"5061/5081，WebSocket 5066/7443，ESL **8021**，RTP UDP 16384–32768 和 "
+"64535–65535。把这些 UDP 范围发布到用户自定义 bridge "
+"是常见失败模式。打包镜像（`docker/master/Dockerfile`）仍需要 SignalWire `TOKEN` 构建参数；不带 token"
+" 的源码镜像是 `docker/examples/Debian11/Dockerfile`。"
+
+#: ../../appendix-01-faq.md:66 0f4bc4f3b40c4f44ab2fd2e7dd34eb57
+msgid "How do I build on Windows vs Unix?"
+msgstr "Windows 和 Unix 上分别怎么构建？"
+
+#: ../../appendix-01-faq.md:68 3c8a755d9a2e4140a8cb03e2ddd4403e
+msgid ""
+"Unix / macOS: Autotools — `./bootstrap.sh -j && ./configure --prefix=... && "
+"make && make install`. Windows: `Freeswitch.2017.sln` / `w32/`, typically "
+"`msbuild Freeswitch.2017.sln -t:build -verbosity:minimal "
+"-property:Configuration=Release -property:Platform=x64` (`msbuild.cmd` "
+"locates VS via `vswhere.exe`). CI uploads `x64\\*.msi` on `master` / `v1.10`"
+" / `v1.11`. Historical `src/CMakeLists.txt` is **not** the Unix CI path."
+msgstr ""
+"Unix / macOS：Autotools — `./bootstrap.sh -j && ./configure --prefix=... && "
+"make && make install`。Windows：`Freeswitch.2017.sln` / `w32/`，通常 `msbuild "
+"Freeswitch.2017.sln -t:build -verbosity:minimal "
+"-property:Configuration=Release -property:Platform=x64`（`msbuild.cmd` 通过 "
+"`vswhere.exe` 定位 VS）。CI 在 `master` / `v1.10` / `v1.11` 上上传 `x64\\*.msi`。历史上的"
+" `src/CMakeLists.txt` **不是** Unix CI 路径。"
+
+#: ../../appendix-01-faq.md:70 02611d5accb54ba590d3c072a7a5158b
+msgid "Where are the prompt / sound files?"
+msgstr "提示音 / 语音文件在哪里？"
+
+#: ../../appendix-01-faq.md:72 4b9b007f64b944a59305e92b6a0b5a2b
+msgid ""
+"They are **not** in this git tree. `make sounds` / `make sounds-install` "
+"downloads Callie 8 kHz packages (`Makefile.am`, default `en-us-"
+"callie-8000`). Specs at repo root: `freeswitch-sounds-*.spec`. Windows sound"
+" packages live in a separate [freeswitch-"
+"sounds](https://github.com/freeswitch/freeswitch-sounds) release repo "
+"(`README.md`)."
+msgstr ""
+"它们 **不在** 本 git 树里。`make sounds` / `make sounds-install` 会下载 Callie 8 kHz "
+"包（`Makefile.am`，默认 `en-us-callie-8000`）。仓库根目录的 spec：`freeswitch-"
+"sounds-*.spec`。Windows 语音包在单独的 [freeswitch-"
+"sounds](https://github.com/freeswitch/freeswitch-sounds) 发行仓库（`README.md`）。"
+
+#: ../../appendix-01-faq.md:74 afd8dd3ebd0c4b1fac06844ab7b0a3fd
+#, python-brace-format
+msgid "What is the difference between `$${var}` and `${var}`?"
+msgstr "`$${var}` 与 `${var}` 有何区别？"
+
+#: ../../appendix-01-faq.md:76 142c99a85bc44178b21301b0e412c191
+#, python-brace-format
+msgid ""
+"`$${name}` is a **preprocessor** variable, expanded once while assembling "
+"XML (`vars.xml`, `#set` / `X-PRE-PROCESS cmd=\"set\"`). `${name}` is a "
+"**channel** variable, expanded at call time. Mixing them is a common config "
+"bug. [Users Manual Chapter "
+"3](https://developer.signalwire.com/freeswitch/configuration/xml)."
+msgstr ""
+"`$${name}` 是**预处理器**变量，组装 XML 时展开一次（`vars.xml`、`#set` / `X-PRE-PROCESS "
+"cmd=\"set\"`）。`${name}` 是**通道**变量，在呼叫时展开。混用是常见配置错误。[用户手册第 3 "
+"章](https://developer.signalwire.com/freeswitch/configuration/xml)。"
+
+#: ../../appendix-01-faq.md:78 d034aea906944f14b8c57afa1288734e
+msgid ""
+"Why does my internal SIP profile say `context=public` but registered phones "
+"use the `default` dialplan?"
+msgstr "为什么 internal SIP profile 写着 `context=public`，已注册话机却走 `default` 拨号计划？"
+
+#: ../../appendix-01-faq.md:80 32c71dc7348b411685a2282bc285515d
+msgid ""
+"Vanilla `sip_profiles/internal.xml` sets `context=public` for "
+"**unauthenticated** inbound. After digest auth, the directory user’s "
+"`user_context` (vanilla `default`) wins. [Chapter "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction)."
+msgstr ""
+"Vanilla `sip_profiles/internal.xml` 把 `context=public` 用于**未认证**入局。Digest "
+"认证后，号码簿用户的 `user_context`（vanilla 为 `default`）优先。[第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)。"
+
+#: ../../appendix-01-faq.md:82 f33f762621304f4886c6493dc5d6e358
+msgid "Where is this Project Knowledge Base?"
+msgstr "这份项目知识库在哪里？"
+
+#: ../../appendix-01-faq.md:84 7bd4f74c476241aa8a2553e07dec852a
+msgid ""
+"**`man/`** at the repo root — not `docs/man/` (Unix man pages). Sphinx: `cd "
+"man && poetry install && make html-en`. Operator configuration is the "
+"[FreeSWITCH Users Manual](https://developer.signalwire.com/freeswitch/). "
+"Historical tutorials remain on [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) and [Confluence](https://freeswitch.org/confluence/). The PKB "
+"maps those concepts onto files in this clone; it does not copy parameter "
+"tables."
+msgstr ""
+"**`man/`** 在仓库根目录 — 不是 `docs/man/`（Unix man page）。Sphinx：`cd man && poetry "
+"install && make html-en`。运维配置以 [FreeSWITCH "
+"用户手册](https://developer.signalwire.com/freeswitch/) 为准。历史教程仍在 [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) 和 [Confluence](https://freeswitch.org/confluence/)。PKB "
+"把这些概念映射到本克隆中的文件，不复制参数表。"
+
+#: ../../appendix-01-faq.md:86 a21f1aec24994aa0a228582c5438871b
+msgid ""
+"Why does this tree say `1.11.3-dev` when CI also builds `v1.10` / `v1.11`?"
+msgstr "为什么本树写着 `1.11.3-dev`，而 CI 也会构建 `v1.10` / `v1.11`？"
+
+#: ../../appendix-01-faq.md:88 cbb1b27076cb45a8afccafed48ce0a3e
+msgid ""
+"This workspace is **1.11.3-dev** (`AC_INIT` in `configure.ac`; keep in sync "
+"with `SWITCH_VERSION_*` and `build/next-release.txt`). GitHub Actions run on"
+" `master`, `v1.10`, and `v1.11`. Packaged `build.yml`: those version "
+"branches → `release`; `master` → **unstable**. FSGET `prerelease` tracks "
+"what you see on `master`. Verify a running binary with `freeswitch -version`"
+" / `fs_cli -x version`."
+msgstr ""
+"本工作区是 **1.11.3-dev**（`configure.ac` 里的 `AC_INIT`；需与 `SWITCH_VERSION_*` 和 "
+"`build/next-release.txt` 保持同步）。GitHub Actions 跑在 `master`、`v1.10` 和 "
+"`v1.11`。打包用的 `build.yml`：那些版本分支 → `release`；`master` → **unstable**。FSGET 的 "
+"`prerelease` 跟踪你在 `master` 上看到的内容。用 `freeswitch -version` / `fs_cli -x "
+"version` 核对正在运行的二进制。"
+
+#: ../../appendix-01-faq.md:90 89e93901b3ac493cafe030e5488542d7
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../appendix-01-faq.md:92 e037d632700548a780bc52439081547b
+msgid "[Quick Start](01-quick-start.md)"
+msgstr "[快速开始](01-quick-start.md)"
+
+#: ../../appendix-01-faq.md:93 4a910956c7914b46a053601493cfd15d
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../appendix-01-faq.md:94 a4cb6fd8b9ed432f909607a234ea58e3
+msgid "[Build](08-build.md)"
+msgstr "[构建](08-build.md)"
+
+#: ../../appendix-01-faq.md:95 6c41df1ff8a143e58754ea52fb2dad2f
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../appendix-01-faq.md:96 c87789f5a8a4499ba1a72d9bdb22d4a5
+msgid "[Documentation Process](12-document.md)"
+msgstr "[文档流程](12-document.md)"
+
+#: ../../appendix-01-faq.md:97 07d5d0ed234b4f6e902010a7b0d02ea5
+msgid "[Glossary](appendix-02-glossary.md)"
+msgstr "[术语表](appendix-02-glossary.md)"
+
+#: ../../appendix-01-faq.md:98 0a7e94ab558e4f168ae45048ebd2aaef
+msgid "[Users Manual](https://developer.signalwire.com/freeswitch/)"
+msgstr "[用户手册](https://developer.signalwire.com/freeswitch/)"

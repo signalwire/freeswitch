@@ -1,0 +1,599 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../00-overview.md:1 060bb95a36564eea9e030ba3f50105d4
+msgid "00. Project Overview"
+msgstr "00. 项目概述"
+
+#: ../../00-overview.md:5 281e7968d73c4113b70400bc71a16b7e
+msgid ""
+"FreeSWITCH is a modular softswitch: a software-defined telecom stack that "
+"replaces proprietary PBX and class-5 switching hardware with a process that "
+"runs on commodity servers, from a Raspberry Pi to a multi-core host. This "
+"repository is the C core, loadable modules, XML configuration profiles, "
+"packaging, and Event Socket tooling for that stack. Version in this tree is "
+"**1.11.3-dev** (`configure.ac`). License is **MPL 1.1**. SignalWire is the "
+"primary sponsor; `mod_signalwire` in this tree pairs a local switch with "
+"SignalWire cloud services."
+msgstr ""
+"FreeSWITCH 是一套模块化软交换：用运行在通用服务器上的进程（从 Raspberry Pi 到多核主机）替代专有 PBX 和 class-5 "
+"交换硬件的软件定义电信栈。本仓库是该栈的 C 核心、可加载模块、XML 配置模板、打包以及 Event Socket 工具。本树版本为 "
+"**1.11.3-dev**（`configure.ac`）。许可证为 **MPL 1.1**。SignalWire 是主要赞助方；本树中的 "
+"`mod_signalwire` 将本地交换机与 SignalWire 云服务对接。"
+
+#: ../../00-overview.md:7 a02ed8c281c847e08476c9adf2ea5c56
+msgid "Purpose"
+msgstr "目的"
+
+#: ../../00-overview.md:9 2bcdfd3c376044ed8c50143fae99c6a5
+msgid ""
+"Switch, bridge, and transcode real-time voice, video, and messaging "
+"sessions."
+msgstr "交换、桥接并转码实时语音、视频和消息会话。"
+
+#: ../../00-overview.md:10 000fd6db11204076aa86c6cf7ed4c5eb
+msgid ""
+"Expose a loadable-module API so SIP, WebRTC, codecs, dialplans, languages, "
+"and CDR backends can be added without forking the core."
+msgstr "提供可加载模块 API，以便在无需 fork 核心的情况下增加 SIP、WebRTC、编解码器、拨号计划、语言和 CDR 后端。"
+
+#: ../../00-overview.md:11 7365b242d9dd41a4ba24f39f3800b346
+msgid ""
+"Provide a working default PBX configuration (`conf/vanilla`) so operators "
+"can start testing immediately."
+msgstr "提供可用的默认 PBX 配置（`conf/vanilla`），方便运维人员立即开始测试。"
+
+#: ../../00-overview.md:12 18becaeb8bdf46739cb8243f2bd7bb6b
+msgid ""
+"Offer an out-of-process control plane (Event Socket / ESL) so applications "
+"can originate, hang up, and subscribe to events without embedding in the "
+"media process."
+msgstr "提供进程外控制面（Event Socket / ESL），使应用可以发起呼叫、挂断并订阅事件，而无需嵌入媒体进程。"
+
+#: ../../00-overview.md:14 fe3dab036c40439387e4fba34fe6b338
+msgid ""
+"This PKB documents **this source tree**. Operator configuration — XML, "
+"directory, SIP profiles, dialplan, codecs, applications, WebRTC, ESL — lives"
+" in the [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/). Every parameter table"
+" there is verified against FreeSWITCH source and the shipped vanilla config."
+" Older wiki pages remain on [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) and [Confluence](https://freeswitch.org/confluence/)."
+msgstr ""
+"本 PKB 记录的是**本源码树**。运维配置（XML、号码簿、SIP profiles、拨号计划、编解码、应用、WebRTC、ESL）在 "
+"[FreeSWITCH 用户手册](https://developer.signalwire.com/freeswitch/)。手册中的参数表均对照 "
+"FreeSWITCH 源码与随附 vanilla 配置核实。旧 wiki 仍在 [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) 与 [Confluence](https://freeswitch.org/confluence/)。"
+
+#: ../../00-overview.md:16 4ea31ac979e7499fbe9927242c46fda1
+msgid ""
+"The Users Manual applies to both **Open Source FreeSWITCH** (this tree and "
+"[release builds](https://files.freeswitch.org/releases/freeswitch/)) and "
+"**FreeSWITCH Enterprise** (commercially supported SignalWire builds). Hosted"
+" SignalWire cloud is still a separate product."
+msgstr ""
+"用户手册同时适用于 **开源 "
+"FreeSWITCH**（本仓库与[发行构建](https://files.freeswitch.org/releases/freeswitch/)）和"
+" **FreeSWITCH Enterprise**（SignalWire 商业支持构建）。托管的 SignalWire 云仍是独立产品。"
+
+#: ../../00-overview.md:18 cee0de5669624ce5ac5378965e979158
+msgid "Scope Boundaries"
+msgstr "范围边界"
+
+#: ../../00-overview.md 98aa77b2c2b746a3a07c4a45cf4442b9
+msgid "In scope"
+msgstr "范围内"
+
+#: ../../00-overview.md 8b498b9a1c2f47acbd18e49051210dbc
+msgid "Out of scope"
+msgstr "范围外"
+
+#: ../../00-overview.md c33cfb67f19a4ce39eeaf18fc6a5c2b2
+msgid ""
+"Core switch process (`src/switch.c`, `src/switch_core.c`) and "
+"session/media/event libraries"
+msgstr "核心交换进程（`src/switch.c`、`src/switch_core.c`）以及会话/媒体/事件库"
+
+#: ../../00-overview.md 772b0b4383fc4f12aa666400e047c61f
+msgid ""
+"SignalWire hosted cloud, SMS, and serverless products (separate repos and "
+"services)"
+msgstr "SignalWire 托管云、短信和无服务器产品（独立仓库与服务）"
+
+#: ../../00-overview.md c8e293cb8eca482f923e182dc02e6a11
+msgid ""
+"Loadable modules under `src/mod/` (endpoints, codecs, applications, event "
+"handlers, languages, XML interfaces)"
+msgstr "`src/mod/` 下的可加载模块（终端、编解码器、应用、事件处理器、语言、XML 接口）"
+
+#: ../../00-overview.md 620323b49184426c851e21964a12c084
+msgid ""
+"Prompt/sound packages (`freeswitch-sounds-*` specs and the [sounds release "
+"repo](https://github.com/freeswitch/freeswitch-sounds))"
+msgstr ""
+"提示音/语音包（`freeswitch-sounds-*` spec 以及 [sounds "
+"发行仓库](https://github.com/freeswitch/freeswitch-sounds)）"
+
+#: ../../00-overview.md c8a368bac6ec4fc78f69629fae65b950
+msgid ""
+"XML config profiles (`conf/vanilla`, `conf/sbc`, `conf/minimal`, …) and "
+"module autoload list (`build/modules.conf.in`)"
+msgstr ""
+"XML 配置模板（`conf/vanilla`、`conf/sbc`、`conf/minimal` "
+"等）以及模块自动加载列表（`build/modules.conf.in`）"
+
+#: ../../00-overview.md 692cb851e96f4b5d80dbbc06092a5434
+msgid ""
+"Third-party Sofia-SIP / spandsp packaging sources that live outside this "
+"tree"
+msgstr "位于本树之外的第三方 Sofia-SIP / spandsp 打包源码"
+
+#: ../../00-overview.md 3c090da42e234d3c9cc1a630ebf6408b
+msgid "ESL library and `fs_cli` (`libs/esl/`)"
+msgstr "ESL 库和 `fs_cli`（`libs/esl/`）"
+
+#: ../../00-overview.md 564d250167604f3fa9eb856add976641
+msgid "A hosted multi-tenant SaaS control plane"
+msgstr "托管的多租户 SaaS 控制面"
+
+#: ../../00-overview.md f8016196d58a44c5949be92a717a687c
+msgid "Autotools/Windows/Docker/Debian packaging in this repo"
+msgstr "本仓库中的 Autotools/Windows/Docker/Debian 打包"
+
+#: ../../00-overview.md 274a6cdb237841539257cf8635906103
+msgid "Duplicating Users Manual parameter tables — link out instead"
+msgstr "不要复制用户手册参数表 — 外链即可"
+
+#: ../../00-overview.md:28 c2f2999238f84802af53d3af668c32c6
+msgid "Key Users and Use Cases"
+msgstr "主要用户与用例"
+
+#: ../../00-overview.md:30 c42b2c2c8ec445e5acc4941b099bdeb4
+msgid ""
+"**PBX / CCaaS operator**: run vanilla or a custom XML profile as an IP-PBX, "
+"conference, voicemail, or call-center node; register SIP phones; route DIDs."
+msgstr ""
+"**PBX / CCaaS 运维人员**：以 vanilla 或自定义 XML 配置运行 IP-PBX、会议、语音信箱或呼叫中心节点；注册 SIP "
+"话机；路由 DID。"
+
+#: ../../00-overview.md:31 c0d40768dac64317a1595eedca81405b
+msgid ""
+"**SBC / interconnect engineer**: use the `conf/sbc` profile and Sofia SIP "
+"(`mod_sofia`) to border-control SIP trunks and media."
+msgstr ""
+"**SBC / 互联工程师**：使用 `conf/sbc` 配置和 Sofia SIP（`mod_sofia`）对 SIP 中继和媒体做边界控制。"
+
+#: ../../00-overview.md:32 314ab7497b424d4c85ffd42cc41cafe0
+msgid ""
+"**Application developer**: control calls from Lua/Python/JavaScript modules "
+"or from an external process over ESL (`mod_event_socket` on TCP 8021, "
+"`libs/esl/fs_cli.c`)."
+msgstr ""
+"**应用开发者**：通过 Lua/Python/JavaScript 模块，或经 ESL 从外部进程控制呼叫（`mod_event_socket` 监听"
+" TCP 8021，`libs/esl/fs_cli.c`）。"
+
+#: ../../00-overview.md:33 53d5c395df1249cb855ee8a4cf79b99c
+msgid ""
+"**WebRTC / HTML5 developer**: terminate browser sessions through Verto "
+"(`mod_verto`, endpoint name `verto.rtc`)."
+msgstr "**WebRTC / HTML5 开发者**：通过 Verto（`mod_verto`，终端名 `verto.rtc`）终结浏览器会话。"
+
+#: ../../00-overview.md:34 a8b5aa9576ea470aaf564881b69c0d40
+msgid ""
+"**Module developer**: implement `SWITCH_MODULE_LOAD_FUNCTION` against "
+"`src/include/switch.h` and drop a `.so` into the modules directory."
+msgstr ""
+"**模块开发者**：对照 `src/include/switch.h` 实现 `SWITCH_MODULE_LOAD_FUNCTION`，并将 "
+"`.so` 放入模块目录。"
+
+#: ../../00-overview.md:35 d58ea5663e0e4a0287df67f0028e4d96
+msgid ""
+"**Packager / SRE**: build from source (`bootstrap.sh` + Autotools), Debian "
+"packages (`debian/`, `scripts/packaging`), Windows (`w32/`, "
+"`Freeswitch.2017.sln`), or Docker (`docker/`)."
+msgstr ""
+"**打包人员 / SRE**：从源码构建（`bootstrap.sh` + Autotools）、Debian "
+"包（`debian/`、`scripts/packaging`）、Windows（`w32/`、`Freeswitch.2017.sln`）或 "
+"Docker（`docker/`）。"
+
+#: ../../00-overview.md:37 6a1fa0e335804d6594de5d92012fda4c
+msgid "Three Configuration Domains"
+msgstr "三大配置域"
+
+#: ../../00-overview.md:39 70de0cffca90468a99d5f559b7f1d9e0
+msgid ""
+"The Users Manual ([Chapter "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction)) "
+"splits operator config into three domains. This tree stores them under "
+"`conf/vanilla/` (installed as the configuration root that contains "
+"`freeswitch.xml`):"
+msgstr ""
+"用户手册（[第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)）把运维配置分成三个域。本仓库把它们放在"
+" `conf/vanilla/`（安装后即含 `freeswitch.xml` 的配置根）："
+
+#: ../../00-overview.md 00eeea0a86eb40ce88d840a8d9a9478f
+msgid "Domain"
+msgstr "域"
+
+#: ../../00-overview.md 7eb1e22773a64d959b425f12988cb0e5
+msgid "Question it answers"
+msgstr "回答什么问题"
+
+#: ../../00-overview.md 2d1ce8770adc4832ae9ab2cafb146fa3
+msgid "Vanilla path"
+msgstr "Vanilla 路径"
+
+#: ../../00-overview.md df265424273a4cd8bf3401ada7eb8bd7
+msgid "Hunt / load"
+msgstr "查找 / 加载"
+
+#: ../../00-overview.md 6b518e652e524e44bfc2aed34f141c03
+msgid "Directory"
+msgstr "号码簿"
+
+#: ../../00-overview.md 7148d90e24b8460090c84eb2250ecea0
+msgid "Who may connect, and with what properties?"
+msgstr "谁可以接入，具备哪些属性？"
+
+#: ../../00-overview.md 02479e61cad646f4a468a6ca3dfd823f
+msgid "`conf/vanilla/directory/`"
+msgstr "`conf/vanilla/directory/`"
+
+#: ../../00-overview.md cbf9c3cca3f04458a5c81e0cc108e6f3
+msgid "SIP digest, `user_context`, `user/` bridge lookup"
+msgstr "SIP digest、`user_context`、`user/` 桥接查找"
+
+#: ../../00-overview.md ebbfdc4e4b76496e8eed56b19811633f
+msgid "Dialplan"
+msgstr "拨号计划"
+
+#: ../../00-overview.md 79efe9fe2fe34f9da493c34551a69b2d
+msgid "When a call arrives, where does it go?"
+msgstr "呼叫到达后去哪里？"
+
+#: ../../00-overview.md 841622bf2024474395f585db78374696
+msgid "`conf/vanilla/dialplan/`"
+msgstr "`conf/vanilla/dialplan/`"
+
+#: ../../00-overview.md 44cf8b5921c540e9b6a89540127f864e
+msgid "`mod_dialplan_xml` in `CS_ROUTING`"
+msgstr "`CS_ROUTING` 中的 `mod_dialplan_xml`"
+
+#: ../../00-overview.md cbcd5ec78bcb4207b4d53f5e71b07e3d
+msgid "Configuration"
+msgstr "配置"
+
+#: ../../00-overview.md b67b59aab07947c88b41aa87d4dd3e11
+msgid "How do the core and each module behave?"
+msgstr "核心与各模块如何表现？"
+
+#: ../../00-overview.md 1849a72c5d3c4e9b8a42091c1b3bca57
+msgid "`conf/vanilla/autoload_configs/`"
+msgstr "`conf/vanilla/autoload_configs/`"
+
+#: ../../00-overview.md 3d5ea8519e034af183291a4e85e74aef
+msgid ""
+"Module `.conf.xml` blocks; SIP profiles live beside this in `sip_profiles/`"
+msgstr "模块 `.conf.xml` 块；SIP profiles 在旁边的 `sip_profiles/`"
+
+#: ../../00-overview.md:47 525f0d7c050f46a78c00f8e874571994
+msgid ""
+"A directory user authenticates to a Sofia profile. After auth, that user’s "
+"`user_context` selects the dialplan context. Vanilla internal profile "
+"`context` is `public` (`conf/vanilla/sip_profiles/internal.xml`) and applies"
+" to **unauthenticated** inbound; authenticated users 1000–1019 have "
+"`user_context=default` (`conf/vanilla/directory/default/1000.xml`)."
+msgstr ""
+"号码簿用户向 Sofia profile 认证。认证后，该用户的 `user_context` 选择拨号计划上下文。Vanilla internal "
+"profile 的 `context` 是 "
+"`public`（`conf/vanilla/sip_profiles/internal.xml`），用于**未认证**入局；已认证用户 "
+"1000–1019 的 "
+"`user_context=default`（`conf/vanilla/directory/default/1000.xml`）。"
+
+#: ../../00-overview.md:49 5d19eb56ce91480ba2b728bbb293dac8
+msgid ""
+"At runtime those files are preprocessor-assembled into one XML document with"
+" sections `configuration`, `dialplan`, `chatplan`, `directory`, and "
+"`languages`. See [Architecture](02-architecture.md) and [Chapter "
+"3](https://developer.signalwire.com/freeswitch/configuration/xml)."
+msgstr ""
+"运行时这些文件由预处理器组装成一份 XML 文档，包含 "
+"`configuration`、`dialplan`、`chatplan`、`directory`、`languages` 各节。见 "
+"[架构](02-architecture.md) 与 [第 3 "
+"章](https://developer.signalwire.com/freeswitch/configuration/xml)。"
+
+#: ../../00-overview.md:51 da7abd2986a44632a335b8dd3a31f0b5
+msgid "System Snapshot"
+msgstr "系统快照"
+
+#: ../../00-overview.md:53 484e9f5c2cf1447cb5132297b732b3fe
+msgid ""
+"**Deployment model**: single long-running `freeswitch` process per host "
+"(Unix daemon or Windows service `FreeSWITCH`), plus optional sidecar apps "
+"talking ESL. Not a microservice mesh. Default install prefix is "
+"`/usr/local/freeswitch` (`configure.ac`)."
+msgstr ""
+"**部署模型**：每台主机一个长期运行的 `freeswitch` 进程（Unix 守护进程或 Windows 服务 "
+"`FreeSWITCH`），外加可选的通过 ESL 通信的 sidecar 应用。不是微服务网格。默认安装前缀为 "
+"`/usr/local/freeswitch`（`configure.ac`）。"
+
+#: ../../00-overview.md:54 79205d24781a4ac1afa20f234436ef1b
+msgid ""
+"**Core runtime shape**: threaded C core owns sessions, media, timers, and a "
+"state machine; features load as DSOs from `src/mod/` categories "
+"(`endpoints`, `applications`, `codecs`, `dialplans`, `event_handlers`, "
+"`languages`, `xml_int`, …)."
+msgstr ""
+"**核心运行形态**：多线程 C 核心拥有会话、媒体、定时器和状态机；功能以 DSO 形式从 `src/mod/` "
+"各类目录加载（`endpoints`、`applications`、`codecs`、`dialplans`、`event_handlers`、`languages`、`xml_int`"
+" 等）。"
+
+#: ../../00-overview.md:55 62e46ab4d38649c9b6b55f492b79652e
+msgid ""
+"**Primary data path**: signaling (SIP/Verto/Skinny/…) → session "
+"(`src/switch_core_session.c`) → XML dialplan / directory → applications "
+"(bridge, conference, voicemail, …) → RTP/SRTP media (`src/switch_rtp.c`, "
+"`src/switch_core_media.c`) → CDR/event consumers."
+msgstr ""
+"**主数据路径**：信令（SIP/Verto/Skinny/…）→ 会话（`src/switch_core_session.c`）→ XML 拨号计划 "
+"/ directory → 应用（bridge、conference、voicemail 等）→ RTP/SRTP "
+"媒体（`src/switch_rtp.c`、`src/switch_core_media.c`）→ CDR/事件消费者。"
+
+#: ../../00-overview.md:56 fbabf8459d554efebf12615395f12d5e
+msgid ""
+"**Top risk or constraint**: real-time media and large UDP port ranges. "
+"Docker docs require host networking; vanilla ESL listens on `::`:8021 with "
+"password `ClueCon` (`event_socket.conf.xml`) — change bind/password before "
+"any non-loopback exposure (`fs_cli` still defaults to `127.0.0.1:8021`)."
+msgstr ""
+"**主要风险或约束**：实时媒体和较大的 UDP 端口范围。Docker 文档要求使用 host 网络；vanilla ESL 在 `::`:8021 "
+"上监听，密码为 `ClueCon`（`event_socket.conf.xml`）——在任何非 loopback "
+"暴露之前务必修改绑定地址和密码（`fs_cli` 仍默认连接 `127.0.0.1:8021`）。"
+
+#: ../../00-overview.md:79 153ad26ec7c14b36939b10e64c7451a6
+msgid "Quality Targets"
+msgstr "质量目标"
+
+#: ../../00-overview.md:81 73a221abc6a64ebaa4f86c13060d1145
+msgid ""
+"This repo does not publish numeric SLOs. The table records what the code and"
+" default config actually optimize for."
+msgstr "本仓库不发布数值化 SLO。下表记录代码和默认配置实际优化的方向。"
+
+#: ../../00-overview.md:58 e5994d6570254c57973a5d1b358711c2
+msgid "Area"
+msgstr "领域"
+
+#: ../../00-overview.md:58 a6c2fb959c2643cbb02386af8f374ba2
+msgid "Target"
+msgstr "目标"
+
+#: ../../00-overview.md:58 bae051b5b1e246498b64225410fcdc6f
+msgid "Notes"
+msgstr "说明"
+
+#: ../../00-overview.md:58 ec0d5ad050d14efbaaecc0a61d04753d
+msgid "Performance"
+msgstr "性能"
+
+#: ../../00-overview.md:58 fc807e08434a49fd994099284b095faf
+msgid ""
+"Real-time media; default codec ptime assumption is **20 ms** "
+"(`conf/vanilla/autoload_configs/switch.conf.xml`)"
+msgstr ""
+"实时媒体；默认编解码器 ptime 假设为 **20 "
+"ms**（`conf/vanilla/autoload_configs/switch.conf.xml`）"
+
+#: ../../00-overview.md:58 8c49c8f44c544feab7343baf4a12b44d
+msgid ""
+"Scale is a function of cores, codec mix, and whether the process is also "
+"bridging/transcoding. No p95 SLA in-tree."
+msgstr "规模取决于核心数、编解码器组合，以及进程是否同时做桥接/转码。树内没有 p95 SLA。"
+
+#: ../../00-overview.md:58 f34fa4753cbe4373ad162cafc1c64974
+msgid "Availability"
+msgstr "可用性"
+
+#: ../../00-overview.md:58 1718381e90eb4238a465b56184482860
+msgid ""
+"Process stays up; XML is compiled to a memory-mapped `freeswitch.xml.fsxml`;"
+" optional `switchname` for HA/clustered DB identity"
+msgstr ""
+"进程保持运行；XML 编译为内存映射的 `freeswitch.xml.fsxml`；可选 `switchname` 用于 HA/集群数据库身份"
+
+#: ../../00-overview.md:58 48e9eb9b2bb94ef18ffe7c3392c62d5c
+msgid ""
+"[NEEDS INPUT: site RTO/RPO] — operators own HA (active/standby, Kamailio, "
+"etc.)."
+msgstr "[NEEDS INPUT: 站点 RTO/RPO] — 高可用由运维自行负责（主备、Kamailio 等）。"
+
+#: ../../00-overview.md:58 6b518e652e524e44bfc2aed34f141c03
+msgid "Correctness"
+msgstr "正确性"
+
+#: ../../00-overview.md:58 5db1636e9f514abc9bfa64c14e3147d5
+msgid ""
+"Channel/session state machine in core; dialplan and directory from XML (or "
+"curl/LDAP XML interfaces)"
+msgstr "核心中的通道/会话状态机；拨号计划和 directory 来自 XML（或 curl/LDAP XML 接口）"
+
+#: ../../00-overview.md:58 a402c736e55e42118731edc54fc15687
+msgid ""
+"Default vanilla config is documented as a working PBX, not a production "
+"security baseline."
+msgstr "默认 vanilla 配置被文档化为可用的 PBX，而非生产安全基线。"
+
+#: ../../00-overview.md:58 a1b2c0c811d343df875dcdf03906c713
+msgid "Security"
+msgstr "安全性"
+
+#: ../../00-overview.md:58 33eb665ca90f4ae99c8c523b7b152c4c
+msgid ""
+"Report vulns to `security@signalwire.com` (`SECURITY.md`). Default ESL "
+"listen is loopback."
+msgstr "漏洞请报告至 `security@signalwire.com`（`SECURITY.md`）。默认 ESL 监听在 loopback。"
+
+#: ../../00-overview.md:58 784988af6ddc44848e804a938533cc87
+msgid ""
+"Change ESL password `ClueCon` and SIP credentials before production. MPL "
+"1.1; some bundled libs use other licenses."
+msgstr "上线前请修改 ESL 密码 `ClueCon` 和 SIP 凭据。MPL 1.1；部分捆绑库使用其他许可证。"
+
+#: ../../00-overview.md:90 ba0b07dccc2b4f7ba41a974bae70f5d9
+msgid "Key Project Facts"
+msgstr "项目关键事实"
+
+#: ../../00-overview.md:92 9f40237f4d1f42599833518879a7c65b
+msgid ""
+"**Code roots**: `src/` (core + `src/include/` public API), `src/mod/` "
+"(modules), `libs/` (APR, SRTP, ESL, VPX, …), `conf/` (XML profiles), "
+"`build/` (Autotools helpers, `modules.conf.in`), `debian/` / "
+"`scripts/packaging/`, `w32/`, `docker/`, `tests/unit/`."
+msgstr ""
+"**代码根目录**：`src/`（核心 + `src/include/` 公共 "
+"API）、`src/mod/`（模块）、`libs/`（APR、SRTP、ESL、VPX 等）、`conf/`（XML "
+"配置）、`build/`（Autotools 辅助、`modules.conf.in`）、`debian/` / "
+"`scripts/packaging/`、`w32/`、`docker/`、`tests/unit/`。"
+
+#: ../../00-overview.md:93 ead8ada3fd72493981b945c1426e8098
+msgid "**Primary interfaces**:"
+msgstr "**主要接口**："
+
+#: ../../00-overview.md:94 fa6a07a7cabb40f3b16e51d54e93fd1b
+msgid "SIP: `src/mod/endpoints/mod_sofia/` (typical 5060/5080; TLS 5061/5081)"
+msgstr "SIP：`src/mod/endpoints/mod_sofia/`（通常 5060/5080；TLS 5061/5081）"
+
+#: ../../00-overview.md:95 ced362beab1744cab6096df6054cb18a
+msgid "WebRTC/HTML5: `src/mod/endpoints/mod_verto/`"
+msgstr "WebRTC/HTML5：`src/mod/endpoints/mod_verto/`"
+
+#: ../../00-overview.md:96 af217a788c734f13adacae748c0ea7c6
+msgid ""
+"Event Socket: `src/mod/event_handlers/mod_event_socket/` + `libs/esl/` "
+"(`fs_cli`)"
+msgstr ""
+"Event Socket：`src/mod/event_handlers/mod_event_socket/` + "
+"`libs/esl/`（`fs_cli`）"
+
+#: ../../00-overview.md:97 03f5fa03e8c24b5baed9a50a3fa9ea7c
+msgid ""
+"XML config: `conf/*/freeswitch.xml` preprocessor (`#include` / `X-PRE-"
+"PROCESS`)"
+msgstr "XML 配置：`conf/*/freeswitch.xml` 预处理器（`#include` / `X-PRE-PROCESS`）"
+
+#: ../../00-overview.md:98 59c154f355e14c97a07f7235786e7d79
+msgid ""
+"Embedded languages: `src/mod/languages/` (Lua, Python3, V8, Perl, Java, "
+"managed, …)"
+msgstr "嵌入式语言：`src/mod/languages/`（Lua、Python3、V8、Perl、Java、managed 等）"
+
+#: ../../00-overview.md:99 91418be5d0bd43ef9f8ad36bcf990959
+msgid ""
+"**Entry points**: `src/switch.c` (`main`), core init in `src/switch_core.c`,"
+" DSO loader in `src/switch_loadable_module.c`."
+msgstr ""
+"**入口点**：`src/switch.c`（`main`），核心初始化在 `src/switch_core.c`，DSO 加载器在 "
+"`src/switch_loadable_module.c`。"
+
+#: ../../00-overview.md:100 6627028557404aecae81020ee23a65ef
+msgid ""
+"**Default modules**: uncommented lines in `build/modules.conf.in` (Sofia, "
+"Verto, conference, voicemail, Opus, XML dialplan, `mod_signalwire`, …)."
+msgstr ""
+"**默认模块**：`build/modules.conf.in` "
+"中未注释的行（Sofia、Verto、conference、voicemail、Opus、XML 拨号计划、`mod_signalwire` 等）。"
+
+#: ../../00-overview.md:101 331584141c4448c08b9a8ac4b7fd7599
+msgid ""
+"**CI**: GitHub Actions on `master`, `v1.10`, `v1.11` "
+"(`.github/workflows/ci.yml` and related workflows for macOS, Windows, "
+"tarball, scan-build)."
+msgstr ""
+"**CI**：GitHub Actions 运行于 "
+"`master`、`v1.10`、`v1.11`（`.github/workflows/ci.yml` 以及 "
+"macOS、Windows、tarball、scan-build 相关工作流）。"
+
+#: ../../00-overview.md:102 ec9999e4096640ee9bdfeffa1a248002
+msgid ""
+"**Source of truth docs**: this PKB for AI/repo navigation; the [FreeSWITCH "
+"Users Manual](https://developer.signalwire.com/freeswitch/) for operator "
+"configuration; [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) / [Confluence](https://freeswitch.org/confluence/) for "
+"historical wiki and release notes."
+msgstr ""
+"**权威文档**：本 PKB 用于 AI/仓库导航；运维配置见 [FreeSWITCH "
+"用户手册](https://developer.signalwire.com/freeswitch/)；历史 wiki 与发行说明见 "
+"[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/) 与 [Confluence](https://freeswitch.org/confluence/)。"
+
+#: ../../00-overview.md:104 c673ca7c8adf4261a55977fbaf6c02bb
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../00-overview.md:106 97e449222406495980b31cb3aa73d49b
+msgid "[Quick Start](01-quick-start.md)"
+msgstr "[快速入门](01-quick-start.md)"
+
+#: ../../00-overview.md:107 bd37eeb88f6b44a79f403b6a2bc7c943
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../00-overview.md:108 c4825330448c4312afd466b4e8c73e72
+msgid "[Tech Stack](03-tech-stack.md)"
+msgstr "[技术栈](03-tech-stack.md)"
+
+#: ../../00-overview.md:109 cfba2f5f222a4078a7de4b2309b6bf0a
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../00-overview.md:110 7d04fa77a07047ed93d5b1aebb1eec8d
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../00-overview.md:111 cac68d4980e347e89152d5f59d745f09
+msgid ""
+"[Users Manual](https://developer.signalwire.com/freeswitch/) — start with "
+"[Ch 1](https://developer.signalwire.com/freeswitch/foundations/introduction)"
+" and [Ch 2](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)"
+msgstr ""
+"[用户手册](https://developer.signalwire.com/freeswitch/) — 从 [第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction) 与 "
+"[第 2 章](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started) 开始"
+
+#~ msgid ""
+#~ "This PKB documents **this source tree**. Product-facing tutorials and "
+#~ "release notes still live on [FreeSWITCH "
+#~ "Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+#~ "Explained/) and [Confluence](https://freeswitch.org/confluence/)."
+#~ msgstr ""
+#~ "本 PKB 记录的是 **本源码树**。面向产品的教程和发行说明仍在 [FreeSWITCH "
+#~ "Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+#~ "Explained/) 和 [Confluence](https://freeswitch.org/confluence/)。"
+
+#~ msgid "Replacing the public wiki as the operator tutorial"
+#~ msgstr "替代公开 wiki 作为运维教程"

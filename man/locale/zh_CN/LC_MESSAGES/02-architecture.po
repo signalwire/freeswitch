@@ -1,0 +1,1025 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../02-architecture.md:1 b2c8b0d7aef34520b963c9c4de822ca9
+msgid "02. Architecture"
+msgstr "02. 架构"
+
+#: ../../02-architecture.md:5 abfe9d17382748778a0b5d2a11f6fd6e
+msgid ""
+"C4 view of this FreeSWITCH tree. Product scope is in "
+"[Overview](00-overview.md); directory ownership in [Repository Map](04-repo-"
+"map.md). Loadable modules live **in-process** as DSOs — they are components,"
+" not separate deployable containers."
+msgstr ""
+"本 FreeSWITCH 源码树的 C4 视图。产品范围见 [概述](00-overview.md)；目录归属见 [仓库地图](04-repo-"
+"map.md)。可加载模块以 DSO 形式运行在**进程内**——它们是组件，不是独立可部署的容器。"
+
+#: ../../02-architecture.md:7 b48bcc3f8ab7489096c917a38809663a
+msgid ""
+"Two different “modules.conf” files matter ([Users Manual Chapter "
+"5](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)):"
+msgstr ""
+"有两份不同的 “modules.conf” 需要分清（[用户手册第 5 "
+"章](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)）："
+
+#: ../../02-architecture.md 3701902e9cc24a1ea61ca128c9362111
+msgid "File"
+msgstr "文件"
+
+#: ../../02-architecture.md 09bcf82985854a6a8404b06d17426af6
+msgid "When it applies"
+msgstr "适用时机"
+
+#: ../../02-architecture.md a1ddc4c48e964a6a82c22f6f000cb864
+msgid "Role"
+msgstr "作用"
+
+#: ../../02-architecture.md f084fe4636f54d33affcaae30466d079
+msgid "`build/modules.conf.in` → `modules.conf`"
+msgstr "`build/modules.conf.in` → `modules.conf`"
+
+#: ../../02-architecture.md 269ea5571bdb45af862dd2248f421d61
+msgid "Build time"
+msgstr "构建时"
+
+#: ../../02-architecture.md 2750ec114c094b13870bd39b9c6ddba5
+msgid "Which `src/mod/...` trees are compiled"
+msgstr "编译哪些 `src/mod/...` 目录树"
+
+#: ../../02-architecture.md a25e4f23a2e6422295630e77f7332a8f
+msgid "`conf/vanilla/autoload_configs/modules.conf.xml`"
+msgstr "`conf/vanilla/autoload_configs/modules.conf.xml`"
+
+#: ../../02-architecture.md 3bef9e1ec1ca4326a85e9679afd8c59d
+msgid "Runtime"
+msgstr "运行时"
+
+#: ../../02-architecture.md 5c0df11778c141c4b11722bea6624bd5
+msgid "Which compiled modules `switch_loadable_module_init()` actually loads"
+msgstr "哪些已编译模块会被 `switch_loadable_module_init()` 实际加载"
+
+#: ../../02-architecture.md 2308e67afaee49c4ba1769e97b7203e5
+msgid "`conf/vanilla/autoload_configs/pre_load_modules.conf.xml`"
+msgstr "`conf/vanilla/autoload_configs/pre_load_modules.conf.xml`"
+
+#: ../../02-architecture.md 9a4d6e2680b94d0e9b308c474475764c
+msgid "Runtime, **before** the main list"
+msgstr "运行时，在主列表**之前**"
+
+#: ../../02-architecture.md 5973145c5c294f46a944328280b7c646
+msgid ""
+"Vanilla loads `mod_pgsql` here so DB backends exist before other modules "
+"init"
+msgstr "Vanilla 在此加载 `mod_pgsql`，以便其他模块初始化前数据库后端已就绪"
+
+#: ../../02-architecture.md e65478add9b54adcb4d5ad9c960753b1
+msgid "`conf/vanilla/autoload_configs/post_load_modules.conf.xml`"
+msgstr "`conf/vanilla/autoload_configs/post_load_modules.conf.xml`"
+
+#: ../../02-architecture.md 59ac9df047384861839ee620a289a8bd
+msgid "Runtime, **after** the main list"
+msgstr "运行时，在主列表**之后**"
+
+#: ../../02-architecture.md 8ebe496046264c5fbbfcfe6b40e73f6f
+msgid "Empty in vanilla"
+msgstr "Vanilla 中为空"
+
+#: ../../02-architecture.md:16 6d8f44b5a44d4e0dae6d4cff13db0117
+msgid ""
+"A module must be compiled before it can appear in `modules.conf.xml`. "
+"Enabling a `<load>` for a missing `.so` logs an error and continues; "
+"compiling a module but leaving it commented out in XML is harmless."
+msgstr ""
+"模块必须先编译，才能出现在 `modules.conf.xml` 中。为缺失的 `.so` 启用 `<load>` "
+"会记错误日志并继续启动；编译了模块但在 XML 中保持注释则无害。"
+
+#: ../../02-architecture.md:18 52cb2fd1c9f6418fbc1fbe0334f25e96
+msgid "Three configuration domains"
+msgstr "三大配置域"
+
+#: ../../02-architecture.md:20 e4bee82598bb41f4bcfafb59154baf7b
+msgid ""
+"Operator config is three domains ([Users Manual Chapter "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction)), "
+"not one XML blob:"
+msgstr ""
+"运维配置分为三个域（[用户手册第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)），不是一份混在一起的"
+" XML："
+
+#: ../../02-architecture.md d3cbfae991e2434da93dbdb36d735bed
+msgid "Domain"
+msgstr "域"
+
+#: ../../02-architecture.md 185d5719212b4ff098130b6fafd9eb17
+msgid "Question"
+msgstr "问题"
+
+#: ../../02-architecture.md d4cebb4145444d44bcf099e85e291d10
+msgid "Vanilla tree"
+msgstr "Vanilla 目录"
+
+#: ../../02-architecture.md ff5888f6a5864e7f9102cbe19adfeb38
+msgid "Directory"
+msgstr "号码簿"
+
+#: ../../02-architecture.md 316cc5bc11f84b86bd8d9557a7b2af07
+msgid "Who is allowed to connect?"
+msgstr "谁可以接入？"
+
+#: ../../02-architecture.md 663bb6acde384938a8294adf3bd2212e
+msgid "`conf/vanilla/directory/`"
+msgstr "`conf/vanilla/directory/`"
+
+#: ../../02-architecture.md 61ffcfddcb60478c96ad895885fa1cd9
+msgid "Dialplan"
+msgstr "拨号计划"
+
+#: ../../02-architecture.md 1b56e107c8bd48de972f1bb403aad152
+msgid "Where does a call go?"
+msgstr "呼叫去哪里？"
+
+#: ../../02-architecture.md fe70d383f13945f09fbfc19909e946c9
+msgid "`conf/vanilla/dialplan/`"
+msgstr "`conf/vanilla/dialplan/`"
+
+#: ../../02-architecture.md ea665230df554c6f968b3e1715818082
+msgid "Configuration"
+msgstr "配置"
+
+#: ../../02-architecture.md f6059c644d8646b6abf01a5ff314d838
+msgid "How do core and modules behave?"
+msgstr "核心与各模块如何表现？"
+
+#: ../../02-architecture.md 74c6bdaeec5c418ea296c729478252ad
+msgid "`conf/vanilla/autoload_configs/` plus `sip_profiles/`"
+msgstr "`conf/vanilla/autoload_configs/` 加上 `sip_profiles/`"
+
+#: ../../02-architecture.md:28 5623883b5e474075888e09baaffdc816
+msgid "Runtime objects the manual names (mapped to this tree):"
+msgstr "手册中的运行时对象（映射到本仓库）："
+
+#: ../../02-architecture.md ccc58856c0cc466cbc707905f20697ff
+msgid "Term"
+msgstr "术语"
+
+#: ../../02-architecture.md b7a159c1e0d24f71b6eb3d0501f2ff5d
+msgid "Meaning"
+msgstr "含义"
+
+#: ../../02-architecture.md ea42c7216bdb48b1bcc1fc663bc89d13
+msgid "In this tree"
+msgstr "本仓库中"
+
+#: ../../02-architecture.md c3816b3ecc01428e8f492d5566b84bd6
+msgid "Endpoint"
+msgstr "端点"
+
+#: ../../02-architecture.md 7f63b14327d54facb7a2737f8d65da83
+msgid "Protocol interface that originates or receives calls"
+msgstr "发起或接收呼叫的协议接口"
+
+#: ../../02-architecture.md 949a72eeb37b4d0895cee71bc533ae9e
+msgid "`mod_sofia`, `mod_verto`, … under `src/mod/endpoints/`"
+msgstr "`src/mod/endpoints/` 下的 `mod_sofia`、`mod_verto` 等"
+
+#: ../../02-architecture.md ../../02-architecture.md:144
+#: 3d2ee9f3a6b34bfa88545af11def8a32
+msgid "Channel"
+msgstr "通道"
+
+#: ../../02-architecture.md 88751e100c5b4f24937bc2ef135654e9
+msgid "One leg between FreeSWITCH and one endpoint"
+msgstr "FreeSWITCH 与单个 endpoint 之间的一条腿"
+
+#: ../../02-architecture.md ec70a59d6e4448a1909e64ce320a6f9d
+msgid "`switch_channel_t`"
+msgstr "`switch_channel_t`"
+
+#: ../../02-architecture.md ../../02-architecture.md:144
+#: 185d5719212b4ff098130b6fafd9eb17
+msgid "Session"
+msgstr "会话"
+
+#: ../../02-architecture.md e1b748292ce647419fbfbf8494e44b32
+msgid "Runtime container for a channel plus application state"
+msgstr "channel 及其应用状态的运行时容器"
+
+#: ../../02-architecture.md ec70a59d6e4448a1909e64ce320a6f9d
+msgid "`switch_core_session_t`"
+msgstr "`switch_core_session_t`"
+
+#: ../../02-architecture.md 3d2ee9f3a6b34bfa88545af11def8a32
+msgid "Call"
+msgstr "呼叫"
+
+#: ../../02-architecture.md adea9cfbfbb64544809c4f67a7bca08d
+msgid "One or more associated channels"
+msgstr "一条或多条关联的 channel"
+
+#: ../../02-architecture.md bc2492cca3d74c779259fe263429013c
+msgid "Core SQL `calls` (`caller_uuid` / `callee_uuid`)"
+msgstr "核心 SQL 表 `calls`（`caller_uuid` / `callee_uuid`）"
+
+#: ../../02-architecture.md f9ae5cae57fa4f34a7222b6dbe848eb8
+msgid "Bridge"
+msgstr "桥接"
+
+#: ../../02-architecture.md 806df0f332b44300b4ef2de8c1a45613
+msgid "Association that joins two channels’ media"
+msgstr "把两条 channel 的媒体连在一起的关联"
+
+#: ../../02-architecture.md c89dafe93a5c4d1abc27dc8ff95a5a3e
+msgid "`switch_ivr_bridge` / `bridge` app"
+msgstr "`switch_ivr_bridge` / `bridge` 应用"
+
+#: ../../02-architecture.md:38 f9d17e5717884c72aea58274d3f9e65e
+#, python-brace-format
+msgid ""
+"Channel variables use `${name}` at **call time**. Preprocessor variables use"
+" `$${name}` and expand **once** while assembling XML (`vars.xml`). Do not "
+"mix them ([Chapter "
+"3](https://developer.signalwire.com/freeswitch/configuration/xml))."
+msgstr ""
+"通道变量 `${name}` 在**呼叫时**展开。预处理器变量 `$${name}` 在组装 "
+"XML（`vars.xml`）时**只展开一次**。不要混用（[第 3 "
+"章](https://developer.signalwire.com/freeswitch/configuration/xml)）。"
+
+#: ../../02-architecture.md:40 d829a08ce59e4aaf8d61622762f37e61
+msgid "Context"
+msgstr "系统上下文"
+
+#: ../../02-architecture.md:42 461b1d2e8d364aa9830691124bcf0f75
+msgid ""
+"FreeSWITCH is one softswitch process that terminates signaling and media, "
+"executes a dialplan, and emits events. Callers are SIP phones, trunks, and "
+"WebRTC browsers. Operators edit XML and use `fs_cli`. Application code "
+"either embeds (Lua/Python/V8 modules) or sits **outside** the process on the"
+" Event Socket (ESL). SignalWire is an optional cloud peer via "
+"`mod_signalwire`."
+msgstr ""
+"FreeSWITCH 是一个软交换进程：终结信令与媒体、执行拨号计划并发送事件。呼叫方是 SIP 话机、中继和 WebRTC 浏览器。运维人员编辑 "
+"XML 并使用 `fs_cli`。应用代码要么嵌入进程（Lua/Python/V8 模块），要么通过 Event "
+"Socket（ESL）运行在进程**之外**。SignalWire 是可选的云端对等体，经由 `mod_signalwire`。"
+
+#: ../../02-architecture.md:65 d8fef15571de4036b9ea7c859f1272ec
+msgid "UML nearest match: system-context diagram (no standard UML type)."
+msgstr "UML 最接近：系统上下文图（无标准 UML 类型）。"
+
+#: ../../02-architecture.md:67 707822e6f9b94bdfa752d9a0b1257580
+msgid "Container View"
+msgstr "容器视图"
+
+#: ../../02-architecture.md:69 cfea81c9080744fcb4e35c34156418bb
+msgid ""
+"Deployable runtime pieces. Modules are **not** listed here; they load into "
+"the `freeswitch` process."
+msgstr "可部署的运行时部件。模块**不**列在此处；它们加载进 `freeswitch` 进程。"
+
+#: ../../02-architecture.md:44 d3cbfae991e2434da93dbdb36d735bed
+msgid "Container"
+msgstr "容器"
+
+#: ../../02-architecture.md:44 52198592fc384865b6f8b4765f8ed404
+msgid "Responsibility"
+msgstr "职责"
+
+#: ../../02-architecture.md:44 358bba2f8966434c900fd30581dea812
+msgid "Technology"
+msgstr "技术"
+
+#: ../../02-architecture.md:44 7d7ccb897cb84e47b0c142d5300cef41
+msgid "Depends on"
+msgstr "依赖"
+
+#: ../../02-architecture.md:44 ../../02-architecture.md:101
+#: b715c19ec0e2418c84fc3c836c3f4e73
+msgid "`freeswitch` process"
+msgstr "`freeswitch` 进程"
+
+#: ../../02-architecture.md:44 b8ab564797e14ed184303f6aac4c3c79
+msgid "Sessions, state machine, media, module host, XML registry, event bus"
+msgstr "会话、状态机、媒体、模块宿主、XML 注册表、事件总线"
+
+#: ../../02-architecture.md:44 97b9f9b7b14042d78235308aad538a11
+msgid "C, APR, POSIX threads / Windows service"
+msgstr "C、APR、POSIX 线程 / Windows 服务"
+
+#: ../../02-architecture.md:44 e200ac3d80ab4dcc9d99e4123e3292b6
+msgid "XML on disk, core SQLite (or ODBC/pgsql), RTP ports, loaded DSOs"
+msgstr "磁盘上的 XML、核心 SQLite（或 ODBC/pgsql）、RTP 端口、已加载的 DSO"
+
+#: ../../02-architecture.md:44 ea42c7216bdb48b1bcc1fc663bc89d13
+msgid "XML config tree"
+msgstr "XML 配置树"
+
+#: ../../02-architecture.md:44 3a2bbf0715db4905ad1b4a5913ec41e2
+msgid "Dialplan, directory, SIP profiles, module autoload"
+msgstr "拨号计划、号码簿、SIP 配置文件、模块自动加载"
+
+#: ../../02-architecture.md:44 66a2177c5d63436ab382ce2e10cf45d2
+msgid "Preprocessed XML (`X-PRE-PROCESS` / `#include`)"
+msgstr "预处理 XML（`X-PRE-PROCESS` / `#include`）"
+
+#: ../../02-architecture.md:44 eb70df08e0114c539c11d8541416c449
+msgid ""
+"Flattened to `freeswitch.xml.fsxml` at start (`conf/vanilla/freeswitch.xml`)"
+msgstr "启动时展平为 `freeswitch.xml.fsxml`（`conf/vanilla/freeswitch.xml`）"
+
+#: ../../02-architecture.md:44 77c3193f533c49ed8e1a065e8797452b
+msgid "Core database"
+msgstr "核心数据库"
+
+#: ../../02-architecture.md:44 112753433ef84e1d990ad16a719de4df
+msgid "Internal scoreboard / recovery / some module data"
+msgstr "内部记分板 / 恢复 / 部分模块数据"
+
+#: ../../02-architecture.md:44 62b3bb80c0434579adf5dc844b4b5460
+msgid ""
+"SQLite by default (`sqlite3_initialize` in `switch_core_init`); optional "
+"ODBC/pgsql"
+msgstr "默认 SQLite（`switch_core_init` 中的 `sqlite3_initialize`）；可选 ODBC/pgsql"
+
+#: ../../02-architecture.md:44 7a6bc5f35c0b4de199f14ec2ca722a61
+msgid "`db/` under prefix"
+msgstr "安装前缀下的 `db/`"
+
+#: ../../02-architecture.md:44 2ea1ce6ea9b7410f96b6b96b9b378f63
+msgid "ESL client (`fs_cli` or custom)"
+msgstr "ESL 客户端（`fs_cli` 或自定义）"
+
+#: ../../02-architecture.md:44 7941c93198fc4daba7c31ef370f79eec
+msgid "Out-of-process API + event subscribe"
+msgstr "进程外 API + 事件订阅"
+
+#: ../../02-architecture.md:44 8f50a1d82d704bc5b219e262390cdb49
+msgid "TCP to `mod_event_socket`"
+msgstr "连到 `mod_event_socket` 的 TCP"
+
+#: ../../02-architecture.md:44 5641a57bde6d448d8266914cc9d4249d
+msgid "Loopback 8021 by default"
+msgstr "默认回环 8021"
+
+#: ../../02-architecture.md:44 6dfcf722b3f8465aa23975adbb490a87
+msgid "SIP / WebRTC peers"
+msgstr "SIP / WebRTC 对端"
+
+#: ../../02-architecture.md:44 e4ce8bacf1844affbff8d130e5eb0982
+msgid "Signaling and media"
+msgstr "信令与媒体"
+
+#: ../../02-architecture.md:44 25a3c99e9a2440199474bf62c497f521
+msgid "Sofia-SIP, Verto"
+msgstr "Sofia-SIP, Verto"
+
+#: ../../02-architecture.md:44 493b600ac2d848bc95ff567a5560bb5b
+msgid "UDP/TCP 5060/5080, WSS, RTP ranges"
+msgstr "UDP/TCP 5060/5080、WSS、RTP 端口范围"
+
+#: ../../02-architecture.md:95 d5a21132bc094d389aaa3cf36d2aca25
+msgid "UML nearest match: deployment / component diagram."
+msgstr "UML 最接近：部署图 / 组件图。"
+
+#: ../../02-architecture.md:97 d9edc4cebd544dde97121b2aef8b50dd
+msgid ""
+"Default install prefix is `/usr/local/freeswitch` (`configure.ac`). One "
+"process per host is the unit of deployment; extra hosts are operator-owned "
+"HA, not an in-tree orchestrator. `switchname` in "
+"`conf/vanilla/autoload_configs/switch.conf.xml` only overrides hostname for "
+"DB/CURL identity in clustered configs."
+msgstr ""
+"默认安装前缀为 `/usr/local/freeswitch`（`configure.ac`）。每台主机上的一个进程是部署单元；额外主机属于运维自建 "
+"HA，并非树内编排器。`conf/vanilla/autoload_configs/switch.conf.xml` 中的 `switchname` "
+"仅在集群配置中覆盖主机名，用于 DB/CURL 身份。"
+
+#: ../../02-architecture.md:99 6dbc6e0c32bb43c7b82d2706180068f9
+msgid "Component View"
+msgstr "组件视图"
+
+#: ../../02-architecture.md:122 e4a3ca21749841fca7ece88d72c8c03c
+msgid "Core runtime"
+msgstr "核心运行时"
+
+#: ../../02-architecture.md:124 590afaa79ad14d8a9b84a702f3d4d418
+msgid ""
+"**Responsibilities**: APR/memory pools, directories, SQLite, SQL flags, "
+"session thread pool (`SCF_SESSION_THREAD_POOL`), signal handlers, "
+"`SWITCH_EVENT_STARTUP`."
+msgstr ""
+"**职责**：APR/内存池、目录、SQLite、SQL "
+"标志、会话线程池（`SCF_SESSION_THREAD_POOL`）、信号处理、`SWITCH_EVENT_STARTUP`。"
+
+#: ../../02-architecture.md:125 5f2e51e09ae84bfba57966dd7e61a930
+msgid ""
+"**Key entry points**: `src/switch.c` (`main`), `switch_core_init()` / "
+"`switch_core_init_and_modload()` in `src/switch_core.c`."
+msgstr ""
+"**关键入口**：`src/switch.c`（`main`）、`src/switch_core.c` 中的 `switch_core_init()` "
+"/ `switch_core_init_and_modload()`。"
+
+#: ../../02-architecture.md:126 36d7442429524b08b98fa8ec94489323
+msgid ""
+"**Important dependencies**: bundled APR (`libs/apr`), SQLite, `libs/srtp`, "
+"`libs/libvpx`."
+msgstr "**重要依赖**：捆绑的 APR（`libs/apr`）、SQLite、`libs/srtp`、`libs/libvpx`。"
+
+#: ../../02-architecture.md:127 16920f165c0f4c15bbdaf5a6453556a5
+msgid ""
+"**Failure modes**: init aborts if APR or SQLite cannot start; "
+"`SCF_NO_NEW_SESSIONS` is set until the core is ready."
+msgstr "**失败模式**：APR 或 SQLite 无法启动则初始化中止；核心就绪前会设置 `SCF_NO_NEW_SESSIONS`。"
+
+#: ../../02-architecture.md:129 ea665230df554c6f968b3e1715818082
+msgid "XML configuration"
+msgstr "XML 配置"
+
+#: ../../02-architecture.md:131 f95d8bc21b0f4b40b1455cad09f2da60
+msgid ""
+"**Responsibilities**: parse `conf_dir/freeswitch.xml`, expand preprocessor "
+"includes (`X-PRE-PROCESS` / `#include` / `#set`), serve sections "
+"(`configuration`, `dialplan`, `directory`, `languages`, `chatplan`). "
+"`mod_xml_curl` / `mod_xml_ldap` can replace file-backed sections at runtime "
+"by installing `switch_xml_set_open_root_function()`."
+msgstr ""
+"**职责**：解析 `conf_dir/freeswitch.xml`，展开预处理器 include（`X-PRE-PROCESS` / "
+"`#include` / "
+"`#set`），提供各节（`configuration`、`dialplan`、`directory`、`languages`、`chatplan`）。`mod_xml_curl`"
+" / `mod_xml_ldap` 可通过安装 `switch_xml_set_open_root_function()` 在运行时替换基于文件的节。"
+
+#: ../../02-architecture.md:132 f64938a301f644378b2d24babd14be34
+msgid ""
+"**Key entry points**: `src/switch_xml.c` (`switch_xml_open_root`, "
+"`__switch_xml_open_root`), root document `conf/vanilla/freeswitch.xml`."
+msgstr ""
+"**关键入口**：`src/switch_xml.c`（`switch_xml_open_root`、`__switch_xml_open_root`），根文档"
+" `conf/vanilla/freeswitch.xml`。"
+
+#: ../../02-architecture.md:133 af246fe93b694a2884d473c0dce6a34d
+#, python-brace-format
+msgid ""
+"**Compiled artifact**: `log_dir/freeswitch.xml.fsxml` (comment in "
+"`conf/vanilla/freeswitch.xml`: `${prefix}/log/freeswitch.xml.fsxml`). "
+"Memory-mapped while running — do not edit it."
+msgstr ""
+"**编译产物**：`log_dir/freeswitch.xml.fsxml`（`conf/vanilla/freeswitch.xml` 注释写的是 "
+"`${prefix}/log/freeswitch.xml.fsxml`）。运行时内存映射 — 不要编辑。"
+
+#: ../../02-architecture.md:134 d4a054aa116a4477a31bf6e24d4150d0
+msgid ""
+"**Failure modes**: broken include path or XML error leaves the switch unable"
+" to open root (`\"Cannot Open log directory or XML Root!\"`)."
+msgstr ""
+"**失败模式**：include 路径损坏或 XML 错误会导致交换机无法打开根文档（`\"Cannot Open log directory or "
+"XML Root!\"`）。"
+
+#: ../../02-architecture.md:136 aacd9a2400ac43459262a2ae45ca32ae
+msgid "Session, channel, state machine"
+msgstr "会话、通道与状态机"
+
+#: ../../02-architecture.md:138 31e4094c55e34f50bc09be691784115c
+msgid ""
+"**Responsibilities**: each call leg is a `switch_core_session_t` (thread, "
+"codecs, queues, UUID) wrapping a `switch_channel_t` (state, variables, "
+"cause). The core runs `switch_state_handler_table` hooks; endpoints override"
+" them (Sofia’s `sofia_on_init` / `sofia_on_routing`)."
+msgstr ""
+"**职责**：每个呼叫腿是一个 `switch_core_session_t`（线程、编解码器、队列、UUID），内部包裹 "
+"`switch_channel_t`（状态、变量、原因）。核心运行 `switch_state_handler_table` "
+"钩子；端点可覆盖它们（Sofia 的 `sofia_on_init` / `sofia_on_routing`）。"
+
+#: ../../02-architecture.md:139 fcb67be0e7484c08a1022338123c6a4a
+msgid ""
+"**Key entry points**: `src/switch_core_session.c`, `src/switch_channel.c`, "
+"`src/switch_core_state_machine.c`, types in `src/include/switch_types.h` "
+"(`switch_channel_state_t`)."
+msgstr ""
+"**关键入口**：`src/switch_core_session.c`、`src/switch_channel.c`、`src/switch_core_state_machine.c`，类型在"
+" `src/include/switch_types.h`（`switch_channel_state_t`）。"
+
+#: ../../02-architecture.md:140 6d9421a8d09f41009ca7e562438ec4ae
+msgid ""
+"**Failure modes**: hung sessions if an endpoint returns without advancing "
+"state; media/proxy flags (`CF_PROXY_MODE`, `CF_PROXY_MEDIA`) change SDP/RTP "
+"ownership."
+msgstr ""
+"**失败模式**：端点返回却不推进状态会导致会话挂起；媒体/代理标志（`CF_PROXY_MODE`、`CF_PROXY_MEDIA`）会改变 "
+"SDP/RTP 所有权。"
+
+#: ../../02-architecture.md:142 dddca1f437ad4a0a8bf5a30838faf60a
+msgid ""
+"Default inbound path after create: `CS_NEW` → `CS_INIT` → `CS_ROUTING` "
+"(dialplan hunt) → `CS_EXECUTE` (apps) → `CS_EXCHANGE_MEDIA` or hangup path "
+"`CS_HANGUP` → `CS_REPORTING` → `CS_DESTROY`."
+msgstr ""
+"创建后的默认入局路径：`CS_NEW` → `CS_INIT` → `CS_ROUTING`（拨号计划查找）→ `CS_EXECUTE`（应用）→ "
+"`CS_EXCHANGE_MEDIA`，或挂断路径 `CS_HANGUP` → `CS_REPORTING` → `CS_DESTROY`。"
+
+#: ../../02-architecture.md:159 560b28bf823b4784a78c00312b0ae9e1
+msgid "Module loader"
+msgstr "模块加载器"
+
+#: ../../02-architecture.md:161 8bf6ecfb7ba8448b88f4c104ffb508cb
+msgid ""
+"**Responsibilities**: dlopen modules from `mod_dir`, register interface "
+"tables (endpoint, dialplan, application, codec, API, file, say, ASR, …) on "
+"`switch_loadable_module_interface`."
+msgstr ""
+"**职责**：从 `mod_dir` dlopen 模块，在 `switch_loadable_module_interface` "
+"上注册接口表（endpoint、dialplan、application、codec、API、file、say、ASR、…）。"
+
+#: ../../02-architecture.md:162 945fcfcaefce490f970034e8affa48ac
+msgid ""
+"**Key entry points**: `src/switch_loadable_module.c`, "
+"`src/include/switch_loadable_module.h`, "
+"`src/include/switch_module_interfaces.h`. Modules export "
+"`SWITCH_MODULE_DEFINITION` / `SWITCH_MODULE_LOAD_FUNCTION`."
+msgstr ""
+"**关键入口**：`src/switch_loadable_module.c`、`src/include/switch_loadable_module.h`、`src/include/switch_module_interfaces.h`。模块导出"
+" `SWITCH_MODULE_DEFINITION` / `SWITCH_MODULE_LOAD_FUNCTION`。"
+
+#: ../../02-architecture.md:163 be01cc4b0e1541559e2875b0392b284d
+msgid ""
+"**Failure modes**: missing `.so` or load error is logged; "
+"`switch_core_init_and_modload` fails the whole startup if "
+"`switch_loadable_module_init(SWITCH_TRUE)` fails."
+msgstr ""
+"**失败模式**：缺少 `.so` 或加载错误会被记录；若 `switch_loadable_module_init(SWITCH_TRUE)` "
+"失败，`switch_core_init_and_modload` 会使整个启动失败。"
+
+#: ../../02-architecture.md:165 08e5d567ece047daa4566582d4562dd9
+msgid "Media path"
+msgstr "媒体路径"
+
+#: ../../02-architecture.md:167 8ffbfbe594de4a8081e4ea3c593013df
+msgid ""
+"**Responsibilities**: RTP/SRTP, jitter buffer, codecs, video, media bugs "
+"(tap/spy)."
+msgstr "**职责**：RTP/SRTP、抖动缓冲、编解码器、视频、媒体探针（tap/spy）。"
+
+#: ../../02-architecture.md:168 25bdf3acbb2742cab513e68a1900c8d4
+msgid ""
+"**Key entry points**: `src/switch_rtp.c`, `src/switch_core_media.c`, "
+"`src/switch_jitterbuffer.c`, codec modules under `src/mod/codecs/`."
+msgstr ""
+"**关键入口**：`src/switch_rtp.c`、`src/switch_core_media.c`、`src/switch_jitterbuffer.c`，编解码模块位于"
+" `src/mod/codecs/`。"
+
+#: ../../02-architecture.md:169 7dd736c34d174dbd96263deb3fc2375c
+msgid ""
+"**Failure modes**: NAT, wrong ptime (default 20 ms assumption in "
+"`switch.conf.xml`), codec mismatch forcing transcoding."
+msgstr "**失败模式**：NAT、错误的 ptime（`switch.conf.xml` 中默认按 20 ms 假设）、编解码不匹配而被迫转码。"
+
+#: ../../02-architecture.md:171 c015751e82ec47b8b35310fb282840e3
+msgid "Signaling endpoints (in-process)"
+msgstr "信令端点（进程内）"
+
+#: ../../02-architecture.md:173 b76ed8133886473f80903efa2303005a
+msgid ""
+"**Sofia (`mod_sofia`)**: SIP. State handlers in "
+"`src/mod/endpoints/mod_sofia/mod_sofia.c`. Profiles in "
+"`conf/vanilla/sip_profiles/` (internal auth vs external `auth-calls=false`)."
+" Vanilla **internal** `context` is `public`; authenticated directory users "
+"override with `user_context` ([Chapter "
+"7](https://developer.signalwire.com/freeswitch/users-and-endpoints/sip-"
+"profiles))."
+msgstr ""
+"**Sofia（`mod_sofia`）**：SIP。状态处理在 "
+"`src/mod/endpoints/mod_sofia/mod_sofia.c`。配置文件在 "
+"`conf/vanilla/sip_profiles/`（内部鉴权 vs 外部 `auth-calls=false`）。Vanilla "
+"**internal** 的 `context` 是 `public`；已认证号码簿用户用 `user_context` 覆盖（[第 7 "
+"章](https://developer.signalwire.com/freeswitch/users-and-endpoints/sip-"
+"profiles)）。"
+
+#: ../../02-architecture.md:174 9e25f68d25d3404f857c0e18d2fcd583
+msgid "**Verto (`mod_verto`)**: HTML5/WebRTC, endpoint name `verto.rtc`."
+msgstr "**Verto（`mod_verto`）**：HTML5/WebRTC，端点名 `verto.rtc`。"
+
+#: ../../02-architecture.md:175 3d1df28db0704f54b9df959aab8cbcd3
+msgid ""
+"**Loopback / RTC**: in-process and WebRTC helper endpoints loaded by vanilla"
+" `modules.conf.xml`."
+msgstr "**Loopback / RTC**：vanilla `modules.conf.xml` 加载的进程内与 WebRTC 辅助端点。"
+
+#: ../../02-architecture.md:177 0bc597e947ab459287e8c229e2fe4b7c
+msgid ""
+"Media mode on a Sofia profile ([Chapter "
+"17](https://developer.signalwire.com/freeswitch/media-and-codecs/handling)):"
+" vanilla internal sets `inbound-late-negotiation=true` (defer A-leg codec "
+"until after dialplan). `inbound-bypass-media` sets `CF_PROXY_MODE` (RTP "
+"endpoint-to-endpoint); `inbound-proxy-media` sets `CF_PROXY_MEDIA` (RTP "
+"through the server without payload inspection)."
+msgstr ""
+"Sofia profile 上的媒体模式（[第 17 "
+"章](https://developer.signalwire.com/freeswitch/media-and-"
+"codecs/handling)）：vanilla internal 设置 `inbound-late-negotiation=true`（把 A "
+"腿编解码推迟到拨号计划之后）。`inbound-bypass-media` 设置 `CF_PROXY_MODE`（RTP 端到端）；`inbound-"
+"proxy-media` 设置 `CF_PROXY_MEDIA`（RTP 经服务器但不检查载荷）。"
+
+#: ../../02-architecture.md:179 a32dee24af884a92954efec6a077ab40
+msgid "Dialplan and applications"
+msgstr "拨号计划与应用"
+
+#: ../../02-architecture.md:181 fbdc44f8ba594d26b822e6d2fc169919
+msgid ""
+"**Dialplan**: `mod_dialplan_xml` matches XML extensions "
+"(`src/mod/dialplans/mod_dialplan_xml/mod_dialplan_xml.c`). Asterisk-style "
+"`mod_dialplan_asterisk` is optional."
+msgstr ""
+"**拨号计划**：`mod_dialplan_xml` 匹配 XML "
+"分机（`src/mod/dialplans/mod_dialplan_xml/mod_dialplan_xml.c`）。Asterisk 风格的 "
+"`mod_dialplan_asterisk` 为可选。"
+
+#: ../../02-architecture.md:182 e653926a1bb7450c8875c8582a0afb4a
+msgid ""
+"**Applications**: `mod_dptools` (bridge, answer, playback, …), "
+"`mod_conference`, `mod_voicemail`, `mod_commands` (CLI/API). Originate lives"
+" in core `switch_ivr_originate()` (`src/switch_ivr_originate.c`)."
+msgstr ""
+"**应用**：`mod_dptools`（bridge、answer、playback、…）、`mod_conference`、`mod_voicemail`、`mod_commands`（CLI/API）。Originate"
+" 位于核心 `switch_ivr_originate()`（`src/switch_ivr_originate.c`）。"
+
+#: ../../02-architecture.md:184 80017a7ecc5342b2929c3c1c3842d26c
+msgid "Event engine and ESL"
+msgstr "事件引擎与 ESL"
+
+#: ../../02-architecture.md:186 eb703409de6447998d8928e1d1c07230
+msgid ""
+"**Bus**: APR FIFO + backend thread (`src/include/switch_event.h`). Bind "
+"callbacks or consume from `mod_event_socket`."
+msgstr ""
+"**总线**：APR FIFO + 后端线程（`src/include/switch_event.h`）。绑定回调或从 "
+"`mod_event_socket` 消费。"
+
+#: ../../02-architecture.md:187 21d568a46a334f3986e51e0b0d9da8d9
+msgid ""
+"**ESL**: `mod_event_socket` listens (default `127.0.0.1:8021`, password "
+"`ClueCon`). `fs_cli` is built from `libs/esl/fs_cli.c`. Auth flag "
+"`LFLAG_AUTHED` in `mod_event_socket.c`. Slow consumers must queue locally — "
+"the core warns against blocking the delivery thread."
+msgstr ""
+"**ESL**：`mod_event_socket` 监听（默认 `127.0.0.1:8021`，密码 `ClueCon`）。`fs_cli` 由 "
+"`libs/esl/fs_cli.c` 构建。鉴权标志 `LFLAG_AUTHED` 在 "
+"`mod_event_socket.c`。慢消费者必须在本地排队——核心警告不要阻塞投递线程。"
+
+#: ../../02-architecture.md:189 b7a159c1e0d24f71b6eb3d0501f2ff5d
+msgid "Logging"
+msgstr "日志"
+
+#: ../../02-architecture.md:191 4479224147f145dfa3be8ebb3e7d0ab9
+msgid ""
+"`mod_console`, `mod_logfile` (vanilla loads both). Levels via "
+"`SWITCH_CHANNEL_LOG` macros in `switch_types.h`."
+msgstr ""
+"`mod_console`、`mod_logfile`（vanilla 两者都加载）。级别通过 `switch_types.h` 中的 "
+"`SWITCH_CHANNEL_LOG` 宏。"
+
+#: ../../02-architecture.md:193 60eb19f13ef847868987e9884ea53d3d
+msgid "Code-Level View"
+msgstr "代码级视图"
+
+#: ../../02-architecture.md:195 9a096e085cfa4b3eb62763865ea573b1
+msgid "Only types on the hot path. Full headers are the API; this is the map."
+msgstr "仅列出热路径上的类型。完整头文件才是 API；这里是地图。"
+
+#: ../../02-architecture.md:144 14fb542536e44166a3c75dcb18789706
+msgid "Area"
+msgstr "领域"
+
+#: ../../02-architecture.md:144 949b7eadb1ab46908730275d5a00a70e
+msgid "Important files or symbols"
+msgstr "重要文件或符号"
+
+#: ../../02-architecture.md:144 7042c5731cfa47eb932ba153ce880532
+msgid "Why it matters"
+msgstr "为何重要"
+
+#: ../../02-architecture.md:144 d4e1c1d4308649a8aae87206aa4e464d
+msgid "Process boot"
+msgstr "进程启动"
+
+#: ../../02-architecture.md:144 0c730283834041d4815f30ccf928d1d4
+msgid ""
+"`src/switch.c` `main`; `switch_core_init`, `switch_core_init_and_modload`"
+msgstr ""
+"`src/switch.c` `main`; `switch_core_init`, `switch_core_init_and_modload`"
+
+#: ../../02-architecture.md:144 f6bb7e7ba5a2474484466ea2a72ad31f
+msgid "Single-runlevel init; modules load only in the second function"
+msgstr "单运行级初始化；模块仅在第二个函数中加载"
+
+#: ../../02-architecture.md:144 4477ee7d7de94bbb9d196ef3f8eeb63c
+msgid ""
+"`struct switch_core_session` in `src/include/private/switch_core_pvt.h`; "
+"`switch_core_session_request_uuid`"
+msgstr ""
+"`struct switch_core_session` in `src/include/private/switch_core_pvt.h`; "
+"`switch_core_session_request_uuid`"
+
+#: ../../02-architecture.md:144 4dc2abdfc2bf4dd6a82ca4901e8b80bf
+msgid "UUID, endpoint pointer, codec pair, event/message queues, media bugs"
+msgstr "UUID、端点指针、编解码器对、事件/消息队列、媒体探针"
+
+#: ../../02-architecture.md:144 5be40811b75f4284bad16534773244df
+msgid ""
+"`switch_channel_t`, `switch_channel_state_t` (`CS_*`), call state `CCS_*`"
+msgstr ""
+"`switch_channel_t`, `switch_channel_state_t` (`CS_*`), call state `CCS_*`"
+
+#: ../../02-architecture.md:144 0a54f3cc24044b2b9ab4570e05c89644
+msgid "Dialplan and apps key off channel state/variables"
+msgstr "拨号计划与应用依据通道状态/变量"
+
+#: ../../02-architecture.md:144 c3816b3ecc01428e8f492d5566b84bd6
+msgid "Endpoint contract"
+msgstr "端点契约"
+
+#: ../../02-architecture.md:144 e23ba5709598428c8ae9b26357fdecd5
+msgid "`switch_endpoint_interface_t`, `switch_state_handler_table`"
+msgstr "`switch_endpoint_interface_t`, `switch_state_handler_table`"
+
+#: ../../02-architecture.md:144 53a6404df259481f9b0c6de7e282ed63
+msgid "Sofia fills `on_init` / `on_routing` / …"
+msgstr "Sofia 填充 `on_init` / `on_routing` / …"
+
+#: ../../02-architecture.md:144 f168c2a5ac894cb88c227f88a59196bb
+msgid "Module contract"
+msgstr "模块契约"
+
+#: ../../02-architecture.md:144 ec70a59d6e4448a1909e64ce320a6f9d
+msgid "`switch_loadable_module_interface`"
+msgstr "`switch_loadable_module_interface`"
+
+#: ../../02-architecture.md:144 e7c118abbe5a4d1593ad77ca4b64e79e
+msgid "Named tables the core looks up (endpoint, app, codec, API)"
+msgstr "核心查找的命名表（endpoint、app、codec、API）"
+
+#: ../../02-architecture.md:144 a145b8c41f014db2afcbf0c637733dd9
+msgid "Events"
+msgstr "事件"
+
+#: ../../02-architecture.md:144 7bd5f1c9fb7d48e2aa82ac61e4b95645
+msgid "`switch_event_t`, `SWITCH_EVENT_CHANNEL_*`, `SWITCH_EVENT_STARTUP`"
+msgstr "`switch_event_t`, `SWITCH_EVENT_CHANNEL_*`, `SWITCH_EVENT_STARTUP`"
+
+#: ../../02-architecture.md:144 b1de7be995b047b59d86d7e3e884780d
+msgid "ESL, CDR, and scripts subscribe here"
+msgstr "ESL、CDR 与脚本在此订阅"
+
+#: ../../02-architecture.md:144 acebb49a0b6f4d51b1cfe1d7aaa96474
+msgid "XML"
+msgstr "XML"
+
+#: ../../02-architecture.md:144 87ff4305d7434e77b3456c164abd2f41
+msgid "`switch_xml_open_root`, preprocessor in `conf/vanilla/freeswitch.xml`"
+msgstr "`switch_xml_open_root`，预处理器在 `conf/vanilla/freeswitch.xml`"
+
+#: ../../02-architecture.md:144 f736f0422b4a4e4f8c91cf2919edc32e
+msgid "Config is data, not code"
+msgstr "配置是数据，不是代码"
+
+#: ../../02-architecture.md:144 84abf3a6a0d24668b76106bebbf8ea87
+msgid "Originate / bridge"
+msgstr "Originate / 桥接"
+
+#: ../../02-architecture.md:144 c89dafe93a5c4d1abc27dc8ff95a5a3e
+msgid "`switch_ivr_originate`, `src/switch_ivr_bridge.c`"
+msgstr "`switch_ivr_originate`, `src/switch_ivr_bridge.c`"
+
+#: ../../02-architecture.md:144 70e62a516e944fbdaecb201ba4317c9a
+msgid "Outbound legs and B2BUA"
+msgstr "出局腿与 B2BUA"
+
+#: ../../02-architecture.md:248 25f580df4a6340269db1d2fdbb2a224b
+msgid ""
+"UML nearest match: class diagram + state machine (channel states above)."
+msgstr "UML 最接近：类图 + 状态机（上方通道状态）。"
+
+#: ../../02-architecture.md:250 72eb820cb23c4e80b9b5b3cdafa601e6
+msgid "Key Runtime Flows"
+msgstr "关键运行时流程"
+
+#: ../../02-architecture.md:252 616fcb759fc84806a80dd181e0630c21
+msgid "Inbound SIP call (vanilla)"
+msgstr "入局 SIP 呼叫（vanilla）"
+
+#: ../../02-architecture.md:279 73c545f26f354b8bba02b58baa1b50dd
+msgid ""
+"**Success path**: INVITE → session thread → INIT/ROUTING → XML extension → "
+"apps (bridge/conference/voicemail) → RTP → hangup/CDR events."
+msgstr ""
+"**成功路径**：INVITE → 会话线程 → INIT/ROUTING → XML 分机 → "
+"应用（bridge/conference/voicemail）→ RTP → 挂断/CDR 事件。"
+
+#: ../../02-architecture.md:280 2960869885b04f3980daeafb420183e7
+msgid ""
+"**Validation boundaries**: Sofia profile ACL (`apply-inbound-acl` on "
+"internal profile uses `domains` from `acl.conf.xml`); `auth-calls` on "
+"internal vs `false` on external; directory digest auth for users 1000–1019 "
+"in vanilla. Authenticated INVITE uses directory `user_context` (`default`); "
+"the profile’s own `context=public` is for unauthenticated inbound only "
+"([Chapter "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction) "
+"anatomy of a call)."
+msgstr ""
+"**校验边界**：Sofia 配置文件 ACL（内部配置的 `apply-inbound-acl` 使用 `acl.conf.xml` 中的 "
+"`domains`）；内部 `auth-calls` vs 外部 `false`；vanilla 中用户 1000–1019 的号码簿 digest "
+"鉴权。已认证 INVITE 使用号码簿 `user_context`（`default`）；profile 自身的 `context=public` "
+"仅用于未认证入局（[第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction) "
+"呼叫解剖）。"
+
+#: ../../02-architecture.md:281 3e961f84525944168bc99bfab071a26a
+msgid ""
+"**Consistency**: one session thread owns the channel state machine. SQL "
+"scoreboard is internal (disable with `-nosql`). Channel recovery flags "
+"`CF_RECOVERING` skip routing and jump to `CS_EXECUTE`."
+msgstr ""
+"**一致性**：一个会话线程拥有通道状态机。SQL 记分板是内部的（用 `-nosql` 禁用）。通道恢复标志 `CF_RECOVERING` "
+"会跳过路由并跳到 `CS_EXECUTE`。"
+
+#: ../../02-architecture.md:282 ee1509ecd5ba4dd781c938e1231a26fc
+msgid ""
+"**Retry / compensation**: SIP retransmits are Sofia/Sofia-SIP’s job. "
+"Dialplan `bridge` failover is application-level (pipe-separated gateways), "
+"not a core saga. ESL clients must not block the event thread."
+msgstr ""
+"**重试 / 补偿**：SIP 重传是 Sofia/Sofia-SIP 的职责。拨号计划 `bridge` 故障转移是应用层（管道分隔的网关），不是核心"
+" saga。ESL 客户端不得阻塞事件线程。"
+
+#: ../../02-architecture.md:284 a1c8d20dbf6b4da386e03771ac53c924
+msgid "Outbound originate"
+msgstr "出局 originate"
+
+#: ../../02-architecture.md:286 db0b069e634b48e3be094dabeb3ef0df
+msgid ""
+"`switch_ivr_originate()` allocates an outbound session through the named "
+"endpoint (`sofia/gateway/...`, `loopback/...`), runs the same state table "
+"with `TFLAG_OUTBOUND` so `sofia_on_init` sends INVITE via "
+"`sofia_glue_do_invite()`."
+msgstr ""
+"`switch_ivr_originate()` 通过指定端点（`sofia/gateway/...`、`loopback/...`）分配出局会话，以 "
+"`TFLAG_OUTBOUND` 运行同一状态表，因此 `sofia_on_init` 会经由 `sofia_glue_do_invite()` 发送 "
+"INVITE。"
+
+#: ../../02-architecture.md:288 37120fa7df1f49d1b709b51a021d0707
+msgid "ESL control"
+msgstr "ESL 控制"
+
+#: ../../02-architecture.md:290 85c7250edbd5443cbbd719a1156bbbb2
+msgid ""
+"Client connects to 8021, authenticates, then `api` / `bgapi` / `event` / "
+"`sendmsg` (uuid). Health check used by Docker: `fs_cli -x status` must match"
+" `^UP`."
+msgstr ""
+"客户端连接 8021、鉴权，然后 `api` / `bgapi` / `event` / `sendmsg`（uuid）。Docker "
+"使用的健康检查：`fs_cli -x status` 必须匹配 `^UP`。"
+
+#: ../../02-architecture.md:292 e53a5364e4c941488d8076b17ad51f72
+msgid "Cross-Cutting Concerns"
+msgstr "横切关注点"
+
+#: ../../02-architecture.md:294 f3eab32d9e424eb28756cc372149d81a
+msgid ""
+"**Authentication and authorization**: SIP digest + ACL lists "
+"(`conf/vanilla/autoload_configs/acl.conf.xml`, Sofia `apply-inbound-acl`). "
+"ESL password in `event_socket.conf.xml` (default `ClueCon`, loopback only). "
+"Directory users are **not** OS users."
+msgstr ""
+"**认证与授权**：SIP digest + ACL "
+"列表（`conf/vanilla/autoload_configs/acl.conf.xml`，Sofia `apply-inbound-"
+"acl`）。ESL 密码在 `event_socket.conf.xml`（默认 `ClueCon`，仅回环）。号码簿用户**不是**操作系统用户。"
+
+#: ../../02-architecture.md:295 ab32bb6333294e4495c9430e7bfded8a
+msgid ""
+"**Error handling**: `switch_status_t` and hangup `switch_call_cause_t` on "
+"the channel. Endpoints return `SWITCH_STATUS_FALSE` from a state handler to "
+"skip the core’s standard handler (`sofia_on_init` comment)."
+msgstr ""
+"**错误处理**：通道上的 `switch_status_t` 与挂断 `switch_call_cause_t`。端点从状态处理函数返回 "
+"`SWITCH_STATUS_FALSE` 以跳过核心的标准处理（见 `sofia_on_init` 注释）。"
+
+#: ../../02-architecture.md:296 a72d8729186a49dfb833332bbc175e34
+msgid ""
+"**Logging and tracing**: `switch_log_printf` with session UUID via "
+"`SWITCH_CHANNEL_SESSION_LOG`. Sofia `siptrace` is a profile/CLI switch, not "
+"distributed tracing. No OpenTelemetry in this tree."
+msgstr ""
+"**日志与追踪**：通过 `SWITCH_CHANNEL_SESSION_LOG` 带会话 UUID 的 "
+"`switch_log_printf`。Sofia `siptrace` 是配置文件/CLI 开关，不是分布式追踪。本源码树没有 "
+"OpenTelemetry。"
+
+#: ../../02-architecture.md:297 1898ba368fe548cd8720a68b7642c4de
+msgid ""
+"**Caching**: compiled XML root is memory-mapped (`freeswitch.xml.fsxml`); "
+"`reloadxml` re-parses. Directory/ACL can be rebuilt from XML. RTP jitter "
+"buffer is per-session, not a shared cache."
+msgstr ""
+"**缓存**：编译后的 XML 根以内存映射（`freeswitch.xml.fsxml`）；`reloadxml` 会重新解析。号码簿/ACL 可从 "
+"XML 重建。RTP 抖动缓冲是每会话的，不是共享缓存。"
+
+#: ../../02-architecture.md:298 22eee0da7c494f5db89abdb8975de918
+msgid ""
+"**Configuration and secrets**: XML under `confdir`; `vars.xml` preprocessor "
+"`$$` vars (including `default_password`). Not a secret manager. Change demo "
+"passwords before any public bind (`conf/vanilla/README_IMPORTANT.txt`)."
+msgstr ""
+"**配置与密钥**：XML 位于 `confdir`；`vars.xml` 预处理器 `$$` 变量（包括 "
+"`default_password`）。不是密钥管理器。对外绑定前请更改演示密码（`conf/vanilla/README_IMPORTANT.txt`）。"
+
+#: ../../02-architecture.md:300 e247edfe05d14803ac8ed81a8d7ec80d
+msgid "Deployment and Scaling Notes"
+msgstr "部署与扩展说明"
+
+#: ../../02-architecture.md:302 d08973bf55934098b864d4f9b21dbb84
+msgid ""
+"**Environments**: same binary; profile choice (`vanilla`, `sbc`, `minimal`, "
+"`curl`) is the environment. CI builds on Debian containers, macOS, Windows."
+msgstr ""
+"**环境**：同一二进制；配置档案选择（`vanilla`、`sbc`、`minimal`、`curl`）即环境。CI 在 Debian "
+"容器、macOS、Windows 上构建。"
+
+#: ../../02-architecture.md:303 6354a9492abe43c99d721ece80f591a5
+msgid ""
+"**Scaling model**: **vertical** (more cores / less transcoding) and **more "
+"processes/hosts** behind an SBC or Kamailio. Not a horizontally sharded in-"
+"process cluster. RTP needs host networking in Docker (`docker/README.md`)."
+msgstr ""
+"**扩展模型**：**纵向**（更多核 / 更少转码）以及在 SBC 或 Kamailio "
+"后面部署**更多进程/主机**。不是进程内水平分片集群。Docker 中 RTP 需要主机网络（`docker/README.md`）。"
+
+#: ../../02-architecture.md:304 4d665fd5a8634414a3960163f951affa
+msgid ""
+"**Recovery**: `-nonat` to skip UPnP pinholes; session recovery flags in the "
+"state machine; core SQL can persist some state. Site HA, backups, and RTO "
+"are **[NEEDS INPUT: operator-owned]** — not specified in this repo."
+msgstr ""
+"**恢复**：`-nonat` 跳过 UPnP 打洞；状态机中的会话恢复标志；核心 SQL 可持久化部分状态。站点 HA、备份和 RTO 为 "
+"**[NEEDS INPUT: 由运营商自行负责]** —— 本仓库未规定。"
+
+#: ../../02-architecture.md:306 9502617dd8854f3590e7a856d373a7b6
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../02-architecture.md:308 c2feaa4168ca487e9032d5116cc0f353
+msgid "[Overview](00-overview.md)"
+msgstr "[概述](00-overview.md)"
+
+#: ../../02-architecture.md:309 bdfb31e1249d45c28ae1e45f4c784c03
+msgid "[Tech Stack](03-tech-stack.md)"
+msgstr "[技术栈](03-tech-stack.md)"
+
+#: ../../02-architecture.md:310 5c0864dc3d61403d907dfd1d2f973208
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../02-architecture.md:311 ac1db36c6c9e466a8aa4a185338ae926
+msgid "[Data and API](05-data-and-api.md)"
+msgstr "[数据与 API](05-data-and-api.md)"
+
+#: ../../02-architecture.md:312 327cca1720b74b4b8a45ce28e3650489
+msgid "[Workflows](06-workflows.md)"
+msgstr "[工作流](06-workflows.md)"
+
+#: ../../02-architecture.md:313 f27809a15dc0474f87284a12b5cdcbf9
+msgid "[ADRs](adr/index.md)"
+msgstr "[ADR](adr/index.md)"
+
+#: ../../02-architecture.md:314 2686271dd4c84a41980d54d59eb55dfb
+msgid ""
+"[Users Manual Ch "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction), "
+"[Ch 3 XML](https://developer.signalwire.com/freeswitch/configuration/xml), "
+"[Ch 5 "
+"modules](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)"
+msgstr ""
+"[用户手册第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)、[第 "
+"3 章 XML](https://developer.signalwire.com/freeswitch/configuration/xml)、[第 5"
+" 章模块](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)"
+
+#~ msgid "Two different “modules.conf” files matter:"
+#~ msgstr "有两份不同的 “modules.conf” 文件需要区分："

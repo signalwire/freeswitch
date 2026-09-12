@@ -1,0 +1,512 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../changes/_template/proposal.md:1 7fce2a71e6fe45c5b21c7041f4da0a6e
+msgid "Change Proposal: [Title]"
+msgstr "变更提案：[Title]"
+
+#: ../../changes/_template/proposal.md:5 d315e39f35164157a3a6be329df622cf
+msgid "Metadata"
+msgstr "元数据"
+
+#: ../../changes/_template/proposal.md:7 afc678ef803d4eb787ad5c6377fedbdd
+msgid "**Change ID**: `[change-id]`"
+msgstr "**变更 ID**：`[change-id]`"
+
+#: ../../changes/_template/proposal.md:8 a40009b8f2174343bb181dda00ea5bc3
+msgid ""
+"**Status**: `Proposed` | `In Review` | `Approved` | `Implementing` | "
+"`Completed` | `Rejected`"
+msgstr "**状态**：`已提议` | `评审中` | `已批准` | `实施中` | `已完成` | `已拒绝`"
+
+#: ../../changes/_template/proposal.md:9 804a71560b344f64aaed4eb23a3b64a3
+msgid "**Proposed by**: [Name/Email]"
+msgstr "**提议人**：[Name/Email]"
+
+#: ../../changes/_template/proposal.md:10 7945224d96c6423ea0a58de60bc45af9
+msgid "**Proposed on**: [Date]"
+msgstr "**提议日期**：[Date]"
+
+#: ../../changes/_template/proposal.md:11
+#: ../../changes/_template/proposal.md:128 a297a1e2bfa5466d88b74d36a520c8fe
+#: b1e598a45db84eadbdf3036055df8ced
+msgid "**Reviewers**: [Names]"
+msgstr "**评审人**：[Names]"
+
+#: ../../changes/_template/proposal.md:12 f9f87382f48f447682492d58134ac5b0
+msgid "**Target version**: [e.g., v2.1.0]"
+msgstr "**目标版本**：[例如 v2.1.0]"
+
+#: ../../changes/_template/proposal.md:14 db6db4a3f537441f8479020da8bcef10
+msgid "Why"
+msgstr "为什么"
+
+#: ../../changes/_template/proposal.md:16 4ba045ede45c4c60b6cc60a65806337c
+msgid "Problem Statement"
+msgstr "问题陈述"
+
+#: ../../changes/_template/proposal.md:18 388547818a68498cbebd73b8b3ccf6a7
+msgid ""
+"[Describe the problem or opportunity. What is not working well? What could "
+"be better?]"
+msgstr "[描述问题或机会。哪些地方运行不畅？哪些地方可以更好？]"
+
+#: ../../changes/_template/proposal.md:20 349b07c233584ee09434b2e35aa6077f
+msgid "Motivation"
+msgstr "动机"
+
+#: ../../changes/_template/proposal.md:22 8eddff0dd11e495db57e43038609dc3a
+msgid ""
+"[Why is this change important? What are the consequences of not doing it?]"
+msgstr "[为什么这项变更重要？如果不做会有什么后果？]"
+
+#: ../../changes/_template/proposal.md:24 4c34d080930a4f958242f50d4081765f
+msgid "Current State"
+msgstr "当前状态"
+
+#: ../../changes/_template/proposal.md:26 2d84fe7a34f945cb8b6505a626d68756
+msgid "[Describe how things work today]"
+msgstr "[描述当前如何运作]"
+
+#: ../../changes/_template/proposal.md:28 35d4c69d16f2480ba1a4728c9f6dfd84
+msgid "Desired State"
+msgstr "期望状态"
+
+#: ../../changes/_template/proposal.md:30 a034f43375da40329014621d134fb89e
+msgid "[Describe how things should work after this change]"
+msgstr "[描述变更完成后应如何运作]"
+
+#: ../../changes/_template/proposal.md:32 938d8f9cc1b64b70821e684a756d5b1c
+msgid "What Changes"
+msgstr "变更内容"
+
+#: ../../changes/_template/proposal.md:34 767799b4a7c34e30a8909d0d207f75d4
+msgid "Summary"
+msgstr "摘要"
+
+#: ../../changes/_template/proposal.md:36 73f88a5d295d4236934409137a19f402
+msgid "[High-level summary of the proposed changes]"
+msgstr "[对拟议变更的高层摘要]"
+
+#: ../../changes/_template/proposal.md:38 b7129420d49f4f048b1f0f53f3f21004
+msgid "Scope"
+msgstr "范围"
+
+#: ../../changes/_template/proposal.md:40 9142c21cf81a49858d108d7416c5adbd
+msgid "In Scope"
+msgstr "范围内"
+
+#: ../../changes/_template/proposal.md:42 8851105ebad6454497eac56622a18515
+msgid "Change 1"
+msgstr "变更 1"
+
+#: ../../changes/_template/proposal.md:43 3b30f538b0ef493e84fa6fc9ebcca768
+msgid "Change 2"
+msgstr "变更 2"
+
+#: ../../changes/_template/proposal.md:44 d0b7acf6529b4e27a1e96f1ed60d5281
+msgid "Change 3"
+msgstr "变更 3"
+
+#: ../../changes/_template/proposal.md:46 be3d703166904568a29d0319609677b5
+msgid "Out of Scope"
+msgstr "范围外"
+
+#: ../../changes/_template/proposal.md:48 0f48f739506d49cfbb306ff030b841cb
+msgid "Not changing 1"
+msgstr "不变更 1"
+
+#: ../../changes/_template/proposal.md:49 b61b037d16244caea2c2747c2a430a47
+msgid "Not changing 2"
+msgstr "不变更 2"
+
+#: ../../changes/_template/proposal.md:50 05fd5fcb98fc499daef59053f8fb5e22
+msgid "Not changing 3"
+msgstr "不变更 3"
+
+#: ../../changes/_template/proposal.md:52 db2b5e7a62fc4b82b83317f7c522a6b7
+msgid "Components Affected"
+msgstr "受影响组件"
+
+#: ../../changes/_template/proposal.md:54 2b1fb01c56ad404998bf7b9eb923fc1f
+msgid "Component 1: [Description of changes]"
+msgstr "组件 1：[变更说明]"
+
+#: ../../changes/_template/proposal.md:55 dca4d8c9bf294449b8326f6aa84f62c0
+msgid "Component 2: [Description of changes]"
+msgstr "组件 2：[变更说明]"
+
+#: ../../changes/_template/proposal.md:56 be6219ae0e634904bc4b98a3a689ce22
+msgid "Component 3: [Description of changes]"
+msgstr "组件 3：[变更说明]"
+
+#: ../../changes/_template/proposal.md:58 3920675a3c384945990f6d031a32890c
+msgid "Impact"
+msgstr "影响"
+
+#: ../../changes/_template/proposal.md:60 1fe2c0ba991f4cb4b5158b28084e6610
+msgid "Breaking Changes"
+msgstr "破坏性变更"
+
+#: ../../changes/_template/proposal.md:62 55b17bbe4a2d4293951a1ec0c0a1c5c6
+msgid "Yes - This change breaks existing APIs/contracts"
+msgstr "是 — 此项变更会破坏现有 API/契约"
+
+#: ../../changes/_template/proposal.md:63 098c3af5efe54ba29dd8c30b48ac9df8
+msgid "No - This change is backward compatible"
+msgstr "否 — 此项变更向后兼容"
+
+#: ../../changes/_template/proposal.md:65
+#: ../../changes/_template/proposal.md:80 91b2e8cd35b949ec89a4032c61c162f1
+#: a038f04bc6814eb68b265f0b69fe9cb2
+msgid "**If yes, describe**:"
+msgstr "**如果是，请说明**："
+
+#: ../../changes/_template/proposal.md:66 6d43d47296b14b45b6efc37deb904071
+msgid "Breaking change 1: [Impact and mitigation]"
+msgstr "破坏性变更 1：[影响与缓解]"
+
+#: ../../changes/_template/proposal.md:67 2e20dbb40446478b8df79bb406b0b33a
+msgid "Breaking change 2: [Impact and mitigation]"
+msgstr "破坏性变更 2：[影响与缓解]"
+
+#: ../../changes/_template/proposal.md:69 e139d3e3e45e4f979319ea22e46e36df
+msgid "Affected Stakeholders"
+msgstr "受影响干系人"
+
+#: ../../changes/_template/proposal.md:71 38d3bfdf3bb34f9397a6f9ad666d5c9e
+msgid "**Team 1**: [How they're affected]"
+msgstr "**团队 1**：[如何受影响]"
+
+#: ../../changes/_template/proposal.md:72 fd062b10c9d440b5942e8e470e3c826e
+msgid "**Team 2**: [How they're affected]"
+msgstr "**团队 2**：[如何受影响]"
+
+#: ../../changes/_template/proposal.md:73 a6f9a15f28a743029dbd8721ab510006
+msgid "**End Users**: [How they're affected]"
+msgstr "**最终用户**：[如何受影响]"
+
+#: ../../changes/_template/proposal.md:75 0ce7fd8321b040dab21d7c4ec0067285
+msgid "Migration Required"
+msgstr "是否需要迁移"
+
+#: ../../changes/_template/proposal.md:77 bb52d1cf5e5b4990ad0e51a0f5f24ae7
+msgid "Yes - Migration is required"
+msgstr "是 — 需要迁移"
+
+#: ../../changes/_template/proposal.md:78 29788ebf14c346ed8f89954363e33a7f
+msgid "No - No migration needed"
+msgstr "否 — 无需迁移"
+
+#: ../../changes/_template/proposal.md:81 81fcf344e86e4fc08597c318d262bfa0
+msgid "Migration step 1"
+msgstr "迁移步骤 1"
+
+#: ../../changes/_template/proposal.md:82 c4be1d70cded4eb49aff66268c454330
+msgid "Migration step 2"
+msgstr "迁移步骤 2"
+
+#: ../../changes/_template/proposal.md:83 8f9eb10eea70428eae39fb0bef421d56
+msgid "Migration step 3"
+msgstr "迁移步骤 3"
+
+#: ../../changes/_template/proposal.md:85 ed7281b06d844d288ae35d3b87b99c85
+msgid "Testing Scope"
+msgstr "测试范围"
+
+#: ../../changes/_template/proposal.md:87 b92602a0990f4bed90872e666c1ff967
+msgid "Unit tests: [What needs testing]"
+msgstr "单元测试：[需要测什么]"
+
+#: ../../changes/_template/proposal.md:88 3010f27add5b4029bcea0026752a4cb9
+msgid "Integration tests: [What needs testing]"
+msgstr "集成测试：[需要测什么]"
+
+#: ../../changes/_template/proposal.md:89 6750a38f5eba418da94d4c835da09754
+msgid "E2E tests: [What needs testing]"
+msgstr "端到端测试：[需要测什么]"
+
+#: ../../changes/_template/proposal.md:90 cef2b7b6496c4e7c9f0c8f66fec33e2f
+msgid "Performance tests: [What needs testing]"
+msgstr "性能测试：[需要测什么]"
+
+#: ../../changes/_template/proposal.md:92 6d9434a8508447968d96d96b5d193abb
+msgid "Documentation Updates"
+msgstr "文档更新"
+
+#: ../../changes/_template/proposal.md:94 166fab0c05b24020bb5ef45a2f26624e
+msgid "API documentation"
+msgstr "API 文档"
+
+#: ../../changes/_template/proposal.md:95 6386ca4661db41cf84b6004f16bc4471
+msgid "User guide"
+msgstr "用户指南"
+
+#: ../../changes/_template/proposal.md:96 5d3edde8360a46dc97dfe02cc252bb6e
+msgid "Runbook"
+msgstr "运维手册"
+
+#: ../../changes/_template/proposal.md:97 47ae61244f6d4df49df25278b07588cd
+msgid "Architecture diagrams"
+msgstr "架构图"
+
+#: ../../changes/_template/proposal.md:98 b8408d2bd24f4a65b9b78fe64b888e36
+msgid "ADR (new or update)"
+msgstr "ADR（新建或更新）"
+
+#: ../../changes/_template/proposal.md:100 c0c032bc68924060916d8139cf510123
+msgid "Timeline"
+msgstr "时间线"
+
+#: ../../changes/_template/proposal.md:102 05780c80886f48b4811effed1e9556cb
+msgid "Proposed Schedule"
+msgstr "建议排期"
+
+#: ../../changes/_template/proposal.md:104 6db09e6d82bb40e8ab5debe1ade0d042
+msgid "**Proposal review**: [Date range]"
+msgstr "**提案评审**：[Date range]"
+
+#: ../../changes/_template/proposal.md:105 9878a3cec9e442f79aef015c90008d69
+msgid "**Design phase**: [Date range]"
+msgstr "**设计阶段**：[Date range]"
+
+#: ../../changes/_template/proposal.md:106 c568eb95553d400da3e3dc56baa28988
+msgid "**Implementation start**: [Date]"
+msgstr "**实施开始**：[Date]"
+
+#: ../../changes/_template/proposal.md:107 439fe59d100f4affbca076446e8cac99
+msgid "**Code complete**: [Date]"
+msgstr "**代码完成**：[Date]"
+
+#: ../../changes/_template/proposal.md:108 15240be785cb4157a9c6d757ae3d3d1c
+msgid "**Testing complete**: [Date]"
+msgstr "**测试完成**：[Date]"
+
+#: ../../changes/_template/proposal.md:109 3ee53cf12dad4e46a3a273e9990f43c2
+msgid "**Deployment**: [Date]"
+msgstr "**部署**：[Date]"
+
+#: ../../changes/_template/proposal.md:111 919a1d05e60445ef8ef20c04216d00cb
+msgid "Dependencies"
+msgstr "依赖"
+
+#: ../../changes/_template/proposal.md:113 2abc175ee63d4a6c92abb1ac35218646
+msgid "Dependency 1: [What we're waiting for]"
+msgstr "依赖 1：[我们在等待什么]"
+
+#: ../../changes/_template/proposal.md:114 471fff7ea07f4e1480677bf81d470d83
+msgid "Dependency 2: [What we're waiting for]"
+msgstr "依赖 2：[我们在等待什么]"
+
+#: ../../changes/_template/proposal.md:116 d188029bf047416a9c9b0f26c5a6edaa
+msgid "Milestones"
+msgstr "里程碑"
+
+#: ../../changes/_template/proposal.md:122 2f50d480c3414a1fadcebb5ed5027f74
+msgid "Resources"
+msgstr "资源"
+
+#: ../../changes/_template/proposal.md:124 f4ee0fc42c67474aa3cbd052ef305b5c
+msgid "Team"
+msgstr "团队"
+
+#: ../../changes/_template/proposal.md:126 38738d8bfabe49f0b25543258b065c8f
+msgid "**Owner**: [Name] - Responsible for delivery"
+msgstr "**负责人**：[Name] — 对交付负责"
+
+#: ../../changes/_template/proposal.md:127 eaeba72e03e24f7baebf04bc8c2f06a5
+msgid "**Contributors**: [Names]"
+msgstr "**贡献者**：[Names]"
+
+#: ../../changes/_template/proposal.md:130 e626008cdcd64b6eb13aad0d110fdfb0
+msgid "Effort Estimate"
+msgstr "工作量估算"
+
+#: ../../changes/_template/proposal.md:132 c37a66c079e545dfa00f3a41b02e4f8b
+msgid "Design: [X person-days]"
+msgstr "设计：[X person-days]"
+
+#: ../../changes/_template/proposal.md:133 0b58a6609bba4de8be3504e093db9311
+msgid "Implementation: [Y person-days]"
+msgstr "实施：[Y person-days]"
+
+#: ../../changes/_template/proposal.md:134 0c5b67ac438449348d4c8085047ff18f
+msgid "Testing: [Z person-days]"
+msgstr "测试：[Z person-days]"
+
+#: ../../changes/_template/proposal.md:135 44981ca4d4404298b6b896739abfb07f
+msgid "Documentation: [W person-days]"
+msgstr "文档：[W person-days]"
+
+#: ../../changes/_template/proposal.md:136 3c1bbb15a6a94818abc25ae20de066f3
+msgid "**Total**: [Total person-days]"
+msgstr "**合计**：[Total person-days]"
+
+#: ../../changes/_template/proposal.md:138 0cb266ffa0fa40b0b2e99ed6fb96ccd3
+msgid "Risks"
+msgstr "风险"
+
+#: ../../changes/_template/proposal.md:140 1fe71d9c4a92440db57e7317d987e111
+msgid "Technical Risks"
+msgstr "技术风险"
+
+#: ../../changes/_template/proposal.md:142
+#: ../../changes/_template/proposal.md:154 33dc0e94f5514bab8b15335afd2711e8
+#: 495ffa2d48eb4c5f8f8d5a32dcb3911d
+msgid "**Risk 1**: [Description]"
+msgstr "**风险 1**：[Description]"
+
+#: ../../changes/_template/proposal.md:143
+#: ../../changes/_template/proposal.md:148
+#: ../../changes/_template/proposal.md:155 54685afa637d46f2a431ab09f7c054c3
+#: 82f9889924144ac6a570235c127a5de5 e16c7edd07814a75900f94728571f8cc
+msgid "**Probability**: High | Medium | Low"
+msgstr "**可能性**：高 | 中 | 低"
+
+#: ../../changes/_template/proposal.md:144
+#: ../../changes/_template/proposal.md:149
+#: ../../changes/_template/proposal.md:156 4dcf036ee16d4d13bf131ebb97b85c0c
+#: 76dfc589a0e14ff386336cf97feddb60 9c260d67fdf1436fb917dfe8938c2595
+msgid "**Impact**: High | Medium | Low"
+msgstr "**影响**：高 | 中 | 低"
+
+#: ../../changes/_template/proposal.md:145
+#: ../../changes/_template/proposal.md:150
+#: ../../changes/_template/proposal.md:157 0ea19dad646147869dbf973aa53e28f9
+#: c7ad278a76f0432ab64158f183f60b6b f962c65cbe61494fa5c788d97e51e1be
+msgid "**Mitigation**: [Strategy]"
+msgstr "**缓解**：[Strategy]"
+
+#: ../../changes/_template/proposal.md:147 d1fe63df614f460b8fa2931b88493d8f
+msgid "**Risk 2**: [Description]"
+msgstr "**风险 2**：[Description]"
+
+#: ../../changes/_template/proposal.md:152 64068d3190b9443da6a112ece952a6b7
+msgid "Business Risks"
+msgstr "业务风险"
+
+#: ../../changes/_template/proposal.md:159 ae9d82bc07b54198afdbc2c6644d67e1
+msgid "Alternatives Considered"
+msgstr "考虑过的备选方案"
+
+#: ../../changes/_template/proposal.md:161 ca94b13a14b04becb46f84dc52861ced
+msgid "Alternative 1: [Name]"
+msgstr "备选 1：[Name]"
+
+#: ../../changes/_template/proposal.md:163
+#: ../../changes/_template/proposal.md:170 1de23ea2c4dc4c5a91f8731f8c0abdd1
+#: 4cf22285970b416dbd6eb35c536cbbfa
+msgid "**Description**: [Brief description]"
+msgstr "**描述**：[简要说明]"
+
+#: ../../changes/_template/proposal.md:164
+#: ../../changes/_template/proposal.md:171 12d7ff55443840c29834f2be56722da6
+#: 45feb860f84049bf9ab4a12c4c88c708
+msgid "**Pros**: [List]"
+msgstr "**优点**：[List]"
+
+#: ../../changes/_template/proposal.md:165
+#: ../../changes/_template/proposal.md:172 058214bc7b6a4457b6c20d0ad0e60fb1
+#: f0a2876f54d2499e8846d7e10430da9f
+msgid "**Cons**: [List]"
+msgstr "**缺点**：[List]"
+
+#: ../../changes/_template/proposal.md:166
+#: ../../changes/_template/proposal.md:173 49afe07681c24a6bab99189bac04b325
+#: e2a0112864b24170b23ad9fada4990a4
+msgid "**Why not chosen**: [Reason]"
+msgstr "**未选原因**：[Reason]"
+
+#: ../../changes/_template/proposal.md:168 d370264aceb6465ab9996ed1f70b6797
+msgid "Alternative 2: [Name]"
+msgstr "备选 2：[Name]"
+
+#: ../../changes/_template/proposal.md:175 8e503f69bb414dccb669c236a43cd5ef
+msgid "Success Criteria"
+msgstr "成功标准"
+
+#: ../../changes/_template/proposal.md:177 d168e9ae8f3d43b388d9e48bc998a36e
+msgid "Criterion 1: [Measurable outcome]"
+msgstr "标准 1：[可度量结果]"
+
+#: ../../changes/_template/proposal.md:178 67a77af6e1a64ac78ca2d1fadb56c613
+msgid "Criterion 2: [Measurable outcome]"
+msgstr "标准 2：[可度量结果]"
+
+#: ../../changes/_template/proposal.md:179 1c0009382e274910b8802110764a2f95
+msgid "Criterion 3: [Measurable outcome]"
+msgstr "标准 3：[可度量结果]"
+
+#: ../../changes/_template/proposal.md:181 2269e5ee69374d048eb02452841d8a8f
+msgid "Rollback Plan"
+msgstr "回滚计划"
+
+#: ../../changes/_template/proposal.md:183 bdc4ee5460c744edb9a7b0243d676606
+msgid "[How to rollback if this change causes issues]"
+msgstr "[如果此项变更引发问题，如何回滚]"
+
+#: ../../changes/_template/proposal.md:185 371c43e39f724455baf41eff179ed315
+msgid "Rollback step 1"
+msgstr "回滚步骤 1"
+
+#: ../../changes/_template/proposal.md:186 be62a32eaf924ae7bad9818edc7338ed
+msgid "Rollback step 2"
+msgstr "回滚步骤 2"
+
+#: ../../changes/_template/proposal.md:187 c290faf470ff4ec39c32043a82d84ab8
+msgid "Rollback step 3"
+msgstr "回滚步骤 3"
+
+#: ../../changes/_template/proposal.md:189 ad939e9a797f4aa7a480a041da70ba02
+msgid "References"
+msgstr "参考资料"
+
+#: ../../changes/_template/proposal.md:191 a265368ae6014bfdb56c7340e1043acc
+msgid "Related issue: [Link]"
+msgstr "相关 issue：[Link]"
+
+#: ../../changes/_template/proposal.md:192 ca8c0014139548cc926169e25e4062d3
+msgid "Related ADR: [Link]"
+msgstr "相关 ADR：[Link]"
+
+#: ../../changes/_template/proposal.md:193 0e9dae7b39b94287ad60173c03d668d6
+msgid "Design doc: [Link to design.md]"
+msgstr "设计文档：[Link to design.md]"
+
+#: ../../changes/_template/proposal.md:194 55c50b1b4b3f4c1a83b83af3c07f2d09
+msgid "Implementation tasks: [Link to tasks.md]"
+msgstr "实施任务：[Link to tasks.md]"
+
+#: ../../changes/_template/proposal.md:198 a747c69789cd4321b2ae27e0adecb770
+msgid "**Status Log**:"
+msgstr "**状态日志**："
+
+#: ../../changes/_template/proposal.md:199 7055d61fcd7846be9de9c0c7a7db21c7
+msgid "[Date]: Proposed by [Name]"
+msgstr "[Date]：由 [Name] 提议"
+
+#: ../../changes/_template/proposal.md:200 a2ea8a1ce60b43f8b0e31ce319a7f5f1
+msgid "[Date]: Review requested from [Names]"
+msgstr "[Date]：向 [Names] 请求评审"
+
+#: ../../changes/_template/proposal.md:201 2f9ef4d561af4ee08f8f67a3a06d841a
+msgid "[Date]: [Status change and reason]"
+msgstr "[Date]：[状态变更及原因]"
