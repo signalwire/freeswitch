@@ -419,6 +419,18 @@ SWITCH_DECLARE(bool) Event::fire(void)
 	return false;
 }
 
+SWITCH_DECLARE(void) Event::verboseChannelData(const char *uuid_header_name)
+{
+	this_check_void();
+
+	if (!event) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Trying to verboseChannelData an event that does not exist!\n");
+		return;
+	}
+
+	switch_event_verbose_channel_data(event, uuid_header_name);
+}
+
 SWITCH_DECLARE(bool) Event::setPriority(switch_priority_t priority)
 {
 	this_check(false);
