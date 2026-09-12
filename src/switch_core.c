@@ -2381,6 +2381,8 @@ static void switch_load_core_config(const char *file)
 					}
 				} else if (!strcasecmp(var, "max-audio-channels") && !zstr(val)) {
 					switch_core_max_audio_channels(atoi(val));
+				} else if (!strcasecmp(var, "ignore_application_channel_update") && !zst(val)) {
+					runtime.ignore_application_channel_update = switch_true(val);
 				}
 			}
 		}
