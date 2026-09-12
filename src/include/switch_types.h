@@ -739,6 +739,7 @@ typedef struct {
 	uint32_t last_rpt_ext_seq;    /* Packet loss calculation, extended sequence number at the begining of this RTCP report interval */
 	uint16_t last_rpt_cycle;      /* Packet loss calculation, sequence number cycle at the begining of the current RTCP report interval */
 	uint16_t period_pkt_count;    /* Packet loss calculation, packet count received during this RTCP report interval */
+	switch_size_t last_rpt_flush_count; /* inbound.flush_packet_count at the start of this RTCP report interval (RTP_BUG_DONT_REPORT_FLUSHED_AS_LOST) */
 	uint16_t pkt_count;           /* Packet loss calculation, packet count received during this session */
 	uint16_t sent_pkt_count;
 	uint32_t rtcp_rtp_count;      /* RTCP report generated count */
@@ -975,11 +976,19 @@ typedef enum {
 	*/
 
 
-	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12)
+	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12),
 
 	/*
 	  Leave the auto-adjust behavior enableed permenantly rather than only at appropriate times.  (IMPLICITLY sets RTP_BUG_ACCEPT_ANY_PACKETS)
 
+	 */
+
+	RTP_BUG_DONT_REPORT_FLUSHED_AS_LOST = (1 << 13)
+
+	/*
+	  Do not count packets FreeSWITCH itself flushed (do_flush) as lost in the RTCP
+	  receiver report. They arrived over the network; discarding them locally is not
+	  transport loss. Genuine network loss (packets that never arrived) is still reported.
 	 */
 
 } switch_rtp_bug_flag_t;
