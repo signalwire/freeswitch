@@ -25,6 +25,9 @@
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
+#ifndef WIN32
+#include "../../../src/include/switch_private.h"
+#endif
 
 /*
  * stuffbuffer - like fspr_cpystrn() but returns the address of the
@@ -352,12 +355,20 @@ const char *strerror_r(fspr_status_t, char *, fspr_size_t);
 static char *native_strerror(fspr_status_t statcode, char *buf,
                              fspr_size_t bufsize)
 {
+#if defined(STRERROR_R_CHAR_P)
     const char *msg;
+#else
+    int msg;
+#endif
 
     buf[0] = '\0';
     msg = strerror_r(statcode, buf, bufsize);
     if (buf[0] == '\0') { /* libc didn't use our buffer */
+#if defined(STRERROR_R_CHAR_P)
         return stuffbuffer(buf, bufsize, msg);
+#else
+        return stuffbuffer(buf, bufsize, (const char*)msg);
+#endif
     }
     else {
         return buf;
