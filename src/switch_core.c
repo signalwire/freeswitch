@@ -121,6 +121,7 @@ static void send_heartbeat(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Peak-Max", "%u", runtime.sessions_peak);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Peak-FiveMin", "%u", runtime.sessions_peak_fivemin);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Idle-CPU", "%f", switch_core_idle_cpu());
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Heartbeat-Interval", "%d", runtime.event_heartbeat_interval);
 		switch_event_fire(&event);
 	}
 }
