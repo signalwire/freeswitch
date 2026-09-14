@@ -2291,9 +2291,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 							  switch_channel_get_name(other_channel));
 			} else {
 				switch_channel_hangup(other_channel, SWITCH_CAUSE_BLIND_TRANSFER);
-			}
-
-			if (!confirmed_blind_transfer) {
 				switch_ivr_media(uuid, SMF_NONE);
 			}
 
