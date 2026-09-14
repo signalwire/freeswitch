@@ -3,6 +3,8 @@
         <param name="use-vbr" value="1"/>
         <!--<param name="use-dtx" value="1"/>-->
         <param name="complexity" value="10"/>
+        <!-- Decoder complexity 0-10, default 0. With libopus 1.5 or later, 5 and above enables Deep PLC, 6 adds OSCE LACE, 7 adds NoLACE. Costs CPU per decoding channel. -->
+        <!--<param name="decoder-complexity" value="5"/>-->
 	<!-- Set the initial packet loss percentage 0-100 -->
         <!--<param name="packet-loss-percent" value="10"/>-->
 	<!-- Support asymmetric sample rates -->
