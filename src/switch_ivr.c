@@ -2272,6 +2272,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
 			&& (other_session = switch_core_session_locate(uuid))) {
+			switch_bool_t confirmed_blind_transfer =
+				switch_channel_test_flag_or_state_flag(channel, CF_CONFIRM_BLIND_TRANSFER) ? SWITCH_TRUE : SWITCH_FALSE;
 			other_channel = switch_core_session_get_channel(other_session);
 
 			switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
@@ -2283,10 +2285,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			/* If we are transferring the CALLER out of the bridge, we do not want to hang up on them */
 			switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "false");
 
-			switch_channel_hangup(other_channel, SWITCH_CAUSE_BLIND_TRANSFER);
-			switch_ivr_media(uuid, SMF_NONE);
+			if (confirmed_blind_transfer) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+							  "Preserving signal bridge partner %s for confirmed blind transfer\n",
+							  switch_channel_get_name(other_channel));
+			} else {
+				switch_channel_hangup(other_channel, SWITCH_CAUSE_BLIND_TRANSFER);
+			}
+
+			if (!confirmed_blind_transfer) {
+				switch_ivr_media(uuid, SMF_NONE);
+			}
 
 			switch_core_session_rwunlock(other_session);
+
+			if (confirmed_blind_transfer) {
+				/* The signal-data thread must remain free to process the re-INVITE response. */
+				switch_ivr_bg_media(uuid, SMF_NONE, SWITCH_TRUE, SWITCH_FALSE, 0);
+			}
 		}
 
 		if (!switch_channel_test_flag(channel, CF_REUSE_CALLER_PROFILE)){
