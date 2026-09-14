@@ -1462,7 +1462,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 		settings.stereo = 1;
 
 		dft_fmtp = gen_fmtp(&settings, pool);
-		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+		if (!opus_prefs.mono) switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 116,	/* the IANA code number */
 											 "opus",/* the IANA code name */
 											 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
@@ -1536,7 +1536,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 		codec_interface->implementations->codec_control = switch_opus_control;
 		settings.stereo = 1;
 		dft_fmtp = gen_fmtp(&settings, pool);
-		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+		if (!opus_prefs.mono) switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 116,	/* the IANA code number */
 											 "opus",/* the IANA code name */
 											 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
@@ -1633,7 +1633,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 		codec_interface->implementations->codec_control = switch_opus_control;
 		settings.stereo = 1;
 		dft_fmtp = gen_fmtp(&settings, pool);
-		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+		if (!opus_prefs.mono) switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 116,	/* the IANA code number */
 											 "opus",/* the IANA code name */
 											 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
