@@ -138,6 +138,40 @@ FST_CORE_BEGIN("./conf")
 			}
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_exact_names)
+		{
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM"), AEAD_AES_256_GCM);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM_8"), AEAD_AES_256_GCM_8);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_128_GCM"), AEAD_AES_128_GCM);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_128_GCM_8"), AEAD_AES_128_GCM_8);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_does_not_confuse_prefix_suites)
+		{
+			/* Regression test: "AEAD_AES_256_GCM" is a string-prefix of "AEAD_AES_256_GCM_8".
+			   A GCM_8 suite name must never be misidentified as the shorter GCM suite
+			   (or vice versa), no matter what order the two appear in SUITES[]. */
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM_8"), AEAD_AES_256_GCM_8);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_128_GCM_8"), AEAD_AES_128_GCM_8);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_with_trailing_key_material)
+		{
+			/* real callers pass the suite name followed by key material, eg the tail
+			   of an SDP "a=crypto:" line, not an isolated token */
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM_8 inline:AbCdEf=="), AEAD_AES_256_GCM_8);
+			fst_check_int_equals(switch_core_media_crypto_str2type("AEAD_AES_256_GCM inline:AbCdEf=="), AEAD_AES_256_GCM);
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(crypto_str2type_invalid)
+		{
+			fst_check_int_equals(switch_core_media_crypto_str2type("BOGUS_SUITE"), CRYPTO_INVALID);
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }
