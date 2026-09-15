@@ -239,7 +239,8 @@ static char agents_sql[] =
 "   calls_answered  INTEGER NOT NULL DEFAULT 0,\n"
 "   talk_time  INTEGER NOT NULL DEFAULT 0,\n"
 "   ready_time INTEGER NOT NULL DEFAULT 0,\n"
-"   external_calls_count INTEGER NOT NULL DEFAULT 0\n"
+"   external_calls_count INTEGER NOT NULL DEFAULT 0,\n"
+"   agent_originate_check VARCHAR(1024)\n"
 ");\n";
 
 static char tiers_sql[] =
@@ -843,6 +844,7 @@ struct call_helper {
 	const char *agent_type;
 	const char *agent_uuid;
 	const char *originate_string;
+	const char *agent_originate_check;
 	const char *record_template;
 	int no_answer_count;
 	int max_no_answer;
@@ -1144,6 +1146,13 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 
 		result = CC_STATUS_SUCCESS;
 
+	} else if (!strcasecmp(key, "agent_originate_check")) {
+		sql = switch_mprintf("UPDATE agents SET agent_originate_check = '%q', instance_id = 'single_box' WHERE name = '%q'", value, agent);
+		cc_execute_sql(NULL, sql, NULL);
+		switch_safe_free(sql);
+
+		result = CC_STATUS_SUCCESS;
+
 	} else if (!strcasecmp(key, "state_if_waiting")) {
 		if (cc_agent_str2state(value) == CC_AGENT_STATE_UNKNOWN) {
 			result = CC_STATUS_AGENT_INVALID_STATE;
@@ -1344,6 +1353,7 @@ static switch_status_t load_agent(const char *agent_name, switch_event_t *params
 		const char *reject_delay_time = switch_xml_attr(x_agent, "reject-delay-time");
 		const char *busy_delay_time = switch_xml_attr(x_agent, "busy-delay-time");
 		const char *no_answer_delay_time = switch_xml_attr(x_agent, "no-answer-delay-time");
+		const char *agent_originate_check = switch_xml_attr(x_agent, "agent-originate-check");
 
 		if (type) {
 			cc_status_t res = cc_agent_add(agent_name, type);
@@ -1370,6 +1380,9 @@ static switch_status_t load_agent(const char *agent_name, switch_event_t *params
 					cc_agent_update("no_answer_delay_time", no_answer_delay_time, agent_name);
 				}
 
+				if (agent_originate_check) {
+					cc_agent_update("agent_originate_check", agent_originate_check, agent_name);
+				}
 				if (type && res == CC_STATUS_AGENT_ALREADY_EXIST) {
 					cc_agent_update("type", type, agent_name);
 				}
@@ -1573,6 +1586,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_cache_db_test_reactive(dbh, "select count(no_answer_delay_time) from agents", NULL, "alter table agents add no_answer_delay_time integer not null default 0;");
 	switch_cache_db_test_reactive(dbh, "select count(ready_time) from agents", "drop table agents", agents_sql);
 	switch_cache_db_test_reactive(dbh, "select count(external_calls_count) from agents", NULL, "alter table agents add external_calls_count integer not null default 0;");
+	switch_cache_db_test_reactive(dbh, "select count(agent_originate_check) from agents", NULL, "alter table agents add agent_originate_check varchar(1024);");
 	switch_cache_db_test_reactive(dbh, "select count(queue) from tiers", "drop table tiers" , tiers_sql);
 	/* This will rename column system for SQLite */
 	if (switch_cache_db_get_type(dbh) == SCDB_TYPE_CORE_DB) {
@@ -1769,9 +1783,41 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 		t_agent_called = local_epoch_time_now(NULL);
 
-		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
-		switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, globals.agent_originate_timeout, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
+		/* agent-originate-check: run an API command before originating.
+		   The value is a full API command string, e.g. "lua agent_handler.lua 1001 example.com"
+		   If the command returns "false", the originate is skipped. */
+		{
+			int skip_originate = 0;
+			if (!zstr(h->agent_originate_check)) {
+				switch_stream_handle_t stream = { 0 };
+				char *api_cmd = NULL;
+				char *api_args = NULL;
+
+				SWITCH_STANDARD_STREAM(stream);
+
+				/* Split on first space: "lua agent_handler.lua 1001 dom" -> cmd="lua", args="agent_handler.lua 1001 dom" */
+				api_cmd = switch_core_strdup(h->pool, h->agent_originate_check);
+				if ((api_args = strchr(api_cmd, ' '))) {
+					*api_args++ = '\0';
+				}
+
+				switch_api_execute(api_cmd, api_args, NULL, &stream);
+				if (stream.data && !strcasecmp(stream.data, "false")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG,
+						"Agent %s originate-check (%s) returned false, skipping originate\n", h->agent_name, api_cmd);
+					cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
+					status = SWITCH_STATUS_FALSE;
+					skip_originate = 1;
+				}
+				switch_safe_free(stream.data);
+			}
+
+			if (!skip_originate) {
+				dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
+				switch_channel_set_app_flag_key(CC_APP_KEY, member_channel, CC_APP_AGENT_CONNECTING);
+				status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, globals.agent_originate_timeout, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL, NULL);
+			}
+		}
 
 		/* Search for loopback agent */
 		if (status == SWITCH_STATUS_SUCCESS) {
@@ -2156,6 +2202,10 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			case SWITCH_CAUSE_USER_NOT_REGISTERED:
 				delay_next_agent_call = 5;
 				break;
+			/* agent-originate-check returned false — use no_answer_delay_time with a 5s floor */
+			case SWITCH_CAUSE_SUBSCRIBER_ABSENT:
+				delay_next_agent_call = (h->no_answer_delay_time > 5 ? h->no_answer_delay_time : 5);
+				break;
 			/* No answer: Destination does not answer for some other reason */
 			default:
 				delay_next_agent_call = (h->no_answer_delay_time > delay_next_agent_call? h->no_answer_delay_time : delay_next_agent_call);
@@ -2296,6 +2346,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	const char *agent_type = argv[16];
 	const char *agent_uuid = argv[17];
 	const char *agent_external_calls_count = argv[18];
+	const char *agent_originate_check = argv[19];
 
 	switch_bool_t contact_agent = SWITCH_TRUE;
 
@@ -2407,6 +2458,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				h->member_session_uuid = switch_core_strdup(h->pool, cbt->member_session_uuid);
 				h->queue_strategy = switch_core_strdup(h->pool, cbt->strategy);
 				h->originate_string = switch_core_strdup(h->pool, agent_originate_string);
+				h->agent_originate_check = agent_originate_check ? switch_core_strdup(h->pool, agent_originate_check) : NULL;
 				h->agent_name = switch_core_strdup(h->pool, agent_name);
 				h->agent_system = switch_core_strdup(h->pool, agent_system);
 				h->agent_status = switch_core_strdup(h->pool, agent_status);
@@ -2629,13 +2681,13 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			switch_core_session_rwunlock(member_session);
 		}
 
-		sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.agent_originate_check, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > %d"
 				" AND tiers.level = %d"
 				" UNION "
-				"SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				"SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.agent_originate_check, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.level > %d"
@@ -2649,13 +2701,13 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 				level
 				);
 	} else if (!strcasecmp(queue->strategy, "round-robin")) {
-		sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.agent_originate_check, agents.last_offered_call as agents_last_offered_call, 1 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" AND tiers.position > (SELECT tiers.position FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" AND tiers.level = (SELECT tiers.level FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent) WHERE tiers.queue = '%q' AND agents.last_offered_call > 0 ORDER BY agents.last_offered_call DESC LIMIT 1)"
 				" UNION "
-				"SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+				"SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position as tiers_position, tiers.level as tiers_level, agents.type, agents.uuid, external_calls_count, agents.agent_originate_check, agents.last_offered_call as agents_last_offered_call, 2 as dyn_order FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY dyn_order asc, tiers_level, tiers_position, agents_last_offered_call",
@@ -2690,7 +2742,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 			sql_order_by = switch_mprintf("level, position, agents.last_offered_call");
 		}
 
-		sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid, external_calls_count FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
+		sql = switch_mprintf("SELECT instance_id, name, status, contact, no_answer_count, max_no_answer, reject_delay_time, busy_delay_time, no_answer_delay_time, tiers.state, agents.last_bridge_end, agents.wrap_up_time, agents.state, agents.ready_time, tiers.position, tiers.level, agents.type, agents.uuid, external_calls_count, agents.agent_originate_check FROM agents LEFT JOIN tiers ON (agents.name = tiers.agent)"
 				" WHERE tiers.queue = '%q'"
 				" AND (agents.status = '%q' OR agents.status = '%q' OR agents.status = '%q')"
 				" ORDER BY %q",
@@ -3514,6 +3566,7 @@ static int list_result_json_callback(void *pArg, int argc, char **argv, char **c
 "\tcallcenter_config agent set reject_delay_time [agent_name] [wait second] | \n"\
 "\tcallcenter_config agent set busy_delay_time [agent_name] [wait second] | \n"\
 "\tcallcenter_config agent set no_answer_delay_time [agent_name] [wait second] | \n"\
+"\tcallcenter_config agent set agent_originate_check [agent_name] [api_command] | \n"\
 "\tcallcenter_config agent get status [agent_name] | \n" \
 "\tcallcenter_config agent get state [agent_name] | \n" \
 "\tcallcenter_config agent get uuid [agent_name] | \n" \
@@ -3633,6 +3686,17 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *key = argv[0 + initial_argc];
 				const char *agent = argv[1 + initial_argc];
 				const char *value = argv[2 + initial_argc];
+
+				/* agent_originate_check value is a full API command string with spaces
+				   (e.g. "lua agent_handler.lua 1001 example.com").
+				   switch_separate_string replaced spaces with NULs — restore them
+				   so value points to the complete string. */
+				if (!strcasecmp(key, "agent_originate_check")) {
+					int i;
+					for (i = 3 + initial_argc; i < argc; i++) {
+						*(argv[i] - 1) = ' ';
+					}
+				}
 
 				switch (cc_agent_update(key, value, agent)) {
 					case CC_STATUS_SUCCESS:
@@ -4277,6 +4341,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	switch_console_set_complete("add callcenter_config agent set reject_delay_time");
 	switch_console_set_complete("add callcenter_config agent set busy_delay_time");
 	switch_console_set_complete("add callcenter_config agent set no_answer_delay_time");
+	switch_console_set_complete("add callcenter_config agent set agent_originate_check");
 	switch_console_set_complete("add callcenter_config agent get status");
 	switch_console_set_complete("add callcenter_config agent list");
 
