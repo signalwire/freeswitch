@@ -352,7 +352,14 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					switch_regex_safe_free(save_re);
 
 					save_expression = strdup(expression);
-					save_field_data = strdup(field_data);
+					/* PCRE2 match_data points into the original subject. Keep that
+					 * buffer alive for later $1 substitution instead of strdup+free. */
+					if (field_expanded && field_data == field_expanded) {
+						save_field_data = field_expanded;
+						field_expanded = NULL;
+					} else {
+						save_field_data = strdup(field_data);
+					}
 					save_re = re;
 					save_match_data = match_data;
 					save_proceed = proceed;

@@ -41,6 +41,7 @@ switch_utils
 switch_vad
 switch_vpx
 switch_xml
+switch_dialplan_xml
 switch_estimators
 switch_jitter_buffer
 test_sofia
