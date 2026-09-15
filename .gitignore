@@ -272,6 +272,10 @@ libs/mariadb-connector-c-*/
 libs/mariadb-connector-c-*.zip
 libs/flite-*/
 libs/flite-*.zip
+libs/pcre-*/
+libs/pcre-*.zip
+libs/opencv-*/
+libs/opencv-*.zip
 libs/lua-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
