@@ -32,12 +32,17 @@
 
 #include <mod_hiredis.h>
 
-/* auth if password is set */
+/* auth if password is set, using the configured ACL username if present */
 static switch_status_t hiredis_context_auth(hiredis_context_t *context)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	if ( !zstr(context->connection->password) ) {
-		redisReply *response = redisCommand(context->context, "AUTH %s", context->connection->password);
+		redisReply *response;
+		if ( !zstr(context->connection->username) ) {
+			response = redisCommand(context->context, "AUTH %s %s", context->connection->username, context->connection->password);
+		} else {
+			response = redisCommand(context->context, "AUTH %s", context->connection->password);
+		}
 		if ( !response || response->type == REDIS_REPLY_ERROR ) {
 			status = SWITCH_STATUS_FALSE;
 		}
@@ -163,12 +168,13 @@ switch_status_t hiredis_profile_destroy(hiredis_profile_t **old_profile)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_contexts)
+switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *username, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_contexts)
 {
 	hiredis_connection_t *connection = NULL, *new_conn = NULL;
 
 	new_conn = switch_core_alloc(profile->pool, sizeof(hiredis_connection_t));
 	new_conn->host = host ? switch_core_strdup(profile->pool, host) : "localhost";
+	new_conn->username = username ? switch_core_strdup(profile->pool, username) : NULL;
 	new_conn->password = password ? switch_core_strdup(profile->pool, password) : NULL;
 	new_conn->port = port ? port : 6379;
 	new_conn->pool = profile->pool;
