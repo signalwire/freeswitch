@@ -4,17 +4,21 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <zlibVersion>1.3.2</zlibVersion>
-    <zlibBuildNumber>1</zlibBuildNumber>
+    <!-- Release tag in freeswitch/windows-deps: libpng-v$(libpngVersion)_$(libpngBuildNumber) -->
+    <libpngVersion>1.6.58</libpngVersion>
+    <libpngBuildNumber>1</libpngBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
-    <zlibVersionImported>true</zlibVersionImported>
+    <libpngVersionImported>true</libpngVersionImported>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
-    <BuildMacro Include="zlibVersion">
-      <Value>$(zlibVersion)</Value>
+    <BuildMacro Include="libpngVersion">
+      <Value>$(libpngVersion)</Value>
+    </BuildMacro>
+    <BuildMacro Include="libpngBuildNumber">
+      <Value>$(libpngBuildNumber)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
