@@ -270,6 +270,8 @@ libs/libpq-*/
 libs/libpq-*.zip
 libs/mariadb-connector-c-*/
 libs/mariadb-connector-c-*.zip
+libs/flite-*/
+libs/flite-*.zip
 libs/lua-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
