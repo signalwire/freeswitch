@@ -102,6 +102,7 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 		mod_amqp_producer_profile_t *producer;
 		mod_amqp_command_profile_t *command;
 		mod_amqp_logging_profile_t *logging;
+		mod_amqp_xml_handler_profile_t *xml_handler;
 
 		switch_event_unbind_callback(mod_amqp_producer_event_handler);
 
@@ -119,6 +120,11 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 		while ((hi = switch_core_hash_first_iter(mod_amqp_globals.logging_hash, hi))) {
 			switch_core_hash_this(hi, NULL, NULL, (void **)&logging);
 			mod_amqp_logging_destroy(&logging);
+		}
+
+		while ((hi = switch_core_hash_first_iter(mod_amqp_globals.xml_handler_hash, hi))) {
+			switch_core_hash_this(hi, NULL, NULL, (void **)&xml_handler);
+			mod_amqp_xml_handler_destroy(&xml_handler);
 		}
 	}
 
@@ -191,6 +197,30 @@ switch_status_t mod_amqp_do_config(switch_bool_t reload)
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate logging section for mod_amqp\n" );
+	}
+
+	if ((profiles = switch_xml_child(cfg, "xml_handler"))) {
+		if ((profile = switch_xml_child(profiles, "profile"))) {
+			for (; profile; profile = profile->next)	{
+				char *name = (char *) switch_xml_attr_soft(profile, "name");
+
+				if (zstr(name)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile. Check configs missing name attr\n");
+					continue;
+				}
+				name = switch_core_strdup(mod_amqp_globals.pool, name);
+
+				if ( mod_amqp_xml_handler_create(name, profile) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load mod_amqp profile [%s]. Check configs\n", name);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loaded mod_amqp profile [%s] successfully\n", name);
+				}
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to locate a profile for mod_amqp\n" );
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate xml handler section for mod_amqp\n" );
 	}
 
 	switch_xml_free(xml);
