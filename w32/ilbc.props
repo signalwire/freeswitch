@@ -2,14 +2,58 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="iLBC-version.props" Condition=" '$(iLBC_VersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <iLBCLibDir>$(SolutionDir)libs\iLBC-$(iLBC_Version)</iLBCLibDir>
+    <iLBCLibDir>$(BaseDir)libs\ilbc-$(iLBC_Version)_$(iLBC_BuildNumber)</iLBCLibDir>
   </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="iLBCBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/ilbc-v$(iLBC_Version)_$(iLBC_BuildNumber)/ilbc-$(iLBC_Version)_$(iLBC_BuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(iLBCLibDir)\binaries\$(Platform)\$(Configuration)\libilbc.lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="iLBCHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/ilbc-v$(iLBC_Version)_$(iLBC_BuildNumber)/ilbc-$(iLBC_Version)_$(iLBC_BuildNumber)-headers.zip"
+           expectfileordirectory="$(iLBCLibDir)\include\ilbc\ilbc.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(iLBCLibDir)\src;$(iLBCLibDir)\src\ilbc;$(iLBCLibDir)\src\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\codec\ilbc\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalIncludeDirectories>$(iLBCLibDir)\include;$(iLBCLibDir)\include\ilbc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(iLBCLibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libilbc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>
