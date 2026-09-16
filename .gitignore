@@ -279,6 +279,7 @@ libs/opencv-*.zip
 libs/broadvoice-*.zip
 libs/lua-*.zip
 libs/g722_1-*.zip
+libs/ilbc-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
