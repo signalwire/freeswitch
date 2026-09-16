@@ -375,6 +375,10 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			if (switch_buffer_inuse(imember->audio_buffer) >= bytes
 				&& (buf_read = (uint32_t) switch_buffer_read(imember->audio_buffer, imember->frame, bytes))) {
 				imember->read = buf_read;
+				/* Zero remainder of frame buffer to prevent stale data from being mixed in */
+				if (buf_read < bytes) {
+					memset((uint8_t *)imember->frame + buf_read, 0, bytes - buf_read);
+				}
 				conference_utils_member_set_flag_locked(imember, MFLAG_HAS_AUDIO);
 				ready++;
 			}
@@ -583,7 +587,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			if (has_file_data && file_sample_len) {
 
 				for (x = 0; x < bytes / 2; x++) {
-					if (x <= file_sample_len * conference->channels) {
+					if (x < file_sample_len * conference->channels) {
 						main_frame[x] = (int32_t) bptr[x];
 					} else {
 						memset(&main_frame[x], 255, sizeof(main_frame[x]));
@@ -640,7 +644,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					z = main_frame[x];
 
 					/* bptr[x] represents my own contribution to this audio sample */
-					if (conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
+					if (conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) && x < omember->read / 2) {
 						z -= (int32_t) bptr[x];
 					}
 
@@ -655,7 +659,9 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 								int16_t *rptr = (int16_t *) imember->frame;
 								for (rel = imember->relationships; rel; rel = rel->next) {
 									if ((rel->id == omember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
-										z -= (int32_t) rptr[x];
+										if (x < imember->read / 2) {
+											z -= (int32_t) rptr[x];
+										}
 										found = 1;
 										break;
 									}
@@ -663,7 +669,9 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 								if (!found) {
 									for (rel = omember->relationships; rel; rel = rel->next) {
 										if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
-											z -= (int32_t) rptr[x];
+											if (x < imember->read / 2) {
+												z -= (int32_t) rptr[x];
+											}
 											break;
 										}
 									}
