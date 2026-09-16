@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <broadvoice_Version>0.1.0</broadvoice_Version>
+    <broadvoice_BuildNumber>1</broadvoice_BuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <broadvoice_VersionImported>true</broadvoice_VersionImported>
@@ -12,6 +13,9 @@
   <ItemGroup>
     <BuildMacro Include="broadvoice_Version">
       <Value>$(broadvoice_Version)</Value>
+    </BuildMacro>
+    <BuildMacro Include="broadvoice_BuildNumber">
+      <Value>$(broadvoice_BuildNumber)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
