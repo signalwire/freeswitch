@@ -125,10 +125,6 @@
     <ClCompile Include="mod_siren.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\libg722_1\libg722_1.2017.vcxproj">
-      <Project>{1bc8a8ec-e03b-44df-bcd9-088650f4d29c}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

@@ -276,7 +276,9 @@ libs/pcre-*/
 libs/pcre-*.zip
 libs/opencv-*/
 libs/opencv-*.zip
+libs/broadvoice-*.zip
 libs/lua-*.zip
+libs/g722_1-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
