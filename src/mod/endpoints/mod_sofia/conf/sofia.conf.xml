@@ -4,6 +4,13 @@
     <param name="auto-restart" value="false"/>
     <param name="debug-presence" value="0"/>
     <!-- <param name="capture-server" value="udp:homer.example.com:5060"/> -->
+    <!-- STIR/SHAKEN authentication and DIV PASSporT defaults -->
+    <!-- sip_stir_shaken_div signs a DIV PASSporT over sip_stir_shaken_div_shaken_identity or the existing SHAKEN Identity; run sofia_stir_shaken_vs first when fail-closed verification is required. -->
+    <!-- <param name="stir-shaken-as-key" value="/path/to/sp-private-key.pem"/> -->
+    <!-- <param name="stir-shaken-as-url" value="https://example.com/sp-cert.pem"/> -->
+    <!-- <param name="stir-shaken-div-as-url" value="https://example.com/div-cert.pem"/> -->
+    <!-- <param name="stir-shaken-div-reason" value="unconditional"/> -->
+    <!-- <param name="stir-shaken-div-hi" value="index=1"/> -->
   </global_settings>
   <profiles>
     <!--
