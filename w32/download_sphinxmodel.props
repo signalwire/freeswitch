@@ -29,7 +29,7 @@
 
   <Target Name="sphinxmodelDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz"
+           package="https://github.com/freeswitch/windows-deps/releases/download/communicator_semi_6000_20080321/communicator_semi_6000_20080321.tar.gz"
            expectfileordirectory="$(BaseDir)libs\Communicator_semi_40.cd_semi_6000\noisedict"
            outputfolder=""
            outputfilename=""

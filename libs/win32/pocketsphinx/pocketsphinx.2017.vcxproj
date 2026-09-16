@@ -24,6 +24,8 @@
     <RootNamespace>pocketsphinx</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\w32\pocketsphinx.props" />
+  <Import Project="$(SolutionDir)\w32\sphinxbase.props" />
   <Import Project="$(SolutionDir)\w32\download_pocketsphinx.props" Condition=" '$(downloadpocketsphinxPropsImported)' == '' " />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -88,7 +90,6 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;..\..\pocketsphinx-0.7/src/libpocketsphinx;..\..\sphinxbase-0.7\include;..\..\pocketsphinx-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -118,7 +119,6 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;..\..\pocketsphinx-0.7/src/libpocketsphinx;..\..\sphinxbase-0.7\include;..\..\pocketsphinx-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -148,7 +148,6 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;..\..\pocketsphinx-0.7/src/libpocketsphinx;..\..\sphinxbase-0.7\include;..\..\pocketsphinx-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -182,7 +181,6 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../include;../../../../sphinxbase/include;../../../../sphinxbase/include/win32;..\..\pocketsphinx-0.7/src/libpocketsphinx;..\..\sphinxbase-0.7\include;..\..\pocketsphinx-0.7\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_USRDLL;POCKETSPHINX_EXPORTS;SPHINXDLL;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -208,47 +206,47 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\acmod.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\bin_mdef.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\blkarray_list.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\acmod.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\bin_mdef.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\blkarray_list.h" />
     <ClInclude Include="..\..\..\include\cmdln_macro.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\cmu6_lts_rules.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fillpen.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_history.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_lextree.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_search_internal.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\cmu6_lts_rules.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\dict.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\dict2pid.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fillpen.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fsg_history.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fsg_lextree.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fsg_search_internal.h" />
     <ClInclude Include="..\..\..\include\fsg_set.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\hmm.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\kdtree.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\lextree.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_gauden.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_mgau.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_senone.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdflat.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdtree.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\phone_loop_search.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\hmm.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\kdtree.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\lextree.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\mdef.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ms_gauden.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ms_mgau.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ms_senone.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ngram_search.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ngram_search_fwdflat.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ngram_search_fwdtree.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\phone_loop_search.h" />
     <ClInclude Include="..\..\..\include\pocketsphinx.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\include\pocketsphinx.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\include\pocketsphinx_export.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\pocketsphinx_internal.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\posixwin32.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice_internal.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\include\ps_mllr.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\s3dict.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\tst_search.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.h" />
-    <ClInclude Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\vithist.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\include\pocketsphinx.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\include\pocketsphinx_export.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\pocketsphinx_internal.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\posixwin32.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ps_lattice.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ps_lattice_internal.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\include\ps_mllr.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\s2_semi_mgau.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\s3dict.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\tmat.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\tst_search.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\vector.h" />
+    <ClInclude Include="$(pocketsphinx_libDir)\src\libpocketsphinx\vithist.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\acmod.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\bin_mdef.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\acmod.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\bin_mdef.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -258,7 +256,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\blkarray_list.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\blkarray_list.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -268,9 +266,9 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\dict2pid.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_history.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\dict.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\dict2pid.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fsg_history.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -280,7 +278,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_lextree.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fsg_lextree.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -290,7 +288,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\fsg_search.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\fsg_search.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -300,7 +298,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\hmm.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\hmm.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -310,7 +308,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\mdef.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\mdef.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -320,7 +318,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_gauden.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ms_gauden.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -330,7 +328,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_mgau.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ms_mgau.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -340,7 +338,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ms_senone.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ms_senone.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -350,15 +348,15 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdflat.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ngram_search_fwdtree.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\phone_loop_search.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\pocketsphinx.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_lattice.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ps_mllr.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\ptm_mgau.c" />
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\s2_semi_mgau.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ngram_search.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ngram_search_fwdflat.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ngram_search_fwdtree.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\phone_loop_search.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\pocketsphinx.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ps_lattice.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ps_mllr.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\ptm_mgau.c" />
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\s2_semi_mgau.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -368,7 +366,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\tmat.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\tmat.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -378,7 +376,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <ClCompile Include="..\..\pocketsphinx-0.7\src\libpocketsphinx\vector.c">
+    <ClCompile Include="$(pocketsphinx_libDir)\src\libpocketsphinx\vector.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
