@@ -288,6 +288,7 @@ struct switch_runtime {
 	uint32_t max_audio_channels;
 	switch_call_cause_t shutdown_cause;
 	uint32_t uuid_version;
+	int ignore_application_channel_update;
 };
 
 extern struct switch_runtime runtime;
