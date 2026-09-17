@@ -285,6 +285,14 @@ libs/libtiff-*/
 libs/libtiff-*.zip
 libs/lame-*/
 libs/lame-*.zip
+libs/libshout-*/
+libs/libshout-*.zip
+libs/libogg-*/
+libs/libogg-*.zip
+libs/pthreads-*/
+libs/pthreads-*.zip
+libs/mpg123-*/
+libs/mpg123-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
