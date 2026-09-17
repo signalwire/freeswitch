@@ -47,6 +47,7 @@
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\lame.props" Condition=" '$(LameVersionImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\curl.props" Condition=" '$(CurlPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
@@ -74,7 +75,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -95,7 +96,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -114,7 +115,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -137,7 +138,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -162,10 +163,6 @@
     <ClInclude Include="mpglib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\libmp3lame\libmp3lame.2017.vcxproj">
-      <Project>{e316772f-5d8f-4f2a-8f71-094c3e859d34}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\libs\win32\libogg\libogg.2017.vcxproj">
       <Project>{0feeaec6-4399-4c46-b7db-62ece80d15b4}</Project>
     </ProjectReference>

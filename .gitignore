@@ -281,6 +281,10 @@ libs/lua-*.zip
 libs/g722_1-*.zip
 libs/ilbc-*.zip
 libs/libsilk-*.zip
+libs/libtiff-*/
+libs/libtiff-*.zip
+libs/lame-*/
+libs/lame-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
