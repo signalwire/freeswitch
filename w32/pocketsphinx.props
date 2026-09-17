@@ -10,7 +10,7 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(pocketsphinx_libDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(pocketsphinx_libDir)\include;$(pocketsphinx_libDir)\src\libpocketsphinx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>POCKETSPHINX_MAJOR_VERSION=$(pocketsphinxMajorVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
