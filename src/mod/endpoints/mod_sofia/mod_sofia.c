@@ -5274,7 +5274,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 
 	time_t epoch_now = switch_epoch_time_now(NULL);
 	time_t expires_in = (expires - epoch_now);
-	char *extra_headers = switch_mprintf("Subscription-State: active, %d\r\n", expires_in);
+	char *extra_headers = switch_mprintf("Subscription-State: active;expires=%d\r\n", expires_in);
 
 	if (profile_name && strcasecmp(profile_name, profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
