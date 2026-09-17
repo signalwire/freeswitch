@@ -1,0 +1,79 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../diagrams-guide.md:1 ed894418242044568f6e608f93711256
+msgid "Appendix-03: Diagram Quick Reference"
+msgstr "附录-03: 图表速查"
+
+#: ../../diagrams-guide.md:5 b7f1210cf40545028b26706bac605de3
+msgid ""
+"Mermaid is the primary diagramming tool for PKB documentation. This page "
+"covers the most common diagram types. For additional examples (class "
+"diagrams, ER diagrams, Gantt charts), refer to the Mermaid documentation at "
+"<https://mermaid.js.org/intro/>."
+msgstr ""
+"Mermaid 是 PKB 文档的主要绘图工具。本页覆盖最常见的图表类型。更多示例（类图、ER 图、甘特图）请参阅 Mermaid "
+"文档：<https://mermaid.js.org/intro/>。"
+
+#: ../../diagrams-guide.md:7 bc69dba9dc6d49f89a73d79ef93e8318
+msgid "Flowcharts"
+msgstr "流程图"
+
+#: ../../diagrams-guide.md:22 eb6b76b3a34c4c4285772809a459bc1e
+msgid "Sequence Diagrams"
+msgstr "时序图"
+
+#: ../../diagrams-guide.md:45 a7c61a1a239e4e61a3150da61d7938ba
+msgid "C4 Context Diagram"
+msgstr "C4 上下文图"
+
+#: ../../diagrams-guide.md:56 7884bc1b76b641f2abc5295c26f3101f
+msgid "State Diagrams"
+msgstr "状态图"
+
+#: ../../diagrams-guide.md:71 2601852ba4c94d0ba9ce934e177cb6b3
+msgid "Tips"
+msgstr "提示"
+
+#: ../../diagrams-guide.md:73 3b68dc681bca4783bf04cf6ef5eab657
+msgid ""
+"Use `flowchart TD` (top-down) or `flowchart LR` (left-right) for "
+"architecture and process diagrams."
+msgstr "架构和流程图使用 `flowchart TD`（自上而下）或 `flowchart LR`（从左到右）。"
+
+#: ../../diagrams-guide.md:74 9dbdde2ce6584aa4b3b6820e5defa5b0
+msgid "Use `sequenceDiagram` for runtime call chains and API interactions."
+msgstr "运行时调用链和 API 交互使用 `sequenceDiagram`。"
+
+#: ../../diagrams-guide.md:75 03327b4a599249919782a5062418e0cb
+msgid "Use `stateDiagram-v2` for lifecycle and state machine documentation."
+msgstr "生命周期和状态机文档使用 `stateDiagram-v2`。"
+
+#: ../../diagrams-guide.md:76 76fc0632b4474a529bb6ecdb27e59f9a
+msgid ""
+"Prefer Mermaid over PlantUML -- it renders natively in Sphinx via "
+"`sphinxcontrib-mermaid`."
+msgstr ""
+"优先使用 Mermaid 而非 PlantUML——它可通过 `sphinxcontrib-mermaid` 在 Sphinx 中原生渲染。"
+
+#: ../../diagrams-guide.md:77 9945ae84b70b4bf196301e4cfc0f11c3
+msgid "Keep diagrams focused: one concept per diagram, not the entire system."
+msgstr "图表保持聚焦：每张图一个概念，而不是整个系统。"

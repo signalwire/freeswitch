@@ -1,0 +1,812 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../10-runbook.md:1 7834785d60f44b49ae271086743a6bd5
+msgid "10. Runbook"
+msgstr "10. 运行手册"
+
+#: ../../10-runbook.md:5 394beaea75b549e3a1095ea36e047657
+msgid ""
+"Ops after a working install. First-time bootstrap, Autotools, and package "
+"install live in [Quick Start](01-quick-start.md). Pipelines and prefix "
+"layout live in [Build](08-build.md)."
+msgstr ""
+"安装可用之后的运维。首次 bootstrap、Autotools 与软件包安装见 [快速开始](01-quick-"
+"start.md)。流水线与前缀目录布局见 [构建](08-build.md)。"
+
+#: ../../10-runbook.md:7 7e526caf07684ff8b9764397b5765103
+msgid ""
+"Vanilla XML is a **demo PBX**, not a production baseline "
+"(`conf/vanilla/README_IMPORTANT.txt`). Change SIP/VM passwords (or run "
+"`scripts/perl/randomize-passwords.pl`) and the ESL password before any "
+"public IP."
+msgstr ""
+"Vanilla XML 是一套 **演示 "
+"PBX**，不是生产基线（`conf/vanilla/README_IMPORTANT.txt`）。在绑定任何公网 IP 之前，请修改 "
+"SIP/语音信箱密码（或运行 `scripts/perl/randomize-passwords.pl`）以及 ESL 密码。"
+
+#: ../../10-runbook.md:9 5b4cd6204e854811b137ec65c4cbf3b3
+msgid ""
+"`$PREFIX` below is the configure prefix. Developer path in this PKB: "
+"`\"$HOME/fs\"`. Autotools default without `--prefix`: "
+"`/usr/local/freeswitch` (`configure.ac`). Debian packages use FHS paths (see"
+" [Inspect Local State](#inspect-local-state))."
+msgstr ""
+"下文 `$PREFIX` 指 configure 安装前缀。本 PKB 的开发者路径：`\"$HOME/fs\"`。未指定 `--prefix` 时 "
+"Autotools 默认为 `/usr/local/freeswitch`（`configure.ac`）。Debian 软件包使用 FHS 路径（见 "
+"[检查本地状态](#inspect-local-state)）。"
+
+#: ../../10-runbook.md:11 1a29261250104fd7b7face19dc9b5ccf
+msgid "Prerequisites"
+msgstr "前置条件"
+
+#: ../../10-runbook.md 3c5b8c94576744e78e988c7fb94dae21
+msgid "Tool"
+msgstr "工具"
+
+#: ../../10-runbook.md a2cd2b5eb32544fe90d1bc0ecadf1369
+msgid "Minimum version"
+msgstr "最低版本"
+
+#: ../../10-runbook.md cf51795f60514ebdac9f0b1e50b5f02c
+msgid "Check command"
+msgstr "检查命令"
+
+#: ../../10-runbook.md 2e295143730e46b988c4fcb09f7d6343
+msgid "Installed `freeswitch`"
+msgstr "已安装的 `freeswitch`"
+
+#: ../../10-runbook.md ecfc8cc6e431486fbec24b1b86309d9c
+msgid "this tree: **1.11.3-dev**"
+msgstr "本代码树：**1.11.3-dev**"
+
+#: ../../10-runbook.md 2d5a7aff40d64893b72e301fa6b7dfc9
+msgid "`\"$PREFIX/bin/freeswitch\" -version`"
+msgstr "`\"$PREFIX/bin/freeswitch\" -version`"
+
+#: ../../10-runbook.md cd0698c11b02412c8cdc9e29017ac8de
+msgid "`fs_cli` (ESL client)"
+msgstr "`fs_cli`（ESL 客户端）"
+
+#: ../../10-runbook.md c4d93ff6ad3543ebbbfb3c59d363b34f
+msgid "same prefix / package"
+msgstr "同一前缀 / 软件包"
+
+#: ../../10-runbook.md 31ff6603c3bd40ffac22254fcec8f922
+msgid "`\"$PREFIX/bin/fs_cli\" -help`"
+msgstr "`\"$PREFIX/bin/fs_cli\" -help`"
+
+#: ../../10-runbook.md 53c9a038835d4dc49803634c52466ed5
+msgid "TCP 8021 on loopback"
+msgstr "回环上的 TCP 8021"
+
+#: ../../10-runbook.md ../../10-runbook.md:94 1da15cf4a8644914b3bb52eb9adf9ee4
+#: cbc4d23d9c9340b2b5a4d1f24349c400
+msgid "Event Socket"
+msgstr "Event Socket"
+
+#: ../../10-runbook.md 3389cae4fb1e4f10a6c6819014445dba
+msgid "`nc -z 127.0.0.1 8021` once the switch is up"
+msgstr "交换机起来后执行 `nc -z 127.0.0.1 8021`"
+
+#: ../../10-runbook.md e7d29032f87b4009b92392ff020e26f4
+msgid "SIP/RTP ports (if you will register or place calls)"
+msgstr "SIP/RTP 端口（若要注册或发起呼叫）"
+
+#: ../../10-runbook.md 11f8e86baa064e92a21301939306766c
+msgid "5060/5080 UDP/TCP, TLS 5061/5081, RTP UDP 16384–32768"
+msgstr "5060/5080 UDP/TCP，TLS 5061/5081，RTP UDP 16384–32768"
+
+#: ../../10-runbook.md 420edcd62037469ab97c673211967f0f
+msgid "`ss -ulnp` / `netstat -ulnp`"
+msgstr "`ss -ulnp` / `netstat -ulnp`"
+
+#: ../../10-runbook.md:20 9d2a1a52a69a4237be0e46003a2136e3
+msgid ""
+"Source-build toolchain, Sofia-SIP, and SignalWire PAT are **not** repeated "
+"here — see [Quick Start](01-quick-start.md) if `freeswitch` is not on disk "
+"yet."
+msgstr ""
+"源码构建工具链、Sofia-SIP 与 SignalWire PAT **不**在此重复 — 若磁盘上还没有 `freeswitch`，见 "
+"[快速开始](01-quick-start.md)。"
+
+#: ../../10-runbook.md:22 5f08ed6e70fd451798453e5177539d44
+msgid "Setup"
+msgstr "安装与准备"
+
+#: ../../10-runbook.md:24 6b234bef6e1341f4b2c5aad73198af97
+msgid ""
+"If `make install` or a Debian package already landed binaries and config, "
+"you are done. Otherwise:"
+msgstr "若 `make install` 或 Debian 软件包已经落盘二进制与配置，即可跳过。否则："
+
+#: ../../10-runbook.md:34 fe4ffb5c14e745cca22e4e32e5374179
+msgid "Confirm the install layout exists:"
+msgstr "确认安装目录布局已存在："
+
+#: ../../10-runbook.md:40 07a1130a02764fe8a069cf9df20c711a
+msgid ""
+"Debian unit (`debian/freeswitch-systemd.freeswitch.service`) expects "
+"`/usr/bin/freeswitch`, config under `/etc/freeswitch`, logs under "
+"`/var/log/freeswitch`, state under `/var/lib/freeswitch`."
+msgstr ""
+"Debian unit（`debian/freeswitch-systemd.freeswitch.service`）期望 "
+"`/usr/bin/freeswitch`，配置在 `/etc/freeswitch`，日志在 `/var/log/freeswitch`，状态在 "
+"`/var/lib/freeswitch`。"
+
+#: ../../10-runbook.md:42 e5ae68b3ce7a4f21854cccaf1a9ac5d1
+msgid "Run the Project"
+msgstr "运行项目"
+
+#: ../../10-runbook.md:44 17e7644ff2fb4b5bb482f57d486222e6
+msgid "Prefix install (developer)"
+msgstr "前缀安装（开发者）"
+
+#: ../../10-runbook.md:51 79c69ec712224824b22f90f630f662b2
+msgid ""
+"`-ncwait`: background, no console, wait until the core is ready "
+"(`src/switch.c`)."
+msgstr "`-ncwait`：后台运行、无控制台，等到核心就绪（`src/switch.c`）。"
+
+#: ../../10-runbook.md:52 17a1aded526445a780cf1d8f253ff9b1
+msgid ""
+"`-nonat`: skip UPnP/NAT-PMP pinholes (`conf/vanilla/README_IMPORTANT.txt`)."
+msgstr "`-nonat`：跳过 UPnP/NAT-PMP 打洞（`conf/vanilla/README_IMPORTANT.txt`）。"
+
+#: ../../10-runbook.md:53 1f7940a6b2354ac8b344f2abc3599044
+msgid "Foreground console: `\"$PREFIX/bin/freeswitch\" -c -nonat`."
+msgstr "前台控制台：`\"$PREFIX/bin/freeswitch\" -c -nonat`。"
+
+#: ../../10-runbook.md:55 e447bc2b90514154b592d4175d115ca1
+msgid "**Stop:**"
+msgstr "**停止：**"
+
+#: ../../10-runbook.md:63 128e894fa79549559c4b7b8ae521e325
+msgid "**Reset** (wipe core SQLite; stop first):"
+msgstr "**重置**（清空核心 SQLite；先停止）："
+
+#: ../../10-runbook.md:71 cd84f9eefe6e41aaa8a066f06456cec2
+msgid ""
+"That drops `core.db`, Sofia registration DBs (`sofia_reg_internal.db`, "
+"`sofia_reg_external.db`), and other module SQLite files under `$PREFIX/db/` "
+"(`src/switch_core_db.c` names them `$dbdir/<dsn>.db`)."
+msgstr ""
+"这会删除 `core.db`、Sofia 注册库（`sofia_reg_internal.db`、`sofia_reg_external.db`），以及"
+" `$PREFIX/db/` 下其他模块的 SQLite 文件（`src/switch_core_db.c` 将其命名为 "
+"`$dbdir/<dsn>.db`）。"
+
+#: ../../10-runbook.md:73 5fcc37f0c42141f8b4022120f7ad2ce6
+msgid "Debian systemd"
+msgstr "Debian systemd"
+
+#: ../../10-runbook.md:82 5a21075bf2264552bb1eb3e23a54904f
+msgid ""
+"Unit start line: `/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait "
+"-nonat`. `PIDFile=/run/freeswitch/freeswitch.pid`. `DAEMON_OPTS=-nonat` "
+"unless `/etc/default/freeswitch` overrides it."
+msgstr ""
+"Unit 启动行：`/usr/bin/freeswitch -u freeswitch -g freeswitch -ncwait "
+"-nonat`。`PIDFile=/run/freeswitch/freeswitch.pid`。除非 "
+"`/etc/default/freeswitch` 覆盖，否则 `DAEMON_OPTS=-nonat`。"
+
+#: ../../10-runbook.md:84 fbb0a631057d421996a1c88a63450ab7
+msgid "Docker"
+msgstr "Docker"
+
+#: ../../10-runbook.md:86 9566a4c32c3948918fbcabdf3c3f232a
+msgid "Containers expect **host networking** (`docker/README.md`):"
+msgstr "容器要求 **host 网络**（`docker/README.md`）："
+
+#: ../../10-runbook.md:92 e9cf0bba2fae422ea1e88abed40e4e35
+msgid ""
+"Healthcheck is `fs_cli -x status | grep -q ^UP` "
+"(`docker/base_image/healthcheck.sh`)."
+msgstr ""
+"健康检查是 `fs_cli -x status | grep -q ^UP`（`docker/base_image/healthcheck.sh`）。"
+
+#: ../../10-runbook.md:96 7f6de1b91d5e4965bebfa25aac630e18
+msgid ""
+"`mod_event_socket` must be loaded "
+"(`conf/vanilla/autoload_configs/modules.conf.xml`). `fs_cli` defaults "
+"(`libs/esl/fs_cli.c`, `libs/esl/fs_cli.conf`): **127.0.0.1:8021**, password "
+"**`ClueCon`**."
+msgstr ""
+"`mod_event_socket` "
+"必须已加载（`conf/vanilla/autoload_configs/modules.conf.xml`）。`fs_cli` "
+"默认（`libs/esl/fs_cli.c`、`libs/esl/fs_cli.conf`）：**127.0.0.1:8021**，密码 "
+"**`ClueCon`**。"
+
+#: ../../10-runbook.md:98 e62e57703fe543468a5797fe3476da83
+msgid ""
+"Module sample binds loopback "
+"(`src/mod/event_handlers/mod_event_socket/conf/autoload_configs/event_socket.conf.xml`)."
+" **Vanilla runtime config binds `listen-ip` `::`** "
+"(`conf/vanilla/autoload_configs/event_socket.conf.xml`) with inbound ACL "
+"commented out. Change the password and bind to loopback (or enable `apply-"
+"inbound-acl`) before any non-loopback exposure."
+msgstr ""
+"模块示例绑定回环（`src/mod/event_handlers/mod_event_socket/conf/autoload_configs/event_socket.conf.xml`）。**Vanilla"
+" 运行时配置将 `listen-ip` 绑到 "
+"`::`**（`conf/vanilla/autoload_configs/event_socket.conf.xml`），入站 ACL "
+"被注释掉。在任何非回环暴露之前，请改密码并绑定回环（或启用 `apply-inbound-acl`）。"
+
+#: ../../10-runbook.md:100 62897583fa2f4d46a81ef70662b6bb3c
+msgid "Build and Package"
+msgstr "构建与打包"
+
+#: ../../10-runbook.md:102 146064b0c48942298f045ab74fdb6197
+msgid "Do not rebuild here. Use:"
+msgstr "不要在本页重新构建。请使用："
+
+#: ../../10-runbook.md:104 0957b2ce73fc45529b2c1a2d66214927
+msgid ""
+"[Quick Start](01-quick-start.md) — `./bootstrap.sh -j && ./configure "
+"--prefix=… && make && make install`"
+msgstr ""
+"[快速开始](01-quick-start.md) — `./bootstrap.sh -j && ./configure --prefix=… && "
+"make && make install`"
+
+#: ../../10-runbook.md:105 2b893a83ecd7451dbc8d96d200a8f212
+msgid ""
+"[Build](08-build.md) — per-module `make mod_sofia` / `make mod_sofia-"
+"install`, Debian FSDEB, Docker, Windows"
+msgstr ""
+"[构建](08-build.md) — 按模块 `make mod_sofia` / `make mod_sofia-install`、Debian "
+"FSDEB、Docker、Windows"
+
+#: ../../10-runbook.md:107 360958b3e335473bbe099ac9e4bc843b
+msgid ""
+"Runtime load list is **not** `modules.conf`. That file (copied from "
+"`build/modules.conf.in` by `bootstrap.sh`) is **build-time**. Runtime load "
+"is `$PREFIX/conf/autoload_configs/modules.conf.xml`."
+msgstr ""
+"运行时加载列表 **不是** `modules.conf`。该文件（由 `bootstrap.sh` 从 `build/modules.conf.in`"
+" 复制）是 **构建期** 的。运行时加载列表是 `$PREFIX/conf/autoload_configs/modules.conf.xml`。"
+
+#: ../../10-runbook.md:109 bdb298fc808d45ee9ba6bf5e19177159
+msgid "Inspect Local State"
+msgstr "检查本地状态"
+
+#: ../../10-runbook.md 60885f1a0dd04a3796513457c963ca3d
+msgid "State"
+msgstr "状态"
+
+#: ../../10-runbook.md f6e824a76cc54215820173a3d9ebf4a4
+msgid "Prefix install (`$PREFIX`)"
+msgstr "前缀安装（`$PREFIX`）"
+
+#: ../../10-runbook.md 25338bdb0d0144e7bcda66c75837e975
+msgid "Debian / FHS"
+msgstr "Debian / FHS"
+
+#: ../../10-runbook.md 212d9c23481e4d718f897275bfa0e198
+msgid "How to inspect"
+msgstr "如何检查"
+
+#: ../../10-runbook.md 6e36af19b0d147bcbc8a84680908c588
+msgid "PID"
+msgstr "PID"
+
+#: ../../10-runbook.md c18728e7261545149c1e5ab719696f52
+msgid "`$PREFIX/run/freeswitch.pid`"
+msgstr "`$PREFIX/run/freeswitch.pid`"
+
+#: ../../10-runbook.md 11a2d6c4292f428291802212bc947f95
+msgid "`/run/freeswitch/freeswitch.pid`"
+msgstr "`/run/freeswitch/freeswitch.pid`"
+
+#: ../../10-runbook.md 79beeeaa7eff401a8b0f7d4f6800cfde
+msgid "`cat …/freeswitch.pid`; `ps -p $(cat …)`"
+msgstr "`cat …/freeswitch.pid`；`ps -p $(cat …)`"
+
+#: ../../10-runbook.md caeb6ef00471446c890f9735894ec7f4
+msgid "Process"
+msgstr "进程"
+
+#: ../../10-runbook.md 3833fde71f0e4a109b8d2fe53ab050c0
+msgid "`freeswitch`"
+msgstr "`freeswitch`"
+
+#: ../../10-runbook.md 7bd6c3a3a05a45e5acdcd61187e79db3
+msgid "`systemctl status freeswitch`"
+msgstr "`systemctl status freeswitch`"
+
+#: ../../10-runbook.md bf810be00aa0419292f6b673ce15b06f
+msgid "`ps aux | grep '[f]reeswitch'`"
+msgstr "`ps aux | grep '[f]reeswitch'`"
+
+#: ../../10-runbook.md 459888ef3b5749ff9865896e529cd982
+msgid "Core SQL"
+msgstr "核心 SQL"
+
+#: ../../10-runbook.md 8fd593a589f543b98ba9effc4a0aa1c1
+msgid "`$PREFIX/db/core.db`"
+msgstr "`$PREFIX/db/core.db`"
+
+#: ../../10-runbook.md b9e2257cf8c04f74880da7a14df2376e
+msgid "`/var/lib/freeswitch/db/core.db`"
+msgstr "`/var/lib/freeswitch/db/core.db`"
+
+#: ../../10-runbook.md 49a67551872b40ab8735ca5a59fc7127
+msgid "`ls -l …/db/`; schema in `src/switch_core_sqldb.c` (DSN `\"core\"`)"
+msgstr "`ls -l …/db/`；模式见 `src/switch_core_sqldb.c`（DSN `\"core\"`）"
+
+#: ../../10-runbook.md abded75f0ca4410c8baaeb0934fe5b78
+msgid "Sofia SQL"
+msgstr "Sofia SQL"
+
+#: ../../10-runbook.md 5b968e7d6212471eb0926a4d305b05cd
+msgid "`$PREFIX/db/sofia_reg_<profile>.db`"
+msgstr "`$PREFIX/db/sofia_reg_<profile>.db`"
+
+#: ../../10-runbook.md 9bbb9bd02d8c406b867dcf67599bac47
+msgid "same under FHS `db/`"
+msgstr "FHS 下同样在 `db/`"
+
+#: ../../10-runbook.md 3af3ad8832bf4222b1c7b449cf535fb8
+msgid "`ls …/db/sofia_reg_*.db`; profiles `internal` / `external`"
+msgstr "`ls …/db/sofia_reg_*.db`；配置文件 `internal` / `external`"
+
+#: ../../10-runbook.md d80f7d4f18c04313aa30c4f7e72003cf
+msgid "Logs"
+msgstr "日志"
+
+#: ../../10-runbook.md 250669c05bad484bbba4fe3ee8676e42
+msgid "`$PREFIX/log/freeswitch.log`"
+msgstr "`$PREFIX/log/freeswitch.log`"
+
+#: ../../10-runbook.md 2eb1a350a2b3458ab21f22177afebf0a
+msgid "`/var/log/freeswitch/freeswitch.log`"
+msgstr "`/var/log/freeswitch/freeswitch.log`"
+
+#: ../../10-runbook.md 7145a8f574c740089a6ba0ff13369f4c
+msgid ""
+"`tail -f …/freeswitch.log`; rotate on HUP "
+"(`conf/vanilla/autoload_configs/logfile.conf.xml`)"
+msgstr ""
+"`tail -f …/freeswitch.log`；HUP "
+"时轮转（`conf/vanilla/autoload_configs/logfile.conf.xml`）"
+
+#: ../../10-runbook.md 0371e73c4ece49f19ea847eee22eaf13
+msgid "Console log"
+msgstr "控制台日志"
+
+#: ../../10-runbook.md 1427eb7ab7ff4fe6bd04a384f8ec7d89
+msgid "stdout if `-c`; else `mod_console` mappings"
+msgstr "若使用 `-c` 则走 stdout；否则为 `mod_console` 映射"
+
+#: ../../10-runbook.md d92497dcaaae497580f966e759e90bed
+msgid "journal + logfile"
+msgstr "journal + 日志文件"
+
+#: ../../10-runbook.md ff3ddb652d27419a8bb304579bb0449d
+msgid ""
+"`conf/vanilla/autoload_configs/console.conf.xml`; `fs_cli -x \"console "
+"loglevel debug\"`"
+msgstr ""
+"`conf/vanilla/autoload_configs/console.conf.xml`；`fs_cli -x \"console "
+"loglevel debug\"`"
+
+#: ../../10-runbook.md 617b322ea0fb44448d946519823394ef
+msgid "Config"
+msgstr "配置"
+
+#: ../../10-runbook.md e6df8262dbad468586b2b6a20733d363
+msgid "`$PREFIX/conf/`"
+msgstr "`$PREFIX/conf/`"
+
+#: ../../10-runbook.md afefb4227dc04d218c0c9f1ef0f88a58
+msgid "`/etc/freeswitch/`"
+msgstr "`/etc/freeswitch/`"
+
+#: ../../10-runbook.md f3aab0fcc5a04add9f75e81d764a1827
+msgid ""
+"vanilla samples; flattened `freeswitch.xml.fsxml` — do not edit while "
+"running"
+msgstr "vanilla 样例；展平后的 `freeswitch.xml.fsxml` — 运行中不要编辑"
+
+#: ../../10-runbook.md d714eb1ee7f748b79006c1e1511679d4
+msgid "Modules (`.so`)"
+msgstr "模块（`.so`）"
+
+#: ../../10-runbook.md 0b8636fc2ccb4fc99d67b2ac2a520b9d
+msgid "`$PREFIX/mod/`"
+msgstr "`$PREFIX/mod/`"
+
+#: ../../10-runbook.md 48fa19a3f0b34f6691b59b776e3b1831
+#, python-brace-format
+msgid "`${libdir}/freeswitch/mod`"
+msgstr "`${libdir}/freeswitch/mod`"
+
+#: ../../10-runbook.md 446dbe110fb84bada3cbe96b6fcc7a87
+msgid "`ls …/mod/mod_sofia*`; `fs_cli -x \"module_exists mod_sofia\"`"
+msgstr "`ls …/mod/mod_sofia*`；`fs_cli -x \"module_exists mod_sofia\"`"
+
+#: ../../10-runbook.md 33ee294a17bf4197ae264a18b9269bc9
+msgid "ESL"
+msgstr "ESL"
+
+#: ../../10-runbook.md 7e34e88b4cb640d384dca6628c0bddc9
+msgid "TCP 8021"
+msgstr "TCP 8021"
+
+#: ../../10-runbook.md 9d1e4552e7f44f3cae158f5c56dd7835
+msgid "same"
+msgstr "相同"
+
+#: ../../10-runbook.md 679a192c67af48ffbddde8a8fa8f682a
+msgid "`ss -lntp | grep 8021`"
+msgstr "`ss -lntp | grep 8021`"
+
+#: ../../10-runbook.md:123 bbb7881cf1884802a786d175d74079e9
+msgid ""
+"Optional location overrides (same binary): `-conf`, `-log`, `-run`, `-db`, "
+"`-mod`, `-base` (`src/switch.c`)."
+msgstr ""
+"可选路径覆盖（同一二进制）：`-conf`、`-log`、`-run`、`-db`、`-mod`、`-base`（`src/switch.c`）。"
+
+#: ../../10-runbook.md:125 6a990c8d39c9430494be5b679584698d
+msgid "Verification Commands"
+msgstr "验证命令"
+
+#: ../../10-runbook.md:139 7609adcca6954857a20e22e9c3292c76
+msgid ""
+"After XML edits: `fs_cli -x reloadxml`. Directory and dialplan changes apply"
+" on the **next** call. Sofia bind/codec/gateway XML needs `sofia profile "
+"internal rescan` (or restart); ACL lists need `reloadacl`. `reloadxml` does "
+"**not** load/unload modules — use `load` / `unload` / `reload mod_name` "
+"([Chapter "
+"5](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/))."
+msgstr ""
+"改完 XML 后执行 `fs_cli -x reloadxml`。号码簿与拨号计划在**下一通**呼叫生效。Sofia 绑定/编解码/网关 XML 需要"
+" `sofia profile internal rescan`（或重启）；ACL 列表需要 `reloadacl`。`reloadxml` "
+"**不会**加载/卸载模块 — 用 `load` / `unload` / `reload mod_name`（[第 5 "
+"章](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)）。"
+
+#: ../../10-runbook.md:141 82588db7b42c4d76a441be031cad9aac
+msgid ""
+"Vanilla SIP ports (`conf/vanilla/vars.xml`): internal **5060** / TLS "
+"**5061**, external **5080** / TLS **5081**. RTP default range "
+"**16384–32768** (`src/switch_rtp.c`; commented overrides in "
+"`conf/vanilla/autoload_configs/switch.conf.xml`). Docker also documents UDP "
+"**64535–65535**."
+msgstr ""
+"Vanilla SIP 端口（`conf/vanilla/vars.xml`）：内部 **5060** / TLS **5061**，外部 "
+"**5080** / TLS **5081**。RTP 默认范围 "
+"**16384–32768**（`src/switch_rtp.c`；`conf/vanilla/autoload_configs/switch.conf.xml`"
+" 中有注释掉的覆盖项）。Docker 还记录了 UDP **64535–65535**。"
+
+#: ../../10-runbook.md:143 6d16b8fe50834525a433794f71f5031e
+#, python-brace-format
+msgid ""
+"Directory users **1000–1019** exist under `conf/vanilla/directory/` with "
+"shared password `1234` (`$${default_password}` in `vars.xml`) — do not "
+"expose 5060/8021 on a public IP. First-call numbers (`9196` echo, `4000` "
+"voicemail, …): [Quick Start](01-quick-start.md)."
+msgstr ""
+"`conf/vanilla/directory/` 下存在分机 **1000–1019**，共享密码 `1234`（`vars.xml` 中的 "
+"`$${default_password}`）— 不要把 5060/8021 暴露到公网 IP。首呼号码（`9196` 回声、`4000` "
+"语音信箱等）见 [快速开始](01-quick-start.md)。"
+
+#: ../../10-runbook.md:145 b144cf958fd34db7ab426aa5a8ea9af8
+msgid "Debugging Notes"
+msgstr "调试说明"
+
+#: ../../10-runbook.md:147 4caf4314e35641ff8e0d672e60acd5ff
+msgid ""
+"**CLI / ESL**: `fs_cli` first. If it cannot connect, the process is down, "
+"ESL is not on 8021, or `mod_event_socket` did not load. Default client "
+"target is loopback (`libs/esl/fs_cli.c`)."
+msgstr ""
+"**CLI / ESL**：先用 `fs_cli`。若连不上，则进程未起来、ESL 不在 8021，或 `mod_event_socket` "
+"未加载。客户端默认目标是回环（`libs/esl/fs_cli.c`）。"
+
+#: ../../10-runbook.md:148 641cd06b078249ff8bf10a5da99bf263
+msgid ""
+"**Runtime / SIP**: `$PREFIX/log/freeswitch.log` and console mappings. SIP "
+"trace: `fs_cli -x \"sofia profile internal siptrace on\"` (keybinding 10 in "
+"`conf/vanilla/autoload_configs/switch.conf.xml`). NAT surprises: you started"
+" without `-nonat`."
+msgstr ""
+"**运行时 / SIP**：`$PREFIX/log/freeswitch.log` 与控制台映射。SIP 跟踪：`fs_cli -x \"sofia "
+"profile internal siptrace "
+"on\"`（`conf/vanilla/autoload_configs/switch.conf.xml` 中快捷键 10）。NAT 异常：启动时未加 "
+"`-nonat`。"
+
+#: ../../10-runbook.md:149 9730061bbea34e04a9420b8b5be0c727
+msgid ""
+"**Data / persistence**: core scoreboard is SQLite under `$PREFIX/db/` "
+"(`src/switch_core_sqldb.c`). `show channels` / `show calls` read that "
+"projection; the session thread is source of truth ([Data and API](05-data-"
+"and-api.md)). Wipe `*.db` only while stopped."
+msgstr ""
+"**数据 / 持久化**：核心记分板是 `$PREFIX/db/` 下的 SQLite（`src/switch_core_sqldb.c`）。`show"
+" channels` / `show calls` 读的是该投影；会话线程才是真相来源（[数据与 API](05-data-and-"
+"api.md)）。仅在停止后清理 `*.db`。"
+
+#: ../../10-runbook.md:151 4b61841b53de4631a4995eb2da11d600
+msgid ""
+"Log verbosity: `fs_cli -x \"console loglevel debug\"`; file logger maps "
+"`all` to `console,debug,info,notice,warning,err,crit,alert` in vanilla "
+"`logfile.conf.xml`. Rotate: `fs_cli -x \"fsctl send_sighup\"` (`rotate-on-"
+"hup` is `true`)."
+msgstr ""
+"日志详细程度：`fs_cli -x \"console loglevel debug\"`；文件记录器在 vanilla "
+"`logfile.conf.xml` 中把 `all` 映射到 "
+"`console,debug,info,notice,warning,err,crit,alert`。轮转：`fs_cli -x \"fsctl "
+"send_sighup\"`（`rotate-on-hup` 为 `true`）。"
+
+#: ../../10-runbook.md:153 02f775bd1014445ea0d4e9a597c2b694
+msgid "Deeper log/metrics layout: [Observability](11-observability.md)."
+msgstr "更深入的日志/指标布局：[可观测性](11-observability.md)。"
+
+#: ../../10-runbook.md:155 26c50fe5cca246c29b0babda2ccdec4e
+msgid "Common Issues"
+msgstr "常见问题"
+
+#: ../../10-runbook.md 194eaa4549c14f1aafa6f80d01432beb
+msgid "Symptom"
+msgstr "现象"
+
+#: ../../10-runbook.md a53f518efefa41a09548807920f56fb9
+msgid "Cause"
+msgstr "原因"
+
+#: ../../10-runbook.md 9afe6f6ff9494a1cb88463ec4a81af2b
+msgid "Fix"
+msgstr "处理"
+
+#: ../../10-runbook.md 80a9fc62f4d04225a57bb3e83ef132c4
+msgid "`fs_cli` cannot connect"
+msgstr "`fs_cli` 无法连接"
+
+#: ../../10-runbook.md ef1c94dd8df44afe93dbf92e44d8afc2
+msgid "Switch not up, ESL not on 8021, or `mod_event_socket` not loaded"
+msgstr "交换机未起来、ESL 不在 8021，或 `mod_event_socket` 未加载"
+
+#: ../../10-runbook.md f9979cf1fde34a7e967576262f2c0354
+msgid ""
+"`\"$PREFIX/bin/freeswitch\" -ncwait -nonat`; `module_exists "
+"mod_event_socket`; `ss -lntp | grep 8021`"
+msgstr ""
+"`\"$PREFIX/bin/freeswitch\" -ncwait -nonat`；`module_exists "
+"mod_event_socket`；`ss -lntp | grep 8021`"
+
+#: ../../10-runbook.md c23e631c83544e72ba76d6ddca9d0654
+msgid "Module missing at runtime but you expected it"
+msgstr "运行时缺少你预期的模块"
+
+#: ../../10-runbook.md f5b09586fab744a6b454ecb8b2e14c66
+msgid ""
+"**Two different files**: `modules.conf` is **build**; `modules.conf.xml` is "
+"**runtime**"
+msgstr "**两份不同的文件**：`modules.conf` 是 **构建**；`modules.conf.xml` 是 **运行时**"
+
+#: ../../10-runbook.md 76bd577779a84b9d8ebb74eba7589c7c
+msgid ""
+"Uncomment `src/mod/…` in `modules.conf`, `make mod_<name>` + install; add "
+"`<load module=\"mod_<name>\"/>` to `autoload_configs/modules.conf.xml`; "
+"`load mod_<name>` or restart"
+msgstr ""
+"在 `modules.conf` 中取消注释 `src/mod/…`，`make mod_<name>` 并安装；向 "
+"`autoload_configs/modules.conf.xml` 添加 `<load module=\"mod_<name>\"/>`；`load"
+" mod_<name>` 或重启"
+
+#: ../../10-runbook.md de89e1a0ce904cee8e47159094963dfe
+msgid "`sofia status` empty / no SIP"
+msgstr "`sofia status` 为空 / 无 SIP"
+
+#: ../../10-runbook.md fdcbd7a5a7eb4a5b8411f5e72f9dc2c6
+msgid "`mod_sofia` not built or not loaded"
+msgstr "`mod_sofia` 未构建或未加载"
+
+#: ../../10-runbook.md 82ea7bcf708e4c4eb8d46053a6d8e167
+msgid ""
+"`ls \"$PREFIX/mod/mod_sofia\"*`; `module_exists mod_sofia`; load it or "
+"rebuild from [Build](08-build.md)"
+msgstr ""
+"`ls \"$PREFIX/mod/mod_sofia\"*`；`module_exists mod_sofia`；加载它或从 "
+"[构建](08-build.md) 重新构建"
+
+#: ../../10-runbook.md 2c01162751a8459baf39fe1e2f819c02
+msgid "SIP bind fails / profile DOWN"
+msgstr "SIP 绑定失败 / profile DOWN"
+
+#: ../../10-runbook.md bf43272fc28143ada60dd0edc1adbaae
+msgid "Port 5060/5080 already in use, or wrong `sip-ip`"
+msgstr "端口 5060/5080 已被占用，或 `sip-ip` 不正确"
+
+#: ../../10-runbook.md b6a3ac0a1bc844c2a3bc48d97cc5e8f6
+#, python-brace-format
+msgid ""
+"`ss -ulnp | grep 506`; check `$${local_ip_v4}` in `conf/vanilla/vars.xml` "
+"and `sip_profiles/internal.xml`"
+msgstr ""
+"`ss -ulnp | grep 506`；检查 `conf/vanilla/vars.xml` 中的 `$${local_ip_v4}` 以及 "
+"`sip_profiles/internal.xml`"
+
+#: ../../10-runbook.md 1c8dc8af412e4116bb516488c081b260
+msgid "One-way / no audio"
+msgstr "单通 / 无声音"
+
+#: ../../10-runbook.md 24c496028a634aa69e1912144cea51eb
+msgid "RTP UDP range not open (16384–32768, plus Docker 64535–65535)"
+msgstr "RTP UDP 范围未开放（16384–32768，外加 Docker 的 64535–65535）"
+
+#: ../../10-runbook.md 31dee4e6f7bb4cf49464ac11b078ae8a
+msgid ""
+"Open the range on host/firewall; Docker: `--network host` "
+"(`docker/README.md`)"
+msgstr "在主机/防火墙上开放该范围；Docker：`--network host`（`docker/README.md`）"
+
+#: ../../10-runbook.md afaf3d9909d241b28c506c125c54afa6
+msgid "Unexpected inbound SIP / “pinhole”"
+msgstr "意外的入站 SIP / “pinhole”"
+
+#: ../../10-runbook.md bd96e2af910647a2a35f7d0d2b591760
+msgid "Auto NAT (UPnP/NAT-PMP)"
+msgstr "自动 NAT（UPnP/NAT-PMP）"
+
+#: ../../10-runbook.md 74083f35309b4d1ab5c857247dbf64c9
+msgid "Start with `-nonat`"
+msgstr "启动时加上 `-nonat`"
+
+#: ../../10-runbook.md 0d4f35b583ef4a8199d5d022a3424916
+msgid "Compromised demo extensions or ESL"
+msgstr "演示分机或 ESL 被攻破"
+
+#: ../../10-runbook.md 38772035ea2841ab95bf72901b3e326e
+msgid ""
+"Vanilla users 1000–1019; password `ClueCon`; vanilla ESL `listen-ip` `::`"
+msgstr "Vanilla 分机 1000–1019；密码 `ClueCon`；vanilla ESL `listen-ip` 为 `::`"
+
+#: ../../10-runbook.md 9fb2b25e94ff4fc2a5a4f01fddfa73a4
+msgid ""
+"Randomize SIP/VM passwords; change ESL password; bind ESL to loopback / "
+"enable ACL"
+msgstr "随机化 SIP/语音信箱密码；更改 ESL 密码；将 ESL 绑定到回环 / 启用 ACL"
+
+#: ../../10-runbook.md 39d8ffd1b9984ad8badf0dd9e38659ca
+msgid "`FSGET` / packaged apt 401"
+msgstr "`FSGET` / 软件包 apt 401"
+
+#: ../../10-runbook.md 7851f20c36524879b2f4841a63c26c1c
+msgid "No SignalWire PAT"
+msgstr "没有 SignalWire PAT"
+
+#: ../../10-runbook.md dec104b91b0049548420fe46410776c4
+msgid ""
+"PAT from `scripts/packaging/README.md`, or build from source ([Quick "
+"Start](01-quick-start.md))"
+msgstr "PAT 见 `scripts/packaging/README.md`，或从源码构建（[快速开始](01-quick-start.md)）"
+
+#: ../../10-runbook.md 696aa8b972294746967972c47c303ef6
+msgid "Docker SIP/RTP broken with `-p`"
+msgstr "Docker 使用 `-p` 时 SIP/RTP 异常"
+
+#: ../../10-runbook.md f1f497f0573744568f1ab17519430b3c
+msgid "Published port ranges vs host net"
+msgstr "发布的端口范围 vs host 网络"
+
+#: ../../10-runbook.md 1fa851144eaa403ebd3d72870083cd53
+msgid "`docker run --network host` (`docker/README.md`)"
+msgstr "`docker run --network host`（`docker/README.md`）"
+
+#: ../../10-runbook.md 73ceb90ad07f45428836cf18e06ca3ed
+msgid "Config edit has no effect"
+msgstr "配置修改没有生效"
+
+#: ../../10-runbook.md 987596acfe8e4f8997b4ee5e79068a95
+msgid "Edited XML not reloaded; or Sofia needs profile restart"
+msgstr "编辑后的 XML 未重新加载；或 Sofia 需要重启 profile"
+
+#: ../../10-runbook.md db55872100be4c8689a8aa26ba3fb110
+msgid ""
+"`reloadxml`; for bind/listen changes restart the profile or the process. Do "
+"not edit `freeswitch.xml.fsxml` live"
+msgstr "`reloadxml`；绑定/监听变更需重启 profile 或进程。不要在运行中编辑 `freeswitch.xml.fsxml`"
+
+#: ../../10-runbook.md 5a16bd41ad6e4a2c8494a8842da0c00c
+msgid "`Cannot open pid file` on `-stop`"
+msgstr "`-stop` 时出现 `Cannot open pid file`"
+
+#: ../../10-runbook.md 7d0d0b1f92cb4c8989a2587ee0e43477
+msgid "Process already dead, or different `-run` / prefix"
+msgstr "进程已经退出，或使用了不同的 `-run` / 前缀"
+
+#: ../../10-runbook.md f261d03539774a6bb938026e3a8180f6
+msgid ""
+"Confirm `$PREFIX/run/freeswitch.pid` vs `/run/freeswitch/freeswitch.pid`"
+msgstr "核对 `$PREFIX/run/freeswitch.pid` 与 `/run/freeswitch/freeswitch.pid`"
+
+#: ../../10-runbook.md bf6f7c0b3dec4bac8040892e6677fa3f
+msgid "SQLite errors after crash"
+msgstr "崩溃后出现 SQLite 错误"
+
+#: ../../10-runbook.md 11d1589abe9943bc95ebf7cc5fd1aa47
+msgid "Stale `$PREFIX/db/*.db`"
+msgstr "陈旧的 `$PREFIX/db/*.db`"
+
+#: ../../10-runbook.md dd38317693434cd0b4c8210843c33f0d
+msgid "Stop, move/remove `*.db`, start again (see Reset)"
+msgstr "先停止，移动/删除 `*.db`，再启动（见重置）"
+
+#: ../../10-runbook.md:172 0a62226a143d4aa2a31898a3afc8f49b
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../10-runbook.md:174 b504bce067fe4073b0221f7e5784bd1b
+msgid "[Quick Start](01-quick-start.md)"
+msgstr "[快速开始](01-quick-start.md)"
+
+#: ../../10-runbook.md:175 58240714fc89413b8d6c453807f28033
+msgid "[Build](08-build.md)"
+msgstr "[构建](08-build.md)"
+
+#: ../../10-runbook.md:176 1b2e41eeebd342c596fb8c6404a77ab1
+msgid "[Testing](09-testing.md)"
+msgstr "[测试策略](09-testing.md)"
+
+#: ../../10-runbook.md:177 2ef8c126dbd74b7aaa06d0651749806d
+msgid "[Observability](11-observability.md)"
+msgstr "[可观测性](11-observability.md)"
+
+#: ../../10-runbook.md:178 dbc941fe9ed34cc9a18072e9de2cbfe5
+msgid "[Data and API](05-data-and-api.md)"
+msgstr "[数据与 API](05-data-and-api.md)"
+
+#: ../../10-runbook.md:179 a6fe8e557bab4b06b1937412c3d986d8
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../10-runbook.md:181 05c3474e554a462e93ebe6047dcd9248
+msgid ""
+"Operator configuration: [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/) ([Ch "
+"2](https://developer.signalwire.com/freeswitch/foundations/getting-started),"
+" Part 11 Troubleshooting). Historical wiki: [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)."
+msgstr ""
+"运维配置：[FreeSWITCH 用户手册](https://developer.signalwire.com/freeswitch/)（[第 2 "
+"章](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)、第 11 部分排障）。历史 wiki：[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)。"
+
+#~ msgid ""
+#~ "After XML edits: `fs_cli -x reloadxml`. Some Sofia bind/codec changes need "
+#~ "`sofia profile internal restart` (or a process restart), not only "
+#~ "`reloadxml`."
+#~ msgstr ""
+#~ "XML 编辑后：`fs_cli -x reloadxml`。部分 Sofia 绑定/编解码更改需要 `sofia profile internal "
+#~ "restart`（或重启进程），仅 `reloadxml` 不够。"
+
+#~ msgid ""
+#~ "Operator tutorials: [FreeSWITCH "
+#~ "Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+#~ "Explained/)."
+#~ msgstr ""
+#~ "运维教程：[FreeSWITCH "
+#~ "Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+#~ "Explained/)。"
