@@ -2533,6 +2533,7 @@ static switch_bool_t is_host_from_gateway(const char *remote_ip, sofia_gateway_t
 	hosts[1] = gateway->register_proxy_host_cfg;
 	hosts[2] = gateway->outbound_proxy_host_cfg;
 
+	//check for ip address only
 	for (i = 0; i < 3; i++) {
 		if (zstr(hosts[i])) {
 			continue;
@@ -2542,11 +2543,20 @@ static switch_bool_t is_host_from_gateway(const char *remote_ip, sofia_gateway_t
 			if (!strcmp(hosts[i], remote_ip)) {
 				ret = SWITCH_TRUE;
 			}
+			if (ret) break;
+		}
+	}
 
-			if (ret) break;
-		} else {
-			ret = sip_resolve_compare(hosts[i], remote_ip, gateway->register_transport);
-			if (ret) break;
+	// if not found any ip address try dns resolution
+	if (!ret) {
+		for (i = 0; i < 3; i++) {
+			if (zstr(hosts[i])) {
+				continue;
+			}
+			if (!host_is_ip_address(hosts[i])) {
+				ret = sip_resolve_compare(hosts[i], remote_ip, gateway->register_transport);
+				if (ret) break;
+			}
 		}
 	}
 
