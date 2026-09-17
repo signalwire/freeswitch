@@ -32,9 +32,9 @@ fs_cli -x status | grep -q ^UP || exit 1
 
 # Check erlang related modules is registered on epmd daemon
 KAZOO_EXIST=$(fs_cli -x "module_exists mod_kazoo")
-ERLANG_EXITS=$(fs_cli -x "module_exists mod_erlang_event")
+ERLANG_EXIST=$(fs_cli -x "module_exists mod_erlang_event")
 
-if [ "$KAZOO_EXIST" == "true" -o "$ERLANG_EXITS" == "true" ]; then
+if [ "$KAZOO_EXIST" == "true" -o "$ERLANG_EXIST" == "true" ]; then
     /usr/bin/epmd -names | grep -qE "^name freeswitch at port" || exit 1
 fi
 
