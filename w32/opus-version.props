@@ -4,17 +4,16 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <signalwire-client-cVersion>2.0.5</signalwire-client-cVersion>
-    <signalwire-client-cBuildNumber>2</signalwire-client-cBuildNumber>
+    <opusVersion>1.5.2</opusVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <signalwire-client-cVersionImported>true</signalwire-client-cVersionImported>
+    <opusVersionImported>true</opusVersionImported>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
-    <BuildMacro Include="signalwire-client-cVersion">
-      <Value>$(signalwire-client-cVersion)</Value>
+    <BuildMacro Include="opusVersion">
+      <Value>$(opusVersion)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

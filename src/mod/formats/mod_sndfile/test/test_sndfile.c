@@ -109,6 +109,24 @@ typedef struct  {
 
 #define thread_bail_out(x, msg) if (!(x)) {params->status = SWITCH_STATUS_FALSE; params->err_detail = strdup(msg); return NULL;}
 
+/* Where to write the recording this test makes and reads back. */
+static char *test_recording_path(switch_core_session_t *session, const char *ext)
+{
+#ifdef WIN32
+	/* Windows has no /tmp, so record into the test folder, which is conf_dir's parent.
+	 * Anchor it on base_dir to keep it absolute: conf_dir on its own is relative, and
+	 * switch_is_file_path() only accepts a drive letter, a leading separator or a URL.
+	 * A path it rejects makes switch_ivr_record_session() prepend sound_prefix to the
+	 * whole string - in front of the "{force_channels=2}" the stereo tests pass - which
+	 * then defeats the brace stripping it does before creating the parent directory. */
+	return switch_mprintf("%s%s%s%s..%s%s.%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR,
+						  SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR,
+						  switch_core_session_get_uuid(session), ext);
+#else
+	return switch_mprintf("/tmp/%s.%s", switch_core_session_get_uuid(session), ext);
+#endif
+}
+
 static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread_t *thread, void *obj)
 {
 	/* play mono, record mono, open mono */
@@ -136,7 +154,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Testing media file extension: [%s]\n", params->ext);
 
-	recording = switch_mprintf("/tmp/%s.%s", switch_core_session_get_uuid(session), params->ext);
+	recording = test_recording_path(session, params->ext);
 	status = switch_ivr_record_session(session, recording, duration, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_record_session() status != SWITCH_STATUS_SUCCESS");
 
@@ -207,7 +225,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_m2s_thread_run(switch_thread_
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_originate() status != SWITCH_STATUS_SUCCESS");
 
-	recording = switch_mprintf("/tmp/%s.%s", switch_core_session_get_uuid(session), params->ext);
+	recording = test_recording_path(session, params->ext);
 
 	status = switch_ivr_record_session(session, recording, duration, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_record_session() status != SWITCH_STATUS_SUCCESS");
@@ -278,7 +296,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_s2m_thread_run(switch_thread_
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_originate() status != SWITCH_STATUS_SUCCESS");
 
-	rec_path = switch_mprintf("/tmp/%s.%s", switch_core_session_get_uuid(session), params->ext);
+	rec_path = test_recording_path(session, params->ext);
 	recording = switch_mprintf("{force_channels=2}%s", rec_path);
 
 	channel = switch_core_session_get_channel(session);
@@ -351,7 +369,7 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_stereo_thread_run(switch_thre
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_play_file() status != SWITCH_STATUS_SUCCESS");
 
-	rec_path = switch_mprintf("/tmp/%s.%s", switch_core_session_get_uuid(session), params->ext);
+	rec_path = test_recording_path(session, params->ext);
 	recording = switch_mprintf("{force_channels=2}%s", rec_path);
 
 	channel = switch_core_session_get_channel(session);

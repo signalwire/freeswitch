@@ -2,14 +2,67 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="broadvoice-version.props" Condition=" '$(broadvoice_VersionImported)' == '' "/>
-    <Import Project="download_broadvoice.props" Condition=" '$(downloadbroadvoicePropsImported)' == '' "/>    
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <broadvoiceLibDir>$(SolutionDir)libs\broadvoice-$(broadvoice_Version)\src</broadvoiceLibDir>
+    <broadvoiceLibDir>$(BaseDir)libs\broadvoice-$(broadvoice_Version)_$(broadvoice_BuildNumber)</broadvoiceLibDir>
   </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="broadvoiceBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/broadvoice-v$(broadvoice_Version)_$(broadvoice_BuildNumber)/broadvoice-$(broadvoice_Version)_$(broadvoice_BuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(broadvoiceLibDir)\binaries\$(Platform)\$(Configuration)\libbroadvoice.dll"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="broadvoiceHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/broadvoice-v$(broadvoice_Version)_$(broadvoice_BuildNumber)/broadvoice-$(broadvoice_Version)_$(broadvoice_BuildNumber)-headers.zip"
+           expectfileordirectory="$(broadvoiceLibDir)\include\broadvoice\broadvoice.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="broadvoicecopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="broadvoiceBinariesDownloadTarget">
+      <ItemGroup>
+          <broadvoiceFiles Include="$(broadvoiceLibDir)\binaries\$(Platform)\$(Configuration)\*.dll" />
+      </ItemGroup>
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(Configuration)\libbroadvoice.dll')"
+          SourceFiles="@(broadvoiceFiles)"
+          DestinationFiles="@(broadvoiceFiles-&gt;'$(BaseDir)$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(broadvoiceLibDir);$(broadvoiceLibDir)\floating\common;$(broadvoiceLibDir)\floating\bv16;$(broadvoiceLibDir)\floating\bv32;$(broadvoiceLibDir)\broadvoice;$(broadvoiceLibDir)\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(broadvoiceLibDir)\include;$(broadvoiceLibDir)\include\broadvoice;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(broadvoiceLibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libbroadvoice.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>

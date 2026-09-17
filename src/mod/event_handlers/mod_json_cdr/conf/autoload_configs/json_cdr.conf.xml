@@ -6,7 +6,8 @@
 			<param name="log-b-leg" value="true"/>
 			<param name="prefix-a-leg" value="false"/>
 
-			<!-- Whether to URL encode the individual JSON values. Defaults to true, set to false for standard JSON. -->
+			<!-- Whether to URL encode the individual JSON values. Defaults to true; set to false
+			     to leave values as they are. -->
 			<param name="encode-values" value="true"/>
 
 			<!-- Normally if url and log-dir are present, url is attempted first and log-dir second.
@@ -29,7 +30,9 @@
 			<param name="auth-scheme" value="basic"/>
 			<!-- Credentials in the form  username:password  if auth-scheme is used. Leave empty for no authentication. -->
 			<param name="cred" value="string"/>
-			<!-- Whether to base64 encode the entire JSON document before POSTing it. -->
+			<!-- How to encode the POSTed body: 'true' for URL encoding, 'base64' for base64,
+			     'false' or unset for raw JSON. 'true' encodes the whole body on top of any
+			     encoding encode-values already applied to the values. -->
 			<param name="encode" value="base64|true|false"/>
 			<!-- Number of retries in case of failure. Each specified URL is tried in turn. -->
 			<param name="retries" value="0"/>
