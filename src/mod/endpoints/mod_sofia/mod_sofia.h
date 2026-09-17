@@ -737,6 +737,8 @@ struct sofia_profile {
 	char *acl_pass_context[SOFIA_MAX_ACL];
 	char *acl_fail_context[SOFIA_MAX_ACL];
 	uint32_t acl_count;
+	char *subscribe_acl[SOFIA_MAX_ACL];
+	uint32_t subscribe_acl_count;
 	char *proxy_acl[SOFIA_MAX_ACL];
 	uint32_t proxy_acl_count;
 	char *reg_acl[SOFIA_MAX_ACL];
