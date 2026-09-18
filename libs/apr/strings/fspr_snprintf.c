@@ -1268,7 +1268,7 @@ APR_DECLARE(int) fspr_vformatter(int (*flush_func)(fspr_vformatter_buff_t *),
                 break;
             }
 
-            if (prefix_char != NUL && s != S_NULL && s != char_buf) {
+            if (prefix_char != NUL &&(strncmp(s, S_NULL, sizeof(S_NULL))) && s != char_buf) {
                 *--s = prefix_char;
                 s_len++;
             }
