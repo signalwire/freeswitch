@@ -126,6 +126,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_logfile.c" />
+    <ClCompile Include="mod_logfile_prefix.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="mod_logfile_prefix.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
