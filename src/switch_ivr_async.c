@@ -1705,9 +1705,30 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_frame_t frame = { 0 };
 			switch_status_t status;
 			int i = 0;
+			switch_codec_implementation_t read_impl = { 0 };
+			uint8_t channels;
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+			switch_core_session_get_read_impl(bug->session, &read_impl);
+			channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : read_impl.number_of_channels;
+
+			if (rh->fh->native_rate != read_impl.actual_samples_per_second || rh->fh->real_channels != channels) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									"Recorded channel codec changed from %dhz@%dc to %dhz@%dc\n",
+									rh->fh->native_rate,
+									rh->fh->real_channels,
+									read_impl.actual_samples_per_second,
+									channels);
+
+				if (switch_core_media_bug_test_flag(bug, SMBF_STEREO) && read_impl.number_of_channels != 1) {
+					switch_core_media_bug_clear_flag(bug, SMBF_STEREO);
+				}
+
+				rh->fh->native_rate = read_impl.actual_samples_per_second;
+				rh->fh->real_channels = switch_core_media_bug_test_flag(bug, SMBF_STEREO) ? 2 : read_impl.number_of_channels;
+			}
 
 			for (;;) {
 				status = switch_core_media_bug_read(bug, &frame, i++ == 0 ? SWITCH_FALSE : SWITCH_TRUE);
