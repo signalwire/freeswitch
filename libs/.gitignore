@@ -577,3 +577,4 @@ win32/spandsp/spandsp.h
 win32/spandsp/win32
 libcodec2-*
 ffmpeg-*
+opus-*

@@ -6556,6 +6556,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	} else if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr, SWITCH_FALSE) &&
 				!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) &&
+				rtp_session->timer.timer_interface &&
 				switch_core_timer_check(&rtp_session->timer, SWITCH_FALSE) == SWITCH_STATUS_FALSE) {
 			/**
 			* nothing has been read from socket. We are not in auto-adjustment window anymore

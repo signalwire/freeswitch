@@ -1,9 +1,102 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+       Precompiled libpng from freeswitch/windows-deps. Replaces the in-tree build
+       (libs\win32\libpng\libpng.2017.vcxproj + w32\download_libpng.props, both
+       removed): the projects that used to reference that project (FreeSwitchCore,
+       mod_png) import this property sheet instead.
+  -->
+  <PropertyGroup>
+    <libpngImported>true</libpngImported>
+  </PropertyGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libpng-version.props" Condition=" '$(libpngVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <!-- libpng16.dll needs zlib.dll (zlibd.dll in Debug) at run time; zlib.props
+         downloads the matching zlib package and copies that DLL to the output dir. -->
+    <Import Project="zlib.props" Condition=" '$(zlibImported)' == '' "/>
+  </ImportGroup>
+
+  <!-- The packages ship only Release and Debug; map any project configuration onto
+       one of them. Debug binaries carry the "d" postfix. -->
+  <PropertyGroup>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+    <libpngLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">libpng16d</libpngLibraryFileName>
+    <libpngLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">libpng16</libpngLibraryFileName>
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <!-- Package name = zip prefix = folder inside the zips. It includes the build
+         number, so a rebuilt package lands in a NEW folder and gets picked up. -->
+    <libpngPkg>libpng-$(libpngVersion)_$(libpngBuildNumber)</libpngPkg>
+    <libpngLibDir>$(BaseDir)libs\$(libpngPkg)</libpngLibDir>
+    <libpngBinDir>$(libpngLibDir)\binaries\$(Platform)\$(LibraryConfiguration)</libpngBinDir>
+    <!-- GitHub Release assets of freeswitch/windows-deps (tag libpng-v<version>_<build>). -->
+    <libpngPkgBase>https://github.com/freeswitch/windows-deps/releases/download/libpng-v$(libpngVersion)_$(libpngBuildNumber)</libpngPkgBase>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libpngBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="$(libpngPkgBase)/$(libpngPkg)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(libpngBinDir)\lib\$(libpngLibraryFileName).lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="libpngHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="$(libpngPkgBase)/$(libpngPkg)-headers.zip"
+           expectfileordirectory="$(libpngLibDir)\include\png.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
+  <!-- Copy libpng16.dll / libpng16d.dll next to the FreeSWITCH binary. -->
+  <Target Name="libpngcopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libpngBinariesDownloadTarget">
+      <ItemGroup>
+          <libpngFiles Include="$(libpngBinDir)\bin\*.dll" />
+      </ItemGroup>
+      <Copy SkipUnchangedFiles="true"
+          SourceFiles="@(libpngFiles)"
+          DestinationFiles="@(libpngFiles->'$(BaseDir)$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\libpng\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- png.h, pngconf.h, pnglibconf.h -->
+      <AdditionalIncludeDirectories>$(libpngLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_LIBPNG;LIBPNG_DYNAMICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <!-- Import library of libpng16.dll / libpng16d.dll. A static link would use
+           libpng16_static.lib / libpng16_staticd.lib and zlib's static library. -->
+      <AdditionalLibraryDirectories>$(libpngBinDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(libpngLibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>

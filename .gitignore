@@ -250,6 +250,49 @@ libs/libcodec2-*/
 libs/libsilk-*/
 libs/rabbitmq-c-*/
 libs/rabbitmq-c-*.zip
+# Dependency packages w32\*.props download from freeswitch/windows-deps
+# into libs\<name>-<version>_<build>\ (rabbitmq-c is listed above).
+libs/zlib-*/
+libs/zlib-*.zip
+libs/openssl-*/
+libs/openssl-*.zip
+libs/libpng-*/
+libs/libpng-*.zip
+libs/libks-*/
+libs/libks-*.zip
+libs/signalwire-client-c-*/
+libs/signalwire-client-c-*.zip
+libs/curl-*/
+libs/curl-*.zip
+libs/libpcap-*/
+libs/libpcap-*.zip
+libs/libpq-*/
+libs/libpq-*.zip
+libs/mariadb-connector-c-*/
+libs/mariadb-connector-c-*.zip
+libs/flite-*/
+libs/flite-*.zip
+libs/pcre-*/
+libs/pcre-*.zip
+libs/opencv-*/
+libs/opencv-*.zip
+libs/broadvoice-*.zip
+libs/lua-*.zip
+libs/g722_1-*.zip
+libs/ilbc-*.zip
+libs/libsilk-*.zip
+libs/libtiff-*/
+libs/libtiff-*.zip
+libs/lame-*/
+libs/lame-*.zip
+libs/libshout-*/
+libs/libshout-*.zip
+libs/libogg-*/
+libs/libogg-*.zip
+libs/pthreads-*/
+libs/pthreads-*.zip
+libs/mpg123-*/
+libs/mpg123-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
@@ -268,6 +311,10 @@ src/mod/applications/mod_http_cache/test/test_aws.log
 src/mod/applications/mod_http_cache/test/test_aws.trs
 src/mod/formats/mod_sndfile/test/test_sndfile
 src/mod/formats/mod_sndfile/test/test_sndfile_conf
+# Recordings test_sndfile writes here on Windows, named <uuid>.<ext>. A passing run
+# unlinks them, but libsndfile also writes a ._<uuid>.sd2 resource fork that nothing
+# removes, and a failing run leaves the lot behind.
+src/mod/formats/mod_sndfile/test/*-*-*-*-*
 src/mod/*/*/test/*.log
 src/mod/*/*/test/*.trs
 src/mod/*/*/test/[0-9]*/*
