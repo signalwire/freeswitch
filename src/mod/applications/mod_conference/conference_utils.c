@@ -190,6 +190,8 @@ void conference_utils_set_cflags(const char *flags, conference_flag_t *f)
 		for (i = 0; i < argc && argv[i]; i++) {
 			if (!strcasecmp(argv[i], "wait-mod")) {
 				f[CFLAG_WAIT_MOD] = 1;
+			} else if (!strcasecmp(argv[i], "record-wait-mod")) {
+				f[CFLAG_RECORD_WAIT_MOD] = 1;
 			} else if (!strcasecmp(argv[i], "video-floor-only")) {
 				f[CFLAG_VID_FLOOR] = 1;
 			} else if (!strcasecmp(argv[i], "audio-always")) {
