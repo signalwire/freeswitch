@@ -496,7 +496,12 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);
 	X509_set_pubkey(x, pk);
 
-	name = X509_get_subject_name(x);
+	/* OpenSSL 4 hands out the certificate's own name as const, so build one
+	 * here and set it instead of filling in the one inside the certificate.
+	 */
+	if ((name = X509_NAME_new()) == NULL) {
+		goto err;
+	}
 
 	/* This function creates and adds the entry, working out the
 	 * correct string type and performing checks on its length.
@@ -505,11 +510,13 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *)"US", -1, -1, 0);
 	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *)"FreeSWITCH", -1, -1, 0);
 
-
 	/* Its self signed so set the issuer name to be the same as the
- 	 * subject.
+	 * subject. Both calls copy the name, so ours is ours to free.
 	 */
+	X509_set_subject_name(x, name);
 	X509_set_issuer_name(x, name);
+	X509_NAME_free(name);
+	name = NULL;
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
 	if (!X509_sign(x, pk, EVP_sha256())) {
