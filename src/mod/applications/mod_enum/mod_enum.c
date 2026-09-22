@@ -31,9 +31,6 @@
  */
 
 #include <switch.h>
-#ifdef _MSC_VER
-#define ssize_t int
-#endif
 #include <ldns/ldns.h>
 
 #define ENUM_MAXNAMESERVERS	10	/* max nameservers that will be used */
