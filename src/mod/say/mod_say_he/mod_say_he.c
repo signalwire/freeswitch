@@ -89,6 +89,9 @@ typedef enum {
 
 static switch_status_t play_group(switch_say_method_t method, switch_say_gender_t gender, int total, play_group_range_t range, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
 {
+	/* 10 to 19 take "and" only when something was said before them: 115 and 1015, but not 15 or 15000 */
+	int teen_needs_and = a || (range == PGR_HUNDREDS && total >= 1000) || (range == PGR_THOUSANDS && total >= 1000000);
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "** total=[%d]  range=[%d]  a=[%d]  b=[%d]  c=[%d]  gender=[%d]  method=[%d]  what=[%s]\n", total, range, a, b, c, gender, method, what);
 
 	/* Check for special cases of thousands */
@@ -136,7 +139,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 			switch_say_file(sh, "digits/%d0", b);
 		} else {
 			if (range != PGR_HUNDREDS || gender == SSG_MASCULINE) {
-				if ((range == PGR_MILLIONS && a) || (range != PGR_MILLIONS && total > 9)){ /* Check if need to say "and" */
+				if (teen_needs_and) { /* Check if need to say "and" */
 					switch (c) {
 					case 0:
 					case 5:
@@ -164,7 +167,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 				}
 				switch_say_file(sh, "digits/%d%d_m", b, c);
 			} else {
-				if ((range == PGR_MILLIONS && a) || (range != PGR_MILLIONS && total > 9)){ /* Check if need to say "and" */
+				if (teen_needs_and) { /* Check if need to say "and" */
 					switch (c) {
 					case 2:
 					case 3:
@@ -268,6 +271,30 @@ static switch_status_t he_say_general_count(switch_say_file_handle_t *sh, char *
 	int places[9] = { 0 };
 	char sbuf[128] = "";
 	switch_status_t status;
+	char *point;
+
+	/* Decimals: say the whole part, then "dot", then the digits after the point one by one (3.05 = 3 dot 0 5) */
+	if ((point = strchr(tosay, '.'))) {
+		char whole[128] = "";
+		switch_say_args_t fraction_args = *say_args;
+
+		switch_copy_string(whole, tosay, sizeof(whole));
+		if ((point = strchr(whole, '.'))) {
+			*point++ = '\0';
+		}
+
+		if ((status = he_say_general_count(sh, whole, say_args)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+		if (!zstr(point)) {
+			switch_say_file(sh, "digits/dot");
+			fraction_args.method = SSM_ITERATED;
+			return he_say_general_count(sh, point, &fraction_args);
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (say_args->method == SSM_ITERATED) {
 		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1))) {
@@ -571,6 +598,7 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
 	char *currency = NULL;
 	char *cents = NULL;
+	char cents_buf[3] = "";
 	int icents = 0;
 
 	if (strlen(tosay) > 15 || !switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1)) {
@@ -582,9 +610,9 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 
 	if ((cents = strchr(sbuf, '.'))) {
 		*cents++ = '\0';
-		if (strlen(cents) > 2) {
-			cents[2] = '\0';
-		}
+		/* Keep exactly two digits, padding with zeros on the right: .1 is 10 agorot, .123 is 12 agorot */
+		switch_snprintf(cents_buf, sizeof(cents_buf), "%s00", cents);
+		cents = cents_buf;
 	}
 
 	/* If positive sign - skip over" */
