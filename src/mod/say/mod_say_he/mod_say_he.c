@@ -89,8 +89,10 @@ typedef enum {
 
 static switch_status_t play_group(switch_say_method_t method, switch_say_gender_t gender, int total, play_group_range_t range, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
 {
-	/* 10 to 19 take "and" only when something was said before them: 115 and 1015, but not 15 or 15000 */
-	int teen_needs_and = a || (range == PGR_HUNDREDS && total >= 1000) || (range == PGR_THOUSANDS && total >= 1000000);
+	/* A higher group was already said: the thousands or millions before these hundreds, or the millions before these thousands */
+	int higher_said = (range == PGR_HUNDREDS && total >= 1000) || (range == PGR_THOUSANDS && total >= 1000000);
+	/* 10 to 99 take "and" only when something was said before them: 115, 120 and 1015, but not 15, 20 or 15000 */
+	int tens_needs_and = a || higher_said;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "** total=[%d]  range=[%d]  a=[%d]  b=[%d]  c=[%d]  gender=[%d]  method=[%d]  what=[%s]\n", total, range, a, b, c, gender, method, what);
 
@@ -115,6 +117,13 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	/* Check for special case of 2 million, which uses the construct form "shney" */
+	if (range == PGR_MILLIONS && a == 0 && b == 0 && c == 2) {
+		switch_say_file(sh, "digits/shney");
+		switch_say_file(sh, "digits/million");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	/* Check for Hebrew SSM_COUNTED special case. Anything above 10 needs to said differently */
 	if (method == SSM_COUNTED && range == PGR_HUNDREDS && total <= 10) {
 		if (b) {
@@ -130,16 +139,48 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 	 * Note that hundreds are always pronounced in SSG_FEMININE form in hebrew, and were recorded as such.
 	 */
 	if (a) {
+		if (higher_said && b == 0 && c == 0) { /* Hundreds are the last word, say "and": 1100 */
+			switch (a) {
+			case 4:
+			case 6:
+				switch_say_file(sh, "digits/ve");
+				break;
+
+			case 5:
+				switch_say_file(sh, "digits/va");
+				break;
+
+			default:
+				switch_say_file(sh, "digits/uu");
+				break;
+			}
+		}
 		switch_say_file(sh, "digits/%d00", a);
 	}
 
 	if (b) {
 		/* Check for two digits playback (10 to 19) */
 		if (b > 1) {
+			if (tens_needs_and && c == 0) { /* Tens are the last word, say "and": 120 */
+				switch (b) {
+				case 3:
+				case 8:
+					switch_say_file(sh, "digits/uu");
+					break;
+
+				case 5:
+					switch_say_file(sh, "digits/va");
+					break;
+
+				default:
+					switch_say_file(sh, "digits/ve");
+					break;
+				}
+			}
 			switch_say_file(sh, "digits/%d0", b);
 		} else {
 			if (range != PGR_HUNDREDS || gender == SSG_MASCULINE) {
-				if (teen_needs_and) { /* Check if need to say "and" */
+				if (tens_needs_and) { /* Check if need to say "and" */
 					switch (c) {
 					case 0:
 					case 5:
@@ -149,7 +190,6 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 					case 2:
 					case 3:
 					case 8:
-					case 9:
 						switch_say_file(sh, "digits/uu");
 						break;
 
@@ -157,6 +197,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 					case 4:
 					case 6:
 					case 7:
+					case 9:
 						switch_say_file(sh, "digits/ve");
 						break;
 
@@ -167,7 +208,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 				}
 				switch_say_file(sh, "digits/%d%d_m", b, c);
 			} else {
-				if (teen_needs_and) { /* Check if need to say "and" */
+				if (tens_needs_and) { /* Check if need to say "and" */
 					switch (c) {
 					case 2:
 					case 3:
@@ -351,6 +392,35 @@ static switch_status_t he_say_general_count(switch_say_file_handle_t *sh, char *
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* Say "and" before a feminine number from 0 to 99 (minutes, agorot).
+ * The vowel depends on the first word: 20 to 99 start with the tens (35 = "shloshim ve'chamesh") */
+static void say_and_feminine(switch_say_file_handle_t *sh, int number)
+{
+	int first_word = number >= 20 ? number / 10 * 10 : number;
+
+	switch (first_word) {
+	case 2:
+	case 8:
+	case 12:
+	case 13:
+	case 17:
+	case 18:
+	case 19:
+	case 30:
+	case 80:
+		switch_say_file(sh, "digits/uu");
+		break;
+
+	case 50:
+		switch_say_file(sh, "digits/va");
+		break;
+
+	default:
+		switch_say_file(sh, "digits/ve");
+		break;
+	}
+}
+
 static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	int32_t t;
@@ -403,9 +473,18 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 		say_args->gender = SSG_FEMININE;
 
+		/* 1 is "<unit> one", 2 is "shtey <units>", the rest are "<number> <units>" */
 		if (hours) {
-			switch_say_file(sh, "time/hour");
-			say_num(sh, hours, SSM_PRONOUNCED);
+			if (hours == 1) {
+				switch_say_file(sh, "time/hour");
+				say_num(sh, hours, SSM_PRONOUNCED);
+			} else if (hours == 2) {
+				switch_say_file(sh, "digits/shtey");
+				switch_say_file(sh, "time/hours");
+			} else {
+				say_num(sh, hours, SSM_PRONOUNCED);
+				switch_say_file(sh, "time/hours");
+			}
 		} else {
 			switch_say_file(sh, "digits/0");
 			switch_say_file(sh, "time/hours");
@@ -415,6 +494,9 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			if (minutes == 1) {
 				switch_say_file(sh, "time/minute");
 				say_num(sh, minutes, SSM_PRONOUNCED);
+			} else if (minutes == 2) {
+				switch_say_file(sh, "digits/shtey");
+				switch_say_file(sh, "time/minutes");
 			} else {
 				say_num(sh, minutes, SSM_PRONOUNCED);
 				switch_say_file(sh, "time/minutes");
@@ -428,6 +510,9 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 			if (seconds == 1) {
 				switch_say_file(sh, "time/second");
 				say_num(sh, seconds, SSM_PRONOUNCED);
+			} else if (seconds == 2) {
+				switch_say_file(sh, "digits/shtey");
+				switch_say_file(sh, "time/seconds");
 			} else {
 				say_num(sh, seconds, SSM_PRONOUNCED);
 				switch_say_file(sh, "time/seconds");
@@ -556,26 +641,7 @@ static switch_status_t he_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		say_num(sh, hour, SSM_PRONOUNCED);
 
 		if (tm.tm_min) {
-			switch (tm.tm_min) {
-			case 2:
-			case 8:
-			case 12:
-			case 13:
-			case 17:
-			case 18:
-			case 19:
-			case 30:
-				switch_say_file(sh, "digits/uu");
-				break;
-
-			case 50:
-				switch_say_file(sh, "digits/va");
-				break;
-
-			default:
-				switch_say_file(sh, "digits/ve");
-				break;
-			}
+			say_and_feminine(sh, tm.tm_min);
 
 			if (tm.tm_min == 1) {
 				switch_say_file(sh, "time/minute");
@@ -651,27 +717,7 @@ static switch_status_t he_say_money(switch_say_file_handle_t *sh, char *tosay, s
 		icents = atoi(cents);
 
 		/* Say "and" */
-		switch (icents) {
-		case 2:
-		case 8:
-		case 12:
-		case 13:
-		case 17:
-		case 18:
-		case 19:
-		case 30:
-		case 80:
-			switch_say_file(sh, "digits/uu");
-			break;
-
-		case 50:
-			switch_say_file(sh, "digits/va");
-			break;
-
-		default:
-			switch_say_file(sh, "digits/ve");
-			break;
-		}
+		say_and_feminine(sh, icents);
 
 		/* Say agorot (Israel currency equivalent for "cents") */
 		switch (icents) {
