@@ -4,17 +4,16 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <zlibVersion>1.3.2</zlibVersion>
-    <zlibBuildNumber>1</zlibBuildNumber>
+    <sphinxbaseVersion>0.8</sphinxbaseVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <zlibVersionImported>true</zlibVersionImported>
+    <sphinxbaseVersionImported>true</sphinxbaseVersionImported>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
-    <BuildMacro Include="zlibVersion">
-      <Value>$(zlibVersion)</Value>
+    <BuildMacro Include="sphinxbaseVersion">
+      <Value>$(sphinxbaseVersion)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

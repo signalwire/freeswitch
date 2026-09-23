@@ -459,10 +459,6 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="..\libtiff\libtiff.2017.vcxproj">
-      <Project>{401a40cd-5db4-4e34-ac68-fa99e9fac014}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="make_at_dictionary.2017.vcxproj">
       <Project>{dee932ab-5911-4700-9eeb-8c7090a0a330}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

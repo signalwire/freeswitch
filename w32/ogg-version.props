@@ -1,21 +1,21 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <TiffVersion>4.7.2</TiffVersion>
-    <TiffBuildNumber>1</TiffBuildNumber>
+    <OggVersion>1.3.6</OggVersion>
+    <OggBuildNumber>1</OggBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
-    <TiffVersionImported>true</TiffVersionImported>
+    <OggVersionImported>true</OggVersionImported>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
   <ItemGroup>
-    <BuildMacro Include="TiffVersion">
-      <Value>$(TiffVersion)</Value>
+    <BuildMacro Include="OggVersion">
+      <Value>$(OggVersion)</Value>
     </BuildMacro>
-    <BuildMacro Include="TiffBuildNumber">
-      <Value>$(TiffBuildNumber)</Value>
+    <BuildMacro Include="OggBuildNumber">
+      <Value>$(OggBuildNumber)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
