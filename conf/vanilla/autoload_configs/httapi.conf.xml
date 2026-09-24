@@ -28,20 +28,20 @@
 	<permission name="set-params" value="true"/>
 	<permission name="set-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
-	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	  <!-- type attr can be "deny" or "allow". Nothing defaults to opposite of the list default, so allow in this case -->
 	  <!-- 
 	  <variable-list default="deny">
-	    <variable name="caller_id_name"/>
+	    <variable name="caller_id_name type="allow""/>
 	    <variable name="hangup"/> 
 	  </variable-list>
 	  -->
 	</permission>
 	<permission name="get-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
-	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	  <!-- type attr can be "deny" or "allow". Nothing defaults to opposite of the list default, so allow in this case -->
 	  <!-- 
 	  <variable-list default="deny">
-	    <variable name="caller_id_name"/>
+	    <variable name="caller_id_name type="allow""/>
 	    <variable name="hangup"/> 
 	  </variable-list>
 	  -->
@@ -50,17 +50,17 @@
 	<permission name="execute-apps" value="true">
 	  <!-- default to "deny" or "allow" -->
 	  <application-list default="deny">
-	    <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
-	    <application name="info"/>
+	    <!-- type attr can be "deny" or "allow". Nothing defaults to opposite of the list default, so allow in this case -->
+	    <application name="info" type="allow"/>
 	    <application name="hangup"/>
 	  </application-list>
 	</permission>
-	<permission name="expand-vars-in-tag-body" value="false">
+	<permission name="expand-vars" value="false">
 	  <!-- default to "deny" or "allow" -->
-	  <!-- type attr can be "deny" or "allow" nothing defaults to opposite of the list default so allow in this case -->
+	  <!-- type attr can be "deny" or "allow". Nothing defaults to opposite of the list default, so allow in this case -->
 	  <!-- 
 	  <variable-list default="deny">
-	    <variable name="caller_id_name"/>
+	    <variable name="caller_id_name" type="allow"/>
 	    <variable name="hangup"/> 
 	  </variable-list>
 
@@ -83,7 +83,10 @@
       <params>
 	<!-- default url can be overridden by app data -->
 	<param name="gateway-url" value="http://www.freeswitch.org/api/index.cgi" />
-	
+
+	<!-- default method (GET|POST|PUT) that mod_httapi will use for making requests. This parameter can be overridden in dialplan, inside curly braces. -->
+	<param name="method" value="GET"/>
+
 	<!-- set this to provide authentication credentials to the server -->
 	<!--<param name="gateway-credentials" value="muser:mypass"/>-->
 	<!--<param name="auth-scheme" value="basic"/>-->
