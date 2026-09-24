@@ -2840,7 +2840,6 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
-
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
 {
 	switch_mutex_lock(channel->profile_mutex);
