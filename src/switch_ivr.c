@@ -1439,7 +1439,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 		switch_ivr_parse_all_events(session);
 
-
+        if (switch_channel_test_flag(channel, CF_BREAK)) {
+        	switch_channel_clear_flag(channel, CF_BREAK);
+        	status = SWITCH_STATUS_BREAK;
+        	break;
+        }
 
 		if (eff_timeout) {
 			digit_elapsed = (uint32_t) ((switch_micro_time_now() - digit_started) / 1000);
