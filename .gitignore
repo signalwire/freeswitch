@@ -293,6 +293,8 @@ libs/pthreads-*/
 libs/pthreads-*.zip
 libs/mpg123-*/
 libs/mpg123-*.zip
+libs/ldns-*/
+libs/ldns-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
