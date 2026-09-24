@@ -275,10 +275,10 @@ struct switch_media_handle_s {
 };
 
 switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
-	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
 	{ "AEAD_AES_256_GCM", "", AEAD_AES_256_GCM, 44, 12},
-	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
+	{ "AEAD_AES_256_GCM_8", "", AEAD_AES_256_GCM_8, 44, 12},
 	{ "AEAD_AES_128_GCM", "", AEAD_AES_128_GCM, 28, 12},
+	{ "AEAD_AES_128_GCM_8", "", AEAD_AES_128_GCM_8, 28, 12},
 	{ "AES_256_CM_HMAC_SHA1_80", "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46, 14},
 	{ "AES_192_CM_HMAC_SHA1_80", "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38, 14},
 	{ "AES_CM_128_HMAC_SHA1_80", "", AES_CM_128_HMAC_SHA1_80, 30, 14},
@@ -306,7 +306,14 @@ SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(c
 	int i;
 
 	for (i = 0; i < CRYPTO_INVALID; i++) {
-		if (!strncasecmp(str, SUITES[i].name, strlen(SUITES[i].name)) || (SUITES[i].alias && strlen(SUITES[i].alias) && !strncasecmp(str, SUITES[i].alias, strlen(SUITES[i].alias)))) {
+		size_t name_len = strlen(SUITES[i].name);
+		size_t alias_len = SUITES[i].alias ? strlen(SUITES[i].alias) : 0;
+
+		/* Match on a full token, not just a prefix, so a shorter suite name (eg "AEAD_AES_256_GCM")
+		   can't shadow a longer one that starts with it (eg "AEAD_AES_256_GCM_8") regardless of
+		   SUITES[] ordering. */
+		if ((!strncasecmp(str, SUITES[i].name, name_len) && (str[name_len] == '\0' || str[name_len] == ' ')) ||
+			(alias_len && !strncasecmp(str, SUITES[i].alias, alias_len) && (str[alias_len] == '\0' || str[alias_len] == ' '))) {
 			return SUITES[i].type;
 		}
 	}
@@ -1607,7 +1614,7 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 	char *suites = NULL;
 	switch_media_handle_t *smh;
 	char *fields[CRYPTO_INVALID+1];
-	int argc = 0, i = 0, j = 0, k = 0;
+	int argc = 0, i = 0, k = 0;
 
 	if (!(smh = session->media_handle)) {
 		return;
@@ -1659,17 +1666,11 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 		argc = switch_split((char *)suites, ':', fields);
 
 		for (i = 0; i < argc; i++) {
-			int ok = 0;
+			switch_rtp_crypto_key_type_t stype = switch_core_media_crypto_str2type(fields[i]);
 
-			for (j = 0; j < CRYPTO_INVALID; j++) {
-				if (!strcasecmp(fields[i], SUITES[j].name)) {
-					smh->crypto_suite_order[k++] = SUITES[j].type;
-					ok++;
-					break;
-				}
-			}
-
-			if (!ok) {
+			if (stype != CRYPTO_INVALID) {
+				smh->crypto_suite_order[k++] = stype;
+			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "INVALID SUITE SUPPLIED\n");
 			}
 
@@ -1692,6 +1693,9 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	int use_alias = 0;
 	switch_rtp_engine_t *engine;
 	switch_media_handle_t *smh;
+	char *crypto_cpy;
+	char *fields[4];
+	unsigned int crypto_argc;
 
 	if (!(smh = session->media_handle)) {
 		return 0;
@@ -1710,25 +1714,36 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	}
 	engine = &session->media_handle->engines[type];
 
-	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
-		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s]alias=[%s] in [%s]\n", SUITES[j].name, SUITES[j].alias, crypto);
-
-		if (switch_stristr(SUITES[j].alias, crypto)) {
-			use_alias = 1;
-		}
-		
-		if (use_alias || switch_stristr(SUITES[j].name, crypto)) {
-			ctype = SUITES[j].type;
-			vval = use_alias ? SUITES[j].alias : SUITES[j].name;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
-			switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
-			break;
-		}
-
-		use_alias = 0;
+	crypto_cpy = (char*)malloc(strlen(crypto)+1);
+	if (!crypto_cpy) {
+		return 0;
 	}
+	strcpy(crypto_cpy, crypto);
+	crypto_argc = switch_split(crypto_cpy, ' ', fields);
+
+	if (crypto_argc > 2) {
+		for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+			switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "looking for crypto suite [%s]alias=[%s] in [%s]\n", SUITES[j].name, SUITES[j].alias, crypto);
+
+			if (!strcmp(SUITES[j].alias, fields[1])) {
+				use_alias = 1;
+			}
+
+			if (use_alias || !strcmp(SUITES[j].name, fields[1])) {
+				ctype = SUITES[j].type;
+				vval = use_alias ? SUITES[j].alias : SUITES[j].name;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
+				switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
+				break;
+			}
+
+			use_alias = 0;
+		}
+	}
+
+	free(crypto_cpy);
 
 	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
