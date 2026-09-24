@@ -33,6 +33,7 @@
 #include <test/switch_test.h>
 
 int protect_dest_uri(switch_caller_profile_t *cp);
+void sofia_deflect_refer_to(const char *target, const char *sipip, char *buf, switch_size_t buflen);
 
 static int timeout_sec = 10;
 static switch_interval_time_t delay_start_ms = 5000;
@@ -100,6 +101,61 @@ FST_TEST_BEGIN(test_protect_url)
 	fst_check_string_equals(cp.destination_number, "external/%0D%0A%20%23%25%26%2B%3A%3B%3C%3D%3E%3F@[\\]^`{|}\"@freeswitch-testing:9080");
 
 	switch_core_destroy_memory_pool(&cp.pool);
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(test_deflect_refer_to)
+{
+	char ref_to[1024];
+
+	/* A bare user part is turned into a SIP URI on the profile address */
+	sofia_deflect_refer_to("1234", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "sip:1234@192.0.2.10");
+
+	sofia_deflect_refer_to("1234", "2001:db8::10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "sip:1234@[2001:db8::10]");
+
+	/* An addr-spec with a scheme is sent unchanged */
+	sofia_deflect_refer_to("sip:1234@example.com", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "sip:1234@example.com");
+
+	sofia_deflect_refer_to("SIP:1234@example.com", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "SIP:1234@example.com");
+
+	sofia_deflect_refer_to("sips:1234@example.com", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "sips:1234@example.com");
+
+	sofia_deflect_refer_to("tel:+15550100", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "tel:+15550100");
+
+	/* A name-addr, as proxy-refer and ${sip_refer_to} pass it, is sent unchanged */
+	sofia_deflect_refer_to("<sip:1234@example.com>", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "<sip:1234@example.com>");
+
+	sofia_deflect_refer_to("<sip:1234@example.com;transport=udp>", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "<sip:1234@example.com;transport=udp>");
+
+	sofia_deflect_refer_to("\"Bob\" <sip:1234@example.com>", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "\"Bob\" <sip:1234@example.com>");
+
+	/* Attended transfer via proxy-refer: URI headers with ?, % and ; */
+	sofia_deflect_refer_to("<sip:bob@example.com?Replaces=abc%40host%3Bto-tag%3D1%3Bfrom-tag%3D2>", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "<sip:bob@example.com?Replaces=abc%40host%3Bto-tag%3D1%3Bfrom-tag%3D2>");
+
+	/* A Refer-To header parameter after the bracket */
+	sofia_deflect_refer_to("<sip:1234@example.com>;foo=bar", "192.0.2.10", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "<sip:1234@example.com>;foo=bar");
+
+	/* The result is truncated to buflen and always NUL-terminated, on both branches */
+	{
+		char small[8];
+
+		sofia_deflect_refer_to("1234", "192.0.2.10", small, sizeof(small));
+		fst_check_string_equals(small, "sip:123");
+
+		sofia_deflect_refer_to("sip:1234@example.com", "192.0.2.10", small, sizeof(small));
+		fst_check_string_equals(small, "sip:123");
+	}
 }
 FST_TEST_END()
 
