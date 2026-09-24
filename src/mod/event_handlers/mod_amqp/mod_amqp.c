@@ -65,6 +65,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amqp_load)
 	switch_core_hash_init(&(mod_amqp_globals.producer_hash));
 	switch_core_hash_init(&(mod_amqp_globals.command_hash));
 	switch_core_hash_init(&(mod_amqp_globals.logging_hash));
+	switch_core_hash_init(&(mod_amqp_globals.xml_handler_hash));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "mod_apqp loading: Version %s\n", switch_version_full());
 
@@ -90,6 +91,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amqp_shutdown)
 	mod_amqp_producer_profile_t *producer;
 	mod_amqp_command_profile_t *command;
 	mod_amqp_logging_profile_t *logging;
+	mod_amqp_xml_handler_profile_t *xml_handler;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mod starting shutting down\n");
 	switch_event_unbind_callback(mod_amqp_producer_event_handler);
@@ -110,10 +112,15 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_amqp_shutdown)
 		mod_amqp_logging_destroy(&logging);
 	}
 
+	while ((hi = switch_core_hash_first_iter(mod_amqp_globals.xml_handler_hash, hi))) {
+		switch_core_hash_this(hi, NULL, NULL, (void **)&xml_handler);
+		mod_amqp_xml_handler_destroy(&xml_handler);
+	}
+
 	switch_core_hash_destroy(&(mod_amqp_globals.producer_hash));
 	switch_core_hash_destroy(&(mod_amqp_globals.command_hash));
 	switch_core_hash_destroy(&(mod_amqp_globals.logging_hash));
-
+	switch_core_hash_destroy(&(mod_amqp_globals.xml_handler_hash));
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Mod finished shutting down\n");
 	return SWITCH_STATUS_SUCCESS;
 }
