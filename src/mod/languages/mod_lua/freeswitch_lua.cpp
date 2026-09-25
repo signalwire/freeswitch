@@ -786,7 +786,7 @@ std::string JSON::execute2(const char *str)
 {
     cJSON *reply = execute(str);
     char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
-    std::string result = std::string(s);
+    std::string result = s ? std::string(s) : std::string();
     free(s);
     cJSON_Delete(reply);
     return result;
