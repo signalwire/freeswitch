@@ -5,9 +5,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <rabbitmq_cMajorVersion>0</rabbitmq_cMajorVersion>
-    <rabbitmq_cMinorVersion>15</rabbitmq_cMinorVersion>
+    <rabbitmq_cMinorVersion>17</rabbitmq_cMinorVersion>
     <rabbitmq_cRevisionVersion>0</rabbitmq_cRevisionVersion>
-    <rabbitmq_cVersion>0.15.0</rabbitmq_cVersion>
+    <rabbitmq_cVersion>$(rabbitmq_cMajorVersion).$(rabbitmq_cMinorVersion).$(rabbitmq_cRevisionVersion)</rabbitmq_cVersion>
     <rabbitmq_cBuildNumber>1</rabbitmq_cBuildNumber>
   </PropertyGroup>
   <PropertyGroup>

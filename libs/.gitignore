@@ -52,7 +52,6 @@ opal
 /broadvoice/src/Makefile.in
 /broadvoice/src/stamp-h1
 /broadvoice/tests/regression_tests.sh
-/celt-*/
 /Communicator_semi_40.cd_semi_6000/
 /esl/Debug/
 /esl/Release/
@@ -479,7 +478,6 @@ opal
 /tiff-*/tools/tiffmedian
 /tiff-*/tools/tiffset
 /tiff-*/tools/tiffsplit
-/win32/celt/*/*/libcelt.log
 /win32/libg722_1/*/*/libg722_1.log
 /win32/libshout/*/*/libshout.log
 /win32/tmp*.bat
@@ -577,3 +575,4 @@ win32/spandsp/spandsp.h
 win32/spandsp/win32
 libcodec2-*
 ffmpeg-*
+opus-*
