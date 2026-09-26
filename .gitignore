@@ -296,6 +296,8 @@ libs/mpg123-*.zip
 libs/ldns-*/
 libs/ldns-*.zip
 libs/speex-*.zip
+libs/libjpeg-*/
+libs/libjpeg-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/
