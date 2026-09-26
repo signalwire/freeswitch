@@ -537,6 +537,7 @@ libg722_1/config/compile
 srtp/build/compile
 /pcre-*/
 /speex-*/
+/speexdsp-*/
 /curl-*/
 /sqlite-*.zip
 /sqlite-*/
