@@ -68,6 +68,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="..\..\..\w32\tiff.props" />
+    <Import Project="..\..\..\w32\libjpeg.props" />
     <Import Project="$(SolutionDir)\w32\spandsp.props"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -84,7 +85,7 @@
     </BuildLog>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;..\..\src\spandsp;..\..\src;..\..\src\msvc;.\spandsp;.\msvc;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\..\src\spandsp;..\..\src;..\..\src\msvc;.\spandsp;.\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -105,7 +106,7 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <ClCompile>
-      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -126,7 +127,7 @@
     </BuildLog>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -147,7 +148,7 @@
       <Path>$(IntDir)BuildLog $(ProjectName).htm</Path>
     </BuildLog>
     <ClCompile>
-      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;..\..\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\spandsp;.\msvc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -451,14 +452,6 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\libjpeg\libjpeg.2017.vcxproj">
-      <Project>{019dbd2a-273d-4ba4-bf86-b5efe2ed76b1}</Project>
-      <Private>true</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
     <ProjectReference Include="make_at_dictionary.2017.vcxproj">
       <Project>{dee932ab-5911-4700-9eeb-8c7090a0a330}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
