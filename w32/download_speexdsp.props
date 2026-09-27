@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
+    <Import Project="speexdsp-version.props" Condition=" '$(speexdspVersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup>
-    <downloadspeexPropsImported>true</downloadspeexPropsImported>
+    <downloadspeexdspPropsImported>true</downloadspeexdspPropsImported>
   </PropertyGroup>
 
   <!--
@@ -27,13 +28,14 @@
        extractto: Folder to extract an archive to
    -->
 
-  <Target Name="speexDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
+  <Target Name="speexdspDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/libs/speex-1.2rc1.tar.gz"
-           expectfileordirectory="$(BaseDir)libs\speex-1.2rc1\src\speexdec.c"
+           package="https://github.com/xiph/speexdsp/archive/refs/tags/SpeexDSP-$(speexdspVersion).tar.gz"
+           expectfileordirectory="$(BaseDir)libs\speexdsp-$(speexdspVersion)\libspeexdsp\resample.c"
            outputfolder=""
-           outputfilename=""
+           outputfilename="speexdsp-$(speexdspVersion).tar.gz"
            extractto="$(BaseDir)libs\"
+           moveafter="speexdsp-SpeexDSP-$(speexdspVersion)|speexdsp-$(speexdspVersion)"
       />
   </Target>
 
