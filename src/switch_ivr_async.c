@@ -1665,12 +1665,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				if (!rh->writes && !rh->vwrites && !switch_test_flag(rh->fh, SWITCH_FILE_WRITE_APPEND)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding empty file %s\n", rh->file);
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
-					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 					set_completion_cause(rh, "empty-file");
 				} else if ((rh->fh->samples_out < rh->fh->samplerate * rh->min_sec) && !switch_test_flag(rh->fh, SWITCH_FILE_WRITE_APPEND)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
-					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 					set_completion_cause(rh, "input-too-short");
 				} else {
 
@@ -2900,6 +2898,9 @@ static switch_status_t record_helper_destroy(struct record_helper **rh, switch_c
 		switch_core_file_close(&(*rh)->out_fh);
 	} else if((*rh)->fh) {
 		switch_core_file_close((*rh)->fh);
+		if (((!(*rh)->writes && !(*rh)->vwrites) || ((*rh)->fh->samples_out < (*rh)->fh->samplerate * (*rh)->min_sec)) && !switch_test_flag((*rh)->fh, SWITCH_FILE_WRITE_APPEND)) {
+			switch_file_remove((*rh)->file, switch_core_session_get_pool(session));
+		}
 	}
 
 	switch_event_safe_destroy((*rh)->variables);
