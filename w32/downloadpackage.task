@@ -41,6 +41,7 @@ using System.Diagnostics;
             public long lastActivityTicks;
             public Exception error;
             public bool cancelled;
+            public bool completed;
         }
 
         protected ManualResetEvent TaskCanceled { get; private set; }
@@ -213,7 +214,16 @@ using System.Diagnostics;
                 {
                     Log.LogMessage(MessageImportance.High,
                         "Deleting incomplete file " + output + " for package \"" + package + "\".");
-                    File.Delete(output);
+                    try
+                    {
+                        File.Delete(output);
+                    }
+                    catch (Exception e)
+                    {
+                        // A scanner may still hold the file; the next attempt
+                        // overwrites it anyway, so do not let this end the retries.
+                        Log.LogWarning("Could not delete " + output + ": " + e.Message);
+                    }
                 }
 
                 if (TaskCanceled.WaitOne(0))
@@ -242,12 +252,19 @@ using System.Diagnostics;
             {
                 client.DownloadFileAsync(uri, output, syncObject);
 
-                while (!Monitor.Wait(syncObject, 1000))
+                // Wait on the completed flag, not on Monitor.Wait's result: a pulse
+                // that lands while a timed-out Wait is reacquiring the lock is lost.
+                while (!syncObject.completed)
                 {
+                    if (Monitor.Wait(syncObject, 1000) || syncObject.completed)
+                    {
+                        continue;
+                    }
+
                     if (TaskCanceled.WaitOne(0))
                     {
                         client.CancelAsync();
-                        Monitor.Wait(syncObject);
+                        WaitCompleted(syncObject);
                         return "canceled";
                     }
 
@@ -257,7 +274,7 @@ using System.Diagnostics;
                     if (idle > TimeSpan.FromSeconds(stallTimeoutSeconds).Ticks)
                     {
                         client.CancelAsync();
-                        Monitor.Wait(syncObject);
+                        WaitCompleted(syncObject);
                         return "no data for " + stallTimeoutSeconds + " s";
                     }
                 }
@@ -280,6 +297,15 @@ using System.Diagnostics;
                 return "0 bytes";
             }
             return null;
+        }
+
+        // Caller holds the lock on state.
+        private static void WaitCompleted(State state)
+        {
+            while (!state.completed)
+            {
+                Monitor.Wait(state);
+            }
         }
 
         private static string Describe(Exception error)
@@ -353,6 +379,7 @@ using System.Diagnostics;
             {
                 state.error = e.Error;
                 state.cancelled = e.Cancelled;
+                state.completed = true;
                 //releases blocked thread
                 Monitor.Pulse(state);
             }
