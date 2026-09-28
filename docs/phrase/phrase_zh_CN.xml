@@ -245,7 +245,7 @@
 			<prompt phrase="然后按#号" filename="vm-followed_by_pound.wav"/>
 			<prompt phrase="下一个" filename="vm-next.wav"/>
 			<prompt phrase="听取新留言" filename="vm-listen_new.wav"/>
-			<prompt phrase="听取已保存的留言" filename="vm-listen_saved.vmwav"/>
+			<prompt phrase="听取已保存的留言" filename="vm-listen_saved.wav"/>
 			<prompt phrase="高级选项" filename="vm-advanced.wav"/>
 			<prompt phrase="高级选项" filename="vm-advanced_alt.wav"/>
 			<prompt phrase="退出" filename="vm-to_exit.wav"/>
@@ -421,7 +421,7 @@
 			<prompt phrase="您大约需要的等待时间是..." filename="ivr-estimated_hold_time.wav"/>
 			<prompt phrase="多于..." filename="ivr-more_than.wav"/>
 			<prompt phrase="少于..." filename="ivr-less_than.wav"/>
-			<prompt phrase="开始录音" filename="ivr-begin_recording.wav "/>
+			<prompt phrase="开始录音" filename="ivr-begin_recording.wav"/>
 			<prompt phrase="呼叫前转已取消" filename="ivr-call_forwarding_has_been_cancelled.wav"/>
 			<prompt phrase="呼叫前转已设置" filename="ivr-call_forwarding_has_been_set.wav"/>
 			<prompt phrase="请输入电话号码" filename="ivr-please_enter_the_phone_number.wav"/>
