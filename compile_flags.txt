@@ -1,0 +1,11 @@
+-D
+SIMD
+-I
+src/include
+-I
+src/include/private
+-I
+libs/teletone/src
+-mavx
+-mavx2
+-march=native
