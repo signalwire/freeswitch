@@ -1249,8 +1249,6 @@ AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
 GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getlib.sh"
 AC_SUBST(GETLIB)
-GETG729="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getg729.sh"
-AC_SUBST(GETG729)
 GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
@@ -2093,7 +2091,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
 		src/mod/codecs/mod_codec2/Makefile
-		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
@@ -2183,7 +2180,6 @@ AC_CONFIG_FILES([Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
 		build/getlib.sh
-		build/getg729.sh
 		build/freeswitch.pc
 		build/standalone_module/freeswitch.pc
 		build/modmake.rules
