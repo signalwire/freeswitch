@@ -41,11 +41,23 @@
 #include <gd.h>
 #endif
 
+/* stb_image triggers false-positive -Wstringop-overflow / -Wmaybe-uninitialized
+ * under GCC 15+ (e.g. tc[3] write when img_n can be 4). Treat as system headers. */
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "../libs/stb/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../libs/stb/stb_image_write.h"
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #ifdef SWITCH_HAVE_YUV
 static inline void switch_img_get_yuv_pixel(switch_image_t *img, switch_yuv_color_t *yuv, int x, int y);
