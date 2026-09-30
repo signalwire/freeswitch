@@ -317,6 +317,7 @@ src/mod/formats/mod_sndfile/test/test_sndfile_conf
 # unlinks them, but libsndfile also writes a ._<uuid>.sd2 resource fork that nothing
 # removes, and a failing run leaves the lot behind.
 src/mod/formats/mod_sndfile/test/*-*-*-*-*
+src/mod/say/mod_say_he/test/test_mod_say_he
 src/mod/*/*/test/*.log
 src/mod/*/*/test/*.trs
 src/mod/*/*/test/[0-9]*/*

@@ -1,0 +1,19 @@
+<document type="freeswitch/xml">
+
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_say_he"/>
+      </modules>
+    </configuration>
+  </section>
+
+  <section name="languages" description="Language Management">
+    <language name="he" say-module="he">
+      <phrases>
+        <macros/>
+      </phrases>
+    </language>
+  </section>
+
+</document>
