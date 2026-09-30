@@ -41,6 +41,7 @@ SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_MAX_CAND_ACL 25
 #define SWITCH_NO_CRYPTO_TAG -1
+#define SWITCH_MAX_CODEC_CHECK_FRAMES 50
 
 typedef enum {
 	DTMF_AUTO,
@@ -101,6 +102,7 @@ typedef struct switch_core_media_params_s {
 	uint32_t rtp_hold_timeout_sec;
 	uint32_t dtmf_delay;
 	uint32_t codec_flags;
+	int32_t max_codec_check_frames;
 
 	switch_core_media_NDLB_t ndlb;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
