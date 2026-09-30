@@ -400,6 +400,14 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(
 SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
+  \brief Test whether a flag is active or pending for the next state change
+  \param channel channel on which to test the flag
+  \param flag flag to test
+  \return non-zero when the flag is active or pending
+*/
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag_or_state_flag(switch_channel_t *channel, switch_channel_flag_t flag);
+
+/*!
   \brief Set given flag(s) on a given channel
   \param channel channel on which to set flag
   \param flag or'd list of flags to set
