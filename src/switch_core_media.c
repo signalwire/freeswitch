@@ -198,6 +198,7 @@ struct switch_rtp_engine_s {
 	uint8_t reject_avp;
 	int t140_pt;
 	int red_pt;
+	int red_generations;
 	switch_rtp_text_factory_t *tf;
 
 	switch_engine_function_t engine_function;
@@ -5952,6 +5953,20 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				t_engine->cur_payload_map = red_pmap;
 			}
 
+			/* red fmtp lists one payload type per generation: "96/96/96" is two redundant plus the primary */
+			if (red_pmap && !zstr(red_pmap->rm_fmtp)) {
+				const char *fp = red_pmap->rm_fmtp;
+				int generations = 1;
+
+				while (*fp) {
+					if (*fp++ == '/') generations++;
+				}
+
+				if (generations > 1 && generations <= MAX_RED_FRAMES) {
+					t_engine->red_generations = generations;
+				}
+			}
+
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 					switch_channel_set_variable(session->channel, "sip_remote_text_rtcp_port", attr->a_value);
@@ -9199,6 +9214,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (!t_engine->tf) {
 					switch_rtp_text_factory_create(&t_engine->tf, switch_core_session_get_pool(session));
+
+					/* only lower it, the factory allocated red_max buffers */
+					if (t_engine->tf && t_engine->red_generations > 0 && t_engine->red_generations < t_engine->tf->red_max) {
+						t_engine->tf->red_max = t_engine->red_generations;
+					}
 				}
 
 				switch_rtp_set_video_buffer_size(t_engine->rtp_session, 2, 2048);
