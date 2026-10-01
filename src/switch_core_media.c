@@ -4743,6 +4743,11 @@ SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session,
 
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_core_media_set_smode(other_session, type, opp_smode, SDP_OFFER);
+
+				if (type == SWITCH_MEDIA_TYPE_TEXT) {
+					/* the partner has no text m-line yet so its re-offer would not carry one */
+					switch_channel_set_flag(other_session->channel, CF_WANT_RTT);
+				}
 				switch_channel_set_flag(session->channel, CF_STREAM_CHANGED);
 				switch_core_session_rwunlock(other_session);
 			}
@@ -5899,6 +5904,23 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			payload_map_t *red_pmap = NULL;
 
 			switch_core_media_set_rmode(smh->session, SWITCH_MEDIA_TYPE_TEXT, sdp_media_flow(m->m_mode), sdp_type);
+
+			if (sdp_type == SDP_OFFER) {
+				switch(t_engine->rmode) {
+				case SWITCH_MEDIA_FLOW_RECVONLY:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_SENDONLY, sdp_type);
+					break;
+				case SWITCH_MEDIA_FLOW_SENDONLY:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_RECVONLY, sdp_type);
+					break;
+				case SWITCH_MEDIA_FLOW_INACTIVE:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_INACTIVE, sdp_type);
+					break;
+				default:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_SENDRECV, sdp_type);
+					break;
+				}
+			}
 
 			switch_channel_set_flag(session->channel, CF_RTT);
 
@@ -8682,6 +8704,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 							  switch_channel_get_name(session->channel));
 			a_engine->cur_payload_map->negotiated = 1;
 			//XX
+			if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && !switch_rtp_ready(t_engine->rtp_session)) {
+				goto text;
+			}
+
 			goto video;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
@@ -8743,6 +8769,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		if (session && a_engine) {
 			check_dtls_reinvite(session, a_engine);
+		}
+
+		if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && !switch_rtp_ready(t_engine->rtp_session)) {
+			goto text;
 		}
 
 		goto video;
