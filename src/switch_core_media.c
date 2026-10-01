@@ -5897,6 +5897,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			sdp_rtpmap_t *map;
 			payload_map_t *red_pmap = NULL;
 
+			switch_core_media_set_rmode(smh->session, SWITCH_MEDIA_TYPE_TEXT, sdp_media_flow(m->m_mode), sdp_type);
+
 			switch_channel_set_flag(session->channel, CF_RTT);
 
 			connection = sdp->sdp_connection;
