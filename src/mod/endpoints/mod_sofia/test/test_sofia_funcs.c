@@ -31,12 +31,36 @@
 
 #include <switch.h>
 #include <test/switch_test.h>
-#include "../mod_sofia.h"
 
 int protect_dest_uri(switch_caller_profile_t *cp);
 
 static int timeout_sec = 10;
 static switch_interval_time_t delay_start_ms = 5000;
+
+static struct {
+	char sip_req_params[256];
+	char sip_h_x_test[256];
+	switch_bool_t received;
+} uri_headers_capture;
+
+static void uri_headers_on_hangup_complete(switch_event_t *event)
+{
+	const char *direction, *val;
+
+	/* Only capture from the leg that received the INVITE */
+	direction = switch_event_get_header(event, "Call-Direction");
+	if (zstr(direction) || strcmp(direction, "inbound")) return;
+
+	if ((val = switch_event_get_header(event, "variable_sip_req_params"))) {
+		switch_snprintf(uri_headers_capture.sip_req_params, sizeof(uri_headers_capture.sip_req_params), "%s", val);
+	}
+
+	if ((val = switch_event_get_header(event, "variable_sip_h_X-Test"))) {
+		switch_snprintf(uri_headers_capture.sip_h_x_test, sizeof(uri_headers_capture.sip_h_x_test), "%s", val);
+	}
+
+	uri_headers_capture.received = SWITCH_TRUE;
+}
 
 FST_CORE_EX_BEGIN("./conf", SCF_VG | SCF_USE_SQL)
 
@@ -104,41 +128,6 @@ FST_TEST_BEGIN(test_protect_url)
 }
 FST_TEST_END()
 
-FST_TEST_BEGIN(test_sofia_overcome_sip_uri_weakness_uri_headers)
-{
-	switch_core_session_t *session = NULL;
-	switch_status_t status;
-	switch_call_cause_t cause;
-
-	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	fst_requires(status == SWITCH_STATUS_SUCCESS);
-	fst_requires(session);
-
-	/* uri-parameters belong before the ?headers part (RFC 3261 19.1.1), not in the last header's value */
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_TCP_TLS, SWITCH_TRUE, NULL, NULL),
-		"sip:test@example.com;transport=tls?myvar=hello");
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?a=1&b=2", SOFIA_TRANSPORT_TCP, SWITCH_TRUE, "user=phone", NULL),
-		"sip:test@example.com;transport=tcp;user=phone?a=1&b=2");
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_TCP_TLS, SWITCH_FALSE, NULL, NULL),
-		"<sip:test@example.com;transport=tls?myvar=hello>");
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_UDP, SWITCH_TRUE, NULL, NULL),
-		"sip:test@example.com?myvar=hello");
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_UDP, SWITCH_TRUE, "user=phone", NULL),
-		"sip:test@example.com;user=phone?myvar=hello");
-
-	/* "port=" in a header must not stop the transport from being added */
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?X-port=1", SOFIA_TRANSPORT_TCP_TLS, SWITCH_TRUE, NULL, NULL),
-		"sip:test@example.com;transport=tls?X-port=1");
-
-	/* no headers: unchanged */
-	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com", SOFIA_TRANSPORT_TCP_TLS, SWITCH_TRUE, NULL, NULL),
-		"sip:test@example.com;transport=tls");
-
-	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
-	switch_core_session_rwunlock(session);
-}
-FST_TEST_END()
-
 FST_TEST_BEGIN(originate_test)
 {
 	switch_core_session_t *session = NULL;
@@ -155,6 +144,36 @@ FST_TEST_BEGIN(originate_test)
 		switch_core_session_rwunlock(session);
 		switch_sleep(1 * 1000 * 1000);
 	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(originate_test_uri_headers_tcp)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	switch_status_t status;
+	switch_call_cause_t cause;
+	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+
+	memset(&uri_headers_capture, 0, sizeof(uri_headers_capture));
+	switch_event_bind("test_sofia_funcs", SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE, SWITCH_EVENT_SUBCLASS_ANY, uri_headers_on_hangup_complete, NULL);
+
+	/* ;transport=tcp must go in the Request-URI, not in the value of the last ?header (RFC 3261 19.1.1) */
+	status = switch_ivr_originate(NULL, &session, &cause, switch_core_sprintf(fst_pool, "{ignore_early_media=true,sip_transport=tcp}sofia/internal/park@%s:53060?X-Test=hello", local_ip_v4), timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	fst_check(session);
+	fst_check(status == SWITCH_STATUS_SUCCESS);
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_core_session_rwunlock(session);
+		switch_sleep(1 * 1000 * 1000);
+	}
+
+	switch_event_unbind_callback(uri_headers_on_hangup_complete);
+
+	fst_check(uri_headers_capture.received == SWITCH_TRUE);
+	fst_check_string_equals(uri_headers_capture.sip_req_params, "transport=tcp");
+	fst_check_string_equals(uri_headers_capture.sip_h_x_test, "hello");
 }
 FST_TEST_END()
 
