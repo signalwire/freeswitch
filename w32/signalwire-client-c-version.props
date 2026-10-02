@@ -5,7 +5,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <signalwire-client-cVersion>2.0.5</signalwire-client-cVersion>
-    <signalwire-client-cBuildNumber>2</signalwire-client-cBuildNumber>
+    <signalwire-client-cBuildNumber>3</signalwire-client-cBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <signalwire-client-cVersionImported>true</signalwire-client-cVersionImported>
