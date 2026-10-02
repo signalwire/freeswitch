@@ -30,7 +30,7 @@ else
       	HAVE_OPENSSL=0
       	AC_MSG_WARN(OpenSSL crypto library was not found))
 
-      AC_CHECK_LIB(ssl, TLSv1_method,,
+      AC_CHECK_LIB(ssl, TLS_method,,
       	HAVE_TLS=0
       	AC_MSG_WARN(OpenSSL protocol library was not found))
      ],[AC_MSG_WARN(OpenSSL include files were not found)],[#include <openssl/safestack.h>])
