@@ -31,6 +31,7 @@
 
 #include <switch.h>
 #include <test/switch_test.h>
+#include "../mod_sofia.h"
 
 int protect_dest_uri(switch_caller_profile_t *cp);
 
@@ -100,6 +101,41 @@ FST_TEST_BEGIN(test_protect_url)
 	fst_check_string_equals(cp.destination_number, "external/%0D%0A%20%23%25%26%2B%3A%3B%3C%3D%3E%3F@[\\]^`{|}\"@freeswitch-testing:9080");
 
 	switch_core_destroy_memory_pool(&cp.pool);
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(test_sofia_overcome_sip_uri_weakness_uri_headers)
+{
+	switch_core_session_t *session = NULL;
+	switch_status_t status;
+	switch_call_cause_t cause;
+
+	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	fst_requires(status == SWITCH_STATUS_SUCCESS);
+	fst_requires(session);
+
+	/* uri-parameters belong before the ?headers part (RFC 3261 19.1.1), not in the last header's value */
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_TCP_TLS, SWITCH_TRUE, NULL, NULL),
+		"sip:test@example.com;transport=tls?myvar=hello");
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?a=1&b=2", SOFIA_TRANSPORT_TCP, SWITCH_TRUE, "user=phone", NULL),
+		"sip:test@example.com;transport=tcp;user=phone?a=1&b=2");
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_TCP_TLS, SWITCH_FALSE, NULL, NULL),
+		"<sip:test@example.com;transport=tls?myvar=hello>");
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_UDP, SWITCH_TRUE, NULL, NULL),
+		"sip:test@example.com?myvar=hello");
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?myvar=hello", SOFIA_TRANSPORT_UDP, SWITCH_TRUE, "user=phone", NULL),
+		"sip:test@example.com;user=phone?myvar=hello");
+
+	/* "port=" in a header must not stop the transport from being added */
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com?X-port=1", SOFIA_TRANSPORT_TCP_TLS, SWITCH_TRUE, NULL, NULL),
+		"sip:test@example.com;transport=tls?X-port=1");
+
+	/* no headers: unchanged */
+	fst_check_string_equals(sofia_overcome_sip_uri_weakness(session, "sip:test@example.com", SOFIA_TRANSPORT_TCP_TLS, SWITCH_TRUE, NULL, NULL),
+		"sip:test@example.com;transport=tls");
+
+	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_core_session_rwunlock(session);
 }
 FST_TEST_END()
 

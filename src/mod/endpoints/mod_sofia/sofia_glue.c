@@ -849,6 +849,7 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
 	char *p;
+	char *headers = NULL;
 	const char *url_params = NULL;
 
 	if (!zstr(params) && *params == '~') {
@@ -861,6 +862,11 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	/* remove our params so we don't make any whiny moronic device piss its pants and forget who it is for a half-hour */
 	if ((p = (char *) switch_stristr(";fs_", stripped))) {
 		*p = '\0';
+	}
+
+	/* uri-parameters go before the ?headers part, so take it off and put it back last */
+	if ((headers = strchr(stripped, '?'))) {
+		*headers++ = '\0';
 	}
 
 	if (transport && transport != SOFIA_TRANSPORT_UDP) {
@@ -885,6 +891,15 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 			} else {
 				new_uri = switch_core_session_sprintf(session, "<%s>", stripped);
 			}
+		}
+	}
+
+	if (headers) {
+		if (uri_only) {
+			new_uri = switch_core_session_sprintf(session, "%s?%s", new_uri, headers);
+		} else {
+			/* inside the closing '>' */
+			new_uri = switch_core_session_sprintf(session, "%.*s?%s>", (int) strlen(new_uri) - 1, new_uri, headers);
 		}
 	}
 
