@@ -12,6 +12,9 @@
       <!--<param name="gateway-credentials" value="muser:mypass"/>-->
       <!--<param name="auth-scheme" value="basic"/>-->
 
+      <!-- optional unix-socket-path: path -->
+      <!-- <param name="unix-socket-path" value="/var/run/nginx/fs-backend.sock"/> -->
+
       <!-- optional: this will enable the CA root certificate check by libcurl to
            verify that the certificate was issued by a major Certificate Authority.
            note: default value is disabled. only enable if you want this! -->
