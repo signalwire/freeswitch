@@ -99,7 +99,7 @@ static switch_status_t load_list(const char *name, const char *filename)
 			switch_core_hash_insert(bl->list, buf, (void *)SWITCH_TRUE);
 		}
 
-		switch_core_hash_insert(globals.files, name, filename);
+		switch_core_hash_insert_auto_free(globals.files, name, strdup(filename));
 		switch_core_hash_insert(globals.lists, name, bl);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded list [%s]\n", name);
 
