@@ -72,6 +72,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		chan_lang = lang;
 	}
 
+	if (event) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "phrases_language", chan_lang);
+	} else {
+		switch_channel_set_variable(channel, "phrases_language", chan_lang);
+	}
+
 	switch_event_create(&hint_data, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(hint_data);
 
