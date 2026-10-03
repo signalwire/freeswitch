@@ -187,6 +187,23 @@ static switch_status_t es_say_general_count(switch_core_session_t *session, char
 		}
 
 		switch (say_args->method) {
+		case SSM_PRONOUNCED_YEAR:
+			{
+				int num = atoi(tosay);
+				int a = num / 100;
+				int b = num % 100;
+
+				if (!b || !(a % 10)) {
+					say_num(num, SSM_PRONOUNCED);
+					return SWITCH_STATUS_SUCCESS;
+				}
+
+				say_num(a, SSM_PRONOUNCED);
+				say_num(b, SSM_PRONOUNCED);
+
+				return SWITCH_STATUS_SUCCESS;
+			}
+			break;
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
 			/* specific case, one million => un millón */
@@ -217,9 +234,9 @@ static switch_status_t es_say_general_count(switch_core_session_t *session, char
 static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	int32_t t;
-	switch_time_t target = 0;
-	switch_time_exp_t tm;
-	uint8_t say_date = 0, say_time = 0;
+	switch_time_t target = 0, target_now = 0;
+	switch_time_exp_t tm, tm_now;
+	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *tz = switch_channel_get_variable(channel, "timezone");
 
@@ -303,8 +320,10 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 
 	if ((t = atoi(tosay)) > 0) {
 		target = switch_time_make(t, 0);
+		target_now = switch_micro_time_now();
 	} else {
 		target = switch_micro_time_now();
+		target_now = switch_micro_time_now();
 	}
 
 	if (tz) {
@@ -312,11 +331,14 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
 		if (check) {
 			switch_time_exp_tz(&tm, target, check);
+			switch_time_exp_tz(&tm_now, target_now, check);
 		} else {
 			switch_time_exp_tz_name(tz, &tm, target);
+			switch_time_exp_tz_name(tz, &tm_now, target_now);
 		}
 	} else {
 		switch_time_exp_lt(&tm, target);
+		switch_time_exp_lt(&tm_now, target_now);
 	}
 
 	switch (say_args->type) {
@@ -329,45 +351,101 @@ static switch_status_t es_say_time(switch_core_session_t *session, char *tosay, 
 	case SST_CURRENT_TIME:
 		say_time = 1;
 		break;
+	case SST_SHORT_DATE_TIME:
+		say_time = 1;
+		//Time is in the future
+		if ((tm.tm_year > tm_now.tm_year) ||
+			(tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) ||
+			(tm.tm_year == tm_now.tm_year && tm.tm_mon == tm_now.tm_mon && tm.tm_mday > tm_now.tm_mday))
+		{
+			say_date = 1;
+			break;
+		}
+		//Time is today or earlier
+		if (tm.tm_year != tm_now.tm_year) {
+			say_date = 1;
+			break;
+		}
+		if (tm.tm_yday == tm_now.tm_yday) {
+			say_today = 1;
+			break;
+		}
+		if (tm.tm_yday == tm_now.tm_yday - 1) {
+			say_yesterday = 1;
+			break;
+		}
+		if (tm.tm_yday >= tm_now.tm_yday - 5) {
+			say_dow = 1;
+			break;
+		}
+		if (tm.tm_mon != tm_now.tm_mon) {
+			say_month = say_day = say_dow = 1;
+			break;
+		}
+
+		say_month = say_day = say_dow = 1;
+
+
+		break;
 	default:
 		break;
 	}
 
-	if (say_date) {
+	if (say_today) {
+		say_file("time/today.wav");
+
+	}
+	if (say_yesterday) {
+		say_file("time/yesterday.wav");
+	}
+	if (say_dow) {
 		say_file("time/day-%d.wav", tm.tm_wday);
+	}
+
+	if (say_date) {
+		say_year = say_month = say_day = say_dow = 1;
+		say_today = say_yesterday = 0;
+	}
+
+	if (say_day) {
+		if (tm.tm_mday == 1) {
+			say_num(tm.tm_mday, SSM_COUNTED);
+		} else {
 		say_num(tm.tm_mday, SSM_PRONOUNCED);
+		}
 		say_file("time/of.wav");
+	}
+	if (say_month) {
 		say_file("time/mon-%d.wav", tm.tm_mon);
+	}
+	if (say_year) {
 		say_file("time/of.wav");
-		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
+		say_num(tm.tm_year + 1900, SSM_PRONOUNCED_YEAR);
 	}
 
 	if (say_time) {
-		int32_t hour = tm.tm_hour, pm = 0;
 
-		if (hour > 12) {
-			hour -= 12;
-			pm = 1;
-		} else if (hour == 12) {
-			pm = 1;
-		} else if (hour == 0) {
-			hour = 12;
-			pm = 0;
+		if (say_date || say_today || say_yesterday || say_dow) {
+			say_file("time/at.wav");
 		}
 
-		say_num(hour, SSM_PRONOUNCED);
 
-		if (tm.tm_min > 9) {
-			say_file("currency/and.wav");
-			say_num(tm.tm_min, SSM_PRONOUNCED);
-		} else if (tm.tm_min) {
-			say_file("currency/and.wav");
-			say_num(tm.tm_min, SSM_PRONOUNCED);
+		if (tm.tm_hour == 1) {
+			say_file("digits/1.wav");
+			say_file("time/hour.wav");
 		} else {
-			say_file("time/oclock.wav");
+			say_num(tm.tm_hour, SSM_PRONOUNCED);
+			say_file("time/hours.wav");
 		}
 
-		say_file("time/%s.wav", pm ? "p-m" : "a-m");
+		if (tm.tm_min == 1) {
+			say_file("digits/1_1a.wav");
+			say_file("time/minute.wav");
+		} else {
+			say_num(tm.tm_min, SSM_PRONOUNCED);
+			say_file("time/minutes.wav");
+		}
+
 	}
 
 	return SWITCH_STATUS_SUCCESS;
