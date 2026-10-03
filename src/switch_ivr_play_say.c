@@ -3103,7 +3103,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			arg_recursion_check_stop(args);
 			return status;
 		}
-	} else if (cache_obj && strcasecmp(cache_obj->voice_name, voice_name)) {
+	} else if (cache_obj && strcasecmp(cache_obj->voice_name, switch_str_nil(voice_name))) {
 		switch_copy_string(cache_obj->voice_name, voice_name, sizeof(cache_obj->voice_name));
 		switch_core_speech_text_param_tts(sh, "voice", voice_name);
 	}
