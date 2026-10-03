@@ -141,8 +141,8 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
                         } else {
                                 switch_say_file(sh, "digits/%d%d", b, c);
                         }
-                }
                 c = 0;
+                }
         }
 
         if (c) {	/* 0 < 9 */
