@@ -82,7 +82,7 @@ static int console_bufferInput(char *buf, int len, char *cmd, int key);
 static char *console_fnkeys[12];
 
 /*
- * Load from console.conf XML file the section:
+ * Load from switch.conf XML file the section:
  * <keybindings>
  * <key name="1" value="show calls"/>
  * </keybindings>
