@@ -235,6 +235,54 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		}
 	}
 
+	/* Allow the writer to override the encoding subtype via file-string params,
+	   e.g. record_session {subtype=ulaw}/tmp/foo.wav -> WAV container, u-law payload.
+	   Accepted values: ulaw, alaw, pcm16, pcm24, pcm32. Write mode only; reads
+	   always autodetect the subtype from the file header. An unrecognized value,
+	   or a subtype the container does not support (e.g. ulaw on a .flac target),
+	   is ignored with a warning and the container's default subtype is kept -- a
+	   bad param never fails the open. */
+	if ((mode & SFM_WRITE) && handle->params) {
+		const char *subtype = switch_event_get_header(handle->params, "subtype");
+
+		if (!zstr(subtype)) {
+			int sf_subtype = 0;
+
+			if (!strcasecmp(subtype, "ulaw")) {
+				sf_subtype = SF_FORMAT_ULAW;
+			} else if (!strcasecmp(subtype, "alaw")) {
+				sf_subtype = SF_FORMAT_ALAW;
+			} else if (!strcasecmp(subtype, "pcm16")) {
+				sf_subtype = SF_FORMAT_PCM_16;
+			} else if (!strcasecmp(subtype, "pcm24")) {
+				sf_subtype = SF_FORMAT_PCM_24;
+			} else if (!strcasecmp(subtype, "pcm32")) {
+				sf_subtype = SF_FORMAT_PCM_32;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								  "Ignoring unsupported subtype param '%s' for %s (use ulaw|alaw|pcm16|pcm24|pcm32)\n", subtype, path);
+			}
+
+			if (sf_subtype) {
+				int orig_format = context->sfinfo.format;
+
+				context->sfinfo.format = (orig_format & ~SF_FORMAT_SUBMASK) | sf_subtype;
+
+				/* Keep the container implied by the extension; only apply the
+				   requested subtype if libsndfile accepts the combination. If it
+				   does not (e.g. subtype=ulaw on a .flac target), warn and fall
+				   back to the container's default subtype rather than failing the
+				   open on the sf_format_check() below. */
+				if (!sf_format_check(&context->sfinfo)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "Ignoring subtype param '%s': not valid for the container implied by %s; using the default subtype\n",
+									  subtype, path);
+					context->sfinfo.format = orig_format;
+				}
+			}
+		}
+	}
+
 	if ((mode & SFM_WRITE) && sf_format_check(&context->sfinfo) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
 		return SWITCH_STATUS_GENERR;
