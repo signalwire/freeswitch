@@ -117,8 +117,9 @@ APR_DECLARE(fspr_status_t) fspr_socket_recv(fspr_socket_t *sock, char *buf,
         return errno;
     }
     (*len) = rv;
-    if (rv == 0)
+    if (rv == 0 && sock->type == SOCK_STREAM)
         return APR_EOF;
+
     return APR_SUCCESS;
 }
 
@@ -205,7 +206,7 @@ APR_DECLARE(fspr_status_t) fspr_socket_recvfrom(fspr_sockaddr_t *from,
     }
 
     (*len) = rv;
-    if (rv == 0)
+    if (rv == 0 && sock->type == SOCK_STREAM)
         return APR_EOF;
 
     return APR_SUCCESS;
