@@ -33,6 +33,7 @@
 #include <test/switch_test.h>
 
 int protect_dest_uri(switch_caller_profile_t *cp);
+switch_status_t sofia_deflect_build_refer_to(const char *target, const char *sipip, char *buf, switch_size_t buflen);
 
 static int timeout_sec = 10;
 static switch_interval_time_t delay_start_ms = 5000;
@@ -119,6 +120,77 @@ FST_TEST_BEGIN(originate_test)
 		switch_core_session_rwunlock(session);
 		switch_sleep(1 * 1000 * 1000);
 	}
+}
+FST_TEST_END()
+
+FST_TEST_BEGIN(test_sofia_deflect_build_refer_to)
+{
+	char ref_to[1024];
+	char short_buf[12];
+	size_t i;
+	const char *sipip = "203.0.113.5";
+	/* expect NULL means the target is rejected */
+	struct {
+		const char *target;
+		const char *expect;
+	} cases[] = {
+		{ NULL, NULL },
+		{ "", NULL },
+		/* a bare user or number is addressed at the profile */
+		{ "1234", switch_core_sprintf(fst_pool, "sip:1234@%s", sipip) },
+		{ "+15551234567", switch_core_sprintf(fst_pool, "sip:+15551234567@%s", sipip) },
+		/* user@host only gains the scheme, including a host port or an IPv6 literal */
+		{ "bob@example.com", "sip:bob@example.com" },
+		{ "bob@198.51.100.7:2222", "sip:bob@198.51.100.7:2222" },
+		{ "bob@[2001:db8::7]", "sip:bob@[2001:db8::7]" },
+		/* a URI with a scheme goes out as given */
+		{ "sip:bob@example.com", "sip:bob@example.com" },
+		{ "sips:bob@example.com", "sips:bob@example.com" },
+		{ "SIPS:bob@example.com", "SIPS:bob@example.com" },
+		{ "sip:bob@198.51.100.7:2222", "sip:bob@198.51.100.7:2222" },
+		{ "tel:+15551234567", "tel:+15551234567" },
+		{ "urn:service:sos", "urn:service:sos" },
+		/* a name-addr goes out as given */
+		{ "<sip:bob@example.com>", "<sip:bob@example.com>" },
+		{ "<sip:bob@example.com;user=phone>", "<sip:bob@example.com;user=phone>" },
+		{ "\"Bob\" <sip:bob@example.com>", "\"Bob\" <sip:bob@example.com>" },
+		{ "<sip:bob@example.com?Replaces=xfer-42%3Bto-tag%3Dt1%3Bfrom-tag%3Df1>", "<sip:bob@example.com?Replaces=xfer-42%3Bto-tag%3Dt1%3Bfrom-tag%3Df1>" },
+		{ "<sip:bob@example.com>;x-leg=b", "<sip:bob@example.com>;x-leg=b" },
+		/* Known limitations: a host:port without a user, or a user:password, reads as a scheme or is
+		 * addressed at the profile, and none of these is a valid Refer-To */
+		{ "pbx.example.com:5060", "pbx.example.com:5060" },
+		{ "198.51.100.7:5060", switch_core_sprintf(fst_pool, "sip:198.51.100.7:5060@%s", sipip) },
+		{ "bob:secret@example.com", "bob:secret@example.com" },
+	};
+
+	for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+		switch_status_t status;
+
+		ref_to[0] = '\0';
+		status = sofia_deflect_build_refer_to(cases[i].target, sipip, ref_to, sizeof(ref_to));
+
+		if (!cases[i].expect) {
+			fst_xcheck(status == SWITCH_STATUS_FALSE, "an empty deflect target must be rejected");
+			continue;
+		}
+
+		fst_xcheck(status == SWITCH_STATUS_SUCCESS, cases[i].target);
+		fst_check_string_equals(ref_to, cases[i].expect);
+	}
+
+	/* An IPv6 profile address is bracketed */
+	sofia_deflect_build_refer_to("1234", "2001:db8:cafe::5", ref_to, sizeof(ref_to));
+	fst_check_string_equals(ref_to, "sip:1234@[2001:db8:cafe::5]");
+
+	/* The result is truncated to buflen on every branch */
+	sofia_deflect_build_refer_to("1234567", sipip, short_buf, sizeof(short_buf));
+	fst_check_string_equals(short_buf, "sip:1234567");
+
+	sofia_deflect_build_refer_to("bob@example.com", sipip, short_buf, sizeof(short_buf));
+	fst_check_string_equals(short_buf, "sip:bob@exa");
+
+	sofia_deflect_build_refer_to("sip:bob@example.com", sipip, short_buf, sizeof(short_buf));
+	fst_check_string_equals(short_buf, "sip:bob@exa");
 }
 FST_TEST_END()
 
