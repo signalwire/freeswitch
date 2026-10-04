@@ -10,6 +10,10 @@
     <param name="csv-path" value="/usr/local/freeswitch/log/odbc_cdr"/>
     <!-- if "csv-path-on-fail" is set, failed INSERTs will be placed here as CSV files otherwise they will be placed in "csv-path" -->
     <param name="csv-path-on-fail" value="/usr/local/freeswitch/log/odbc_cdr/failed"/>
+    <!-- value can be "never", "on-db-fail" -->
+    <param name="write-sql" value="on-db-fail"/>
+    <!-- failed INSERTs will be placed here -->
+    <param name="sql-path-on-fail" value="/usr/local/freeswitch/log/odbc_cdr/failed"/>
     <!-- dump SQL statement after leg ends -->
 	<param name="debug-sql" value="true"/>
   </settings>
