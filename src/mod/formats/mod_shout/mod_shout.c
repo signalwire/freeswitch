@@ -1840,6 +1840,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
 	mpg123_exit();
+	shout_shutdown();
 	return SWITCH_STATUS_SUCCESS;
 }
 
