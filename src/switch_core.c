@@ -1490,6 +1490,8 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_TRUE);
+	/* Unique Local Addresses (ULA) — RFC 4193 */
+	switch_network_list_add_cidr(rfc_list, "fc00::/7", SWITCH_TRUE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "wan.auto";
@@ -1502,6 +1504,8 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "169.254.0.0/16", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
+	/* Unique Local Addresses (ULA) — RFC 4193 */
+	switch_network_list_add_cidr(rfc_list, "fc00::/7", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "wan_v6.auto";
@@ -1509,6 +1513,8 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (allow)\n", tmp_name);
 	switch_network_list_add_cidr(rfc_list, "0.0.0.0/0", SWITCH_FALSE);
 	switch_network_list_add_cidr(rfc_list, "fe80::/10", SWITCH_FALSE);
+	/* Unique Local Addresses (ULA) — RFC 4193 */
+	switch_network_list_add_cidr(rfc_list, "fc00::/7", SWITCH_FALSE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 
