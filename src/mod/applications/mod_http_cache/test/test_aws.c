@@ -35,7 +35,7 @@
 // Run test
 // make && libtool --mode=execute valgrind --leak-check=full  --log-file=vg.log ./test/test_aws && cat vg.log
 
-FST_BEGIN()
+FST_MINCORE_BEGIN("conf")
 {
 
 FST_SUITE_BEGIN(aws)
@@ -332,4 +332,4 @@ FST_TEST_END()
 FST_SUITE_END()
 
 }
-FST_END()
+FST_MINCORE_END()
