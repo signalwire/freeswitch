@@ -325,7 +325,7 @@ SWITCH_MOD_DECLARE(switch_curl_slist_t *) aws_s3_append_headers(
  * @param profile pointer that config will be written to
  * @return status
  */
-SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile)
+SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool)
 {
 #if defined(HAVE_OPENSSL)
 	switch_xml_t base_domain_xml = switch_xml_child(xml, "base-domain");
@@ -340,8 +340,8 @@ SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http
 	profile->secret_access_key = getenv("AWS_SECRET_ACCESS_KEY");
 	if (!zstr(profile->aws_s3_access_key_id) && !zstr(profile->secret_access_key)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables for AWS S3 access for profile \"%s\"\n", profile->name);
-		profile->aws_s3_access_key_id = strdup(profile->aws_s3_access_key_id);
-		profile->secret_access_key = strdup(profile->secret_access_key);
+		profile->aws_s3_access_key_id = switch_core_strdup(pool, profile->aws_s3_access_key_id);
+		profile->secret_access_key = switch_core_strdup(pool, profile->secret_access_key);
 	} else {
 		/* use configuration for keys */
 		switch_xml_t id = switch_xml_child(xml, "access-key-id");
@@ -352,12 +352,10 @@ SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http
 			return SWITCH_STATUS_FALSE;
 		}
 
-		profile->aws_s3_access_key_id = switch_strip_whitespace(switch_xml_txt(id));
-		profile->secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
+		profile->aws_s3_access_key_id = switch_pool_strip_whitespace(pool, switch_xml_txt(id));
+		profile->secret_access_key = switch_pool_strip_whitespace(pool, switch_xml_txt(secret));
 		if (zstr(profile->aws_s3_access_key_id) || zstr(profile->secret_access_key)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty access-key-id or secret-access-key in http_cache.conf.xml for profile \"%s\"\n", profile->name);
-			switch_safe_free(profile->aws_s3_access_key_id);
-			switch_safe_free(profile->secret_access_key);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -367,23 +365,22 @@ SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing region in http_cache.conf.xml for profile \"%s\"\n", profile->name);
 		return SWITCH_STATUS_FALSE;
 	}
-	profile->region = switch_strip_whitespace(switch_xml_txt(region_xml));
+	profile->region = switch_pool_strip_whitespace(pool, switch_xml_txt(region_xml));
 	if (zstr(profile->region)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty region in http_cache.conf.xml for profile \"%s\"\n", profile->name);
-		switch_safe_free(profile->region);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	// Get base domain for AWS S3 compatible services. Default base domain is s3.amazonaws.com
 	if (base_domain_xml) {
-		profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
+		profile->base_domain = switch_pool_strip_whitespace(pool, switch_xml_txt(base_domain_xml));
 		if (zstr(profile->base_domain)) {
 			switch_safe_free(profile->base_domain);
-			profile->base_domain = switch_mprintf(DEFAULT_BASE_DOMAIN, profile->region);
+			profile->base_domain = switch_core_sprintf(pool, DEFAULT_BASE_DOMAIN, profile->region);
 		}
 	} else
 	{
-		profile->base_domain = switch_mprintf(DEFAULT_BASE_DOMAIN, profile->region);
+		profile->base_domain = switch_core_sprintf(pool, DEFAULT_BASE_DOMAIN, profile->region);
 	}
 
 	// Get expire time for URL signature
