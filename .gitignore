@@ -104,7 +104,6 @@ Release/
 /build/freeswitch.pc
 /build/standalone_module/freeswitch.pc
 /build/getlib.sh
-/build/getg729.sh
 /build/getsounds.sh
 /build/Makefile
 /build/Makefile.in
@@ -116,7 +115,6 @@ Release/
 /libs/esl/fs_ivrd
 /libs/esl/testclient
 /libs/esl/testserver
-/libs/fsg729-*-installer
 /libs/g729/
 /libs/libcodec2/compile
 /libs/libcodec2/config.guess
@@ -148,8 +146,6 @@ Release/
 /src/mod/applications/mod_snipe_hunt/Makefile
 /src/mod/applications/mod_test/test/Makefile
 /src/mod/applications/mod_test/test/Makefile.in
-/src/mod/codecs/mod_com_g729/Makefile
-/src/mod/codecs/mod_com_g729/Makefile.in
 /src/mod/dialplans/mod_dialplan_directory/Makefile
 /src/mod/formats/mod_shell_stream/Makefile
 /src/mod/languages/mod_lua/mod_lua_wrap.cpp.orig
@@ -228,7 +224,6 @@ yum/temp
 
 Freeswitch.2015.VC.db
 Freeswitch.2015.VC.VC.opendb
-libs/freetype/
 libs/libpng/
 libs/zlib/
 
@@ -298,6 +293,8 @@ libs/ldns-*.zip
 libs/speex-*.zip
 libs/libjpeg-*/
 libs/libjpeg-*.zip
+libs/freetype-*/
+libs/freetype-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/

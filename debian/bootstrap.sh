@@ -38,7 +38,6 @@ avoid_mods=(
   applications/mod_osp
   applications/mod_skel
   applications/mod_cluechoo
-  codecs/mod_com_g729
   codecs/mod_openh264
   codecs/mod_siren
   codecs/mod_skel_codec
