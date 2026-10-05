@@ -1287,6 +1287,7 @@ end:
 		stream->write_function(stream, "%s", result);
 	}
 
+	switch_xml_free(xml_root);
 	switch_safe_free(mydata);
 	switch_safe_free(dup_domain);
 	switch_event_destroy(&params);
