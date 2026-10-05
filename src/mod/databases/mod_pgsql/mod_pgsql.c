@@ -355,8 +355,9 @@ switch_status_t pgsql_handle_disconnect(switch_pgsql_handle_t *handle)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (handle->state == SWITCH_PGSQL_STATE_CONNECTED) {
+	if (handle->con) {
 		PQfinish(handle->con);
+		handle->con = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Disconnected from [%s]\n", handle->dsn);
 	}
 	switch_safe_free(handle->sql);
@@ -388,8 +389,8 @@ switch_status_t pgsql_handle_connect(switch_pgsql_handle_t *handle)
 			switch_safe_free(err_str);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to connect to the database [%s]\n", handle->dsn);
-			pgsql_handle_disconnect(handle);
 		}
+		pgsql_handle_disconnect(handle);
 
 		return SWITCH_STATUS_FALSE;
 	}
@@ -402,8 +403,8 @@ switch_status_t pgsql_handle_connect(switch_pgsql_handle_t *handle)
 			switch_safe_free(err_str);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to setup socket for the database [%s]\n", handle->dsn);
-			pgsql_handle_disconnect(handle);
 		}
+		pgsql_handle_disconnect(handle);
 
 		return SWITCH_STATUS_FALSE;
 	}
