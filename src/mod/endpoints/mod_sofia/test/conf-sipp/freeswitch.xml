@@ -359,6 +359,16 @@
                     <variable name="rtp_secure_media" value="false" direction="outbound"/>
                 </variables>
             </gateway>
+           <gateway name="testgw-unreg">
+                <param name="username" value="1001"/>
+                <param name="password" value="1234"/>
+                <param name="proxy" value="$${local_ip_v4}:6083"/>
+                <param name="register" value="true"/>
+                <param name="realm" value="unresolvable.local"/>
+                <param name="outbound_proxy" value="$${local_ip_v4}:6083"/>
+                <param name="register_proxy" value="127.0.0.1:6083"/>
+                <param name="retry-seconds" value="600"/>
+            </gateway>
         </gateways>
 
       <domains>

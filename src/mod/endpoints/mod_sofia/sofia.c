@@ -1502,7 +1502,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		if (!zstr(sofia_private->gateway_name)) {
-			if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+			if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name)) && !sofia_private->is_unregister) {
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
@@ -1543,6 +1543,11 @@ static void our_sofia_event_callback(nua_event_t event,
 				return;
 			}
 		}
+	}
+
+	if (sofia_private && sofia_private->is_unregister) {
+		sofia_reg_handle_gateway_unregister(event, status, phrase, nua, profile, nh, sofia_private, gateway, sip, de, tags);
+		goto done;
 	}
 
 	if (session && tech_pvt && tech_pvt->watch_headers && sip) {
@@ -3542,6 +3547,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		}
 	}
 	nua_destroy(profile->nua);
+
+	if (!profile->queued_events) {
+		sofia_reg_release_unregisters(profile);
+	}
 
 	switch_mutex_lock(profile->ireg_mutex);
 	switch_mutex_unlock(profile->ireg_mutex);
