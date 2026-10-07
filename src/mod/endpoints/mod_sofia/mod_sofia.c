@@ -5293,7 +5293,10 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 
-	callsequence = sofia_presence_get_cseq(profile);
+	callsequence = sofia_presence_get_subscription_cseq(profile, call_id);
+	if (!callsequence) {
+		goto done;
+	}
 
 	//nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(full_to), SIPTAG_TO_STR(full_from), SIPTAG_CONTACT_STR(profile->url), TAG_END());
@@ -5307,6 +5310,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 			   TAG_END());
 
 
+ done:
 
 	switch_safe_free(route_uri);
 	sofia_glue_free_destination(dst);
