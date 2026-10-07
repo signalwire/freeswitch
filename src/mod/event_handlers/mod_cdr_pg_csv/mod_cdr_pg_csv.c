@@ -88,6 +88,7 @@ static struct {
 	spool_format_t spool_format;
 	int rotate;
 	int debug;
+	int honor_force_process_cdr;
 } globals;
 
 static switch_xml_config_enum_item_t config_opt_cdr_leg_enum[] = {
@@ -122,6 +123,7 @@ static switch_xml_config_item_t config_settings[] = {
 	SWITCH_CONFIG_ITEM("spool-format", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.spool_format, (void *) SPOOL_FORMAT_CSV, &config_opt_spool_format_enum, "csv|sql", "Disk spool format to use if SQL insert fails."),
 	SWITCH_CONFIG_ITEM("rotate-on-hup", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.rotate, SWITCH_FALSE, NULL, NULL, NULL),
 	SWITCH_CONFIG_ITEM("debug", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.debug, SWITCH_FALSE, NULL, NULL, NULL),
+	SWITCH_CONFIG_ITEM("honor-force-process-cdr", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.honor_force_process_cdr, SWITCH_FALSE, NULL, NULL, NULL),
 
 	/* key, type, flags, ptr, defaultvalue, function, functiondata, syntax, helptext */
 	SWITCH_CONFIG_ITEM_CALLBACK("spool-dir", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &globals.spool_dir, NULL, config_validate_spool_dir, NULL, NULL, NULL),
@@ -315,12 +317,19 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	const char *var = NULL;
 	cdr_field_t *cdr_field = NULL;
 	switch_size_t len, offset;
+	switch_bool_t forced_b_leg = SWITCH_FALSE;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!((globals.legs & CDR_LEG_A) && (globals.legs & CDR_LEG_B))) {
+	/* A b-leg flagged force_process_cdr bypasses the legs filter (opt-in), as in mod_json_cdr. */
+	if (globals.honor_force_process_cdr && switch_channel_get_originator_caller_profile(channel) &&
+		switch_true(switch_channel_get_variable(channel, SWITCH_FORCE_PROCESS_CDR_VARIABLE))) {
+		forced_b_leg = SWITCH_TRUE;
+	}
+
+	if (!forced_b_leg && !((globals.legs & CDR_LEG_A) && (globals.legs & CDR_LEG_B))) {
 		if ((globals.legs & CDR_LEG_A)) {
 			if (switch_channel_get_originator_caller_profile(channel)) {
 				return SWITCH_STATUS_SUCCESS;
