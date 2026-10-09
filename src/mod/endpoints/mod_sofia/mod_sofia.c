@@ -679,7 +679,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	sofia_clear_flag(tech_pvt, TFLAG_IO);
 
-	if (tech_pvt->sofia_private) {
+	if (tech_pvt->nh && tech_pvt->sofia_private) {
 		/* set to NULL so that switch_core_session_locate no longer succeeds, but don't lose the UUID in uuid_str so we
 		 * can fire events with session UUID */
 		tech_pvt->sofia_private->uuid = NULL;
