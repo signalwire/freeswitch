@@ -11,7 +11,7 @@ print_usage()
 	cat << EOF
 Usage: $0 [TOKEN] [release|prerelease] [install|source|build-dep|showsrc]
 
-  TOKEN        PAT (pat_*, ghapat_*) or FSA token (PT*, swapi_*). Optional if the
+  TOKEN        PAT (swpat_*, pat_*, ghapat_*) or FSA token (PT*, swapi_*). Optional if the
                FreeSWITCH apt repository is already configured.
   release      Use the stable repository (default when TOKEN is provided).
   prerelease   Use the unstable repository.
@@ -26,7 +26,7 @@ If TOKEN is omitted the repository is assumed to be configured already and the
 action is executed against the existing configuration.
 
 Examples:
-  $0 pat_xxxxx release install
+  $0 swpat_xxxxx release install
   $0 PT_xxxxx prerelease build-dep
   $0 build-dep
   $0 showsrc
@@ -185,7 +185,7 @@ for arg in "$@"; do
 		install | source | build-dep | showsrc)
 			ACTION="${arg}"
 			;;
-		pat_* | ghapat_* | PT* | swapi_* | not_a_real_token_but_a_dummy_token_*)
+		swpat_* | pat_* | ghapat_* | PT* | swapi_* | not_a_real_token_but_a_dummy_token_*)
 			TOKEN="${arg}"
 			;;
 		*)
@@ -219,7 +219,7 @@ ARCH=$(dpkg --print-architecture)
 EDITION=""
 
 if [ -n "${TOKEN}" ]; then
-	if [[ ${TOKEN} == pat_* || ${TOKEN} == ghapat_* || ${TOKEN} == not_a_real_token_but_a_dummy_token_* ]]; then
+	if [[ ${TOKEN} == swpat_* || ${TOKEN} == pat_* || ${TOKEN} == ghapat_* || ${TOKEN} == not_a_real_token_but_a_dummy_token_* ]]; then
 		DOMAIN="freeswitch.signalwire.com"
 		GPG_KEY="/usr/share/keyrings/signalwire-freeswitch-repo.gpg"
 		RPI=""
