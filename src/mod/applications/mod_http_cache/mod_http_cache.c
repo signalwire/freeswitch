@@ -944,23 +944,23 @@ static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, c
  */
 static void find_extension(const char *url, const char **found_extension, size_t *found_extension_len)
 {
+	const char *path_end;
 	const char *ext;
-	size_t ext_len = 0;
 
-	/* find extension on the end of URL */
-	for (ext = &url[strlen(url) - 1]; ext != url; ext--) {
+	/* query parameters and fragments are not part of the URL path */
+	path_end = url + strcspn(url, "?#");
+
+	/* find extension at the end of the URL path */
+	for (ext = path_end; ext != url;) {
+		ext--;
 		if (*ext == '/' || *ext == '\\') {
 			break;
 		}
-		if (*ext == '?' || *ext == '#') {
-			ext_len = 0;
-		} else if (*ext == '.') {
+		if (*ext == '.') {
 			/* found it */
-			*found_extension_len = ext_len;
-			*found_extension = ++ext;
+			*found_extension = ext + 1;
+			*found_extension_len = path_end - *found_extension;
 			break;
-		} else {
-			ext_len++;
 		}
 	}
 }
