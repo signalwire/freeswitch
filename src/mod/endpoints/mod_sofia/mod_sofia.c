@@ -1352,6 +1352,27 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/*
+ * Build the Refer-To value for a deflect (SWITCH_MESSAGE_INDICATE_DEFLECT).
+ *
+ * A target that contains a colon is sent unchanged. That covers every URI
+ * ("sip:", "sips:", "tel:", ...) and every name-addr ("<sip:...>",
+ * "Name <sip:...>"), since a name-addr always holds a URI with a scheme.
+ * proxy-refer and ${sip_refer_to} pass the full Refer-To header, brackets
+ * included. Anything else is taken as a bare user part ("1234") and turned
+ * into sip:<user>@<profile sip-ip>.
+ */
+void sofia_deflect_refer_to(const char *target, const char *sipip, char *buf, switch_size_t buflen)
+{
+	if (strchr(target, ':')) {
+		switch_copy_string(buf, target, buflen);
+	} else {
+		const char *format = strchr(sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
+
+		switch_snprintf(buf, buflen, format, target, sipip);
+	}
+}
+
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1568,13 +1589,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		const char *var;
 		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
-		if (strncasecmp(msg->string_arg, "sip:", 4)) {
-			const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
-
-			switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);
-		} else {
-			switch_set_string(ref_to, msg->string_arg);
-		}
+		sofia_deflect_refer_to(msg->string_arg, tech_pvt->profile->sipip, ref_to, sizeof(ref_to));
 
 		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
 				  TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
