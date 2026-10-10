@@ -3076,6 +3076,20 @@ SWITCH_DECLARE(void) switch_rtp_reset_vb(switch_rtp_t *rtp_session)
 	}
 }
 
+SWITCH_DECLARE(void) switch_rtp_ice_lock(switch_rtp_t *rtp_session)
+{
+	if (rtp_session && rtp_session->ice_mutex) {
+		switch_mutex_lock(rtp_session->ice_mutex);
+	}
+}
+
+SWITCH_DECLARE(void) switch_rtp_ice_unlock(switch_rtp_t *rtp_session)
+{
+	if (rtp_session && rtp_session->ice_mutex) {
+		switch_mutex_unlock(rtp_session->ice_mutex);
+	}
+}
+
 SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
 {
 	if (!rtp_session) {

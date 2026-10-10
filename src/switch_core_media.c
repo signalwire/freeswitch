@@ -3787,6 +3787,13 @@ static void clear_ice(switch_core_session_t *session, switch_media_type_t type)
 
 	engine = &smh->engines[type];
 
+	/* The RTP receive thread walks engine->ice_in (via ice->ice_params) while
+	   holding the session's ice_mutex. Zeroing it here without that lock lets
+	   handle_ice() read a NULL cands[i][proto].con_addr and crash. */
+	if (engine->rtp_session) {
+		switch_rtp_ice_lock(engine->rtp_session);
+	}
+
 	engine->ice_in.chosen[0] = 0;
 	engine->ice_in.chosen[1] = 0;
 	engine->ice_in.is_chosen[0] = 0;
@@ -3798,6 +3805,7 @@ static void clear_ice(switch_core_session_t *session, switch_media_type_t type)
 
 	if (engine->rtp_session) {
 		switch_rtp_reset(engine->rtp_session);
+		switch_rtp_ice_unlock(engine->rtp_session);
 	}
 
 }
