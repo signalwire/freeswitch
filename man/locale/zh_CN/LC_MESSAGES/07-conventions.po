@@ -1,0 +1,818 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../07-conventions.md:1 38286687742b4f0380b3a9b7b1c8a18e
+msgid "07. Conventions"
+msgstr "07. 约定"
+
+#: ../../07-conventions.md:5 4fb7e4532c3e42b4843a7c2a9952356b
+msgid ""
+"Verified rules from this tree: `docs/SubmittingPatches`, root `.clang-"
+"format`, module macros in `src/include/switch.h` / `switch_types.h`, and the"
+" two different `modules.conf` files. There is no `.editorconfig`, no "
+"`uncrustify.cfg`, and no repo-root pre-commit or clang-tidy gate."
+msgstr ""
+"本仓库已核实的规则来源：`docs/SubmittingPatches`、根目录 `.clang-"
+"format`、`src/include/switch.h` / `switch_types.h` 中的模块宏，以及两份不同的 "
+"`modules.conf`。没有 `.editorconfig`、没有 `uncrustify.cfg`，仓库根目录也没有 pre-commit 或 "
+"clang-tidy 门禁。"
+
+#: ../../07-conventions.md:7 c08770c4b51347eb90ccdf8421064cba
+msgid "Style and Tooling"
+msgstr "风格与工具"
+
+#: ../../07-conventions.md f14d037c99c2481a896983b5392f1027
+msgid "Area"
+msgstr "领域"
+
+#: ../../07-conventions.md 6d91ede5325a44a998cbcbfd893762ab
+msgid "Rule"
+msgstr "规则"
+
+#: ../../07-conventions.md 70c6ac68b2b74e1db5847c0d2a4f7c17
+msgid "Source of truth"
+msgstr "权威来源"
+
+#: ../../07-conventions.md 8554c7af37274a2382dd8c7e87f4ae67
+msgid "C/C++ formatting"
+msgstr "C/C++ 格式"
+
+#: ../../07-conventions.md 7c8dd566cfdf4ffab7eee251297386f2
+msgid ""
+"Tabs, 4-wide indent, 120-column limit, Linux brace style, right-aligned "
+"pointers. Match surrounding code; do not reformat unrelated lines."
+msgstr "使用 Tab、4 列缩进、120 列限制、Linux 大括号风格、指针右对齐。与周围代码保持一致；不要重排无关行。"
+
+#: ../../07-conventions.md e72208da941747ba8ac328e55672c049
+msgid ""
+"Root `.clang-format` (`UseTab: Always`, `TabWidth`/`IndentWidth: 4`, "
+"`ColumnLimit: 120`, `BreakBeforeBraces: Linux`, `PointerAlignment: Right`). "
+"`docs/SubmittingPatches` (tabs, no trailing whitespace)."
+msgstr ""
+"根目录 `.clang-format`（`UseTab: Always`，`TabWidth`/`IndentWidth: "
+"4`，`ColumnLimit: 120`，`BreakBeforeBraces: Linux`，`PointerAlignment: "
+"Right`）。`docs/SubmittingPatches`（Tab，无行尾空白）。"
+
+#: ../../07-conventions.md aca67c5cb2e448ca92d06570f4f32ea2
+msgid "Formatter enforcement"
+msgstr "格式化强制执行"
+
+#: ../../07-conventions.md c836e1eb9b634e4d95603428b561d209
+msgid ""
+"`.clang-format` exists at the repo root but is **not** run by FreeSWITCH "
+"GitHub Actions. Do not assume a format-on-PR bot. Bundled `libs/srtp/` has "
+"its own `.clang-format` and Travis `format.sh`; that is not the core tree."
+msgstr ""
+"仓库根目录有 `.clang-format`，但 FreeSWITCH GitHub Actions **不会**运行它。不要假定存在 PR "
+"自动格式化机器人。捆绑的 `libs/srtp/` 有自己的 `.clang-format` 和 Travis `format.sh`；那不是核心树。"
+
+#: ../../07-conventions.md b124c74b29d24f2aaa3d586114a96f6f
+msgid "`.clang-format`; `.github/workflows/ci.yml`; `libs/srtp/format.sh`"
+msgstr "`.clang-format`; `.github/workflows/ci.yml`; `libs/srtp/format.sh`"
+
+#: ../../07-conventions.md 2d55b2b821be4138a317d09ca356dbff
+msgid "Uncrustify / EditorConfig"
+msgstr "Uncrustify / EditorConfig"
+
+#: ../../07-conventions.md a5843f5ca13f4a6387dbe6e126947183
+msgid "Not present. Do not invent them."
+msgstr "不存在。不要自行发明。"
+
+#: ../../07-conventions.md 97554e4db5554f31874dd87b3cd6da66
+msgid "No `uncrustify.cfg`, no `.editorconfig`"
+msgstr "没有 `uncrustify.cfg`，没有 `.editorconfig`"
+
+#: ../../07-conventions.md 3aa6c24713684d97866983b6131f00b5
+msgid "Whitespace footer"
+msgstr "空白页脚"
+
+#: ../../07-conventions.md f1c41f84f1ad4d0dadb836276e46badf
+msgid ""
+"End `*.[ch]` with the Emacs/VIM local-variables block (`indent-tabs-mode:t`,"
+" `tab-width:4`, `c-basic-offset:4` / `vim:set … noet`). Strip trailing "
+"whitespace."
+msgstr ""
+"在 `*.[ch]` 末尾加上 Emacs/VIM local-variables 块（`indent-tabs-mode:t`、`tab-"
+"width:4`、`c-basic-offset:4` / `vim:set … noet`）。去掉行尾空白。"
+
+#: ../../07-conventions.md 8f7713da5bed42c38d05186210c55280
+msgid ""
+"`docs/SubmittingPatches` “whitespace footer”; example "
+"`src/mod/applications/mod_skel/mod_skel.c`"
+msgstr ""
+"`docs/SubmittingPatches`「whitespace footer」；示例 "
+"`src/mod/applications/mod_skel/mod_skel.c`"
+
+#: ../../07-conventions.md 67a528f066d04f4cbf8179e916dfb3a2
+msgid "Line endings"
+msgstr "换行符"
+
+#: ../../07-conventions.md a57ecee620c2475090d230b7e89392c2
+msgid "LF for `*.c` / `*.h` / `*.in` / `*.txt`."
+msgstr "`*.c` / `*.h` / `*.in` / `*.txt` 使用 LF。"
+
+#: ../../07-conventions.md 655360a240844e0fb0392f641d5e1727
+msgid "`.gitattributes`"
+msgstr "`.gitattributes`"
+
+#: ../../07-conventions.md 341b9ae88550474ab8d97d68bc4840d5
+msgid "Static analysis"
+msgstr "静态分析"
+
+#: ../../07-conventions.md 2b4191ddfe5a4a0284d5a9b566e06b87
+msgid ""
+"Clang `scan-build-14` on PRs via `ci.sh -t scan-build` (uses "
+"`build/modules.conf.most` plus explicit enable/disable edits). Address-"
+"sanitizer unit-test configure is a separate `ci.sh -t unit-test` path."
+msgstr ""
+"PR 上通过 `ci.sh -t scan-build` 运行 Clang `scan-build-14`（使用 "
+"`build/modules.conf.most` 并做显式启用/禁用编辑）。Address Sanitizer 单元测试配置是另一条 `ci.sh "
+"-t unit-test` 路径。"
+
+#: ../../07-conventions.md fc120522e8f5487f99e385ab713c24aa
+msgid "`ci.sh`; `.github/workflows/ci.yml`"
+msgstr "`ci.sh`; `.github/workflows/ci.yml`"
+
+#: ../../07-conventions.md 49b1651a025246e3a2ee997acf98bb47
+msgid "Shell (`ci.sh` only)"
+msgstr "Shell（仅 `ci.sh`）"
+
+#: ../../07-conventions.md 36580578eeff4f91a55ac9f95d92c6fa
+msgid ""
+"Comment documents `shfmt -w -s -ci -sr -kp -fn ci.sh`. That is a helper-"
+"script convention, not a tree-wide shell linter."
+msgstr ""
+"注释写明 `shfmt -w -s -ci -sr -kp -fn ci.sh`。这是辅助脚本约定，不是全仓库的 shell linter。"
+
+#: ../../07-conventions.md 0cc019262afa4561a57b0f291bbba8d2
+msgid "`ci.sh` header"
+msgstr "`ci.sh` 文件头"
+
+#: ../../07-conventions.md 504565849b8146f9bf0247b0e8699433
+msgid "License header"
+msgstr "许可证头"
+
+#: ../../07-conventions.md 7763b16da7b04b5b82bbef327b4b5a67
+msgid ""
+"New core/module C files carry the MPL 1.1 FreeSWITCH header used throughout "
+"`src/` and `src/include/`."
+msgstr "新的核心/模块 C 文件应带上 `src/` 与 `src/include/` 中通用的 MPL 1.1 FreeSWITCH 文件头。"
+
+#: ../../07-conventions.md e7f4f8dddb4a46268eac523c806c0312
+msgid "`LICENSE`; `src/include/switch.h`"
+msgstr "`LICENSE`; `src/include/switch.h`"
+
+#: ../../07-conventions.md 4666b654da3d485893f67812a74aa239
+msgid "Git identity"
+msgstr "Git 身份"
+
+#: ../../07-conventions.md f74a0bfe8e214d3f885344301b4921c1
+msgid ""
+"Run `./scripts/setup-git.sh` from the repo root (real name and email, not a "
+"username). It sets `pull.rebase` and `branch.master.rebase` to `true`."
+msgstr ""
+"从仓库根目录运行 `./scripts/setup-git.sh`（使用真实姓名和邮箱，不要用用户名）。它会把 `pull.rebase` 和 "
+"`branch.master.rebase` 设为 `true`。"
+
+#: ../../07-conventions.md f5ebdb370a5a4140adf70d8659eff7d6
+msgid "`docs/SubmittingPatches`; `scripts/setup-git.sh`"
+msgstr "`docs/SubmittingPatches`; `scripts/setup-git.sh`"
+
+#: ../../07-conventions.md 90a496dacc11452a88b8d4360c95b856
+msgid "Commits"
+msgstr "提交"
+
+#: ../../07-conventions.md 7d02e6cf982f41a99841e7f0a0e969fa
+msgid ""
+"Topic branch; one identifiable change per commit; present-tense imperative "
+"subject typically &lt; 50 characters; body hard-wrapped 68–72 characters; "
+"empty line after subject. Mention JIRA as `FS-XXXX` on its own line; add "
+"`#resolve` if the commit closes it. Rebase onto upstream; do not merge "
+"master into the topic branch."
+msgstr ""
+"主题分支；每次提交一个可识别的改动；现在时祈使语气的标题通常 &lt; 50 个字符；正文硬折行 68–72 个字符；标题后空一行。JIRA 以 "
+"`FS-XXXX` 单独成行；若该提交关闭工单则加 `#resolve`。变基到上游；不要把 master 合并进主题分支。"
+
+#: ../../07-conventions.md ../../07-conventions.md:106
+#: ae50536e482d4593b4b310bb3f6166d9 b9bf4b1474dc45979dec6f77223ea48d
+msgid "`docs/SubmittingPatches`"
+msgstr "`docs/SubmittingPatches`"
+
+#: ../../07-conventions.md 32e8657550af481f997b18143dc6b1bc
+msgid "Review path"
+msgstr "评审路径"
+
+#: ../../07-conventions.md 8fb3385398a34c28b7a03edcc09ce4b1
+msgid ""
+"GitHub pull requests are the inclusion path (`README.md`). CI on PR "
+"open/sync: unit tests + scan-build (`ci.yml`). Mailing-list patches are not "
+"the inclusion path (`docs/SubmittingPatches`)."
+msgstr ""
+"纳入路径是 GitHub pull request（`README.md`）。PR 打开/同步时的 CI：单元测试 + scan-"
+"build（`ci.yml`）。邮件列表补丁不是纳入路径（`docs/SubmittingPatches`）。"
+
+#: ../../07-conventions.md 92b6d10d873841eabd17ec044e539555
+msgid "`README.md`; `docs/SubmittingPatches`; `.github/workflows/ci.yml`"
+msgstr "`README.md`; `docs/SubmittingPatches`; `.github/workflows/ci.yml`"
+
+#: ../../07-conventions.md:23 eff2bd7b80f7497eb808e6027ed2a2d2
+msgid ""
+"Practical C style for this tree: **match surrounding code**, use **tabs**, "
+"keep the **Emacs/VIM footer**, and treat root `.clang-format` as the written"
+" style when you do format — not as a CI gate. There is no uncrustify config."
+msgstr ""
+"本仓库实用的 C 风格：**与周围代码保持一致**、使用 **Tab**、保留 **Emacs/VIM 页脚**，需要格式化时以根目录 `.clang-"
+"format` 为书面规范——而不是 CI 门禁。没有 uncrustify 配置。"
+
+#: ../../07-conventions.md:25 36605a69fdbd426e8c367ed3056fff64
+msgid "Naming and Layout"
+msgstr "命名与布局"
+
+#: ../../07-conventions.md:27 44d4a5eb043d4f31a9af45561610c094
+msgid ""
+"**Core files**: `src/switch_<area>.c` with matching "
+"`src/include/switch_<area>.h`. Process entry is `src/switch.c`. Public "
+"umbrella header is `src/include/switch.h` — module authors include that, not"
+" a private core `.c`."
+msgstr ""
+"**核心文件**：`src/switch_<area>.c`，对应头文件 `src/include/switch_<area>.h`。进程入口是 "
+"`src/switch.c`。对外总头文件是 `src/include/switch.h`——模块作者应包含它，而不是私有核心 `.c`。"
+
+#: ../../07-conventions.md:28 f994feda540c4f97a293c6528db12622
+msgid ""
+"**Modules**: `src/mod/<category>/mod_<name>/` with primary source "
+"`mod_<name>.c` (or `.cpp`). Categories in this tree: `applications`, "
+"`endpoints`, `codecs`, `say`, `event_handlers`, `formats`, `languages`, "
+"`xml_int`, `loggers`, `dialplans`, `asr_tts`, `databases`, `timers`, "
+"`directories`, `sdk`."
+msgstr ""
+"**模块**：`src/mod/<category>/mod_<name>/`，主源文件为 `mod_<name>.c`（或 "
+"`.cpp`）。本仓库中的类别：`applications`、`endpoints`、`codecs`、`say`、`event_handlers`、`formats`、`languages`、`xml_int`、`loggers`、`dialplans`、`asr_tts`、`databases`、`timers`、`directories`、`sdk`。"
+
+#: ../../07-conventions.md:29 3d310169da6140a8a46f09d4403161be
+msgid ""
+"**Module API**: declare load/shutdown/runtime with "
+"`SWITCH_MODULE_LOAD_FUNCTION`, `SWITCH_MODULE_SHUTDOWN_FUNCTION`, "
+"`SWITCH_MODULE_RUNTIME_FUNCTION`, then `SWITCH_MODULE_DEFINITION(mod_name, "
+"load, shutdown, runtime)` (`src/include/switch_types.h`). Skeleton: "
+"`src/mod/applications/mod_skel/` and `build/standalone_module/mod_skel.c`."
+msgstr ""
+"**模块 API**：用 "
+"`SWITCH_MODULE_LOAD_FUNCTION`、`SWITCH_MODULE_SHUTDOWN_FUNCTION`、`SWITCH_MODULE_RUNTIME_FUNCTION`"
+" 声明 load/shutdown/runtime，然后 `SWITCH_MODULE_DEFINITION(mod_name, load, "
+"shutdown, "
+"runtime)`（`src/include/switch_types.h`）。骨架：`src/mod/applications/mod_skel/` "
+"与 `build/standalone_module/mod_skel.c`。"
+
+#: ../../07-conventions.md:30 bfbe41ea83cb418fb8c4a0bd487f0a59
+msgid ""
+"**Exported vs private**: symbols not meant to be exported are `static` "
+"(`docs/SubmittingPatches`). Public core APIs use `SWITCH_DECLARE(...)` "
+"(`src/include/switch_platform.h`). Register console APIs with "
+"`SWITCH_ADD_API` and dialplan apps with `SWITCH_ADD_APP` "
+"(`src/include/switch_loadable_module.h`)."
+msgstr ""
+"**导出与私有**：不打算导出的符号用 `static`（`docs/SubmittingPatches`）。公开核心 API 使用 "
+"`SWITCH_DECLARE(...)`（`src/include/switch_platform.h`）。用 `SWITCH_ADD_API` "
+"注册控制台 API，用 `SWITCH_ADD_APP` "
+"注册拨号计划应用（`src/include/switch_loadable_module.h`）。"
+
+#: ../../07-conventions.md:31 e40cfef7a43745d7a3b83f3ce1db9dfe
+msgid ""
+"**Config files**: `<feature>.conf.xml` under "
+"`conf/<profile>/autoload_configs/` (or the module’s own `conf/` samples). "
+"Runtime module load list is XML `<load module=\"mod_…\"/>`, not a "
+"`src/mod/…` path."
+msgstr ""
+"**配置文件**：`<feature>.conf.xml`，位于 `conf/<profile>/autoload_configs/`（或模块自带的 "
+"`conf/` 样例）。运行时模块加载列表是 XML `<load module=\"mod_…\"/>`，不是 `src/mod/…` 路径。"
+
+#: ../../07-conventions.md:32 2ac539ef455e40bd98eaa4f3278f7b83
+msgid ""
+"**XML preprocessor**: `#include` / `#set` / `X-PRE-PROCESS`. You cannot "
+"comment out an `X-PRE-PROCESS` line — remove it (`conf/vanilla/vars.xml`). "
+"Flattened dump is `freeswitch.xml.fsxml`; do not edit it while the process "
+"is running."
+msgstr ""
+"**XML 预处理器**：`#include` / `#set` / `X-PRE-PROCESS`。不能把 `X-PRE-PROCESS` "
+"行注释掉——必须删掉（`conf/vanilla/vars.xml`）。展开后的转储是 "
+"`freeswitch.xml.fsxml`；进程运行时不要编辑它。"
+
+#: ../../07-conventions.md:33 500b02f6f7244e54a9781738a442eb89
+msgid ""
+"**PKB**: English source lives in `man/` (not `docs/man/`, which is Unix man "
+"pages). `man/pyproject.toml` is Sphinx/Poetry for this knowledge base — "
+"**not** product runtime dependencies."
+msgstr ""
+"**PKB**：英文源在 `man/`（不是 `docs/man/`，后者是 Unix man page）。`man/pyproject.toml` "
+"是本知识库的 Sphinx/Poetry 依赖——**不是**产品运行时依赖。"
+
+#: ../../07-conventions.md:35 e6a65c59b7e14a8687399f9d8b5a97d1
+msgid "Two `modules.conf` files (do not mix)"
+msgstr "两份 `modules.conf`（不要混用）"
+
+#: ../../07-conventions.md 4816946cf9f54325899af07667337dd4
+msgid "File"
+msgstr "文件"
+
+#: ../../07-conventions.md 772cf54aa1ef42108aee04f7ce0d7fc2
+msgid "Role"
+msgstr "作用"
+
+#: ../../07-conventions.md 6e7518323593407485eb1567d95a91d1
+msgid "Format"
+msgstr "格式"
+
+#: ../../07-conventions.md e9affe5f582d4ebf8015fcceff409561
+msgid ""
+"`build/modules.conf.in` → copied to repo-root `modules.conf` by "
+"`bootstrap.sh` if missing"
+msgstr ""
+"`build/modules.conf.in` → 若不存在则由 `bootstrap.sh` 复制为仓库根目录的 `modules.conf`"
+
+#: ../../07-conventions.md 26125cbcfb934dbd97c8eb719ceaa62e
+msgid "**Build**: which `src/mod/<category>/mod_*` trees are compiled"
+msgstr "**构建**：编译哪些 `src/mod/<category>/mod_*` 目录树"
+
+#: ../../07-conventions.md 341b2d27d02e425ab5014be9fdada790
+msgid "Lines like `endpoints/mod_sofia`; `#` comments disable"
+msgstr "形如 `endpoints/mod_sofia` 的行；`#` 注释表示禁用"
+
+#: ../../07-conventions.md 5f4eff0d503e41c1a8be28df6ca201ca
+msgid ""
+"`conf/vanilla/autoload_configs/modules.conf.xml` (installed under "
+"`$prefix/conf/`)"
+msgstr "`conf/vanilla/autoload_configs/modules.conf.xml`（安装到 `$prefix/conf/`）"
+
+#: ../../07-conventions.md b664735b2c1c4a3cae390a5738239c56
+msgid "**Runtime**: which already-built modules the process loads"
+msgstr "**运行时**：进程加载哪些已经编译好的模块"
+
+#: ../../07-conventions.md c3c91a20d4d2400dad6929e76af191ea
+msgid "`<load module=\"mod_sofia\"/>`"
+msgstr "`<load module=\"mod_sofia\"/>`"
+
+#: ../../07-conventions.md:42 607725ccecd043d58e3fb6bce0d5ea67
+msgid ""
+"A module can be compiled and still not load, or listed in XML and missing "
+"from `mod/` because it was commented out at build time. "
+"`build/modules.conf.most` is the scan-build “almost everything” list, not "
+"the default."
+msgstr ""
+"模块可以编译了却不加载，也可以写在 XML 里却因构建时被注释而不在 `mod/` 中。`build/modules.conf.most` 是 "
+"scan-build 的「几乎全部」列表，不是默认值。"
+
+#: ../../07-conventions.md:44 1e7c7c9e32d245b0a6b9d3f165806a33
+msgid "Error Handling"
+msgstr "错误处理"
+
+#: ../../07-conventions.md:46 cff07ea1a28345eaa151c2ddfb929b02
+msgid ""
+"**Classification**: C APIs return `switch_status_t` "
+"(`src/include/switch_types.h`). Common values: `SWITCH_STATUS_SUCCESS`, "
+"`SWITCH_STATUS_FALSE`, `SWITCH_STATUS_TIMEOUT`, `SWITCH_STATUS_RESTART`, "
+"`SWITCH_STATUS_INTR`, `SWITCH_STATUS_NOTIMPL`, `SWITCH_STATUS_MEMERR`, "
+"`SWITCH_STATUS_NOOP`, `SWITCH_STATUS_GENERR`, `SWITCH_STATUS_INUSE`, "
+"`SWITCH_STATUS_BREAK`, `SWITCH_STATUS_SOCKERR`, `SWITCH_STATUS_MORE_DATA`, "
+"`SWITCH_STATUS_NOTFOUND`, `SWITCH_STATUS_UNLOAD`, `SWITCH_STATUS_NOUNLOAD`, "
+"`SWITCH_STATUS_IGNORE`, `SWITCH_STATUS_TOO_SMALL`, `SWITCH_STATUS_FOUND`, "
+"`SWITCH_STATUS_CONTINUE`, `SWITCH_STATUS_TERM`, "
+"`SWITCH_STATUS_NOT_INITALIZED`, `SWITCH_STATUS_TOO_LATE`. Compare against "
+"these constants; do not invent ad-hoc integer codes for core/module APIs."
+msgstr ""
+"**分类**：C API 返回 "
+"`switch_status_t`（`src/include/switch_types.h`）。常见取值：`SWITCH_STATUS_SUCCESS`、`SWITCH_STATUS_FALSE`、`SWITCH_STATUS_TIMEOUT`、`SWITCH_STATUS_RESTART`、`SWITCH_STATUS_INTR`、`SWITCH_STATUS_NOTIMPL`、`SWITCH_STATUS_MEMERR`、`SWITCH_STATUS_NOOP`、`SWITCH_STATUS_GENERR`、`SWITCH_STATUS_INUSE`、`SWITCH_STATUS_BREAK`、`SWITCH_STATUS_SOCKERR`、`SWITCH_STATUS_MORE_DATA`、`SWITCH_STATUS_NOTFOUND`、`SWITCH_STATUS_UNLOAD`、`SWITCH_STATUS_NOUNLOAD`、`SWITCH_STATUS_IGNORE`、`SWITCH_STATUS_TOO_SMALL`、`SWITCH_STATUS_FOUND`、`SWITCH_STATUS_CONTINUE`、`SWITCH_STATUS_TERM`、`SWITCH_STATUS_NOT_INITALIZED`、`SWITCH_STATUS_TOO_LATE`。与这些常量比较；不要为核心/模块"
+" API 发明临时整数码。"
+
+#: ../../07-conventions.md:47 fe8dce66047b4364b2e546880059934b
+msgid ""
+"**Load/runtime**: module load functions return `switch_status_t`. Runtime "
+"threads that should not be rescheduled return `SWITCH_STATUS_TERM` (see "
+"`mod_skel` comments). `SWITCH_STATUS_NOUNLOAD` means “never unload”."
+msgstr ""
+"**加载/运行时**：模块 load 函数返回 `switch_status_t`。不应再被调度的运行时线程返回 "
+"`SWITCH_STATUS_TERM`（见 `mod_skel` 注释）。`SWITCH_STATUS_NOUNLOAD` 表示「永不卸载」。"
+
+#: ../../07-conventions.md:48 b79e96377e044a2b892b819acf4290c6
+msgid ""
+"**Media reads**: `SWITCH_READ_ACCEPTABLE(status)` treats `SUCCESS`, `BREAK`,"
+" and `INUSE` as acceptable (`src/include/switch_utils.h`)."
+msgstr ""
+"**媒体读取**：`SWITCH_READ_ACCEPTABLE(status)` 把 `SUCCESS`、`BREAK` 和 `INUSE` "
+"视为可接受（`src/include/switch_utils.h`）。"
+
+#: ../../07-conventions.md:49 48ff1d2ab83042a08d58cc28df45b121
+msgid ""
+"**User-facing errors**: ESL replies are `+OK` / `-ERR` after `auth` "
+"(`mod_event_socket.c` `parse_command()`). Console/API strings go through "
+"`SWITCH_ADD_API`. Call teardown uses channel hangup causes, not a REST error"
+" body. SIP status is Sofia’s problem, not a second core errno."
+msgstr ""
+"**面向用户的错误**：`auth` 之后 ESL 回复是 `+OK` / `-ERR`（`mod_event_socket.c` 的 "
+"`parse_command()`）。控制台/API 字符串走 `SWITCH_ADD_API`。呼叫拆除使用信道挂断原因，不是 REST "
+"错误体。SIP 状态是 Sofia 的事，不是第二套核心 errno。"
+
+#: ../../07-conventions.md:50 2257d4d2c43f4c6d8d8a0cdd16f6eece
+msgid ""
+"**Null/empty strings**: use `zstr()` (`switch_utils.h`). `switch_assert()` "
+"aborts on invariant failure (`switch_platform.h`) — not a substitute for "
+"returning `SWITCH_STATUS_*` on expected failures."
+msgstr ""
+"**空/空字符串**：使用 `zstr()`（`switch_utils.h`）。`switch_assert()` "
+"在不变量失败时中止（`switch_platform.h`）——不能代替在预期失败时返回 `SWITCH_STATUS_*`。"
+
+#: ../../07-conventions.md:51 c860824d0ab542688222f8ccb4750a0c
+msgid ""
+"**Retries or fallbacks**: there is no project-wide retry wrapper. "
+"`SWITCH_STATUS_RESTART` / `BREAK` / `TIMEOUT` are control-flow statuses for "
+"the caller. SIP retransmission lives in Sofia; do not add a generic “retry "
+"three times” layer in new module code unless that module already does so."
+msgstr ""
+"**重试或回退**：没有项目级的重试封装。`SWITCH_STATUS_RESTART` / `BREAK` / `TIMEOUT` "
+"是给调用方的控制流状态。SIP 重传在 Sofia 里；除非该模块已经这样做，否则不要在新模块代码里加一层通用的「重试三次」。"
+
+#: ../../07-conventions.md:53 04b9f545bb8d42cdade1109308af6843
+msgid "Logging and Diagnostics"
+msgstr "日志与诊断"
+
+#: ../../07-conventions.md:55 a1063c9a0ba64798802729ad2e412d26
+msgid ""
+"**API**: `switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_<LEVEL>, "
+"\"fmt\\n\", …)` (`src/include/switch_log.h`). The first argument is a "
+"**channel macro** that supplies file, function, and line "
+"(`SWITCH_CHANNEL_LOG`, `SWITCH_CHANNEL_LOG_CLEAN`, "
+"`SWITCH_CHANNEL_SESSION_LOG(session)`, `SWITCH_CHANNEL_UUID_LOG(uuid)` in "
+"`switch_types.h`). Optional JSON metadata: `switch_log_meta_printf`."
+msgstr ""
+"**API**：`switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_<LEVEL>, "
+"\"fmt\\n\", "
+"…)`（`src/include/switch_log.h`）。第一个参数是**信道宏**，提供文件、函数和行号（`switch_types.h` 中的"
+" "
+"`SWITCH_CHANNEL_LOG`、`SWITCH_CHANNEL_LOG_CLEAN`、`SWITCH_CHANNEL_SESSION_LOG(session)`、`SWITCH_CHANNEL_UUID_LOG(uuid)`）。可选"
+" JSON 元数据：`switch_log_meta_printf`。"
+
+#: ../../07-conventions.md:56 3fde5ab76e3c4fba932e461d4f8e0f46
+msgid ""
+"**Levels** (`switch_log_level_t`): `DEBUG10`…`DEBUG1`, then `DEBUG` (7), "
+"`INFO` (6), `NOTICE` (5), `WARNING` (4), `ERROR` (3), `CRIT` (2), `ALERT` "
+"(1), `CONSOLE` (0), plus `DISABLE` / `INVALID` / `UNINIT`. Prefer "
+"`ERROR`/`CRIT` for failures, `WARNING` for recoverable misconfig, "
+"`DEBUG`/`DEBUG1`+ for packet/session chatter."
+msgstr ""
+"**级别**（`switch_log_level_t`）：`DEBUG10`…`DEBUG1`，然后是 "
+"`DEBUG`（7）、`INFO`（6）、`NOTICE`（5）、`WARNING`（4）、`ERROR`（3）、`CRIT`（2）、`ALERT`（1）、`CONSOLE`（0），再加上"
+" `DISABLE` / `INVALID` / `UNINIT`。失败用 `ERROR`/`CRIT`，可恢复的错误配置用 "
+"`WARNING`，包/会话噪声用 `DEBUG`/`DEBUG1`+。"
+
+#: ../../07-conventions.md:57 7b49cdecb5904132b5a32496377c7f32
+msgid ""
+"**Required fields**: file, function, and line are automatic via the channel "
+"macros. Session-scoped logs should use `SWITCH_CHANNEL_SESSION_LOG(session)`"
+" so the UUID is attached. `conf/vanilla/autoload_configs/logfile.conf.xml` "
+"can prefix lines with the session UUID (`<param name=\"uuid\" "
+"value=\"true\"/>`). Log nodes also carry timestamp and a sequence "
+"(`switch_log_node_t`)."
+msgstr ""
+"**必填字段**：文件、函数和行号由信道宏自动提供。会话范围的日志应使用 `SWITCH_CHANNEL_SESSION_LOG(session)` "
+"以便附上 UUID。`conf/vanilla/autoload_configs/logfile.conf.xml` 可以在行前加上会话 "
+"UUID（`<param name=\"uuid\" "
+"value=\"true\"/>`）。日志节点还带时间戳和序号（`switch_log_node_t`）。"
+
+#: ../../07-conventions.md:58 58c7aece54f249b3ba94c83fbd52cc46
+#, python-brace-format
+msgid ""
+"**Where it goes**: console mappings in `console.conf.xml` "
+"(`$${console_loglevel}`); file logger `mod_logfile` (rotate-on-HUP, "
+"rollover). Operators map by file name, function name, or `all`."
+msgstr ""
+"**去向**：控制台映射在 `console.conf.xml`（`$${console_loglevel}`）；文件记录器是 "
+"`mod_logfile`（HUP 时轮转、按大小滚动）。运维可按文件名、函数名或 `all` 做映射。"
+
+#: ../../07-conventions.md:59 eefef699d3a54e688addfd38380b9986
+msgid ""
+"**Debug workflow**: raise console/file maps for the file under study "
+"(`mod_sofia.c`, `switch_core_state_machine.c`, …); `fs_cli` `/log debug`; "
+"`freeswitch -c -nonat` for a foreground console. Unit tests often start the "
+"core with `SCF_LOG_DISABLE` (`src/include/test/switch_test.h`)."
+msgstr ""
+"**调试流程**：提高正在研究的文件的控制台/文件映射（`mod_sofia.c`、`switch_core_state_machine.c` "
+"等）；`fs_cli` `/log debug`；前台控制台用 `freeswitch -c -nonat`。单元测试常常以 "
+"`SCF_LOG_DISABLE` 启动核心（`src/include/test/switch_test.h`）。"
+
+#: ../../07-conventions.md:60 2c41f427f31f4d9bac447a777dbef207
+msgid ""
+"**Sensitive data policy**: never log ESL passwords, SIP digest credentials, "
+"voicemail PINs, SignalWire PATs, or XML-RPC `auth-pass` at info-or-higher in"
+" examples or new code as if they were production-safe. Demo values "
+"(`ClueCon`, `default_password=1234`, users 1000–1019) are **known-insecure "
+"samples**, not a logging exemption. Do not paste production auth into PKB "
+"examples."
+msgstr ""
+"**敏感数据策略**：不要在示例或新代码里把 ESL 密码、SIP digest 凭据、语音信箱 PIN、SignalWire PAT 或 XML-"
+"RPC `auth-pass` 以 info "
+"及以上级别记日志，仿佛它们生产可用。演示值（`ClueCon`、`default_password=1234`、用户 "
+"1000–1019）是**已知不安全的样例**，不是日志豁免。不要把生产认证贴进 PKB 示例。"
+
+#: ../../07-conventions.md:62 8394f6a338aa40a5a641a5ea56cd98da
+msgid "Configuration and Secrets"
+msgstr "配置与密钥"
+
+#: ../../07-conventions.md:64 dc8607e4652b45dbb4ecd0328b994a6a
+#, python-brace-format
+msgid ""
+"**Config sources**: XML under `conf/<profile>/` (vanilla is the demo PBX). "
+"Preprocessor variables in `vars.xml` (`$${default_password}`, "
+"`$${console_loglevel}`, …). Module settings in `autoload_configs/*.xml`. "
+"Build-time module set: `modules.conf`. Install prefix and version: "
+"`configure.ac`."
+msgstr ""
+"**配置来源**：`conf/<profile>/` 下的 XML（vanilla 是演示 PBX）。预处理器变量在 "
+"`vars.xml`（`$${default_password}`、`$${console_loglevel}` 等）。模块设置在 "
+"`autoload_configs/*.xml`。构建时模块集合：`modules.conf`。安装前缀和版本：`configure.ac`。"
+
+#: ../../07-conventions.md:65 7b8c4288020f44b9a50c78915da4b105
+msgid ""
+"**Override order**: preprocessor `#set` / `X-PRE-PROCESS` expands before XML"
+" parse. Runtime `reloadxml` re-reads XML; it does not rebuild modules. "
+"Enabling a module requires **both** an uncommented build line **and** a "
+"runtime `<load>` (unless you `load mod_*` from the console)."
+msgstr ""
+"**覆盖顺序**：预处理器 `#set` / `X-PRE-PROCESS` 在 XML 解析之前展开。运行时 `reloadxml` 会重新读取 "
+"XML；它不会重新编译模块。启用一个模块需要**同时**有未注释的构建行**以及**运行时 `<load>`（除非你从控制台 `load "
+"mod_*`）。"
+
+#: ../../07-conventions.md:66 549dce2ec2d94e718e6eeb3d3378fb1b
+#, python-brace-format
+msgid ""
+"**Vanilla is demo, not production**: `conf/vanilla/README_IMPORTANT.txt`. "
+"Default directory users 1000–1019 share `$${default_password}` (`1234` in "
+"`vars.xml`); voicemail PINs match the extension. Dialplan logs CRIT and "
+"sleeps 10s while the password is still `1234` "
+"(`conf/vanilla/dialplan/default.xml`). Change passwords or run "
+"`scripts/perl/randomize-passwords.pl`. Start with `-nonat` unless UPnP/NAT-"
+"PMP pinholes are intentional."
+msgstr ""
+"**Vanilla 是演示，不是生产**：`conf/vanilla/README_IMPORTANT.txt`。默认 directory 用户 "
+"1000–1019 共用 `$${default_password}`（`vars.xml` 中为 `1234`）；语音信箱 PIN "
+"与分机号相同。密码仍为 `1234` 时，拨号计划会打 CRIT 日志并睡眠 10 "
+"秒（`conf/vanilla/dialplan/default.xml`）。请改密码或运行 `scripts/perl/randomize-"
+"passwords.pl`。除非有意做 UPnP/NAT-PMP 打孔，否则用 `-nonat` 启动。"
+
+#: ../../07-conventions.md:67 88618d8c3abf4a31a3d784bf09027122
+msgid ""
+"**ESL**: default password `ClueCon` "
+"(`conf/vanilla/autoload_configs/event_socket.conf.xml` listens on `::` port "
+"8021; the module sample in `src/mod/event_handlers/mod_event_socket/conf/` "
+"binds `127.0.0.1`). `libs/esl/fs_cli.conf` uses the same password. **Change "
+"it** before any non-loopback exposure. Erlang cookie samples also use "
+"`ClueCon`."
+msgstr ""
+"**ESL**：默认密码 `ClueCon`（`conf/vanilla/autoload_configs/event_socket.conf.xml`"
+" 监听 `::` 端口 8021；模块样例 `src/mod/event_handlers/mod_event_socket/conf/` 绑定 "
+"`127.0.0.1`）。`libs/esl/fs_cli.conf` 使用同一密码。在任何非回环暴露之前**务必改掉**。Erlang cookie "
+"样例也用 `ClueCon`。"
+
+#: ../../07-conventions.md:68 1db1120e013e4ba79ffd7c74a07f2405
+msgid ""
+"**XML-RPC demo auth** (not in vanilla autoload): `auth-user` `freeswitch` / "
+"`auth-pass` `works` "
+"(`src/mod/xml_int/mod_xml_rpc/conf/autoload_configs/xml_rpc.conf.xml`)."
+msgstr ""
+"**XML-RPC 演示认证**（不在 vanilla autoload 中）：`auth-user` `freeswitch` / `auth-"
+"pass` "
+"`works`（`src/mod/xml_int/mod_xml_rpc/conf/autoload_configs/xml_rpc.conf.xml`）。"
+
+#: ../../07-conventions.md:69 30d3d86849fc4c468d90f0526ad903cf
+msgid ""
+"**Packaging secrets**: FSGET and packaged Docker images need a SignalWire "
+"Personal Access Token (`scripts/packaging/README.md`). Pass the PAT on the "
+"command line or as a Docker `TOKEN` build-arg — **never commit it**. Source "
+"builds do not need that token (`docker/examples/Debian11/Dockerfile`)."
+msgstr ""
+"**打包密钥**：FSGET 和打包的 Docker 镜像需要 SignalWire Personal Access "
+"Token（`scripts/packaging/README.md`）。在命令行或 Docker `TOKEN` build-arg 传入 "
+"PAT——**永远不要提交**。源码构建不需要该 token（`docker/examples/Debian11/Dockerfile`）。"
+
+#: ../../07-conventions.md:70 23efd4406cc047518ca08eb937bb17c8
+msgid ""
+"**No secrets in git**: do not add PATs, production SIP passwords, TLS "
+"private keys, or live ESL passwords to this repository. Demo XML that "
+"already contains `ClueCon` / `1234` stays demo; new config must not copy "
+"those values as if they were a baseline."
+msgstr ""
+"**密钥不要进 git**：不要把 PAT、生产 SIP 密码、TLS 私钥或线上 ESL 密码加入本仓库。已经含有 `ClueCon` / "
+"`1234` 的演示 XML 继续当演示；新配置不得把这些值当成基线去复制。"
+
+#: ../../07-conventions.md:71 d6d804b64d5a4e10b21cd29fa3416437
+msgid ""
+"**Version bump**: keep together (comment in `configure.ac`): "
+"`AC_INIT([freeswitch], […])`, `SWITCH_VERSION_MAJOR` / `MINOR` / `MICRO` "
+"(and optional `REVISION` / `REVISION_HUMAN` for a tagged release), and "
+"`build/next-release.txt`. See [Build](08-build.md)."
+msgstr ""
+"**版本号变更**：必须一起改（`configure.ac` 中的注释）：`AC_INIT([freeswitch], "
+"[…])`、`SWITCH_VERSION_MAJOR` / `MINOR` / `MICRO`（打标签发布时还可选 `REVISION` / "
+"`REVISION_HUMAN`），以及 `build/next-release.txt`。参见 [构建](08-build.md)。"
+
+#: ../../07-conventions.md:73 5798790fc01d4435bf3bf4309e55eebb
+msgid "Testing and Review Expectations"
+msgstr "测试与评审期望"
+
+#: ../../07-conventions.md:75 9a331aec3da94afebb157909e4e30837
+msgid ""
+"**Core unit tests**: Autotools programs under `tests/unit/` against "
+"`libfreeswitch`. New tests **must** use `src/include/test/switch_test.h` "
+"(`tests/unit/README`). Run `tests/unit/run-tests.sh` after "
+"configure/build/install; CI chunks with `./run-tests.sh 2 1` (`ci.yml` "
+"`TOTAL_GROUPS: 2`). ESL: `make -C libs/esl check` (CI group 1)."
+msgstr ""
+"**核心单元测试**：`tests/unit/` 下针对 `libfreeswitch` 的 Autotools 程序。新测试**必须**使用 "
+"`src/include/test/switch_test.h`（`tests/unit/README`）。configure/build/install"
+" 之后运行 `tests/unit/run-tests.sh`；CI 分片为 `./run-tests.sh 2 1`（`ci.yml` 的 "
+"`TOTAL_GROUPS: 2`）。ESL：`make -C libs/esl check`（CI 第 1 组）。"
+
+#: ../../07-conventions.md:76 189dc42a6303446191e3692f0abd8a2e
+msgid ""
+"**Module tests**: some modules ship `test/` trees (for example Sofia SIPp "
+"under `src/mod/endpoints/mod_sofia/test/`). Enable the module in **build** "
+"`modules.conf` before those tests can link."
+msgstr ""
+"**模块测试**：部分模块自带 `test/` 树（例如 `src/mod/endpoints/mod_sofia/test/` 下的 Sofia "
+"SIPp）。这些测试要能链接，须先在**构建**用的 `modules.conf` 中启用该模块。"
+
+#: ../../07-conventions.md:77 1dde0ef98dac4be88aea30e5fc3e68ed
+msgid ""
+"**CI on a GitHub PR**: `.github/workflows/ci.yml` (unit-test groups via "
+"`ci.sh`, optional DinD, `scan-build`). Platform packs: `build.yml`, "
+"`macos.yml`, `windows.yml`. Treat a red `ci.yml` as blocking."
+msgstr ""
+"**GitHub PR 上的 CI**：`.github/workflows/ci.yml`（经 `ci.sh` 的单元测试分组、可选 "
+"DinD、`scan-build`）。平台包：`build.yml`、`macos.yml`、`windows.yml`。把变红的 `ci.yml` "
+"视为阻断。"
+
+#: ../../07-conventions.md:78 84742b1a25254b5ebd6a9a4831b5c665
+msgid ""
+"**New module checklist** (`docs/SubmittingPatches`): `Makefile.am`; entry in"
+" `configure.ac`; commented line in `build/modules.conf.in`; header comments "
+"describing the module; whitespace footer; `static` for private symbols; **do"
+" not** add files to `conf/vanilla`; commit body explains why it exists and "
+"what is unfinished."
+msgstr ""
+"**新模块清单**（`docs/SubmittingPatches`）：`Makefile.am`；`configure.ac` "
+"中的条目；`build/modules.conf.in` 中的注释行；描述模块的头注释；空白页脚；私有符号用 `static`；**不要**向 "
+"`conf/vanilla` 添加文件；提交正文说明它为何存在、哪些尚未完成。"
+
+#: ../../07-conventions.md:79 595fee49fa6e4b00a7b96131ac12efdf
+msgid ""
+"**Docs for changes**: behavior, flags, or XML knobs belong in the commit "
+"body. PKB pages under `man/` are English source for this knowledge base — "
+"update the affected numbered page when layout, build, or conventions change;"
+" do not treat `man/pyproject.toml` as a FreeSWITCH dependency bump."
+msgstr ""
+"**变更文档**：行为、标志或 XML 旋钮写在提交正文。`man/` 下的 PKB "
+"页是本知识库的英文源——布局、构建或约定变化时更新对应编号页；不要把 `man/pyproject.toml` 当成 FreeSWITCH 依赖升级。"
+
+#: ../../07-conventions.md:80 44d334627fd34524ad5c87b98eb5f33c
+msgid ""
+"**Review focus**: media/SIP compatibility, module load vs build-list "
+"mistakes, secret leakage in samples, rebase-clean history, scan-build noise,"
+" and whether vanilla XML was treated as production."
+msgstr ""
+"**评审重点**：媒体/SIP 兼容性、模块加载与构建列表搞混、样例中的密钥泄漏、干净的变基历史、scan-build 噪声，以及是否把 vanilla"
+" XML 当成了生产配置。"
+
+#: ../../07-conventions.md:82 21ca1fd690c242cd8a59719b49e05286
+msgid "Anti-Patterns"
+msgstr "反模式"
+
+#: ../../07-conventions.md:84 f918d20d9162418fb41ca45a3e9270cb
+msgid ""
+"Mixing **build** `modules.conf` / `build/modules.conf.in` with **runtime** "
+"`conf/vanilla/autoload_configs/modules.conf.xml` (different files, different"
+" syntax, different effect)."
+msgstr ""
+"把**构建**用的 `modules.conf` / `build/modules.conf.in` 与**运行时**的 "
+"`conf/vanilla/autoload_configs/modules.conf.xml` 混为一谈（不同文件、不同语法、不同效果）。"
+
+#: ../../07-conventions.md:85 edcd904597264229b21f3812dfd85945
+msgid ""
+"Treating `conf/vanilla` as a production baseline (`README_IMPORTANT.txt`). "
+"Shipping `default_password=1234`, users 1000–1019, ESL `ClueCon`, or XML-RPC"
+" `works` as if they were safe."
+msgstr ""
+"把 `conf/vanilla` 当成生产基线（`README_IMPORTANT.txt`）。把 `default_password=1234`、用户"
+" 1000–1019、ESL `ClueCon` 或 XML-RPC `works` 当作安全配置去发布。"
+
+#: ../../07-conventions.md:86 e41ace3a836c464eb9011dcaf4e542a8
+msgid ""
+"Logging or documenting ESL `ClueCon` or SIP digest/voicemail secrets as "
+"production-ready examples."
+msgstr "把 ESL `ClueCon` 或 SIP digest/语音信箱密钥作为生产可用示例来记日志或写进文档。"
+
+#: ../../07-conventions.md:87 a22ab2c23a3b483385523bd949509755
+msgid ""
+"Committing a SignalWire PAT, Docker `TOKEN`, or any live credential. Putting"
+" secrets in git “just for CI”."
+msgstr "提交 SignalWire PAT、Docker `TOKEN` 或任何线上凭据。把密钥放进 git「只是为了 CI」。"
+
+#: ../../07-conventions.md:88 abccda7cb9e74c9f9604031ed14ec46d
+msgid ""
+"Bumping only `AC_INIT` or only `build/next-release.txt` instead of all "
+"version fields together."
+msgstr "只改 `AC_INIT` 或只改 `build/next-release.txt`，而不是所有版本字段一起改。"
+
+#: ../../07-conventions.md:89 382adadf36064b68b5e71ec359f11aee
+msgid ""
+"Whitespace-only or drive-by reformat mixed into a functional commit; merge "
+"commits of master into a topic branch (`docs/SubmittingPatches`)."
+msgstr "把纯空白或顺手重排混进功能提交；把 master 合并进主题分支（`docs/SubmittingPatches`）。"
+
+#: ../../07-conventions.md:90 9e0cdc4a4bf347a3b58890237ed5756b
+msgid ""
+"Exporting internal module symbols; skipping `static`; omitting the Emacs/VIM"
+" footer on new `*.[ch]`."
+msgstr "导出模块内部符号；漏写 `static`；新 `*.[ch]` 省略 Emacs/VIM 页脚。"
+
+#: ../../07-conventions.md:91 c276afd49aca4512ae13f186b45a2e1d
+msgid "Adding sample XML to `conf/vanilla` as part of a new module PR."
+msgstr "在新模块 PR 中向 `conf/vanilla` 添加样例 XML。"
+
+#: ../../07-conventions.md:92 bc7f7d24c8ce4d51acfe2c63a04220e3
+msgid ""
+"Commenting out `X-PRE-PROCESS` lines, or editing `freeswitch.xml.fsxml` "
+"while FreeSWITCH is running."
+msgstr "把 `X-PRE-PROCESS` 行注释掉，或在 FreeSWITCH 运行时编辑 `freeswitch.xml.fsxml`。"
+
+#: ../../07-conventions.md:93 2938adb67c924093a530db37b3b79b49
+msgid ""
+"Starting a public-facing box without `-nonat` and without ACLs on SIP/ESL "
+"ports."
+msgstr "在面向公网的机器上启动时不加 `-nonat`，也不给 SIP/ESL 端口加 ACL。"
+
+#: ../../07-conventions.md:94 a61ea294979c4b5da0f70ebcb91ef73d
+msgid ""
+"Treating `docs/man/` as this PKB, or `man/pyproject.toml` as product Python "
+"dependencies."
+msgstr "把 `docs/man/` 当成这份 PKB，或把 `man/pyproject.toml` 当成产品 Python 依赖。"
+
+#: ../../07-conventions.md:95 54cf35b00ada4d5186833541242cc312
+msgid ""
+"Sending patches only to the mailing list and expecting them to land "
+"(`docs/SubmittingPatches`); skipping GitHub PR CI (`README.md`, `ci.yml`)."
+msgstr ""
+"只把补丁发到邮件列表并指望合入（`docs/SubmittingPatches`）；跳过 GitHub PR "
+"CI（`README.md`、`ci.yml`）。"
+
+#: ../../07-conventions.md:97 4f021a055aea4642824204e600cf56e0
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../07-conventions.md:99 3a64919e55e74dbb9774ff5801605a09
+msgid "[Quick Start](01-quick-start.md)"
+msgstr "[快速开始](01-quick-start.md)"
+
+#: ../../07-conventions.md:100 643d8f17747342b39e92bb4c791bdbd0
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../07-conventions.md:101 78edc765b573451da2aa801f45d0f4c8
+msgid "[Data and API](05-data-and-api.md)"
+msgstr "[数据与 API](05-data-and-api.md)"
+
+#: ../../07-conventions.md:102 06aa9b0c5566483694ea5486812a6400
+msgid "[Build](08-build.md)"
+msgstr "[构建](08-build.md)"
+
+#: ../../07-conventions.md:103 161c693d14b84ddf9ab6a7e37031cc5d
+msgid "[Testing](09-testing.md)"
+msgstr "[测试](09-testing.md)"
+
+#: ../../07-conventions.md:104 c8c048a0685d470da9b2b0d298919735
+msgid "[Observability](11-observability.md)"
+msgstr "[可观测性](11-observability.md)"
+
+#: ../../07-conventions.md:105 4ea348793ca9479bbd56e74a39e3da97
+msgid "[Documentation Process](12-document.md)"
+msgstr "[文档流程](12-document.md)"
+
+#: ../../07-conventions.md:107 5912ff8f867c438a8a007be4d6c37673
+msgid "`conf/vanilla/README_IMPORTANT.txt`"
+msgstr "`conf/vanilla/README_IMPORTANT.txt`"

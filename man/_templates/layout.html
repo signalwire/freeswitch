@@ -1,0 +1,24 @@
+{% extends "!layout.html" %}
+
+{% block sidebartitle %}
+  {{ super() }}
+  {% if available_languages %}
+  {% set page_depth = pagename.count("/") %}
+  {% set relative_prefix = "../" * (page_depth + 1) %}
+  {% set page_suffix = "" if pagename == "index" else pagename ~ ".html" %}
+  <div class="language-switcher">
+    <span class="lang-label">{{ "语言：" if current_language == "zh_CN" else "Language:" }}</span>
+    {% for lang in available_languages %}
+      {% if lang.code == current_language %}
+      <span class="lang-current">{{ lang.label }}</span>
+      {% else %}
+      {% set target_route = language_routes.get(lang.code, "") %}
+      {% if target_route in ["en", "zh"] %}
+      {% set target = relative_prefix ~ target_route ~ "/" ~ page_suffix %}
+      <a class="lang-link" href="{{ target|e }}">{{ lang.label }}</a>
+      {% endif %}
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endblock %}

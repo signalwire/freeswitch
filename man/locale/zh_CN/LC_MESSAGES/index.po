@@ -1,0 +1,495 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../index.md:35
+msgid "Getting Started"
+msgstr "入门"
+
+#: ../../index.md:43
+msgid "Design & Structure"
+msgstr "设计与结构"
+
+#: ../../index.md:54
+msgid "Development"
+msgstr "开发"
+
+#: ../../index.md:63
+msgid "Operations"
+msgstr "运维"
+
+#: ../../index.md:72
+msgid "Appendix"
+msgstr "附录"
+
+#: ../../index.md:1 a224ee63fb49462090acd2cd7ca31a79
+msgid "FreeSWITCH Knowledge Base"
+msgstr "FreeSWITCH 知识库"
+
+#: ../../index.md:5 fe05fa3c47644158b5f7817110139ea6
+msgid ""
+"This documentation is the Project Knowledge Base for FreeSWITCH. It is "
+"designed to help both humans and AI locate code, understand architecture, "
+"execute workflows, and verify changes."
+msgstr "本文档是 FreeSWITCH 的项目知识库（PKB）。旨在帮助人和 AI 定位代码、理解架构、执行工作流并验证变更。"
+
+#: ../../index.md:7 bd486fd6c93347c48612c7c0387d7551
+msgid "Overview"
+msgstr "概述"
+
+#: ../../index.md:9 d2abbe2a6f1c4e10a2af2c8a3ed61797
+msgid "Purpose"
+msgstr "目的"
+
+#: ../../index.md:12 25a1026f9beb4d8da1399cf2ecc4e3ca
+msgid "This PKB should help readers:"
+msgstr "本 PKB 应帮助读者："
+
+#: ../../index.md:13 c460cd4aca024773bbc95312f20f2300
+msgid ""
+"**Locate** code, configs, scripts, and entry points in **this git tree**"
+msgstr "**定位** 本 git 树中的代码、配置、脚本和入口点"
+
+#: ../../index.md:14 f693f3f682054bfca27245aa43baa927
+msgid "**Understand** architecture, stack choices, and workflows"
+msgstr "**理解** 架构、技术栈选择和工作流"
+
+#: ../../index.md:15 3e0dbfbed4a144a783157932650e2ff0
+msgid "**Execute** setup, build, release, and debugging tasks"
+msgstr "**执行** 安装、构建、发布和调试任务"
+
+#: ../../index.md:16 68697c3dac9c46479186a576bbb84f69
+msgid ""
+"**Verify** behavior with tests, observability, and documentation checks"
+msgstr "**验证** 行为：通过测试、可观测性和文档检查"
+
+#: ../../index.md:19 4e97c55293ed468cb26dec6ef0d31600
+msgid ""
+"Operator configuration (XML, SIP profiles, dialplan, directory, codecs, ESL "
+"programming) is documented in the [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/). This PKB does not "
+"replace that manual. It maps the same concepts onto verified paths in this "
+"repository."
+msgstr ""
+"运维配置（XML、SIP profiles、拨号计划、号码簿、编解码、ESL 编程）写在 [FreeSWITCH "
+"用户手册](https://developer.signalwire.com/freeswitch/)。本 PKB "
+"不替代该手册，只把同样的概念映射到本仓库已核实的路径。"
+
+#: ../../index.md:9 c0019e26e7bb4cf29905a2d292dd9f90
+msgid "Layer"
+msgstr "层级"
+
+#: ../../index.md:9 415669cba070468481b868f634ae828c
+msgid "What it is"
+msgstr "是什么"
+
+#: ../../index.md:9 626b49cf07bc4f61b7cd441074741e1f
+msgid "Start here"
+msgstr "从这里开始"
+
+#: ../../index.md:9 974b7158133b4b2ba41eef6bc1482d3e
+msgid "**Users Manual**"
+msgstr "**用户手册**"
+
+#: ../../index.md:9 8612207d6be14900982f15278c98bc47
+msgid ""
+"Operator configuration reference. Parameters and defaults are verified "
+"against FreeSWITCH source and the shipped vanilla config."
+msgstr "运维配置参考。参数与默认值对照 FreeSWITCH 源码与随附 vanilla 配置核实。"
+
+#: ../../index.md:9 108d89c314694517b3384c2938cf7523
+msgid ""
+"[developer.signalwire.com/freeswitch](https://developer.signalwire.com/freeswitch/)"
+msgstr ""
+"[developer.signalwire.com/freeswitch](https://developer.signalwire.com/freeswitch/)"
+
+#: ../../index.md:9 dfa7a8f8f9a542b8895dac8d4c2f39b4
+msgid "**This PKB**"
+msgstr "**本 PKB**"
+
+#: ../../index.md:9 fa647c8b337b484987f7810512e31245
+msgid ""
+"Repo map, C4 architecture, Autotools/CI, ESL/XML contracts as implemented "
+"here, runbook for this clone"
+msgstr "仓库地图、C4 架构、Autotools/CI、本仓库实现的 ESL/XML 契约、本克隆的运维手册"
+
+#: ../../index.md:9 96f2c9760f834d6abcab3361bdd95cfd
+msgid "[Project Overview](00-overview.md)"
+msgstr "[项目概述](00-overview.md)"
+
+#: ../../index.md:9 89891acc213b4fe48dfe4012754ef390
+msgid "**Historical wiki**"
+msgstr "**历史 wiki**"
+
+#: ../../index.md:9 1e9dd690a40f467181c1b00149b9e2f0
+msgid "Older tutorials and Confluence pages still linked from `README.md`"
+msgstr "`README.md` 仍链接的旧教程与 Confluence 页面"
+
+#: ../../index.md:9 0c9df02f58c24ce4ac8bf06c205cfb58
+msgid ""
+"[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/), [Confluence](https://freeswitch.org/confluence/)"
+msgstr ""
+"[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)、[Confluence](https://freeswitch.org/confluence/)"
+
+#: ../../index.md:27 2b4d0dce61554b7daf7ab0d48262180c
+msgid "How to use both"
+msgstr "如何同时使用两者"
+
+#: ../../index.md:30 29fc28cf58ff43039ae800b6060b57e6
+msgid ""
+"Read [Users Manual Part "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction) and"
+" [Part 2](https://developer.signalwire.com/freeswitch/configuration/xml) for"
+" the configuration model. Use this PKB when you need the C file, Autotools "
+"target, or CI path that implements that model."
+msgstr ""
+"先读 [用户手册第 1 "
+"部分](https://developer.signalwire.com/freeswitch/foundations/introduction) 与 "
+"[第 2 部分](https://developer.signalwire.com/freeswitch/configuration/xml) "
+"了解配置模型。需要实现该模型的 C 文件、Autotools 目标或 CI 路径时再用本 PKB。"
+
+#: ../../index.md:33 7721144ca0184bb39d8e5ecd13c4d14b
+msgid "Table of Contents"
+msgstr "目录"
+
+#: ../../index.md:85 47b2f68e3a5847fba94ef0e3e341b94e
+msgid "PKB page to Users Manual"
+msgstr "PKB 页面与用户手册对照"
+
+#: ../../index.md:87 4426d8dd1620407f8338af6c49e580be
+msgid ""
+"Keep PKB numbering stable. When an operator question is about *how to "
+"configure* FreeSWITCH, follow the Users Manual chapter; when it is about "
+"*where it lives in this tree*, stay on the PKB page."
+msgstr "保持 PKB 编号稳定。运维问题若是 *如何配置* FreeSWITCH，跟用户手册章节；若是 *它在本仓库哪里*，留在 PKB 页面。"
+
+#: ../../index.md:72 7fc6d7db6a5e4d87a086fc53491b15a6
+msgid "PKB page"
+msgstr "PKB 页面"
+
+#: ../../index.md:72 317d469b0a784513b481a420bc931f66
+msgid "Users Manual"
+msgstr "用户手册"
+
+#: ../../index.md:72 1426fe8e480e4dbe9769e2b4c7e9fc00
+msgid "Use the PKB for"
+msgstr "PKB 用于"
+
+#: ../../index.md:72 2e229555f0474855a88fb42d7fcb2be6
+msgid "[00 Overview](00-overview.md)"
+msgstr "[00 概述](00-overview.md)"
+
+#: ../../index.md:72 f4d89a9b786a497eaf3b4869f83ac0dd
+msgid ""
+"[Ch 1 Core "
+"Concepts](https://developer.signalwire.com/freeswitch/foundations/introduction)"
+msgstr ""
+"[第 1 "
+"章核心概念](https://developer.signalwire.com/freeswitch/foundations/introduction)"
+
+#: ../../index.md:72 d4cdd81d343a4f0da3b2fc7672f69058
+msgid "Scope of this clone, C4 context, edition vs cloud"
+msgstr "本克隆的范围、C4 上下文、发行版 vs 云"
+
+#: ../../index.md:72 1a291895d3c94a81b369a138a877edb5
+msgid "[01 Quick Start](01-quick-start.md)"
+msgstr "[01 快速开始](01-quick-start.md)"
+
+#: ../../index.md:72 572716ad306c4778bdc935c45bf26e8a
+msgid ""
+"[Ch 2 Getting "
+"Started](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)"
+msgstr ""
+"[第 2 章入门](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)"
+
+#: ../../index.md:72 ed82e79171784cbebd56a96a4ee44e56
+msgid "Source-build from this tree; Sofia-SIP / libks out of tree"
+msgstr "从本仓库源码构建；Sofia-SIP / libks 在树外"
+
+#: ../../index.md:72 efe49e2274f7495897351651ce76436c
+msgid "[02 Architecture](02-architecture.md)"
+msgstr "[02 架构](02-architecture.md)"
+
+#: ../../index.md:72 bd8e2b356c3a462d8d658ba042d3deaf
+msgid ""
+"Ch 1 + [Ch 3 XML "
+"config](https://developer.signalwire.com/freeswitch/configuration/xml) + [Ch"
+" 5 Module "
+"loading](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)"
+msgstr ""
+"第 1 章 + [第 3 章 XML "
+"配置](https://developer.signalwire.com/freeswitch/configuration/xml) + [第 5 "
+"章模块加载](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)"
+
+#: ../../index.md:72 b9f6178e8abc489998a936c202eb0317
+msgid "Session state machine, module loader, in-process DSOs"
+msgstr "会话状态机、模块加载器、进程内 DSO"
+
+#: ../../index.md:72 5938fdd80f1e4b01a5eddca3450805bc
+msgid "[04 Repo map](04-repo-map.md)"
+msgstr "[04 仓库地图](04-repo-map.md)"
+
+#: ../../index.md:72 b8738665865e4fb69494a8a36d58a879
+msgid "Config paths relative to the directory that contains `freeswitch.xml`"
+msgstr "配置路径相对于包含 `freeswitch.xml` 的目录"
+
+#: ../../index.md:72 a45e8ef0e93f43cd86efc2746cbd5627
+msgid "`src/`, `src/mod/`, `conf/vanilla/` ownership"
+msgstr "`src/`、`src/mod/`、`conf/vanilla/` 的归属"
+
+#: ../../index.md:72 f087a61df276482cb48c8866447543cb
+msgid "[05 Data and API](05-data-and-api.md)"
+msgstr "[05 数据与 API](05-data-and-api.md)"
+
+#: ../../index.md:72 401c82f6621a477ebf2f02491768f615
+msgid ""
+"[Ch 6 Directory](https://developer.signalwire.com/freeswitch/users-and-"
+"endpoints/user-directory), [Ch 12 XML "
+"Dialplan](https://developer.signalwire.com/freeswitch/dialplan/xml), [Ch 46 "
+"Inbound ESL](https://developer.signalwire.com/freeswitch/programming/esl-"
+"inbound)"
+msgstr ""
+"[第 6 章号码簿](https://developer.signalwire.com/freeswitch/users-and-"
+"endpoints/user-directory)、[第 12 章 XML "
+"拨号计划](https://developer.signalwire.com/freeswitch/dialplan/xml)、[第 46 章入站 "
+"ESL](https://developer.signalwire.com/freeswitch/programming/esl-inbound)"
+
+#: ../../index.md:72 90be68f6bc154fe6ae61ca6bc95e53dd
+msgid "Event ids, SQL scoreboard, ESL command table in this tree"
+msgstr "本仓库中的事件 id、SQL 记分板、ESL 命令表"
+
+#: ../../index.md:72 ba12db41c00e4852b92c56df56a8f76e
+msgid "[06 Workflows](06-workflows.md)"
+msgstr "[06 工作流](06-workflows.md)"
+
+#: ../../index.md:72 69bfb44893a04958a3e3eaf8c514bf18
+msgid ""
+"Ch 1 anatomy of a call; [Ch 7 SIP "
+"profiles](https://developer.signalwire.com/freeswitch/users-and-"
+"endpoints/sip-profiles)"
+msgstr ""
+"第 1 章呼叫解剖；[第 7 章 SIP "
+"profiles](https://developer.signalwire.com/freeswitch/users-and-"
+"endpoints/sip-profiles)"
+
+#: ../../index.md:72 a91a93f97ee049188f7169805efb3bbb
+msgid "INVITE/REGISTER/originate traces with C symbols"
+msgstr "带 C 符号的 INVITE/REGISTER/originate 追踪"
+
+#: ../../index.md:72 6c69f2511ab6465987d47f297b609f57
+msgid "[10 Runbook](10-runbook.md)"
+msgstr "[10 运维手册](10-runbook.md)"
+
+#: ../../index.md:72 2b7a8d110b8c4bb982626521d1c471ae
+msgid "Ch 2 + Part 11 Troubleshooting"
+msgstr "第 2 章 + 第 11 部分排障"
+
+#: ../../index.md:72 bd0650f6cc7d4c40969f0d4c5f8a1e46
+msgid "Prefix vs FHS paths, `fs_cli` against this install"
+msgstr "prefix 与 FHS 路径，对本安装使用 `fs_cli`"
+
+#: ../../index.md:72 d00f75f20cbc40bb8d1bc5476f777fdf
+msgid "[11 Observability](11-observability.md)"
+msgstr "[11 可观测性](11-observability.md)"
+
+#: ../../index.md:72 2c924233a2b84bc8a9ddf72127fd24de
+msgid "Part 11 diagnostics"
+msgstr "第 11 部分诊断"
+
+#: ../../index.md:72 894ce40321ff444cac8f09ca3f9c4cfa
+msgid "`switch_log` levels, HEARTBEAT; no Prometheus in-tree"
+msgstr "`switch_log` 级别、HEARTBEAT；树内没有 Prometheus"
+
+#: ../../index.md:100 e375fd1a83e645b297cd83f48e386203
+msgid ""
+"Parts 6–10 of the Users Manual (applications, integration, module reference,"
+" recipes) have no extra PKB chapter. Link those from "
+"[Workflows](06-workflows.md) and [Data and API](05-data-and-api.md) when an "
+"operator needs parameter tables."
+msgstr ""
+"用户手册第 6–10 部分（应用、集成、模块参考、配方）没有额外 PKB 章节。运维需要参数表时，从 [工作流](06-workflows.md) 与 "
+"[数据与 API](05-data-and-api.md) 链出去。"
+
+#: ../../index.md:102 1a7bb3a22f62400f9e31407ee6a4c193
+msgid "Quick Start"
+msgstr "快速入门"
+
+#: ../../index.md:104 9bd8d9a18cdd479fa01c13b86cf7cd10
+msgid "For New Developers"
+msgstr "面向新开发者"
+
+#: ../../index.md:106 96f2c9760f834d6abcab3361bdd95cfd
+msgid ""
+"Read [Project Overview](00-overview.md) to understand purpose, users, and "
+"scope."
+msgstr "阅读 [项目概述](00-overview.md) 以了解目的、用户和范围。"
+
+#: ../../index.md:107 1a291895d3c94a81b369a138a877edb5
+msgid ""
+"Follow [Quick Start](01-quick-start.md) to get the project running locally."
+msgstr "按照 [快速入门](01-quick-start.md) 在本地把项目跑起来。"
+
+#: ../../index.md:108 50d6bd2c40a94df5a7a24c9dcfb9bbdc
+msgid ""
+"Study [Repository Map](04-repo-map.md) to locate entry points and major "
+"directories."
+msgstr "研读 [仓库地图](04-repo-map.md) 以定位入口点和主要目录。"
+
+#: ../../index.md:109 d1072ede41184889ad22c4ad3a6a3616
+msgid ""
+"Review [Runbook](10-runbook.md) and [Conventions](07-conventions.md) before "
+"making changes."
+msgstr "动手修改前，先阅读 [运维手册](10-runbook.md) 和 [约定](07-conventions.md)。"
+
+#: ../../index.md:111 c9a53fe2a9984836920d86468fa03156
+msgid "For AI Assistants"
+msgstr "面向 AI 助手"
+
+#: ../../index.md:113 0bbc84d885414a9aacae057083714f79
+msgid "Use a layered reading order:"
+msgstr "采用分层阅读顺序："
+
+#: ../../index.md:115 b234e8d3169144559004aa3682e6649a
+msgid ""
+"**Round 1**: read `00-overview`, `02-architecture`, and `04-repo-map` (plus "
+"Users Manual Ch 1 if the three configuration domains are new)"
+msgstr ""
+"**第一轮**：阅读 `00-overview`、`02-architecture` 和 `04-repo-map`（若三大配置域还不熟，加上用户手册第"
+" 1 章）"
+
+#: ../../index.md:116 f3b14239bad1404fa7dac5a96340b01c
+msgid "**Round 2**: read `05-data-and-api` and `06-workflows`"
+msgstr "**第二轮**：阅读 `05-data-and-api` 和 `06-workflows`"
+
+#: ../../index.md:117 71cba72599444f6e9eb07f253f942089
+msgid ""
+"**Round 3**: read `09-testing`, `10-runbook`, `11-observability`, and "
+"`12-document`"
+msgstr ""
+"**第三轮**：阅读 `09-testing`、`10-runbook`、`11-observability` 和 `12-document`"
+
+#: ../../index.md:119 ac2810414741429285d6073344aa86ce
+msgid ""
+"See [How to Use This Documentation for AI](ai-guide.md) for the detailed "
+"workflow."
+msgstr "详细工作流见 [如何将本文档用于 AI](ai-guide.md)。"
+
+#: ../../index.md:121 a9b3335a0005427a966d938379352739
+msgid "Key Concepts"
+msgstr "核心概念"
+
+#: ../../index.md:127 e9e65ebcdce54d6984d3296e92cbfb54
+msgid "Navigation"
+msgstr "导航"
+
+#: ../../index.md:131 4d1ae55e8d0d43f79ea50e17cfa53f0d
+msgid ""
+"Find the project structure, startup files, and major module boundaries."
+msgstr "查找项目结构、启动文件和主要模块边界。"
+
+#: ../../index.md:134 b20fa94503094cc6a389cb1d6b755a15
+msgid "Architecture"
+msgstr "架构"
+
+#: ../../index.md:138 4e8d9850ba744e2c92b89bed372d07d9
+msgid "Learn how the system is decomposed and how the main pieces interact."
+msgstr "了解系统如何分解，以及主要部件如何交互。"
+
+#: ../../index.md:141 d5ccd1d1c03447b5849b1c40be7c752d
+msgid "Workflows"
+msgstr "工作流"
+
+#: ../../index.md:145 64052521f4604f6ab93da859bb47a467
+msgid ""
+"Explore critical request, event, and business flows with code references."
+msgstr "结合代码引用，探索关键请求、事件和业务流程。"
+
+#: ../../index.md:148 85779351cd7f4f17983be1b1f80acee1
+msgid "Testing"
+msgstr "测试"
+
+#: ../../index.md:152 3f5c66c362ef414ab7202ceecf8e65f8
+msgid "Review the test layers, critical regressions, and validation commands."
+msgstr "查阅测试分层、关键回归用例和验证命令。"
+
+#: ../../index.md:156 4e7ea392167d44b99008d18bf43cd5f0
+msgid "Documentation Maintenance"
+msgstr "文档维护"
+
+#: ../../index.md:158 6f13608dec3e430d94e27745146d0700
+msgid "Living Documentation"
+msgstr "持续更新的文档"
+
+#: ../../index.md:161 e8179b7dd06b444a9a97fde1cb50c5a2
+msgid "Keep the PKB fresh without wasting tokens:"
+msgstr "在不浪费 token 的前提下保持 PKB 新鲜："
+
+#: ../../index.md:162 6cdfff3cb2984dd1b397b8c48132ae5d
+msgid "run rule-based freshness checks before LLM-heavy doc work"
+msgstr "在大量使用 LLM 写文档之前，先跑基于规则的新鲜度检查"
+
+#: ../../index.md:163 365144bcad294ddb910f8180f2922875
+msgid "apply mechanical Level 1 updates first"
+msgstr "先应用机械式的 Level 1 更新"
+
+#: ../../index.md:164 4d5d58bcaefe45ce99fc6bd70c04ed12
+msgid "batch Level 2 refreshes by PR, sprint, or milestone"
+msgstr "按 PR、sprint 或里程碑批量做 Level 2 刷新"
+
+#: ../../index.md:165 a2cd0bf38fcf4b99b4e79780c5d955b0
+msgid "keep ADRs and product rationale human-led"
+msgstr "ADR 和产品决策理由仍由人工主导"
+
+#: ../../index.md:168 df0a5bd3249d4b509053dd5ebaf4d6d9
+msgid "Contributing"
+msgstr "贡献"
+
+#: ../../index.md:170 7d0b42f036604050869817320ea6f4e3
+msgid ""
+"See [Conventions](07-conventions.md) for coding standards and [Documentation"
+" Process](12-document.md) for PKB maintenance rules."
+msgstr "编码规范见 [约定](07-conventions.md)，PKB 维护规则见 [文档流程](12-document.md)。"
+
+#: ../../index.md:172 939cf644bb0e47c4bef4e4d07bdc0084
+msgid "Indices and tables"
+msgstr "索引与表格"
+
+#: ../../index.md:174 39049a0c757640e69f3888a43a956eb6
+#, python-brace-format
+msgid "{ref}`genindex`"
+msgstr "{ref}`genindex`"
+
+#: ../../index.md:175 6bc8d55a816247fcbcd8f81d7da53d9e
+#, python-brace-format
+msgid "{ref}`search`"
+msgstr "{ref}`search`"
+
+#: ../../index.md:179 18ec094eabc543f0a01a03dde78b9d44
+#, python-brace-format
+msgid "**Version**: {sub-ref}`release` **Last Updated**: {sub-ref}`today`"
+msgstr "**版本**：{sub-ref}`release` **最后更新**：{sub-ref}`today`"

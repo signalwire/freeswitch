@@ -1,0 +1,1497 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../06-workflows.md:1 11654ceaa3f940a48b1f6730eb5ed7d2
+msgid "06. Workflows"
+msgstr "06. 工作流"
+
+#: ../../06-workflows.md:5 28d81a4af53142809980668f7a8601d6
+msgid ""
+"Critical **runtime** paths in this tree. Channel states (`CS_*`) and the "
+"state-handler contract are in [Architecture](02-architecture.md); ESL "
+"commands, events, and SQL tables are in [Data and API](05-data-and-api.md). "
+"Default inbound progression after create: `CS_NEW` → `CS_INIT` → "
+"`CS_ROUTING` → `CS_EXECUTE` → media or hangup `CS_HANGUP` → `CS_REPORTING` →"
+" `CS_DESTROY` (`src/include/switch_types.h`)."
+msgstr ""
+"本仓库中的关键 **运行时** 路径。通道状态（`CS_*`）与状态处理约定见 [架构](02-architecture.md)；ESL 命令、事件和 "
+"SQL 表见 [数据与 API](05-data-and-api.md)。创建后的默认呼入推进：`CS_NEW` → `CS_INIT` → "
+"`CS_ROUTING` → `CS_EXECUTE` → 媒体或挂断 `CS_HANGUP` → `CS_REPORTING` → "
+"`CS_DESTROY`（`src/include/switch_types.h`）。"
+
+#: ../../06-workflows.md:7 33264e548c8d41f08762b1141fae49b1
+msgid ""
+"These flows use vanilla XML (`conf/vanilla/`). Other profiles (`conf/sbc`, "
+"`conf/minimal`, `conf/curl`) change bind ports, auth, and whether "
+"directory/dialplan come from files or `mod_xml_curl`. Operator-level "
+"walkthrough of the same 1000→1001 call: [Users Manual Chapter "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction)."
+msgstr ""
+"这些流程使用 vanilla "
+"XML（`conf/vanilla/`）。其他配置档（`conf/sbc`、`conf/minimal`、`conf/curl`）会改变绑定端口、鉴权，以及"
+" directory/dialplan 来自文件还是 `mod_xml_curl`。同一通 1000→1001 呼叫的运维走查见 [用户手册第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)。"
+
+#: ../../06-workflows.md:9 78f0fa66b7274755bdb29ff8417e9c4e
+msgid "Workflow Index"
+msgstr "工作流索引"
+
+#: ../../06-workflows.md:11 2d7dc95894f74476837d2b432c1e5eac
+msgid "[Inbound SIP call](#inbound-sip-call)"
+msgstr "[呼入 SIP 呼叫](#inbound-sip-call)"
+
+#: ../../06-workflows.md:12 18ac6670d3344b2da499ccbbaab004af
+msgid ""
+"[SIP registration and directory lookup](#sip-registration-and-directory-"
+"lookup)"
+msgstr "[SIP 注册与 directory 查找](#sip-registration-and-directory-lookup)"
+
+#: ../../06-workflows.md:13 4e88827900f3437888508bbca7671a4e
+msgid "[ESL originate and event control](#esl-originate-and-event-control)"
+msgstr "[ESL originate 与事件控制](#esl-originate-and-event-control)"
+
+#: ../../06-workflows.md:14 6f29e4bdebe7483f9147b363ff43dac1
+msgid "[XML reload](#xml-reload)"
+msgstr "[XML 重载](#xml-reload)"
+
+#: ../../06-workflows.md:16 996b3c8470514a11ac62772bd4cd1fb2
+#, python-brace-format
+msgid ""
+"Vanilla 1000 calling 1001 (config files, not C): REGISTER on "
+"`sip_profiles/internal.xml` → directory `directory/default/1000.xml` "
+"(`user_context=default`) → INVITE `1001` → `dialplan/default.xml` "
+"`Local_Extension` → `bridge` `user/${dialed_extension}@${domain_name}`. "
+"Internal profile `context` is `public`; that value applies only to "
+"**unauthenticated** inbound. Late codec negotiation: `inbound-late-"
+"negotiation=true` on the internal profile."
+msgstr ""
+"Vanilla 分机 1000 呼叫 1001（配置文件路径，不是 C 符号）：在 `sip_profiles/internal.xml` 上 "
+"REGISTER → 号码簿 `directory/default/1000.xml`（`user_context=default`）→ INVITE "
+"`1001` → `dialplan/default.xml` 的 `Local_Extension` → `bridge` "
+"`user/${dialed_extension}@${domain_name}`。internal profile 的 `context` 是 "
+"`public`，该值只用于**未认证**入局。延迟编解码协商：internal profile 上 `inbound-late-"
+"negotiation=true`。"
+
+#: ../../06-workflows.md:20 e8f3c0e15e5d48dea374e20f105b1b33
+msgid "Inbound SIP Call"
+msgstr "呼入 SIP 呼叫"
+
+#: ../../06-workflows.md:22 ../../06-workflows.md:121
+#: ../../06-workflows.md:205 ../../06-workflows.md:293
+#: ca4e5e67b30845d29b6f6b64fa50705e
+msgid "Trigger and Goal"
+msgstr "触发条件与目标"
+
+#: ../../06-workflows.md:24 7eeb8fc004fb4554b0f598fd89773200
+msgid ""
+"**Trigger**: SIP `INVITE` arrives on a Sofia profile (vanilla internal "
+"typically UDP/TCP **5060**, external **5080**). Sofia-SIP delivers "
+"`nua_i_invite` to `sofia_event_callback()` in "
+"`src/mod/endpoints/mod_sofia/sofia.c`."
+msgstr ""
+"**触发条件**：SIP `INVITE` 到达 Sofia 配置档（vanilla 内部通常为 UDP/TCP **5060**，外部为 "
+"**5080**）。Sofia-SIP 将 `nua_i_invite` 投递给 "
+"`src/mod/endpoints/mod_sofia/sofia.c` 中的 `sofia_event_callback()`。"
+
+#: ../../06-workflows.md:25 4102057ed13e4b84aeca39b39b8573cb
+#, python-brace-format
+msgid ""
+"**Goal**: allocate a session/channel, authenticate if the profile requires "
+"it, hunt an XML extension, run applications (vanilla `Local_Extension` "
+"bridges `user/${dialed_extension}@${domain_name}`), exchange media, then "
+"hang up with a SIP response/`BYE`/`CANCEL` and CDR/events."
+msgstr ""
+"**目标**：分配会话/通道，若配置档要求则鉴权，查找 XML extension，运行应用（vanilla 的 `Local_Extension` 会"
+" bridge `user/${dialed_extension}@${domain_name}`），交换媒体，然后以 SIP "
+"响应/`BYE`/`CANCEL` 挂断并产生 CDR/事件。"
+
+#: ../../06-workflows.md:27 ../../06-workflows.md:128
+#: ../../06-workflows.md:212 ../../06-workflows.md:298
+#: 3bb504972bd147b09b2b05e0ce9af4fc
+msgid "Main Flow"
+msgstr "主流程"
+
+#: ../../06-workflows.md:65 ../../06-workflows.md:159
+#: ../../06-workflows.md:245 ../../06-workflows.md:327
+#: c37824ad827441a2a7cffa133516fc9d
+msgid "Key Steps"
+msgstr "关键步骤"
+
+#: ../../06-workflows.md:67 b4b3cce4432e404bbfc553c7dd44a782
+msgid ""
+"**Admit the INVITE.** `sofia_event_callback()` rejects with **503** "
+"`\"Maximum Calls In Progress\"` / `\"System Busy\"` / `\"System Paused\"` "
+"when session limit, message-queue critical watermark, or `PFLAG_STANDBY` is "
+"hit. Missing `Call-ID` → **503** `\"INVALID INVITE\"`. Session-timer `Min-"
+"SE` too small → **422**."
+msgstr ""
+"**准入 INVITE。** 当命中会话上限、消息队列临界水位或 `PFLAG_STANDBY` 时，`sofia_event_callback()` "
+"以 **503** `\"Maximum Calls In Progress\"` / `\"System Busy\"` / `\"System "
+"Paused\"` 拒绝。缺少 `Call-ID` → **503** `\"INVALID INVITE\"`。会话定时器 `Min-SE` 过小 →"
+" **422**。"
+
+#: ../../06-workflows.md:68 c521c1a5994043bc9bef1a9ab70e6076
+msgid ""
+"**Create the inbound session.** `switch_core_session_request()` (or "
+"`switch_core_session_request_uuid()` when `PFLAG_CALLID_AS_UUID`) plus "
+"`sofia_glue_new_pvt()` / `sofia_glue_attach_private()`. The event is queued "
+"onto the session with `switch_core_session_queue_signal_data()`; the session"
+" thread starts in `CS_NEW`."
+msgstr ""
+"**创建呼入会话。** `switch_core_session_request()`（当 `PFLAG_CALLID_AS_UUID` 时为 "
+"`switch_core_session_request_uuid()`），再加上 `sofia_glue_new_pvt()` / "
+"`sofia_glue_attach_private()`。事件通过 `switch_core_session_queue_signal_data()`"
+" 入队到该会话；会话线程从 `CS_NEW` 启动。"
+
+#: ../../06-workflows.md:69 a5dfedd81fbb4784941438594082e515
+msgid ""
+"**Handle the INVITE body.** `sofia_handle_sip_i_invite()` requires a "
+"`Contact` (**400** `\"Missing Contact Header\"` otherwise). Source IP/port "
+"become `sip_network_ip` / `sip_network_port`. Destination number is Request-"
+"URI user (`req_user`), or the full URI when `full-id-in-dialplan` "
+"(`PFLAG_FULL_ID`)."
+msgstr ""
+"**处理 INVITE 消息体。** `sofia_handle_sip_i_invite()` 要求有 `Contact`（否则 **400** "
+"`\"Missing Contact Header\"`）。源 IP/端口成为 `sip_network_ip` / "
+"`sip_network_port`。被叫号码是 Request-URI 的 user（`req_user`），或在 `full-id-in-"
+"dialplan`（`PFLAG_FULL_ID`）时为完整 URI。"
+
+#: ../../06-workflows.md:70 a21080ae87984aa989f58dad02d97ca6
+#, python-brace-format
+msgid ""
+"**Authenticate when required.** Vanilla internal profile: `auth-"
+"calls=$${internal_auth_calls}` (`true` in `conf/vanilla/vars.xml`) and "
+"`apply-inbound-acl` = `domains`. Failed ACL can fall back to Digest. Digest "
+"uses the same `sofia_reg_handle_register(..., REG_INVITE, ...)` path as "
+"REGISTER. Success sets `sip_authorized=true` and loads directory XML via "
+"`switch_ivr_set_user_xml()` (including `user_context`). External profile: "
+"`auth-calls=false` — typically no digest; context stays the profile context "
+"(`public`)."
+msgstr ""
+"**需要时鉴权。** Vanilla 内部配置档：`auth-"
+"calls=$${internal_auth_calls}`（`conf/vanilla/vars.xml` 中为 `true`）且 `apply-"
+"inbound-acl` = `domains`。ACL 失败可回退到 Digest。Digest 走与 REGISTER 相同的 "
+"`sofia_reg_handle_register(..., REG_INVITE, ...)` 路径。成功后设置 "
+"`sip_authorized=true`，并通过 `switch_ivr_set_user_xml()` 加载 directory XML（含 "
+"`user_context`）。外部配置档：`auth-calls=false` — 通常不做 "
+"digest；上下文保持为配置档上下文（`public`）。"
+
+#: ../../06-workflows.md:71 4c73a3770b5f449e9e3d9ba9148bbe50
+msgid ""
+"**Build the caller profile.** Context order in "
+"`sofia_handle_sip_i_invite()`: ACL override → channel `user_context` → "
+"profile `context` (or From-host when profile context is `_domain_`). "
+"Dialplan defaults to profile `dialplan` (`XML`) unless `inbound_dialplan` is"
+" set."
+msgstr ""
+"**构建 caller profile。** `sofia_handle_sip_i_invite()` 中的 context 顺序：ACL 覆盖 → "
+"通道 `user_context` → 配置档 `context`（当配置档 context 为 `_domain_` 时用 From-"
+"host）。除非设置了 `inbound_dialplan`，dialplan 默认为配置档 `dialplan`（`XML`）。"
+
+#: ../../06-workflows.md:72 e70ce93ea8af4504bf7d89871a80aaa4
+msgid ""
+"**Leave `CS_NEW`.** `sofia_handle_sip_i_state()` on `nua_callstate_received`"
+" sets `CS_INIT` after SDP offer handling (`sofia_media_negotiate_sdp` unless"
+" proxy/late-neg). `STATE_MACRO(init)` runs `sofia_on_init` then, if the "
+"endpoint returns `SWITCH_STATUS_SUCCESS`, `switch_core_standard_on_init()` "
+"(moves to `CS_ROUTING`, or `CS_EXECUTE` when `CF_RECOVERING`). After that "
+"macro, the `CS_INIT` case fires `SWITCH_EVENT_CHANNEL_CREATE`."
+msgstr ""
+"**离开 `CS_NEW`。** `sofia_handle_sip_i_state()` 在 `nua_callstate_received` 时，于"
+" SDP offer 处理之后（除非 proxy/late-neg，否则走 `sofia_media_negotiate_sdp`）设置 "
+"`CS_INIT`。`STATE_MACRO(init)` 先运行 `sofia_on_init`，若 endpoint 返回 "
+"`SWITCH_STATUS_SUCCESS`，再运行 `switch_core_standard_on_init()`（进入 "
+"`CS_ROUTING`，若 `CF_RECOVERING` 则进入 `CS_EXECUTE`）。该宏之后，`CS_INIT` 分支会触发 "
+"`SWITCH_EVENT_CHANNEL_CREATE`。"
+
+#: ../../06-workflows.md:73 a5a9887a767a425bb7ae600adfa07d17
+msgid ""
+"**Optional 100 Trying.** `sofia_on_routing()` sends `SIP_100_TRYING` when "
+"`PFLAG_AUTO_INVITE_100` and the inbound channel is not yet answered "
+"(`sofia_acknowledge_call()`)."
+msgstr ""
+"**可选的 100 Trying。** 当 `PFLAG_AUTO_INVITE_100` "
+"且呼入通道尚未应答时，`sofia_on_routing()` 发送 "
+"`SIP_100_TRYING`（`sofia_acknowledge_call()`）。"
+
+#: ../../06-workflows.md:74 64747e8275d54299afbeea116c85454f
+msgid ""
+"**Hunt the dialplan.** `switch_core_standard_on_routing()` looks up "
+"`caller_profile->dialplan` (comma-separated names) and calls "
+"`hunt_function`. `mod_dialplan_xml` registers name `\"XML\"` → "
+"`dialplan_hunt()`. Hunt locates `<context name=\"...\">` (fallback "
+"`global`), walks `<extension>` / `<condition>` regexes (`parse_exten`). "
+"Vanilla authenticated users (`user_context=default`) match `Local_Extension`"
+" `^(10[01][0-9])$` in `conf/vanilla/dialplan/default.xml`."
+msgstr ""
+"**查找 dialplan。** `switch_core_standard_on_routing()` 查找 "
+"`caller_profile->dialplan`（逗号分隔的名称）并调用 `hunt_function`。`mod_dialplan_xml` "
+"将名称 `\"XML\"` 注册为 `dialplan_hunt()`。查找定位 `<context name=\"...\">`（回退 "
+"`global`），遍历 `<extension>` / `<condition>` 正则（`parse_exten`）。Vanilla "
+"已鉴权用户（`user_context=default`）匹配 `conf/vanilla/dialplan/default.xml` 中的 "
+"`Local_Extension` `^(10[01][0-9])$`。"
+
+#: ../../06-workflows.md:75 ac8d98c3544e448490f6d18adfdb76d5
+#, python-brace-format
+msgid ""
+"**Execute applications.** `switch_core_standard_on_execute()` walks "
+"`extension->current_application` and "
+"`switch_core_session_execute_application()`. Vanilla `Local_Extension` sets "
+"`hangup_after_bridge=true` / `continue_on_fail=true`, then `bridge` "
+"`user/${dialed_extension}@${domain_name}`. `audio_bridge_function()` calls "
+"`switch_ivr_originate()` for the B-leg, then "
+"`switch_ivr_multi_threaded_bridge()` (or `switch_ivr_signal_bridge()` when "
+"`CF_PROXY_MODE`). Failed originate can fall through to voicemail via "
+"`loopback/app=voicemail:...`."
+msgstr ""
+"**执行应用。** `switch_core_standard_on_execute()` 遍历 "
+"`extension->current_application` 并调用 "
+"`switch_core_session_execute_application()`。Vanilla 的 `Local_Extension` 设置 "
+"`hangup_after_bridge=true` / `continue_on_fail=true`，然后 `bridge` "
+"`user/${dialed_extension}@${domain_name}`。`audio_bridge_function()` 为 B-leg "
+"调用 `switch_ivr_originate()`，再调用 "
+"`switch_ivr_multi_threaded_bridge()`（`CF_PROXY_MODE` 时为 "
+"`switch_ivr_signal_bridge()`）。originate 失败可通过 `loopback/app=voicemail:...` "
+"落到语音信箱。"
+
+#: ../../06-workflows.md:76 defc6ad03baf4965847b406e649d615d
+msgid ""
+"**Hang up.** `switch_channel_hangup()` fires `SWITCH_EVENT_CHANNEL_HANGUP` "
+"(`src/switch_channel.c`). Session thread `CS_HANGUP` → `sofia_on_hangup()`: "
+"answered → `nua_bye`; unanswered outbound → `nua_cancel`; unanswered inbound"
+" → `nua_respond` with `hangup_cause_to_sip()`. Then `CS_REPORTING` → "
+"`CS_DESTROY`. Vanilla CDR is `mod_cdr_csv`, not core SQL."
+msgstr ""
+"**挂断。** `switch_channel_hangup()` 触发 "
+"`SWITCH_EVENT_CHANNEL_HANGUP`（`src/switch_channel.c`）。会话线程 `CS_HANGUP` → "
+"`sofia_on_hangup()`：已应答 → `nua_bye`；未应答的呼出 → `nua_cancel`；未应答的呼入 → 以 "
+"`hangup_cause_to_sip()` 做 `nua_respond`。然后 `CS_REPORTING` → "
+"`CS_DESTROY`。Vanilla CDR 由 `mod_cdr_csv` 产生，而非核心 SQL。"
+
+#: ../../06-workflows.md:78 ../../06-workflows.md:170
+#: ../../06-workflows.md:257 ../../06-workflows.md:337
+#: 65f1600f17a5474b809f151feba50b7b
+msgid "Error and Edge Cases"
+msgstr "错误与边界情况"
+
+#: ../../06-workflows.md:29 ../../06-workflows.md:130
+#: ../../06-workflows.md:214 ../../06-workflows.md:300
+#: 26d095b5019e4cc9b0b74cd2a915ecc6
+msgid "Case"
+msgstr "情形"
+
+#: ../../06-workflows.md:29 ../../06-workflows.md:130
+#: ../../06-workflows.md:214 ../../06-workflows.md:300
+#: 6de5de77e2d646de95894aa0f56a20df
+msgid "Where handled"
+msgstr "处理位置"
+
+#: ../../06-workflows.md:29 ../../06-workflows.md:130
+#: ../../06-workflows.md:214 ../../06-workflows.md:300
+#: 95fcaa6697404399aae766abd2f9aef9
+msgid "Expected outcome"
+msgstr "预期结果"
+
+#: ../../06-workflows.md:29 a2392a081cee4d08bc327aae0ebad6b9
+msgid "Session limit / queue overload / standby"
+msgstr "会话上限 / 队列过载 / 待机"
+
+#: ../../06-workflows.md:29 8d669a010e3f41cda5cd6e69bd5971d5
+msgid "`sofia_event_callback`"
+msgstr "`sofia_event_callback`"
+
+#: ../../06-workflows.md:29 19050732c6c04ae8ad12d37f921b4721
+msgid ""
+"SIP **503** with `Retry-After: 300` (busy/max); standby has no Retry-After"
+msgstr "SIP **503** 带 `Retry-After: 300`（busy/max）；待机没有 Retry-After"
+
+#: ../../06-workflows.md:29 7c577c5f1f534c2f9a605229609bdd4f
+msgid "No Contact"
+msgstr "无 Contact"
+
+#: ../../06-workflows.md:29 2412482fb913410eb4a1db4d2e564589
+msgid "`sofia_handle_sip_i_invite`"
+msgstr "`sofia_handle_sip_i_invite`"
+
+#: ../../06-workflows.md:29 18fea6537e424ad4891121e4f7b6c8a1
+msgid "SIP **400** `\"Missing Contact Header\"`; `ib_failed_calls++`"
+msgstr "SIP **400** `\"Missing Contact Header\"`；`ib_failed_calls++`"
+
+#: ../../06-workflows.md:29 d4a1626e73664df4a572c75a0ddd0601
+msgid "Auth required, no credentials"
+msgstr "需要鉴权但无凭据"
+
+#: ../../06-workflows.md:29 351f01bfc9df4c9da11598d64369bc51
+msgid "`sofia_reg_handle_register` / `sofia_reg_auth_challenge`"
+msgstr "`sofia_reg_handle_register` / `sofia_reg_auth_challenge`"
+
+#: ../../06-workflows.md:29 208e84a93f7146d19fc76f990ac15b7b
+msgid ""
+"SIP **401** with `WWW-Authenticate` Digest; nonce stored in "
+"`sip_authentication`"
+msgstr "SIP **401** 带 `WWW-Authenticate` Digest；nonce 存入 `sip_authentication`"
+
+#: ../../06-workflows.md:29 29db383aacc249f6a193d7a43d3b1cee
+msgid "Bad digest / unknown user"
+msgstr "错误的 digest / 未知用户"
+
+#: ../../06-workflows.md:29 ../../06-workflows.md:130
+#: 948050a0ceea4d6dbde52f42cdcb20b8
+msgid "`sofia_reg_parse_auth`"
+msgstr "`sofia_reg_parse_auth`"
+
+#: ../../06-workflows.md:29 17bcc78e1b4940f8adfdcb2e43a2e963
+msgid ""
+"`AUTH_FORBIDDEN` → **403** (or **401** if not marked forbidden); log "
+"`\"Can't find user [user@domain]\"`"
+msgstr ""
+"`AUTH_FORBIDDEN` → **403**（若未标记为 forbidden 则为 **401**）；日志 `\"Can't find user"
+" [user@domain]\"`"
+
+#: ../../06-workflows.md:29 98bb961ed5ed479d945c19644840517f
+msgid "ACL reject with `auth-calls-acl-only`"
+msgstr "因 `auth-calls-acl-only` 被 ACL 拒绝"
+
+#: ../../06-workflows.md:29 e775c14d99694451baed3379c5854207
+msgid "SIP **403**; no digest fallback"
+msgstr "SIP **403**；无 digest 回退"
+
+#: ../../06-workflows.md:29 0ce9e9211027409897450bc17e6e30ea
+msgid "No matching extension"
+msgstr "无匹配的 extension"
+
+#: ../../06-workflows.md:29 597ddd56b44943308c224042e48ed16d
+msgid "`switch_core_standard_on_routing`"
+msgstr "`switch_core_standard_on_routing`"
+
+#: ../../06-workflows.md:29 3a48f03a504f4ac1b04bbc1f80ec4871
+msgid "Hangup `SWITCH_CAUSE_NO_ROUTE_DESTINATION`"
+msgstr "挂断 `SWITCH_CAUSE_NO_ROUTE_DESTINATION`"
+
+#: ../../06-workflows.md:29 71aad46887124e62b270cf2b5c706c81
+msgid "Codec mismatch on offer"
+msgstr "offer 编解码不匹配"
+
+#: ../../06-workflows.md:29 932dfb1450054c55968f0e709daefeba
+msgid "`sofia_media_negotiate_sdp` / `nua_callstate_received`"
+msgstr "`sofia_media_negotiate_sdp` / `nua_callstate_received`"
+
+#: ../../06-workflows.md:29 2bb7803db8bd412ca3e6b70f75a47002
+msgid "SIP **488** if already past `CS_NEW`"
+msgstr "若已越过 `CS_NEW` 则 SIP **488**"
+
+#: ../../06-workflows.md:29 8241c356ca4d4292972646a4ee271c73
+msgid "`bridge` originate fails"
+msgstr "`bridge` originate 失败"
+
+#: ../../06-workflows.md:29 cfdafda4566148f8963c96e4c9da3a52
+msgid "`audio_bridge_function`"
+msgstr "`audio_bridge_function`"
+
+#: ../../06-workflows.md:29 8cc846c2e40e435a92da54fe2bd9578e
+msgid ""
+"Logs `\"Originate Failed\"`; vanilla `continue_on_fail=true` continues to "
+"voicemail loopback"
+msgstr ""
+"记录 `\"Originate Failed\"`；vanilla 的 `continue_on_fail=true` 会继续到语音信箱 "
+"loopback"
+
+#: ../../06-workflows.md:29 e6b27b9b8484425b8b23a11b04b2b644
+msgid "Recovered channel (`CF_RECOVERING`)"
+msgstr "恢复的通道（`CF_RECOVERING`）"
+
+#: ../../06-workflows.md:29 4048c02d1498450b83ef392427e63e45
+msgid "`switch_core_standard_on_init`"
+msgstr "`switch_core_standard_on_init`"
+
+#: ../../06-workflows.md:29 ce7873022c8f4684954f0bc4f3c05e40
+msgid "Skips `CS_ROUTING`; goes to `CS_EXECUTE`"
+msgstr "跳过 `CS_ROUTING`；进入 `CS_EXECUTE`"
+
+#: ../../06-workflows.md:29 7068ebd35478414db9fab15ac78121e0
+msgid "Proxy media (`CF_PROXY_MODE` / `CF_PROXY_MEDIA`)"
+msgstr "代理媒体（`CF_PROXY_MODE` / `CF_PROXY_MEDIA`）"
+
+#: ../../06-workflows.md:29 791737805c8c4332815e4f044b4fd303
+msgid "`sofia_on_init`, bridge"
+msgstr "`sofia_on_init`，bridge"
+
+#: ../../06-workflows.md:29 17c4c22175e9446e81764e9618a0c375
+msgid "SDP absorbed; `switch_ivr_signal_bridge` instead of RTP bridge"
+msgstr "SDP 被吸收；使用 `switch_ivr_signal_bridge` 而非 RTP 桥接"
+
+#: ../../06-workflows.md:29 660f90b5a2ea4897a176f940933b7ed4
+msgid "Re-INVITE while both legs reinvite"
+msgstr "双腿同时 reinvite 时的 Re-INVITE"
+
+#: ../../06-workflows.md:29 b9aaeb2b3f454bd9be67d9a09043433c
+msgid "`nua_callstate_received`"
+msgstr "`nua_callstate_received`"
+
+#: ../../06-workflows.md:29 43d857ca33fc4d4ea53bb5ac550ce0cf
+msgid "**491** Request Pending; redo outbound invite"
+msgstr "**491** Request Pending；重做呼出 invite"
+
+#: ../../06-workflows.md:94 ../../06-workflows.md:184
+#: ../../06-workflows.md:271 ../../06-workflows.md:349
+#: 406cc472c2f04fb7aecc8f3395bbb110
+msgid "Data and Contracts Involved"
+msgstr "涉及的数据与约定"
+
+#: ../../06-workflows.md:96 5c056c97a340492f85cf66c17163b8a0
+msgid ""
+"Channel / session UUID; `switch_caller_profile_t` (`destination_number`, "
+"`context`, `dialplan`)."
+msgstr ""
+"通道 / 会话 "
+"UUID；`switch_caller_profile_t`（`destination_number`、`context`、`dialplan`）。"
+
+#: ../../06-workflows.md:97 5c41439d323443dfa8121fd265e3dc23
+msgid ""
+"Directory user XML after auth (`id`, `password`, `user_context`) — vanilla "
+"`conf/vanilla/directory/default/1000.xml`."
+msgstr ""
+"鉴权后的 directory 用户 XML（`id`、`password`、`user_context`）— vanilla "
+"`conf/vanilla/directory/default/1000.xml`。"
+
+#: ../../06-workflows.md:98 a63219a0341b4af8ab2db195d621e258
+msgid ""
+"Dialplan XML: `conf/vanilla/dialplan/default.xml` (`Local_Extension`), "
+"`conf/vanilla/dialplan/public.xml` for unauthenticated/external."
+msgstr ""
+"Dialplan XML：`conf/vanilla/dialplan/default.xml`（`Local_Extension`），未鉴权/外部走 "
+"`conf/vanilla/dialplan/public.xml`。"
+
+#: ../../06-workflows.md:99 3b7dcf51d7ce4b8b9a4b8919f6974d29
+msgid ""
+"Events: `SWITCH_EVENT_CHANNEL_CREATE`, `CHANNEL_STATE`, `CHANNEL_EXECUTE` / "
+"`_COMPLETE`, `CHANNEL_BRIDGE` / `_UNBRIDGE`, `CHANNEL_HANGUP` / "
+"`_HANGUP_COMPLETE`, outbound B-leg also `CHANNEL_ORIGINATE`."
+msgstr ""
+"事件：`SWITCH_EVENT_CHANNEL_CREATE`、`CHANNEL_STATE`、`CHANNEL_EXECUTE` / "
+"`_COMPLETE`、`CHANNEL_BRIDGE` / `_UNBRIDGE`、`CHANNEL_HANGUP` / "
+"`_HANGUP_COMPLETE`，呼出 B-leg 还有 `CHANNEL_ORIGINATE`。"
+
+#: ../../06-workflows.md:100 68d8527068f446cdb672724d1d81c599
+msgid ""
+"Core SQL `channels` / `calls` are a scoreboard projection, not the source of"
+" truth."
+msgstr "核心 SQL 的 `channels` / `calls` 是记分牌投影，不是事实源。"
+
+#: ../../06-workflows.md:101 df616813b95f4326a4764a644c3fc473
+msgid ""
+"SIP hangup mapping: `hangup_cause_to_sip()` in `mod_sofia.c`; optional Q.850"
+" `Reason` unless `disable_q850_reason`."
+msgstr ""
+"SIP 挂断映射：`mod_sofia.c` 中的 `hangup_cause_to_sip()`；除非 "
+"`disable_q850_reason`，否则可选 Q.850 `Reason`。"
+
+#: ../../06-workflows.md:103 ../../06-workflows.md:192
+#: ../../06-workflows.md:278 ../../06-workflows.md:355
+#: 6134f19323c04bd6bd9603d492fe4a8b
+msgid "Code References"
+msgstr "代码引用"
+
+#: ../../06-workflows.md:105 b0387abc9c62473e89ca310054495990
+msgid ""
+"`src/mod/endpoints/mod_sofia/sofia.c` — `sofia_event_callback`, "
+"`sofia_handle_sip_i_invite`, `sofia_handle_sip_i_state`"
+msgstr ""
+"`src/mod/endpoints/mod_sofia/sofia.c` — "
+"`sofia_event_callback`、`sofia_handle_sip_i_invite`、`sofia_handle_sip_i_state`"
+
+#: ../../06-workflows.md:106 561fdfe51d554f06918372cbb35a0c91
+msgid ""
+"`src/mod/endpoints/mod_sofia/mod_sofia.c` — `sofia_on_init`, "
+"`sofia_on_routing`, `sofia_on_execute`, `sofia_on_hangup`, "
+"`sofia_outgoing_channel`, `sofia_acknowledge_call`"
+msgstr ""
+"`src/mod/endpoints/mod_sofia/mod_sofia.c` — "
+"`sofia_on_init`、`sofia_on_routing`、`sofia_on_execute`、`sofia_on_hangup`、`sofia_outgoing_channel`、`sofia_acknowledge_call`"
+
+#: ../../06-workflows.md:107 d11510d54b884130aa0203c6a3474301
+msgid ""
+"`src/mod/endpoints/mod_sofia/sofia_glue.c` — `sofia_glue_do_invite`, "
+"`sofia_glue_new_pvt`"
+msgstr ""
+"`src/mod/endpoints/mod_sofia/sofia_glue.c` — "
+"`sofia_glue_do_invite`、`sofia_glue_new_pvt`"
+
+#: ../../06-workflows.md:108 9b8dcf82b61847f9857cd02bb230f2ec
+msgid ""
+"`src/switch_core_session.c` — `switch_core_session_request`, "
+"`switch_core_session_thread_launch`"
+msgstr ""
+"`src/switch_core_session.c` — "
+"`switch_core_session_request`、`switch_core_session_thread_launch`"
+
+#: ../../06-workflows.md:109 08dcac8e7c2e454c9b11213b327a8992
+msgid ""
+"`src/switch_core_state_machine.c` — `STATE_MACRO`, "
+"`switch_core_standard_on_routing`, `switch_core_standard_on_execute`"
+msgstr ""
+"`src/switch_core_state_machine.c` — "
+"`STATE_MACRO`、`switch_core_standard_on_routing`、`switch_core_standard_on_execute`"
+
+#: ../../06-workflows.md:110 4ed3611dcaf9442593cfede809cff1e7
+msgid ""
+"`src/mod/dialplans/mod_dialplan_xml/mod_dialplan_xml.c` — `dialplan_hunt`"
+msgstr ""
+"`src/mod/dialplans/mod_dialplan_xml/mod_dialplan_xml.c` — `dialplan_hunt`"
+
+#: ../../06-workflows.md:111 2682fb3c05264f929d9317645d2e2fef
+msgid ""
+"`src/mod/applications/mod_dptools/mod_dptools.c` — `audio_bridge_function` "
+"(`bridge`)"
+msgstr ""
+"`src/mod/applications/mod_dptools/mod_dptools.c` — "
+"`audio_bridge_function`（`bridge`）"
+
+#: ../../06-workflows.md:112 8389d0abf91549ac9eb969ea45aa9326
+msgid "`src/switch_ivr_originate.c` — `switch_ivr_originate`"
+msgstr "`src/switch_ivr_originate.c` — `switch_ivr_originate`"
+
+#: ../../06-workflows.md:113 2d82a60704654ed99e0db353cef19ade
+msgid "`src/switch_ivr_bridge.c` — media / signal bridge"
+msgstr "`src/switch_ivr_bridge.c` — 媒体 / 信令桥接"
+
+#: ../../06-workflows.md:114 fd9590de7efd411baf565f053fcd0cee
+msgid ""
+"`conf/vanilla/sip_profiles/internal.xml`, "
+"`conf/vanilla/sip_profiles/external.xml`"
+msgstr ""
+"`conf/vanilla/sip_profiles/internal.xml`、`conf/vanilla/sip_profiles/external.xml`"
+
+#: ../../06-workflows.md:115 36e32fd71b884fd192775850bacf7ccc
+msgid "`conf/vanilla/dialplan/default.xml`"
+msgstr "`conf/vanilla/dialplan/default.xml`"
+
+#: ../../06-workflows.md:119 11c92a0dbd754db392cf806555607c82
+msgid "SIP Registration and Directory Lookup"
+msgstr "SIP 注册与 Directory 查找"
+
+#: ../../06-workflows.md:123 ccd1fb9387e84174a3a386efd6ea4c58
+msgid ""
+"**Trigger**: SIP `REGISTER` on a Sofia profile (`nua_i_register` → "
+"`sofia_reg_handle_sip_i_register()` in "
+"`src/mod/endpoints/mod_sofia/sofia_reg.c`). Directory lookup is also used "
+"for INVITE digest (`REG_INVITE`) and Verto login."
+msgstr ""
+"**触发条件**：Sofia 配置档上的 SIP `REGISTER`（`nua_i_register` → "
+"`src/mod/endpoints/mod_sofia/sofia_reg.c` 中的 "
+"`sofia_reg_handle_sip_i_register()`）。Directory 查找也用于 INVITE "
+"digest（`REG_INVITE`）和 Verto 登录。"
+
+#: ../../06-workflows.md:124 eafab52b43184667aab2937fcbb4106f
+msgid ""
+"**Goal**: locate `user@domain` in the XML `directory` section, complete "
+"Digest (unless ACL/blind-reg), persist the Contact in Sofia "
+"`sip_registrations` and core `registrations`, answer **200 OK**, fire "
+"`CUSTOM sofia::register`."
+msgstr ""
+"**目标**：在 XML `directory` 段中定位 `user@domain`，完成 Digest（除非 ACL/blind-reg），将 "
+"Contact 持久化到 Sofia `sip_registrations` 和核心 `registrations`，应答 **200 OK**，触发 "
+"`CUSTOM sofia::register`。"
+
+#: ../../06-workflows.md:126 76ccd362383e4ffebe124468904a72b4
+#, python-brace-format
+msgid ""
+"Vanilla directory: domain `$${domain}` in "
+"`conf/vanilla/directory/default.xml`, users `1000`–`1019` under "
+"`conf/vanilla/directory/default/*.xml`. Password is `$${default_password}`. "
+"Domain for REGISTER is the To/From host unless the profile sets `reg-"
+"domain`."
+msgstr ""
+"Vanilla directory：`conf/vanilla/directory/default.xml` 中的域 `$${domain}`，用户 "
+"`1000`–`1019` 位于 `conf/vanilla/directory/default/*.xml`。密码为 "
+"`$${default_password}`。REGISTER 的域是 To/From host，除非配置档设置了 `reg-domain`。"
+
+#: ../../06-workflows.md:161 131678afbf284dc195826e145429ebd3
+msgid ""
+"**Profile gates.** If the profile lacks `MFLAG_REGISTER`, respond **403**. "
+"Optional `apply-register-acl`: reject IP → **403**; pass without "
+"`PFLAG_BLIND_REG` → `REG_AUTO_REGISTER` (skip digest). Vanilla internal has "
+"`apply-register-acl` commented out."
+msgstr ""
+"**配置档门禁。** 若配置档缺少 `MFLAG_REGISTER`，应答 **403**。可选 `apply-register-acl`：拒绝 IP "
+"→ **403**；通过且无 `PFLAG_BLIND_REG` → `REG_AUTO_REGISTER`（跳过 digest）。Vanilla "
+"内部配置档中 `apply-register-acl` 被注释掉。"
+
+#: ../../06-workflows.md:162 2c25a29663754bba9dfe9b0954cfdcb9
+msgid ""
+"**Missing Contact.** With `reg_deny_binding_fetch_and_no_lookup`, no Contact"
+" → **400**. Otherwise a fetch-style REGISTER may proceed without adding a "
+"binding."
+msgstr ""
+"**缺少 Contact。** 若启用 `reg_deny_binding_fetch_and_no_lookup`，无 Contact → "
+"**400**。否则 fetch 式 REGISTER 可不添加绑定而继续。"
+
+#: ../../06-workflows.md:163 bec5b3d0badf43caa8c0c80df29f5529
+msgid ""
+"**Challenge.** No `Authorization` (and not auto/blind) → "
+"`sofia_reg_auth_challenge()` inserts a nonce into `sip_authentication` and "
+"sends **401** `Digest realm=..., nonce=..., algorithm=MD5, qop=\"auth\"` "
+"(RFC 8760 extra algorithms when configured)."
+msgstr ""
+"**质询。** 无 `Authorization`（且非 auto/blind）→ `sofia_reg_auth_challenge()` 向 "
+"`sip_authentication` 插入 nonce，并发送 **401** `Digest realm=..., nonce=..., "
+"algorithm=MD5, qop=\"auth\"`（配置时还有 RFC 8760 额外算法）。"
+
+#: ../../06-workflows.md:164 b34d8b98a6b4452e8a28c6b217305571
+msgid ""
+"**Locate the user.** `sofia_reg_parse_auth()` calls "
+"`switch_xml_locate_user_merged(\"id\", username, domain_name, ip, ...)`. "
+"Domain is `profile->reg_domain` if set, else Digest realm. Pointer users "
+"(`type=\"pointer\"` in group XML) cannot register. Missing user → "
+"`AUTH_FORBIDDEN` and the log line that the domain/user must exist in "
+"directory."
+msgstr ""
+"**定位用户。** `sofia_reg_parse_auth()` 调用 `switch_xml_locate_user_merged(\"id\","
+" username, domain_name, ip, ...)`。域为已设置的 `profile->reg_domain`，否则为 Digest "
+"realm。指针用户（组 XML 中 `type=\"pointer\"`）不能注册。用户不存在 → `AUTH_FORBIDDEN`，并记录 "
+"domain/user 必须存在于 directory 的日志行。"
+
+#: ../../06-workflows.md:165 24f5de841ac247cc96bbb78bbbaabea2
+msgid ""
+"**Verify Digest.** Directory `<param name=\"password\">` or `a1-hash`. `sip-"
+"forbid-register=true` forbids. Per-user `auth-acl` can still reject the "
+"source IP. Results: `AUTH_OK`, `AUTH_RENEWED`, `AUTH_STALE` (re-challenge), "
+"`AUTH_FORBIDDEN`."
+msgstr ""
+"**校验 Digest。** Directory 的 `<param name=\"password\">` 或 `a1-hash`。`sip-"
+"forbid-register=true` 会禁止。每用户 `auth-acl` 仍可拒绝源 "
+"IP。结果：`AUTH_OK`、`AUTH_RENEWED`、`AUTH_STALE`（重新质询）、`AUTH_FORBIDDEN`。"
+
+#: ../../06-workflows.md:166 c219b4932ec14561b4317cb7c1a9c43a
+msgid ""
+"**Store the binding.** `insert into sip_registrations` (or `update` on "
+"refresh) in `sofia_reg.c`; `switch_core_add_registration()` writes the core "
+"`registrations` table. Expires 0 deletes (`switch_core_del_registration`) "
+"and fires `CUSTOM sofia::unregister`."
+msgstr ""
+"**存储绑定。** 在 `sofia_reg.c` 中 `insert into sip_registrations`（刷新时 "
+"`update`）；`switch_core_add_registration()` 写入核心 `registrations` 表。Expires 0 "
+"删除（`switch_core_del_registration`）并触发 `CUSTOM sofia::unregister`。"
+
+#: ../../06-workflows.md:167 e0c9266ded224556bfa28ee62ffdfba0
+msgid ""
+"**Respond and notify.** **200 OK** with Contact list from positive-expires "
+"bindings. Fire `CUSTOM sofia::register` (`MY_EVENT_REGISTER`). Attempts also"
+" fire `sofia::register_attempt` with `auth-result` `SUCCESS` / `RENEWED` / "
+"`STALE` / `FORBIDDEN`."
+msgstr ""
+"**应答并通知。** **200 OK** 带正 Expires 绑定的 Contact 列表。触发 `CUSTOM "
+"sofia::register`（`MY_EVENT_REGISTER`）。尝试还会触发带 `auth-result` `SUCCESS` / "
+"`RENEWED` / `STALE` / `FORBIDDEN` 的 `sofia::register_attempt`。"
+
+#: ../../06-workflows.md:168 a2d122d41dfe4b3791df9b2b0e505b92
+msgid ""
+"**INVITE reuse.** Inbound INVITE with `PFLAG_AUTH_CALLS` calls the same "
+"`sofia_reg_handle_register(..., REG_INVITE, ...)` using `Proxy-"
+"Authorization` / `Authorization`, then copies directory variables onto the "
+"channel."
+msgstr ""
+"**INVITE 复用。** 带 `PFLAG_AUTH_CALLS` 的呼入 INVITE 走同一条 "
+"`sofia_reg_handle_register(..., REG_INVITE, ...)` 路径，使用 `Proxy-"
+"Authorization` / `Authorization`，然后将 directory 变量复制到通道。"
+
+#: ../../06-workflows.md:130 02f4a57680d343f187e2416577e83105
+msgid "Profile not accepting REGISTER"
+msgstr "配置档不接受 REGISTER"
+
+#: ../../06-workflows.md:130 fd21a07ee1204bb5a3a9f4862c0da4ad
+msgid "`sofia_reg_handle_sip_i_register`"
+msgstr "`sofia_reg_handle_sip_i_register`"
+
+#: ../../06-workflows.md:130 5d07a7182d694427a878311197406b63
+msgid "SIP **403**"
+msgstr "SIP **403**"
+
+#: ../../06-workflows.md:130 ae61bde16a3541ca8a3c895b73ca284c
+msgid "Register ACL miss"
+msgstr "注册 ACL 未命中"
+
+#: ../../06-workflows.md:130 7ff27fdca3aa43878a9d79dc864804fc
+msgid "`reg_acl` loop"
+msgstr "`reg_acl` 循环"
+
+#: ../../06-workflows.md:130 92653c94f3e448ef916f84fd4bc243a7
+msgid "SIP **403**; log `\"IP … Rejected by register acl\"`"
+msgstr "SIP **403**；日志 `\"IP … Rejected by register acl\"`"
+
+#: ../../06-workflows.md:130 dc22ec8d130e47869e23121addd7e773
+msgid "Incomplete To/From"
+msgstr "To/From 不完整"
+
+#: ../../06-workflows.md:130 80ea61b7d91144e093a2c72b83fb9cd6
+msgid "`sofia_reg_handle_register_token`"
+msgstr "`sofia_reg_handle_register_token`"
+
+#: ../../06-workflows.md:130 f1ab790f74074019adc861d762071093
+msgid "SIP **401**; log cannot authorize without complete header"
+msgstr "SIP **401**；日志记录缺少完整头无法鉴权"
+
+#: ../../06-workflows.md:130 ccf58d2bcd454c3b9f93d6068d1041c8
+msgid "Unknown user / pointer user"
+msgstr "未知用户 / 指针用户"
+
+#: ../../06-workflows.md:130 3310175a17e047ac8072691854e4d510
+msgid "`AUTH_FORBIDDEN` → **403**"
+msgstr "`AUTH_FORBIDDEN` → **403**"
+
+#: ../../06-workflows.md:130 bcc22cf573074660b93163865d8653ac
+msgid "Stale nonce"
+msgstr "过期 nonce"
+
+#: ../../06-workflows.md:130 0821bb038c3f4140a5d9651fe0b24838
+msgid "`AUTH_STALE`"
+msgstr "`AUTH_STALE`"
+
+#: ../../06-workflows.md:130 15c31817718b46c2b86ab98e92785e8c
+msgid "New **401** with `stale=true`"
+msgstr "新的 **401** 带 `stale=true`"
+
+#: ../../06-workflows.md:130 3c839acf1125498ca9735da54fc2c459
+msgid "`Expires: 0`"
+msgstr "`Expires: 0`"
+
+#: ../../06-workflows.md:130 ab54a81f66aa4bc581313096d52b3f4d
+msgid "unregister branch"
+msgstr "unregister 分支"
+
+#: ../../06-workflows.md:130 34887884111e4adfaab9ad269711359b
+msgid "Delete rows; `sofia::unregister`; **200**"
+msgstr "删除行；`sofia::unregister`；**200**"
+
+#: ../../06-workflows.md:130 a3107525293a44d4b596bc8d5553f534
+msgid "NAT / WS / TLS"
+msgstr "NAT / WS / TLS"
+
+#: ../../06-workflows.md:130 c4ac51824387487e90383b6f7b212db9
+msgid "via / Contact / `nat-acl`"
+msgstr "via / Contact / `nat-acl`"
+
+#: ../../06-workflows.md:130 b6fba4b61a01453a9321ccd9dd7ddb72
+msgid ""
+"Status text e.g. `Registered(WS-NAT)`; Contact rewritten toward received "
+"address"
+msgstr "状态文本例如 `Registered(WS-NAT)`；Contact 改写为指向收到的地址"
+
+#: ../../06-workflows.md:130 8538fc8384084556a93305d60d53f20f
+msgid "`mod_xml_curl` directory"
+msgstr "`mod_xml_curl` directory"
+
+#: ../../06-workflows.md:130 88e2a004d9a9430e856ef0e14ca1eb61
+msgid "`switch_xml_locate_user` open-root hook"
+msgstr "`switch_xml_locate_user` 的 open-root 钩子"
+
+#: ../../06-workflows.md:130 7bd0d57c918e42679b5117a080c3269d
+msgid ""
+"Same locate API; HTTP/LDAP backend is operator config — **[NEEDS INPUT: "
+"whether this deploy uses file XML or curl/LDAP]**"
+msgstr ""
+"同一套 locate API；HTTP/LDAP 后端由运维配置 — **[NEEDS INPUT: 本次部署使用文件 XML 还是 "
+"curl/LDAP]**"
+
+#: ../../06-workflows.md:130 04264c240fc44c00b0e1b47424f8c719
+msgid "`cacheable` user XML"
+msgstr "`cacheable` 用户 XML"
+
+#: ../../06-workflows.md:130 ../../06-workflows.md:300
+#: 987a19fa4dd14ebb97ddc5f743fee14a
+msgid "`switch_xml_locate_user_merged`"
+msgstr "`switch_xml_locate_user_merged`"
+
+#: ../../06-workflows.md:130 66fc6ccd7a90428abd130fa0845ae9a6
+msgid ""
+"Cached user can survive `reloadxml` until TTL; vanilla demo users have no "
+"`cacheable` attr"
+msgstr "缓存用户可在 TTL 内挺过 `reloadxml`；vanilla 演示用户没有 `cacheable` 属性"
+
+#: ../../06-workflows.md:186 50336a9f1600417d9a892d6ae3934793
+msgid ""
+"XML directory section; vanilla users `1000`–`1019`, groups `sales` / "
+"`billing` / `support` as pointers."
+msgstr ""
+"XML directory 段；vanilla 用户 `1000`–`1019`，组 `sales` / `billing` / `support` "
+"作为指针。"
+
+#: ../../06-workflows.md:187 e0645ce5b800472588843b5278e7db75
+msgid ""
+"Sofia tables (`sofia_glue.c`): `sip_registrations`, `sip_authentication`, "
+"`sip_dialogs`, `sip_presence`, `sip_subscriptions`."
+msgstr ""
+"Sofia "
+"表（`sofia_glue.c`）：`sip_registrations`、`sip_authentication`、`sip_dialogs`、`sip_presence`、`sip_subscriptions`。"
+
+#: ../../06-workflows.md:188 291df37e7def42d6947712c47ad6c53b
+msgid ""
+"Core table `registrations` (`switch_core_add_registration` in "
+"`src/switch_core_sqldb.c`)."
+msgstr ""
+"核心表 `registrations`（`src/switch_core_sqldb.c` 中的 "
+"`switch_core_add_registration`）。"
+
+#: ../../06-workflows.md:189 43a082155bff47deb13ebfd0095b6793
+msgid ""
+"Events: `CUSTOM sofia::register`, `sofia::register_attempt`, "
+"`sofia::register_failure`, `sofia::unregister` (`MY_EVENT_*` in "
+"`mod_sofia.h`)."
+msgstr ""
+"事件：`CUSTOM "
+"sofia::register`、`sofia::register_attempt`、`sofia::register_failure`、`sofia::unregister`（`mod_sofia.h`"
+" 中的 `MY_EVENT_*`）。"
+
+#: ../../06-workflows.md:190 ba71b38b381042baa69489720386dd72
+msgid ""
+"Channel vars after INVITE auth: `sip_authorized`, directory `<variables>` "
+"(e.g. `user_context=default`)."
+msgstr ""
+"INVITE 鉴权后的通道变量：`sip_authorized`，directory `<variables>`（例如 "
+"`user_context=default`）。"
+
+#: ../../06-workflows.md:194 3e10bde495424740b99a28756000ce24
+msgid ""
+"`src/mod/endpoints/mod_sofia/sofia_reg.c` — "
+"`sofia_reg_handle_sip_i_register`, `sofia_reg_handle_register_token`, "
+"`sofia_reg_parse_auth`, `sofia_reg_auth_challenge`"
+msgstr ""
+"`src/mod/endpoints/mod_sofia/sofia_reg.c` — "
+"`sofia_reg_handle_sip_i_register`、`sofia_reg_handle_register_token`、`sofia_reg_parse_auth`、`sofia_reg_auth_challenge`"
+
+#: ../../06-workflows.md:195 38a17bb754e64bd2888e11be8e2de848
+msgid ""
+"`src/mod/endpoints/mod_sofia/sofia.c` — `nua_i_register` dispatch; INVITE "
+"`REG_INVITE`"
+msgstr ""
+"`src/mod/endpoints/mod_sofia/sofia.c` — `nua_i_register` 分发；INVITE "
+"`REG_INVITE`"
+
+#: ../../06-workflows.md:196 5368ba35cb9e4012b74d9ab9663edfd8
+msgid ""
+"`src/switch_xml.c` — `switch_xml_locate_user_merged`, "
+"`switch_xml_locate_user`"
+msgstr ""
+"`src/switch_xml.c` — "
+"`switch_xml_locate_user_merged`、`switch_xml_locate_user`"
+
+#: ../../06-workflows.md:197 bc184f14e06c4116b80cb5f9bb065a90
+msgid ""
+"`src/mod/endpoints/mod_sofia/sofia_glue.c` — `CREATE TABLE "
+"sip_registrations`"
+msgstr ""
+"`src/mod/endpoints/mod_sofia/sofia_glue.c` — `CREATE TABLE "
+"sip_registrations`"
+
+#: ../../06-workflows.md:198 48016754b46245458d6029e4dda9a96b
+msgid ""
+"`conf/vanilla/directory/default.xml`, "
+"`conf/vanilla/directory/default/1000.xml`"
+msgstr ""
+"`conf/vanilla/directory/default.xml`、`conf/vanilla/directory/default/1000.xml`"
+
+#: ../../06-workflows.md:199 be6c2aba296d46e6939c90d135d0fd7c
+msgid ""
+"`conf/vanilla/sip_profiles/internal.xml` (`auth-calls`, commented `apply-"
+"register-acl`)"
+msgstr ""
+"`conf/vanilla/sip_profiles/internal.xml`（`auth-calls`，已注释的 `apply-register-"
+"acl`）"
+
+#: ../../06-workflows.md:203 2ffdda8d4b2945f499505c4441ff14fd
+msgid "ESL Originate and Event Control"
+msgstr "ESL Originate 与事件控制"
+
+#: ../../06-workflows.md:207 e481a26361e5459e8fee084340d03c01
+msgid ""
+"**Trigger**: TCP client (`fs_cli` or custom `libs/esl`) connects to "
+"`mod_event_socket`. Vanilla listen: port **8021**, password **`ClueCon`**, "
+"`listen-ip` **`::`** in "
+"`conf/vanilla/autoload_configs/event_socket.conf.xml`. `fs_cli` itself "
+"defaults to **`127.0.0.1:8021`** / `ClueCon` (`libs/esl/fs_cli.c`)."
+msgstr ""
+"**触发条件**：TCP 客户端（`fs_cli` 或自定义 `libs/esl`）连接到 `mod_event_socket`。Vanilla "
+"监听：端口 **8021**，密码 **`ClueCon`**，`listen-ip` **`::`**，见 "
+"`conf/vanilla/autoload_configs/event_socket.conf.xml`。`fs_cli` 自身默认 "
+"**`127.0.0.1:8021`** / `ClueCon`（`libs/esl/fs_cli.c`）。"
+
+#: ../../06-workflows.md:208 96bc6c5aa4a7453185a7f2a833b44571
+msgid ""
+"**Goal**: authenticate, then run console APIs (`api` / `bgapi`, including "
+"`originate`), subscribe to events, and/or drive a live UUID with `sendmsg` "
+"(`call-command: execute|hangup|…`). Outbound mode: dialplan app `socket` "
+"connects **from** FreeSWITCH to a controller."
+msgstr ""
+"**目标**：鉴权，然后运行控制台 API（`api` / `bgapi`，包括 `originate`），订阅事件，和/或用 "
+"`sendmsg`（`call-command: execute|hangup|…`）驱动活动 UUID。呼出模式：dialplan 应用 "
+"`socket` **从** FreeSWITCH 连到控制器。"
+
+#: ../../06-workflows.md:210 1cf575d945b64fdea99075b2c7045608
+msgid ""
+"Do not bind ESL beyond loopback in production without changing `ClueCon` — "
+"vanilla `listen-ip` is `::` (all interfaces). **[NEEDS INPUT: site ESL bind "
+"and password]**."
+msgstr ""
+"生产环境不要在未更改 `ClueCon` 的情况下把 ESL 绑到回环以外 — vanilla 的 `listen-ip` 是 "
+"`::`（所有接口）。**[NEEDS INPUT: 站点 ESL 绑定地址与密码]**。"
+
+#: ../../06-workflows.md:247 a94969fb28334d88a5f1b6177a92c9d8
+msgid ""
+"**Accept and challenge.** Listener thread sends `Content-Type: "
+"auth/request`. Until `LFLAG_AUTHED`, only `auth <password>` (compared to "
+"`prefs.password`) or `userauth user@domain:pass` (directory `esl-password` /"
+" `esl-allowed-api` / `esl-allowed-events`) are accepted. Wrong password: "
+"`-ERR invalid` and the socket is closed."
+msgstr ""
+"**接受并质询。** 监听线程发送 `Content-Type: auth/request`。在 `LFLAG_AUTHED` 之前，只接受 `auth"
+" <password>`（与 `prefs.password` 比较）或 `userauth user@domain:pass`（directory 的"
+" `esl-password` / `esl-allowed-api` / `esl-allowed-events`）。密码错误：`-ERR "
+"invalid` 并关闭套接字。"
+
+#: ../../06-workflows.md:248 4fc8c215bc7448eaa2db0a49ceb8a4a3
+msgid ""
+"**Parse commands.** `parse_command()` in `mod_event_socket.c`. After auth: "
+"`api`, `bgapi` (async + `Job-UUID` + `BACKGROUND_JOB`), `event` / `nixevent`"
+" / `noevents` / `myevents`, `sendmsg`, `sendevent`, `getvar`, `log`, "
+"`linger`, `exit` (`+OK bye`). Replies are `+OK` or `-ERR`."
+msgstr ""
+"**解析命令。** `mod_event_socket.c` 中的 `parse_command()`。鉴权后：`api`、`bgapi`（异步 + "
+"`Job-UUID` + `BACKGROUND_JOB`）、`event` / `nixevent` / `noevents` / "
+"`myevents`、`sendmsg`、`sendevent`、`getvar`、`log`、`linger`、`exit`（`+OK "
+"bye`）。回复为 `+OK` 或 `-ERR`。"
+
+#: ../../06-workflows.md:249 6ee4a674276b4ed3b2656f4a426437ae
+msgid ""
+"**`api originate`.** `originate_function` in `mod_commands.c`. Syntax: "
+"`<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>]"
+" [<cid_name>] [<cid_num>] [<timeout_sec>]`. Defaults: dialplan `XML`, "
+"context `default`, timeout **60s**. Calls `switch_ivr_originate()`. On "
+"success the new session is transferred into the extension or `&app(args)` "
+"inline extension; on failure `-ERR` plus `switch_channel_cause2str(cause)`."
+msgstr ""
+"**`api originate`。** `mod_commands.c` 中的 `originate_function`。语法：`<call url>"
+" <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] "
+"[<cid_name>] [<cid_num>] [<timeout_sec>]`。默认：dialplan `XML`，context "
+"`default`，超时 **60s**。调用 `switch_ivr_originate()`。成功时新会话转入 extension 或 "
+"`&app(args)` 内联 extension；失败则 `-ERR` 加上 `switch_channel_cause2str(cause)`。"
+
+#: ../../06-workflows.md:250 adc49defd4fe4455a28b71229f43cf4b
+msgid ""
+"**Outbound SIP leg.** `sofia_outgoing_channel()` sets `TFLAG_OUTBOUND` and "
+"`CS_INIT`. `sofia_on_init()` then `sofia_glue_do_invite()` sends the INVITE."
+" Core also fires `SWITCH_EVENT_CHANNEL_ORIGINATE` for outbound legs."
+msgstr ""
+"**呼出 SIP 腿。** `sofia_outgoing_channel()` 设置 `TFLAG_OUTBOUND` 和 `CS_INIT`。随后 "
+"`sofia_on_init()` 再由 `sofia_glue_do_invite()` 发送 INVITE。核心还会为呼出腿触发 "
+"`SWITCH_EVENT_CHANNEL_ORIGINATE`。"
+
+#: ../../06-workflows.md:251 5851245272f048dabf81d8c59c7e9ae4
+msgid ""
+"**`sendmsg`.** Headers include `call-command`. `switch_ivr_parse_event()` "
+"hashes `execute` (needs `execute-app-name` / `execute-app-arg`), `hangup`, "
+"`nomedia`, `unicast`, `xferext`. With a UUID, the event is queued on that "
+"session (`switch_core_session_queue_private_event`); outbound `socket` "
+"sessions may run it inline."
+msgstr ""
+"**`sendmsg`。** 头字段包含 `call-command`。`switch_ivr_parse_event()` 哈希 "
+"`execute`（需要 `execute-app-name` / `execute-app-"
+"arg`）、`hangup`、`nomedia`、`unicast`、`xferext`。有 UUID "
+"时事件入队到该会话（`switch_core_session_queue_private_event`）；呼出 `socket` 会话可内联执行。"
+
+#: ../../06-workflows.md:252 1f4688cdf92844d6948655e3e9e127cb
+msgid ""
+"**Outbound ESL (`socket` app).** `SWITCH_ADD_APP(..., \"socket\", ..., "
+"socket_function, \"<ip>[:<port>]\")`. The channel connects out; the "
+"controller sends the same `sendmsg` vocabulary. `LFLAG_OUTBOUND` without "
+"`LFLAG_FULL` skips inbound-only commands (`api`, `sendevent`, …)."
+msgstr ""
+"**呼出 ESL（`socket` 应用）。** `SWITCH_ADD_APP(..., \"socket\", ..., "
+"socket_function, \"<ip>[:<port>]\")`。通道向外连接；控制器发送同一套 `sendmsg` "
+"词汇。`LFLAG_OUTBOUND` 且无 `LFLAG_FULL` 时跳过仅呼入命令（`api`、`sendevent`、…）。"
+
+#: ../../06-workflows.md:253 bd8586a035c84f1eaddf95cc359a84ae
+msgid ""
+"**Events to the client.** `mod_event_socket` binds `SWITCH_EVENT_ALL`. "
+"Serialize with `switch_event_serialize()` (plain) or JSON. Do not block the "
+"event thread (`switch_event.h`)."
+msgstr ""
+"**发给客户端的事件。** `mod_event_socket` 绑定 `SWITCH_EVENT_ALL`。用 "
+"`switch_event_serialize()`（plain）或 JSON 序列化。不要阻塞事件线程（`switch_event.h`）。"
+
+#: ../../06-workflows.md:255 e8a9ccfe53414781a18fdcf2cca17290
+msgid ""
+"`bgapi` is the non-blocking form of `api`; `originate` itself can block up "
+"to the timeout (the API logs a notice if invoked on an existing session)."
+msgstr ""
+"`bgapi` 是 `api` 的非阻塞形式；`originate` 本身可阻塞直到超时（若在已有会话上调用，API 会记一条 notice）。"
+
+#: ../../06-workflows.md:214 3c7e307d1272488dbeb68b7526399944
+msgid "Bad ESL password"
+msgstr "错误的 ESL 密码"
+
+#: ../../06-workflows.md:214 ff3f3e6c94ae47789326e781567096c4
+msgid "`parse_command` auth"
+msgstr "`parse_command` 鉴权"
+
+#: ../../06-workflows.md:214 0280328d6cbc4be98377cdfad3fe4bf1
+msgid "`-ERR invalid`; connection dropped"
+msgstr "`-ERR invalid`；连接断开"
+
+#: ../../06-workflows.md:214 aa6100080a4e4c51909d80709e368c28
+msgid "Command before auth"
+msgstr "鉴权前的命令"
+
+#: ../../06-workflows.md:214 b86b61971b284c758f865a9f464ba02b
+msgid "`LFLAG_AUTHED` check"
+msgstr "`LFLAG_AUTHED` 检查"
+
+#: ../../06-workflows.md:214 80695ce500f844d09a22b332532c98f7
+msgid "Ignored except `auth` / `userauth`"
+msgstr "除 `auth` / `userauth` 外忽略"
+
+#: ../../06-workflows.md:214 3735be36837840f7a82755704ba0372b
+msgid "`userauth` API not in allow-list"
+msgstr "`userauth` API 不在允许列表"
+
+#: ../../06-workflows.md:214 728b69113f9e4f198e11d6167c368408
+msgid "`auth_api_command`"
+msgstr "`auth_api_command`"
+
+#: ../../06-workflows.md:214 231c21474b6f4a42b60b8e74e766d53e
+msgid "`-ERR permission denied`"
+msgstr "`-ERR permission denied`"
+
+#: ../../06-workflows.md:214 5f479b5b1d324743a71791e6af96111f
+msgid "`originate` argc not 2–7"
+msgstr "`originate` 的 argc 不是 2–7"
+
+#: ../../06-workflows.md:214 dc1385c2ebf04fe89f7f8d44be776d3e
+msgid "`originate_function`"
+msgstr "`originate_function`"
+
+#: ../../06-workflows.md:214 7e019caac7464609be68e48bf425d51c
+msgid "`-USAGE:` plus `ORIGINATE_SYNTAX`"
+msgstr "`-USAGE:` 加上 `ORIGINATE_SYNTAX`"
+
+#: ../../06-workflows.md:214 2b410a9d72284562b4fe50dd33f54fef
+msgid "Originate timeout / SIP fail"
+msgstr "Originate 超时 / SIP 失败"
+
+#: ../../06-workflows.md:214 6e571a51f94f4dcd8fcca5c12d83ee5b
+msgid "`switch_ivr_originate`"
+msgstr "`switch_ivr_originate`"
+
+#: ../../06-workflows.md:214 5a951a85a44a4e62865cc90b7541aefe
+msgid "`-ERR` cause string (`NO_ANSWER`, `USER_BUSY`, …)"
+msgstr "`-ERR` 原因字符串（`NO_ANSWER`、`USER_BUSY`、…）"
+
+#: ../../06-workflows.md:214 a2f2193efccd45cd9020c87a307821e3
+msgid "`sendmsg` unknown UUID"
+msgstr "`sendmsg` 未知 UUID"
+
+#: ../../06-workflows.md:214 58c1169df1e74b4d80ec5e384dfc3965
+msgid "`parse_command`"
+msgstr "`parse_command`"
+
+#: ../../06-workflows.md:214 e23efacb1c884fbbbf0030f1be38124e
+msgid "`-ERR invalid session id [… ]`"
+msgstr "`-ERR invalid session id [… ]`"
+
+#: ../../06-workflows.md:214 b78b1cf43f634d629cd38dd44645db67
+msgid "Missing `call-command`"
+msgstr "缺少 `call-command`"
+
+#: ../../06-workflows.md:214 0895106e1cc14d6e814c483747f668cc
+msgid "`switch_ivr_parse_event`"
+msgstr "`switch_ivr_parse_event`"
+
+#: ../../06-workflows.md:214 c37c670fd9af437aa757a3e46b413b4d
+msgid "Log `\"Invalid Command!\"`; `SWITCH_STATUS_FALSE`"
+msgstr "日志 `\"Invalid Command!\"`；`SWITCH_STATUS_FALSE`"
+
+#: ../../06-workflows.md:214 c9e1446c472742e3b74a858ed7410cf9
+msgid "Unload/reload `mod_event_socket` via `api`"
+msgstr "通过 `api` 卸载/重载 `mod_event_socket`"
+
+#: ../../06-workflows.md:214 6b3bb47338fe4d50a91c42dd94e7d32e
+msgid "cheat rewrite"
+msgstr "作弊改写"
+
+#: ../../06-workflows.md:214 e327547b821642c0ba64bf264f4ee757
+msgid "Forced to `bgapi` so the listener thread is not torn down mid-command"
+msgstr "强制改为 `bgapi`，以免监听线程在命令执行中被拆掉"
+
+#: ../../06-workflows.md:214 adf85e29e38545a59e4c5ad7055fa8f7
+msgid "Slow ESL consumer"
+msgstr "缓慢的 ESL 消费者"
+
+#: ../../06-workflows.md:214 f0aa2c2650ad4c76b71569e80858e6a6
+msgid "event delivery thread"
+msgstr "事件投递线程"
+
+#: ../../06-workflows.md:214 6c7cf560e19c446a9341b81a5d72e722
+msgid "Core warns; client must queue locally"
+msgstr "核心发出警告；客户端必须本地排队"
+
+#: ../../06-workflows.md:273 79fd4d5f8460438c8f7a1f4c97abbd41
+msgid ""
+"ESL line protocol after `auth` (see [Data and API](05-data-and-api.md) "
+"command table)."
+msgstr "`auth` 之后的 ESL 行协议（见 [数据与 API](05-data-and-api.md) 命令表）。"
+
+#: ../../06-workflows.md:274 ad147608fa79425881db617774a59486
+msgid ""
+"Console APIs: `originate`, `uuid_kill`, `uuid_bridge`, `uuid_transfer`, "
+"`status`, `show channels` (`mod_commands.c`)."
+msgstr ""
+"控制台 API：`originate`、`uuid_kill`、`uuid_bridge`、`uuid_transfer`、`status`、`show"
+" channels`（`mod_commands.c`）。"
+
+#: ../../06-workflows.md:275 624d9fc1a93f4f93a4b906dcdb9366f6
+msgid "Events as subscribed; `BACKGROUND_JOB` for `bgapi`."
+msgstr "按订阅投递事件；`bgapi` 对应 `BACKGROUND_JOB`。"
+
+#: ../../06-workflows.md:276 0a28cf1f7a694d55a909d40f2b358297
+msgid ""
+"Channel UUID returned on successful originate — handle for later `sendmsg` /"
+" `uuid_*`."
+msgstr "成功 originate 返回的通道 UUID — 供后续 `sendmsg` / `uuid_*` 使用。"
+
+#: ../../06-workflows.md:280 0ccaaf0c390e4c24b668bd43059f4947
+msgid ""
+"`src/mod/event_handlers/mod_event_socket/mod_event_socket.c` — "
+"`parse_command`, `LFLAG_AUTHED`, `socket_function`"
+msgstr ""
+"`src/mod/event_handlers/mod_event_socket/mod_event_socket.c` — "
+"`parse_command`、`LFLAG_AUTHED`、`socket_function`"
+
+#: ../../06-workflows.md:281 315dc8e378fe4c15b01b03c0b377b056
+msgid "`libs/esl/src/esl.c` — `esl_connect_timeout`, `esl_send_recv`"
+msgstr "`libs/esl/src/esl.c` — `esl_connect_timeout`、`esl_send_recv`"
+
+#: ../../06-workflows.md:282 8321830cdc3141b180d96acb300575e9
+msgid ""
+"`libs/esl/fs_cli.c` — default host/port/password; `-x` one-shot (`fs_cli -x "
+"status`)"
+msgstr ""
+"`libs/esl/fs_cli.c` — 默认 host/port/password；`-x` 一次性命令（`fs_cli -x status`）"
+
+#: ../../06-workflows.md:283 2209edfef1944e7e9955b7e9c32bdd97
+msgid ""
+"`src/mod/applications/mod_commands/mod_commands.c` — `originate_function`, "
+"`ORIGINATE_SYNTAX`"
+msgstr ""
+"`src/mod/applications/mod_commands/mod_commands.c` — "
+"`originate_function`、`ORIGINATE_SYNTAX`"
+
+#: ../../06-workflows.md:284 88df48f0a81b426abcfc3a752badf967
+msgid ""
+"`src/include/switch_ivr.h` / `src/switch_ivr_originate.c` — "
+"`switch_ivr_originate`"
+msgstr ""
+"`src/include/switch_ivr.h` / `src/switch_ivr_originate.c` — "
+"`switch_ivr_originate`"
+
+#: ../../06-workflows.md:285 6dc494d5046d40d987709cd267eb1b07
+msgid "`src/switch_ivr.c` — `switch_ivr_parse_event` (`call-command`)"
+msgstr "`src/switch_ivr.c` — `switch_ivr_parse_event`（`call-command`）"
+
+#: ../../06-workflows.md:286 f6dcc78a6d5748b4b830fc7a109c1359
+msgid "`src/switch_event.c` — bus, `switch_event_serialize`"
+msgstr "`src/switch_event.c` — 事件总线，`switch_event_serialize`"
+
+#: ../../06-workflows.md:287 5cc117e199db4071b1322606bec67e57
+msgid "`conf/vanilla/autoload_configs/event_socket.conf.xml`"
+msgstr "`conf/vanilla/autoload_configs/event_socket.conf.xml`"
+
+#: ../../06-workflows.md:291 005b3764fcdf4ee7a8c45f66d824f4e8
+msgid "XML Reload"
+msgstr "XML 重载"
+
+#: ../../06-workflows.md:295 6f6c5abcfd5c4c6bb6994a4dd930ed9a
+msgid ""
+"**Trigger**: console/ESL `reloadxml` (`reload_xml_function` in "
+"`mod_commands.c`), or `reloadacl` / `sofia profile <name> rescan` which also"
+" call `switch_xml_reload()`."
+msgstr ""
+"**触发条件**：控制台/ESL `reloadxml`（`mod_commands.c` 中的 "
+"`reload_xml_function`），或同样会调用 `switch_xml_reload()` 的 `reloadacl` / `sofia "
+"profile <name> rescan`。"
+
+#: ../../06-workflows.md:296 c92536da4e4a44cd9577143ca8ce50c4
+msgid ""
+"**Goal**: re-parse `conf_dir` + `freeswitch.xml` (vanilla root "
+"`conf/vanilla/freeswitch.xml` with preprocessor includes), replace "
+"`MAIN_XML_ROOT`, fire `SWITCH_EVENT_RELOADXML` so **new** dialplan hunts and"
+" directory locates see the new tree. In-flight sessions keep the extension "
+"they already hunted."
+msgstr ""
+"**目标**：重新解析 `conf_dir` + `freeswitch.xml`（vanilla 根为带预处理器 include 的 "
+"`conf/vanilla/freeswitch.xml`），替换 `MAIN_XML_ROOT`，触发 "
+"`SWITCH_EVENT_RELOADXML`，使**新的** dialplan 查找和 directory "
+"定位看到新树。进行中的会话仍保留已经查到的 extension。"
+
+#: ../../06-workflows.md:325 d98b6ae8a88b412caaed4409f8771b89
+#, python-format
+msgid ""
+"(`reload_xml_function` always prints `+OK [%s]` with the `err` string from "
+"`switch_xml_reload` — including failure text. Check the bracketed message, "
+"not only `+OK`.)"
+msgstr ""
+"（`reload_xml_function` 始终打印带 `switch_xml_reload` 返回的 `err` 字符串的 `+OK [%s]` —"
+" 包括失败文本。请检查方括号内的消息，不要只看 `+OK`。）"
+
+#: ../../06-workflows.md:329 6b8e98a1feb9418caabcadad8693fd76
+msgid ""
+"**Re-open root.** `switch_xml_reload()` → `switch_xml_open_root(1, err)` → "
+"`__switch_xml_open_root()`. Path: `SWITCH_GLOBAL_dirs.conf_dir` + "
+"`SWITCH_GLOBAL_filenames.conf_name`. Preprocessor expands `X-PRE-PROCESS` / "
+"`#include` / `#set`. Flattened copy remains `freeswitch.xml.fsxml` (do not "
+"edit while running)."
+msgstr ""
+"**重新打开 root。** `switch_xml_reload()` → `switch_xml_open_root(1, err)` → "
+"`__switch_xml_open_root()`。路径：`SWITCH_GLOBAL_dirs.conf_dir` + "
+"`SWITCH_GLOBAL_filenames.conf_name`。预处理器展开 `X-PRE-PROCESS` / `#include` / "
+"`#set`。展平副本仍为 `freeswitch.xml.fsxml`（运行中不要编辑）。"
+
+#: ../../06-workflows.md:330 7c1cbe6a9c994e3c82fd76b0e9bbd25e
+msgid ""
+"**Commit or keep old.** Parse error: `switch_xml_error()` copied to `err`, "
+"new tree discarded, previous root stays. Success: "
+"`switch_xml_set_root(new_main)`, `err` = `\"Success\"`."
+msgstr ""
+"**提交或保留旧树。** 解析错误：`switch_xml_error()` 复制到 `err`，新树丢弃，保留原 "
+"root。成功：`switch_xml_set_root(new_main)`，`err` = `\"Success\"`。"
+
+#: ../../06-workflows.md:331 3efd65872b7c4916a0ad21e8ca8c59c5
+msgid ""
+"**Notify.** If a root is returned, `SWITCH_EVENT_RELOADXML` is fired "
+"(`switch_xml_open_root`). Modules that `switch_event_bind(..., "
+"SWITCH_EVENT_RELOADXML, ...)` refresh themselves (examples in-tree: "
+"`mod_voicemail` does not bind this id for its main config in the same way; "
+"`mod_enum`, `mod_cidlookup`, `mod_loopback`, `mod_avmd`, "
+"`mod_tts_commandline` do)."
+msgstr ""
+"**通知。** 若返回了 root，则触发 `SWITCH_EVENT_RELOADXML`（`switch_xml_open_root`）。通过 "
+"`switch_event_bind(..., SWITCH_EVENT_RELOADXML, ...)` "
+"绑定的模块会自行刷新（树内示例：`mod_voicemail` 不以同样方式绑定该 id "
+"来刷新主配置；`mod_enum`、`mod_cidlookup`、`mod_loopback`、`mod_avmd`、`mod_tts_commandline`"
+" 会绑定）。"
+
+#: ../../06-workflows.md:332 85b7bf7767434fb98135df09125cbe18
+msgid ""
+"**What picks up immediately.** Next `dialplan_hunt()` / "
+"`switch_xml_locate_user()` reads the new root. Vanilla file users without "
+"`cacheable` are re-read from XML."
+msgstr ""
+"**立即生效的部分。** 下一次 `dialplan_hunt()` / `switch_xml_locate_user()` 读取新 root。没有 "
+"`cacheable` 的 vanilla 文件用户会从 XML 重新读取。"
+
+#: ../../06-workflows.md:333 a7268064345d4b9091257e9d20fd873e
+msgid ""
+"**What does not auto-apply.** `mod_sofia` does **not** bind "
+"`SWITCH_EVENT_RELOADXML`. SIP profile parameters, gateways, and codecs need "
+"`sofia profile <name> rescan` (that API itself calls `switch_xml_reload` "
+"then `config_sofia(SOFIA_CONFIG_RESCAN)`). ACL lists: `reloadacl` reloads "
+"XML **and** `switch_load_network_lists(SWITCH_TRUE)`. Loaded DSOs: `reload "
+"<module>` is separate from XML."
+msgstr ""
+"**不会自动生效的部分。** `mod_sofia` **不会**绑定 `SWITCH_EVENT_RELOADXML`。SIP "
+"配置档参数、网关和编解码需要 `sofia profile <name> rescan`（该 API 自身先调用 `switch_xml_reload`"
+" 再 `config_sofia(SOFIA_CONFIG_RESCAN)`）。ACL 列表：`reloadacl` 重载 XML **并且**调用 "
+"`switch_load_network_lists(SWITCH_TRUE)`。已加载的 DSO：`reload <module>` 与 XML "
+"是分开的。"
+
+#: ../../06-workflows.md:335 5f01558040844a3091664dd9ebdc90dc
+msgid ""
+"`mod_xml_curl` (when enabled) may replace `__switch_xml_open_root` via "
+"`switch_xml_set_open_root_function()` — then “reload” is whatever that hook "
+"does (HTTP fetch). **[NEEDS INPUT: whether this deploy uses `mod_xml_curl` "
+"for live XML]**."
+msgstr ""
+"`mod_xml_curl`（启用时）可通过 `switch_xml_set_open_root_function()` 替换 "
+"`__switch_xml_open_root` — 此时“reload”就是该钩子所做的事（HTTP 拉取）。**[NEEDS INPUT: "
+"本次部署是否用 `mod_xml_curl` 提供实时 XML]**。"
+
+#: ../../06-workflows.md:300 bc8c37ef096241edb56fa962c5d80a0d
+msgid "Broken include / bad XML"
+msgstr "损坏的 include / 错误 XML"
+
+#: ../../06-workflows.md:300 970c33ecc06342b6b4d90b49efbc0c5f
+msgid "`__switch_xml_open_root`"
+msgstr "`__switch_xml_open_root`"
+
+#: ../../06-workflows.md:300 0b7a10b33ce3433598782f54bf899c01
+msgid ""
+"`err` set (e.g. parser message or `\"Cannot Open log directory or XML "
+"Root!\"`); old root kept"
+msgstr "设置 `err`（例如解析器消息或 `\"Cannot Open log directory or XML Root!\"`）；保留旧 root"
+
+#: ../../06-workflows.md:300 b7633d1e23894eb998d7f8456daafebd
+msgid "Success string vs API prefix"
+msgstr "成功字符串 vs API 前缀"
+
+#: ../../06-workflows.md:300 f5ca15af857a45129debbc15bc6361c2
+msgid "`reload_xml_function`"
+msgstr "`reload_xml_function`"
+
+#: ../../06-workflows.md:300 3344fa413ab649759f24b5316fe6629f
+#, python-format
+msgid "Stream is always `+OK [%s]\\n` — inspect `%s`"
+msgstr "输出流始终为 `+OK [%s]\\n` — 检查 `%s`"
+
+#: ../../06-workflows.md:300 c2e8194377424e5baa602a1ef1c99020
+msgid "In-call session"
+msgstr "通话中的会话"
+
+#: ../../06-workflows.md:300 4d828a436d0a4d35b7dbe4a62b7ae04e
+msgid "dialplan already hunted"
+msgstr "dialplan 已经查找过"
+
+#: ../../06-workflows.md:300 2dd2ebec4b5d41dd8172bce137df80df
+msgid "Continues current extension; next transfer/new call uses new XML"
+msgstr "继续当前 extension；下一次 transfer/新呼叫使用新 XML"
+
+#: ../../06-workflows.md:300 b9874cbd92be4e1aafd3cc230b2bc0d2
+msgid "`cacheable` directory users"
+msgstr "`cacheable` directory 用户"
+
+#: ../../06-workflows.md:300 3da614b6c0084ef1ac99bccf18900854
+msgid ""
+"Cache **not** cleared by `switch_xml_set_root`; stale user until TTL or "
+"`switch_xml_clear_user_cache`"
+msgstr ""
+"`switch_xml_set_root` **不会**清除缓存；用户会过期直到 TTL 或 `switch_xml_clear_user_cache`"
+
+#: ../../06-workflows.md:300 94d95c6c9e77477089b69f09a3693c8f
+msgid "Sofia bind/codec/gateway XML"
+msgstr "Sofia 绑定/编解码/网关 XML"
+
+#: ../../06-workflows.md:300 8fba8fb917c148a08141e3df04591746
+msgid "`mod_sofia` (no RELOADXML bind)"
+msgstr "`mod_sofia`（未绑定 RELOADXML）"
+
+#: ../../06-workflows.md:300 95a2a04f59c64e7fab9da43be5add4e8
+msgid ""
+"Still running old profile until `sofia profile <name> rescan` / `restart`"
+msgstr "仍运行旧配置档，直到 `sofia profile <name> rescan` / `restart`"
+
+#: ../../06-workflows.md:300 fc126963ceb84a799b420c9c31d69a09
+msgid "ACL XML only"
+msgstr "仅 ACL XML"
+
+#: ../../06-workflows.md:300 d8e7325379e146cf9e1b4cfbad4c3cc8
+msgid "`reloadxml` alone"
+msgstr "仅 `reloadxml`"
+
+#: ../../06-workflows.md:300 0ccf85cdf2644e41a77fa3a619e7c4ce
+msgid "Network lists not rebuilt until `reloadacl`"
+msgstr "网络列表直到 `reloadacl` 才重建"
+
+#: ../../06-workflows.md:300 c29215596e4146509c2e2a2cae7686f1
+msgid "`reloadacl reloadxml` extra arg"
+msgstr "`reloadacl reloadxml` 额外参数"
+
+#: ../../06-workflows.md:300 f01a3bf267b2491aa64b0c980f5e3e5d
+msgid "`reload_acl_function`"
+msgstr "`reload_acl_function`"
+
+#: ../../06-workflows.md:300 d5bbbd7b9f6147f0b15b4e86f5f1554e
+msgid "Deprecated notice; ACL path **always** reloads XML now"
+msgstr "已弃用提示；ACL 路径现在**总是**重载 XML"
+
+#: ../../06-workflows.md:351 5b3cafe87c464ee6ab1d2b32b04134b0
+msgid ""
+"XML sections: `configuration`, `dialplan`, `directory`, `chatplan`, "
+"`languages` (`conf/vanilla/freeswitch.xml`)."
+msgstr ""
+"XML "
+"段：`configuration`、`dialplan`、`directory`、`chatplan`、`languages`（`conf/vanilla/freeswitch.xml`）。"
+
+#: ../../06-workflows.md:352 d6a46b624918438e80f88763ef3e8fd3
+msgid "Event `SWITCH_EVENT_RELOADXML` (`switch_types.h`)."
+msgstr "事件 `SWITCH_EVENT_RELOADXML`（`switch_types.h`）。"
+
+#: ../../06-workflows.md:353 18e02efcc1c2469686445bc19c45c066
+msgid ""
+"Sofia CLI: `sofia profile <name> [start\\|stop\\|restart\\|rescan]` "
+"(`mod_sofia.c`)."
+msgstr ""
+"Sofia CLI：`sofia profile <name> "
+"[start\\|stop\\|restart\\|rescan]`（`mod_sofia.c`）。"
+
+#: ../../06-workflows.md:357 0c9c0ea04e5e4e23a2274cc031c80039
+msgid ""
+"`src/mod/applications/mod_commands/mod_commands.c` — `reload_xml_function`, "
+"`reload_acl_function`"
+msgstr ""
+"`src/mod/applications/mod_commands/mod_commands.c` — "
+"`reload_xml_function`、`reload_acl_function`"
+
+#: ../../06-workflows.md:358 5033509a3b8949e6bfdc9b2344105987
+msgid ""
+"`src/switch_xml.c` — `switch_xml_reload`, `switch_xml_open_root`, "
+"`__switch_xml_open_root`, `switch_xml_set_root`"
+msgstr ""
+"`src/switch_xml.c` — "
+"`switch_xml_reload`、`switch_xml_open_root`、`__switch_xml_open_root`、`switch_xml_set_root`"
+
+#: ../../06-workflows.md:359 323fb965a071430a94089c24e361fcf5
+msgid "`src/mod/endpoints/mod_sofia/mod_sofia.c` — `sofia profile … rescan`"
+msgstr "`src/mod/endpoints/mod_sofia/mod_sofia.c` — `sofia profile … rescan`"
+
+#: ../../06-workflows.md:360 daab6ac254ab4e07b097f6061667711b
+msgid "`conf/vanilla/freeswitch.xml`"
+msgstr "`conf/vanilla/freeswitch.xml`"
+
+#: ../../06-workflows.md:364 bc25790ee01e4c849ad01dac9b932325
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../06-workflows.md:366 edadb7050d3a4058aaf4a10150dcacdd
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../06-workflows.md:367 827f6d4a8afb4ecda031fc7f807d2517
+msgid "[Data and API](05-data-and-api.md)"
+msgstr "[数据与 API](05-data-and-api.md)"
+
+#: ../../06-workflows.md:368 460d155e7a2a45bf8ceb8510fed42de6
+msgid "[Testing](09-testing.md)"
+msgstr "[测试](09-testing.md)"
+
+#: ../../06-workflows.md:369 70f40be2aa11483893e0ebeb231d4ec9
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../06-workflows.md:370 387be6c42280433bb378daf6976b9b4e
+msgid ""
+"[Users Manual Ch "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction), "
+"[Ch 7 SIP profiles](https://developer.signalwire.com/freeswitch/users-and-"
+"endpoints/sip-profiles), [Ch 12 "
+"Dialplan](https://developer.signalwire.com/freeswitch/dialplan/xml)"
+msgstr ""
+"[用户手册第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)、[第 "
+"7 章 SIP profiles](https://developer.signalwire.com/freeswitch/users-and-"
+"endpoints/sip-profiles)、[第 12 章 "
+"Dialplan](https://developer.signalwire.com/freeswitch/dialplan/xml)"
