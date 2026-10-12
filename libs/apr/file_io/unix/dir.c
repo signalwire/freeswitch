@@ -285,6 +285,9 @@ fspr_status_t fspr_dir_make_recursive(const char *path, fspr_fileperms_t perm,
         
         if (!fspr_err) 
             fspr_err = fspr_dir_make (path, perm, pool);
+        
+        if (fspr_err == EEXIST) /* muti thread create the same dir may failed eg /a/b/c/d  */
+            return APR_SUCCESS;
     }
 
     return fspr_err;
