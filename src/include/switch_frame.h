@@ -87,6 +87,7 @@ typedef struct switch_frame_geometry {
 	payload_map_t *pmap;
 	switch_image_t *img;
 	struct switch_frame_geometry geometry;
+	switch_time_t received_ts;
 };
 
 SWITCH_END_EXTERN_C
