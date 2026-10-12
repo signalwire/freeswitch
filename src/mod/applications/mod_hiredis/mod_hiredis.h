@@ -38,6 +38,7 @@ typedef struct mod_hiredis_context_s {
 
 typedef struct hiredis_connection_s {
 	char *host;
+	char *username;
 	char *password;
 	uint32_t port;
 	switch_interval_time_t timeout_us;
@@ -81,7 +82,7 @@ typedef struct hiredis_limit_pvt_s {
 switch_status_t mod_hiredis_do_config(void);
 switch_status_t hiredis_profile_create(hiredis_profile_t **new_profile, char *name, uint8_t ignore_connect_fail, uint8_t ignore_error, int max_pipelined_requests, int delete_when_zero);
 switch_status_t hiredis_profile_destroy(hiredis_profile_t **old_profile);
-switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_connections);
+switch_status_t hiredis_profile_connection_add(hiredis_profile_t *profile, char *host, char *username, char *password, uint32_t port, uint32_t timeout_ms, uint32_t max_connections);
 switch_status_t hiredis_profile_execute_requests(hiredis_profile_t *profile, switch_core_session_t *session, hiredis_request_t *requests);
 switch_status_t hiredis_profile_execute_sync(hiredis_profile_t *profile, switch_core_session_t *session, char **response, const char *data);
 switch_status_t hiredis_profile_execute_sync_printf(hiredis_profile_t *profile, switch_core_session_t *session, char **response, const char *data_format_string, ...);

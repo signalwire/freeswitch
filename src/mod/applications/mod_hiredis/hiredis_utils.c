@@ -80,7 +80,7 @@ switch_status_t mod_hiredis_do_config()
 			/* Add connection to profile */
 			if ( (connections = switch_xml_child(profile, "connections")) != NULL) {
 				for (connection = switch_xml_child(connections, "connection"); connection; connection = connection->next) {
-					char *host = NULL, *password = NULL;
+					char *host = NULL, *username = NULL, *password = NULL;
 					uint32_t port = 0, timeout_ms = 0, max_connections = 0;
 
 					for (param = switch_xml_child(connection, "param"); param; param = param->next) {
@@ -92,6 +92,8 @@ switch_status_t mod_hiredis_do_config()
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "hiredis: adding conn[%u == %s]\n", port, switch_xml_attr_soft(param, "value"));
 						} else if ( !strncmp(var, "timeout-ms", 10) || !strncmp(var, "timeout_ms", 10) ) {
 							timeout_ms = atoi(switch_xml_attr_soft(param, "value"));
+						} else if ( !strncmp(var, "username", 8) ) {
+							username = (char *) switch_xml_attr_soft(param, "value");
 						} else if ( !strncmp(var, "password", 8) ) {
 							password = (char *) switch_xml_attr_soft(param, "value");
 						} else if ( !strncmp(var, "max-connections", 15) ) {
@@ -99,7 +101,7 @@ switch_status_t mod_hiredis_do_config()
 						}
 					}
 
-					if ( hiredis_profile_connection_add(new_profile, host, password, port, timeout_ms, max_connections) == SWITCH_STATUS_SUCCESS) {
+					if ( hiredis_profile_connection_add(new_profile, host, username, password, port, timeout_ms, max_connections) == SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created profile[%s]\n", name);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create profile[%s]\n", name);
