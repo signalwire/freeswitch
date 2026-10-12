@@ -203,6 +203,116 @@ void conference_send_notify(conference_obj_t *conference, const char *status, co
 
 }
 
+static switch_bool_t conference_member_is_recent_audio_source(conference_member_t *member)
+{
+	switch_time_t last_audio_in;
+	switch_time_t recent_window = member->conference->interval * 1000 * CONF_AUDIO_INPUT_RECENT_MULTIPLIER;
+
+	if (!member->audio_in_mutex) {
+		return SWITCH_FALSE;
+	}
+
+	switch_mutex_lock(member->audio_in_mutex);
+	last_audio_in = member->last_audio_in;
+	switch_mutex_unlock(member->audio_in_mutex);
+
+	return last_audio_in && switch_micro_time_now() - last_audio_in <= recent_window;
+}
+
+static switch_bool_t conference_member_expects_audio(conference_member_t *member)
+{
+	if (!member->audio_buffer || !member->frame) {
+		return SWITCH_FALSE;
+	}
+
+	if (!(conference_utils_member_test_flag(member, MFLAG_RUNNING) && member->session)) {
+		return SWITCH_FALSE;
+	}
+
+	if (!(conference_utils_member_test_flag(member, MFLAG_CAN_SPEAK) && !conference_utils_member_test_flag(member, MFLAG_HOLD))) {
+		return SWITCH_FALSE;
+	}
+
+	if (conference_utils_test_flag(member->conference, CFLAG_WAIT_MOD)) {
+		return SWITCH_FALSE;
+	}
+
+	if (!(member->conference->count > 1 ||
+		  (member->conference->record_count && member->conference->count >= member->conference->min_recording_participants))) {
+		return SWITCH_FALSE;
+	}
+
+	return conference_utils_member_test_flag(member, MFLAG_TALKING) ||
+		member->energy_level == 0 ||
+		conference_utils_test_flag(member->conference, CFLAG_AUDIO_ALWAYS) ||
+		conference_member_is_recent_audio_source(member);
+}
+
+static switch_bool_t conference_member_read_audio(conference_member_t *member, uint32_t bytes)
+{
+	uint32_t buf_read = 0;
+	switch_bool_t have_audio = SWITCH_FALSE;
+
+	if (!member->audio_buffer || !member->audio_in_mutex || !member->frame) {
+		return SWITCH_FALSE;
+	}
+
+	switch_mutex_lock(member->audio_in_mutex);
+	if (switch_buffer_inuse(member->audio_buffer) >= bytes
+		&& (buf_read = (uint32_t) switch_buffer_read(member->audio_buffer, member->frame, bytes))) {
+		member->read = buf_read;
+		conference_utils_member_set_flag_locked(member, MFLAG_HAS_AUDIO);
+		have_audio = SWITCH_TRUE;
+	}
+	switch_mutex_unlock(member->audio_in_mutex);
+
+	return have_audio;
+}
+
+static void conference_member_wait_for_audio(conference_member_t *member, uint32_t bytes)
+{
+	if (!member->audio_buffer || !member->audio_in_mutex) {
+		return;
+	}
+
+	switch_mutex_lock(member->audio_in_mutex);
+	if (switch_buffer_inuse(member->audio_buffer) < bytes) {
+		if (member->audio_in_cond) {
+			switch_thread_cond_timedwait(member->audio_in_cond, member->audio_in_mutex, CONF_AUDIO_INPUT_RETRY_USEC);
+		} else {
+			switch_mutex_unlock(member->audio_in_mutex);
+			switch_yield(CONF_AUDIO_INPUT_RETRY_USEC);
+			return;
+		}
+	}
+	switch_mutex_unlock(member->audio_in_mutex);
+}
+
+static uint8_t conference_retry_real_audio(conference_obj_t *conference, uint32_t bytes)
+{
+	conference_member_t *member, *wait_member = NULL;
+	uint8_t ready = 0;
+
+	for (member = conference->members; member; member = member->next) {
+		if (conference_member_expects_audio(member)) {
+			wait_member = member;
+			break;
+		}
+	}
+
+	if (wait_member) {
+		conference_member_wait_for_audio(wait_member, bytes);
+
+		for (member = conference->members; member; member = member->next) {
+			if (!conference_utils_member_test_flag(member, MFLAG_HAS_AUDIO) &&
+				conference_member_read_audio(member, bytes)) {
+				ready++;
+			}
+		}
+	}
+
+	return ready;
+}
 
 /* Main monitor thread (1 per distinct conference room) */
 void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *obj)
@@ -306,7 +416,6 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
 		for (imember = conference->members; imember; imember = imember->next) {
-			uint32_t buf_read = 0;
 			total++;
 			imember->read = 0;
 
@@ -370,15 +479,9 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			}
 
 			conference_utils_member_clear_flag_locked(imember, MFLAG_HAS_AUDIO);
-			switch_mutex_lock(imember->audio_in_mutex);
-
-			if (switch_buffer_inuse(imember->audio_buffer) >= bytes
-				&& (buf_read = (uint32_t) switch_buffer_read(imember->audio_buffer, imember->frame, bytes))) {
-				imember->read = buf_read;
-				conference_utils_member_set_flag_locked(imember, MFLAG_HAS_AUDIO);
+			if (conference_member_read_audio(imember, bytes)) {
 				ready++;
 			}
-			switch_mutex_unlock(imember->audio_in_mutex);
 		}
 
 		conference->members_with_video = members_with_video;
@@ -571,6 +674,10 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 			}
 		}
 		switch_mutex_unlock(conference->file_mutex);
+
+		if (!ready && !has_file_data) {
+			ready = conference_retry_real_audio(conference, bytes);
+		}
 
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
