@@ -385,7 +385,7 @@ switch_curl_slist_t *azure_blob_append_headers(http_profile_t *profile, switch_c
  * @param bytes_per_block returned value of bytes_per_block in the configuration
  * @return SWITCH_STATUS_SUCCESS on success
  */
-switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *profile)
+switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *key = NULL;
@@ -416,7 +416,7 @@ switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *prof
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		// convert to UTF-8
-		switch_malloc(profile->secret_access_key, AZURE_SIGNATURE_LENGTH_MAX);
+		profile->secret_access_key = switch_core_alloc(pool, AZURE_SIGNATURE_LENGTH_MAX);
 		switch_b64_decode((char *) key, profile->secret_access_key, AZURE_SIGNATURE_LENGTH_MAX);
 	}
 	switch_safe_free(key);
@@ -425,9 +425,9 @@ switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *prof
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set number of bytes per block to %zu\n", profile->bytes_per_block);
 
 	if (base_domain_xml) {
-		profile->base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
+		profile->base_domain = switch_pool_strip_whitespace(pool, switch_xml_txt(base_domain_xml));
 		if (zstr(profile->base_domain)) {
-			switch_safe_free(profile->base_domain);
+			profile->base_domain = NULL;
 		}
 	}
 
