@@ -954,7 +954,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 			switch_cache_db_handle_t *db = NULL;
 			char *errmsg = NULL;
 			struct e_data e_data = { {0} };
-			char *sql = switch_mprintf("select uuid from channels where uuid != '%q'", switch_core_session_get_uuid(session));
+			char *sql = switch_mprintf("select uuid from channels where uuid != '%q' order by created_epoch desc", switch_core_session_get_uuid(session));
 			const char *file = NULL;
 			int x = 0;
 			char buf[2] = "";
