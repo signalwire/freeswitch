@@ -457,9 +457,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					if (switch_core_codec_ready(&session->bug_codec)) {
 						use_codec = &session->bug_codec;
 					}
-					switch_thread_rwlock_unlock(session->bug_rwlock);
-
-					switch_thread_rwlock_wrlock(session->bug_rwlock);
 					if (!session->bugs) {
 						do_bugs = 0;
 					}
