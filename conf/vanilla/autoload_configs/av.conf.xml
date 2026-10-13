@@ -107,7 +107,7 @@ enum AVColorSpace {
     AVCOL_SPC_NB                ///< Not part of ABI
 };
 -->
-      <param name="colorspace" value="0"/>
+      <param name="colorspace" value="1"/>
 
 <!--
 enum AVColorRange {
