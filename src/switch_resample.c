@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Stephane Alnet <stephane@shimaore.net>
  *
  *
  * switch_resample.c -- Resampler
@@ -36,6 +37,7 @@
 #include <switch_private.h>
 #endif
 #include <speex/speex_resampler.h>
+#include <switch_simd.h>
 
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF
@@ -122,6 +124,8 @@ SWITCH_DECLARE(switch_size_t) switch_float_to_short(float *f, short *s, switch_s
 {
 	switch_size_t i;
 	float ft;
+
+	// SIMD:Unused, only in mod_managed.
 	for (i = 0; i < len; i++) {
 		ft = f[i] * NORMFACT;
 		if (ft >= 0) {
@@ -129,6 +133,9 @@ SWITCH_DECLARE(switch_size_t) switch_float_to_short(float *f, short *s, switch_s
 		} else {
 			s[i] = (short) (ft - 0.5);
 		}
+		// SIMD: No instruction to convert `ps` to `epi16` (saturated or not).
+		// We could first convert to epi32 (`simde_mm256_cvtps_epi32`) then down to saturated epi16
+		// (`simde_mm256_cvtsepi32_epi16`).
 		if ((float) s[i] > MAXSAMPLE)
 			s[i] = (short) MAXSAMPLE / 2;
 		if (s[i] < (short) -MAXSAMPLE)
@@ -145,6 +152,7 @@ SWITCH_DECLARE(int) switch_char_to_float(char *c, float *f, int len)
 		return (-1);
 	}
 
+	// SIMD:Unused, only in mod_managed.
 	for (i = 1; i < len; i += 2) {
 		f[(int) (i / 2)] = (float) (((c[i]) * 0x100) + c[i - 1]);
 		f[(int) (i / 2)] /= NORMFACT;
@@ -161,6 +169,7 @@ SWITCH_DECLARE(int) switch_float_to_char(float *f, char *c, int len)
 	int i;
 	float ft;
 	long l;
+	// SIMD: Unused, only in mod_managed.
 	for (i = 0; i < len; i++) {
 		ft = f[i] * NORMFACT;
 		if (ft >= 0) {
@@ -177,7 +186,7 @@ SWITCH_DECLARE(int) switch_float_to_char(float *f, char *c, int len)
 SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len)
 {
 	int i;
-
+	// SIMD: Unused, only in mod_managed.
 	for (i = 0; i < len; i++) {
 		f[i] = (float) (s[i]) / NORMFACT;
 		/* f[i] = (float) s[i]; */
@@ -185,10 +194,13 @@ SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len)
 	return len;
 }
 
-
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 {
 	int i;
+
+	/* SIMD: there is no point in implementing this using SIMD.
+	 * Rely on GCC optimization instead, when adding AVX/AVX2 flags.
+	 */
 	for (i = 0; i < len; i++) {
 		buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00);
 	}
@@ -217,6 +229,7 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 			sum_rnd += rnd2;
 		}
 
+		// SIMD?
 		s = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
 		for (j = 0; j < channels; j++) {
@@ -241,11 +254,15 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 		x = samples;
 	}
 
+#ifdef SIMD
+	SIMD_mux_sln(data, other_data, x * channels);
+#else
 	for (i = 0; i < x * channels; i++) {
 		z = data[i] + other_data[i];
 		switch_normalize_to_16bit(z);
 		data[i] = (int16_t) z;
 	}
+#endif
 
 	return x;
 }
@@ -264,9 +281,16 @@ SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int
 		x = samples;
 	}
 
+#ifdef SIMD
+	// Only used in switch_core_session_read_frame for read_demux_frame, I don't know how often this happens.
 	for (i = 0; i < x * channels; i++) {
 		data[i] -= other_data[i];
 	}
+#else
+	for (i = 0; i < x * channels; i++) {
+		data[i] -= other_data[i];
+	}
+#endif
 
 	return x;
 }
@@ -278,6 +302,9 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 
 	switch_assert(channels < 11);
 
+	/* Due to how the data is stored (channels are interleaved, and the number of channels is not fixed), there
+	 * is no gain in using SIMD, since moving the data around in memory would be time-prohibitive.
+	 */
 	if (orig_channels > channels) {
 		if (channels == 1) {
 			for (i = 0; i < samples; i++) {
@@ -344,26 +371,32 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 
 SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t samples, int32_t vol)
 {
-	double newrate = 0;
+	/* Note: existing code was being pedantic in using `double` because we're at most providing 28 bits
+	 * of precision, while a regular `float` can accodomodate 24 bits. Not sure the expense
+	 * in processing terms is worth the audible outcome over 16 bits.
+	 * Converting to float so that SIMD can process larger bunches at once.
+	 */
+	float newrate = 0;
 	// change in dB mapped to ratio for output sample
 	// computed as (powf(10.0f, (float)(change_in_dB) / 20.0f))
-	static const double pos[SWITCH_GRANULAR_VOLUME_MAX] = {
+	static const float pos[SWITCH_GRANULAR_VOLUME_MAX] = {
 		  1.122018,   1.258925,   1.412538,   1.584893,   1.778279,   1.995262,   2.238721,   2.511887,   2.818383,   3.162278,
 		  3.548134,   3.981072,   4.466835,   5.011872,   5.623413,   6.309574,   7.079458,   7.943282,   8.912509,  10.000000,
 		 11.220183,  12.589254,  14.125375,  15.848933,  17.782795,  19.952621,  22.387213,  25.118862,  28.183832,  31.622776,
 		 35.481335,  39.810719,  44.668358,  50.118729,  56.234131,  63.095726,  70.794586,  79.432816,  89.125107, 100.000000,
 		112.201836, 125.892517, 141.253784, 158.489334, 177.827942, 199.526215, 223.872070, 251.188705, 281.838318, 316.227753
 	};
-	static const double neg[SWITCH_GRANULAR_VOLUME_MAX] = {
+	static const float neg[SWITCH_GRANULAR_VOLUME_MAX] = {
 		0.891251, 0.794328, 0.707946, 0.630957, 0.562341, 0.501187, 0.446684, 0.398107, 0.354813, 0.316228,
 		0.281838, 0.251189, 0.223872, 0.199526, 0.177828, 0.158489, 0.141254, 0.125893, 0.112202, 0.100000,
 		0.089125, 0.079433, 0.070795, 0.063096, 0.056234, 0.050119, 0.044668, 0.039811, 0.035481, 0.031623,
 		0.028184, 0.025119, 0.022387, 0.019953, 0.017783, 0.015849, 0.014125, 0.012589, 0.011220, 0.010000,
 		0.008913, 0.007943, 0.007079, 0.006310, 0.005623, 0.005012, 0.004467, 0.003981, 0.003548, 0.000000  // NOTE mapped -50 dB ratio to total silence instead of 0.003162
 	};
-	const double *chart;
+	const float *chart;
 	uint32_t i;
 
+	// FIXME shouldn't we memset here?
 	if (vol == 0) return;
 
 	switch_normalize_volume_granular(vol);
@@ -385,11 +418,37 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 		uint32_t x;
 		int16_t *fp = data;
 
+#ifdef UNFINISHED_SIMD
+		simde__m256 _newrate = simde_mm256_broadcast_ss(&newrate);
+		enum {
+			float_per_m128 = sizeof(simde__m128i) / sizeof(float),
+			mask_float_per_m128 = float_per_m128-1,
+		};
+		uint32_t blocks = samples & ~mask_float_per_m128;
+		uint32_t extra = samples & mask_float_per_m128;
+		for (x = 0; x < blocks; x += float_per_m128) {
+			/* This does what is written, but it doesn't sound like this would be the most efficient
+			 * way to do it. Might be better to have the coefficients as integer (fixed-point) and
+			 * use e.g. _mm256_mulhi_epi16 (maybe).
+			 */
+			simde_mm_storeu_si128(fp+x, // not sure about this one
+				simde_mm256_cvtsepi32_epi16(
+					simde_mm256_cvtps_epi32(
+						simde_mm256_mul_ps(
+							_newrate,
+							simde_mm256_cvtepi32_ps(
+							simde_mm256_cvtepi16_epi32(
+								simde_mm_loadu_si128(fp+x))) // not sure about this one
+							))));
+		}
+		// FIXME write the code for the `extra` data.
+#else
 		for (x = 0; x < samples; x++) {
 			tmp = (int32_t) (fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
 			fp[x] = (int16_t) tmp;
 		}
+#endif
 	} else {
 		memset(data, 0, samples * 2);
 	}
@@ -424,6 +483,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 		uint32_t x;
 		int16_t *fp = data;
 
+		// SIMD
 		for (x = 0; x < samples; x++) {
 			tmp = (int32_t) (fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
@@ -539,6 +599,7 @@ SWITCH_DECLARE(switch_status_t) switch_agc_feed(switch_agc_t *agc, int16_t *data
 		uint32_t energy = 0;
 		int i;
 
+		// SIMD
 		for (i = 0; i < samples * channels; i++) {
 			energy += abs(data[i]);
 		}
