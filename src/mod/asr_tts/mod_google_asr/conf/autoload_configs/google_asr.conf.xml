@@ -1,0 +1,42 @@
+<configuration name="google_asr.conf" description="">
+  <settings>
+    <!-- api settings -->
+    <param name="api-url" value="https://speech.googleapis.com/v1/speech:recognize?key=${api-key}" />
+    <param name="api-key" value="---YOUR-API-KEY---" />
+
+    <!-- curl settings -->
+    <param name="connect-timeout" value="5" />
+    <param name="request-timeout" value="25" />
+<!-- <param name="proxy" value="http://proxy:port" /> -->
+<!-- <param name="proxy-credentials" value="" /> -->
+<!-- <param name="user-agent" value="Mozilla/1.0" /> -->
+
+    <!-- capture settings -->
+    <param name="speech-max-sec" value="45" />
+    <param name="speech-silence-sec" value="3" />
+    <param name="retries-on-error" value="3" />
+
+    <param name="vad-debug" value="false" />
+    <param name="vad-silence-ms" value="400" />
+    <param name="vad-voice-ms" value="200" />
+    <param name="vad-threshold" value="100" />
+
+    <!-- service settings -->
+    <param name="encoding" value="l16" />
+    <param name="default-language" value="en" />
+    <param name="max-alternatives" value="1" />
+    <param name="speech-model" value="phone_call" />
+    <param name="use-enhanced-model" value="false" />
+    <param name="enable-word-time-offsets" value="false" />
+    <param name="enable-word-confidence" value="false" />
+    <param name="enable-profanity-filter" value="false" />
+    <param name="enable-automatic-punctuation" value="false" />
+    <param name="enable-spoken-punctuation" value="false" />
+    <param name="enable-spoken-emojis" value="false" />
+    <param name="microphone-distance" value="nearfield" />
+    <param name="recording-device-type" value="phone_line" />
+    <param name="interaction-type" value="unspecified" />
+
+  </settings>
+</configuration>
+

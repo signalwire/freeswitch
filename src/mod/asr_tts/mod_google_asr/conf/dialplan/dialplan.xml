@@ -1,0 +1,11 @@
+
+<extension name="asr">
+  <condition field="destination_number" expression="^(3222)$">
+    <action application="answer"/>
+    <action application="play_and_detect_speech" data="conference/8000/conf-welcome.wav detect:google {lang=en}"/>
+    <action application="sleep" data="1000"/>
+    <action application="log" data="INFO SPEECH_RESULT=${detect_speech_result}"/>
+    <action application="sleep" data="1000"/>
+    <action application="hangup"/>
+ </condition>
+</extension>
