@@ -2920,21 +2920,21 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 		/* If Agent Logoff, we might need to recalculare score based on skill */
 		/* Play the periodic announcement if it is time to do so */
-		if (announce_valid == SWITCH_TRUE && queue->announce && queue->announce_freq > 0 &&
-			queue->announce_freq <= time_now - last_announce) {
-			switch_status_t status = SWITCH_STATUS_FALSE;
-			/* Stop previous announcement in case it's still running */
-			switch_ivr_stop_displace_session(member_session, queue->announce);
-			/* Play the announcement */
-			status = switch_ivr_displace_session(member_session, queue->announce, 0, NULL);
-
-			if (status != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING,
-								  "Couldn't play announcement '%s'\n", queue->announce);
-				announce_valid = SWITCH_FALSE;
-			}
-			else {
+		if (queue->announce && announce_valid) {
+			/* still in middle of playing */
+			if (switch_channel_get_private(member_channel, queue->announce)) {
 				last_announce = time_now;
+			} else if (queue->announce_freq > 0 && queue->announce_freq <= time_now - last_announce) {
+				switch_status_t status = SWITCH_STATUS_FALSE;
+
+				/* Play the announcement */
+				status = switch_ivr_displace_session(member_session, queue->announce, 0, NULL);
+
+				if (status != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING,
+									"Couldn't play announcement '%s'\n", queue->announce);
+					announce_valid = SWITCH_FALSE;
+				}
 			}
 		}
 
@@ -3011,6 +3011,7 @@ SWITCH_STANDARD_APP(callcenter_function)
 	switch_bool_t agent_found = SWITCH_FALSE;
 	switch_bool_t moh_valid = SWITCH_TRUE;
 	const char *p;
+	char *queue_announce = NULL;
 
 	if (!zstr(data)) {
 		mydata = switch_core_session_strdup(member_session, data);
@@ -3170,6 +3171,10 @@ SWITCH_STANDARD_APP(callcenter_function)
 	h->t_member_called = t_member_called;
 	h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NONE;
 	h->running = 1;
+	/* save to var in case queue gets reloaded with a new announcment */
+	if (queue->announce) {
+		queue_announce = switch_core_session_strdup(member_session, queue->announce);
+	}
 
 	switch_threadattr_create(&thd_attr, h->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -3240,16 +3245,29 @@ SWITCH_STANDARD_APP(callcenter_function)
 		agent_found = switch_true(p);
 	}
 
-	/* Stop member thread */
+	/* Stop member thread and announcement */
 	if (h) {
 		h->running = 0;
+	}
+
+	if (queue_announce) {
+		switch_ivr_stop_displace_session(member_session, queue_announce);
+	}
+
+	/* in the case queue was reloaded */
+	if ((queue = get_queue(queue_name)) {
+		if (queue->announce && switch_channel_get_private(member_channel, queue->announce)) {
+			switch_ivr_stop_displace_session(member_session, queue->announce);
+		}
+		
+		queue_rwunlock(queue);
 	}
 
 	/* Stop uuid_broadcasts */
 	switch_core_session_flush_private_events(member_session);
 	switch_channel_stop_broadcast(member_channel);
 	switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
-
+	
 	/* Check if we were removed because FS Core(BREAK) asked us to */
 	if (h->member_cancel_reason == CC_MEMBER_CANCEL_REASON_NONE && !agent_found) {
 		h->member_cancel_reason = CC_MEMBER_CANCEL_REASON_BREAK_OUT;
