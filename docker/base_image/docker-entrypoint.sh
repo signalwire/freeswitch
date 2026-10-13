@@ -106,7 +106,7 @@ else
 	delete_archives
 fi
 
-if [ "$EPMD"="true" ]; then
+if [ "$EPMD" = "true" ]; then
     /usr/bin/epmd -daemon
 fi
 
