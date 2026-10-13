@@ -1,0 +1,9 @@
+
+<extension name="openai-tts">
+    <condition field="destination_number" expression="^(3123)$">
+	<action application="answer"/>
+	<action application="speak" data="openai|en|Hello world!"/>
+	<action application="hangup"/>
+    </condition>
+</extension>
+
