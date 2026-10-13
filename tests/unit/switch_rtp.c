@@ -331,6 +331,40 @@ FST_TEARDOWN_END()
 	}
 	FST_TEST_END()
 
+	FST_TEST_BEGIN(test_rtcp_autoadj_ignores_break_ping)
+	{
+		char rbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+		int x;
+
+		switch_core_new_memory_pool(&pool);
+
+		/* No timer: with one, SWITCH_RTP_FLAG_NOBLOCK is set and switch_rtp_break() sends no ping */
+		rtp_session = switch_rtp_new(rx_host, 1250, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, NULL, &err, pool, 0, 0);
+		fst_requires(rtp_session);
+		fst_requires(switch_rtp_ready(rtp_session));
+		fst_requires(switch_rtp_activate_rtcp(rtp_session, 5000, tx_port + 1, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS);
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+		fst_requires(switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ));
+
+		/* switch_rtp_break() pings our own RTP and RTCP sockets; read until both pings are consumed */
+		switch_rtp_break(rtp_session);
+
+		for (x = 0; x < 10; x++) {
+			uint32_t rlen = sizeof(rbuf);
+			switch_payload_t pt = 0;
+			switch_frame_flag_t frameflags = 0;
+
+			switch_rtp_read(rtp_session, (void *)rbuf, &rlen, &pt, &frameflags, SWITCH_IO_FLAG_NOBLOCK);
+		}
+
+		/* Had the ping reached RTCP auto-adjust, it would have moved the remote RTCP address to our own and cleared the flag (#3213) */
+		fst_check(switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_RTCP_AUTOADJ));
+
+		switch_rtp_destroy(&rtp_session);
+		switch_core_destroy_memory_pool(&pool);
+	}
+	FST_TEST_END()
+
 	FST_TEST_BEGIN(test_session_with_rtp)
 	{
 		switch_core_session_t *session = NULL;
