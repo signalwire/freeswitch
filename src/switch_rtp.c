@@ -7614,6 +7614,12 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 		*bytes = 0;
 	}
 
+	/* Wake-up ping from ping_socket(): not RTCP, and its source (our own address) must not reach RTCP auto-adjust */
+	if (*bytes == 4 && *((uint32_t *) rtp_session->rtcp_recv_msg_p) == UINT_MAX) {
+		*bytes = 0;
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_mutex_lock(rtp_session->ice_mutex);
 	if (rtp_session->rtcp_dtls) {
 		char *b = (char *) rtp_session->rtcp_recv_msg_p;
