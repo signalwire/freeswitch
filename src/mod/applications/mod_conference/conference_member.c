@@ -1776,24 +1776,14 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 
 	switch_mutex_lock(member->audio_out_mutex);
 
+	switch_core_session_lock_codec_read(member->session);
 	switch_core_session_get_read_impl(member->session, &read_impl);
+	switch_core_session_get_real_read_impl(member->session, &member->orig_read_impl);
 
 	if (switch_core_codec_ready(&member->read_codec)) {
 		switch_core_codec_destroy(&member->read_codec);
 		memset(&member->read_codec, 0, sizeof(member->read_codec));
 	}
-
-	if (switch_core_codec_ready(&member->write_codec)) {
-		switch_core_codec_destroy(&member->write_codec);
-		memset(&member->write_codec, 0, sizeof(member->write_codec));
-	}
-
-	if (member->read_resampler) {
-		switch_resample_destroy(&member->read_resampler);
-	}
-
-	switch_core_session_get_real_read_impl(member->session, &member->orig_read_impl);
-	member->native_rate = member->orig_read_impl.samples_per_second;
 
 	/* Setup a Signed Linear codec for reading audio. */
 	if (switch_core_codec_init(&member->read_codec,
@@ -1809,7 +1799,20 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz %d channel %dms\n",
 						  read_impl.actual_samples_per_second, read_impl.number_of_channels, read_impl.microseconds_per_packet / 1000);
 
+		switch_core_session_unlock_codec_read(member->session);
 		goto done;
+	}
+	switch_core_session_unlock_codec_read(member->session);
+
+	member->native_rate = member->orig_read_impl.samples_per_second;
+
+	if (switch_core_codec_ready(&member->write_codec)) {
+		switch_core_codec_destroy(&member->write_codec);
+		memset(&member->write_codec, 0, sizeof(member->write_codec));
+	}
+
+	if (member->read_resampler) {
+		switch_resample_destroy(&member->read_resampler);
 	}
 
 	if (!member->frame_size) {
@@ -1874,7 +1877,10 @@ int conference_member_setup_media(conference_member_t *member, conference_obj_t 
 	return 0;
 
  codec_done1:
+	switch_core_session_lock_codec_read(member->session);
 	switch_core_codec_destroy(&member->read_codec);
+	memset(&member->read_codec, 0, sizeof(member->read_codec));
+	switch_core_session_unlock_codec_read(member->session);
  codec_done2:
 	switch_core_codec_destroy(&member->write_codec);
  done:
