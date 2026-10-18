@@ -4,7 +4,8 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <fliteVersion>2.0.0</fliteVersion>
+    <fliteVersion>2.2</fliteVersion>
+    <fliteBuildNumber>1</fliteBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <fliteVersionImported>true</fliteVersionImported>

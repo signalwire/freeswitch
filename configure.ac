@@ -1249,8 +1249,6 @@ AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
 GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getlib.sh"
 AC_SUBST(GETLIB)
-GETG729="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getg729.sh"
-AC_SUBST(GETG729)
 GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
@@ -1726,7 +1724,11 @@ if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
 	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required]))
-	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
+	dnl DTLS_method is what the code calls from OpenSSL 1.1.0 on; DTLSv1_method is
+	dnl the pre 1.1.0 spelling, deprecated since and gone from OpenSSL 4.
+	AC_CHECK_LIB(ssl, DTLS_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS),
+		[AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS),
+			AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated development headers required]))])
 	AC_CHECK_LIB(ssl, DTLSv1_2_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLSv1_2_method, 1, [DTLS version 1.2 is available]))
 else
 	AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required])
@@ -2089,7 +2091,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
 		src/mod/codecs/mod_codec2/Makefile
-		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
@@ -2179,7 +2180,6 @@ AC_CONFIG_FILES([Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
 		build/getlib.sh
-		build/getg729.sh
 		build/freeswitch.pc
 		build/standalone_module/freeswitch.pc
 		build/modmake.rules

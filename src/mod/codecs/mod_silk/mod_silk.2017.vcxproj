@@ -126,10 +126,6 @@
     <ClCompile Include="mod_silk.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)libs\win32\libsilk\Silk_FIX.2017.vcxproj">
-      <Project>{56b91d01-9150-4bbf-afa1-5b68ab991b76}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

@@ -47,6 +47,9 @@
     <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\lame.props" Condition=" '$(LameVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\libshout.props" Condition=" '$(libshoutVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\mpg123.props" Condition=" '$(mpg123VersionImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\curl.props" Condition=" '$(CurlPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
@@ -74,7 +77,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -95,7 +97,6 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -114,7 +115,6 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -137,7 +137,6 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>../../../../libs/lame-3.98.4/include;..\..\..\..\libs\win32\libshout;..\..\..\..\libs\libshout-2.2.2\include;..\..\..\..\libs\mpg123\src;..\..\..\..\libs\win32\mpg123;..\..\..\..\libs\win32\mpg123\libmpg123;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -162,25 +161,6 @@
     <ClInclude Include="mpglib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\libmp3lame\libmp3lame.2017.vcxproj">
-      <Project>{e316772f-5d8f-4f2a-8f71-094c3e859d34}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\libogg\libogg.2017.vcxproj">
-      <Project>{0feeaec6-4399-4c46-b7db-62ece80d15b4}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\libshout\libshout.2017.vcxproj">
-      <Project>{d3d8b329-20be-475e-9e83-653cea0e0ef5}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\mpg123\libmpg123.2017.vcxproj">
-      <Project>{419c8f80-d858-4b48-a25c-af4007608137}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2017.vcxproj">
-      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

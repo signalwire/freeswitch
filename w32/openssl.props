@@ -35,7 +35,7 @@
 
   <Target Name="opensslbinariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="https://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/openssl-v$(OpenSSLVersion)_$(OpenSSLBuildNumber)/openssl-$(OpenSSLVersion)_$(OpenSSLBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
            expectfileordirectory="$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\openssl.exe"
            outputfolder=""
            outputfilename="" 
@@ -45,7 +45,7 @@
 
   <Target Name="opensslheadersTarget" BeforeTargets="CustomBuild" DependsOnTargets="opensslbinariesTarget">  
       <DownloadPackageTask 
-           package="https://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/openssl-v$(OpenSSLVersion)_$(OpenSSLBuildNumber)/openssl-$(OpenSSLVersion)_$(OpenSSLBuildNumber)-headers.zip"
            expectfileordirectory="$(OpenSSLLibDir)\include\openssl\ssl.h" 
            outputfolder=""
            outputfilename="" 

@@ -110,9 +110,9 @@ Vendor:       	http://www.freeswitch.org/
 #
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{nonparsedversion}.tar.bz2
-Source1:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
-Source3:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+Source1:	https://github.com/freeswitch/windows-deps/releases/download/communicator_semi_6000_20080321/communicator_semi_6000_20080321.tar.gz
+Source2:	https://github.com/freeswitch/windows-deps/releases/download/pocketsphinx-0.8/pocketsphinx-0.8.tar.gz
+Source3:	https://github.com/freeswitch/windows-deps/releases/download/sphinxbase-0.8/sphinxbase-0.8.tar.gz
 Prefix:        	%{prefix}
 
 

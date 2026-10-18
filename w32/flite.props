@@ -6,7 +6,7 @@
   </ImportGroup>
 
   <PropertyGroup Label="UserMacros">
-    <fliteLibDir>$(BaseDir)libs\flite-$(fliteVersion)</fliteLibDir>
+    <fliteLibDir>$(BaseDir)libs\flite-$(fliteVersion)_$(fliteBuildNumber)</fliteLibDir>
   </PropertyGroup>
 
   <!-- 
@@ -31,7 +31,7 @@
 
   <Target Name="flite-binariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/flite/$(fliteVersion)/flite-$(fliteVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/flite-v$(fliteVersion)_$(fliteBuildNumber)/flite-$(fliteVersion)_$(fliteBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(fliteLibDir)\binaries\$(Platform.ToLower())\$(Configuration.ToLower())\flite.lib" 
            outputfolder=""
            outputfilename="" 
@@ -41,12 +41,12 @@
 
   <Target Name="flite-headersTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/flite/$(fliteVersion)/flite-$(fliteVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/flite-v$(fliteVersion)_$(fliteBuildNumber)/flite-$(fliteVersion)_$(fliteBuildNumber)-headers.zip"
            expectfileordirectory="$(fliteLibDir)\flite\flite.h" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs"
-           moveafter="flite-$(fliteVersion)\include|flite-$(fliteVersion)\flite"
+           moveafter="flite-$(fliteVersion)_$(fliteBuildNumber)\include|flite-$(fliteVersion)_$(fliteBuildNumber)\flite"
       />
   </Target> 
 

@@ -3,10 +3,13 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="rabbitmq-c-version.props" Condition=" '$(rabbitmq_cVersionImported)' == '' "/>
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <!-- librabbitmq.4.lib is a STATIC library built with SSL support: it references
+         OpenSSL, so the consumer links the OpenSSL package too. -->
+    <Import Project="openssl.props" Condition=" '$(OpensslPropsImported)' == '' "/>
   </ImportGroup>
 
   <PropertyGroup Label="UserMacros">
-    <rabbitmq_c_libDir>$(BaseDir)libs\rabbitmq-c-$(rabbitmq_cVersion)</rabbitmq_c_libDir>
+    <rabbitmq_c_libDir>$(BaseDir)libs\rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)</rabbitmq_c_libDir>
   </PropertyGroup>
 
   <!-- 
@@ -31,7 +34,7 @@
 
   <Target Name="rabbitmq-c-binariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="https://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)/rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/rabbitmq-c-v$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)/rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(rabbitmq_c_libDir)\binaries\$(Platform.ToLower())\$(Configuration.ToLower())\librabbitmq.4.lib" 
            outputfolder=""
            outputfilename="" 
@@ -41,7 +44,7 @@
 
   <Target Name="rabbitmq-c-headersTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="https://files.freeswitch.org/windows/packages/rabbitmq-c/$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)/rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/rabbitmq-c-v$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)/rabbitmq-c-$(rabbitmq_cVersion)_$(rabbitmq_cBuildNumber)-headers.zip"
            expectfileordirectory="$(rabbitmq_c_libDir)\include\amqp.h" 
            outputfolder=""
            outputfilename="" 
@@ -52,7 +55,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(rabbitmq_c_libDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>AMQP_MAJOR_VERSION=$(rabbitmq_cMajorVersion);AMQP_MINOR_VERSION=$(rabbitmq_cMinorVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AMQP_STATIC;AMQP_MAJOR_VERSION=$(rabbitmq_cMajorVersion);AMQP_MINOR_VERSION=$(rabbitmq_cMinorVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(rabbitmq_c_libDir)\binaries\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

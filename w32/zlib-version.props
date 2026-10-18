@@ -4,7 +4,8 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <zlibVersion>1.2.11</zlibVersion>
+    <zlibVersion>1.3.2</zlibVersion>
+    <zlibBuildNumber>1</zlibBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <zlibVersionImported>true</zlibVersionImported>

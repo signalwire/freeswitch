@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
-    <zlibLibDir>$(BaseDir)libs\zlib-$(zlibVersion)</zlibLibDir>
+    <zlibLibDir>$(BaseDir)libs\zlib-$(zlibVersion)_$(zlibBuildNumber)</zlibLibDir>
   </PropertyGroup>
 
   <!-- 
@@ -41,7 +41,7 @@
 
   <Target Name="zlibBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/zlib/$(zlibVersion)/zlib-$(zlibVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/zlib-v$(zlibVersion)_$(zlibBuildNumber)/zlib-$(zlibVersion)_$(zlibBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
            expectfileordirectory="$(zlibLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\$(LibraryFileName).lib"
            outputfolder=""
            outputfilename="" 
@@ -50,7 +50,7 @@
   </Target> 
   <Target Name="zlibHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/zlib/$(zlibVersion)/zlib-$(zlibVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/zlib-v$(zlibVersion)_$(zlibBuildNumber)/zlib-$(zlibVersion)_$(zlibBuildNumber)-headers.zip"
            expectfileordirectory="$(zlibLibDir)\include\zlib.h" 
            outputfolder=""
            outputfilename="" 
@@ -70,11 +70,11 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(zlibLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_ZLIB;ZLIB_STATICLIB;Z_SOLO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)libs\zlib-$(zlibVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(zlibLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(LibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
