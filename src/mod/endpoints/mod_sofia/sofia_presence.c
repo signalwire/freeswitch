@@ -3545,7 +3545,7 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 								 " from sip_subscriptions where "
 								 "hostname='%q' and profile_name='%q' "
 								 "and sub_to_user='%q' and sub_to_host='%q' "
-								 "and event='line-seized'",
+								 "and event='line-seize'",
 								 mod_sofia_globals.hostname, profile->name, to_user, to_host
 								 );
 
@@ -3561,7 +3561,14 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 
 		sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and profile_name='%q' and "
 							 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
-							 "and call_info_state='seized'", mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host);
+							 "and call_info_state='seized' and (expires <= %ld or call_info in "
+							 "(select call_info from sip_dialogs where hostname='%q' and profile_name='%q' and "
+							 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+							 "and call_info is not null and call_info_state is not null "
+							 "and call_info_state not in ('seized','idle','')))",
+							 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host,
+							 (long) switch_epoch_time_now(NULL),
+							 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host);
 
 
 		if (mod_sofia_globals.debug_sla > 1) {
@@ -3867,6 +3874,41 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 
 	call_id = sip->sip_call_id->i_id;
+
+	/* SCA (D2): refuse a line-seize for an appearance already held by another device or call */
+	if (event && !strcasecmp(event, "line-seize") && sub_state != nua_substate_terminated && sip->sip_call_info) {
+		char *seize_ci = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_call_info);
+		char *seize_idx = seize_ci ? strchr(seize_ci, ';') : NULL;
+		int seize_busy = 0;
+
+		if (seize_idx && *(++seize_idx)) {
+			char busy[32] = "";
+			char *csql = switch_mprintf("select count(*) from sip_dialogs where hostname='%q' and profile_name='%q' and "
+										"((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
+										"and call_info='%q' and call_info_state is not null and call_info_state != '' "
+										"and call_info_state != 'idle' and (call_id is null or call_id != '%q') "
+										"and (call_info_state != 'seized' or expires > %ld)",
+										mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host,
+										seize_idx, call_id, (long) switch_epoch_time_now(NULL));
+			sofia_glue_execute_sql2str(profile, profile->dbh_mutex, csql, busy, sizeof(busy));
+			if (mod_sofia_globals.debug_sla > 1) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SEIZE CHECK SQL %s [%s]\n", csql, busy);
+			}
+			switch_safe_free(csql);
+			seize_busy = atoi(busy) > 0;
+		}
+
+		if (seize_ci) {
+			su_free(nua_handle_get_home(nh), seize_ci);
+		}
+
+		if (seize_busy) {
+			nua_respond(nh, SIP_480_TEMPORARILY_UNAVAILABLE, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			sent_reply++;
+			goto end;
+		}
+	}
+
 	full_from = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_from);
 	full_to = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_to);
 	full_via = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_via);
@@ -4147,8 +4189,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 				sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and profile_name='%q' and "
 									 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
-									 "and call_info_state='seized'",
-									 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host);
+									 "and call_info_state='seized' and (call_id='%q' or call_id is null)",
+									 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host, call_id);
 
 
 				if (mod_sofia_globals.debug_sla > 1) {
@@ -4189,8 +4231,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 				sql = switch_mprintf("delete from sip_dialogs where hostname='%q' and profile_name='%q' and "
 									 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') "
-									 "and call_info_state='seized' and profile_name='%q'",
-									 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host, profile->name);
+									 "and call_info_state='seized' and profile_name='%q' "
+									 "and (call_id='%q' or call_id is null or expires <= %ld)",
+									 mod_sofia_globals.hostname, profile->name, to_user, to_host, to_user, to_host, profile->name,
+									 call_id, (long) switch_epoch_time_now(NULL));
 
 
 				if (mod_sofia_globals.debug_sla > 1) {
@@ -4199,9 +4243,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 				now = switch_epoch_time_now(NULL);
-				sql = switch_mprintf("insert into sip_dialogs (sip_from_user,sip_from_host,call_info,call_info_state,hostname,expires,rcd,profile_name) "
-									 "values ('%q','%q','%q','seized','%q',%"TIME_T_FMT",%ld,'%q')",
-									 to_user, to_host, switch_str_nil(p), mod_sofia_globals.hostname,
+				sql = switch_mprintf("insert into sip_dialogs (call_id,sip_from_user,sip_from_host,call_info,call_info_state,hostname,expires,rcd,profile_name) "
+									 "values ('%q','%q','%q','%q','seized','%q',%"TIME_T_FMT",%ld,'%q')",
+									 call_id, to_user, to_host, switch_str_nil(p), mod_sofia_globals.hostname,
 									 switch_epoch_time_now(NULL) + exp_delta, (long)now, profile->name);
 
 				if (mod_sofia_globals.debug_sla > 1) {
