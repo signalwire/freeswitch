@@ -79,36 +79,43 @@ SWITCH_DECLARE(void) switch_kalman_init(kalman_estimator_t *est, float Q, float 
 }
 
 /*
-CUSUM Kalman functions to detect sudden change over a predefined thereshold.
+CUSUM Kalman functions to detect sudden change over a predefined threshold.
 
-y(t) = sampled RTT
-x(t)= desired RTT
+y(t) = sampled value (RTT, packet loss)
+x(t) = desired value
 
 Model:
 x(t+1) = x(t) + delta(t)*v(t)
 y(t) = x(t) + e(t)
 
-Noisy characteristic of RTT captured by measurment noise e(t) with variance Re.
-The step changes in the desired RTT x(t) is modeled as the process noise v(t)
-with variance Rv and the discrete variable delta(t) .
+Noisy characteristic of the samples captured by measurement noise e(t) with variance Re.
+The step changes in the desired value x(t) are modeled as the process noise v(t)
+with variance Rv and the discrete variable delta(t).
 If a change occurs at time t, then delta(t) = 1 otherwise delta(t) = 0.
 
-avg(x(t)) = avg(x(t-1)) + K(t)(y(t) - avg(x(t-1)))
-K(t) = P(t-1)/(P(t-1) + Re))
-P(t) = (1-K(t))P(t-1)  + delta(t-1)* Rv
-e(t) = y(t) - avg(x(t))
-g(t) = max(g(t-1) + e(t) - epsilon,0)
-if g(t) > 0 then
-	delta(t) = 1 // alarm
-	g(t) = 0
+e(t) = y(t) - avg(x(t-1))                           (innovation)
+K(t) = P(t-1)/(P(t-1) + Re)
+avg(x(t)) = avg(x(t-1)) + K(t)*e(t)
+P(t) = (1-K(t))P(t-1) + delta(t-1)*Rv
+g(t) = max(g(t-1) + e(t) - epsilon, 0)              (upward drift)
+g_down(t) = max(g_down(t-1) - e(t) - epsilon, 0)    (downward drift)
+if g(t) > h then
+	alarm, g(t) = 0
+if g_down(t) > h then
+	g_down(t) = 0
+if g(t) or g_down(t) crossed h then
+	delta(t) = 1   (re-inflate P so that avg(x) follows the new level)
 else
 	delta(t) = 0
 endif
 
-constants:
+Only upward changes are reported to the caller. Downward changes are detected
+so that the baseline avg(x) follows a level that has gone down again; without
+this the baseline stays at the old, higher level and a later increase of the
+same size is never seen.
 
-epsilon = 0.005
-h = 0.05
+Re and Rv are the running sample variance of y (Welford's method).
+The 'avg' argument is no longer used and is kept for API compatibility.
 */
 SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *detect_change, float epsilon,float h)
 {
@@ -136,57 +143,72 @@ SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *
 	detector_change -> last_average = 0;
 	detector_change -> last_q = 0;
 	detector_change -> N = 0;
+	detector_change -> g_down_last = 0;
 	return TRUE;
 }
 
 SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float avg)
 {
-	float K=0;
-	float P=0;
-	float g=0;
+	float K;
+	float P;
+	float g;
+	float g_down;
+	float innovation;
 	float desired_val;
-	float current_average;
-	float current_q;
-	float sample_variance_Re = 0;
+	float prev_average;
+	switch_bool_t increase = SWITCH_FALSE;
+	switch_bool_t decrease = SWITCH_FALSE;
 
-	/*variance*/
+	(void)avg;
 
+	/* running sample variance of the measurements (Welford) */
 	detector->N++;
-	current_average = detector->last_average + (measurement - detector->last_average)/detector->N ;
-	if (avg > current_average) {
-		current_average = avg;
-	}
-	current_q =  detector-> last_q +  (measurement - detector->last_average) * (measurement - current_average);
-	if (detector->N != 0)
-	sample_variance_Re = sqrt(current_q/detector->N);
+	prev_average = detector->last_average;
+	detector->last_average = prev_average + (measurement - prev_average) / detector->N;
+	detector->last_q += (measurement - prev_average) * (measurement - detector->last_average);
 
-	detector->variance_Re = sample_variance_Re;
-	detector->variance_Rv = sample_variance_Re;
+	detector->variance_Re = (detector->N > 1) ? detector->last_q / (detector->N - 1) : 0;
+	detector->variance_Rv = detector->variance_Re;
 
-	if (sample_variance_Re != 0) {
-		K = detector->P_last / (detector->P_last + detector->variance_Re);
-		desired_val = detector->val_desired_last + K * (measurement - detector->variance_Re);
-		P = (1 - K) * detector->P_last + detector->delta * detector->variance_Rv;
-		detector->measurement_noise_e = measurement - desired_val;
-		g = detector->g_last + detector->measurement_noise_e - detector->epsilon;
-		if (g > detector->h) {
-			detector->delta = 1;
-			g = 0;
-		} else {
-			detector->delta = 0;
-		}
+	if (detector->variance_Re <= 0) {
+		/* all samples identical so far: nothing has changed */
+		return SWITCH_FALSE;
+	}
 
-		/* update last vals for calculating variance */
-		detector->last_average = current_average;
-		/* update lasts (cusum)*/
-		detector -> g_last = g;
-		detector -> P_last = P;
-		detector -> val_desired_last = desired_val;
+	innovation = measurement - detector->val_desired_last;
+	K = detector->P_last / (detector->P_last + detector->variance_Re);
+	desired_val = detector->val_desired_last + K * innovation;
+	P = (1 - K) * detector->P_last + detector->delta * detector->variance_Rv;
+	detector->measurement_noise_e = innovation;
+
+	g = detector->g_last + innovation - detector->epsilon;
+	if (g < 0) {
+		g = 0;
 	}
-	if (detector->delta == 1) {
-		return TRUE;
+
+	g_down = detector->g_down_last - innovation - detector->epsilon;
+	if (g_down < 0) {
+		g_down = 0;
 	}
-	return FALSE;
+
+	if (g > detector->h) {
+		increase = SWITCH_TRUE;
+		g = 0;
+	}
+
+	if (g_down > detector->h) {
+		decrease = SWITCH_TRUE;
+		g_down = 0;
+	}
+
+	detector->delta = (increase || decrease) ? 1 : 0;
+
+	detector->g_last = g;
+	detector->g_down_last = g_down;
+	detector->P_last = P;
+	detector->val_desired_last = desired_val;
+
+	return increase;
 }
 
 /* Kalman filter abstract ( measure and estimate 1 single value per system model )
