@@ -313,6 +313,8 @@ src/mod/applications/mod_http_cache/test/test_aws.log
 src/mod/applications/mod_http_cache/test/test_aws.trs
 src/mod/formats/mod_sndfile/test/test_sndfile
 src/mod/formats/mod_sndfile/test/test_sndfile_conf
+src/mod/formats/mod_opusfile/test/test_opusfile
+src/mod/endpoints/mod_sofia/test/test_603plus
 # Recordings test_sndfile writes here on Windows, named <uuid>.<ext>. A passing run
 # unlinks them, but libsndfile also writes a ._<uuid>.sd2 resource fork that nothing
 # removes, and a failing run leaves the lot behind.

@@ -514,8 +514,8 @@ FST_TEARDOWN_END()
 			status = switch_core_session_read_frame(session, &read_frame, frameflags, 0);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 		}
-		switch_sleep(3000 * 1000);
-		
+		fst_wait_until(send_rtcp_test_success, 6000);
+
 		fst_requires(send_rtcp_test_success);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
