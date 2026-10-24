@@ -290,6 +290,151 @@ FST_TEARDOWN_BEGIN()
 FST_TEARDOWN_END()
 
 	/*
+	 * RTCP-mux does not stall the RTP read path.
+	 *
+	 * With RTCP enabled and multiplexed onto the RTP socket, a PCMU stream is replayed from a
+	 * capture while a sender report (SR) is injected on the same socket every tenth packet. (This
+	 * unit harness has no media consumer draining the jitter buffer, so switch_rtp_read() hands
+	 * back CNG placeholders rather than decoded audio -- the stall is therefore measured at the
+	 * read call itself, which is where an rtcp-mux regression would bite.) Two things must hold:
+	 *   - the interleaved RTCP must not stall or break the reader: every paced read must return a
+	 *     non-error status and none may block anywhere near a stall;
+	 *   - the injected SR must actually be ingested -- its fields must surface through
+	 *     switch_rtcp_zerocopy_read_frame(). (The original version fired SRs but never checked that
+	 *     any of it was parsed, and its one media assertion sat behind a CNG `continue` that almost
+	 *     always skipped it.)
+	 */
+	FST_TEST_BEGIN(test_rtp_rtcp_mux_no_stall)
+	{
+		switch_core_session_t *session = NULL;
+		switch_status_t status;
+		char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
+		switch_payload_t pt = { 0 };
+		switch_frame_flag_t frameflags = { 0 };
+		pcap_t *pcap;
+		const unsigned char *packet;
+		char errbuf[PCAP_ERRBUF_SIZE];
+		struct timeval prev_ts = { 0 };
+		switch_socket_t *sock_rtp = NULL;
+		switch_sockaddr_t *sock_addr = NULL;
+		const char *str_err;
+		switch_size_t rtp_len;
+		switch_time_t last_read = 0, max_gap = 0;
+		int sent_rtp = 0, ok_reads = 0, sr_sent = 0, sr_ingested = 0, x = 0;
+
+		/* Chosen, distinctive SR field values, big-endian on the wire; the parser ntohl()s them,
+		   so switch_rtcp_zerocopy_read_frame() must hand these exact host values back. */
+		const uint32_t sr_ssrc = 0x11223344;
+		const uint32_t sr_ntp_msw = 0xe2000000;
+		const uint32_t sr_ntp_lsw = 0x80000000;
+		const uint32_t sr_rtp_ts = 0x0000abcd;
+		const uint32_t sr_pkt_count = 0x00002a2a;
+		const uint32_t sr_oct_count = 0x00112233;
+		/* RTCP SR (PT=200), RC=0, length=6 words. 28 bytes: 8-byte header+SSRC then 20-byte
+		   sender info (NTP msw/lsw, RTP ts, sender packet count, sender octet count). */
+		unsigned char sr[28] = {
+			0x80, 0xc8, 0x00, 0x06,
+			0x11, 0x22, 0x33, 0x44,             /* SSRC = sr_ssrc */
+			0xe2, 0x00, 0x00, 0x00,             /* NTP msw */
+			0x80, 0x00, 0x00, 0x00,             /* NTP lsw */
+			0x00, 0x00, 0xab, 0xcd,             /* RTP timestamp */
+			0x00, 0x00, 0x2a, 0x2a,             /* sender packet count */
+			0x00, 0x11, 0x22, 0x33              /* sender octet count */
+		};
+
+		status = rtp_test_start_call(&session);
+		fst_requires(status == SWITCH_STATUS_SUCCESS);
+		fst_requires(session);
+
+		pcap = pcap_open_offline_with_tstamp_precision("pcap/milliwatt.long.pcmu.rtp.pcap", PCAP_TSTAMP_PRECISION_MICRO, errbuf);
+		fst_requires(pcap);
+
+		switch_core_media_set_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
+
+		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
+		fst_requires(rtp_session);
+
+		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
+		/* This test only replays inbound media; drop the media timeout so a brief scheduling gap
+		   can't tear the channel down mid-test. */
+		switch_rtp_set_media_timeout(rtp_session, 0);
+
+		fst_requires(switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS);
+
+		switch_sockaddr_new(&sock_addr, rx_host, audio_rx_port, switch_core_session_get_pool(session));
+		fst_requires(sock_addr);
+
+		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
+		switch_rtp_reset(rtp_session);
+
+		/* Replay a bounded slice of the capture (~3s at 20ms spacing) so the test stays quick. */
+		while (x < 150 && (packet = pcap_next_rtp(pcap, &prev_ts, &rtp_len))) {
+			uint32_t rcvd_datalen = sizeof(rpacket);
+			switch_size_t tmp_len;
+			switch_rtcp_frame_t rtcp_frame = { 0 };
+			switch_time_t now;
+
+			x++;
+
+			/* Every tenth packet, inject a muxed SR ahead of the media packet. */
+			if ((x % 10) == 0) {
+				tmp_len = sizeof(sr);
+				fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)sr, &tmp_len) == SWITCH_STATUS_SUCCESS);
+				sr_sent++;
+			}
+
+			tmp_len = rtp_len;
+			fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)packet, &tmp_len) == SWITCH_STATUS_SUCCESS);
+			sent_rtp++;
+
+			now = switch_time_now();
+			status = switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+
+			/* The reader must stay healthy while RTCP is interleaved. */
+			fst_requires(status != SWITCH_STATUS_GENERR && status != SWITCH_STATUS_FALSE);
+			ok_reads++;
+
+			/* Track the longest gap between consecutive reads: paced input is ~20ms apart, so a
+			   stall (a read blocking on the muxed RTCP) would show up as a large spike here. */
+			if (last_read) {
+				switch_time_t gap = now - last_read;
+				if (gap > max_gap) max_gap = gap;
+			}
+			last_read = now;
+
+			/* Did the SR we just injected surface through the RTCP frame API? */
+			if (switch_rtcp_zerocopy_read_frame(rtp_session, &rtcp_frame) == SWITCH_STATUS_SUCCESS &&
+				rtcp_frame.ssrc == sr_ssrc) {
+				fst_check_int_equals(rtcp_frame.packet_count, sr_pkt_count);
+				fst_check_int_equals(rtcp_frame.octect_count, sr_oct_count);
+				fst_check_int_equals(rtcp_frame.timestamp, sr_rtp_ts);
+				fst_check_int_equals(rtcp_frame.ntp_msw, sr_ntp_msw);
+				fst_check_int_equals(rtcp_frame.ntp_lsw, sr_ntp_lsw);
+				sr_ingested++;
+			}
+		}
+
+		fst_requires(sent_rtp > 0);
+		fst_requires(sr_sent > 0);
+
+		/* Every paced read returned a non-error status while RTCP was muxed in. */
+		fst_xcheck(ok_reads == sent_rtp,
+				   "every RTP read returns a non-error status while RTCP is muxed onto the socket");
+		/* No stall: reads kept pace with the ~20ms input; no single read blocked near a stall. */
+		fst_xcheck(max_gap < 500000,
+				   "no stall: the gap between consecutive reads stays well under half a second");
+		/* The injected SR was actually parsed and exposed through the RTCP frame API. */
+		fst_xcheck(sr_ingested > 0,
+				   "an injected muxed RTCP sender report is ingested and surfaced to the RTCP frame API");
+
+		switch_rtp_destroy(&rtp_session);
+		rtp_test_end_call(&session);
+		switch_socket_close(sock_rtp);
+		pcap_close(pcap);
+	}
+	FST_TEST_END()
+
+	/*
 	 * Regression test for the bounds clamp in switch_rtp.c:rtcp_nack_fci_count().
 	 *
 	 * An RTCP RTPFB/NACK packet carries a count of FCI feedback words implied by its 16-bit
