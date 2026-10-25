@@ -128,7 +128,11 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
         if (c) {	/* 0 < 9 */
 		if (c == 1) {
 			if (what) {
-	 			switch_say_file(sh, "digits/n-1");
+				if (!strcmp(what, "digits/miljon") || !strcmp(what, "digits/miljoner")) {
+					switch_say_file(sh, "digits/u-1");
+				} else {
+					switch_say_file(sh, "digits/n-1");
+				}
 			} else {
 				if (method == SSM_COUNTED) {
 					switch_say_file(sh, "digits/r-1");
