@@ -216,7 +216,7 @@ static switch_status_t sv_say_general_count(switch_say_file_handle_t *sh, char *
                         break;
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if (places[6] == 1 && ( !places[8] || !places[7])) {
+			if (places[6] == 1 && !places[8] && !places[7]) {
 				if ((status = play_group(SSM_PRONOUNCED, say_args->gender, places[8], places[7], places[6], "digits/miljon", sh)) != SWITCH_STATUS_SUCCESS) {
 					return status;
 				}
