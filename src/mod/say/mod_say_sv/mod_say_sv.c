@@ -108,42 +108,22 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 		}
 	}
 
-        if (b) {
-                if (b > 1) {	/* 20 < 99 */
-                        if (c == 0) {
-				if (method == SSM_COUNTED) {
-					switch_say_file(sh, "digits/r-%d0", b);
-                        	} else {
-					switch_say_file(sh, "digits/%d0", b);
-				}
+	if (b) {
+		if (b > 1) {
+			if (method == SSM_COUNTED && c == 0) {
+				switch_say_file(sh, "digits/r-%d0", b);
 			} else {
-                                if (c == 1) {
-					if (method == SSM_COUNTED) {
-						switch_say_file(sh, "digits/r-1", b);
-                	        	} else {
-						if (gender == SSG_UTRUM) {
-        	        	        		switch_say_file(sh, "digits/u-1");
-						} else {
-							switch_say_file(sh, "digits/n-1");
-						}
-					}
-                                } else {
-					if (method == SSM_COUNTED) {
-						switch_say_file(sh, "digits/r-%d0", b);
-                	        	} else {
-						switch_say_file(sh, "digits/%d0", b);
-					}
-				}
-                        }
-                } else {	/* 10 < 20 */
-                        if (method == SSM_COUNTED) {
-                                switch_say_file(sh, "digits/r-%d%d", b, c);
-                        } else {
-                                switch_say_file(sh, "digits/%d%d", b, c);
-                        }
-                }
-                c = 0;
-        }
+				switch_say_file(sh, "digits/%d0", b);
+			}
+		} else {
+			if (method == SSM_COUNTED) {
+				switch_say_file(sh, "digits/r-%d%d", b, c);
+			} else {
+				switch_say_file(sh, "digits/%d%d", b, c);
+			}
+			c = 0;
+		}
+	}
 
         if (c) {	/* 0 < 9 */
 		if (c == 1) {
