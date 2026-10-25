@@ -104,7 +104,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 			} else {	/* [2-9]xx */
 				switch_say_file(sh, "digits/%d", a);
 			}
-			switch_say_file(sh, "digits/hundra");
+			switch_say_file(sh, "digits/100");
 		}
 	}
 
