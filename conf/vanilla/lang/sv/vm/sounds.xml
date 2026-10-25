@@ -407,11 +407,18 @@
   </macro>
 
   <macro name="voicemail_say_message_number">
-    <input pattern="^([a-z]+):(\d+)$">
+    <input pattern="^(new):(\d+)$">
       <match>
-	<action function="play-file" data="voicemail/vm-$1.wav"/> 
+	<action function="play-file" data="voicemail/vm-nytt.wav"/>
 	<action function="play-file" data="voicemail/vm-meddelande_nummer.wav"/>
-	<action function="say" data="$2" method="pronounced" type="items"/> 
+	<action function="say" data="$2" method="pronounced" type="items"/>
+      </match>
+    </input>
+    <input pattern="^(saved):(\d+)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-sparat.wav"/>
+	<action function="play-file" data="voicemail/vm-meddelande_nummer.wav"/>
+	<action function="say" data="$2" method="pronounced" type="items"/>
       </match>
     </input>
   </macro>
