@@ -680,6 +680,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
 	switch_chat_application_interface_t *chat_app_interface;
+	lua_State *L;
+
+	/* The first luaopen_freeswitch() call fills SWIG's process-wide type tables and is not thread-safe,
+	   so do it once here, before anything (calls, event hooks, startup scripts) can run Lua concurrently. */
+	if (!(L = lua_init())) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to initialize Lua\n");
+
+		return SWITCH_STATUS_FALSE;
+	}
+
+	lua_uninit(L);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
