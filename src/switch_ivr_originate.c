@@ -1545,7 +1545,7 @@ static void *SWITCH_THREAD_FUNC enterprise_originate_ringback_thread(switch_thre
 		switch_ivr_parse_all_messages(session);
 		if (status != SWITCH_STATUS_BREAK) {
 			if (zstr(rb_data->ringback_data) || !strcasecmp(rb_data->ringback_data, "silence")) {
-				status = switch_ivr_collect_digits_callback(session, NULL, 0, 0);
+				status = switch_ivr_sleep(session, 1000, SWITCH_TRUE, NULL);
 			} else if (switch_is_file_path(rb_data->ringback_data)) {
 				status = switch_ivr_play_file(session, NULL, rb_data->ringback_data, NULL);
 			} else {
