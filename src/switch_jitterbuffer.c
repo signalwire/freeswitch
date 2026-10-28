@@ -32,6 +32,7 @@
 #include <switch.h>
 #include <switch_jitterbuffer.h>
 #include "private/switch_hashtable_private.h"
+#include <math.h>
 
 #define NACK_TIME 80000
 #define RENACK_TIME 100000
@@ -60,6 +61,9 @@ typedef struct switch_jb_node_s {
 
 typedef struct switch_jb_stats_s {
 	uint32_t reset_too_big;
+	uint32_t reset_too_big_drops;  /* total queued packets discarded by reset_too_big events */
+	uint32_t reset_too_expanded;
+	uint32_t reset_too_expanded_drops;  /* total queued packets discarded by reset_too_expanded events */
 	uint32_t reset_missing_frames;
 	uint32_t reset_ts_jump;
 	uint32_t reset_error;
@@ -67,10 +71,25 @@ typedef struct switch_jb_stats_s {
 	uint32_t size_max;
 	uint32_t size_est;
 	uint32_t acceleration;
+	uint32_t fast_acceleration;
+	uint32_t forced_acceleration;
 	uint32_t expand;
+	uint32_t consecutive_miss;
+	int32_t expand_frame_len;
 	uint32_t jitter_max_ms;
+	uint32_t buffering_skip;
 	int estimate_ms;
 	int buffer_size_ms;
+	/* Elastic algorithm activity */
+	uint32_t grew;          /* count of frame_len increases */
+	uint32_t shrunk;        /* count of frame_len decreases */
+	uint32_t grow_to_max;   /* count of times grow hit max_frame_len */
+	uint32_t at_min_ms;     /* cumulative ms parked at min_frame_len */
+	uint32_t at_max_ms;     /* cumulative ms parked at max_frame_len */
+	switch_time_t edge_since; /* us; when current min/max stretch started (0 if not at an edge) */
+	/* Setup vs runtime reset split (set by switch_jb_reset based on jb->media_started) */
+	uint32_t reset_setup;   /* resets that fired before first media packet was put */
+	uint32_t reset_runtime; /* resets that fired after media flow started */
 } switch_jb_stats_t;
 
 typedef struct switch_jb_jitter_s {
@@ -116,6 +135,40 @@ struct switch_jb_s {
 	uint8_t write_init;
 	uint8_t read_init;
 	uint8_t debug_level;
+	uint8_t media_started; /* set on first put_packet; switch_jb_reset uses it to split setup vs runtime resets */
+	uint32_t packets_total; /* lifetime count of put_packet calls - used for expand_ratio */
+	/* Arrival-time-based jitter estimate. The RFC 3550 inter_jitter that feeds
+	 * jb->jitter.estimate measures drift against the local read timer and
+	 * heavily smooths alternating bursts (e.g. pair-bunching from upstream
+	 * coalescing). This second estimate measures absolute deviation of
+	 * wall-clock inter-arrival from the expected ptime, so a bimodal
+	 * early/late pattern surfaces as real jitter the expand path can act on. */
+	switch_time_t last_arrival_us;
+	/* Two-tier EWMA + EWMV of |delta_ms - ptime_ms|.
+	 * Fast (α=1/4, ~320ms memory) reacts to immediate bursts.
+	 * Slow (α=1/128, ~10s memory) holds the line on sustained burstiness
+	 * even after the fast tier forgets. Consumers take max(fast_est, slow_est).
+	 * Each tier carries its own mean + variance; sizing uses mean + 3*sigma. */
+	double arrival_jitter_ms;        /* fast EWMA mean */
+	double arrival_jitter_var;       /* fast EWMV variance */
+	double arrival_jitter_ms_slow;   /* slow EWMA mean (α=1/128) */
+	double arrival_jitter_var_slow;  /* slow EWMV variance (α=1/128) */
+	/* Clock drift tracker — GStreamer-style sliding baseline.
+	 * Records (recv_us − rtp_us) for each packet and slides the baseline
+	 * DOWN to the smallest observed offset. This avoids the bias problem
+	 * where a delayed first packet would lock in a wrong reference. PPM is
+	 * computed against this sliding min, not against packet 1.
+	 * Logged only, not used in sizing.
+	 * RTP clock rate is inferred from observed timestamps because
+	 * jitter.samples_per_second is the codec sample rate, which doesn't
+	 * match the RTP timestamp rate for codecs like opus (RTP clock always
+	 * 48000 per RFC 7587 regardless of internal rate). */
+	switch_time_t arrival_first_recv_us;     /* first recv timestamp (for slope denominator) */
+	uint32_t      arrival_first_rtp_ts;      /* first RTP timestamp seen */
+	uint32_t      arrival_rtp_clock_hz;      /* 0 = not yet measured; otherwise 8000/16000/48000 */
+	int64_t       arrival_offset_min_us;     /* sliding min(recv_us − rtp_us) */
+	uint8_t       arrival_offset_min_set;    /* 0 until first sample */
+	double        arrival_clock_drift_ppm;
 	uint16_t next_seq;
 	switch_size_t last_len;
 	switch_inthash_t *missing_seq_hash;
@@ -134,6 +187,7 @@ struct switch_jb_s {
 	uint32_t buffer_lag;
 	uint32_t flush;
 	uint32_t packet_count;
+	int32_t packets_in_buffer;
 	uint32_t max_packet_len;
 	uint32_t period_len;
 	uint32_t nack_saved_the_day;
@@ -262,6 +316,7 @@ static inline switch_jb_node_t *new_node(switch_jb_t *jb)
 		if (jb->allocated_nodes > jb->max_frame_len * mult) {
 			jb_debug(jb, 2, "ALLOCATED FRAMES TOO HIGH! %d\n", jb->allocated_nodes);
 			jb->jitter.stats.reset_too_big++;
+			jb->jitter.stats.reset_too_big_drops += jb->visible_nodes;
 			switch_jb_reset(jb);
 			switch_mutex_unlock(jb->list_mutex);
 			return NULL;
@@ -571,7 +626,32 @@ static void jb_frame_inc_line(switch_jb_t *jb, int i, int line)
 	}
 
 	if (old_frame_len != jb->frame_len) {
+		switch_time_t now = switch_micro_time_now();
+
 		jb_debug(jb, 1, "%d Change framelen from %u to %u\n", line, old_frame_len, jb->frame_len);
+
+		if (jb->jitter.stats.edge_since) {
+			uint32_t held_ms = (uint32_t)((now - jb->jitter.stats.edge_since) / 1000);
+			if (old_frame_len == jb->min_frame_len) {
+				jb->jitter.stats.at_min_ms += held_ms;
+			} else if (old_frame_len == jb->max_frame_len) {
+				jb->jitter.stats.at_max_ms += held_ms;
+			}
+			jb->jitter.stats.edge_since = 0;
+		}
+
+		if (jb->frame_len > old_frame_len) {
+			jb->jitter.stats.grew++;
+			if (jb->frame_len == jb->max_frame_len) {
+				jb->jitter.stats.grow_to_max++;
+			}
+		} else {
+			jb->jitter.stats.shrunk++;
+		}
+
+		if (jb->frame_len == jb->min_frame_len || jb->frame_len == jb->max_frame_len) {
+			jb->jitter.stats.edge_since = now;
+		}
 
 		//if (jb->session) {
 		//	switch_core_session_request_video_refresh(jb->session);
@@ -784,8 +864,8 @@ static inline void increment_seq(switch_jb_t *jb)
 
 static inline void decrement_seq(switch_jb_t *jb)
 {
-	jb->last_target_seq = jb->target_seq;
 	jb->target_seq = htons((ntohs(jb->target_seq) - 1));
+	jb->last_target_seq = htons((ntohs(jb->target_seq) - 1));
 }
 
 static inline void set_read_seq(switch_jb_t *jb, uint16_t seq)
@@ -930,9 +1010,14 @@ static inline int check_jb_size(switch_jb_t *jb)
 
 		seq_hs = ntohs(np->packet.header.seq);
 		if (target_seq_hs > seq_hs) {
-			hide_node(np, SWITCH_FALSE);
-			old++;
-			continue;
+			const int MAX_DROPOUT = 3000;
+			uint16_t udelta = target_seq_hs - seq_hs;
+			if (udelta > 1 && udelta < MAX_DROPOUT) {
+				// not a sequence id roll-over, this is an old packet, we can hide it
+				hide_node(np, SWITCH_FALSE);
+				old++;
+				continue;
+			}
 		}
 
 		if (count == 0) {
@@ -962,23 +1047,10 @@ static inline int check_jb_size(switch_jb_t *jb)
 
 	/* update the stats every x packets */
 	if (target_seq_hs % 50 == 0) {
-		int packet_ms = jb->jitter.samples_per_frame / (jb->jitter.samples_per_second / 1000);
-
 		jb->jitter.stats.estimate_ms = (*jb->jitter.estimate) / jb->jitter.samples_per_second * 1000;
-		if (jb->channel) {
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_max_ms", "%u", jb->jitter.stats.size_max * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_est_ms", "%u", jb->jitter.stats.size_est * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", jb->jitter.stats.acceleration * packet_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", jb->jitter.stats.expand * packet_ms);
-		}
 
 		if (jb->jitter.stats.jitter_max_ms < jb->jitter.stats.estimate_ms) {
 			jb->jitter.stats.jitter_max_ms = jb->jitter.stats.estimate_ms;
-		}
-
-		if (jb->channel) {
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", jb->jitter.stats.jitter_max_ms);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_est_ms", "%u", jb->jitter.stats.estimate_ms);
 		}
 	}
 
@@ -1004,10 +1076,43 @@ static inline switch_status_t jb_next_packet_by_seq_with_acceleration(switch_jb_
 	   select packet to drop/accelerate. */
 
 	if (jb->elastic && jb->jitter.estimate && (jb->visible_nodes * jb->jitter.samples_per_frame) > 0 && jb->jitter.samples_per_second) {
-		int visible_not_old = check_jb_size(jb);
+		int rfc_estimate_ms;
+		jb->packets_in_buffer = check_jb_size(jb);
 
-		jb->jitter.stats.estimate_ms = (int)((*jb->jitter.estimate) / ((jb->jitter.samples_per_second)) * 1000);
-		jb->jitter.stats.buffer_size_ms = (int)((visible_not_old * jb->jitter.samples_per_frame) / (jb->jitter.samples_per_second / 1000));
+		rfc_estimate_ms = (int)((*jb->jitter.estimate) / ((jb->jitter.samples_per_second)) * 1000);
+		/* Take the larger of the RFC inter_jitter and our arrival-time-based
+		 * estimate. Arrival side uses MAX of fast (~320ms) and slow (~10s) tiers,
+		 * each as mean + 3*sigma — fast catches bursts, slow holds the line. */
+		{
+			int fast_est = (int)(jb->arrival_jitter_ms      + 3.0 * sqrt(jb->arrival_jitter_var));
+			int slow_est = (int)(jb->arrival_jitter_ms_slow + 3.0 * sqrt(jb->arrival_jitter_var_slow));
+			int arrival_est_ms = fast_est > slow_est ? fast_est : slow_est;
+			jb->jitter.stats.estimate_ms = rfc_estimate_ms > arrival_est_ms ? rfc_estimate_ms : arrival_est_ms;
+		}
+		jb->jitter.stats.buffer_size_ms = (int)((jb->packets_in_buffer * jb->jitter.samples_per_frame) / (jb->jitter.samples_per_second / 1000));
+
+		/* If the jitter buffer size is above the its max size, we force accelerate */
+		if (jb->packets_in_buffer >= jb->max_frame_len) {
+			if (packet_vad(jb, packet, len) == SWITCH_FALSE) {
+				jb_debug(jb, SWITCH_LOG_ALERT, "JITTER_BUFFER above max size: [%d>%d] inactive fast acceleration\n", jb->packets_in_buffer, jb->max_frame_len);
+				jb->jitter.drop_gap = 3;
+				jb->jitter.stats.acceleration++;
+				jb->jitter.stats.expand_frame_len--;
+				jb->jitter.stats.fast_acceleration++;
+				return jb_next_packet_by_seq(jb, nodep);
+			} else {
+				if (jb->jitter.drop_gap > 0) {
+					jb->jitter.drop_gap--;
+				} else {
+					jb_debug(jb, SWITCH_LOG_ALERT, "JITTER_BUFFER above max size: [%d>%d] forced acceleration\n", jb->packets_in_buffer, jb->max_frame_len);
+					jb->jitter.drop_gap = 10;
+					jb->jitter.stats.acceleration++;
+					jb->jitter.stats.expand_frame_len--;
+					jb->jitter.stats.forced_acceleration++;
+					return jb_next_packet_by_seq(jb, nodep);
+				}
+			}
+		}
 
 		/* We try to accelerate in order to remove delay when the jitter buffer is 3x larger than the estimation. */
 		if (jb->jitter.stats.buffer_size_ms > (3 * jb->jitter.stats.estimate_ms) && jb->jitter.stats.buffer_size_ms > 60) {
@@ -1025,14 +1130,15 @@ static inline switch_status_t jb_next_packet_by_seq_with_acceleration(switch_jb_
 				if (status != SWITCH_STATUS_SUCCESS || packet_vad(jb, packet, len) == SWITCH_FALSE) {
 					jb->jitter.drop_gap = 3;
 					if (status != SWITCH_STATUS_SUCCESS) {
-						jb_debug(jb, SWITCH_LOG_INFO, "JITTER estimation n/a buffersize %d/%d %dms seq:%u [drop-missing/no-plc]\n",
+						jb_debug(jb, SWITCH_LOG_ALERT, "JITTER estimation n/a buffersize %d/%d %dms seq:%u [drop-missing/no-plc]\n",
 								 jb->complete_frames, jb->frame_len, jb->jitter.stats.buffer_size_ms, seq);
 					} else {
-						jb_debug(jb, SWITCH_LOG_INFO, "JITTER estimation %dms buffersize %d/%d %dms seq:%u ACCELERATE [drop]\n",
+						jb_debug(jb, SWITCH_LOG_ALERT, "JITTER estimation %dms buffersize %d/%d %dms seq:%u ACCELERATE [drop]\n",
 								 jb->jitter.stats.estimate_ms, jb->complete_frames, jb->frame_len, jb->jitter.stats.buffer_size_ms, seq);
 					}
 
 					jb->jitter.stats.acceleration++;
+					jb->jitter.stats.expand_frame_len--;
 
 					return jb_next_packet_by_seq(jb, nodep);
 				} else {
@@ -1080,19 +1186,6 @@ SWITCH_DECLARE(void) switch_jb_set_jitter_estimator(switch_jb_t *jb, double *jit
 {
 	if (jb && jitter) {
 		memset(&jb->jitter, 0, sizeof(switch_jb_jitter_t));
-		if (jb->channel) {
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_ms", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_count", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_missing_frames", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_ts_jump", "%u", 0);
-			switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_error", "%u", 0);
-		}
 
 		jb->jitter.estimate = jitter;
 		jb->jitter.samples_per_frame = samples_per_frame;
@@ -1174,13 +1267,21 @@ SWITCH_DECLARE(void) switch_jb_debug_level(switch_jb_t *jb, uint8_t level)
 SWITCH_DECLARE(void) switch_jb_reset(switch_jb_t *jb)
 {
 	jb->jitter.stats.reset++;
-	if (jb->channel) {
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_count", "%u", jb->jitter.stats.reset);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big", "%u", jb->jitter.stats.reset_too_big);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_missing_frames", "%u", jb->jitter.stats.reset_missing_frames);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_ts_jump", "%u", jb->jitter.stats.reset_ts_jump);
-		switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_error", "%u", jb->jitter.stats.reset_error);
+	if (jb->media_started) {
+		jb->jitter.stats.reset_runtime++;
+	} else {
+		jb->jitter.stats.reset_setup++;
 	}
+	jb->jitter.stats.expand_frame_len = 0;
+	/* After a reset there's no previous arrival to delta from — clear that.
+	 * Fast tier is per-burst, so reset alongside it.
+	 * Slow tier and clock-drift state survive resets: their whole purpose is
+	 * long-term measurement across the call, so zeroing them on each reset
+	 * would defeat the design (and made our channel-var hangup snapshots
+	 * read as zero when a reset happened near hangup). */
+	jb->last_arrival_us = 0;
+	jb->arrival_jitter_ms = 0;
+	jb->arrival_jitter_var = 0;
 
 	if (jb->type == SJB_VIDEO) {
 		switch_mutex_lock(jb->mutex);
@@ -1230,13 +1331,18 @@ SWITCH_DECLARE(uint32_t) switch_jb_get_nack_success(switch_jb_t *jb)
 	return nack_recovered;
 }
 
-SWITCH_DECLARE(uint32_t) switch_jb_get_packets_per_frame(switch_jb_t *jb) 
+SWITCH_DECLARE(uint32_t) switch_jb_get_packets_per_frame(switch_jb_t *jb)
 {
 	uint32_t ppf;
 	switch_mutex_lock(jb->mutex);
 	ppf = jb->packet_count; /* get current packets per frame */
 	switch_mutex_unlock(jb->mutex);
 	return ppf;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_jb_is_elastic(switch_jb_t *jb)
+{
+	return jb && jb->elastic ? SWITCH_TRUE : SWITCH_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_jb_peek_frame(switch_jb_t *jb, uint32_t ts, uint16_t seq, int peek, switch_frame_t *frame)
@@ -1314,6 +1420,20 @@ SWITCH_DECLARE(switch_status_t) switch_jb_set_frames(switch_jb_t *jb, uint32_t m
 		jb->frame_len = jb->min_frame_len;
 	}
 
+	/* Floor/ceiling just moved - flush the in-flight at-edge timer and re-stamp if still at an edge. */
+	if (jb->jitter.stats.edge_since) {
+		uint32_t held_ms = (uint32_t)((switch_micro_time_now() - jb->jitter.stats.edge_since) / 1000);
+		if (jb->frame_len == jb->min_frame_len) {
+			jb->jitter.stats.at_min_ms += held_ms;
+		} else if (jb->frame_len == jb->max_frame_len) {
+			jb->jitter.stats.at_max_ms += held_ms;
+		}
+		jb->jitter.stats.edge_since = 0;
+	}
+	if (jb->frame_len == jb->min_frame_len || jb->frame_len == jb->max_frame_len) {
+		jb->jitter.stats.edge_since = switch_micro_time_now();
+	}
+
 	switch_mutex_unlock(jb->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1337,6 +1457,7 @@ SWITCH_DECLARE(switch_status_t) switch_jb_create(switch_jb_t **jbp, switch_jb_ty
 	jb->pool = pool;
 	jb->type = type;
 	jb->highest_frame_len = jb->frame_len;
+	jb->jitter.stats.edge_since = switch_micro_time_now();
 
 	if (jb->type == SJB_VIDEO) {
 		switch_core_inthash_init(&jb->missing_seq_hash);
@@ -1352,6 +1473,152 @@ SWITCH_DECLARE(switch_status_t) switch_jb_create(switch_jb_t **jbp, switch_jb_ty
 	*jbp = jb;
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(void) switch_jb_export_stats(switch_jb_t *jb)
+{
+	int packet_ms = 0;
+
+	if (!jb || !jb->channel) {
+		return;
+	}
+
+	switch_mutex_lock(jb->mutex);
+
+	/* Export jitter buffer configuration */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_type", "%s",
+		jb->type == SJB_VIDEO ? "video" : (jb->type == SJB_AUDIO ? "audio" : "text"));
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_min_frame_len", "%u", jb->min_frame_len);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_frame_len", "%u", jb->max_frame_len);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_cur_frame_len", "%u", jb->frame_len);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_highest_frame_len", "%u", jb->highest_frame_len);
+
+	/* Export buffer state */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_visible_nodes", "%u", jb->visible_nodes);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_allocated_nodes", "%u", jb->allocated_nodes);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_complete_frames", "%u", jb->complete_frames);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_packets_in_buffer", "%d", jb->packets_in_buffer);
+
+	/* Export miss/hit statistics */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_period_miss_count", "%u", jb->period_miss_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_consec_miss_count", "%u", jb->consec_miss_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_period_good_count", "%u", jb->period_good_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_consec_good_count", "%u", jb->consec_good_count);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_period_miss_pct", "%.2f", jb->period_miss_pct);
+
+	/* Export jitter estimator statistics */
+	if (jb->jitter.samples_per_frame && jb->jitter.samples_per_second) {
+		packet_ms = jb->jitter.samples_per_frame / (jb->jitter.samples_per_second / 1000);
+	}
+
+	if (jb->jitter.estimate && jb->jitter.samples_per_second) {
+		int rfc_estimate_ms = (*jb->jitter.estimate) / jb->jitter.samples_per_second * 1000;
+		int fast_est = (int)(jb->arrival_jitter_ms      + 3.0 * sqrt(jb->arrival_jitter_var));
+		int slow_est = (int)(jb->arrival_jitter_ms_slow + 3.0 * sqrt(jb->arrival_jitter_var_slow));
+		int arrival_est_ms = fast_est > slow_est ? fast_est : slow_est;
+		jb->jitter.stats.estimate_ms = rfc_estimate_ms > arrival_est_ms ? rfc_estimate_ms : arrival_est_ms;
+	}
+
+	if (packet_ms) {
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_max_ms", "%u", jb->jitter.stats.size_max * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_size_est_ms", "%u", jb->jitter.stats.size_est * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_acceleration_ms", "%u", jb->jitter.stats.acceleration * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_fast_acceleration_ms", "%u", jb->jitter.stats.fast_acceleration * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_forced_acceleration_ms", "%u", jb->jitter.stats.forced_acceleration * packet_ms);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ms", "%u", jb->jitter.stats.expand * packet_ms);
+	}
+
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffering_skip", "%u", jb->jitter.stats.buffering_skip);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_max_ms", "%u", jb->jitter.stats.jitter_max_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_est_ms", "%u", jb->jitter.stats.estimate_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_mean_ms", "%u", (uint32_t)jb->arrival_jitter_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_sigma_ms", "%u", (uint32_t)sqrt(jb->arrival_jitter_var));
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_mean_slow_ms", "%u", (uint32_t)jb->arrival_jitter_ms_slow);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_jitter_sigma_slow_ms", "%u", (uint32_t)sqrt(jb->arrival_jitter_var_slow));
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_clock_drift_ppm", "%d", (int)jb->arrival_clock_drift_ppm);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_rtp_clock_hz", "%u", jb->arrival_rtp_clock_hz);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_buffer_size_ms", "%u", jb->jitter.stats.buffer_size_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_frame_len", "%d", jb->jitter.stats.expand_frame_len);
+
+	/* Export reset statistics */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_count", "%u", jb->jitter.stats.reset);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big", "%u", jb->jitter.stats.reset_too_big);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_big_drops", "%u", jb->jitter.stats.reset_too_big_drops);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_expanded", "%u", jb->jitter.stats.reset_too_expanded);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_too_expanded_drops", "%u", jb->jitter.stats.reset_too_expanded_drops);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_missing_frames", "%u", jb->jitter.stats.reset_missing_frames);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_ts_jump", "%u", jb->jitter.stats.reset_ts_jump);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_error", "%u", jb->jitter.stats.reset_error);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_consecutive_miss", "%u", jb->jitter.stats.consecutive_miss);
+
+	/* Export video-specific statistics */
+	if (jb->type == SJB_VIDEO) {
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_nack_saved_the_day", "%u", jb->nack_saved_the_day);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_nack_didnt_save_the_day", "%u", jb->nack_didnt_save_the_day);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_max_packet_len", "%u", jb->max_packet_len);
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_packet_count", "%u", jb->packet_count);
+	}
+
+	/* Export elastic buffer info */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_elastic", "%s", jb->elastic ? "true" : "false");
+
+	/* Flush any in-flight time-at-edge into the cumulative counters.
+	 * Re-stamp edge_since so a later export call doesn't undercount if the JB is still alive. */
+	if (jb->jitter.stats.edge_since) {
+		switch_time_t now = switch_micro_time_now();
+		uint32_t held_ms = (uint32_t)((now - jb->jitter.stats.edge_since) / 1000);
+		if (jb->frame_len == jb->min_frame_len) {
+			jb->jitter.stats.at_min_ms += held_ms;
+			jb->jitter.stats.edge_since = now;
+		} else if (jb->frame_len == jb->max_frame_len) {
+			jb->jitter.stats.at_max_ms += held_ms;
+			jb->jitter.stats.edge_since = now;
+		} else {
+			jb->jitter.stats.edge_since = 0;
+		}
+	}
+
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_grew", "%u", jb->jitter.stats.grew);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_shrunk", "%u", jb->jitter.stats.shrunk);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_grow_to_max", "%u", jb->jitter.stats.grow_to_max);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_at_min_ms", "%u", jb->jitter.stats.at_min_ms);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_at_max_ms", "%u", jb->jitter.stats.at_max_ms);
+
+	/* Setup vs runtime reset split */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_setup", "%u", jb->jitter.stats.reset_setup);
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_reset_runtime", "%u", jb->jitter.stats.reset_runtime);
+
+	/* Lifetime packets seen + expand ratio (pct of audio that was concealed) */
+	switch_channel_set_variable_printf(jb->channel, "rtp_jb_packets_total", "%u", jb->packets_total);
+	{
+		double expand_ratio_pct = 0.0;
+		if (packet_ms && jb->packets_total) {
+			expand_ratio_pct = (double)jb->jitter.stats.expand * 100.0 / (double)jb->packets_total;
+		}
+		switch_channel_set_variable_printf(jb->channel, "rtp_jb_expand_ratio_pct", "%.2f", expand_ratio_pct);
+
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(jb->channel), SWITCH_LOG_INFO,
+			"switch_jb_export_stats: type=%s elastic=%s "
+			"frame_len=%u/%u/%u/%u(min/cur/highest/max) "
+			"miss_pct=%.2f consec_miss=%u "
+			"jitter_est_ms=%u jitter_max_ms=%u buffer_size_ms=%u "
+			"reset=%u setup=%u runtime=%u (too_big=%u too_big_drops=%u too_expanded=%u missing_frames=%u ts_jump=%u error=%u) "
+			"grew=%u shrunk=%u grow_to_max=%u at_min_ms=%u at_max_ms=%u "
+			"packets=%u expand_ratio_pct=%.2f\n",
+			jb->type == SJB_VIDEO ? "video" : (jb->type == SJB_AUDIO ? "audio" : "text"),
+			jb->elastic ? "true" : "false",
+			jb->min_frame_len, jb->frame_len, jb->highest_frame_len, jb->max_frame_len,
+			jb->period_miss_pct, jb->consec_miss_count,
+			jb->jitter.stats.estimate_ms, jb->jitter.stats.jitter_max_ms, jb->jitter.stats.buffer_size_ms,
+			jb->jitter.stats.reset, jb->jitter.stats.reset_setup, jb->jitter.stats.reset_runtime,
+			jb->jitter.stats.reset_too_big, jb->jitter.stats.reset_too_big_drops, jb->jitter.stats.reset_too_expanded,
+			jb->jitter.stats.reset_missing_frames, jb->jitter.stats.reset_ts_jump, jb->jitter.stats.reset_error,
+			jb->jitter.stats.grew, jb->jitter.stats.shrunk, jb->jitter.stats.grow_to_max,
+			jb->jitter.stats.at_min_ms, jb->jitter.stats.at_max_ms,
+			jb->packets_total, expand_ratio_pct);
+	}
+
+	switch_mutex_unlock(jb->mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_jb_destroy(switch_jb_t **jbp)
@@ -1485,6 +1752,82 @@ SWITCH_DECLARE(switch_status_t) switch_jb_put_packet(switch_jb_t *jb, switch_rtp
 		jb->highest_dropped_ts = 0;
 	}
 
+	jb->media_started = 1;
+	jb->packets_total++;
+
+	/* Maintain arrival-time-based jitter estimate. Two-tier EWMA + EWMV of
+	 * |actual_interval - ptime|. Fast tier reacts to bursts; slow tier holds
+	 * the line on sustained burstiness past the fast tier's ~320ms memory. */
+	if (jb->jitter.samples_per_frame && jb->jitter.samples_per_second) {
+		switch_time_t now_us = switch_micro_time_now();
+		double delta_ms, ptime_ms, deviation, abs_dev, diff_f, diff_s, drift_ppm;
+		uint32_t rtp_ts_now;
+		int64_t elapsed_us, rtp_us, offset_us;
+
+		if (jb->last_arrival_us) {
+			delta_ms = (double)(now_us - jb->last_arrival_us) / 1000.0;
+			ptime_ms = (double)jb->jitter.samples_per_frame * 1000.0 / (double)jb->jitter.samples_per_second;
+			deviation = delta_ms - ptime_ms;
+			abs_dev = deviation < 0 ? -deviation : deviation;
+			/* Fast tier (α=1/4, ~320ms memory) */
+			diff_f = abs_dev - jb->arrival_jitter_ms;
+			jb->arrival_jitter_ms  += diff_f / 4.0;
+			jb->arrival_jitter_var += (diff_f * diff_f - jb->arrival_jitter_var) / 4.0;
+			/* Slow tier (α=1/128, ~10s memory) */
+			diff_s = abs_dev - jb->arrival_jitter_ms_slow;
+			jb->arrival_jitter_ms_slow  += diff_s / 128.0;
+			jb->arrival_jitter_var_slow += (diff_s * diff_s - jb->arrival_jitter_var_slow) / 128.0;
+		}
+		jb->last_arrival_us = now_us;
+
+		/* Clock-drift tracker — GStreamer-style sliding-min baseline.
+		 *
+		 * Per-packet offset = (recv_us − rtp_us). Without drift, this is a
+		 * constant: the wall-clock time the packet spent in flight plus a
+		 * fixed phase. With drift, it slowly rises (sender ahead) or falls.
+		 *
+		 * Anchoring to packet 1 (our old approach) was fragile: if packet 1
+		 * arrived during a jitter spike, every later sample inherited that
+		 * bias. GStreamer instead tracks min(offset) as the running baseline
+		 * — whenever a packet arrives at a smaller offset, the baseline slides
+		 * down. Drift PPM is then (current_offset − min) / elapsed.
+		 *
+		 * RTP clock rate is inferred from observed timestamps (snapped to
+		 * 8/16/48 kHz) because jitter.samples_per_second is the codec sample
+		 * rate, not the RTP timestamp rate. Opus uses 48000 per RFC 7587. */
+		if (!jb->arrival_first_recv_us) {
+			jb->arrival_first_recv_us = now_us;
+			jb->arrival_first_rtp_ts  = ntohl(packet->header.ts);
+		} else {
+			rtp_ts_now = ntohl(packet->header.ts);
+			elapsed_us = (int64_t)(now_us - jb->arrival_first_recv_us);
+			if (!jb->arrival_rtp_clock_hz && elapsed_us > 3000000) {
+				int64_t rtp_ticks = (int64_t)(rtp_ts_now - jb->arrival_first_rtp_ts);
+				int64_t hz_est = (rtp_ticks * 1000000LL) / elapsed_us;
+				if      (hz_est > 24000) jb->arrival_rtp_clock_hz = 48000;
+				else if (hz_est > 12000) jb->arrival_rtp_clock_hz = 16000;
+				else                     jb->arrival_rtp_clock_hz = 8000;
+			}
+			if (jb->arrival_rtp_clock_hz) {
+				/* Compute current per-packet offset in microseconds. */
+				rtp_us = ((int64_t)(rtp_ts_now - jb->arrival_first_rtp_ts) * 1000000LL)
+				          / (int64_t)jb->arrival_rtp_clock_hz;
+				offset_us = elapsed_us - rtp_us;
+				/* Slide baseline DOWN whenever we see a smaller offset.
+				 * First sample initializes the baseline. */
+				if (!jb->arrival_offset_min_set || offset_us < jb->arrival_offset_min_us) {
+					jb->arrival_offset_min_us  = offset_us;
+					jb->arrival_offset_min_set = 1;
+				}
+				/* Drift PPM relative to sliding baseline. Only compute after
+				 * a warmup window so the baseline has had a chance to settle. */
+				if (elapsed_us > 1000000) {
+					drift_ppm = 1e6 * (double)(offset_us - jb->arrival_offset_min_us) / (double)elapsed_us;
+					jb->arrival_clock_drift_ppm += (drift_ppm - jb->arrival_clock_drift_ppm) / 16.0;
+				}
+			}
+		}
+	}
 
 	if (!want) want = got;
 
@@ -1582,12 +1925,13 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 		switch_goto_status(SWITCH_STATUS_BREAK, end);
 	}
 
-	if (jb->complete_frames < jb->frame_len) {
+	if (!jb->elastic && (jb->complete_frames < jb->frame_len)) {
 
 		switch_jb_poll(jb);
 
 		if (!jb->flush) {
 			jb_debug(jb, 2, "BUFFERING %u/%u\n", jb->complete_frames , jb->frame_len);
+			jb->jitter.stats.buffering_skip++;
 			switch_goto_status(SWITCH_STATUS_MORE_DATA, end);
 		}
 	}
@@ -1596,7 +1940,13 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 	if (++jb->period_count >= jb->period_len) {
 
-		if (jb->consec_good_count >= (jb->period_len - 5)) {
+		/* This shrink-on-consecutive-good heuristic is the fixed-size JB controller
+		 * and conflicts with the elastic acceleration/expand feedback (which already
+		 * grows/shrinks frame_len based on estimator-vs-buffer comparisons). On a
+		 * bursty stream the "early" packet of each pair counts as good, climbing
+		 * consec_good_count fast and shrinking the buffer just as expand was trying
+		 * to grow it. Gate to non-elastic only. */
+		if (!jb->elastic && jb->consec_good_count >= (jb->period_len - 5)) {
 			jb_frame_inc(jb, -1);
 		}
 
@@ -1695,16 +2045,46 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 					switch_goto_status(SWITCH_STATUS_RESTART, end);
 				} else {
 					if (jb->elastic) {
-						int visible_not_old = check_jb_size(jb);
-
-						jb->jitter.stats.estimate_ms = (int)((*jb->jitter.estimate) / ((jb->jitter.samples_per_second)) * 1000);
-						jb->jitter.stats.buffer_size_ms = (int)((visible_not_old * jb->jitter.samples_per_frame) / (jb->jitter.samples_per_second / 1000));
+						int rfc_estimate_ms = (int)((*jb->jitter.estimate) / ((jb->jitter.samples_per_second)) * 1000);
+						int fast_est = (int)(jb->arrival_jitter_ms      + 3.0 * sqrt(jb->arrival_jitter_var));
+						int slow_est = (int)(jb->arrival_jitter_ms_slow + 3.0 * sqrt(jb->arrival_jitter_var_slow));
+						int arrival_est_ms = fast_est > slow_est ? fast_est : slow_est;
+						jb->jitter.stats.estimate_ms = rfc_estimate_ms > arrival_est_ms ? rfc_estimate_ms : arrival_est_ms;
+						jb->jitter.stats.buffer_size_ms = (int)((jb->packets_in_buffer * jb->jitter.samples_per_frame) / (jb->jitter.samples_per_second / 1000));
 						/* When playing PLC, we take the oportunity to expand the buffer if the jitter buffer is smaller than the 3x the estimated jitter. */
-						if (jb->jitter.stats.buffer_size_ms < (3 * jb->jitter.stats.estimate_ms)) {
-							jb_debug(jb, SWITCH_LOG_INFO, "JITTER estimation %dms buffersize %d/%d %dms EXPAND [plc]\n",
-									 jb->jitter.stats.estimate_ms, jb->complete_frames, jb->frame_len, jb->jitter.stats.buffer_size_ms);
+						if (jb->jitter.stats.expand_frame_len < 0) jb->jitter.stats.expand_frame_len = 0;
+
+						if (jb->jitter.stats.expand_frame_len > jb->max_frame_len) {
+							jb_debug(jb, SWITCH_LOG_ALERT, "JITTER  estimation %dms buffersize %d/%d %dms RESET TOO EXPANDED [%d>%d] visible[%u] target seq[%u]\n",
+							   jb->jitter.stats.estimate_ms, jb->complete_frames, jb->frame_len, jb->jitter.stats.buffer_size_ms,
+							   jb->jitter.stats.expand_frame_len, jb->max_frame_len, jb->visible_nodes, ntohs(jb->target_seq));
+							jb->jitter.stats.reset_too_expanded++;
+							/* Count the queued packets the listener will never hear, mirroring
+							 * reset_too_big_drops accounting. visible_nodes is the count at the
+							 * moment of reset; switch_jb_reset() then hides them all. */
+							jb->jitter.stats.reset_too_expanded_drops += jb->visible_nodes;
+							jb->jitter.stats.expand_frame_len=0;
+							switch_jb_reset(jb);
+							switch_goto_status(SWITCH_STATUS_RESTART, end);
+						} else if (jb->jitter.stats.buffer_size_ms < 40 ||
+								   jb->jitter.stats.buffer_size_ms < (3 * jb->jitter.stats.estimate_ms)) {
+							/* Floor: if we're about to PLC and the buffer is under 40ms, always
+							 * expand. The configured min (often 20ms = 1 packet) leaves zero
+							 * cushion, and the jitter estimator under-reads systematic bursting,
+							 * so the "3x estimate" clause alone often won't trigger expansion
+							 * even when one extra packet of headroom would catch the late
+							 * arrivals we're about to silence. */
+							jb_debug(jb, SWITCH_LOG_ALERT, "JITTER estimation %dms buffersize %d/%d %dms EXPAND [plc] target_seq[%u] expand[%d] now[%ld]\n",
+									 jb->jitter.stats.estimate_ms, jb->complete_frames, jb->frame_len, jb->jitter.stats.buffer_size_ms,
+									 ntohs(jb->target_seq), jb->jitter.stats.expand_frame_len, (int64_t)(switch_micro_time_now()/1000));
 							jb->jitter.stats.expand++;
+							jb->jitter.stats.expand_frame_len++;
 							decrement_seq(jb);
+						} else if (jb->jitter.stats.expand_frame_len >= jb->max_frame_len) {
+							jb->jitter.stats.reset_error++;
+							jb->jitter.stats.expand_frame_len=0;
+							switch_jb_reset(jb);
+							switch_goto_status(SWITCH_STATUS_RESTART, end);
 						} else {
 							jb_debug(jb, 2, "%s", "Frame not found suggest PLC\n");
 						}
@@ -1712,6 +2092,33 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 						jb_debug(jb, 2, "%s", "Frame not found suggest PLC\n");
 					}
 
+					if (jb->elastic) {
+						jb->jitter.stats.consecutive_miss++;
+						/* Too many consecutive missing frames - the JB keeps advancing its
+						 * target but the packets aren't there. Most common cause in this
+						 * deployment is a dead client (browser tab closed, network drop).
+						 * Reset the JB so it re-seeds on the next arrival, but stay elastic:
+						 * if the stream resumes the JB is ready to absorb whatever shape it
+						 * comes back in. Teardown is handled separately by the RTP layer. */
+						if (jb->jitter.stats.consecutive_miss > 100) {
+								jb_debug(jb, SWITCH_LOG_ALERT, "JITTER reset after %u consecutive misses, reset_missing_frames=%u target_seq[%u]\n",
+									jb->jitter.stats.consecutive_miss, jb->jitter.stats.reset_missing_frames + 1, ntohs(jb->target_seq));
+								jb->jitter.stats.reset_missing_frames++;
+								jb->jitter.stats.consecutive_miss=0;
+								/* Raise the minimum buffer floor to 3 frames after a disruption
+								 * serious enough to trigger this reset. Whatever cushion the
+								 * dialplan asked for at setup wasn't enough to keep the JB in
+								 * sync; on the recovery side, give the new stream more headroom. */
+								if (jb->min_frame_len < 3) {
+									jb->min_frame_len = 3;
+									if (jb->frame_len < jb->min_frame_len) {
+										jb->frame_len = jb->min_frame_len;
+									}
+								}
+								switch_jb_reset(jb);
+								switch_goto_status(SWITCH_STATUS_RESTART, end);
+						}
+					}
 					plc = 1;
 					switch_goto_status(SWITCH_STATUS_NOTFOUND, end);
 				}
@@ -1742,6 +2149,8 @@ SWITCH_DECLARE(switch_status_t) switch_jb_get_packet(switch_jb_t *jb, switch_rtp
 
 		packet->header.seq = seq;
 		packet->header.ts = ts;
+	} else {
+		jb->jitter.stats.consecutive_miss=0;
 	}
 
 	switch_mutex_unlock(jb->mutex);

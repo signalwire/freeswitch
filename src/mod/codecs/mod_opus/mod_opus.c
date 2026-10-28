@@ -109,6 +109,20 @@ struct dec_stats {
 	uint32_t fec_counter;
 	uint32_t plc_counter;
 	uint32_t frame_counter;
+	/* PLC run-length classification. ≤3 PLC frames in a run (≤60ms) are
+	 * essentially inaudible — opus spectrally interpolates from the prior
+	 * packet. Beyond 3 the output degenerates into comfort noise.
+	 *
+	 * A "run" is gap-tolerant: as long as a new PLC arrives within
+	 * PLC_GAP_TOLERANCE frames (200ms) of the prior PLC, it continues the
+	 * same run. This catches alternating glitchy patterns like
+	 * PLC-real-PLC-real-PLC where each PLC is "isolated" but the listener
+	 * hears a sustained audible artifact. */
+	uint32_t plc_run_len;       /* current run length (gap-tolerant) */
+	uint32_t plc_gap_since;     /* frames since last PLC (caps at gap tolerance) */
+	uint32_t plc_short;         /* PLC frames in runs ≤3 — soft */
+	uint32_t plc_long;          /* PLC frames in runs >3 — audible */
+	uint32_t plc_long_starts;   /* count of runs that crossed the >3 threshold */
 };
 typedef struct dec_stats dec_stats_t;
 
@@ -732,8 +746,19 @@ static switch_status_t switch_opus_destroy(switch_codec_t *codec)
 		if (context->decoder_object) {
 			switch_core_session_t *session = codec->session;
 			if (session) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Opus decoder stats: Frames[%d] PLC[%d] FEC[%d]\n",
 										context->decoder_stats.frame_counter, context->decoder_stats.plc_counter-context->decoder_stats.fec_counter, context->decoder_stats.fec_counter);
+				if (channel) {
+					switch_channel_set_variable_printf(channel, "opus_decoder_frames", "%u", context->decoder_stats.frame_counter);
+					switch_channel_set_variable_printf(channel, "opus_decoder_plc", "%u",
+						context->decoder_stats.plc_counter > context->decoder_stats.fec_counter
+							? context->decoder_stats.plc_counter - context->decoder_stats.fec_counter : 0);
+					switch_channel_set_variable_printf(channel, "opus_decoder_fec", "%u", context->decoder_stats.fec_counter);
+					switch_channel_set_variable_printf(channel, "opus_decoder_plc_short", "%u", context->decoder_stats.plc_short);
+					switch_channel_set_variable_printf(channel, "opus_decoder_plc_long",  "%u", context->decoder_stats.plc_long);
+					switch_channel_set_variable_printf(channel, "opus_decoder_plc_long_starts", "%u", context->decoder_stats.plc_long_starts);
+				}
 			}
 			opus_decoder_destroy(context->decoder_object);
 			context->decoder_object = NULL;
@@ -916,14 +941,52 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 						 !encoded_data ? "PLC correction" : fec ?  "FEC correction" : "decode");
 	}
 
+	/* Gap-tolerant PLC run accounting. PLC_GAP_TOLERANCE is in frames at
+	 * 20ms ptime. If a new PLC fires within this gap of the previous one,
+	 * treat it as continuing the same audible event. Otherwise start fresh. */
+	#define PLC_GAP_TOLERANCE 10  /* 10 frames * 20ms = 200ms */
 	if (plc) {
 		context->decoder_stats.plc_counter++;
+		if (context->decoder_stats.plc_gap_since <= PLC_GAP_TOLERANCE) {
+			context->decoder_stats.plc_run_len++;
+		} else {
+			context->decoder_stats.plc_run_len = 1;
+		}
+		context->decoder_stats.plc_gap_since = 0;
+		if (context->decoder_stats.plc_run_len <= 3) {
+			context->decoder_stats.plc_short++;
+		} else {
+			if (context->decoder_stats.plc_run_len == 4) {
+				context->decoder_stats.plc_long_starts++;
+			}
+			context->decoder_stats.plc_long++;
+		}
+	} else {
+		if (context->decoder_stats.plc_gap_since <= PLC_GAP_TOLERANCE) {
+			context->decoder_stats.plc_gap_since++;
+		}
 	}
 	if (fec) {
 		context->decoder_stats.fec_counter++;
 	}
 	/* a frame for which we decode FEC will be counted twice */
 	context->decoder_stats.frame_counter++;
+
+	/* Keep channel variables fresh on each PLC/FEC event so the hangup hook
+	 * (api_hangup_hook fires in CS_HANGUP, before CS_DESTROY runs codec destroy)
+	 * sees current values. Normal decode path does not hit this branch. */
+	if ((plc || fec) && session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		if (channel) {
+			switch_channel_set_variable_printf(channel, "opus_decoder_plc", "%u",
+				context->decoder_stats.plc_counter > context->decoder_stats.fec_counter
+					? context->decoder_stats.plc_counter - context->decoder_stats.fec_counter : 0);
+			switch_channel_set_variable_printf(channel, "opus_decoder_fec", "%u", context->decoder_stats.fec_counter);
+			switch_channel_set_variable_printf(channel, "opus_decoder_plc_short", "%u", context->decoder_stats.plc_short);
+			switch_channel_set_variable_printf(channel, "opus_decoder_plc_long",  "%u", context->decoder_stats.plc_long);
+			switch_channel_set_variable_printf(channel, "opus_decoder_plc_long_starts", "%u", context->decoder_stats.plc_long_starts);
+		}
+	}
 
 	samples = opus_decode(context->decoder_object, encoded_data, encoded_data_len, decoded_data, frame_size, fec);
 
