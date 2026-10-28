@@ -5,7 +5,7 @@ AUTOMAKE_OPTIONS += foreign
 MODNAME=mod_v8
 
 AM_CFLAGS    += -I. -I./include -I$(switch_srcdir)/src/mod/languages/mod_v8/include $(V8_CFLAGS)
-AM_CPPFLAGS  += -I. -I./include -I$(switch_srcdir)/src/mod/languages/mod_v8/include $(V8_CFLAGS) -std=c++17
+AM_CPPFLAGS  += -I. -I./include -I$(switch_srcdir)/src/mod/languages/mod_v8/include $(V8_CFLAGS) -std=c++20
 AM_LDFLAGS   += -avoid-version -module -no-undefined -shared
 
 AM_LIBADD     = $(switch_builddir)/libfreeswitch.la

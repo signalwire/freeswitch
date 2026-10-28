@@ -129,7 +129,7 @@ Local<Value> FSXML::GetJSObjFromXMLObj(const switch_xml_t xml, const v8::Functio
 		/* Create a new object if it wasn't found in the hash */
 		if ((newObj = new FSXML(info))) {
 			if (_rootJSObject.IsEmpty()) {
-				newObj->_rootJSObject.Reset(info.GetIsolate(), info.Holder()); /* The caller is the owner */
+				newObj->_rootJSObject.Reset(info.GetIsolate(), info.This()); /* The caller is the owner */
 			} else {
 				newObj->_rootJSObject.Reset(info.GetIsolate(), _rootJSObject); /* The owner is stored in the persistent object */
 			}
@@ -354,7 +354,7 @@ JS_XML_IMPL_STATIC(Remove)
 		}
 		delete obj;
 	} else {
-		JsUtf8Value str(info.Holder());
+		JsUtf8Value str(info.This());
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No valid internal data available for %s when calling FSXML::Remove()\n", *str ? *str : "[unknown]");
 	}
 }

@@ -173,7 +173,9 @@ JSMain::~JSMain(void)
 	if (forcedTerminationMessage) free(forcedTerminationMessage);
 	if (forcedTerminationScriptFile) free(forcedTerminationScriptFile);
 
-	isolate->Dispose();
+	if (isolate) {
+		isolate->Dispose();
+	}
 }
 
 const string JSMain::GetExceptionInfo(Isolate* isolate, TryCatch* try_catch)
@@ -471,7 +473,6 @@ void JSMain::Dispose()
 	// Make sure to cleanup properly!
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
 	v8::Isolate::GetCurrent()->LowMemoryNotification();
-	while (!v8::Isolate::GetCurrent()->IdleNotificationDeadline(0.500)) {}
 	V8::Dispose();
 #if V8_MAJOR_VERSION >= 10
   /* ShutdownPlatform() became a deprecated alias for DisposePlatform() in
