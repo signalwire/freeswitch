@@ -49,11 +49,8 @@ switch_io_flag_t io_flags;
 switch_payload_t read_pt;
 static switch_port_t audio_rx_port = 1234;
 
-static int got_media_timeout = 0;
-
-//#define USE_RTCP_PCAP 
-
-#define NTP_TIME_OFFSET 2208988800UL
+/* media_timeout configured on the test channel (ms); see rtp_test_start_call(). */
+#define TEST_MEDIA_TIMEOUT_MS 1000
 
 /* https://www.tcpdump.org/pcap.html */
 /* IP header */
@@ -75,68 +72,6 @@ struct sniff_ip {
 
 #define IP_HL(ip)		(((ip)->ip_vhl) & 0x0f)
 
-/* switch_rtp.c - calc_local_lsr_now()  */
-#if 0
-static inline uint32_t test_calc_local_lsr_now(switch_time_t now, uint32_t past /*milliseconds*/) 
-{
-//	switch_time_t now;
-	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
-//	now = switch_micro_time_now() - (past * 1000);
-	now = now - (past * 1000);
-	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
-	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
-	ntp_usec = (uint32_t)(now - ((switch_time_t) sec*1000000)); /* remove seconds to keep only the microseconds */
-	 
-	lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; /* 0.065536 is used for convertion from useconds to fraction of     65536 (x65536/1000000) */
-	return lsr_now;
-}
-
-static void test_prepare_rtcp(void *rtcp_packet, float est_last, uint32_t rtt, uint8_t loss) 
-{
-	/* taken from switch_rtp.c, rtcp_generate_sender_info() */
-	/* === */
-	char *rtcp_sr_trigger = rtcp_packet;
-	switch_time_t now;
-	uint32_t sec, ntp_sec, ntp_usec;
-	uint32_t ntp_msw;
-	uint32_t ntp_lsw;
-	uint32_t *ptr_msw;
-	uint32_t *ptr_lsw;
-	uint32_t lsr;
-	uint32_t *ptr_lsr;
-	uint32_t dlsr = 0;
-	uint32_t *ptr_dlsr;
-	uint8_t *ptr_loss;
-
-	now = switch_micro_time_now();
-	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
-	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
-	ntp_msw = htonl(ntp_sec);   /* store result in "most significant word" */
-	ntp_usec = (uint32_t)(now - (sec*1000000)); /* remove seconds to keep only the microseconds */
-	ntp_lsw = htonl((u_long)(ntp_usec*(double)(((uint64_t)1)<<32)*1.0e-6)); 
-
-	/* === */
-
-	/*patch the RTCP payload to set the RTT we want */
-
-	ptr_msw = (uint32_t *)rtcp_sr_trigger + 2;
-	*ptr_msw = ntp_msw;
-	
-	ptr_lsw = (uint32_t *)rtcp_sr_trigger + 3;
-	*ptr_lsw = ntp_lsw;
-
-	lsr = test_calc_local_lsr_now(now, est_last * 1000 + rtt /*ms*/);
-
-	ptr_lsr = (uint32_t *)rtcp_sr_trigger + 11;
-	*ptr_lsr  = htonl(lsr);
-
-	ptr_dlsr = (uint32_t *)rtcp_sr_trigger + 12;
-	*ptr_dlsr  = htonl(dlsr);
-
-	ptr_loss = (uint8_t *)rtcp_sr_trigger + 32;
-	*ptr_loss  = loss;
-}
-#endif
 
 static switch_status_t rtp_test_start_call(switch_core_session_t **psession)
 {
@@ -255,38 +190,87 @@ static switch_status_t rtp_test_end_call(switch_core_session_t **psession)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void rtp_test_init_frame(switch_frame_t **pwrite_frame, switch_core_session_t **psession)
+/* Pull the next PCMU RTP packet out of a capture. Returns a pointer to the UDP payload
+   (RTP header + body) and its length via rtp_len, or NULL at end of capture. The inter-packet
+   gap recorded in the capture is honored so packets are replayed at their original pace.
+   Non-RTP frames (too short, or not PCMU) are skipped. */
+static const unsigned char *pcap_next_rtp(pcap_t *pcap, struct timeval *prev_ts, switch_size_t *rtp_len)
 {
-	const unsigned char hdr_packet[]="\x80\x00\xcd\x15\xfd\x86\x00\x00\x61\x5a\xe1\x37";
+	const unsigned char *packet;
+	struct pcap_pkthdr pcap_header;
 
-	switch_frame_alloc(pwrite_frame, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	(*pwrite_frame)->codec = switch_core_session_get_write_codec(*psession);
+	while ((packet = pcap_next(pcap, &pcap_header))) {
+		const struct sniff_ip *ip;
+		int jump_over;
+		long diff_us = 0;
 
-	(*pwrite_frame)->datalen = SWITCH_RTP_HEADER_LEN; /*init with dummy RTP header*/
-	memcpy((*pwrite_frame)->data, &hdr_packet, SWITCH_RTP_HEADER_LEN);
-}
-
-static void show_event(switch_event_t *event) {
-	char *str;
-	/*print the event*/
-	switch_event_serialize_json(event, &str);
-	if (str) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", str);
-		switch_safe_free(str);
-	}
-}
-
-static void event_handler(switch_event_t *event) 
-{
-	const char *new_ev = switch_event_get_header(event, "Event-Name");
-
-	if (new_ev && !strcmp(new_ev, "CHANNEL_HANGUP")) {
-		if (!strcmp(switch_event_get_header(event, "Hangup-Cause"), "MEDIA_TIMEOUT")) {
-			got_media_timeout = 1;
+		if (prev_ts->tv_sec || prev_ts->tv_usec) {
+			diff_us = (pcap_header.ts.tv_sec - prev_ts->tv_sec) * 1000000L + (pcap_header.ts.tv_usec - prev_ts->tv_usec);
 		}
+		*prev_ts = pcap_header.ts;
+
+		/* need at least ethernet + minimal IP + UDP + RTP header */
+		if (pcap_header.caplen <= 14 + 20 + 8 + SWITCH_RTP_HEADER_LEN) {
+			continue;
+		}
+
+		ip = (const struct sniff_ip *)(packet + 14);
+		jump_over = 14 /*ethernet*/ + IP_HL(ip) * 4 /*IP header*/ + 8 /*UDP header*/;
+
+		if ((bpf_u_int32)(jump_over + SWITCH_RTP_HEADER_LEN) > pcap_header.caplen) {
+			continue;
+		}
+
+		packet += jump_over;
+
+		/* RTP version 2, PCMU (PT 0) */
+		if (packet[0] != 0x80 || (packet[1] & 0x7f) != 0) {
+			continue;
+		}
+
+		if (diff_us > 0) {
+			switch_yield(diff_us);
+		}
+
+		*rtp_len = pcap_header.caplen - jump_over;
+		return packet;
 	}
 
-	show_event(event);
+	return NULL;
+}
+
+/* Feed the session's read path a few times so a datagram just sent to it gets parsed. */
+static void rtp_test_pump_reads(switch_rtp_t *rtp, int rounds)
+{
+	char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_payload_t pt = 0;
+	switch_frame_flag_t frameflags = 0;
+	uint32_t datalen;
+	int i;
+
+	for (i = 0; i < rounds; i++) {
+		datalen = sizeof(rpacket);
+		switch_rtp_read(rtp, (void *)rpacket, &datalen, &pt, &frameflags, SWITCH_IO_FLAG_NONE);
+	}
+}
+
+/* The RTCP reader logs "Got NACK count <n>" with the number of FCI entries it is about to process,
+   i.e. the output of the bounds clamp in switch_rtp.c:rtcp_nack_fci_count(). The NACK test binds this
+   logger to read that number back and assert the clamp behaved. -1 means "not seen yet". */
+static volatile int captured_nack_count = -1;
+
+static switch_status_t nack_count_logger(const switch_log_node_t *node, switch_log_level_t level)
+{
+	const char *marker = "Got NACK count ";
+	const char *p;
+
+	(void) level;
+
+	if (node && node->content && (p = strstr(node->content, marker))) {
+		captured_nack_count = atoi(p + strlen(marker));
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 FST_CORE_DB_BEGIN("./conf_rtp")
@@ -304,35 +288,59 @@ FST_TEARDOWN_BEGIN()
 {
 }
 FST_TEARDOWN_END()
-#if 0
-	FST_TEST_BEGIN(test_rtp_stall_with_rtcp_muxed_with_timer)
+
+	/*
+	 * RTCP-mux does not stall the RTP read path.
+	 *
+	 * With RTCP enabled and multiplexed onto the RTP socket, a PCMU stream is replayed from a
+	 * capture while a sender report (SR) is injected on the same socket every tenth packet. (This
+	 * unit harness has no media consumer draining the jitter buffer, so switch_rtp_read() hands
+	 * back CNG placeholders rather than decoded audio -- the stall is therefore measured at the
+	 * read call itself, which is where an rtcp-mux regression would bite.) Two things must hold:
+	 *   - the interleaved RTCP must not stall or break the reader: every paced read must return a
+	 *     non-error status and none may block anywhere near a stall;
+	 *   - the injected SR must actually be ingested -- its fields must surface through
+	 *     switch_rtcp_zerocopy_read_frame(). (The original version fired SRs but never checked that
+	 *     any of it was parsed, and its one media assertion sat behind a CNG `continue` that almost
+	 *     always skipped it.)
+	 */
+	FST_TEST_BEGIN(test_rtp_rtcp_mux_no_stall)
 	{
 		switch_core_session_t *session = NULL;
 		switch_status_t status;
-		uint32_t plen = SWITCH_RTP_HEADER_LEN;
 		char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
 		switch_payload_t pt = { 0 };
 		switch_frame_flag_t frameflags = { 0 };
-		int x = 0;
-		switch_frame_t *write_frame;
 		pcap_t *pcap;
 		const unsigned char *packet;
 		char errbuf[PCAP_ERRBUF_SIZE];
-		struct pcap_pkthdr pcap_header;
-		char rtcp_sr_trigger[] = "\x81\xc8\x00\x0c\x78\x9d\xac\x45\xe2\x67\xa5\x74\x30\x60\x56\x81\x00\x19"
-			"\xaa\x00\x00\x00\x06\xd7\x00\x01\x2c\x03\x5e\xbd\x2f\x0b\x00"
-			"\x00\x00\x00\x00\x00\x57\xc4\x00\x00\x00\x39\xa5\x73\xfe\x90\x00\x00\x2c\x87"
-			"\x81\xca\x00\x0c\x78\x9d\xac\x45\x01\x18\x73\x69\x70\x3a\x64\x72\x40\x31\x39\x32\x2e"
-			"\x31\x36\x38\x2e\x30\x2e\x31\x33\x3a\x37\x30\x36\x30\x06\x0e\x4c\x69\x6e\x70\x68\x6f"
-			"\x6e\x65\x2d\x33\x2e\x36\x2e\x31\x00\x00";
-		const struct sniff_ip *ip; /* The IP header */
-		int size_ip, jump_over;
 		struct timeval prev_ts = { 0 };
-		switch_time_t time_nowpacket = 0, time_prevpacket = 0;
 		switch_socket_t *sock_rtp = NULL;
 		switch_sockaddr_t *sock_addr = NULL;
 		const char *str_err;
-		switch_size_t rough_add = 0;
+		switch_size_t rtp_len;
+		switch_time_t last_read = 0, max_gap = 0;
+		int sent_rtp = 0, ok_reads = 0, sr_sent = 0, sr_ingested = 0, x = 0;
+
+		/* Chosen, distinctive SR field values, big-endian on the wire; the parser ntohl()s them,
+		   so switch_rtcp_zerocopy_read_frame() must hand these exact host values back. */
+		const uint32_t sr_ssrc = 0x11223344;
+		const uint32_t sr_ntp_msw = 0xe2000000;
+		const uint32_t sr_ntp_lsw = 0x80000000;
+		const uint32_t sr_rtp_ts = 0x0000abcd;
+		const uint32_t sr_pkt_count = 0x00002a2a;
+		const uint32_t sr_oct_count = 0x00112233;
+		/* RTCP SR (PT=200), RC=0, length=6 words. 28 bytes: 8-byte header+SSRC then 20-byte
+		   sender info (NTP msw/lsw, RTP ts, sender packet count, sender octet count). */
+		unsigned char sr[28] = {
+			0x80, 0xc8, 0x00, 0x06,
+			0x11, 0x22, 0x33, 0x44,             /* SSRC = sr_ssrc */
+			0xe2, 0x00, 0x00, 0x00,             /* NTP msw */
+			0x80, 0x00, 0x00, 0x00,             /* NTP lsw */
+			0x00, 0x00, 0xab, 0xcd,             /* RTP timestamp */
+			0x00, 0x00, 0x2a, 0x2a,             /* sender packet count */
+			0x00, 0x11, 0x22, 0x33              /* sender octet count */
+		};
 
 		status = rtp_test_start_call(&session);
 		fst_requires(status == SWITCH_STATUS_SUCCESS);
@@ -344,14 +352,14 @@ FST_TEARDOWN_END()
 		switch_core_media_set_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
 
 		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
-
-		rtp_test_init_frame(&write_frame, &session);
+		fst_requires(rtp_session);
 
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
+		/* This test only replays inbound media; drop the media timeout so a brief scheduling gap
+		   can't tear the channel down mid-test. */
+		switch_rtp_set_media_timeout(rtp_session, 0);
 
-		if (switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			fst_requires(0); /*exit*/ 
-		}
+		fst_requires(switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS);
 
 		switch_sockaddr_new(&sock_addr, rx_host, audio_rx_port, switch_core_session_get_pool(session));
 		fst_requires(sock_addr);
@@ -359,102 +367,91 @@ FST_TEARDOWN_END()
 		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
 		switch_rtp_reset(rtp_session);
 
-		while ((packet = pcap_next(pcap, &pcap_header))) {
-			/*assume only UDP/RTP packets in the pcap*/
-			uint32_t rcvd_datalen = pcap_header.caplen;
-			size_t len;
+		/* Replay a bounded slice of the capture (~3s at 20ms spacing) so the test stays quick. */
+		while (x < 150 && (packet = pcap_next_rtp(pcap, &prev_ts, &rtp_len))) {
+			uint32_t rcvd_datalen = sizeof(rpacket);
 			switch_size_t tmp_len;
+			switch_rtcp_frame_t rtcp_frame = { 0 };
+			switch_time_t now;
 
-			int diff_us = (pcap_header.ts.tv_sec-prev_ts.tv_sec)*1000000+(pcap_header.ts.tv_usec-prev_ts.tv_usec);
-
-			if (diff_us > 0) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SENT pkt diff: %d us\n", diff_us);
-				usleep(diff_us);
-			}
-
-			prev_ts = pcap_header.ts;
-
-			len = pcap_header.caplen;
-
-			if (len <= 42) {
-				continue;
-			} 
-
-			ip = (struct sniff_ip*)(packet + 14);
-			size_ip = IP_HL(ip) * 4;
-
-			jump_over = 14 /*SIZE_ETHERNET*/ + size_ip /*IP HDR size*/ + 8 /* UDP HDR SIZE */; /* jump 42 bytes over network layers/headers */
-			packet += jump_over;
 			x++;
-			
-			if (!(x%10)) { /* send a RTCP SR packet every 10th RTP packet */
-				int add_rtt = 200;
-				test_prepare_rtcp(&rtcp_sr_trigger, 2, add_rtt, 0xa0);
-				tmp_len = sizeof(rtcp_sr_trigger);
-				/*RTCP muxed*/
-				if (switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char*)rtcp_sr_trigger, &tmp_len) != SWITCH_STATUS_SUCCESS) {
-					fst_requires(0);
-				}
 
-				plen = sizeof(rtcp_sr_trigger);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Sent RTCP. Packet size = [%u]\n", plen);
-				status = switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
-				if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) { 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG/RTCP, skip\n");
-					while (1) {
-						status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
-						if (frameflags || SFF_RTCP) break;
-					}
-				}
-				fst_requires(status == SWITCH_STATUS_SUCCESS);
+			/* Every tenth packet, inject a muxed SR ahead of the media packet. */
+			if ((x % 10) == 0) {
+				tmp_len = sizeof(sr);
+				fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)sr, &tmp_len) == SWITCH_STATUS_SUCCESS);
+				sr_sent++;
 			}
 
-			if (packet[0] == 0x80 && packet[1] == 0 /*PCMU*/) {
-				int16_t *seq = (int16_t *)packet + 1;
-				plen = len - jump_over;
-				tmp_len = plen;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent RTP. Packet size = [%u] seq = [%d]\n", plen, htons(*seq));
-				if (switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char*)packet, &tmp_len) != SWITCH_STATUS_SUCCESS) {
-					fst_requires(0);
-				}
-			}
+			tmp_len = rtp_len;
+			fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)packet, &tmp_len) == SWITCH_STATUS_SUCCESS);
+			sent_rtp++;
 
-			status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
-			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG, skip\n");
-				continue;
-			}
-			time_prevpacket = time_nowpacket;
-			time_nowpacket = switch_time_now();
-			if (time_prevpacket) { // skip init.
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "RECV pkt diff: %ld us\n", time_nowpacket - time_prevpacket);
+			now = switch_time_now();
+			status = switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
 
-				fst_requires((time_nowpacket - time_prevpacket) < 80000);
-				rough_add += time_nowpacket - time_prevpacket; /* just add to var for visual comparison */
+			/* The reader must stay healthy while RTCP is interleaved. */
+			fst_requires(status != SWITCH_STATUS_GENERR && status != SWITCH_STATUS_FALSE);
+			ok_reads++;
+
+			/* Track the longest gap between consecutive reads: paced input is ~20ms apart, so a
+			   stall (a read blocking on the muxed RTCP) would show up as a large spike here. */
+			if (last_read) {
+				switch_time_t gap = now - last_read;
+				if (gap > max_gap) max_gap = gap;
 			}
-			fst_requires(status == SWITCH_STATUS_SUCCESS);
-			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) continue;
-			fst_requires(rcvd_datalen == plen - SWITCH_RTP_HEADER_LEN);
+			last_read = now;
+
+			/* Did the SR we just injected surface through the RTCP frame API? */
+			if (switch_rtcp_zerocopy_read_frame(rtp_session, &rtcp_frame) == SWITCH_STATUS_SUCCESS &&
+				rtcp_frame.ssrc == sr_ssrc) {
+				fst_check_int_equals(rtcp_frame.packet_count, sr_pkt_count);
+				fst_check_int_equals(rtcp_frame.octect_count, sr_oct_count);
+				fst_check_int_equals(rtcp_frame.timestamp, sr_rtp_ts);
+				fst_check_int_equals(rtcp_frame.ntp_msw, sr_ntp_msw);
+				fst_check_int_equals(rtcp_frame.ntp_lsw, sr_ntp_lsw);
+				sr_ingested++;
+			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "RECV total delay: %lu\n", rough_add); /*around 17092408 us*/
-		switch_yield(1000 * 1000);
+		fst_requires(sent_rtp > 0);
+		fst_requires(sr_sent > 0);
 
-		if (write_frame) switch_frame_free(&write_frame);
+		/* Every paced read returned a non-error status while RTCP was muxed in. */
+		fst_xcheck(ok_reads == sent_rtp,
+				   "every RTP read returns a non-error status while RTCP is muxed onto the socket");
+		/* No stall: reads kept pace with the ~20ms input; no single read blocked near a stall. */
+		fst_xcheck(max_gap < 500000,
+				   "no stall: the gap between consecutive reads stays well under half a second");
+		/* The injected SR was actually parsed and exposed through the RTCP frame API. */
+		fst_xcheck(sr_ingested > 0,
+				   "an injected muxed RTCP sender report is ingested and surfaced to the RTCP frame API");
 
 		switch_rtp_destroy(&rtp_session);
-
 		rtp_test_end_call(&session);
-
 		switch_socket_close(sock_rtp);
-
 		pcap_close(pcap);
-
-		switch_yield(1000 * 1000);
 	}
 	FST_TEST_END()
-#endif
 
+	/*
+	 * Regression test for the bounds clamp in switch_rtp.c:rtcp_nack_fci_count().
+	 *
+	 * An RTCP RTPFB/NACK packet carries a count of FCI feedback words implied by its 16-bit
+	 * length field (words - 2, after the 3-word RTPFB header). A malicious or corrupt sender can
+	 * set length far larger than the datagram actually holds. The reader must iterate only over
+	 * the FCI words that are really present, not the count the header claims -- otherwise the
+	 * handle_nack() loop walks off the end of the receive buffer (out-of-bounds read).
+	 *
+	 * The test feeds two feedback packets through the real rtcp-mux read path and, via a bound
+	 * logger, reads back the FCI count the parser decided to process:
+	 *   1. A well-formed NACK with an honest length: the count must equal the entries present.
+	 *   2. A NACK whose length claims 0xFFFF words but that carries only two FCI words in a
+	 *      20-byte datagram: the count must be clamped to the two words that fit, NOT the 65533
+	 *      the length field implies.
+	 * Under ASan/Valgrind the unclamped walk is additionally caught as an out-of-bounds read on
+	 * the switch_rtp_read() below.
+	 */
 	FST_TEST_BEGIN(test_rtcp_nack_oversized_length)
 	{
 		switch_core_session_t *session = NULL;
@@ -462,115 +459,138 @@ FST_TEARDOWN_END()
 		switch_socket_t *sock_rtp = NULL;
 		switch_sockaddr_t *sock_addr = NULL;
 		const char *str_err = NULL;
-		char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
-		switch_payload_t pt = { 0 };
-		switch_frame_flag_t frameflags = { 0 };
-		uint32_t rcvd_datalen;
 		switch_size_t send_len;
 		int i;
-		/* RTPFB NACK feedback: V=2/P=0/FMT=1, PT=205 (byte 0xCD -> header.pt 77), header.length
-		   claims 0xFFFF words but only two FCI words are present. The reader must process two
-		   entries (clamped to the datagram), not the 0xFFFF - 2 implied by the length field. */
-		unsigned char nack[20] = {
-			0x81, 0xcd, 0xff, 0xff,             /* V/P/FMT=1, PT=205, length=0xFFFF */
+		switch_log_level_t verbose = SWITCH_LOG_DEBUG10;
+		int logger_bound = 0;
+
+		/* A well-formed NACK: one FCI word, so length = 4 words - 1 = 3. 16-byte datagram.
+		   fits = (16 - 12)/4 = 1, so the parser must report a count of 1. */
+		unsigned char nack_ok[16] = {
+			0x81, 0xcd, 0x00, 0x03,             /* V=2/P=0/FMT=1, PT=205, length=3 (honest) */
 			0xde, 0xad, 0xbe, 0xef,             /* sender SSRC */
 			0xca, 0xfe, 0xba, 0xbe,             /* media SSRC */
-			0x00, 0x01, 0x00, 0x00,             /* FCI word 0: PID=1, BLP=0 */
-			0x00, 0x02, 0x00, 0x00              /* FCI word 1: PID=2, BLP=0 */
+			0x00, 0x2a, 0x00, 0x00              /* FCI 0: PID=42, BLP=0 */
+		};
+
+		/* The attack packet: length claims 0xFFFF words, but only two FCI words are present in a
+		   20-byte datagram. fits = (20 - 12)/4 = 2, so the parser must report a count of 2, not
+		   65533 (= 0xFFFF - 2). */
+		unsigned char nack_oversized[20] = {
+			0x81, 0xcd, 0xff, 0xff,             /* V=2/P=0/FMT=1, PT=205, length=0xFFFF (lie) */
+			0xde, 0xad, 0xbe, 0xef,             /* sender SSRC */
+			0xca, 0xfe, 0xba, 0xbe,             /* media SSRC */
+			0x00, 0x01, 0x00, 0x00,             /* FCI 0: PID=1,  BLP=0 */
+			0x00, 0x02, 0x00, 0x00              /* FCI 1: PID=2,  BLP=0 */
 		};
 
 		status = rtp_test_start_call(&session);
-		if (status != SWITCH_STATUS_SUCCESS || !session) {
-			fst_fail("failed to start PCMU test call");
-			goto nack_oob_cleanup;
-		}
+		fst_requires(status == SWITCH_STATUS_SUCCESS);
+		fst_requires(session);
+
+		/* The "Got NACK count N" line is logged at DEBUG2; raise the core log level so the bound
+		   logger actually receives it, and capture it. */
+		switch_core_session_ctl(SCSC_LOGLEVEL, &verbose);
+		captured_nack_count = -1;
+		fst_requires(switch_log_bind_logger(nack_count_logger, SWITCH_LOG_DEBUG10, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS);
+		logger_bound = 1;
 
 		switch_core_media_set_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
 
 		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
-		if (!rtp_session) {
-			fst_fail("no RTP session");
-			goto nack_oob_cleanup;
-		}
+		fst_requires(rtp_session);
 
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
-		/* This test feeds only RTCP; drop the media timeout so the no-RTP reads don't return a
-		   media-timeout error that the post-condition below would misread as a reader failure. */
+		/* This test feeds only RTCP; drop the media timeout so the silent reads don't hang up. */
 		switch_rtp_set_media_timeout(rtp_session, 0);
-		/* Accept the feedback packet from the test socket and route it through the video
-		   NACK branch of the RTCP reader. */
+		/* Accept the feedback from the test socket and route it through the RTPFB/NACK branch of
+		   the RTCP reader (only reached when the VIDEO flag is set). */
 		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO);
 		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_NACK);
 
-		if (switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			fst_fail("failed to create test socket");
-			goto nack_oob_cleanup;
-		}
+		fst_requires(switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS);
 
 		switch_sockaddr_new(&sock_addr, rx_host, audio_rx_port, switch_core_session_get_pool(session));
-		if (!sock_addr) {
-			fst_fail("failed to create sockaddr");
-			goto nack_oob_cleanup;
-		}
+		fst_requires(sock_addr);
 
 		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
 		switch_rtp_reset(rtp_session);
 
-		/* rtcp-mux: the feedback arrives on the RTP socket. Send and read a few rounds so the
-		   source address is adopted and the packet reaches the RTCP NACK parser. With the FCI
-		   count clamped the parser stays in bounds; without it the read trips an out-of-bounds
-		   access (ASan/Valgrind abort, or heap corruption). */
-		for (i = 0; i < 4; i++) {
-			send_len = sizeof(nack);
-			if (switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)nack, &send_len) != SWITCH_STATUS_SUCCESS) {
-				fst_fail("failed to send NACK packet");
-				goto nack_oob_cleanup;
-			}
-
-			rcvd_datalen = sizeof(rpacket);
-			status = switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+		/* 1) Honest length: expect the parser to process exactly the one FCI word present.
+		   rtcp-mux means the feedback arrives on the RTP socket, so a few send/read rounds let
+		   the source address be adopted and the packet reach the parser. We resend until the
+		   expected count is observed (a datagram may be dropped before autoadj locks on); an honest
+		   packet only ever yields a count of 1, so waiting for exactly that is race-free even if a
+		   stray packet is still queued. */
+		captured_nack_count = -1;
+		for (i = 0; i < 40 && captured_nack_count != 1; i++) {
+			send_len = sizeof(nack_ok);
+			fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)nack_ok, &send_len) == SWITCH_STATUS_SUCCESS);
+			rtp_test_pump_reads(rtp_session, 2);
 		}
+		fst_xcheck(captured_nack_count == 1,
+				   "RTCP NACK with an honest length is read as exactly the FCI entries present");
 
-		/* In-band, synchronous post-condition: the read we just issued on this thread returned a
-		   non-error status, i.e. the reader tolerated the malformed feedback rather than breaking.
-		   The out-of-bounds access itself is caught by ASan/Valgrind on the read above. */
-		fst_xcheck(status != SWITCH_STATUS_GENERR && status != SWITCH_STATUS_FALSE,
-				   "RTP reader tolerates an oversized RTCP NACK and keeps reading");
+		/* 2) Oversized length with only two FCI words present: the parser must clamp to the two
+		   that fit in the datagram, never the 65533 the length field claims. A regression here is
+		   also an out-of-bounds read, caught by ASan/Valgrind on the reads below. The oversized
+		   packet only ever yields a count of 2, so resend until exactly 2 is seen: this ignores any
+		   honest packet from step 1 still sitting in the socket buffer (which would read back as 1). */
+		captured_nack_count = -1;
+		for (i = 0; i < 40 && captured_nack_count != 2; i++) {
+			send_len = sizeof(nack_oversized);
+			fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)nack_oversized, &send_len) == SWITCH_STATUS_SUCCESS);
+			rtp_test_pump_reads(rtp_session, 2);
+		}
+		fst_xcheck(captured_nack_count == 2,
+				   "oversized RTCP NACK length is clamped to the FCI entries that fit the datagram");
 
-nack_oob_cleanup:
+		/* The session survived parsing the malformed feedback and is still usable. */
+		fst_xcheck(switch_rtp_ready(rtp_session) == SWITCH_TRUE,
+				   "RTP session stays ready after an oversized RTCP NACK");
+
+		if (logger_bound) switch_log_unbind_logger(nack_count_logger);
 		if (sock_rtp) switch_socket_close(sock_rtp);
 		/* rtp_test_end_call() -> switch_media_handle_destroy() destroys the RTP session. */
 		if (session) rtp_test_end_call(&session);
 	}
 	FST_TEST_END()
 
+	/*
+	 * Media-timeout test. With media_timeout configured (TEST_MEDIA_TIMEOUT_MS), the RTP stack
+	 * must hang up the channel with SWITCH_CAUSE_MEDIA_TIMEOUT once inbound media stops -- but not
+	 * while media is still arriving. The test asserts both directions and the timing:
+	 *   - while packets from the capture are replayed at their original pace for well over the
+	 *     timeout, the channel stays up (no false timeout);
+	 *   - once the packets stop, the channel is torn down with MEDIA_TIMEOUT;
+	 *   - the teardown does not happen before roughly the configured timeout has elapsed.
+	 */
 	FST_TEST_BEGIN(test_rtp_media_timeout)
 	{
 		switch_core_session_t *session = NULL;
+		switch_channel_t *channel = NULL;
 		switch_status_t status;
-		uint32_t plen = SWITCH_RTP_HEADER_LEN;
 		char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
 		switch_payload_t pt = { 0 };
 		switch_frame_flag_t frameflags = { 0 };
-		int x = 0;
-		switch_frame_t *write_frame;
 		pcap_t *pcap;
 		const unsigned char *packet;
 		char errbuf[PCAP_ERRBUF_SIZE];
-		struct pcap_pkthdr pcap_header;
-		const struct sniff_ip *ip; /* The IP header */
-		int size_ip, jump_over;
 		struct timeval prev_ts = { 0 };
 		switch_socket_t *sock_rtp = NULL;
 		switch_sockaddr_t *sock_addr = NULL;
 		const char *str_err;
+		switch_size_t rtp_len;
+		switch_time_t feed_until, last_media_at, detected_at = 0, deadline;
+		int fed = 0;
 
 		status = rtp_test_start_call(&session);
 		fst_requires(status == SWITCH_STATUS_SUCCESS);
 		fst_requires(session);
 
-		switch_event_bind("", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL);
+		channel = switch_core_session_get_channel(session);
+		fst_requires(channel);
 
 		pcap = pcap_open_offline_with_tstamp_precision("pcap/milliwatt.pcmu.rtp.pcap", PCAP_TSTAMP_PRECISION_MICRO, errbuf);
 		fst_requires(pcap);
@@ -580,13 +600,9 @@ nack_oob_cleanup:
 		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
 		fst_requires(rtp_session);
 
-		rtp_test_init_frame(&write_frame, &session);
-
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
 
-		if (switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-			fst_requires(0); /*exit*/ 
-		}
+		fst_requires(switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS);
 
 		switch_sockaddr_new(&sock_addr, rx_host, audio_rx_port, switch_core_session_get_pool(session));
 		fst_requires(sock_addr);
@@ -594,68 +610,52 @@ nack_oob_cleanup:
 		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
 		switch_rtp_reset(rtp_session);
 
-		/* send 3 packets then wait and expect RTP timeout */
-		while ((packet = pcap_next(pcap, &pcap_header)) && x < 3) {
-			/*assume only UDP/RTP packets in the pcap*/
-			uint32_t rcvd_datalen = pcap_header.caplen;
-			size_t len;
-			switch_size_t tmp_len;
+		/* Phase 1: replay media for well over the timeout. The channel must stay up throughout --
+		   continuously arriving media must not be mistaken for a timeout. */
+		feed_until = switch_micro_time_now() + (TEST_MEDIA_TIMEOUT_MS + 700) * 1000;
+		last_media_at = switch_micro_time_now();
 
-			int diff_us = (pcap_header.ts.tv_sec-prev_ts.tv_sec)*1000000+(pcap_header.ts.tv_usec-prev_ts.tv_usec);
-			if (diff_us > 0) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "SENT pkt diff: %d us\n", diff_us);
-				usleep(diff_us);
+		while (switch_micro_time_now() < feed_until && (packet = pcap_next_rtp(pcap, &prev_ts, &rtp_len))) {
+			uint32_t rcvd_datalen = sizeof(rpacket);
+			switch_size_t tmp_len = rtp_len;
+
+			fst_requires(switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)packet, &tmp_len) == SWITCH_STATUS_SUCCESS);
+
+			status = switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+			if (status == SWITCH_STATUS_SUCCESS && pt != SWITCH_RTP_CNG_PAYLOAD) {
+				last_media_at = switch_micro_time_now();
 			}
-
-			x++;
-
-			prev_ts = pcap_header.ts;
-
-			len = pcap_header.caplen;
-
-			if (len <= 42) {
-				continue;
-			} 
-
-			ip = (struct sniff_ip*)(packet + 14);
-			size_ip = IP_HL(ip) * 4;
-
-			jump_over = 14 /*SIZE_ETHERNET*/ + size_ip /*IP HDR size*/ + 8 /* UDP HDR SIZE */; /* jump 42 bytes over network layers/headers */
-			packet += jump_over;
-			
-			if (packet[0] == 0x80 && packet[1] == 0 /*PCMU*/) {
-				int16_t *seq = (int16_t *)packet + 1;
-				plen = len - jump_over;
-				tmp_len = plen;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sent RTP. Packet size = [%u] seq = [%d]\n", plen, htons(*seq));
-				if (switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char*)packet, &tmp_len) != SWITCH_STATUS_SUCCESS) {
-					fst_requires(0);
-				}
-			}
-
-			status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
-			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG, skip\n");
-				continue;
-			}
-
-			fst_requires(status == SWITCH_STATUS_SUCCESS);
-			fst_requires(rcvd_datalen == plen - SWITCH_RTP_HEADER_LEN);
+			fed++;
 		}
 
-		x = 150; /* 3 seconds max */
-		while (x || !got_media_timeout) {
-			uint32_t rcvd_datalen; 
-			status = switch_rtp_read(rtp_session, (void *)&rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
-			if (pt == SWITCH_RTP_CNG_PAYLOAD /*timeout*/) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "read CNG, skip\n");
+		/* We replayed media for longer than the timeout; the channel must not have been torn down. */
+		fst_requires(fed > 0);
+		fst_xcheck(switch_channel_get_cause(channel) != SWITCH_CAUSE_MEDIA_TIMEOUT,
+				   "channel is not hung up for media timeout while media is still flowing");
+
+		/* Phase 2: stop sending. Within a bounded window the stack must raise MEDIA_TIMEOUT. */
+		deadline = switch_micro_time_now() + 5 * 1000 * 1000;
+		while (switch_micro_time_now() < deadline) {
+			uint32_t rcvd_datalen = sizeof(rpacket);
+
+			switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+
+			if (switch_channel_get_cause(channel) == SWITCH_CAUSE_MEDIA_TIMEOUT) {
+				detected_at = switch_micro_time_now();
+				break;
 			}
 			switch_yield(20 * 1000);
-			fst_requires(status == SWITCH_STATUS_SUCCESS);
-			x--;
 		}
 
-		if (write_frame) switch_frame_free(&write_frame);
+		fst_xcheck(detected_at != 0, "channel is hung up with MEDIA_TIMEOUT after media stops");
+
+		/* The timeout must honor the configured duration rather than firing immediately. Allow a
+		   300ms slack below the configured value for scheduling jitter. */
+		if (detected_at != 0) {
+			switch_time_t silent_us = detected_at - last_media_at;
+			fst_xcheck(silent_us >= (switch_time_t)(TEST_MEDIA_TIMEOUT_MS - 300) * 1000,
+					   "MEDIA_TIMEOUT does not fire before roughly the configured timeout elapses");
+		}
 
 		switch_rtp_destroy(&rtp_session);
 
@@ -664,8 +664,6 @@ nack_oob_cleanup:
 		switch_socket_close(sock_rtp);
 
 		pcap_close(pcap);
-
-		fst_check(got_media_timeout);
 	}
 	FST_TEST_END()
 }
