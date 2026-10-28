@@ -881,6 +881,50 @@ FST_CORE_BEGIN("./conf")
 			switch_dial_handle_list_destroy(&dl);
 		}
 		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(switch_ivr_enterprise_orig_and_bridge_silent_ringback_cpu)
+		{
+			switch_status_t status;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_dial_handle_list_t *dl;
+			switch_dial_handle_t *dh;
+			switch_dial_leg_list_t *ll;
+			switch_dial_leg_t *leg = NULL;
+			switch_cputime cpu_start, cpu_end;
+			switch_time_t wall_start;
+			int64_t cpu_ms, wall_ms;
+
+			switch_dial_handle_list_create(&dl);
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test1");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "false");
+
+			switch_dial_handle_list_create_handle(dl, &dh);
+			switch_dial_handle_add_leg_list(dh, &ll);
+			switch_dial_leg_list_add_leg(ll, &leg, "null/test2");
+			switch_dial_handle_add_leg_var(leg, "null_enable_auto_answer", "false");
+
+			switch_dial_handle_list_add_global_var(dl, "originate_timeout", "3");
+
+			/* The caller is answered with no ringback set, so the ringback thread waits in silence while both legs ring. */
+			switch_channel_set_variable(fst_channel, "park_after_bridge", "true");
+			switch_getcputime(&cpu_start);
+			wall_start = switch_micro_time_now();
+			status = switch_ivr_enterprise_orig_and_bridge(fst_session, NULL, dl, &cause);
+			wall_ms = (switch_micro_time_now() - wall_start) / 1000;
+			switch_getcputime(&cpu_end);
+			cpu_ms = (cpu_end.userms - cpu_start.userms) + (cpu_end.kernelms - cpu_start.kernelms);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Enterprise bridge rang for %" SWITCH_INT64_T_FMT " ms using %" SWITCH_INT64_T_FMT " ms CPU\n", wall_ms, cpu_ms);
+			fst_xcheck(status == SWITCH_STATUS_FALSE, "Expect switch_ivr_enterprise_orig_and_bridge() to fail");
+			fst_xcheck(cause == SWITCH_CAUSE_NO_ANSWER || cause == SWITCH_CAUSE_ORIGINATOR_CANCEL, "Expect called parties not to answer");
+			fst_xcheck(wall_ms >= 2000, "Expect the legs to ring until the originate timeout");
+			fst_xcheck(cpu_start.userms < 0 || cpu_ms < wall_ms / 2, "Expect the silent ringback thread not to busy loop");
+			switch_dial_handle_list_destroy(&dl);
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }
