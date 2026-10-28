@@ -281,6 +281,24 @@ GCC_DIAG_ON(deprecated-declarations)
 #endif
 }
 
+static inline int av_get_ticks_per_frame(AVCodecContext *c)
+{
+#if (LIBAVCODEC_VERSION_MAJOR < LIBAVCODEC_8_V)
+	int ticks;
+
+GCC_DIAG_OFF(deprecated-declarations)
+	ticks = c->ticks_per_frame;
+GCC_DIAG_ON(deprecated-declarations)
+
+	return ticks;
+#else
+	/* FFmpeg 8 removed ticks_per_frame, which decoders of field based codecs set to 2 */
+	const AVCodecDescriptor *desc = avcodec_descriptor_get(c->codec_id);
+
+	return (desc && (desc->props & AV_CODEC_PROP_FIELDS)) ? 2 : 1;
+#endif
+}
+
 static char *const get_error_text(const int error, char *error_buffer, switch_size_t error_buflen)
 {
 	av_strerror(error, error_buffer, error_buflen);
@@ -637,12 +655,14 @@ static switch_status_t add_stream(av_file_context_t *context, MediaStream *mst, 
 		c->rc_initial_buffer_occupancy = buffer_bytes * 8;
 
 		if (codec_id == AV_CODEC_ID_H264) {
+#if (LIBAVCODEC_VERSION_MAJOR < LIBAVCODEC_8_V) /* FFmpeg 8 removed ticks_per_frame */
 #if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
 GCC_DIAG_OFF(deprecated-declarations)
 #endif
 			c->ticks_per_frame = 2;
 #if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
 GCC_DIAG_ON(deprecated-declarations)
+#endif
 #endif
 
 			c->flags|=AV_CODEC_FLAG_LOOP_FILTER;   // flags=+loop
@@ -1431,7 +1451,7 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 		switch_goto_status(SWITCH_STATUS_FALSE, err);
 	}
 
-#if (LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
+#if (LIBAVFORMAT_VERSION_MAJOR >= LIBAVFORMAT_7_V)
 	handle->seekable = !(context->fc->iformat->flags & AVFMT_NOTIMESTAMPS);
 #else
 	handle->seekable = context->fc->iformat->read_seek2 ? 1 : (context->fc->iformat->read_seek ? 1 : 0);
@@ -3240,21 +3260,15 @@ static switch_status_t av_file_read_video(switch_file_handle_t *handle, switch_f
 
 	if ((c = av_get_codec_context(mst)) && c->time_base.num) {
 		cp = av_stream_get_parser(st);
-#if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
-GCC_DIAG_OFF(deprecated-declarations)
-#endif
-		ticks = cp ? cp->repeat_pict + 1 : c->ticks_per_frame;
+		ticks = cp ? cp->repeat_pict + 1 : av_get_ticks_per_frame(c);
 		// mst->next_pts += ((int64_t)AV_TIME_BASE * st->codec->time_base.num * ticks) / st->codec->time_base.den;
 	}
 
 	if (!context->video_start_time) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "start: %" SWITCH_INT64_T_FMT " ticks: %d ticks_per_frame: %d st num:%d st den:%d codec num:%d codec den:%d start: %" SWITCH_TIME_T_FMT ", duration:%" SWITCH_INT64_T_FMT " nb_frames:%" SWITCH_INT64_T_FMT " q2d:%f\n",
-			context->video_start_time, ticks, c ? c->ticks_per_frame : -1, st->time_base.num, st->time_base.den, c ? c->time_base.num : -1, c ? c->time_base.den : -1,
+			context->video_start_time, ticks, c ? av_get_ticks_per_frame(c) : -1, st->time_base.num, st->time_base.den, c ? c->time_base.num : -1, c ? c->time_base.den : -1,
 			st->start_time, st->duration == AV_NOPTS_VALUE ? context->fc->duration / AV_TIME_BASE * 1000 : st->duration, st->nb_frames, av_q2d(st->time_base));
 	}
-#if ((LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_6_V && LIBAVFORMAT_VERSION_MINOR >= LIBAVFORMAT_61_V) || LIBAVFORMAT_VERSION_MAJOR == LIBAVFORMAT_7_V)
-GCC_DIAG_ON(deprecated-declarations)
-#endif
 
  again:
 
