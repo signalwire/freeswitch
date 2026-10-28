@@ -561,6 +561,68 @@ FST_TEARDOWN_END()
 	}
 	FST_TEST_END()
 
+	FST_TEST_BEGIN(test_hard_mute_flushes_on_state_change_only)
+	{
+		switch_core_session_t *session = NULL;
+		switch_channel_t *channel = NULL;
+		switch_status_t status;
+		switch_call_cause_t cause;
+		switch_media_handle_t *media_handle;
+		switch_core_media_params_t *mparams;
+		switch_rtp_t *mute_rtp = NULL;
+
+		status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+		fst_requires(session);
+		fst_check(status == SWITCH_STATUS_SUCCESS);
+
+		channel = switch_core_session_get_channel(session);
+		fst_requires(channel);
+
+		mparams = switch_core_session_alloc(session, sizeof(switch_core_media_params_t));
+		mparams->num_codecs = 1;
+		mparams->inbound_codec_string = switch_core_session_strdup(session, "PCMA");
+		mparams->outbound_codec_string = switch_core_session_strdup(session, "PCMA");
+		mparams->rtpip = switch_core_session_strdup(session, (char *)rx_host);
+
+		status = switch_media_handle_create(&media_handle, session, mparams);
+		fst_requires(status == SWITCH_STATUS_SUCCESS);
+
+		mute_rtp = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "soft", &err, switch_core_session_get_pool(session), 0, 0);
+		fst_requires(mute_rtp);
+		fst_requires(switch_rtp_ready(mute_rtp));
+		switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, mute_rtp);
+
+		/* switch_core_media_bug_add() always ends with an unmute; on a channel that was
+		 * never muted it must not flush the read buffer (that drops live inbound audio). */
+		switch_rtp_clear_flag(mute_rtp, SWITCH_RTP_FLAG_FLUSH);
+		switch_core_media_hard_mute(session, SWITCH_FALSE);
+		fst_xcheck(!switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_MUTE), "unmute of an unmuted channel leaves it unmuted");
+		fst_xcheck(!switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_FLUSH), "unmute of an unmuted channel does not flush");
+
+		/* A real mute flushes, as before. */
+		switch_core_media_hard_mute(session, SWITCH_TRUE);
+		fst_xcheck(switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_MUTE), "mute sets the mute flag");
+		fst_xcheck(switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_FLUSH), "mute flushes");
+
+		/* Muting an already muted channel changes nothing, so it does not flush. */
+		switch_rtp_clear_flag(mute_rtp, SWITCH_RTP_FLAG_FLUSH);
+		switch_core_media_hard_mute(session, SWITCH_TRUE);
+		fst_xcheck(switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_MUTE), "repeated mute keeps the mute flag");
+		fst_xcheck(!switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_FLUSH), "repeated mute does not flush");
+
+		/* A real unmute flushes, as before. */
+		switch_core_media_hard_mute(session, SWITCH_FALSE);
+		fst_xcheck(!switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_MUTE), "unmute clears the mute flag");
+		fst_xcheck(switch_rtp_test_flag(mute_rtp, SWITCH_RTP_FLAG_FLUSH), "unmute of a muted channel flushes");
+
+		switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, NULL);
+		switch_rtp_destroy(&mute_rtp);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_media_handle_destroy(session);
+		switch_core_session_rwunlock(session);
+	}
+	FST_TEST_END()
+
 }
 FST_SUITE_END()
 }
