@@ -383,13 +383,19 @@ FST_CORE_BEGIN("./conf")
 		FST_TEST_BEGIN(test_fork)
 		{
 			switch_stream_handle_t exec_result = { 0 };
+			/* commands that exist everywhere (not iproute2), and a fresh stream per command,
+			   so the pipe case is really checked rather than passing on the first command's output */
 			SWITCH_STANDARD_STREAM(exec_result);
-			fst_requires(switch_stream_system_fork("ip ad sh", &exec_result) == 0);
+			fst_requires(switch_stream_system_fork("echo fork_test_output", &exec_result) == 0);
 			fst_requires(!zstr(exec_result.data));
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", (char *)exec_result.data);
+			fst_check(strstr((char *)exec_result.data, "fork_test_output") != NULL);
+			switch_safe_free(exec_result.data);
 
-			fst_requires(switch_stream_system_fork("ip ad sh | grep link", &exec_result) == 0);
+			SWITCH_STANDARD_STREAM(exec_result);
+			fst_requires(switch_stream_system_fork("printf 'first line\\nlink line\\n' | grep link", &exec_result) == 0);
 			fst_requires(!zstr(exec_result.data));
+			fst_check(strstr((char *)exec_result.data, "link line") != NULL);
+			fst_check(strstr((char *)exec_result.data, "first line") == NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", (char *)exec_result.data);
 
 			switch_safe_free(exec_result.data);
