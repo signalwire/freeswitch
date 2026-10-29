@@ -186,6 +186,8 @@ struct sofia_private {
 	int destroy_me;
 	int is_call;
 	int is_static;
+	int is_unregister;
+	struct sofia_private *unregister_next;
 	switch_time_t ping_sent;
 	char *rfc7989_uuid;
 };
@@ -711,6 +713,7 @@ struct sofia_profile {
 	switch_mutex_t *dbh_mutex;
 	switch_mutex_t *gateway_mutex;
 	sofia_gateway_t *gateways;
+	sofia_private_t *unregistering;
 	//su_home_t *home;
 	switch_hash_t *chat_hash;
 	switch_hash_t *reg_nh_hash;
@@ -1044,7 +1047,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count, switch_xml_t *user_xml);
 
 
-void sofia_reg_handle_sip_r_challenge(int status,
+switch_bool_t sofia_reg_handle_sip_r_challenge(int status,
 									  char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile,
 									  nua_handle_t *nh, sofia_private_t *sofia_private,
@@ -1055,6 +1058,13 @@ void sofia_reg_handle_sip_r_register(int status,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de,
 									 tagi_t tags[]);
+void sofia_reg_handle_gateway_unregister(nua_event_t event,
+										 int status,
+										 char const *phrase,
+										 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
+										 sofia_gateway_t *gateway, sip_t const *sip,
+										 sofia_dispatch_event_t *de, tagi_t tags[]);
+void sofia_reg_release_unregisters(sofia_profile_t *profile);
 void sofia_handle_sip_i_options(int status, char const *phrase, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
 								sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[]);
