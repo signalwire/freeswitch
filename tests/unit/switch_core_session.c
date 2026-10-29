@@ -71,6 +71,35 @@ FST_CORE_BEGIN("./conf")
 			fst_check(session == NULL);
 		}
 		FST_SESSION_END()
+
+		FST_SESSION_BEGIN(session_partner_uuid_copy)
+		{
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+			const char *uuid = NULL;
+			int i = 0;
+
+			/* no bond set: no partner uuid */
+			fst_check(switch_channel_get_partner_uuid_copy(fst_channel, uuid_str, sizeof(uuid_str)) == NULL);
+
+			switch_channel_set_variable(fst_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(fst_session));
+
+			/* the copy must land in the caller's buffer and stay valid across lookups:
+			   the CNG path in switch_core_session_read_frame() consults the partner
+			   at frame rate on bridged calls */
+			for (i = 0; i < 1000; i++) {
+				uuid = switch_channel_get_partner_uuid_copy(fst_channel, uuid_str, sizeof(uuid_str));
+				fst_requires(uuid == (const char *) uuid_str);
+			}
+			fst_check_string_equals(uuid_str, switch_core_session_get_uuid(fst_session));
+
+			/* originate_signal_bond is the fallback when signal_bond is unset */
+			switch_channel_set_variable(fst_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
+			switch_channel_set_variable(fst_channel, SWITCH_ORIGINATE_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(fst_session));
+			uuid = switch_channel_get_partner_uuid_copy(fst_channel, uuid_str, sizeof(uuid_str));
+			fst_requires(uuid == (const char *) uuid_str);
+			fst_check_string_equals(uuid_str, switch_core_session_get_uuid(fst_session));
+		}
+		FST_SESSION_END()
 	}
 	FST_SUITE_END()
 }
