@@ -108,7 +108,7 @@ LIBYUV_API
 int AArch64CpuCaps(unsigned long hwcap, unsigned long hwcap2);
 #else
 LIBYUV_API
-int AArch64CpuCaps();
+int AArch64CpuCaps(void);
 #endif
 
 // For testing, allow CPU flags to be disabled.

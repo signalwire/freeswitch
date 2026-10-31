@@ -229,7 +229,7 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(unsigned long hwcap,
 
 #elif defined(_WIN32)
 // For AArch64, but public to allow testing on any CPU.
-LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(void) {
   // Neon is mandatory on AArch64, so enable unconditionally.
   int features = kCpuHasNEON;
 
@@ -259,7 +259,7 @@ static bool have_feature(const char* feature) {
 }
 
 // For AArch64, but public to allow testing on any CPU.
-LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(void) {
   // Neon is mandatory on AArch64, so enable unconditionally.
   int features = kCpuHasNEON;
 
@@ -288,7 +288,7 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
 
 #else  // !defined(__linux__) && !defined(_WIN32) && !defined(__APPLE__)
 // For AArch64, but public to allow testing on any CPU.
-LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
+LIBYUV_API SAFEBUFFERS int AArch64CpuCaps(void) {
   // Neon is mandatory on AArch64, so enable unconditionally.
   int features = kCpuHasNEON;
 
