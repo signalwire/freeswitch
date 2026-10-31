@@ -8830,6 +8830,9 @@ void HalfWidthRow_16To8_Odd_AVX2(const uint16_t* src_uv,
   int r = (width - 1) & 15;
   SIMD_ALIGNED(uint16_t pair[64]);
   SIMD_ALIGNED(uint8_t out[16]);
+#ifdef __clang_analyzer__
+  memset(out, 0, sizeof(out));
+#endif
   if (n > 0) {
     HalfWidthRow_16To8_AVX2(src_uv, src_uv_stride, dst_uv, scale, n);
     src_uv += n * 2;
