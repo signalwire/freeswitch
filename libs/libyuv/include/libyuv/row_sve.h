@@ -2484,7 +2484,7 @@ static inline void ARGBAlphaBlendRow_SVE_SC(const uint8_t* src_argb0,
       "cntw     %x[vl]                                  \n"
       "ptrue    p0.b                                    \n"
       "mov      z24.h, #1                               \n"
-      "mov      z25.s, #0x01010101                      \n"
+      "mov      z25.b, #1                               \n"
       "mov      z26.s, #0x00ffffff                      \n"
       "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.lt     2f                                      \n"

@@ -458,6 +458,7 @@ uint32_t HammingDistance_AVX512BW(const uint8_t* src_a,
 #ifdef HAS_HAMMINGDISTANCE_AVX512VNNI
 // Process 64 bytes per loop and the remainder of 1 to 63 bytes with masked
 // loads that read zeros, accumulating byte popcounts with vpdpbusd.
+LIBYUV_TARGET_AVX512VNNI
 uint32_t HammingDistance_AVX512VNNI(const uint8_t* src_a,
                                     const uint8_t* src_b,
                                     int count) {
