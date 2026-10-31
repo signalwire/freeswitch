@@ -1240,7 +1240,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				profile_tick = 0;
 			}
 
-			if (runtime.sps <= 0) {
+			if (runtime.sps < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
 
