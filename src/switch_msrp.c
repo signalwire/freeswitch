@@ -697,7 +697,7 @@ static char *msrp_parse_header(char *start, int skip, const char *end, switch_ms
 	if (q > p) {
 		if (*(q-1) == '\r') *(q-1) = '\0';
 		*q = '\0';
-		switch_msrp_msg_add_header(msrp_msg, htype, p);
+		switch_msrp_msg_add_header(msrp_msg, htype, "%s", p);
 		return q + 1;
 	}
 	return start;
@@ -718,7 +718,7 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 
 			if (q > p) {
 				*q = '\0';
-				switch_msrp_msg_add_header(msrp_msg, MSRP_H_TRASACTION_ID, p);
+				switch_msrp_msg_add_header(msrp_msg, MSRP_H_TRASACTION_ID, "%s", p);
 				switch_msrp_msg_add_header(msrp_msg, MSRP_H_DELIMITER, "-------%s", p);
 				msrp_msg->state = MSRP_ST_PARSE_HEADER;
 			}
@@ -748,7 +748,7 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 					if (q > p) {
 						if (*(q-1) == '\r') *(q-1) = '\0';
 						*q = '\0';
-						switch_msrp_msg_add_header(msrp_msg, MSRP_H_CODE_DESCRIPTION, p);
+						switch_msrp_msg_add_header(msrp_msg, MSRP_H_CODE_DESCRIPTION, "%s", p);
 						p = ++q;
 					}
 				}
