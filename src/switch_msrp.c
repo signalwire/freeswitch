@@ -1564,6 +1564,8 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	const char *to_path = msrp_h_to_path ? msrp_h_to_path : ms->remote_path;
 	const char *from_path = msrp_h_from_path ? msrp_h_from_path: ms->local_path;
 	const char *content_type = switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE);
+	switch_size_t room;
+	int ret;
 
 	if (msrp_msg->payload_bytes == 2 && msrp_msg->payload && !strncmp(msrp_msg->payload, "\r\n", 2)) {
 		// discard \r\n appended in uuid_send_text
@@ -1582,7 +1584,7 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	random_string(transaction_id, MSRP_TRANS_ID_LEN);
 	switch_uuid_str(message_id, sizeof(message_id));
 
-	sprintf(buf, "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
+	ret = snprintf(buf, sizeof(buf), "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
 		"Message-ID: %s\r\n"
 		"Byte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT "\r\n"
 		"%s%s%s",
@@ -1596,25 +1598,43 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 		msrp_msg->payload ? content_type : "",
 		msrp_msg->payload ? "\r\n\r\n" : "");
 
-	len = strlen(buf);
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf)) {
+		goto too_large;
+	}
+
+	len = ret;
 
 	if (msrp_msg->payload) {
-		if (len + msrp_msg->payload_bytes >= MSRP_BUFF_SIZE) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_ERROR, "payload too large! %" SWITCH_SIZE_T_FMT "\n", len + msrp_msg->payload_bytes);
-			return SWITCH_STATUS_FALSE;
+		/* at least one byte is left after the header */
+		room = sizeof(buf) - len;
+
+		/* the payload and its CRLF, leaving room for the end-line */
+		if (msrp_msg->payload_bytes + 2 >= room) {
+			goto too_large;
 		}
+
 		memcpy(buf + len, msrp_msg->payload, msrp_msg->payload_bytes);
 		len += msrp_msg->payload_bytes;
-		sprintf(buf + len, "\r\n");
+		memcpy(buf + len, "\r\n", 2);
 		len += 2;
 	}
 
-	sprintf(buf + len, "-------%s$\r\n", transaction_id);
-	len += (10 + strlen(transaction_id));
+	ret = snprintf(buf + len, sizeof(buf) - len, "-------%s$\r\n", transaction_id);
+
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf) - len) {
+		goto too_large;
+	}
+
+	len += ret;
 
 	if (globals.debug) dump_buffer(buf, len, __LINE__, 1);
 
 	return ms->csock ? msrp_socket_send(ms->csock, buf, &len) : SWITCH_STATUS_FALSE;
+
+too_large:
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_ERROR, "MSRP message does not fit %" SWITCH_SIZE_T_FMT " bytes, not sent\n", sizeof(buf));
+
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE (switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, switch_msrp_msg_t *msrp_msg, const char *file, const char *func, int line)
