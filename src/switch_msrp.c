@@ -1701,14 +1701,25 @@ SWITCH_STANDARD_APP(msrp_recv_file_function)
 	switch_channel_answer(channel);
 
 	if (zstr(data)) {
-		filename = switch_channel_get_variable(channel, "sip_msrp_file_name");
+		const char *sip_file_name = switch_channel_get_variable(channel, "sip_msrp_file_name");
+		const char *safe_name;
 
-		if (zstr(filename)) {
+		if (zstr(sip_file_name)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No file specified.\n");
+
 			return;
 		}
 
-		filename = switch_core_session_sprintf(session, "%s%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR, filename);
+		/* The name is taken from the remote SDP file-selector. Reduce it to its final
+		   path component so the opened file always stays inside the receive directory. */
+		safe_name = switch_cut_path(sip_file_name);
+		if (zstr(safe_name) || !strcmp(safe_name, ".") || !strcmp(safe_name, "..")) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Rejecting remote file name '%s'\n", sip_file_name);
+
+			return;
+		}
+
+		filename = switch_core_session_sprintf(session, "%s%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR, safe_name);
 	}
 
 	if (!(msrp_session = switch_core_media_get_msrp_session(session))) {
