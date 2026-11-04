@@ -679,6 +679,8 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_msg_add_header(switch_msrp_msg_t *ms
 	default: break;
 	}
 
+	switch_safe_free(data);
+
 	return status;
 }
 
@@ -1183,7 +1185,11 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP setup TLS %s\n", msrp_session->call_id);
 
 			ssl = SSL_new(globals.ssl_client_ctx);
-			assert(ssl);
+			if (!ssl) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP %s cannot create a TLS client session\n", msrp_session->call_id);
+				goto end;
+			}
+
 			csock->ssl = ssl;
 			SSL_set_fd(ssl, sockdes);
 
@@ -1241,7 +1247,11 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_assert(sockdes != SWITCH_SOCK_INVALID);
 
 			ssl = SSL_new(globals.ssl_ctx);
-			assert(ssl);
+			if (!ssl) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP cannot create a TLS server session\n");
+				goto end;
+			}
+
 			csock->ssl = ssl;
 
 			SSL_set_fd(ssl, sockdes);
@@ -1322,7 +1332,12 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			}
 
 			msrp_session = switch_core_media_get_msrp_session(session);
-			switch_assert(msrp_session);
+			if (!msrp_session) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Session %s has no MSRP session\n", uuid);
+				switch_core_session_rwunlock(session);
+				goto end;
+			}
+
 			msrp_session->csock = csock;
 			msrp_session->running = 1;
 
@@ -1339,8 +1354,9 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes: %" SWITCH_SIZE_T_FMT "\n", len);
 
 		if (len == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes: %" SWITCH_SIZE_T_FMT "\n", len);
-			continue;
+			/* only a TLS read reports success with no data, and only once the peer has closed */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MSRP connection closed by peer\n");
+			break;
 		}
 
 		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__, 0);
@@ -1453,6 +1469,10 @@ end:
 	if (ssl) SSL_free(ssl);
 
 	if (msrp_session) msrp_session->running = 0;
+
+	if (msrp_msg) {
+		switch_msrp_msg_destroy(&msrp_msg);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP worker down %s\n", msrp_session ? msrp_session->call_id : "!");
 
@@ -1725,6 +1745,7 @@ SWITCH_DECLARE(void) switch_msrp_msg_destroy(switch_msrp_msg_t **msg)
 	}
 
 	switch_safe_free(msrp_msg->payload);
+	switch_safe_free(*msg);
 	*msg = NULL;
 }
 
@@ -1794,7 +1815,7 @@ SWITCH_STANDARD_APP(msrp_recv_file_function)
 			}
 		}
 
-		switch_safe_free(msrp_msg);
+		switch_msrp_msg_destroy(&msrp_msg);
 	}
 
 	switch_file_close(fd);
@@ -1890,12 +1911,14 @@ SWITCH_STANDARD_API(uuid_msrp_send_function)
 
 	if (!(msession = switch_core_session_locate(argv[0]))) {
 		stream->write_function(stream, "-ERR Usage: cannot locate session.\n");
+		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(msrp_session = switch_core_media_get_msrp_session(msession))) {
 		stream->write_function(stream, "-ERR No msrp_session.\n");
 		switch_core_session_rwunlock(msession);
+		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1906,10 +1929,12 @@ SWITCH_STANDARD_API(uuid_msrp_send_function)
 	switch_msrp_msg_destroy(&msrp_msg);
 	stream->write_function(stream, "+OK message sent\n");
 	switch_core_session_rwunlock(msession);
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 
 error:
 	stream->write_function(stream, "-ERR Usage: uuid_msrp_send <uuid> msg\n");
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
