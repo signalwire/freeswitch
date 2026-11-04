@@ -718,6 +718,12 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 
 			while(*q && q < end && *q != ' ') q++;
 
+			if (q == p && q < end) {
+				/* empty transaction id: there is no end-line delimiter to frame the body */
+				msrp_msg->state = MSRP_ST_ERROR;
+				goto done;
+			}
+
 			if (q > p) {
 				*q = '\0';
 				switch_msrp_msg_add_header(msrp_msg, MSRP_H_TRASACTION_ID, "%s", p);
@@ -910,13 +916,19 @@ static switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_
 			return msrp_msg;
 		}
 
+		if (zstr(msrp_msg->delimiter)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP body without a delimiter\n");
+			msrp_msg->state = MSRP_ST_ERROR;
+
+			return msrp_msg;
+		}
+
 		if (msrp_msg->range_star) { /* the * case */
 			/*hope we can find the delimiter at the end*/
 			int dlen;
 			char *delim_pos = NULL;
 			switch_size_t payload_bytes;
 
-			switch_assert(msrp_msg->delimiter);
 			dlen = strlen(msrp_msg->delimiter);
 
 			/* Need room for the trailing delimiter framing; a shorter
@@ -1092,12 +1104,13 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	worker_helper_t *helper = (worker_helper_t *) obj;
 	switch_msrp_client_socket_t *csock = &helper->csock;
 	switch_memory_pool_t *pool = helper->pool;
-	char buf[MSRP_BUFF_SIZE];
+	char buf[MSRP_BUFF_SIZE + 1]; /* received data is NUL-terminated in the extra byte */
 	char *p;
 	char *last_p;
 	switch_size_t len = MSRP_BUFF_SIZE;
 	switch_status_t status;
 	switch_msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *setup_msg = NULL;
 	char uuid[128] = { 0 };
 	switch_msrp_session_t *msrp_session = NULL;
 	int sanity = 10;
@@ -1106,12 +1119,12 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 	if (client_mode) {
 		switch_sockaddr_t *sa = NULL;
-		switch_msrp_msg_t *setup_msg = switch_msrp_msg_create();
 		const char *remote_ip = NULL;
 		switch_port_t remote_port = 0;
 		char *dup = NULL;
 		char *p = NULL;
 
+		setup_msg = switch_msrp_msg_create();
 		switch_assert(setup_msg);
 		switch_assert(helper->msrp_session);
 		msrp_session = helper->msrp_session;
@@ -1287,6 +1300,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		}
 
 		if (status == SWITCH_STATUS_SUCCESS) {
+			buf[len] = '\0';
 			msrp_msg = msrp_parse_buffer(buf, len, NULL, pool);
 			switch_assert(msrp_msg);
 		} else {
@@ -1362,6 +1376,8 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__, 0);
 
 	again:
+		/* p + len is the end of the received data on every path that reaches here */
+		p[len] = '\0';
 		msrp_msg = msrp_parse_buffer(last_p, p - last_p + len, msrp_msg, pool);
 
 		switch_assert(msrp_msg);
@@ -1472,6 +1488,11 @@ end:
 
 	if (msrp_msg) {
 		switch_msrp_msg_destroy(&msrp_msg);
+	}
+
+	/* set only when a client connection failed before its setup SEND */
+	if (setup_msg) {
+		switch_msrp_msg_destroy(&setup_msg);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP worker down %s\n", msrp_session ? msrp_session->call_id : "!");
@@ -1595,6 +1616,12 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	if (!from_path) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_WARNING, "NO FROM PATH\n");
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!to_path) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_WARNING, "NO TO PATH\n");
+
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (zstr(content_type)) {
