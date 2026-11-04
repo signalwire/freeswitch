@@ -1066,10 +1066,15 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 
 static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
 {
-	int len = strlen(to_path);
+	int len;
 	int i;
 	int slash_count = 0;
-	switch_assert(to_path);
+
+	if (!to_path) {
+		return SWITCH_FALSE;
+	}
+
+	len = strlen(to_path);
 	for(i=0; i<len; i++){
 		if (*(to_path + i) == '/') {
 			if (++slash_count == 3) break;
