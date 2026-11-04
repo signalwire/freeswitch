@@ -1077,7 +1077,7 @@ static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
 	}
 	if (slash_count < 3) return SWITCH_FALSE;
 	if (len - i++ < 36) return SWITCH_FALSE;
-	switch_snprintf(uuid, 37, to_path + i);
+	switch_snprintf(uuid, 37, "%s", to_path + i);
 	return SWITCH_TRUE;
 }
 
