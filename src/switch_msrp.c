@@ -1013,13 +1013,22 @@ switch_status_t msrp_reply(switch_msrp_client_socket_t *csock, switch_msrp_msg_t
 {
 	char buf[2048];
 	switch_size_t len;
-	sprintf(buf, "MSRP %s 200 OK\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
+	int ret;
+
+	ret = snprintf(buf, sizeof(buf), "MSRP %s 200 OK\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
 		"%s$\r\n",
 		msrp_msg->transaction_id,
 		switch_str_nil(switch_msrp_msg_get_header(msrp_msg, MSRP_H_FROM_PATH)),
 		switch_str_nil(switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH)),
 		msrp_msg->delimiter);
-	len = strlen(buf);
+
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MSRP reply does not fit %" SWITCH_SIZE_T_FMT " bytes, not sent\n", sizeof(buf));
+
+		return SWITCH_STATUS_FALSE;
+	}
+
+	len = ret;
 
 	return msrp_socket_send(csock, buf, &len);
 }
@@ -1028,7 +1037,9 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 {
 	char buf[2048];
 	switch_size_t len;
-	sprintf(buf, "MSRP %s REPORT\r\nTo-Path: %s\r\nFrom-Path: %s\r\nMessage-ID: %s\r\n"
+	int ret;
+
+	ret = snprintf(buf, sizeof(buf), "MSRP %s REPORT\r\nTo-Path: %s\r\nFrom-Path: %s\r\nMessage-ID: %s\r\n"
 		"Status: 000 %s\r\nByte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT
 		"\r\n%s$\r\n",
 		msrp_msg->transaction_id,
@@ -1039,7 +1050,14 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 		msrp_msg->accumulated_bytes ? msrp_msg->accumulated_bytes : msrp_msg->byte_end,
 		msrp_msg->bytes,
 		msrp_msg->delimiter);
-	len = strlen(buf);
+
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MSRP report does not fit %" SWITCH_SIZE_T_FMT " bytes, not sent\n", sizeof(buf));
+
+		return SWITCH_STATUS_FALSE;
+	}
+
+	len = ret;
 
 	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "report: %" SWITCH_SIZE_T_FMT " bytes [\n%s]\n", len, buf);
 
