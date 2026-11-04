@@ -793,7 +793,6 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 			if (q > p) {
 				*q = '\0';
 				msrp_msg->byte_start = atoi(p);
-				switch_assert(msrp_msg->byte_start > 0);
 				p = ++q;
 				if (*p && *p == '*') {
 					msrp_msg->range_star = 1;
